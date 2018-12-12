@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2c4faeda_00936ac6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:06:06Z",
+      "side": 1,
+      "message": "acl.entry(\n    roles \u003d [\n        acl.PROJECT_CONFIGS_READER,\n        acl.LOGDOG_READER,\n        acl.BUILDBUCKET_READER,\n    ],\n    group \u003d \u0027all-my-project-viewers\u0027,\n)\n\nacl.entry() is flexible to reduce duplication as much as possible without resorting to writing custom functions or imperative code.",
+      "parentUuid": "732dc16c_e9018163",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 10
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef31200c_f0cd2451",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b32bea63_05efeaa0",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:06:06Z",
+      "side": 1,
+      "message": "This is public API.\n\nThere\u0027s a way to check type of an argument, but I prefer all arguments to have single definite type. I don\u0027t think there\u0027s a potential for confusion here.",
+      "parentUuid": "ef31200c_f0cd2451",
+      "range": {
+        "startLine": 112,
+        "startChar": 4,
+        "endLine": 117,
+        "endChar": 75
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "e873d80a_0c253470",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:06:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f70bf0a_8c595b95",
+      "range": {
+        "startLine": 124,
+        "startChar": 2,
+        "endLine": 124,
+        "endChar": 43
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1b72ff1_b07f1c6d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
         "patchSetId": 2
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "f218fd6d_d2deb252",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:06:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1b72ff1_b07f1c6d",
+      "range": {
+        "startLine": 171,
+        "startChar": 50,
+        "endLine": 171,
+        "endChar": 52
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2e4b263_68af207b",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
         "patchSetId": 2
@@ -114,6 +210,30 @@
       "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d5034e1_9f392e6f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:06:06Z",
+      "side": 1,
+      "message": "I\u0027m just naming everything per existing roles in *.proto files, since they are still our API.\n\nWe can bikeshed details like that at the very end when everything else is working and we have a coherent picture for productive bikeshedding :)",
+      "parentUuid": "c2e4b263_68af207b",
+      "range": {
+        "startLine": 233,
+        "startChar": 27,
+        "endLine": 233,
+        "endChar": 33
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -149,6 +269,24 @@
       "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3eb684de_963a35f1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:06:06Z",
+      "side": 1,
+      "message": "I plan to write a python script that scrapes this documentation into an MD file (using glorious \u0027ast\u0027 module). The script will be full of hacks to understand particular structure of starlark/stdlib/* files. I may need to do some changes for this (e.g. move help strings from comments into real strings or something).\n\nStarlark lib itself is not helpful for this (there isn\u0027t even __doc__ in Starlark). Note that Bazel document generator is also written in python :-/",
+      "parentUuid": "92c9b1b1_0896d18d",
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
