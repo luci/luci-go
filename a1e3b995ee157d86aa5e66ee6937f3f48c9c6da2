@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34fde077_99f19348",
+        "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-12T20:20:32Z",
+      "side": 1,
+      "message": "maybe \"RescheduleArchiveTask\"?",
+      "range": {
+        "startLine": 210,
+        "startChar": 5,
+        "endLine": 210,
+        "endChar": 24
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3997e515_2b8b4e50",
+        "filename": "logdog/appengine/coordinator/archival.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-12T20:20:32Z",
+      "side": 1,
+      "message": "`if lst.ArchivalState().Archived() { ... }`",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 46
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59edb754_01a5ea96",
+        "filename": "logdog/appengine/coordinator/archival.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-12T20:20:32Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this just be `bytes.Equal`?",
+      "range": {
+        "startLine": 89,
+        "startChar": 4,
+        "endLine": 89,
+        "endChar": 21
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab959bd1_7d56ebc2",
+        "filename": "logdog/appengine/coordinator/archival.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-12T20:20:32Z",
+      "side": 1,
+      "message": "I think this won\u0027t catch instances where the function is called multiple times in the same transaction?\n\nI think we should probably generate a new archival key for each publish. So the states go:\n\n                                   +-------+\n                                   |       |\n                 CAS(nil, key)     |       |  CAS(old_key, new_key) \u0026\u0026 retry++\n                                   v       |\n     unscheduled +--------\u003e scheduled(key) +\n\nThe reason for this is so that at any point in time there\u0027s only one message with the \u0027correct\u0027 key in it. If we re-use the key between publications, we can\u0027t tell the difference between a message bouncing around in pubsub vs. a legit republication.\n\nThe \u0027old_key\u0027 will be the token needed during republish to correctly increment the retry count. Either they present the old key, and we do TXN[retry++, new_key], or we don\u0027t do either. Once the transaction is committed, accidental retries of the operation will fail (because \u0027old_key\u0027 is no longer active). If we don\u0027t generate a new key, we could retry this indefinitely and always boost `retry`.",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 50
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "214bdb68_3ef951eb",
+        "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-12T20:20:32Z",
+      "side": 1,
+      "message": "I think you need to actually run this mutation in this handler; that way you can immediately check to see that the old key is still active. If it\u0027s not active, you return 200. Otherwise you do the transaction to CAS(oldkey, newkey). The archive task will retry this operation until it gets a 200. If the archiver dies, pubsub will re-deliver the task with the old key, and it can continue to try the reschedule (or get 200 that it was successful).\n\nIf you only post the new mutation, you could potentially have a bunch of retries on this handler from the archiver which all try to overwrite the mutation with old_key.",
+      "range": {
+        "startLine": 74,
+        "startChar": 24,
+        "endLine": 74,
+        "endChar": 48
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
