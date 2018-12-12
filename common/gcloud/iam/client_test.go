@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
+	"encoding/json"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -191,5 +193,61 @@ func TestClient(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(token.AccessToken, ShouldResemble, "token1")
 		So(token.Expiry, ShouldResemble, expireTime)
+	})
+
+	Convey("CreateServiceAccount works", t, func(c C) {
+		projectId := "abcdefg"
+		urlPath := fmt.Sprintf("/v1/projects/%s/serviceAccounts", projectId)
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "POST" {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+
+			switch r.URL.Path {
+			case urlPath:
+				body, err := ioutil.ReadAll(r.Body)
+				if err != nil {
+					panic(err)
+				}
+				var request struct {
+					AccountId      string         `json:"accountId"`
+					ServiceAccount ServiceAccount `json:"serviceAccount"`
+				}
+				err = json.Unmarshal(body, &request)
+				if err != nil {
+					panic(err)
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(200)
+
+				request.ServiceAccount.ProjectId = projectId
+				request.ServiceAccount.DisplayName = request.AccountId
+				resp, err := json.Marshal(&request.ServiceAccount)
+				if err != nil {
+					panic(err)
+				}
+				w.Write([]byte(resp))
+
+			default:
+				panic(fmt.Errorf("Unknown URL: %q\n", r.URL.Path))
+			}
+		}))
+		defer ts.Close()
+
+		cl := Client{
+			Client:   http.DefaultClient,
+			BasePath: ts.URL,
+		}
+
+		accountId := "newAccount123"
+		expected := &ServiceAccount{
+			ProjectId:   projectId,
+			DisplayName: accountId,
+		}
+		serviceAccount, err := cl.CreateServiceAccount(context.Background(), projectId, accountId)
+		So(err, ShouldBeNil)
+		So(serviceAccount, ShouldResemble, expected)
 	})
 }

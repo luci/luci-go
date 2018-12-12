@@ -51,7 +51,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		max_grant_validity_duration: 7200
 	}`)
 
-	var loggedInfo *MintedOAuthTokenInfo
+	var loggedInfo LoggableOAuthTokenInfo
 	var lastMintParams auth.MintAccessTokenParams
 	rpc := MintOAuthTokenViaGrantRPC{
 		Signer: testingSigner(),
@@ -65,7 +65,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 				Expiry:      clock.Now(ctx).Add(time.Hour),
 			}, nil
 		},
-		LogOAuthToken: func(c context.Context, i *MintedOAuthTokenInfo) error {
+		LogOAuthToken: func(c context.Context, i LoggableOAuthTokenInfo) error {
 			loggedInfo = i
 			return nil
 		},
