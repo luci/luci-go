@@ -17,6 +17,7 @@
 load('@stdlib//internal/generator.star', 'generator')
 load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
+load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
 load('@proto//luci/buildbucket/project_config.proto', buildbucket_pb='buildbucket')
@@ -55,6 +56,25 @@ def get_buckets():
   return graph.children(keys.project(), kinds.BUCKET)
 
 
+def get_project_acls():
+  """Returns [acl.elementary] with the project-level ACLs."""
+  return aclimpl.normalize_acls(get_project().props.acls)
+
+
+def get_bucket_acls(bucket):
+  """Returns [acl.elementary] with combined bucket and project ACLs.
+
+  Args:
+    bucket: a bucket node, as returned by e.g. get_buckets().
+  """
+  return aclimpl.normalize_acls(bucket.props.acls + get_project().props.acls)
+
+
+def filter_acls(acls, roles):
+  """Keeps only ACL entries that have any of given roles."""
+  return [a for a in acls if a.role in roles]
+
+
 ################################################################################
 ## project.cfg.
 
@@ -68,9 +88,18 @@ def gen_project_cfg(ctx):
   proj = get_project(required=False)
   if not proj:
     return
+
+  # Find all PROJECT_CONFIGS_READER role entries.
+  access = []
+  for a in filter_acls(get_project_acls(), [acl.PROJECT_CONFIGS_READER]):
+    if a.user:
+      access.append('user:' + a.user)
+    elif a.group:
+      access.append('group:' + a.group)
+
   ctx.config_set['project.cfg'] = config_pb.ProjectCfg(
-      name = get_project().props.name,
-      access = ['group:all'],  # TODO: get this from where?..
+      name = proj.props.name,
+      access = access,
   )
 
 
@@ -83,16 +112,35 @@ def gen_logdog_cfg(ctx):
   opts = graph.node(keys.logdog())
   if not opts:
     return
+
+  # Note that acl.LOGDOG_* are declared as groups_only=True roles, so .group
+  # is guaranteed to be set here.
+  readers = []
+  writers = []
+  for a in get_project_acls():
+    if a.role == acl.LOGDOG_READER:
+      readers.append(a.group)
+    elif a.role == acl.LOGDOG_WRITER:
+      writers.append(a.group)
+
   logdog = get_service('logdog', 'defining LogDog options')
   ctx.config_set[logdog.cfg_file] = logdog_pb.ProjectConfig(
-      reader_auth_groups = [],  # TODO
-      writer_auth_groups = [],  # TODO
+      reader_auth_groups = readers,
+      writer_auth_groups = writers,
       archive_gs_bucket = opts.props.gs_bucket,
   )
 
 
 ################################################################################
 ## buildbucket.cfg.
+
+
+# acl.role => buildbucket_pb.Acl.Role.
+_bb_roles = {
+    acl.BUILDBUCKET_READER: buildbucket_pb.Acl.READER,
+    acl.BUILDBUCKET_SCHEDULER: buildbucket_pb.Acl.SCHEDULER,
+    acl.BUILDBUCKET_WRITER: buildbucket_pb.Acl.WRITER,
+}
 
 
 def gen_buildbucket_cfg(ctx):
@@ -110,7 +158,7 @@ def gen_buildbucket_cfg(ctx):
   for bucket in buckets:
     cfg.acl_sets.append(buildbucket_pb.AclSet(
         name = bucket.props.name,
-        acls = [],  # TODO
+        acls = gen_buildbucket_acls(bucket),
     ))
     cfg.buckets.append(buildbucket_pb.Bucket(
         name = bucket.props.name,
@@ -120,3 +168,15 @@ def gen_buildbucket_cfg(ctx):
             builders = [],  # TODO
         ),
     ))
+
+
+def gen_buildbucket_acls(bucket):
+  """core.bucket(...) node => [buildbucket_pb.Acl]."""
+  return [
+      buildbucket_pb.Acl(
+          role = _bb_roles[a.role],
+          group = a.group,
+          identity = 'user:' + a.user if a.user else None,
+      )
+      for a in filter_acls(get_bucket_acls(bucket), _bb_roles.keys())
+  ]
