@@ -339,6 +339,8 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 			}
 			return result
 		}
+
+		logging.Debugf(ctx, "Waiting task_id: %s", taskID)
 	}
 }
 
@@ -401,7 +403,7 @@ func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 	}
 
 	// Prepare context.
-	ctx := context.Background()
+	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
 	if c.timeout > 0 {
 		// TODO(mknyszek): Use cancel func to implement graceful exit on SIGINT.
 		var cancel func()
