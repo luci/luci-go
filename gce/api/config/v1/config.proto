@@ -6,6 +6,15 @@ syntax = "proto3";
 
 package config;
 
+// A description of a service account.
+message ServiceAccount {
+  // The email address of this service account.
+  string email = 1;
+
+  // The scopes available for this service account.
+  repeated string scope = 2;
+}
+
 // A network access config type.
 // GCE's default and only value is 1:1 NAT.
 enum AccessConfigType {
@@ -76,9 +85,12 @@ message VM {
   // The name of a GCP project to create this VM in.
   string project = 5;
 
+  // The service accounts to make available to this VM.
+  repeated ServiceAccount service_account = 6;
+
   // The name of a zone to create this VM in.
   // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
-  string zone = 6;
+  string zone = 7;
 }
 
 // A kind of VM.

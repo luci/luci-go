@@ -96,11 +96,78 @@ func TestVM(t *testing.T) {
 		})
 	})
 
-	Convey("GetMetadata", t, func() {
+	Convey("getDisks", t, func() {
+		Convey("zero", func() {
+			Convey("nil", func() {
+				v := &VM{}
+				d := v.getDisks()
+				So(d, ShouldHaveLength, 0)
+			})
+
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Disk: []*config.Disk{},
+					},
+				}
+				d := v.getDisks()
+				So(d, ShouldHaveLength, 0)
+			})
+		})
+
+		Convey("non-zero", func() {
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Disk: []*config.Disk{
+							{},
+						},
+					},
+				}
+				d := v.getDisks()
+				So(d, ShouldHaveLength, 1)
+				So(d[0].AutoDelete, ShouldBeTrue)
+				So(d[0].Boot, ShouldBeTrue)
+				So(d[0].InitializeParams.DiskSizeGb, ShouldEqual, 0)
+			})
+
+			Convey("non-empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Disk: []*config.Disk{
+							{
+								Image: "image",
+							},
+						},
+					},
+				}
+				d := v.getDisks()
+				So(d, ShouldHaveLength, 1)
+				So(d[0].InitializeParams.SourceImage, ShouldEqual, "image")
+			})
+
+			Convey("multi", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Disk: []*config.Disk{
+							{},
+							{},
+						},
+					},
+				}
+				d := v.getDisks()
+				So(d, ShouldHaveLength, 2)
+				So(d[0].Boot, ShouldBeTrue)
+				So(d[1].Boot, ShouldBeFalse)
+			})
+		})
+	})
+
+	Convey("getMetadata", t, func() {
 		Convey("nil", func() {
 			v := &VM{}
 			m := v.getMetadata()
-			So(m.Items, ShouldHaveLength, 0)
+			So(m, ShouldBeNil)
 		})
 
 		Convey("empty", func() {
@@ -110,7 +177,7 @@ func TestVM(t *testing.T) {
 				},
 			}
 			m := v.getMetadata()
-			So(m.Items, ShouldHaveLength, 0)
+			So(m, ShouldBeNil)
 		})
 
 		Convey("non-empty", func() {
@@ -220,12 +287,162 @@ func TestVM(t *testing.T) {
 		})
 	})
 
+	Convey("getNetworkInterfaces", t, func() {
+		Convey("zero", func() {
+			Convey("nil", func() {
+				v := &VM{}
+				n := v.getNetworkInterfaces()
+				So(n, ShouldHaveLength, 0)
+			})
+
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						NetworkInterface: []*config.NetworkInterface{},
+					},
+				}
+				n := v.getNetworkInterfaces()
+				So(n, ShouldHaveLength, 0)
+			})
+		})
+
+		Convey("non-zero", func() {
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						NetworkInterface: []*config.NetworkInterface{
+							{},
+						},
+					},
+				}
+				n := v.getNetworkInterfaces()
+				So(n, ShouldHaveLength, 1)
+				So(n[0].AccessConfigs, ShouldHaveLength, 0)
+				So(n[0].Network, ShouldEqual, "")
+			})
+
+			Convey("non-empty", func() {
+				Convey("network", func() {
+					v := &VM{
+						Attributes: config.VM{
+							NetworkInterface: []*config.NetworkInterface{
+								{
+									AccessConfig: []*config.AccessConfig{},
+									Network:      "network",
+								},
+							},
+						},
+					}
+					n := v.getNetworkInterfaces()
+					So(n, ShouldHaveLength, 1)
+					So(n[0].AccessConfigs, ShouldBeNil)
+					So(n[0].Network, ShouldEqual, "network")
+				})
+
+				Convey("access configs", func() {
+					v := &VM{
+						Attributes: config.VM{
+							NetworkInterface: []*config.NetworkInterface{
+								{
+									AccessConfig: []*config.AccessConfig{
+										{
+											Type: config.AccessConfigType_ONE_TO_ONE_NAT,
+										},
+									},
+								},
+							},
+						},
+					}
+					n := v.getNetworkInterfaces()
+					So(n, ShouldHaveLength, 1)
+					So(n[0].AccessConfigs, ShouldHaveLength, 1)
+					So(n[0].AccessConfigs[0].Type, ShouldEqual, "ONE_TO_ONE_NAT")
+				})
+			})
+		})
+	})
+
+	Convey("getServiceAccounts", t, func() {
+		Convey("zero", func() {
+			Convey("nil", func() {
+				v := &VM{}
+				s := v.getServiceAccounts()
+				So(s, ShouldHaveLength, 0)
+			})
+
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						ServiceAccount: []*config.ServiceAccount{},
+					},
+				}
+				s := v.getServiceAccounts()
+				So(s, ShouldHaveLength, 0)
+			})
+		})
+
+		Convey("non-zero", func() {
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						ServiceAccount: []*config.ServiceAccount{
+							{},
+						},
+					},
+				}
+				s := v.getServiceAccounts()
+				So(s, ShouldHaveLength, 1)
+				So(s[0].Email, ShouldEqual, "")
+				So(s[0].Scopes, ShouldHaveLength, 0)
+			})
+
+			Convey("non-empty", func() {
+				Convey("email", func() {
+					v := &VM{
+						Attributes: config.VM{
+							ServiceAccount: []*config.ServiceAccount{
+								{
+									Email: "email",
+									Scope: []string{},
+								},
+							},
+						},
+					}
+					s := v.getServiceAccounts()
+					So(s, ShouldHaveLength, 1)
+					So(s[0].Email, ShouldEqual, "email")
+					So(s[0].Scopes, ShouldHaveLength, 0)
+				})
+
+				Convey("scopes", func() {
+					v := &VM{
+						Attributes: config.VM{
+							ServiceAccount: []*config.ServiceAccount{
+								{
+									Scope: []string{
+										"scope",
+									},
+								},
+							},
+						},
+					}
+					s := v.getServiceAccounts()
+					So(s, ShouldHaveLength, 1)
+					So(s[0].Email, ShouldEqual, "")
+					So(s[0].Scopes, ShouldHaveLength, 1)
+					So(s[0].Scopes[0], ShouldEqual, "scope")
+				})
+			})
+		})
+
+	})
+
 	Convey("GetInstance", t, func() {
 		Convey("empty", func() {
 			v := &VM{}
 			i := v.GetInstance()
 			So(i.Disks, ShouldHaveLength, 0)
-			So(i.Metadata.Items, ShouldHaveLength, 0)
+			So(i.Metadata, ShouldBeNil)
 			So(i.NetworkInterfaces, ShouldHaveLength, 0)
 		})
 
@@ -251,16 +468,10 @@ func TestVM(t *testing.T) {
 			}
 			i := v.GetInstance()
 			So(i.Disks, ShouldHaveLength, 1)
-			So(i.Disks[0].AutoDelete, ShouldBeTrue)
-			So(i.Disks[0].Boot, ShouldBeTrue)
-			So(i.Disks[0].InitializeParams.DiskSizeGb, ShouldEqual, 100)
-			So(i.Disks[0].InitializeParams.SourceImage, ShouldEqual, "image")
 			So(i.MachineType, ShouldEqual, "type")
-			So(i.Metadata.Items, ShouldHaveLength, 0)
+			So(i.Metadata, ShouldBeNil)
 			So(i.NetworkInterfaces, ShouldHaveLength, 1)
-			So(i.NetworkInterfaces[0].AccessConfigs, ShouldHaveLength, 1)
-			So(i.NetworkInterfaces[0].AccessConfigs[0].Type, ShouldEqual, "ONE_TO_ONE_NAT")
-			So(i.NetworkInterfaces[0].Network, ShouldEqual, "network")
+			So(i.ServiceAccounts, ShouldBeNil)
 		})
 	})
 }
