@@ -38,6 +38,16 @@ func (s Set) Has(value string) bool {
 	return ret
 }
 
+// HasAll returns true iff the Set contains all the given values.
+func (s Set) HasAll(values ...string) bool {
+	for _, v := range values {
+		if !s.Has(v) {
+			return false
+		}
+	}
+	return true
+}
+
 // Add ensures that Set contains value, and returns true if it was added (i.e.
 // it returns false if the Set already contained the value).
 func (s Set) Add(value string) bool {
@@ -67,8 +77,8 @@ func (s Set) Peek() (string, bool) {
 	return "", false
 }
 
-// Peek removes and returns an arbitrary element from the set. If the set was
-// empty, this returns ("", false).
+// Pop removes and returns an arbitrary element from the set and removes it from the
+// set. If the set was empty, this returns ("", false).
 func (s Set) Pop() (string, bool) {
 	for k := range s {
 		delete(s, k)

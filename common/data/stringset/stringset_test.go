@@ -102,6 +102,8 @@ func TestSet(t *testing.T) {
 		s := NewFromSlice("hi", "there", "person", "hi")
 		So(s.Len(), ShouldEqual, 3)
 		So(s.Has("hi"), ShouldBeTrue)
+		So(s.HasAll("hi", "person"), ShouldBeTrue)
+		So(s.HasAll("hi", "bye"), ShouldBeFalse)
 		sl := s.ToSlice()
 		sort.Strings(sl)
 		So(sl, ShouldResemble, []string{"hi", "person", "there"})
