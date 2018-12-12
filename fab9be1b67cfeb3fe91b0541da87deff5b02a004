@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "dc2c0da9_5cc6e4f9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:16:24Z",
+      "side": 1,
+      "message": "Ah, no. It just my stupidity (and lack of tests which I\u0027m about to write).\n\nSo, would you prefer _entry(role\u003dNone, roles\u003dNone, ...) or _entry(roles, ...) and checking type(role) \u003d\u003d \u0027list\u0027? Both a bit weird... Like a have a feeling it would be unexpected for most that \u0027role\u0027 can actually be a list.",
+      "parentUuid": "ab138dd5_77beae46",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 10
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef31200c_f0cd2451",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
         "patchSetId": 2
