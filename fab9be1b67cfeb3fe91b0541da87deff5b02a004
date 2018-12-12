@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "698b178a_5b9e51d4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-12T00:35:31Z",
+      "side": 1,
+      "message": "I feel like `_entry(roles, groups, users)` wouldn\u0027t be too weird (and document that each of them could be just a singular or a list of their respective types). e.g. I don\u0027t think\n  \n    _entry(role, groups\u003d[group, group], users\u003d[user, user])\n    _entry([role, role], users\u003duser)\n    etc.\n\nAre too confusing, but as you like (the 6-argument version would also be fine with me)",
+      "parentUuid": "dc2c0da9_5cc6e4f9",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 10
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef31200c_f0cd2451",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
         "patchSetId": 2
