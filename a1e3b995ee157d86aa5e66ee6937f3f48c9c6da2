@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5bd4a6d5_b15c0308",
+        "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-12T20:24:03Z",
+      "side": 1,
+      "message": "This name sounds clearer me; the comment could also be slightly rephrased as \"... an internal operation to reschedule an archive task for a later time\" or something like that.",
+      "parentUuid": "34fde077_99f19348",
+      "range": {
+        "startLine": 210,
+        "startChar": 5,
+        "endLine": 210,
+        "endChar": 24
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3997e515_2b8b4e50",
         "filename": "logdog/appengine/coordinator/archival.go",
         "patchSetId": 7
@@ -94,6 +118,29 @@
     },
     {
       "key": {
+        "uuid": "5b2072b5_a2dbc475",
+        "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-12T20:24:03Z",
+      "side": 1,
+      "message": "Unrelated to this CL:\n\nAlthough this name is used elsewhere currently in LogDog, it\u0027s a pretty confusing name.\n\n`lst` looks like `1st`, and it also looks like an abbreviation of \"list\".\n\nPossible alternative names: `stream`. Or if we want to stick with 1-3 letter abbreviations, `lss` or `ss` might be better than lst. If you do think this could be renamed, then it could perhaps be renamed elsewhere in a separate CL.",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 4
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "214bdb68_3ef951eb",
         "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
         "patchSetId": 7
@@ -110,6 +157,29 @@
         "startChar": 24,
         "endLine": 74,
         "endChar": 48
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92f16cef_c7ef2888",
+        "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-12T20:24:03Z",
+      "side": 1,
+      "message": "Are we expecting these tests to just fail occasionally? If so, is there any way that we can assert only non-flaky parts?",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 26
       },
       "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
