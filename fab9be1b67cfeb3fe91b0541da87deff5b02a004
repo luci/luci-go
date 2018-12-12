@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "ab138dd5_77beae46",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-12T00:09:11Z",
+      "side": 1,
+      "message": "I guess I was confused by `_entry(role, roles\u003dNone,...)`, which in python wouldn\u0027t allow you to call `_entry(roles\u003d[...])` without complaining... is starlark different here?",
+      "parentUuid": "2c4faeda_00936ac6",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 10
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef31200c_f0cd2451",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
         "patchSetId": 2
