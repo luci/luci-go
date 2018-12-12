@@ -64,11 +64,37 @@ type VM struct {
 	URL string `gae:"url"`
 }
 
-func (vm *VM) getMetadata() *compute.Metadata {
-	meta := &compute.Metadata{
-		Items: make([]*compute.MetadataItems, len(vm.Attributes.GetMetadata())),
+// getDisks returns a []*compute.AttachedDisk representation of this VM's disks.
+func (vm *VM) getDisks() []*compute.AttachedDisk {
+	if len(vm.Attributes.GetDisk()) == 0 {
+		return nil
 	}
-	for i, data := range vm.Attributes.GetMetadata() {
+	disks := make([]*compute.AttachedDisk, len(vm.Attributes.Disk))
+	for i, disk := range vm.Attributes.Disk {
+		disks[i] = &compute.AttachedDisk{
+			// AutoDelete deletes the disk when the instance is deleted.
+			AutoDelete: true,
+			InitializeParams: &compute.AttachedDiskInitializeParams{
+				DiskSizeGb:  disk.Size,
+				DiskType:    disk.Type,
+				SourceImage: disk.Image,
+			},
+		}
+	}
+	// GCE requires the first disk to be the boot disk.
+	disks[0].Boot = true
+	return disks
+}
+
+// getMetadata returns a *compute.Metadata representation of this VM's metadata.
+func (vm *VM) getMetadata() *compute.Metadata {
+	if len(vm.Attributes.GetMetadata()) == 0 {
+		return nil
+	}
+	meta := &compute.Metadata{
+		Items: make([]*compute.MetadataItems, len(vm.Attributes.Metadata)),
+	}
+	for i, data := range vm.Attributes.Metadata {
 		// Implicitly rejects FromFile, which is only supported in configs.
 		spl := strings.SplitN(data.GetFromText(), ":", 2)
 		// Per strings.SplitN semantics, len(spl) > 0 when splitting on a non-empty separator.
@@ -86,40 +112,57 @@ func (vm *VM) getMetadata() *compute.Metadata {
 	return meta
 }
 
+// getNetworkInterfaces returns a []*compute.NetworkInterface representation of this VM's network interfaces.
+func (vm *VM) getNetworkInterfaces() []*compute.NetworkInterface {
+	if len(vm.Attributes.GetNetworkInterface()) == 0 {
+		return nil
+	}
+	nics := make([]*compute.NetworkInterface, len(vm.Attributes.NetworkInterface))
+	for i, nic := range vm.Attributes.NetworkInterface {
+		nics[i] = &compute.NetworkInterface{
+			Network: nic.Network,
+		}
+		if len(nic.GetAccessConfig()) > 0 {
+			nics[i].AccessConfigs = make([]*compute.AccessConfig, len(nic.AccessConfig))
+			for j, cfg := range nic.AccessConfig {
+				nics[i].AccessConfigs[j] = &compute.AccessConfig{
+					Type: cfg.Type.String(),
+				}
+			}
+		}
+	}
+	return nics
+}
+
+// getServiceAccounts returns a []*compute.ServiceAccount representation of this VM's service accounts.
+func (vm *VM) getServiceAccounts() []*compute.ServiceAccount {
+	if len(vm.Attributes.GetServiceAccount()) == 0 {
+		return nil
+	}
+	accts := make([]*compute.ServiceAccount, len(vm.Attributes.ServiceAccount))
+	for i, sa := range vm.Attributes.ServiceAccount {
+		accts[i] = &compute.ServiceAccount{
+			Email: sa.Email,
+		}
+		if len(sa.GetScope()) > 0 {
+			accts[i].Scopes = make([]string, len(sa.Scope))
+			for j, s := range sa.Scope {
+				accts[i].Scopes[j] = s
+			}
+		}
+	}
+	return accts
+}
+
 // GetInstance returns a *compute.Instance representation of this VM.
 func (vm *VM) GetInstance() *compute.Instance {
 	inst := &compute.Instance{
-		Name:        vm.Hostname,
-		MachineType: vm.Attributes.GetMachineType(),
-		Metadata:    vm.getMetadata(),
-	}
-	inst.Disks = make([]*compute.AttachedDisk, len(vm.Attributes.GetDisk()))
-	for i, disk := range vm.Attributes.GetDisk() {
-		inst.Disks[i] = &compute.AttachedDisk{
-			// AutoDelete deletes the disk when the instance is deleted.
-			AutoDelete: true,
-			InitializeParams: &compute.AttachedDiskInitializeParams{
-				DiskSizeGb:  disk.Size,
-				DiskType:    disk.Type,
-				SourceImage: disk.Image,
-			},
-		}
-	}
-	if len(inst.Disks) > 0 {
-		// GCE requires the first disk to be the boot disk.
-		inst.Disks[0].Boot = true
-	}
-	inst.NetworkInterfaces = make([]*compute.NetworkInterface, len(vm.Attributes.GetNetworkInterface()))
-	for i, nic := range vm.Attributes.GetNetworkInterface() {
-		inst.NetworkInterfaces[i] = &compute.NetworkInterface{
-			Network: nic.Network,
-		}
-		inst.NetworkInterfaces[i].AccessConfigs = make([]*compute.AccessConfig, len(nic.GetAccessConfig()))
-		for j, cfg := range nic.GetAccessConfig() {
-			inst.NetworkInterfaces[i].AccessConfigs[j] = &compute.AccessConfig{
-				Type: cfg.Type.String(),
-			}
-		}
+		Name:              vm.Hostname,
+		Disks:             vm.getDisks(),
+		MachineType:       vm.Attributes.GetMachineType(),
+		Metadata:          vm.getMetadata(),
+		NetworkInterfaces: vm.getNetworkInterfaces(),
+		ServiceAccounts:   vm.getServiceAccounts(),
 	}
 	return inst
 }
