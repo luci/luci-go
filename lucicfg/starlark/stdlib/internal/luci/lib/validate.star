@@ -16,7 +16,7 @@
 
 
 def _string(attr, val, default='', required=True):
-  if not val:
+  if val == None:
     if required:
       fail('bad %r: missing' % attr)
     return default
@@ -25,6 +25,29 @@ def _string(attr, val, default='', required=True):
   return val
 
 
+def _list(attr, val, default=None, required=False):
+  if val != None and type(val) != 'list':
+    fail('bad %r: not a list' % attr)
+  if val:
+    return val
+  if required:
+    fail('bad %r: missing' % attr)
+  return default or []
+
+
+def _struct(attr, val, sym, default=None, required=True):
+  if val == None:
+    if required:
+      fail('bad %r: missing' % attr)
+    return default
+  tp = ctor(val) or type(val)  # ctor(...) return None for non-structs
+  if tp != sym:
+    fail('bad %r: got %s, expecting %s' % (attr, tp, sym))
+  return val
+
+
 validate = struct(
     string = _string,
+    list = _list,
+    struct = _struct,
 )
