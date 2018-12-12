@@ -1,8 +1,15 @@
 core.project(
     name = 'infra.git',
+
     buildbucket = 'cr-buildbucket.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
     logdog = 'luci-logdog.appspot.com',
+
+    acls = [
+        acl.entry(acl.PROJECT_CONFIGS_READER, groups='all'),
+        acl.entry(acl.BUILDBUCKET_READER, groups='all'),
+        acl.entry(acl.LOGDOG_READER, groups='all'),
+    ],
 )
 
 core.logdog(
@@ -15,6 +22,10 @@ core.bucket(
 
 core.bucket(
     name = 'try',
+
+    acls = [
+        acl.entry(acl.BUILDBUCKET_SCHEDULER, groups='infra-try-access'),
+    ],
 )
 
 
@@ -37,13 +48,24 @@ core.bucket(
 # >
 # acl_sets: <
 #   name: "ci"
+#   acls: <
+#     group: "all"
+#   >
 # >
 # acl_sets: <
 #   name: "try"
+#   acls: <
+#     group: "all"
+#   >
+#   acls: <
+#     role: SCHEDULER
+#     group: "infra-try-access"
+#   >
 # >
 # ===
 #
 # === luci-logdog.cfg
+# reader_auth_groups: "all"
 # archive_gs_bucket: "chromium-luci-logdog"
 # ===
 #

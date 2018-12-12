@@ -14,23 +14,26 @@
 
 load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/luci/common.star', 'keys')
+load('@stdlib//internal/luci/lib/acl.star', 'aclimpl')
 load('@stdlib//internal/luci/lib/service.star', 'service')
 load('@stdlib//internal/luci/lib/validate.star', 'validate')
 
 
-def project(name, buildbucket=None, swarming=None, logdog=None):
+def project(name, acls=None, buildbucket=None, swarming=None, logdog=None):
   """Defines a LUCI project.
 
   There should be exactly one such definition in a single top-level config file.
 
   Args:
     name: full name of the project.
+    acls: list of acl.entry objects, will be inherited by all buckets.
     buildbucket: hostname of a Buildbucket service to use (if any).
     swarming: hostname of a Swarming service to use (if any).
     logdog: hostname of a LogDog service to use (if any).
   """
   graph.add_node(keys.project(), props = {
       'name': validate.string('name', name),
+      'acls': aclimpl.validate_acls(acls, project_level=True),
       'buildbucket': service.from_host('buildbucket', buildbucket),
       'swarming': service.from_host('swarming', swarming),
       'logdog': service.from_host('logdog', logdog),
