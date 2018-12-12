@@ -74,7 +74,7 @@ footer {
 .text {
   white-space: pre;
 }
-#to-lite, #to-full {
+#to-raw, #to-lite, #to-full {
   color: #0000EE;
   cursor: pointer;
   text-decoration: underline;

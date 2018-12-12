@@ -89,6 +89,7 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 <header>
 <div>{{ if .Link }}<a href="{{ .Link }}">Back to build</a>{{ end }}</div>
 <div>
+<a id="to-raw" href="?format=raw">Raw log</a> |
 {{ if .IsFull }}<a id="to-lite">Switch to lite
 {{ else }}<a id="to-full">Switch to full{{ end }} mode</a> |
 	{{ if .IsAnonymous }}
