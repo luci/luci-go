@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "48419401_35dec67f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:50:41Z",
+      "side": 1,
+      "message": "Ok, changed to (roles, groups\u003dNone, users\u003dNone).",
+      "parentUuid": "698b178a_5b9e51d4",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 10
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef31200c_f0cd2451",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
         "patchSetId": 2
