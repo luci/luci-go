@@ -14,17 +14,20 @@
 
 load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/luci/common.star', 'keys')
+load('@stdlib//internal/luci/lib/acl.star', 'aclimpl')
 load('@stdlib//internal/luci/lib/validate.star', 'validate')
 
 
-def bucket(name):
+def bucket(name, acls=None):
   """Defines a bucket: a container for LUCI resources that share the same ACL.
 
   Args:
     name: name of the bucket, e.g. 'ci' or 'try'.
+    acls: list of acl.entry objects.
   """
   name = validate.string('name', name)
   graph.add_node(keys.bucket(name), props = {
       'name': name,
+      'acls': aclimpl.validate_acls(acls, project_level=False),
   })
   graph.add_edge(keys.project(), keys.bucket(name))
