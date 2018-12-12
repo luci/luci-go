@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1d573cc4_bab6a7b6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:54:26Z",
+      "side": 1,
+      "message": "Oops, forgot about that.",
+      "parentUuid": "5a1c67c9_0df6904e",
+      "range": {
+        "startLine": 75,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 0
+      },
+      "revId": "21e890258031e67efae2ed4f49efae9d78416d91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9cb6fb39_6fa8433d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "31e521ca_1708c7d1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:54:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cb6fb39_6fa8433d",
+      "range": {
+        "startLine": 178,
+        "startChar": 30,
+        "endLine": 178,
+        "endChar": 50
+      },
+      "revId": "21e890258031e67efae2ed4f49efae9d78416d91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f0894bf_3f1fb7ca",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/project.star",
         "patchSetId": 1
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "54f51b45_8d0a4014",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/project.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:54:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f0894bf_3f1fb7ca",
+      "revId": "21e890258031e67efae2ed4f49efae9d78416d91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5befcbc_9cd682a1",
         "filename": "lucicfg/testdata/full_example.star",
         "patchSetId": 1
@@ -76,6 +142,24 @@
       "writtenOn": "2018-12-11T22:21:00Z",
       "side": 1,
       "message": "too late to add ROLE_UNSPECIFIED :(",
+      "revId": "21e890258031e67efae2ed4f49efae9d78416d91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "060bb76e_d992e2ff",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-12T00:54:26Z",
+      "side": 1,
+      "message": "yep\n\nwe can theoretically add new alias for READER role and use it instead, then it will show up in configs. But probably not worth it.",
+      "parentUuid": "e5befcbc_9cd682a1",
       "revId": "21e890258031e67efae2ed4f49efae9d78416d91",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
