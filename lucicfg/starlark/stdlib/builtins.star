@@ -20,6 +20,9 @@ load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
 load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
 load('@stdlib//internal/luci/rules/project.star', _project='project')
 
+# LUCI helper modules.
+load('@stdlib//internal/luci/lib/acl.star', _acl='acl')
+
 # Register all LUCI config generator callbacks.
 load('@stdlib//internal/luci/generators.star', _register='register')
 _register()
@@ -33,3 +36,4 @@ core = struct(
     logdog =  _logdog,
     project = _project,
 )
+acl = _acl

@@ -52,7 +52,9 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// All available functions implemented in go.
 	predeclared := starlark.StringDict{
 		// Part of public API of the generator.
+		"ctor":       builtins.Ctor,
 		"fail":       builtins.Fail,
+		"genstruct":  builtins.GenStruct,
 		"proto":      starlarkproto.ProtoLib()["proto"],
 		"stacktrace": builtins.Stacktrace,
 		"struct":     builtins.Struct,
