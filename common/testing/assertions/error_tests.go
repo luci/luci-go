@@ -22,6 +22,53 @@ import (
 	"github.com/smartystreets/assertions"
 )
 
+// ShouldContainErr checks if an `errors.MultiError` on the left side contains
+// as one of its errors an `error` or `string` on the right side.
+//
+// Equivalent to calling ShouldErrLike on each `error` in an `errors.MultiError`
+// and succeeding as long as one of the ShouldErrLike calls succeeds.
+//
+// To avoid confusion, explicitly rejects the special case where the righthand
+// side is an `errors.MultiError`.
+func ShouldContainErr(actual interface{}, expected ...interface{}) string {
+	if len(expected) == 0 {
+		return assertions.ShouldHaveLength(actual, 0)
+	}
+	if len(expected) != 1 {
+		return fmt.Sprintf("ShouldContainErr requires 0 or 1 expected value, got %d", len(expected))
+	}
+
+	if expected[0] == nil {
+		return assertions.ShouldBeNil(actual)
+	} else if actual == nil {
+		return assertions.ShouldNotBeNil(actual)
+	}
+
+	_, ok := expected[0].(errors.MultiError)
+	if ok {
+		return fmt.Sprintf("expected value must not be a MultiError")
+	}
+
+	me, ok := actual.(errors.MultiError)
+	if !ok {
+		return assertions.ShouldHaveSameTypeAs(actual, errors.MultiError{})
+	}
+
+	switch expected[0].(type) {
+	case string:
+	case error:
+	default:
+		return fmt.Sprintf("unknown argument type %T, expected string or error", expected[0])
+	}
+
+	for _, err := range me {
+		if ShouldErrLike(err, expected[0]) == "" {
+			return ""
+		}
+	}
+	return fmt.Sprintf("expected MultiError to contain %q", expected[0])
+}
+
 // ShouldErrLike compares an `error` or `string` on the left side, to an `error`
 // or `string` on the right side.
 //
