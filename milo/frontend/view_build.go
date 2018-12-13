@@ -31,7 +31,7 @@ func handleLUCIBuild(c *router.Context) error {
 	// TODO(nodir): after switching to API v2, check that project, bucket
 	// and builder in parameters indeed match the returned build. This is
 	// relevant when the build is loaded by id.
-	return renderBuildLegacy(c, build, err)
+	return renderBuildLegacy(c, build, true, err)
 }
 
 // redirectLUCIBuild redirects to a canonical build URL
