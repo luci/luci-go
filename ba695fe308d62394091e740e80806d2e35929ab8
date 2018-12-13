@@ -169,6 +169,30 @@
     },
     {
       "key": {
+        "uuid": "6c4ff338_2634af07",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-13T23:47:46Z",
+      "side": 1,
+      "message": "The only successful assertion using this function and your code would be So(Something(), ShouldContainErr). It correctly detects that Something() returned an empty MultiError (in patchset 2, not this patchset).\n\nI\u0027m not sure it\u0027s this function\u0027s concern that Something() is returning something you probably don\u0027t want in your code.\n\nShould succeed:\nSo(Something(), ShouldContainErr) // check that the MultiError is empty\n\nShould fail:\nSo(Something(), ShouldContainErr, nil) // check that the MultiError contains a nil",
+      "parentUuid": "0e9949d5_ff8da861",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 2
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "60345a15_eca0b9fc",
         "filename": "common/testing/assertions/error_tests.go",
         "patchSetId": 1
