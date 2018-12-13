@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "ed700dcd_d6b2e1cc",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-13T22:50:53Z",
+      "side": 1,
+      "message": "I\u0027m not sure an empty MultiError is wrong. If I were writing code where I accumulated errors into a MultiError, I\u0027d expect to be able to return an empty MultiError and have it be treated as \"no errors occurred\", rather than having to do an extra check at the end for \"if len(errs) \u003d\u003d 0 { return nil }\".\n\nThough I agree that MultiError{nil} is almost certainly wrong (open question on the comment below).",
+      "parentUuid": "2b771b85_846a56cd",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 2
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "60345a15_eca0b9fc",
         "filename": "common/testing/assertions/error_tests.go",
         "patchSetId": 1
