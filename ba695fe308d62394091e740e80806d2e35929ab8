@@ -145,6 +145,30 @@
     },
     {
       "key": {
+        "uuid": "0e9949d5_ff8da861",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-13T23:24:43Z",
+      "side": 1,
+      "message": "All I\u0027m saying is that because `error` is an interface, doing the naive thing:\n\n    func Something() error {\n      var err MultiError   // it\u0027s nil!\n      // code, nothing appends to err\n      return err           // still a nil MultiError!\n    }\n\n    ...\n  \n    func InnocentBystander() error {\n      if err :\u003d Something(); err !\u003d nil {\n         // oops, err isn\u0027t nil here! It\u0027s a non-nil `error` interface\n         // which contains a nil MultiError.\n         return err\n      }\n      ...\n    }\n\nWill always be wrong. Maybe this assertion is the wrong place to catch this, though, but I sort of feel like it should have an opinion.",
+      "parentUuid": "830d48e7_399ea04e",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 2
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "60345a15_eca0b9fc",
         "filename": "common/testing/assertions/error_tests.go",
         "patchSetId": 1
