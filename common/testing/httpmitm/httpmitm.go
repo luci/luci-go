@@ -60,24 +60,25 @@ type Transport struct {
 func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var buf, bodyBuf bytes.Buffer
 
-	req = &(*req) // Shallow copy of req, since we modify it.
+	reqCopy := *req // Shallow copy of req, since we modify it.
 
 	// Since "Body" is an io.Reader, it can only be read once. However, we need
 	// to read it twice, once for the request capture and once for the actual
 	// request.
 	//
 	// To that end, we will tee Body into a Buffer when we perform the initial
-	// read, then replace "req.Body" with that Buffer for RoundTrip to read from.
-	origBody := req.Body
+	// read, then replace "reqCopy.Body" with that Buffer for RoundTrip to read
+	// from.
+	origBody := reqCopy.Body
 	if origBody != nil {
-		req.Body = ioutil.NopCloser(io.TeeReader(origBody, &bodyBuf))
+		reqCopy.Body = ioutil.NopCloser(io.TeeReader(origBody, &bodyBuf))
 	}
-	req.Write(&buf)
+	reqCopy.Write(&buf)
 	if origBody != nil {
 		if err := origBody.Close(); err != nil {
 			t.callback(Request, nil, err)
 		}
-		req.Body = ioutil.NopCloser(&bodyBuf)
+		reqCopy.Body = ioutil.NopCloser(&bodyBuf)
 	}
 	t.callback(Request, buf.Bytes(), nil)
 
@@ -85,7 +86,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if rt == nil {
 		rt = http.DefaultTransport
 	}
-	res, err := rt.RoundTrip(req)
+	res, err := rt.RoundTrip(&reqCopy)
 
 	if err != nil {
 		t.callback(Response, nil, err)
