@@ -77,6 +77,16 @@ service Admin {
   //   grpc.InvalidArgument error for unsupported token kind.
   //   grpc.Internal error for transient errors.
   rpc InspectOAuthTokenGrant(InspectOAuthTokenGrantRequest) returns (InspectOAuthTokenGrantResponse);
+
+  // CreateProjectScopedServiceAccount creates a project scoped service account.
+  //
+  // Project scoped service accounts are used to limit a LUCI service's
+  // authority to a particular LUCI project so it can not accidentally perform
+  // and operation cross-project.
+  //
+  // This RPC is mostly used for administrative purpose, e.g. to setup an
+  // environment before rolling out a new configuration.
+  rpc CreateProjectScopedServiceAccount(CreateProjectScopedServiceAccountRequest) returns (CreateProjectScopedServiceAccountResponse);
 }
 
 
@@ -274,3 +284,30 @@ message InspectOAuthTokenGrantResponse {
   // True if current service_accounts.cfg rules allow this token.
   bool allowed_by_rules = 8;
 }
+
+// CreateProjectScopedServiceAccountRequest is body of
+// CreateProjectScopedServiceAccount call.
+message CreateProjectScopedServiceAccountRequest {
+  // Service is the LUCI service whose authority is being limited to a project.
+  string service = 1;
+
+  // Project is the LUCI project to which the service account is scoped to.
+  string project = 2;
+
+  // OverrideAccountId is used override the auto generated account.
+  //
+  // In some situations this might be required to avoid conflicting names.
+  string override_account_id = 3;
+}
+
+// CreateProjectScopedServiceAccountResponse is the return value of
+// CreateProjectScopedServiceAccount call.
+message CreateProjectScopedServiceAccountResponse {
+
+  // AccountId is the id of the newly created service account.
+  string account_id = 1;
+
+  // GcpProjectId is the id of the project in which the account was created.
+  string gcp_project_id = 2;
+}
+
