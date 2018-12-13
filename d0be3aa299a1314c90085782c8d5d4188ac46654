@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc07eeaa_8e99978e",
+        "filename": "milo/common/config.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T21:05:13Z",
+      "side": 1,
+      "message": "https://godoc.org/net/url#URL.Path\nsays that relative URLs may omit leading slash. This URL is not relative, so I expected this to have leading slash",
+      "range": {
+        "startLine": 103,
+        "startChar": 20,
+        "endLine": 103,
+        "endChar": 21
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d57d7ae4_2ad69df8",
+        "filename": "milo/common/config.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T21:05:13Z",
+      "side": 1,
+      "message": "This is incorrect https://play.golang.org/p/-bTjvRPDmJt\n\nUnlike RawPath, Path does escaping for you",
+      "range": {
+        "startLine": 103,
+        "startChar": 41,
+        "endLine": 103,
+        "endChar": 56
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f891d23_7744a32f",
+        "filename": "milo/common/config.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T21:05:13Z",
+      "side": 1,
+      "message": "this code might deserve its own file in this dir",
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77d85b3b_ac4b2fc5",
+        "filename": "milo/common/config.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T21:05:13Z",
+      "side": 1,
+      "message": "this will store individual proto message fields as datastore entity properties, and will break as soon as we add something involved there, e.g. repeated inside repeated.\n\ni think this should be stored in binary protobuf form, using https://chromium.googlesource.com/infra/luci/gae/+/master/tools/proto-gae/README.md\n\nstrictly speaking, there is no reason to keep BugTemplate custom type, with its rendering impl, in this package. This package is about loading configs from luci-config and storing them in the datastore, so we could just store config.BugTemplate here.",
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b5e6e99_c072dc40",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T21:05:13Z",
+      "side": 1,
+      "message": "FWIU this is false. a LUCI project can have a combination of buildbot and LUCI builds.",
+      "range": {
+        "startLine": 299,
+        "startChar": 52,
+        "endLine": 300,
+        "endChar": 73
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "626a3497_13f16db7",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T21:05:13Z",
+      "side": 1,
+      "message": "if project.BuildBugTemplate was a pointer, this would be simplified to !\u003dnil",
+      "range": {
+        "startLine": 303,
+        "startChar": 18,
+        "endLine": 303,
+        "endChar": 83
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fc108de_16458ed9",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T21:05:13Z",
+      "side": 1,
+      "message": "this is where BuildBugTemplate type is used, so perhaps this package is more appropriate that config package\n\nin general it is unlikely that feedback link generation will be used anywhere outside of frontend",
+      "range": {
+        "startLine": 307,
+        "startChar": 14,
+        "endLine": 307,
+        "endChar": 55
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
