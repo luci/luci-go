@@ -18,6 +18,8 @@ import (
 	"errors"
 	"testing"
 
+	multierror "go.chromium.org/luci/common/errors"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -30,6 +32,44 @@ func TestShouldErrLike(t *testing.T) {
 
 	ce := customError{}
 	e := errors.New("e is for error")
+	f := errors.New("f is not for error")
+	me := multierror.MultiError{
+		e,
+		ce,
+	}
+
+	Convey("Test ShouldContainErr", t, func() {
+		Convey("too many params", func() {
+			So(ShouldContainErr(nil, nil, nil), ShouldContainSubstring, "requires 0 or 1")
+		})
+		Convey("no expectation", func() {
+			So(ShouldContainErr(nil), ShouldEqual, "")
+			So(ShouldContainErr(me), ShouldContainSubstring, "Expected: nil")
+		})
+		Convey("nil expectation", func() {
+			So(ShouldContainErr(nil, nil), ShouldEqual, "")
+			So(ShouldContainErr(me, nil), ShouldContainSubstring, "Expected: nil")
+		})
+		Convey("nil actual", func() {
+			So(ShouldContainErr(nil, "wut"), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
+		})
+		Convey("not a multierror", func() {
+			So(ShouldContainErr(100, "wut"), ShouldContainSubstring, "Expected '100' to be: 'errors.MultiError'")
+		})
+		Convey("string actual", func() {
+			So(ShouldContainErr(me, "is for error"), ShouldEqual, "")
+			So(ShouldContainErr(me, "customError"), ShouldEqual, "")
+			So(ShouldContainErr(me, "is not for error"), ShouldContainSubstring, "MultiError did not contain")
+		})
+		Convey("error actual", func() {
+			So(ShouldContainErr(me, e), ShouldEqual, "")
+			So(ShouldContainErr(me, ce), ShouldEqual, "")
+			So(ShouldContainErr(me, f), ShouldContainSubstring, "MultiError did not contain")
+		})
+		Convey("bad expected type", func() {
+			So(ShouldContainErr(me, 20), ShouldContainSubstring, "unknown argument type int")
+		})
+	})
 
 	Convey("Test ShouldErrLike", t, func() {
 		Convey("too many params", func() {
