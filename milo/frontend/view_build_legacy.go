@@ -59,7 +59,7 @@ func handleBuildbotBuild(c *router.Context) error {
 		return nil
 	default:
 		build, err := buildbot.GetBuild(c.Context, id)
-		return renderBuildLegacy(c, build, err)
+		return renderBuildLegacy(c, build, false, err)
 	}
 }
 
@@ -68,7 +68,7 @@ func handleSwarmingBuild(c *router.Context) error {
 		c.Context,
 		c.Request.FormValue("server"),
 		c.Params.ByName("id"))
-	return renderBuildLegacy(c, build, err)
+	return renderBuildLegacy(c, build, false, err)
 }
 
 func handleRawPresentationBuild(c *router.Context) error {
@@ -77,7 +77,7 @@ func handleRawPresentationBuild(c *router.Context) error {
 		c.Params.ByName("logdog_host"),
 		types.ProjectName(c.Params.ByName("project")),
 		types.StreamPath(strings.Trim(c.Params.ByName("path"), "/")))
-	return renderBuildLegacy(c, build, err)
+	return renderBuildLegacy(c, build, false, err)
 }
 
 func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
@@ -94,7 +94,7 @@ func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
 
 // renderBuildLegacy is a shortcut for rendering build or returning err if it is not
 // nil. Also calls build.Fix().
-func renderBuildLegacy(c *router.Context, build *ui.MiloBuildLegacy, err error) error {
+func renderBuildLegacy(c *router.Context, build *ui.MiloBuildLegacy, renderTimeline bool, err error) error {
 	if err != nil {
 		return err
 	}
@@ -102,9 +102,11 @@ func renderBuildLegacy(c *router.Context, build *ui.MiloBuildLegacy, err error) 
 	build.StepDisplayPref = getStepDisplayPrefCookie(c)
 	build.Fix(c.Context)
 
-	timelineJSON, err := timelineData(build)
-	if err != nil {
-		return err
+	timelineJSON := ""
+	if renderTimeline {
+		if timelineJSON, err = timelineData(build); err != nil {
+			return err
+		}
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/build_legacy.html", templates.Args{
