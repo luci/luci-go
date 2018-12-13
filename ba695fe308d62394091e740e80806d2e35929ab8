@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "588341c3_3d07f3a1",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T20:07:33Z",
+      "side": 1,
+      "message": "this isn\u0027t documented above, and I don\u0027t see how \"contains nothing\" implies \"is nothing\".\nCan we simplify the semantics by removing this?\n\nsame in L42",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 2
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4859150_ddba572f",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T20:07:33Z",
+      "side": 1,
+      "message": "unexpected",
+      "range": {
+        "startLine": 61,
+        "startChar": 22,
+        "endLine": 61,
+        "endChar": 29
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b851864f_b789cd16",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-13T20:07:33Z",
+      "side": 1,
+      "message": "other error messages in this file use present tense, and use wording like \"expected X, got Y\" or \"requires X\"",
+      "range": {
+        "startLine": 69,
+        "startChar": 32,
+        "endLine": 69,
+        "endChar": 35
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
