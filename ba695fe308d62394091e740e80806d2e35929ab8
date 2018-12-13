@@ -25,6 +25,47 @@
     },
     {
       "key": {
+        "uuid": "85745bd2_2e77abaa",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-13T22:32:11Z",
+      "side": 1,
+      "message": "It\u0027s copied from ShouldErrLike below. I made semantics similar.\n\nIf the user calls:\nShouldContainErr(multiError)\n\nWhat would you expect to happen?\n\nIn my opinion this should probably be changed to ShouldHaveLength 0 so that it succeeds on nil MultiError and empty MultiError. Otherwise what\u0027s the alternative? Always succeed? Always fail? Neither make much sense to me.",
+      "parentUuid": "588341c3_3d07f3a1",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 2
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60345a15_eca0b9fc",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-13T22:32:11Z",
+      "side": 1,
+      "message": "These are similarly copied from ShouldErrLike. Again, thinking more about it:\n\nWhat semantics would you expect from:\nShouldContainErr(multiError, nil)\n\nI think there are two possibilities:\n1. Actually check if the slice of errors contains a nil value.\n2. Check if the entire slice is nil.\n\nThe first one seems more natural, and if we removed the special case that\u0027s what it\u0027d do, but it also doesn\u0027t seem very useful. A MultiError containing as one of its elements a nil error seems odd, but I can change the semantics if you want.\n\nBut for this:\nShouldContainErr((errors.MultiError)(nil), \"whatever\")\n\nI\u0027d expect it to fail for sure. It\u0027s the same as checking if an empty MultiError contains an error. It doesn\u0027t. ShouldErrLike handles it as a special case, so I copied that here. I can remove the special casing if you want and the rest of the code will give the desired semantics with a different error message- which is probably more reasonable- but I opted for consistency instead.",
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e4859150_ddba572f",
         "filename": "common/testing/assertions/error_tests.go",
         "patchSetId": 1
@@ -36,6 +77,30 @@
       "writtenOn": "2018-12-13T20:07:33Z",
       "side": 1,
       "message": "unexpected",
+      "range": {
+        "startLine": 61,
+        "startChar": 22,
+        "endLine": 61,
+        "endChar": 29
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cad3c817_b3e7a06f",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-13T22:32:11Z",
+      "side": 1,
+      "message": "Again it\u0027s just for consistency with ShouldErrLike. Would you prefer unexpected even if it was inconsistent (I have no preference in this case, just clarifying yours)?",
+      "parentUuid": "e4859150_ddba572f",
       "range": {
         "startLine": 61,
         "startChar": 22,
@@ -68,6 +133,30 @@
       "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74a83aa7_b2481b96",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-13T22:32:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b851864f_b789cd16",
+      "range": {
+        "startLine": 69,
+        "startChar": 32,
+        "endLine": 69,
+        "endChar": 35
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
