@@ -38,6 +38,9 @@ message CertificateAuthorityConfig {
 
   // KnownDomains describes parameters to use for each particular domain.
   repeated DomainConfig known_domains = 5;
+
+  // KnownServices describes parameters to use for each particular service.
+  repeated ServiceConfig known_services = 8;
 }
 
 
@@ -56,6 +59,14 @@ message DomainConfig {
   //
   // If 0, machine tokens are not allowed.
   int64 machine_token_lifetime = 5;
+}
+
+message ServiceConfig {
+  // Service describes a LUCI service to be associated with the cloud project.
+  string service = 1;
+
+  // CloudProject is the GCP project to which service is associated with.
+  string cloud_project = 2;
 }
 
 
