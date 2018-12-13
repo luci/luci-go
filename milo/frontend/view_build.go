@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -14,24 +15,53 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+// normalizeBucketname takes a v1 or v2 bucket name and returns a v2 bucket name.
+// v1 bucket names are in the form of: "luci.project.name"
+// The project field is ignored.
+func normalizeBucket(bucket string) string {
+	if !strings.HasPrefix(bucket, "luci.") {
+		return bucket
+	}
+	parts := strings.SplitN(bucket, ".", 2)
+	if len(parts) != 3 {
+		return bucket
+	}
+	return parts[2]
+}
+
 // handleLUCIBuild renders a LUCI build.
 func handleLUCIBuild(c *router.Context) error {
 	bucket := c.Params.ByName("bucket")
-	builder := c.Params.ByName("builder")
+	buildername := c.Params.ByName("builder")
 	numberOrId := c.Params.ByName("numberOrId")
 
-	var address string
-	if strings.HasPrefix(numberOrId, "b") {
-		address = numberOrId[1:]
-	} else {
-		address = fmt.Sprintf("%s/%s/%s", bucket, builder, numberOrId)
+	if c.Request.FormValue("v2") == "" {
+		return handleLUCIBuildLegacy(c, bucket, buildername, numberOrId)
 	}
 
-	build, err := buildbucket.GetBuild(c.Context, address, true)
-	// TODO(nodir): after switching to API v2, check that project, bucket
-	// and builder in parameters indeed match the returned build. This is
-	// relevant when the build is loaded by id.
-	return renderBuildLegacy(c, build, err)
+	// TODO(hinoka): Once v2 is default, redirect v1 bucketnames to v2 bucketname URLs.
+	project := c.Params.ByName("project")
+	builder := bbpb.BuilderID{
+		Project: project,
+		Bucket:  normalizeBucket(bucket),
+		Builder: buildername,
+	}
+	br := bbpb.GetBuildRequest{Builder: &builder}
+	if strings.HasPrefix(numberOrId, "b") {
+		id, err := strconv.Atoi(numberOrId[1:])
+		if err != nil {
+			return err
+		}
+		br.Id = int64(id)
+	} else {
+		number, err := strconv.Atoi(numberOrId)
+		if err != nil {
+			return err
+		}
+		br.BuildNumber = int32(number)
+	}
+
+	return buildbucket.GetBuild(c, br, true)
 }
 
 // redirectLUCIBuild redirects to a canonical build URL

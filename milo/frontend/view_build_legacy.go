@@ -63,6 +63,19 @@ func handleBuildbotBuild(c *router.Context) error {
 	}
 }
 
+// handleLUCIBuildLegacy renders a LUCI build.
+func handleLUCIBuildLegacy(c *router.Context, bucket, builder, numberOrId string) error {
+	var address string
+	if strings.HasPrefix(numberOrId, "b") {
+		address = numberOrId[1:]
+	} else {
+		address = fmt.Sprintf("%s/%s/%s", bucket, builder, numberOrId)
+	}
+
+	build, err := buildbucket.GetBuild(c.Context, address, true)
+	return renderBuildLegacy(c, build, err)
+}
+
 func handleSwarmingBuild(c *router.Context) error {
 	build, err := swarming.GetBuild(
 		c.Context,
