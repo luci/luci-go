@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "2b771b85_846a56cd",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-13T22:42:01Z",
+      "side": 1,
+      "message": "I would just make ShouldContainErr require a value.\n\nNote that go is tricky wrt error and MultiError and nil. For example https://play.golang.org/p/gHHZLoxwXz5 prints \u0027false\u0027.\n\nI think it would make sense for:\n\n    So(MultiError{}, ShouldContainErr, nil)\n    So(MultiError{nil}, ShouldContainErr, nil)\n\nTo unique messages like \"Hey! You have an empty MultiErrror! This is almost always wrong, and this should be `error(nil)` instead!\"\n\nor something like that.",
+      "parentUuid": "93e5f3a0_841ee63c",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 2
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "60345a15_eca0b9fc",
         "filename": "common/testing/assertions/error_tests.go",
         "patchSetId": 1
