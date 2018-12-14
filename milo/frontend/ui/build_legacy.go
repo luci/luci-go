@@ -322,8 +322,8 @@ const (
 	// Recipe corresponds to a full recipe run.  Dependencies are recipes.
 	Recipe ComponentType = iota
 
-	// Step is a single step of a recipe.
-	Step
+	// StepLegacy is a single step of a recipe.
+	StepLegacy
 
 	// Summary denotes that this does not pretain to any particular step.
 	Summary

@@ -96,7 +96,7 @@
         "Finished": "0001-01-01T00:00:00Z",
         "Duration": 7198000000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": false
