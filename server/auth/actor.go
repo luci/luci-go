@@ -48,6 +48,12 @@ type MintAccessTokenParams struct {
 	//
 	// Default is 2 min.
 	MinTTL time.Duration
+
+	// Project defines the GCP project this service account should be created in.
+	//
+	// This field is necessary only for project-scoped service accounts which are
+	// created on demand.
+	Project string
 }
 
 // actorTokenCache is used to store access tokens of a service accounts the
@@ -88,6 +94,33 @@ func (c *cachedOAuth2Token) toToken() *oauth2.Token {
 	}
 }
 
+type ServiceAccountCreator func(context.Context, string, string) (bool, error)
+
+// CreateScopedServiceAccountIfNotExists allows on-demand creation of project scoped service accounts.
+//
+// Project scoped service accounts are associated with a LUCI project and a LUCI service. Their
+// authority is used by the respective service and tied to the respective LUCI project.
+// This function creates
+func CreateScopedServiceAccountIfNotExists(ctx context.Context, project, accountId string) (created bool, err error) {
+	created = false
+	err = nil
+
+	asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(iam.OAuthScope))
+	if err != nil {
+		return
+	}
+
+	client := &iam.Client{Client: &http.Client{Transport: asSelf}}
+	_, err = client.GetServiceAccount(ctx, project, accountId)
+	if err != nil {
+		if _, err = client.CreateServiceAccount(ctx, project, accountId); err != nil {
+			created = true
+			return
+		}
+	}
+	return
+}
+
 // MintAccessTokenForServiceAccount produces an access token for some service
 // account that the current service has "iam.serviceAccountActor" role in.
 //
@@ -114,6 +147,12 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 
 	if params.MinTTL == 0 {
 		params.MinTTL = 2 * time.Minute
+	}
+
+	if params.Project != "" {
+		if _, err := CreateScopedServiceAccountIfNotExists(ctx, params.Project, params.ServiceAccount); err != nil {
+			return nil, err
+		}
 	}
 
 	sortedScopes := append([]string(nil), params.Scopes...)
