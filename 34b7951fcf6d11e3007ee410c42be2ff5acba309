@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44b18ded_3708ca5c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-14T19:51:02Z",
+      "side": 1,
+      "message": "or",
+      "range": {
+        "startLine": 21,
+        "startChar": 45,
+        "endLine": 21,
+        "endChar": 47
+      },
+      "revId": "34b7951fcf6d11e3007ee410c42be2ff5acba309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37620a5a_6650421e",
+        "filename": "milo/common/config.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-14T19:51:02Z",
+      "side": 1,
+      "message": "nit: unnecessary. bytes are not indexable",
+      "range": {
+        "startLine": 53,
+        "startChar": 36,
+        "endLine": 53,
+        "endChar": 53
+      },
+      "revId": "34b7951fcf6d11e3007ee410c42be2ff5acba309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "864398dc_d316d4ec",
+        "filename": "milo/frontend/feedback_links.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-14T19:51:02Z",
+      "side": 1,
+      "message": "nit: these should go in a separate import block because they are not in stdlib",
+      "range": {
+        "startLine": 10,
+        "startChar": 1,
+        "endLine": 11,
+        "endChar": 39
+      },
+      "revId": "34b7951fcf6d11e3007ee410c42be2ff5acba309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46e16126_da58b855",
+        "filename": "milo/frontend/feedback_links.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-14T19:51:02Z",
+      "side": 1,
+      "message": "fillTemplate function is currently generic and can be used with non-build feedback links, except this part. This makes it specific to build because BugTemplateDetails has Build in it.\n\nThis is unnecessary actually. Nothing in this function requires it to be specific to build. This can be just interface{}.\n\nThis applies to all functions in this file \u003d\u003e most of this file can be be made build-agnostic \u003d\u003e BugTemplateDetails does not belong here to this file, but to the use-site",
+      "range": {
+        "startLine": 21,
+        "startChar": 36,
+        "endLine": 21,
+        "endChar": 55
+      },
+      "revId": "34b7951fcf6d11e3007ee410c42be2ff5acba309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf4f7f65_2d479607",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-14T19:51:02Z",
+      "side": 1,
+      "message": "i think this needs a gofmt: no \\n in the end",
+      "revId": "34b7951fcf6d11e3007ee410c42be2ff5acba309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4402a735_38a76712",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-14T19:51:02Z",
+      "side": 1,
+      "message": "this func is actually the only place that needs BugTemplateDetails, so perhaps the type can be declared in this func, or, even better, not declare the type at all:\n\nlink, err :\u003d MakeFeedbackLink(\u0026project.BuildBugTemplate, map[string]interface{}{\n    \"Build\": makeBuild(c.Params, build),\n})",
+      "range": {
+        "startLine": 247,
+        "startChar": 59,
+        "endLine": 247,
+        "endChar": 77
+      },
+      "revId": "34b7951fcf6d11e3007ee410c42be2ff5acba309",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
