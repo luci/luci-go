@@ -25,6 +25,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/gae/service/info"
 
 	"go.chromium.org/luci/auth/identity"
@@ -52,6 +55,8 @@ var funcMap = template.FuncMap{
 	"formatTime":       formatTime,
 	"humanDuration":    humanDuration,
 	"localTime":        localTime,
+	"toTime":           toTime,
+	"toInterval":       toInterval,
 	"localTimeTooltip": localTimeTooltip,
 	"obfuscateEmail":   obfuscateEmail,
 	"pagedURL":         pagedURL,
@@ -216,6 +221,40 @@ func formatCommitDesc(desc string) template.HTML {
 	})
 	chunks = replaceLinkChunks(chunks)
 	return chunksToHTML(chunks)
+}
+
+func toTime(ts *timestamp.Timestamp) (result time.Time) {
+	if t, err := ptypes.Timestamp(ts); err == nil {
+		result = t
+	}
+	return
+}
+
+type interval struct {
+	Start time.Time
+	End   time.Time
+}
+
+func (in interval) Started() bool {
+	return !in.Start.IsZero()
+}
+
+func (in interval) Ended() bool {
+	return !in.End.IsZero()
+}
+
+func (in interval) Duration() time.Duration {
+	return in.End.Sub(start)
+}
+
+func toInterval(start, end *timestamp.Timestamp) (result interval) {
+	if t, err := ptypes.Timestamp(start); err == nil {
+		result.Start = t
+	}
+	if t, err := ptypes.Timestamp(end); err == nil {
+		result.End = t
+	}
+	return
 }
 
 // humanDuration translates d into a human readable string of x units y units,
