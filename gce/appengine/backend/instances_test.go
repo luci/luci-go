@@ -82,6 +82,54 @@ func TestCreate(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 
+			Convey("error", func() {
+				Convey("http", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						return http.StatusInternalServerError, nil
+					}
+					rt.Type = reflect.TypeOf(compute.Instance{})
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Hostname: "name",
+					})
+					err := create(c, &tasks.Create{
+						Id: "id",
+					})
+					So(err, ShouldErrLike, "failed to create instance")
+					v := &model.VM{
+						ID: "id",
+					}
+					datastore.Get(c, v)
+					So(v.Hostname, ShouldBeEmpty)
+				})
+
+				Convey("operation", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						return http.StatusOK, &compute.Operation{
+							Error: &compute.OperationError{
+								Errors: []*compute.OperationErrorErrors{
+									{},
+								},
+							},
+						}
+					}
+					rt.Type = reflect.TypeOf(compute.Instance{})
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Hostname: "name",
+					})
+					err := create(c, &tasks.Create{
+						Id: "id",
+					})
+					So(err, ShouldErrLike, "failed to create instance")
+					v := &model.VM{
+						ID: "id",
+					}
+					datastore.Get(c, v)
+					So(v.Hostname, ShouldBeEmpty)
+				})
+			})
+
 			Convey("conflict", func() {
 				Convey("zone", func() {
 					rt.Handler = func(req interface{}) (int, interface{}) {
@@ -110,6 +158,7 @@ func TestCreate(t *testing.T) {
 						ID: "id",
 					}
 					datastore.Get(c, v)
+					So(v.Hostname, ShouldBeEmpty)
 					So(v.URL, ShouldBeEmpty)
 				})
 
