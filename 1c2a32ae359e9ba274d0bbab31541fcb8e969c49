@@ -22,6 +22,30 @@
       "revId": "1c2a32ae359e9ba274d0bbab31541fcb8e969c49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b49c744_e60850e8",
+        "filename": "gce/appengine/backend/instances_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-14T22:10:45Z",
+      "side": 1,
+      "message": "HTTP error vs. no HTTP error but error in the returned operation.",
+      "parentUuid": "94550468_993edb02",
+      "range": {
+        "startLine": 106,
+        "startChar": 12,
+        "endLine": 106,
+        "endChar": 14
+      },
+      "revId": "1c2a32ae359e9ba274d0bbab31541fcb8e969c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
