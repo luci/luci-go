@@ -130,7 +130,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.2.13"
+	UserAgent = "cipd 2.2.14"
 )
 
 func init() {
@@ -286,6 +286,19 @@ type Client interface {
 	//
 	// If the update was only partially applied, returns both Actions and error.
 	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (ActionMap, error)
+
+	// CheckDeployment looks at what is supposed to be installed and compares it
+	// to what is really installed.
+	//
+	// Returns an error if it can't even detect what is supposed to be installed.
+	// Inconsistencies are returned through the ActionMap.
+	CheckDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error)
+
+	// RepairDeployment attempts to repair a deployment in the site root if it
+	// appears to be broken (per given paranoia mode).
+	//
+	// Returns an action map of what it did.
+	RepairDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error)
 }
 
 // ClientOptions is passed to NewClient factory function.
@@ -1454,50 +1467,16 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 	})
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (aMap ActionMap, err error) {
+func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (ActionMap, error) {
+	return client.ensurePackagesImpl(ctx, allPins, paranoia, dryRun, false)
+}
+
+func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun, silent bool) (aMap ActionMap, err error) {
 	if err = allPins.Validate(common.AnyHash); err != nil {
 		return
 	}
 	if err = paranoia.Validate(); err != nil {
 		return
-	}
-
-	// needsRepair decided whether we should attempt to repair an already
-	// installed package.
-	needsRepair := func(string, common.Pin) *RepairPlan { return nil }
-	if paranoia != NotParanoid {
-		needsRepair = func(subdir string, pin common.Pin) *RepairPlan {
-			switch state, err := client.deployer.CheckDeployed(ctx, subdir, pin.PackageName, paranoia, WithoutManifest); {
-			case err != nil:
-				// This error is probably non-recoverable, but we'll try anyway and
-				// properly fail later.
-				return &RepairPlan{
-					NeedsReinstall:  true,
-					ReinstallReason: fmt.Sprintf("failed to check the package state - %s", err),
-				}
-			case !state.Deployed:
-				// This should generally not happen. Can probably happen if two clients
-				// are messing with same .cipd/* directory concurrently.
-				return &RepairPlan{
-					NeedsReinstall:  true,
-					ReinstallReason: "the package is not deployed at all",
-				}
-			case state.Pin.InstanceID != pin.InstanceID:
-				// Same here.
-				return &RepairPlan{
-					NeedsReinstall:  true,
-					ReinstallReason: fmt.Sprintf("expected to see instance %q, but saw %q", pin.InstanceID, state.Pin.InstanceID),
-				}
-			case len(state.ToRedeploy) != 0 || len(state.ToRelink) != 0:
-				// Have some corrupted files that need to be repaired.
-				return &RepairPlan{
-					ToRedeploy: state.ToRedeploy,
-					ToRelink:   state.ToRelink,
-				}
-			default:
-				return nil // the package needs no repairs
-			}
-		}
 	}
 
 	client.BeginBatch(ctx)
@@ -1510,16 +1489,22 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 	}
 
 	// Figure out what needs to be updated and deleted, log it.
-	aMap = buildActionPlan(allPins, existing, needsRepair)
+	aMap = buildActionPlan(allPins, existing, client.makeRepairChecker(ctx, paranoia))
 	if len(aMap) == 0 {
-		logging.Debugf(ctx, "Everything is up-to-date.")
+		if !silent {
+			logging.Debugf(ctx, "Everything is up-to-date.")
+		}
 		return
 	}
-	// TODO(iannucci): ensure that no packages cross root boundaries
-	aMap.Log(ctx)
 
+	// TODO(iannucci): ensure that no packages cross root boundaries
+	if !silent {
+		aMap.Log(ctx, false)
+	}
 	if dryRun {
-		logging.Infof(ctx, "Dry run, not actually doing anything.")
+		if !silent {
+			logging.Infof(ctx, "Dry run, not actually doing anything.")
+		}
 		return
 	}
 
@@ -1592,6 +1577,69 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 		err = ErrEnsurePackagesFailed
 	}
 	return
+}
+
+func (client *clientImpl) CheckDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error) {
+	// This is essentially a dry run of EnsurePackages(already installed pkgs),
+	// but with some paranoia mode, so it detects breakages.
+	existing, err := client.deployer.FindDeployed(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return client.ensurePackagesImpl(ctx, existing, paranoia, true, true)
+}
+
+func (client *clientImpl) RepairDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error) {
+	// And this is a real run of EnsurePackages(already installed pkgs), so it
+	// can do repairs, if necessary.
+	existing, err := client.deployer.FindDeployed(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return client.EnsurePackages(ctx, existing, paranoia, false)
+}
+
+// makeRepairChecker returns a function that decided whether we should attempt
+// to repair an already installed package.
+//
+// The implementation depends on selected paranoia mode.
+func (client *clientImpl) makeRepairChecker(ctx context.Context, paranoia ParanoidMode) repairCB {
+	if paranoia == NotParanoid {
+		return func(string, common.Pin) *RepairPlan { return nil }
+	}
+
+	return func(subdir string, pin common.Pin) *RepairPlan {
+		switch state, err := client.deployer.CheckDeployed(ctx, subdir, pin.PackageName, paranoia, WithoutManifest); {
+		case err != nil:
+			// This error is probably non-recoverable, but we'll try anyway and
+			// properly fail later.
+			return &RepairPlan{
+				NeedsReinstall:  true,
+				ReinstallReason: fmt.Sprintf("failed to check the package state - %s", err),
+			}
+		case !state.Deployed:
+			// This should generally not happen. Can probably happen if two clients
+			// are messing with same .cipd/* directory concurrently.
+			return &RepairPlan{
+				NeedsReinstall:  true,
+				ReinstallReason: "the package is not deployed at all",
+			}
+		case state.Pin.InstanceID != pin.InstanceID:
+			// Same here.
+			return &RepairPlan{
+				NeedsReinstall:  true,
+				ReinstallReason: fmt.Sprintf("expected to see instance %q, but saw %q", pin.InstanceID, state.Pin.InstanceID),
+			}
+		case len(state.ToRedeploy) != 0 || len(state.ToRelink) != 0:
+			// Have some corrupted files that need to be repaired.
+			return &RepairPlan{
+				ToRedeploy: state.ToRedeploy,
+				ToRelink:   state.ToRelink,
+			}
+		default:
+			return nil // the package needs no repairs
+		}
+	}
 }
 
 func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin common.Pin, plan *RepairPlan) error {

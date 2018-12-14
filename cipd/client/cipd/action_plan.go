@@ -124,7 +124,9 @@ func (am ActionMap) LoopOrdered(cb func(subdir string, actions *Actions)) {
 }
 
 // Log prints the pending action to the logger installed in ctx.
-func (am ActionMap) Log(ctx context.Context) {
+//
+// If verbose is true, prints filenames of files that need a repair.
+func (am ActionMap) Log(ctx context.Context, verbose bool) {
 	keys := make([]string, 0, len(am))
 	for key := range am {
 		keys = append(keys, key)
@@ -167,6 +169,18 @@ func (am ActionMap) Log(ctx context.Context) {
 					more = fmt.Sprintf("%d file(s) to repair", broken.RepairPlan.NumBrokenFiles())
 				}
 				logging.Infof(ctx, "    %s (%s)", broken.Pin, more)
+				if verbose && len(broken.RepairPlan.ToRedeploy) != 0 {
+					logging.Infof(ctx, "      to redeploy:")
+					for _, f := range broken.RepairPlan.ToRedeploy {
+						logging.Infof(ctx, "        %s", f)
+					}
+				}
+				if verbose && len(broken.RepairPlan.ToRelink) != 0 {
+					logging.Infof(ctx, "      to relink:")
+					for _, f := range broken.RepairPlan.ToRelink {
+						logging.Infof(ctx, "        %s", f)
+					}
+				}
 			}
 		}
 	}
