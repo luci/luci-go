@@ -117,7 +117,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 	}
 
 	// This should always be a step.
-	comp.Type = ui.Step
+	comp.Type = ui.StepLegacy
 
 	// Timestamps
 	var start, end time.Time

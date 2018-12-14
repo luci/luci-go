@@ -90,7 +90,7 @@
         "Finished": "2016-03-14T10:00:03Z",
         "Duration": 1000000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": true
@@ -128,7 +128,7 @@
         "Finished": "2016-03-14T10:00:04Z",
         "Duration": 1000000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": [
         "running recipe: \"v8\""
       ],
@@ -159,7 +159,7 @@
         "Finished": "0001-01-01T00:00:00Z",
         "Duration": 7195000000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": false

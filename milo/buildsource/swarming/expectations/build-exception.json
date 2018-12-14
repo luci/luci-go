@@ -84,7 +84,7 @@
         "Finished": "2016-03-14T10:00:09Z",
         "Duration": 7000000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": true
@@ -122,7 +122,7 @@
         "Finished": "2016-03-14T10:00:04Z",
         "Duration": 1000000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": [
         "running recipe: \"v8\""
       ],
@@ -162,7 +162,7 @@
         "Finished": "2016-03-14T10:00:06Z",
         "Duration": 1000000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": false
@@ -200,7 +200,7 @@
         "Finished": "2016-03-14T10:00:08Z",
         "Duration": 1000000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": false

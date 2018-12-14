@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	swarmingTestdata "go.chromium.org/luci/milo/buildsource/swarming/testdata"
 	"go.chromium.org/luci/milo/common"
@@ -55,6 +56,7 @@ var (
 	allPackages = []testPackage{
 		{buildbotBuildTestData, "buildbot.build", "build_legacy.html"},
 		{buildbotBuilderTestData, "buildbot.builder", "builder.html"},
+		{buildbucketBuildTestData, "buildbucket.build", "build.html"},
 		{consoleTestData, "console", "console.html"},
 		{func() []common.TestBundle {
 			return swarmingTestdata.BuildTestData(
@@ -141,6 +143,24 @@ func TestPages(t *testing.T) {
 			})
 		}
 	})
+}
+
+// buildbucketBuildTestData returns sample test data for build pages.
+func buildbucketBuildTestData() []common.TestBundle {
+	c := memory.Use(context.Background())
+	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
+	bundles := []common.TestBundle{}
+	for _, tc := range buildbucket.TestCases {
+		build, err := buildbucket.GetTestBuild(c, "../buildsource/buildbucket", tc)
+		if err != nil {
+			panic(fmt.Errorf("Encountered error while fetching %s.\n%s", tc, err))
+		}
+		bundles = append(bundles, common.TestBundle{
+			Description: fmt.Sprintf("Test page: %s", tc),
+			Data:        templates.Args{"BuildPage": &ui.BuildPage{Build: *build}},
+		})
+	}
+	return bundles
 }
 
 // buildbotBuildTestData returns sample test data for build pages.

@@ -4,9 +4,9 @@ package ui
 
 import "strconv"
 
-const _ComponentType_name = "RecipeStepSummary"
+const _ComponentType_name = "RecipeStepLegacySummary"
 
-var _ComponentType_index = [...]uint8{0, 6, 10, 17}
+var _ComponentType_index = [...]uint8{0, 6, 16, 23}
 
 func (i ComponentType) String() string {
 	if i < 0 || i >= ComponentType(len(_ComponentType_index)-1) {
