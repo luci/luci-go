@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94550468_993edb02",
+        "filename": "gce/appengine/backend/instances_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-14T13:36:54Z",
+      "side": 1,
+      "message": "nit: wdym?",
+      "range": {
+        "startLine": 106,
+        "startChar": 12,
+        "endLine": 106,
+        "endChar": 14
+      },
+      "revId": "1c2a32ae359e9ba274d0bbab31541fcb8e969c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
