@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "37fb2fe2_0e57fb9e",
+        "filename": "milo/common/config.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-14T17:56:49Z",
+      "side": 1,
+      "message": "Good catch and hard to argue with the demo. Done.",
+      "parentUuid": "d57d7ae4_2ad69df8",
+      "range": {
+        "startLine": 103,
+        "startChar": 41,
+        "endLine": 103,
+        "endChar": 56
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "181a3476_4b267abe",
+        "filename": "milo/common/config.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-14T17:56:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc07eeaa_8e99978e",
+      "range": {
+        "startLine": 103,
+        "startChar": 20,
+        "endLine": 103,
+        "endChar": 21
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f891d23_7744a32f",
         "filename": "milo/common/config.go",
         "patchSetId": 8
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "69ae828f_06c289f1",
+        "filename": "milo/common/config.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-14T17:56:49Z",
+      "side": 1,
+      "message": "Moved over with the frontend code into its own file. Done.",
+      "parentUuid": "1f891d23_7744a32f",
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77d85b3b_ac4b2fc5",
         "filename": "milo/common/config.go",
         "patchSetId": 8
@@ -79,6 +145,24 @@
       "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0f21270_9f48613f",
+        "filename": "milo/common/config.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-14T17:56:49Z",
+      "side": 1,
+      "message": "Done and Done.",
+      "parentUuid": "77d85b3b_ac4b2fc5",
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "cb7ab243_1cb4d4dc",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-14T17:56:49Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "0b5e6e99_c072dc40",
+      "range": {
+        "startLine": 299,
+        "startChar": 52,
+        "endLine": 300,
+        "endChar": 73
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "626a3497_13f16db7",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 8
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "c07d713d_4b43f7ba",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-14T17:56:49Z",
+      "side": 1,
+      "message": "I really wanted this to work (as I consider this very ugly / awkward) and I hacked\naround with it for a time. It appears this isn\u0027t currently supported per the blurb\nin pls.go:\n\nhttps://chromium.googlesource.com/infra/luci/gae/+/master/service/datastore/pls.go#36\n\nWon\u0027t fix.",
+      "parentUuid": "626a3497_13f16db7",
+      "range": {
+        "startLine": 303,
+        "startChar": 18,
+        "endLine": 303,
+        "endChar": 83
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4fc108de_16458ed9",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 8
@@ -148,6 +280,30 @@
       "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a32ec9fa_3fda20fe",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-14T17:56:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4fc108de_16458ed9",
+      "range": {
+        "startLine": 307,
+        "startChar": 14,
+        "endLine": 307,
+        "endChar": 55
+      },
+      "revId": "d0be3aa299a1314c90085782c8d5d4188ac46654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
