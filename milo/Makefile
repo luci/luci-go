@@ -6,7 +6,7 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
 dev:
-	gae.py devserver --app-dir $(projdir)/frontend/appengine -- --host 0.0.0.0 --port 8082 --admin_port 7999 --log_level debug
+	gae.py devserver --app-dir $(projdir)/frontend/appengine -A luci-milo-dev -- --host 0.0.0.0 --port 8082 --admin_port 7999 --log_level debug
 
 # This is intentionally not dependent on the others below to avoid
 # asking for user confirmation multiple times.
