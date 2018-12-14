@@ -61,7 +61,7 @@
         "Finished": "0001-01-01T00:00:00Z",
         "Duration": -21206166000000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": false
@@ -99,7 +99,7 @@
         "Finished": "2016-11-14T22:36:13.02Z",
         "Duration": 49999872
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": [
         "running recipe: \"magenta\""
       ],
@@ -139,7 +139,7 @@
         "Finished": "2016-11-14T22:36:13.450000128Z",
         "Duration": 430000128
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": [
         "cipd instance_id: d1ec9d904caee34beffec0a691a79991122037ba"
       ],
@@ -179,7 +179,7 @@
         "Finished": "2016-11-14T22:36:13.68Z",
         "Duration": 229999872
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": true
@@ -208,7 +208,7 @@
         "Finished": "2016-11-14T22:36:14.06Z",
         "Duration": 380000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": true
@@ -237,7 +237,7 @@
         "Finished": "2016-11-14T22:36:14.089999872Z",
         "Duration": 29999872
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": true
@@ -266,7 +266,7 @@
         "Finished": "2016-11-14T22:36:14.089999872Z",
         "Duration": 0
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": true
@@ -295,7 +295,7 @@
         "Finished": "2016-11-14T22:37:14.029999872Z",
         "Duration": 59940000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [],
       "Collapsed": true
@@ -317,7 +317,7 @@
         "Finished": "2016-11-14T22:38:11.34Z",
         "Duration": 56560000000
       },
-      "Type": "Step",
+      "Type": "StepLegacy",
       "Text": null,
       "Children": [
         {
@@ -344,7 +344,7 @@
             "Finished": "2016-11-14T22:37:16.329999872Z",
             "Duration": 1549999872
           },
-          "Type": "Step",
+          "Type": "StepLegacy",
           "Text": null,
           "Children": [],
           "Collapsed": true
@@ -366,7 +366,7 @@
             "Finished": "2016-11-14T22:37:58.5Z",
             "Duration": 42170000128
           },
-          "Type": "Step",
+          "Type": "StepLegacy",
           "Text": null,
           "Children": [
             {
@@ -393,7 +393,7 @@
                 "Finished": "2016-11-14T22:37:18.329999872Z",
                 "Duration": 2000000000
               },
-              "Type": "Step",
+              "Type": "StepLegacy",
               "Text": null,
               "Children": [],
               "Collapsed": true
@@ -422,7 +422,7 @@
                 "Finished": "2016-11-14T22:37:58.5Z",
                 "Duration": 40170000128
               },
-              "Type": "Step",
+              "Type": "StepLegacy",
               "Text": null,
               "Children": [],
               "Collapsed": false
@@ -454,7 +454,7 @@
             "Finished": "2016-11-14T22:38:11.34Z",
             "Duration": 5900000000
           },
-          "Type": "Step",
+          "Type": "StepLegacy",
           "Text": null,
           "Children": [],
           "Collapsed": false
