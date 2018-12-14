@@ -36,6 +36,7 @@ func TestCron(t *testing.T) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		c := withDispatcher(memory.Use(context.Background()), dsp)
+		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -52,7 +53,6 @@ func TestCron(t *testing.T) {
 						ID:  "id",
 						URL: "url",
 					})
-					datastore.GetTestable(c).CatchupIndexes()
 					err := createInstances(c)
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
@@ -66,7 +66,6 @@ func TestCron(t *testing.T) {
 						Zone: "zone",
 					},
 				})
-				datastore.GetTestable(c).CatchupIndexes()
 				err := createInstances(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
@@ -91,7 +90,6 @@ func TestCron(t *testing.T) {
 						Prefix: "prefix",
 					},
 				})
-				datastore.GetTestable(c).CatchupIndexes()
 				err := expandVMs(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
@@ -106,10 +104,38 @@ func TestCron(t *testing.T) {
 						},
 					})
 				}
-				datastore.GetTestable(c).CatchupIndexes()
 				err := expandVMs(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
+			})
+		})
+
+		Convey("manageInstances", func() {
+			Convey("none", func() {
+				Convey("zero", func() {
+					err := manageInstances(c)
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
+
+				Convey("not created", func() {
+					datastore.Put(c, &model.VM{
+						ID: "id",
+					})
+					err := manageInstances(c)
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("one", func() {
+				datastore.Put(c, &model.VM{
+					ID:  "id",
+					URL: "url",
+				})
+				err := manageInstances(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})
 		})
 	})

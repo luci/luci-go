@@ -53,6 +53,7 @@ func ensure(c context.Context, payload proto.Message) error {
 			vm.Attributes = *task.Attributes
 		}
 		vm.Prefix = task.Prefix
+		vm.Swarming = task.Swarming
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
@@ -84,6 +85,7 @@ func expand(c context.Context, payload proto.Message) error {
 				Id:         fmt.Sprintf("%s-%d", task.Id, i),
 				Attributes: vms.Attributes,
 				Prefix:     vms.Prefix,
+				Swarming:   vms.Swarming,
 			},
 		}
 	}
