@@ -20,6 +20,7 @@ package adminsrv
 
 import (
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectscope"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
@@ -35,6 +36,8 @@ type AdminServer struct {
 	machinetoken.InspectMachineTokenRPC
 	serviceaccounts.ImportServiceAccountsConfigsRPC
 	serviceaccounts.InspectOAuthTokenGrantRPC
+	serviceaccounts.CreateProjectScopedServiceAccountRPC
+	serviceaccounts.LookupProjectScopedServiceAccountRPC
 }
 
 // NewServer returns prod AdminServer implementation.
@@ -59,5 +62,10 @@ func NewServer() *AdminServer {
 			Signer: signer,
 			Rules:  serviceaccounts.GlobalRulesCache.Rules,
 		},
+		CreateProjectScopedServiceAccountRPC: serviceaccounts.CreateProjectScopedServiceAccountRPC{
+			ScopedIdentities:   projectscope.GetScopedIdentities(),
+			GcpProjectResolver: nil,
+		},
+		LookupProjectScopedServiceAccountRPC: serviceaccounts.LookupProjectScopedServiceAccountRPC{},
 	}
 }
