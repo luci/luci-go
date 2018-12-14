@@ -25,9 +25,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/gae/service/info"
 
 	"go.chromium.org/luci/auth/identity"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -47,11 +52,16 @@ import (
 
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
+	"duration":         duration,
+	"botLink":          botLink,
+	"renderProperties": renderProperties,
 	"faviconMIMEType":  faviconMIMEType,
 	"formatCommitDesc": formatCommitDesc,
 	"formatTime":       formatTime,
 	"humanDuration":    humanDuration,
 	"localTime":        localTime,
+	"toTime":           toTime,
+	"toInterval":       toInterval,
 	"localTimeTooltip": localTimeTooltip,
 	"obfuscateEmail":   obfuscateEmail,
 	"pagedURL":         pagedURL,
@@ -191,6 +201,22 @@ func replaceLinkChunks(chunks []formatChunk) []formatChunk {
 	return chunks
 }
 
+// botLink generates a link to a swarming bot given a buildbucketpb.BuildInfra_Swarming struct.
+func botLink(s *buildbucketpb.BuildInfra_Swarming) (result template.HTML) {
+	if s == nil {
+		return
+	}
+	l := &ui.Link{}
+	for _, d := range s.BotDimensions {
+		if d.Key == "id" {
+			l.Label = d.Value
+			l.URL = fmt.Sprintf("https://%s/bot?id=%s", s.Hostname, d.Value)
+			break
+		}
+	}
+	return l.HTML()
+}
+
 // formatCommitDesc takes a commit message and adds embellishments such as:
 // * Linkify https:// URLs
 // * Linkify bug numbers using https://crbug.com/
@@ -216,6 +242,48 @@ func formatCommitDesc(desc string) template.HTML {
 	})
 	chunks = replaceLinkChunks(chunks)
 	return chunksToHTML(chunks)
+}
+
+func toTime(ts *timestamp.Timestamp) (result time.Time) {
+	if t, err := ptypes.Timestamp(ts); err == nil {
+		result = t
+	}
+	return
+}
+
+type interval struct {
+	Start time.Time
+	End   time.Time
+}
+
+func (in interval) Started() bool {
+	return !in.Start.IsZero()
+}
+
+func (in interval) Ended() bool {
+	return !in.End.IsZero()
+}
+
+func (in interval) Duration() time.Duration {
+	return in.End.Sub(in.Start)
+}
+
+func toInterval(start, end *timestamp.Timestamp) (result interval) {
+	if t, err := ptypes.Timestamp(start); err == nil {
+		result.Start = t
+	}
+	if t, err := ptypes.Timestamp(end); err == nil {
+		result.End = t
+	}
+	return
+}
+
+func duration(start, end *timestamp.Timestamp) string {
+	in := toInterval(start, end)
+	if in.Started() && in.Ended() {
+		return humanDuration(in.Duration())
+	}
+	return "N/A"
 }
 
 // humanDuration translates d into a human readable string of x units y units,
@@ -339,6 +407,14 @@ func GetReload(r *http.Request, def int) int {
 		return def
 	}
 	return refresh
+}
+
+// renderProperties renders a structpb.Struct as a properties table.
+func renderProperties(p *structpb.Struct) (results template.HTML) {
+	if p == nil {
+		return
+	}
+	return
 }
 
 // pagedURL returns a self URL with the given cursor and limit paging options.

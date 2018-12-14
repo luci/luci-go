@@ -19,12 +19,6 @@
 {{define "head"}}
 <script src="/static/common/js/build.js"></script>
 <link rel="stylesheet" href="/static/common/css/tabs.css" type="text/css">
-{{if .TimelineJSON}}
-  <link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
-  <script>
-    const timelineData = JSON.parse({{ .TimelineJSON }});
-  </script>
-{{end}}
 {{end}}
 
 {{define "interval"}}
@@ -125,16 +119,10 @@
         <li><a href="#results-tab">Results</a></li>
         <li><a href="#properties-tab">Properties</a></li>
         <li><a href="#changes-tab">Changes</a></li>
-        {{ if .TimelineJSON }}
-          <li><a href="#timeline-tab">Timeline</a></li>
-        {{ end }}
       </ul>
       <div id="results-tab">{{ template "results" . }}</div>
       <div id="properties-tab">{{ template "properties" . }}</div>
       <div id="changes-tab">{{ template "changes" . }}</div>
-      {{ if .TimelineJSON }}
-        <div id="timeline-tab">{{ template "timeline" . }}</div>
-      {{ end }}
     </div>
   </div>
 {{end}}
@@ -388,11 +376,5 @@
     {{ end }}
     </ol>
     {{ end }}
-  </div>
-{{end}}
-
-{{define "timeline"}}
-  <div id="timeline">
-    <div id="timeline-rendering">Rendering...</div>
   </div>
 {{end}}
