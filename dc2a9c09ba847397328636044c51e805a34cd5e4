@@ -1,0 +1,829 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f71e4440_b210dc3b",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this won\u0027t work on 32bit machines. Please use strconv.FormatInt",
+      "range": {
+        "startLine": 50,
+        "startChar": 16,
+        "endLine": 50,
+        "endChar": 35
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adf51b13_6420a9a4",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "only looking at this func, this may return an number which does not make sense without a builder, so perhaps we should return id in this case.\n\nbut stepping back, this isn\u0027t realistic. All builds have buckets, so think the if statement can be removed.",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 12
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb9c9f7a_ae64a0a5",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this assumes that b came from the same host. Let\u0027s pass host together with b.",
+      "range": {
+        "startLine": 155,
+        "startChar": 1,
+        "endLine": 158,
+        "endChar": 2
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "faa55c06_c42dbfbe",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "b.GetInput().GetGitilesCommit() \u003d\u003d nil",
+      "range": {
+        "startLine": 160,
+        "startChar": 4,
+        "endLine": 160,
+        "endChar": 62
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4961654_34f5595b",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this can\u0027t be true, so i think it can be safely removed",
+      "range": {
+        "startLine": 160,
+        "startChar": 63,
+        "endLine": 160,
+        "endChar": 82
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec57ae9f_319504a3",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "b.Input.GitilesCommit.BuildSetString()",
+      "range": {
+        "startLine": 164,
+        "startChar": 2,
+        "endLine": 168,
+        "endChar": 28
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "428f93e3_a44ce839",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "{b.Input.GitilesCommit.BuildSetString()}\n\ndoes it compile?",
+      "range": {
+        "startLine": 172,
+        "startChar": 13,
+        "endLine": 172,
+        "endChar": 17
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f934807_c4f03692",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "nit: inline?",
+      "range": {
+        "startLine": 177,
+        "startChar": 31,
+        "endLine": 177,
+        "endChar": 33
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcd07c04_b90709fe",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "nit: let\u0027s make each item on a separate line. It would be more readable.",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2e0f3d9_dc55a5a1",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "how do you track the things that are not implemented yet? consider adding TODO for each of them.\nfor example, Timeline is missing",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "514436ce_92d6bb00",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "why copy? why not pass it as a pointer?",
+      "range": {
+        "startLine": 223,
+        "startChar": 9,
+        "endLine": 223,
+        "endChar": 11
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3777cb0_f55873c1",
+        "filename": "milo/buildsource/buildbucket/html_data.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "i don\u0027t understand this comment. This is used only from _test.go, so why do we want it to be built when we are not running tests?",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "923b8aaf_769b57cd",
+        "filename": "milo/buildsource/buildbucket/html_data.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this will panic if err !\u003dnil, it should be below\n\nthis requires the test files to have the prefix. Wouldn\u0027t it be easier to just not have the prefix in the test files? then they would be valid json files",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85a8f476_ce1c6967",
+        "filename": "milo/buildsource/buildbucket/html_data.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "please add defer f.Close()",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36c04193_b04b29ef",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "what if L212-213 never ran?\n\nthe following would be simpler and handle this case:\n\nfor _, d :\u003d range s.GetBotDimensions() {\n  if ...  {\n     ...\n     return l.HTML()\n  }\n}\n\nreturn \"\"\n\n\nthen you don\u0027t need to do L206-208 check",
+      "range": {
+        "startLine": 217,
+        "startChar": 8,
+        "endLine": 217,
+        "endChar": 16
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "849dc44b_9cecb91d",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "based on the ptypes.Timestamp docstring, i think it is ok to ignore this err completely in this particular case",
+      "range": {
+        "startLine": 248,
+        "startChar": 7,
+        "endLine": 248,
+        "endChar": 10
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69b98e7f_4fa346f3",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this will return a non-sensical value if it is not ended. 0 would be better than that.",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54e4c186_1b2a2b32",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "same here, WDYT?",
+      "range": {
+        "startLine": 272,
+        "startChar": 7,
+        "endLine": 272,
+        "endChar": 10
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb738b35_54f3ed31",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "please add a TODO, otherwise it looks weird\n\nhowever, why is it a func that returns HTML? are we doing to inline a template here?\nif we just need rows with JSON-formatted values, then perhaps the signature should be something like\n\n  struct \u003d\u003e []property\n\nwhere property has a name and JSON value.\n\nthis comment is mostly for future CL",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa5bedcc_df21376d",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "i suspect annotee currently has a bug that causes step names to be \n\n  GrandParent|GrandParent.Parent|GrandParent.Parent.Child\n\nif so, we\u0027d need to fix it, ideally in the annotee or annotee-\u003ebuild.proto",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b3cbe10_1aff18b3",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this can happen only if name is empty\nhttps://play.golang.org/p/D2bMmP3NS1_E\n\nwhich would mean a bug in a different place, so i think this if statement should not exist",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 2
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1274be18_3a7d7bf7",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this is a nice type. It has a very clear purpose.\n\nI think it should be the argument to the feedback link that David added recently.",
+      "range": {
+        "startLine": 55,
+        "startChar": 5,
+        "endLine": 55,
+        "endChar": 14
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df0e8c15_5eeb0e24",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "nit: \"likely caused the build result\"",
+      "range": {
+        "startLine": 59,
+        "startChar": 47,
+        "endLine": 60,
+        "endChar": 37
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3df4cd62_bc362d37",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this is plural, but the field is one error. How does it work?",
+      "range": {
+        "startLine": 63,
+        "startChar": 36,
+        "endLine": 63,
+        "endChar": 42
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d83e24a8_b3b293d1",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "uncomment?\n\nthis behavior should be documented",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e826ec3_8ad441c6",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this does not depend on step, so should be outside of the loop",
+      "range": {
+        "startLine": 85,
+        "startChar": 2,
+        "endLine": 85,
+        "endChar": 59
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d807926c_5412c720",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "nit: please swap these two lines. nameParts is used right after stepMap",
+      "range": {
+        "startLine": 90,
+        "startChar": 2,
+        "endLine": 91,
+        "endChar": 5
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b035ca0_2f803158",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "nit: it would be faster to find last |, and chop off from there, s.t. we don\u0027t unnecessarily recreate the string",
+      "range": {
+        "startLine": 96,
+        "startChar": 17,
+        "endLine": 96,
+        "endChar": 20
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb255d1d_86a85823",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "related to comment above, here we assume that step names are never \"\"",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a472724_eddb5536",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "unrealistic, i think panicking is ok\n\ncould do b.GetProject() below too",
+      "range": {
+        "startLine": 110,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 2
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60e773db_d96abe96",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "won\u0027t work on 32bit machines",
+      "range": {
+        "startLine": 122,
+        "startChar": 9,
+        "endLine": 122,
+        "endChar": 12
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07cdcb8a_dbcbcc86",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "FormatInt",
+      "range": {
+        "startLine": 127,
+        "startChar": 11,
+        "endLine": 127,
+        "endChar": 15
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "324233e0_ce1d649d",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "num is not necessarily a number though",
+      "range": {
+        "startLine": 129,
+        "startChar": 22,
+        "endLine": 129,
+        "endChar": 28
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a6ca6e4_e6edcaa6",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "unrealistic: builder contains a bucket\n\nit can only happen if Fields in the the request did not specify the builder",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e6c7c3b_7780d7d0",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/buildbucket#BucketNameToV2",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bac6660c_467285b3",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "we could kill two birds with one stone here: if bucket names does not start with \"luci.\", then it is v2.\nThen you don\u0027t have to do bucket normalization",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 2
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2be02c9_299dca4d",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "same here, should be ParseInt",
+      "range": {
+        "startLine": 62,
+        "startChar": 21,
+        "endLine": 62,
+        "endChar": 25
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04885602_93c5de98",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "this will turn into an HTTP 500 instead of HTTP 400",
+      "range": {
+        "startLine": 64,
+        "startChar": 3,
+        "endLine": 64,
+        "endChar": 13
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4343eb0_b168172b",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T00:29:04Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 70,
+        "startChar": 10,
+        "endLine": 70,
+        "endChar": 13
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
