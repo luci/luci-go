@@ -214,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "f2425ff7_b864eadd",
+        "filename": "logdog/appengine/coordinator/archival.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-15T00:46:24Z",
+      "side": 1,
+      "message": "I forgot the most important part of this, which is to validate the key on request",
+      "parentUuid": "c591b521_7ea433e5",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 50
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b2072b5_a2dbc475",
         "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
         "patchSetId": 7
