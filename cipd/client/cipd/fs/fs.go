@@ -358,18 +358,23 @@ func (f *fsImpl) EnsureFileGone(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	if err = os.Remove(path); err != nil && !os.IsNotExist(err) {
-		logging.Warningf(ctx, "fs: failed to remove %s - %s", path, err)
-		// Refuse to delete non-empty directories.
-		if isNotEmpty(err) {
-			return err
-		}
+	switch err = os.Remove(path); {
+	case err == nil:
+		return nil // removed
+	case os.IsNotExist(err):
+		return nil // didn't exist
+	case isNotDir(err):
+		return nil // "path" is e.g. "a/b/c" where "a/b" is a file, not a directory
+	case isNotEmpty(err):
+		return err // refuse to delete non-empty directories
+	default:
 		// Otherwise assume it's a locked file and just move it to trash.
+		logging.Warningf(ctx, "fs: failed to remove %s - %s", path, err)
 		if f.moveToTrash(ctx, path) == "" {
 			return err
 		}
+		return nil
 	}
-	return nil
 }
 
 func (f *fsImpl) EnsureDirectoryGone(ctx context.Context, path string) error {
