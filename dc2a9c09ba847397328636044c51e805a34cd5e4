@@ -294,6 +294,362 @@
     },
     {
       "key": {
+        "uuid": "264247c5_7d9f8890",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "FWIU this won\u0027t compute (now-start) if it is not ended, but it should",
+      "range": {
+        "startLine": 34,
+        "startChar": 16,
+        "endLine": 34,
+        "endChar": 24
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff00ea7b_c2f328f4",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "nit: this always bothered me because this isn\u0027t how CSS is usually used, so I wonder if this is the time to fix this. CSS can query a combination of classes, so\n\n   class\u003d\"status {{.Step.Status}} result\"\u003e\n\nwould be cleaner. Then css can say\n\n  .status.SUCCESS {  ... }\n\nalso, why do we need both result and status?\n\nbut it\u0027s fine to do it later too",
+      "range": {
+        "startLine": 58,
+        "startChar": 14,
+        "endLine": 58,
+        "endChar": 37
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3ced924_fc837430",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "does this work? Here `.` is ui.Step and `.Step` is buildbucketpb.Step, which does not have ShortName?",
+      "range": {
+        "startLine": 60,
+        "startChar": 9,
+        "endLine": 60,
+        "endChar": 24
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07d36ba0_c3d7b1e1",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "this erases all line breaks. We need to convert this to html",
+      "range": {
+        "startLine": 62,
+        "startChar": 39,
+        "endLine": 62,
+        "endChar": 60
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd749436_f223ced5",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "nit: initially I\u0027ve interpreted this as one of two input/output property tables.\nConsider appending \"-tab\" to all tab template names",
+      "range": {
+        "startLine": 96,
+        "startChar": 44,
+        "endLine": 96,
+        "endChar": 54
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21d1a818_5e8144f9",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "nit: headers usually do not end with colon. Their style (size, font weight) already signifies a block. Input below doesn\u0027t have a colon\n\nsame below",
+      "range": {
+        "startLine": 105,
+        "startChar": 15,
+        "endLine": 105,
+        "endChar": 16
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f112d20_2759bef8",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "this tries to render markdown which is not html. We need to convert it to html first.\nWe need the same feature in luci-notify too.\n\nlet\u0027s replace this with a TODO for now because currently it is incorrect",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a1073eb_1e8f7386",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "this is currently in results page but this isn\u0027t a result?\n\nmaybe rename Results to Overview or something",
+      "range": {
+        "startLine": 110,
+        "startChar": 6,
+        "endLine": 110,
+        "endChar": 31
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cdb823a_4bd43f5f",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "nit: this indentation doesn\u0027t suggest that these two tds are actually on the same level.\nPlease align their indentation\n\nsame below",
+      "range": {
+        "startLine": 114,
+        "startChar": 10,
+        "endLine": 115,
+        "endChar": 14
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd9a8a10_b621ba9a",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "this is redundant with \"Patch\" above. in case of gerrit we just print id. I think \"CL \" can be omitted",
+      "range": {
+        "startLine": 123,
+        "startChar": 12,
+        "endLine": 123,
+        "endChar": 14
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fa33460_c01776cb",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "nit: this alignment is inconsistent with L144-145 (which is more readable)",
+      "range": {
+        "startLine": 135,
+        "startChar": 12,
+        "endLine": 136,
+        "endChar": 10
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "904f9849_ca282a53",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "strictly speaking, this is regression. swarming/build.py does\n\n  \trecipeURL :\u003d fmt.Sprintf(\"https://%s/search/?q\u003dfile:recipes/%s.py\", csHost, name)\n\tbuild.Summary.Recipe \u003d ui.NewLink(name, recipeURL, fmt.Sprintf(\"recipe %s\", name))",
+      "range": {
+        "startLine": 144,
+        "startChar": 20,
+        "endLine": 144,
+        "endChar": 31
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22a23956_0fd5b2bc",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "nit: \"logs\". There are no logfiles",
+      "range": {
+        "startLine": 152,
+        "startChar": 18,
+        "endLine": 152,
+        "endChar": 26
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "487a832a_45f054b6",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "this isn\u0027t properties? perhaps should go to the overview page",
+      "range": {
+        "startLine": 185,
+        "startChar": 4,
+        "endLine": 185,
+        "endChar": 20
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d522b16_9097104e",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "indentation in this table makes it very hard to see what row declarations start and end",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9431e5b8_108325d9",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-15T01:11:40Z",
+      "side": 1,
+      "message": "we should say something if there is no blame, or perhaps not render the table at all",
+      "range": {
+        "startLine": 267,
+        "startChar": 4,
+        "endLine": 267,
+        "endChar": 12
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "36c04193_b04b29ef",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 10
