@@ -70,8 +70,9 @@ type FileSystem interface {
 
 	// EnsureDirectory creates a directory at given native path.
 	//
-	// Does nothing it the path already exists and it is a directory. Replaces
-	// existing file with a directory.
+	// Follows symlinks. Does nothing it the path already exists and it is a
+	// directory (or a symlink pointing to a directory). Replaces an existing file
+	// with a directory.
 	//
 	// It takes an absolute path or a path relative to the current working
 	// directory and always returns absolute path.
