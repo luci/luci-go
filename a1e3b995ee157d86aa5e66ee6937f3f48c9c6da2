@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "55946423_d616c5c0",
+        "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-15T00:21:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5bd4a6d5_b15c0308",
+      "range": {
+        "startLine": 210,
+        "startChar": 5,
+        "endLine": 210,
+        "endChar": 24
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3997e515_2b8b4e50",
         "filename": "logdog/appengine/coordinator/archival.go",
         "patchSetId": 7
@@ -69,6 +93,30 @@
       "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "040c8b5b_eccdbf20",
+        "filename": "logdog/appengine/coordinator/archival.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-15T00:21:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3997e515_2b8b4e50",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 46
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "cc40e54b_4cec59af",
+        "filename": "logdog/appengine/coordinator/archival.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-15T00:21:58Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "59edb754_01a5ea96",
+      "range": {
+        "startLine": 89,
+        "startChar": 4,
+        "endLine": 89,
+        "endChar": 21
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab959bd1_7d56ebc2",
         "filename": "logdog/appengine/coordinator/archival.go",
         "patchSetId": 7
@@ -115,6 +187,30 @@
       "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c591b521_7ea433e5",
+        "filename": "logdog/appengine/coordinator/archival.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-15T00:21:58Z",
+      "side": 1,
+      "message": "Done, a new key is created for every retry.",
+      "parentUuid": "ab959bd1_7d56ebc2",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 50
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -141,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "dfa38586_4c64dd74",
+        "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-15T00:21:58Z",
+      "side": 1,
+      "message": "by convention, \"ls\" stands for log stream, and \"lst\" stands for \"log stream state\", since they are two different entities (but 1:1 relation).\n\nI think ls -\u003e stream, and lst -\u003e state makes sense.  wdyt?",
+      "parentUuid": "5b2072b5_a2dbc475",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 4
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "214bdb68_3ef951eb",
         "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
         "patchSetId": 7
@@ -164,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "ee94c8ac_1b8561c1",
+        "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-15T00:21:58Z",
+      "side": 1,
+      "message": "Can\u0027t run this mutation immediately since it\u0027s a delayed mutation.  Took your suggestion in the other thread to always swap out the archive key though, which should solve this problem.",
+      "parentUuid": "214bdb68_3ef951eb",
+      "range": {
+        "startLine": 74,
+        "startChar": 24,
+        "endLine": 74,
+        "endChar": 48
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92f16cef_c7ef2888",
         "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask_test.go",
         "patchSetId": 7
@@ -184,6 +328,30 @@
       "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f792c2c8_f2766bde",
+        "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-15T00:21:58Z",
+      "side": 1,
+      "message": "unfortunately none of the non-flaky parts are useful :/\n\nThe flaky parts are annotated with \"SkipSo\", which skips the assertion.  The hope is that one IterateTumbleAll() gets fixed and we can re-enable them again.",
+      "parentUuid": "92f16cef_c7ef2888",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 26
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
