@@ -2799,6 +2799,93 @@ func assembleClientDigests(ctx context.Context, c cipd.Client, version string) (
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// 'deployment-check' subcommand.
+
+func cmdCheckDeployment(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "deployment-check [options]",
+		ShortDesc: "verifies all files that are supposed to be installed are present",
+		LongDesc: "Compares CIPD package manifests stored in .cipd/* with what's on disk.\n\n" +
+			"Useful when debugging issues with broken installations.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &checkDeploymentRun{}
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
+			return c
+		},
+	}
+}
+
+type checkDeploymentRun struct {
+	cipdSubcommand
+	clientOptions
+}
+
+func (c *checkDeploymentRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 0) {
+		return 1
+	}
+	ctx := cli.GetContext(a, c, env)
+	return c.done(checkDeployment(ctx, c.clientOptions))
+}
+
+func checkDeployment(ctx context.Context, clientOpts clientOptions) (cipd.ActionMap, error) {
+	client, err := clientOpts.makeCIPDClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	actions, err := client.CheckDeployment(ctx, cipd.CheckPresence)
+	if err != nil {
+		return nil, err
+	}
+	actions.Log(ctx, true)
+	if len(actions) != 0 {
+		err = fmt.Errorf("the deployment needs a repair")
+	}
+	return actions, err
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 'deployment-repair' subcommand.
+
+func cmdRepairDeployment(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "deployment-repair [options]",
+		ShortDesc: "attempts to repair a deployment if it is broken",
+		LongDesc:  "This is equivalent of running 'ensure' in paranoia.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &repairDeploymentRun{}
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
+			return c
+		},
+	}
+}
+
+type repairDeploymentRun struct {
+	cipdSubcommand
+	clientOptions
+}
+
+func (c *repairDeploymentRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 0) {
+		return 1
+	}
+	ctx := cli.GetContext(a, c, env)
+	return c.done(repairDeployment(ctx, c.clientOptions))
+}
+
+func repairDeployment(ctx context.Context, clientOpts clientOptions) (cipd.ActionMap, error) {
+	client, err := clientOpts.makeCIPDClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return client.RepairDeployment(ctx, cipd.CheckPresence)
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Main.
 
 // GetApplication returns cli.Application.
@@ -2884,6 +2971,11 @@ func GetApplication(params Parameters) *cli.Application {
 			cmdFetch(params),
 			cmdInspect(),
 			cmdRegister(params),
+
+			// Low level deployment-* commands.
+			{Advanced: true},
+			cmdCheckDeployment(params),
+			cmdRepairDeployment(params),
 
 			// Low level misc commands.
 			{Advanced: true},
