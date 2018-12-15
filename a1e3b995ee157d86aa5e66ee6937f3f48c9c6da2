@@ -238,6 +238,30 @@
     },
     {
       "key": {
+        "uuid": "5a37fcdd_f63bbc18",
+        "filename": "logdog/appengine/coordinator/archival.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-15T01:05:28Z",
+      "side": 1,
+      "message": "Ok fixed now.",
+      "parentUuid": "f2425ff7_b864eadd",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 50
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b2072b5_a2dbc475",
         "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
         "patchSetId": 7
