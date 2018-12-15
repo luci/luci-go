@@ -261,6 +261,30 @@
     },
     {
       "key": {
+        "uuid": "11d11630_4b3c10bf",
+        "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-15T00:32:30Z",
+      "side": 1,
+      "message": "I agree, I think that changing the names to stream and state respectively would made the code more readable.",
+      "parentUuid": "dfa38586_4c64dd74",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 4
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "214bdb68_3ef951eb",
         "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask.go",
         "patchSetId": 7
@@ -343,6 +367,30 @@
       "side": 1,
       "message": "unfortunately none of the non-flaky parts are useful :/\n\nThe flaky parts are annotated with \"SkipSo\", which skips the assertion.  The hope is that one IterateTumbleAll() gets fixed and we can re-enable them again.",
       "parentUuid": "92f16cef_c7ef2888",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 26
+      },
+      "revId": "a1e3b995ee157d86aa5e66ee6937f3f48c9c6da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "09f24fd6_70ebe377",
+        "filename": "logdog/appengine/coordinator/endpoints/services/scheduleArchiveTask_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-15T00:32:30Z",
+      "side": 1,
+      "message": "Ah, got it.",
+      "parentUuid": "f792c2c8_f2766bde",
       "range": {
         "startLine": 64,
         "startChar": 5,
