@@ -7,6 +7,7 @@ syntax = "proto3";
 package logdog;
 
 import "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/state.proto";
+import "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/tasks.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 
@@ -205,6 +206,10 @@ service Services {
   // parameters. It is used by the Archivist service upon successful stream
   // archival.
   rpc ArchiveStream(ArchiveStreamRequest) returns (google.protobuf.Empty);
+
+  // RescheduleArchiveTask is an internal operation used to schedule an archive task
+  // for a later time.
+  rpc RescheduleArchiveTask(ArchiveDispatchTask) returns (google.protobuf.Empty);
 
   // Batch is a series of requests submitted in batch. It returns a
   // BatchResponse containing the same number of entries, with each entry index

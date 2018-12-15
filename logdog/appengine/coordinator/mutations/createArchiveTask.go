@@ -116,8 +116,8 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 		CompletePeriod: m.CompletePeriod,
 	}
 	if err = params.PublishTask(c, ap, state); err != nil {
-		if err == coordinator.ErrArchiveTasked {
-			log.Warningf(c, "Archival already tasked, skipping.")
+		if err == coordinator.ErrStreamArchived {
+			log.Warningf(c, "Stream already archived, skipping.")
 			return nil, nil
 		}
 
