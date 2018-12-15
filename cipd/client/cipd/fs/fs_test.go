@@ -276,6 +276,12 @@ func TestEnsureFileGone(t *testing.T) {
 		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldNotBeNil)
 	})
 
+	Convey("EnsureFileGone skips paths that use files as if they are dirs", t, func() {
+		fs := tempFileSystem()
+		fs.write("abc/file", "zzz")
+		So(fs.EnsureFileGone(ctx, fs.join("abc/file/huh")), ShouldBeNil)
+	})
+
 	if runtime.GOOS != "windows" {
 		Convey("EnsureFileGone works with symlink", t, func() {
 			fs := tempFileSystem()
