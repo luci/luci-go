@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4e2b5f71_e3938bda",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1087,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-15T04:11:14Z",
+      "side": 1,
+      "message": "I considered adding this to EnsureDirectory (so EnsureDirectory(\"a/b/c/symlink\") will replace \"symlink\" with a real directory, but won\u0027t scrutinize \"a/b/c\"). But EnsureDirectory is used in a lot of places, and in general case we don\u0027t have the guarantee that all path components are supposed to be real directories (like we have here from knowing we deal with CIPD manifests).",
+      "range": {
+        "startLine": 1087,
+        "startChar": 5,
+        "endLine": 1087,
+        "endChar": 29
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
