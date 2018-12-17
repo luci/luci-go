@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dae662d6_12520dff",
+        "filename": "gce/api/tasks/v1/tasks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-17T16:56:22Z",
+      "side": 1,
+      "message": "my guess is that this is a hostname, so perhaps at least document this, and at most even rename to swarming_host?",
+      "range": {
+        "startLine": 26,
+        "startChar": 9,
+        "endLine": 26,
+        "endChar": 17
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "159898fd_7d16d52d",
+        "filename": "gce/appengine/backend/cron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-17T16:56:22Z",
+      "side": 1,
+      "message": "feels fragile, just like other tasks here, but I agree that before we hit 1M machines, we don\u0027t really need to care,\nexcept maybe for RAM usage here.\n\nI realize this is handler is just like others nearby, so w/o intend to block this CL, tell me: is the plan to wait and if OOMs happen, then do batching?",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 95,
+        "endChar": 54
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d47b57bc_43bc4f78",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-17T16:56:22Z",
+      "side": 1,
+      "message": "minor: s/err/gerr\n\nI realize that code is correct as is, but mistakes in logging/annotating errors will be less likely with diff var name.",
+      "range": {
+        "startLine": 170,
+        "startChar": 7,
+        "endLine": 170,
+        "endChar": 10
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a06c41c8_492dc7a8",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-17T16:56:22Z",
+      "side": 1,
+      "message": "why no %q?",
+      "range": {
+        "startLine": 226,
+        "startChar": 38,
+        "endLine": 226,
+        "endChar": 39
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca1a91b6_12345003",
+        "filename": "gce/appengine/frontend/queue.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-17T16:56:22Z",
+      "side": 1,
+      "message": "writing comment here, but it applies to overall CL design:\n\nSo, if we have just 6k machines, this queue will be 100% busy and we\u0027d be re-querying each machine every ~60 seconds, and swarming will be serving sustained 100 QPS.\n\nHence, should we bother to reduce load on swarming?\n\nIf yes, then \n\n1) we could insert task queue tasks with delay of M minutes and include timestamp in task id for deduplication:\n  task_id \u003d {vm}-{timestamp-rounded-to-M-minutes}\n  payload {vm}\nthis way we ensure that each VM is queried every ~M minutes.\n\n2) would swarming benefit from batch requests for bot status?\n\n\nAdditionally, can we complement this with pubsub from swarming wrt to change of bot status?",
+      "range": {
+        "startLine": 18,
+        "startChar": 8,
+        "endLine": 18,
+        "endChar": 13
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
