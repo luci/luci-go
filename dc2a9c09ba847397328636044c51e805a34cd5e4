@@ -495,6 +495,30 @@
     },
     {
       "key": {
+        "uuid": "7fbfc66d_2fe1eba1",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "i think its fine for code to crash in unrealistic cases. The template also assumes that BuildPage is initialized, and that BuildPage is there in the first place, and we consider it fine. We could document the contract \"A valid BuildPage must have a non-nil Build\" somewhere in the BuildPage comment\n\nnot a big deal",
+      "parentUuid": "a2dd3906_9c5d4c71",
+      "range": {
+        "startLine": 223,
+        "startChar": 9,
+        "endLine": 223,
+        "endChar": 11
+      },
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c3777cb0_f55873c1",
         "filename": "milo/buildsource/buildbucket/html_data.go",
         "patchSetId": 10
@@ -1539,6 +1563,24 @@
     },
     {
       "key": {
+        "uuid": "0b89ed15_3f0a2966",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "yes, i understand that we want a table. A table has two rows (name and value) and a row per property. This is why I suggested this func to be scoped to (struct \u003d\u003e []property) conversion, and not take responsibility for rendering HTML",
+      "parentUuid": "c7ea8122_396904b3",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa5bedcc_df21376d",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 10
@@ -1967,6 +2009,24 @@
       "side": 1,
       "message": "What does this imply?",
       "parentUuid": "bb255d1d_86a85823",
+      "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdee2a0e_23b6cc46",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "i meant that this code will crash if name is empty, because LastIndex will return -1, or in the prev line of code, that len(nameParts) will return 0.",
+      "parentUuid": "3a1e36d3_4dcf64a9",
       "revId": "dc2a9c09ba847397328636044c51e805a34cd5e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

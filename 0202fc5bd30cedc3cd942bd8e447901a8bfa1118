@@ -1,0 +1,245 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "faa85816_dfb8afd5",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "nit: consider saving to a var and use it in L160",
+      "range": {
+        "startLine": 153,
+        "startChar": 4,
+        "endLine": 153,
+        "endChar": 35
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc69c964_cb3c00f3",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "thanks. this is cleaner",
+      "range": {
+        "startLine": 177,
+        "startChar": 33,
+        "endLine": 177,
+        "endChar": 37
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "29378fdf_be9144f4",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "nit: this creates this constant part of the message each time, unnecessarily. Please move Paths or the entire mask out to a separate global var.",
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02645164_8cc542eb",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 12
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "this won\u0027t really stand out, nobody might notice\n\ncan we use https://getbootstrap.com/docs/3.3/css/#helper-classes-backgrounds ?",
+      "range": {
+        "startLine": 107,
+        "startChar": 7,
+        "endLine": 107,
+        "endChar": 8
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c4a4157_c9c8f05c",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "nit: space",
+      "range": {
+        "startLine": 212,
+        "startChar": 3,
+        "endLine": 212,
+        "endChar": 4
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a76593d_f888b20d",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "the intent (check ts \u003d\u003d nil) would be much clearer from the code if the code checked exactly that:\n\n  if ts \u003d\u003d nil return zero\n\nare there other reasons for checking the error?",
+      "range": {
+        "startLine": 264,
+        "startChar": 1,
+        "endLine": 264,
+        "endChar": 62
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8ad8857_3134dd3a",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "english: just \"this\"?",
+      "range": {
+        "startLine": 61,
+        "startChar": 35,
+        "endLine": 61,
+        "endChar": 43
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17a05570_de9e5356",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "this will crash if name is empty because len(nameParts) \u003d\u003d 0, and LastIndex returns -1. L46 protected from empty name. This code should be consistent with that. Either add a check here, or remove there.\n\nThis case is unrealistic though. Step name is required, so milo shouldn\u0027t see a step without a name.\nIMO this would be dead code, i.e. checks against unrealistic cases, like build.Builder \u003d\u003d nil. I think we can just document \"A valid BuildPage must have a valid Build proto\" which automatically implies all the rules documented in go/build.proto.",
+      "range": {
+        "startLine": 98,
+        "startChar": 28,
+        "endLine": 98,
+        "endChar": 61
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb0d8e18_f8428d85",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "nit: this code adds little value. Without this if statement, this function would panic with the message/trace that is equally useful. \n\nIMO there is no point in trying to protect from unrealistic cases. bp can be nil too, but we never check against that. What if b.Project is \"\". That\u0027s invalid build too.\n\n\n\nsame in L123-125.",
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75d60af2_69831248",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "it would be simpler if num was int64.  Then we don\u0027t have to Sprintf it, and in L133 we can just use %d",
+      "range": {
+        "startLine": 126,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 4
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1119a811_bcc5a3d9",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T19:27:18Z",
+      "side": 1,
+      "message": "bucket",
+      "range": {
+        "startLine": 42,
+        "startChar": 37,
+        "endLine": 42,
+        "endChar": 62
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
