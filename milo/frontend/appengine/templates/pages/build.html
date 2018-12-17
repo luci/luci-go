@@ -1,0 +1,287 @@
+{{define "title"}}
+  {{ with .BuildPage.Build -}}
+    {{ if eq .Status.String "INFRA_FAILURE" }}
+      Infra Failure
+    {{ else if eq .Status.String "FAILURE" }}
+      Failed
+    {{ else if eq .Status.String "SCHEDULED" }}
+      Pending
+    {{ else }}
+      {{ .Status.String }}
+    {{ end }}
+    -
+    {{ with .Builder }}{{ .Builder }}{{ end }}
+    {{ if .Number }}{{ .Number }}{{ else }}{{ .Id }}{{ end }}
+  {{- end }}
+{{end}}
+
+{{define "head"}}
+<link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
+<link rel="stylesheet" href="/static/common/css/tabs.css" type="text/css">
+<script>
+  const timelineData = JSON.parse({{ .BuildPage.Timeline }});
+  const useTabs = true;
+</script>
+<script src="/static/common/js/build.js"></script>
+{{end}}
+
+{{define "interval"}}
+  {{ if .Started }}
+    <span class="duration"
+          data-starttime="{{ .Start | formatTime }}"
+          {{ if .Ended -}}
+            data-endtime="{{ .End | formatTime }}"
+          {{- end }}>
+          ( {{ .Duration | humanDuration }} )</span>
+  {{ end }}
+{{end}}
+
+{{define "favicon"}}
+<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/
+{{- with .BuildPage.Status.String -}}
+  {{- if eq . "STARTED" -}} yellow
+  {{- else if eq . "SUCCESS" -}} green
+  {{- else if eq . "INFRA_FAILURE" -}} purple
+  {{- else if eq . "FAILURE" -}} red
+  {{- else if eq . "CANCELLED" -}} brown
+  {{- else if eq . "SCHEDULED" -}} gray
+  {{- else -}} milo
+  {{- end -}}
+{{- end -}}-32.png">
+
+{{end}}
+
+{{define "step"}}
+<li class="{{ if eq .Step.Status.String "SUCCESS" }}green{{ end }}
+           {{- if .Children }} substeps
+             {{- if .Collapsed }} collapsed{{ end }}
+           {{- end }}">
+  <div class="status {{.Step.Status}} result">
+      {{ template "interval" toInterval .StartTime .EndTime }}
+    <b>{{.ShortName}}</b>
+    <span>
+      <div class="summary-markdown">{{ .Step.SummaryMarkdown | renderMarkdown }}</div>
+    </span>
+  </div>
+  {{ if .Children }}
+    <ol>
+    {{ range .Children  }}
+      {{ template "step" . }}
+    {{ end }}
+    </ol>
+  {{ end }}
+</li>
+{{ end }}
+
+{{define "body"}}
+  <div class="content">
+    <h1>
+    {{ with .BuildPage.Builder }}
+      Builder {{ . }}
+    {{ end }}
+    Build {{ .BuildPage.BuildID.HTML }}
+    {{ range .BuildPage.Banners }}
+      <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
+           width="25px">
+    {{ end }}
+    </h1>
+
+    <div id="tabs" style="display: none;">
+      <ul>
+        <li><a href="#overview-tab">Overview</a></li>
+        <li><a href="#properties-tab">Properties</a></li>
+        <li><a href="#changes-tab">Changes</a></li>
+        <li><a href="#timeline-tab">Timeline</a></li>
+      </ul>
+      <div id="overview-tab">{{ template "overview_tab" . }}</div>
+      <div id="properties-tab">{{ template "properties_tab" . }}</div>
+      <div id="changes-tab">{{ template "changes_tab" . }}</div>
+      <div id="timeline-tab">{{ template "timeline_tab" . }}</div>
+    </div>
+  </div>
+{{end}}
+
+{{define "overview_tab"}}
+  <div id="overview">
+    <!--- TODO(hinoka): Stylize this -->
+    {{ range .BuildPage.Errors }}
+      <p class="status FAILURE">Error while rendering page: {{.}}</p>
+    {{ end }}
+    <h2>Overview</h2>
+    <p class="result status {{.BuildPage.Status}}">
+      {{ .BuildPage.Output.SummaryMarkdown | renderMarkdown }}
+    </p>
+
+    {{ with .BuildPage.Input }}
+      <h2>Input</h2>
+      <table>
+        {{ with .GitilesCommit }}
+          <tr>
+            <td class="left">Revision</td>
+            <td><a href="https://{{ .Host }}/{{ .Project }}/+/{{ .Id }}">{{ .Id }}</a>
+            {{ with .Position }}(CP #{{ . }}){{ end }}
+            </td>
+          </tr>
+        {{ end }}
+
+        {{ range .GerritChanges }}
+          <tr>
+            <td class="left">Patch</td>
+            <td>
+              <a href="https://{{ .Host }}/c/{{ .Project }}/{{ .Change }}/{{ .Patchset }}">
+              {{ .Change }} (ps #{{ .Patchset }})
+              </a>
+            </td>
+          </tr>
+        {{ end }}
+      </table>
+    {{ end }}
+
+    <h2>Infra</h2>
+    <ul>
+      <li>Buildbucket ID: {{ .BuildPage.Id }}</li>
+
+      {{ with .BuildPage.Infra }}
+        {{ with .Swarming }}
+        <li>
+          Swarming Task:
+          <a href="https://{{ .Hostname }}/task?id={{ .TaskId }}&show_raw=1&wide_logs=true">
+            {{ .TaskId }}
+          </a>
+        </li>
+        <li>Bot: {{ . | botLink }}</li>
+        {{ end }}
+
+        {{ with .Recipe }}
+          <li>
+            Recipe: {{ . | recipeLink }}
+          </li>
+        {{ end }}
+      {{ end }}
+    </ul>
+
+    <h2>Steps and Logs</h2>
+    Show:
+    <input type="radio" name="hider" id="showExpanded"
+           {{- if eq .BuildPage.StepDisplayPref "expanded" }} checked{{ end }}>
+    <label for="showExpanded">Expanded</label>
+    <input type="radio" name="hider" id="showDefault"
+           {{- if eq .BuildPage.StepDisplayPref "default" }} checked{{ end }}>
+    <label for="showDefault">Default</label>
+    <input type="radio" name="hider" id="showNonGreen"
+           {{- if eq .BuildPage.StepDisplayPref "non-green" }} checked{{ end }}>
+    <label for="showNonGreen">Non-Green</label>
+
+    <ol id="steps" {{- if eq .BuildPage.StepDisplayPref "non-green" }} class="non-green"{{ end }}>
+      {{ range .Steps }}
+        {{ template "step" . }}
+      {{ end }}
+    </ol>
+
+    <h2>Timing</h2>
+    <table class="info" width="100%">
+      <tr class="alt">
+        <td class="left">Create</td>
+        <td>{{ .BuildPage.CreateTime | toTime | localTime "N/A" }}</td>
+      </tr>
+      <tr>
+        <td class="left">Start</td>
+        <td>{{ .BuildPage.StartTime | toTime | localTime "N/A" }}</td>
+      </tr>
+      <tr class="alt">
+        <td class="left">End</td>
+        <td>{{ .BuildPage.EndTime | toTime | localTime "N/A" }}</td>
+      </tr>
+      <tr>
+        <td class="left">Pending</td>
+        <td id="duration">{{ duration .BuildPage.CreateTime .BuildPage.StartTime }}</td>
+      </tr>
+      <tr class="alt">
+        <td class="left">Execution</td>
+        <td id="duration">{{ duration .BuildPage.StartTime .BuildPage.EndTime }}</td>
+      </tr>
+    </table>
+  </div>
+{{end}}
+
+{{define "properties_tab"}}
+  <div id="properties">
+    {{ with .Build.Input.Properties }}
+      <h2>Input Properties</h2>
+      {{ . | renderProperties }}
+    {{ end }}
+
+    {{ with .Build.Output.Properties }}
+      <h2>Output Properties</h2>
+      {{ . | renderProperties }}
+    {{ end }}
+
+  </div>
+{{end}}
+
+{{define "changes_tab"}}
+  <div id="changes">
+    <h2>All Changes</h2>
+    {{ if .Build.Blame }}
+    <ol>
+    {{ range .Build.Blame }}
+    <li>
+      <h3>{{.Title}}</h3>
+      <table class="info">
+        <tbody>
+          <tr>
+            <td class="left">Changed by</td>
+            <td class="value">
+                {{ if .AuthorName }}{{ .AuthorName }} - {{ end }}
+                {{ .AuthorEmail | obfuscateEmail }}
+            </td>
+          </tr>
+          <tr>
+            <td class="left">Changed at</td>
+            <td class="value">{{ .CommitTime | localTime "N/A" }}</td>
+          </tr>
+          <tr>
+            <td class="left">Repository</td>
+            <td class="value">{{ .Repo }}</td>
+          </tr>
+          <tr>
+            <td class="left">Branch</td>
+            <td class="value">{{ .Branch }}</td>
+          </tr>
+          {{ with .Revision }}
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value">{{ .HTML }}</td>
+            </tr>
+          {{ end }}
+        </tbody>
+      </table>
+
+      {{ if .Description }}
+        <h3>Comments</h3>
+        <pre class="comments">{{ .Description | formatCommitDesc }}</pre>
+      {{ end }}
+
+      {{ if .File }}
+        <h3 class="files">Changed files</h3>
+        <ul class="alternating">
+          {{ range .File }}
+          <li class="file">{{ . }}</li>
+          {{ end }}
+        </ul>
+      {{ end }}
+
+    </li>
+    {{ end }} <!-- range .Build.Blame -->
+    </ol>
+    {{ else }}
+      No Blamelist
+    {{ end }} <!-- if .Build.Blame -->
+  </div>
+{{end}}
+
+{{define "timeline_tab"}}
+  <div id="timeline">
+    <div id="timeline-rendering">Rendering...</div>
+  </div>
+{{end}}

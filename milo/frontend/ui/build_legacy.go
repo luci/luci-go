@@ -17,33 +17,14 @@
 package ui
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
-	"html/template"
 	"regexp"
 	"strings"
 	"time"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
-)
-
-// StepDisplayPref is the display preference for the steps.
-type StepDisplayPref string
-
-const (
-	// StepDisplayDefault means that all steps are visible, green steps are
-	// collapsed.
-	StepDisplayDefault StepDisplayPref = "default"
-	// StepDisplayExpanded means that all steps are visible, nested steps are
-	// expanded.
-	StepDisplayExpanded StepDisplayPref = "expanded"
-	// StepDisplayNonGreen means that only non-green steps are visible, nested
-	// steps are expanded.
-	StepDisplayNonGreen StepDisplayPref = "non-green"
 )
 
 // MiloBuildLegacy denotes a full renderable Milo build page.
@@ -244,64 +225,6 @@ func (p PropertyGroup) Swap(i, j int) {
 }
 func (p PropertyGroup) Less(i, j int) bool { return p.Property[i].Key < p.Property[j].Key }
 
-// Commit represents a single commit to a repository, rendered as part of a blamelist.
-type Commit struct {
-	// Who made the commit?
-	AuthorName string
-	// Email of the committer.
-	AuthorEmail string
-	// Time of the commit.
-	CommitTime time.Time
-	// Full URL of the main source repository.
-	Repo string
-	// Branch of the repo.
-	Branch string
-	// Requested revision of the commit or base commit.
-	RequestRevision *Link
-	// Revision of the commit or base commit.
-	Revision *Link
-	// The commit message.
-	Description string
-	// Rietveld or Gerrit URL if the commit is a patch.
-	Changelist *Link
-	// Browsable URL of the commit.
-	CommitURL string
-	// List of changed filenames.
-	File []string
-}
-
-// RevisionHTML returns a single rendered link for the revision, prioritizing
-// Revision over RequestRevision.
-func (c *Commit) RevisionHTML() template.HTML {
-	switch {
-	case c == nil:
-		return ""
-	case c.Revision != nil:
-		return c.Revision.HTML()
-	case c.RequestRevision != nil:
-		return c.RequestRevision.HTML()
-	default:
-		return ""
-	}
-}
-
-// Title is the first line of the commit message (Description).
-func (c *Commit) Title() string {
-	switch lines := strings.SplitN(c.Description, "\n", 2); len(lines) {
-	case 0:
-		return ""
-	case 1:
-		return c.Description
-	default:
-		return lines[0]
-	}
-}
-
-// DescLines returns the description as a slice, one line per item.
-func (c *Commit) DescLines() []string {
-	return strings.Split(c.Description, "\n")
-}
-
 // BuildProgress is a way to show progress.  Percent should always be specified.
 type BuildProgress struct {
 	// The total number of entries. Shows up as a tooltip.  Leave at 0 to
@@ -455,102 +378,3 @@ type Navigation struct {
 // LinkSet is an ordered collection of Link objects that will be rendered on the
 // same line.
 type LinkSet []*Link
-
-// Link denotes a single labeled link.
-//
-// JSON tags here are for test expectations.
-type Link struct {
-	model.Link
-
-	// AriaLabel is a spoken label for the link.  Used as aria-label under the anchor tag.
-	AriaLabel string `json:",omitempty"`
-
-	// Img is an icon for the link.  Not compatible with label.  Rendered as <img>
-	Img string `json:",omitempty"`
-
-	// Alt text for the image, or title text with text link.
-	Alt string `json:",omitempty"`
-
-	// Alias, if true, means that this link is an [alias link].
-	Alias bool `json:",omitempty"`
-}
-
-// NewLink does just about what you'd expect.
-func NewLink(label, url, ariaLabel string) *Link {
-	return &Link{Link: model.Link{Label: label, URL: url}, AriaLabel: ariaLabel}
-}
-
-// NewPatchLink is the right way (TM) to generate links to Rietveld/Gerrit CLs.
-//
-// Returns nil if provided buildset is not Rietveld or Gerrit CL.
-func NewPatchLink(cl buildbucketpb.BuildSet) *Link {
-	switch v := cl.(type) {
-	case *buildbucketpb.GerritChange:
-		return NewLink(
-			fmt.Sprintf("Gerrit CL %d (ps#%d)", v.Change, v.Patchset),
-			v.URL(),
-			fmt.Sprintf("gerrit changelist number %d patchset %d", v.Change, v.Patchset))
-	default:
-		return nil
-	}
-}
-
-// NewEmptyLink creates a Link struct acting as a pure text label.
-func NewEmptyLink(label string) *Link {
-	return &Link{Link: model.Link{Label: label}}
-}
-
-/// HTML methods.
-
-var (
-	linkifyTemplate = template.Must(
-		template.New("linkify").
-			Parse(
-				`<a{{if .URL}} href="{{.URL}}"{{end}}` +
-					`{{if .AriaLabel}} aria-label="{{.AriaLabel}}"{{end}}` +
-					`{{if .Alt}}{{if not .Img}} title="{{.Alt}}"{{end}}{{end}}>` +
-					`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
-					`{{else if .Alias}}[{{.Label}}]` +
-					`{{else}}{{.Label}}{{end}}` +
-					`</a>`))
-
-	linkifySetTemplate = template.Must(
-		template.New("linkifySet").
-			Parse(
-				`{{ range $i, $link := . }}` +
-					`{{ if gt $i 0 }} {{ end }}` +
-					`{{ $link.HTML }}` +
-					`{{ end }}`))
-)
-
-// HTML renders this Link as HTML.
-func (l *Link) HTML() template.HTML {
-	if l == nil {
-		return ""
-	}
-	buf := bytes.Buffer{}
-	if err := linkifyTemplate.Execute(&buf, l); err != nil {
-		panic(err)
-	}
-	return template.HTML(buf.Bytes())
-}
-
-// String renders this Link's Label as a string.
-func (l *Link) String() string {
-	if l == nil {
-		return ""
-	}
-	return l.Label
-}
-
-// HTML renders this LinkSet as HTML.
-func (l LinkSet) HTML() template.HTML {
-	if len(l) == 0 {
-		return ""
-	}
-	buf := bytes.Buffer{}
-	if err := linkifySetTemplate.Execute(&buf, l); err != nil {
-		panic(err)
-	}
-	return template.HTML(buf.Bytes())
-}
