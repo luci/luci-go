@@ -25,9 +25,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/gae/service/info"
 
 	"go.chromium.org/luci/auth/identity"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -47,6 +52,9 @@ import (
 
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
+	"botLink":          botLink,
+	"recipeLink":       recipeLink,
+	"duration":         duration,
 	"faviconMIMEType":  faviconMIMEType,
 	"formatCommitDesc": formatCommitDesc,
 	"formatTime":       formatTime,
@@ -58,10 +66,14 @@ var funcMap = template.FuncMap{
 	"parseRFC3339":     parseRFC3339,
 	"percent":          percent,
 	"prefix":           prefix,
+	"renderMarkdown":   renderMarkdown,
+	"renderProperties": renderProperties,
 	"shortenEmail":     shortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
+	"toInterval":       toInterval,
 	"toLower":          strings.ToLower,
+	"toTime":           toTime,
 }
 
 // localTime returns a <span> element with t in human format
@@ -191,6 +203,34 @@ func replaceLinkChunks(chunks []formatChunk) []formatChunk {
 	return chunks
 }
 
+// recipeLink generates a link to codesearch given a recipe bundle.
+func recipeLink(r *buildbucketpb.BuildInfra_Recipe) (result template.HTML) {
+	if r == nil {
+		return
+	}
+	// We don't know location of recipes within the repo and getting that
+	// information is not trivial, so use code search, which is precise enough.
+	csHost := "cs.chromium.org"
+	if strings.HasPrefix(r.CipdPackage, "infra_internal") {
+		csHost = "cs.corp.google.com"
+	}
+	recipeURL := fmt.Sprintf("https://%s/search/?q=file:recipes/%s.py", csHost, r.Name)
+	return ui.NewLink(r.Name, recipeURL, fmt.Sprintf("recipe %s", r.Name)).HTML()
+}
+
+// botLink generates a link to a swarming bot given a buildbucketpb.BuildInfra_Swarming struct.
+func botLink(s *buildbucketpb.BuildInfra_Swarming) (result template.HTML) {
+	for _, d := range s.GetBotDimensions() {
+		if d.Key == "id" {
+			return ui.NewLink(
+				d.Value,
+				fmt.Sprintf("https://%s/bot?id=%s", s.Hostname, d.Value),
+				fmt.Sprintf("swarming bot %s", d.Value)).HTML()
+		}
+	}
+	return ""
+}
+
 // formatCommitDesc takes a commit message and adds embellishments such as:
 // * Linkify https:// URLs
 // * Linkify bug numbers using https://crbug.com/
@@ -216,6 +256,59 @@ func formatCommitDesc(desc string) template.HTML {
 	})
 	chunks = replaceLinkChunks(chunks)
 	return chunksToHTML(chunks)
+}
+
+// toTime returns the time.Time format for the proto timestamp.
+// If the proto timestamp is invalid, we return a zero-ed out time.Time.
+func toTime(ts *timestamp.Timestamp) (result time.Time) {
+	// We want a zero-ed out time.Time, not one set to the epoch.
+	if t, err := ptypes.Timestamp(ts); err == nil {
+		result = t
+	}
+	return
+}
+
+type interval struct {
+	Start time.Time
+	End   time.Time
+}
+
+func (in interval) Started() bool {
+	return !in.Start.IsZero()
+}
+
+func (in interval) Ended() bool {
+	return !in.End.IsZero()
+}
+
+func (in interval) Duration() time.Duration {
+	// Only return something if the interval is complete.
+	if !(in.Ended() && in.Started()) {
+		return 0
+	}
+	// Don't return non-sensical values.
+	if d := in.End.Sub(in.Start); d > 0 {
+		return d
+	}
+	return 0
+}
+
+func toInterval(start, end *timestamp.Timestamp) (result interval) {
+	if t, err := ptypes.Timestamp(start); err == nil {
+		result.Start = t
+	}
+	if t, err := ptypes.Timestamp(end); err == nil {
+		result.End = t
+	}
+	return
+}
+
+func duration(start, end *timestamp.Timestamp) string {
+	in := toInterval(start, end)
+	if in.Started() && in.Ended() {
+		return humanDuration(in.Duration())
+	}
+	return "N/A"
 }
 
 // humanDuration translates d into a human readable string of x units y units,
@@ -339,6 +432,21 @@ func GetReload(r *http.Request, def int) int {
 		return def
 	}
 	return refresh
+}
+
+// renderMarkdown renders the given text as markdown HTML.
+// TODO(hinoka): Implement me.
+func renderMarkdown(t string) (results template.HTML) {
+	return template.HTML(fmt.Sprintf("<pre>%s</pre>", template.HTMLEscapeString(t)))
+}
+
+// renderProperties renders a structpb.Struct as a properties table.
+// TODO(hinoka): Implement me.
+func renderProperties(p *structpb.Struct) (results template.HTML) {
+	if p == nil {
+		return
+	}
+	return
 }
 
 // pagedURL returns a self URL with the given cursor and limit paging options.

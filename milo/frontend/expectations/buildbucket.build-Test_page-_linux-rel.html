@@ -6,10 +6,11 @@
 <meta name="google" value="notranslate">
 <title>
   
-      Pending
+      SUCCESS
     
     -
-     2fb1b35e1da25710
+    linux-rel
+    13052
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
@@ -22,14 +23,16 @@
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 <script src="/static/common/third_party/js/vis-custom.min.js"></script>
 
-<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/gray-32.png">
+<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/green-32.png">
 
 
+<link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
+<link rel="stylesheet" href="/static/common/css/tabs.css" type="text/css">
 <script>
-  const useTabs = false;
+  const timelineData = JSON.parse("\"timeline goes here\"");
+  const useTabs = true;
 </script>
 <script src="/static/common/js/build.js"></script>
-<link rel="stylesheet" href="/static/common/css/tabs.css" type="text/css">
 
 
 <body class="interface">
@@ -49,105 +52,126 @@
   <div class="content">
     <h1>
     
-    Build <a>2fb1b35e1da25710</a>
+      Builder linux-rel
     
+    Build <a href="/p/chromium/builder/ci/linux-rel/13052" aria-label="Build 13052">13052</a>
     
     </h1>
 
     <div id="tabs" style="display: none;">
       <ul>
         <li><a href="#overview-tab">Overview</a></li>
+        <li><a href="#properties-tab">Properties</a></li>
+        <li><a href="#changes-tab">Changes</a></li>
+        <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
       <div id="overview-tab">
+  <div id="overview">
+    
+    
+    <h2>Overview</h2>
+    <p class="result status SUCCESS">
+      <pre></pre>
+    </p>
+
+    
+      <h2>Input</h2>
+      <table>
         
-  <div id="results" class="column">
-    <h2>Results:</h2>
-    
-      <p class="result status-NotRun">
-      
-        Pending
-      
-      </p>
-     
+          <tr>
+            <td class="left">Revision</td>
+            <td><a href="https://chromium.googlesource.com/chromium/src/+/62c93f6041326a2c4781680583e433bbfad93884">62c93f6041326a2c4781680583e433bbfad93884</a>
+            
+            </td>
+          </tr>
+        
 
-      
-
+        
+      </table>
     
-    <h2>Execution:</h2>
+
+    <h2>Infra</h2>
     <ul>
-      
-      <li>
-        Source:
-        <a href="https://example.com/task?id=2fb1b35e1da25710&amp;show_raw=1&amp;wide_logs=true"
-           aria-label="Source for Task 2fb1b35e1da25710">
-          Task 2fb1b35e1da25710
-        </a>
-      </li>
-      
+      <li>Buildbucket ID: 8927206632544641856</li>
 
       
+        
+        <li>
+          Swarming Task:
+          <a href="https://chromium-swarm.appspot.com/task?id=41c30ddc76b2e910&show_raw=1&wide_logs=true">
+            41c30ddc76b2e910
+          </a>
+        </li>
+        <li>Bot: <a href="https://chromium-swarm.appspot.com/bot?id=swarm582-c4" aria-label="swarming bot swarm582-c4">swarm582-c4</a></li>
+        
 
+        
+          <li>
+            Recipe: <a href="https://cs.chromium.org/search/?q=file:recipes/chromium.py" aria-label="recipe chromium">chromium</a>
+          </li>
+        
       
     </ul>
-     
 
-    
+    <h2>Steps and Logs</h2>
+    Show:
+    <input type="radio" name="hider" id="showExpanded">
+    <label for="showExpanded">Expanded</label>
+    <input type="radio" name="hider" id="showDefault">
+    <label for="showDefault">Default</label>
+    <input type="radio" name="hider" id="showNonGreen">
+    <label for="showNonGreen">Non-Green</label>
 
-     
-
-  </div>
-
-        
-  <div id="properties" class="column">
-    <h2>Build Properties:</h2>
-
-    <table class="info BuildProperties" width="100%">
-    <tr><th>Name</th><th>Value</th><th>Source</th></tr>
-
+    <ol id="steps">
       
-      
-        
-      
-    </table>
+    </ol>
 
-    
-
-    <h2>Timing:</h2>
+    <h2>Timing</h2>
     <table class="info" width="100%">
-      <tr class="alt"><td class="left">Create</td>
-      <td>
-        <span class="local-time " data-timestamp="1457950785146">Monday, 14-Mar-16 10:19:45 UTC</span>
-      </td></tr>
-      <tr><td class="left">Start</td>
-      <td>
-        N/A
-      </td></tr>
-      <tr class="alt"><td class="left">End</td>
-      <td>
-        N/A
-      </td></tr>
-      <tr><td class="left">Pending</td>
-      <td id="duration">
-        
-          40 mins 14 secs
-        
-      </td></tr>
-      <tr class="alt"><td class="left">Execution</td>
-      <td id="duration">
-        
-          N/A
-        
-      </td></tr>
+      <tr class="alt">
+        <td class="left">Create</td>
+        <td><span class="local-time " data-timestamp="1544749339498">Friday, 14-Dec-18 01:02:19 UTC</span></td>
+      </tr>
+      <tr>
+        <td class="left">Start</td>
+        <td><span class="local-time " data-timestamp="1544749341404">Friday, 14-Dec-18 01:02:21 UTC</span></td>
+      </tr>
+      <tr class="alt">
+        <td class="left">End</td>
+        <td><span class="local-time " data-timestamp="1544749976253">Friday, 14-Dec-18 01:12:56 UTC</span></td>
+      </tr>
+      <tr>
+        <td class="left">Pending</td>
+        <td id="duration">1 secs</td>
+      </tr>
+      <tr class="alt">
+        <td class="left">Execution</td>
+        <td id="duration">10 mins 34 secs</td>
+      </tr>
     </table>
-
   </div>
-
-        
-  <div id="changes" class="column">
+</div>
+      <div id="properties-tab">
+  <div id="properties">
     
-  </div>
 
-      </div>
+    
+
+  </div>
+</div>
+      <div id="changes-tab">
+  <div id="changes">
+    <h2>All Changes</h2>
+    
+      No Blamelist
+     
+  </div>
+</div>
+      <div id="timeline-tab">
+  <div id="timeline">
+    <div id="timeline-rendering">Rendering...</div>
+  </div>
+</div>
     </div>
   </div>
 
