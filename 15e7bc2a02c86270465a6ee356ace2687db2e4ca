@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04988505_02f14d3c",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 14
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T21:12:06Z",
+      "side": 1,
+      "message": "this will work the legacy page. Let\u0027s change this code so that it does nothing when legacy page is used",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 112,
+        "endChar": 22
+      },
+      "revId": "15e7bc2a02c86270465a6ee356ace2687db2e4ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

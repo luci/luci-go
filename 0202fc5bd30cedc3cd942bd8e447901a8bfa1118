@@ -154,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "b0e13181_2eff3faf",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 12
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T21:12:06Z",
+      "side": 1,
+      "message": "oh, sorry, indeed there is a todo",
+      "parentUuid": "5b2fe64d_0917a760",
+      "range": {
+        "startLine": 107,
+        "startChar": 7,
+        "endLine": 107,
+        "endChar": 8
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8c4a4157_c9c8f05c",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 12
@@ -342,6 +366,30 @@
     },
     {
       "key": {
+        "uuid": "4bb042d0_e8166552",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T21:12:06Z",
+      "side": 1,
+      "message": "i agree that build.proto is user data and it should behave well even with invalid user data. Frankly I forgot about the case where build.proto is loaded from logdog (build.proto loaded from buildbucket is not user data because it is buildbucket data, and buildbucket guarantees valid build protos). It means my previous comments (there is no way a Buildre is nil) are incorrect, sorry about the noise...\n\nbut then panicking isn\u0027t behaving well, isn\u0027t it? a user will see an HTTP 500 on an attempt to render such build, and won\u0027t be able to debug the problem. They will perceive it a milo bug and send us emails or file bugs. We will see elevated HTTP 500 traffic in monarch, although there is no bug in our code (according to your comment).\n\nI think a correct \"well behavior\" would be to render the list of discovered errors in the user-supplied build. Perhaps we should validate a user-supplied build before trying to render it, include it in the errors list, and not panic in the rendering code (here). Here we should render as much as possible, i.e. take the `return \"ERROR: EMPTY NAME\"` approach",
+      "parentUuid": "17d69e96_e02d5759",
+      "range": {
+        "startLine": 98,
+        "startChar": 28,
+        "endLine": 98,
+        "endChar": 61
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "eb0d8e18_f8428d85",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 12
@@ -371,6 +419,24 @@
       "side": 1,
       "message": "I don\u0027t think it\u0027s that unrealistic.  The user can ask Milo to load any arbitrary build.proto by uploading one to logdog and pointing to it.  The difference between having this check and not having this check is the user thinking \"Milo is broken\" vs \"My build proto is broken\".\n\nIf b.Project is \"\", then it either won\u0027t crash Milo (since it\u0027s not a pointer), or will fail earlier in the chain.",
       "parentUuid": "eb0d8e18_f8428d85",
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2e942ae5_2a25bd7c",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-17T21:12:06Z",
+      "side": 1,
+      "message": "if this check results in panic, the user will still think milo is broken, because it would be http 500",
+      "parentUuid": "6bb3c8b6_ad58a8a5",
       "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
