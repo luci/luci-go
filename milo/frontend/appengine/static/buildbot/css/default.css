@@ -445,13 +445,13 @@ div.BuildWaterfall {
 }
 
 /* LastBuild, BuildStep states */
-.success, .status-Success, .status-Idle, .tree-status-open {
+.success, .status-Success, .status-Idle, .tree-status-open, .status.SUCCESS {
   color: #000;
   background-color: #8d4;
   border-color: #4F8530;
 }
 
-.failure, .status-Failure, .status-Cancelled, .tree-status-closed {
+.failure, .status-Failure, .status-Cancelled, .tree-status-closed, .status.FAILURE, .status.CANCELLED {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
@@ -465,7 +465,7 @@ div.BuildWaterfall {
   border-style: solid;
 }
 
-.status-InfraFailure {
+.status-InfraFailure, .status.INFRA_FAILURE {
   color: #FFFFFF;
   background-color: #c6c;
   border-color: #ACA0B3;
@@ -495,13 +495,13 @@ div.BuildWaterfall {
   border-color: #ACA0B3;
 }
 
-.start, .status-NotRun {
+.start, .status-NotRun, .status.SCHEDULED {
   color: #000;
   background-color: #ccc;
   border-color: #ccc;
 }
 
-.running, .waiting, td.building, .status-Running, .status-Busy, .tree-status-throttled {
+.running, .waiting, td.building, .status-Running, .status-Busy, .tree-status-throttled, .status.STARTED {
   color: #000;
   background-color: #fd3;
   border-color: #C5C56D;
