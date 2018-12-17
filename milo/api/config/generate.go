@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //go:generate cproto
-//go:generate proto-gae -type Console
+//go:generate proto-gae -type Console -type BugTemplate
 //go:generate goimports -w .
 
 package config
