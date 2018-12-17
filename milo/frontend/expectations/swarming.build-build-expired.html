@@ -25,9 +25,11 @@
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/darkpurple-32.png">
 
 
+<script>
+  const useTabs = false;
+</script>
 <script src="/static/common/js/build.js"></script>
 <link rel="stylesheet" href="/static/common/css/tabs.css" type="text/css">
-
 
 
 <body class="interface">
@@ -62,13 +64,11 @@
 
     <div id="tabs" style="display: none;">
       <ul>
-        <li><a href="#results-tab">Results</a></li>
-        <li><a href="#properties-tab">Properties</a></li>
-        <li><a href="#changes-tab">Changes</a></li>
-        
+        <li><a href="#overview-tab">Overview</a></li>
       </ul>
-      <div id="results-tab">
-  <div id="results">
+      <div id="overview-tab">
+        
+  <div id="results" class="column">
     <h2>Results:</h2>
     
       <p class="result status-Expired">
@@ -131,9 +131,9 @@
      
 
   </div>
-</div>
-      <div id="properties-tab">
-  <div id="properties">
+
+        
+  <div id="properties" class="column">
     <h2>Build Properties:</h2>
 
     <table class="info BuildProperties" width="100%">
@@ -176,13 +176,13 @@
     </table>
 
   </div>
-</div>
-      <div id="changes-tab">
-  <div id="changes">
+
+        
+  <div id="changes" class="column">
     
   </div>
-</div>
-      
+
+      </div>
     </div>
   </div>
 

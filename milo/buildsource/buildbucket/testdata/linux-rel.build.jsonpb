@@ -1,0 +1,654 @@
+{
+  "status": "SUCCESS",
+  "updateTime": "2018-12-14T01:12:56.696949Z",
+  "createdBy": "user:luci-scheduler@appspot.gserviceaccount.com",
+  "builder": {
+    "project": "chromium",
+    "builder": "linux-rel",
+    "bucket": "ci"
+  },
+  "number": 13052,
+  "id": "8927206632544641856",
+  "steps": [
+    {
+      "status": "SUCCESS",
+      "name": "setup_build",
+      "startTime": "2018-12-14T01:02:28.569713448Z",
+      "endTime": "2018-12-14T01:02:28.881827136Z",
+      "summaryMarkdown": "running recipe: \"chromium\"",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/setup_build/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout",
+          "name": "stdout"
+        },
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/setup_build/0/logs/run_recipe/0",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0",
+          "name": "run_recipe"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "name": "report builders",
+      "startTime": "2018-12-14T01:02:28.891218198Z",
+      "endTime": "2018-12-14T01:02:29.111869148Z",
+      "summaryMarkdown": "<br/>running builder/tester 'linux-rel' on master 'chromium'",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/report_builders/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Freport_builders%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "name": "bot_update",
+      "startTime": "2018-12-14T01:02:29.112575899Z",
+      "endTime": "2018-12-14T01:03:15.368454580Z",
+      "summaryMarkdown": "[71GB/295GB used (24%)]",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/bot_update/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout",
+          "name": "stdout"
+        },
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/bot_update/0/logs/json.output/0",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fbot_update%2F0%2Flogs%2Fjson.output%2F0",
+          "name": "json.output"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:03:15.443521865Z",
+      "name": "ensure_goma",
+      "startTime": "2018-12-14T01:03:15.368741106Z"
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:03:15.443019010Z",
+      "name": "ensure_goma|ensure_goma.ensure_installed",
+      "startTime": "2018-12-14T01:03:15.368741106Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/ensure_goma/0/steps/ensure_installed/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fensure_goma%2F0%2Fsteps%2Fensure_installed%2F0%2Fstdout",
+          "name": "stdout"
+        },
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/ensure_goma/0/steps/ensure_installed/0/logs/json.output/0",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fensure_goma%2F0%2Fsteps%2Fensure_installed%2F0%2Flogs%2Fjson.output%2F0",
+          "name": "json.output"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "name": "swarming.py --version",
+      "startTime": "2018-12-14T01:03:15.443774683Z",
+      "endTime": "2018-12-14T01:03:16.021406989Z",
+      "summaryMarkdown": "0.14",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/swarming.py_--version/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fswarming.py_--version%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:03:22.117647337Z",
+      "name": "clobber",
+      "startTime": "2018-12-14T01:03:16.021876874Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/clobber/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fclobber%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:03:31.802421722Z",
+      "name": "gclient runhooks",
+      "startTime": "2018-12-14T01:03:22.118140610Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/gclient_runhooks/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fgclient_runhooks%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:03:34.367273846Z",
+      "name": "get compile targets for scripts",
+      "startTime": "2018-12-14T01:03:31.803243546Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/get_compile_targets_for_scripts/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fget_compile_targets_for_scripts%2F0%2Fstdout",
+          "name": "stdout"
+        },
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/get_compile_targets_for_scripts/0/logs/json.output/0",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fget_compile_targets_for_scripts%2F0%2Flogs%2Fjson.output%2F0",
+          "name": "json.output"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "name": "read test spec (chromium.json)",
+      "startTime": "2018-12-14T01:03:34.367719339Z",
+      "endTime": "2018-12-14T01:03:34.606023133Z",
+      "summaryMarkdown": "path: /b/swarming/w/ir/cache/builder/src/testing/buildbot/chromium.json",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/read_test_spec__chromium.json_/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fread_test_spec__chromium.json_%2F0%2Fstdout",
+          "name": "stdout"
+        },
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/read_test_spec__chromium.json_/0/logs/json.output/0",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fread_test_spec__chromium.json_%2F0%2Flogs%2Fjson.output%2F0",
+          "name": "json.output"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "name": "lookup GN args",
+      "startTime": "2018-12-14T01:03:34.606490267Z",
+      "endTime": "2018-12-14T01:03:35.068038111Z",
+      "summaryMarkdown": "<br/>is_component_build = false<br/>is_debug = false<br/>strip_absolute_paths_from_debug_symbols = true<br/>use_goma = true<br/>goma_dir = \"/b/swarming/w/ir/cache/goma/client\"",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/lookup_GN_args/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Flookup_GN_args%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:03:45.204139631Z",
+      "name": "generate_build_files",
+      "startTime": "2018-12-14T01:03:35.068635173Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/generate_build_files/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fgenerate_build_files%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:04:00.225491722Z",
+      "name": "preprocess_for_goma",
+      "startTime": "2018-12-14T01:03:45.205092856Z"
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:03:45.639284153Z",
+      "name": "preprocess_for_goma|preprocess_for_goma.goma cache directory",
+      "startTime": "2018-12-14T01:03:45.205092856Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/preprocess_for_goma/0/steps/goma_cache_directory/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpreprocess_for_goma%2F0%2Fsteps%2Fgoma_cache_directory%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "name": "preprocess_for_goma|preprocess_for_goma.start_goma",
+      "startTime": "2018-12-14T01:03:45.639841172Z",
+      "endTime": "2018-12-14T01:03:58.709298971Z",
+      "summaryMarkdown": "* [cloudtail](https://console.cloud.google.com/logs/viewer?project=goma-logs&resource=gce_instance%2Finstance_id%2Fswarm582-c4&timestamp=2018-12-14T01:03:58.708124)",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/preprocess_for_goma/0/steps/start_goma/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpreprocess_for_goma%2F0%2Fsteps%2Fstart_goma%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:04:00.224933097Z",
+      "name": "preprocess_for_goma|preprocess_for_goma.start cloudtail",
+      "startTime": "2018-12-14T01:03:58.709901181Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/preprocess_for_goma/0/steps/start_cloudtail/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpreprocess_for_goma%2F0%2Fsteps%2Fstart_cloudtail%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:11:29.138847280Z",
+      "name": "compile",
+      "startTime": "2018-12-14T01:04:00.225956894Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/compile/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fcompile%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:11:35.101027734Z",
+      "name": "compile confirm no-op",
+      "startTime": "2018-12-14T01:11:29.139499295Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/compile_confirm_no-op/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fcompile_confirm_no-op%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:12:14.402833277Z",
+      "name": "postprocess_for_goma",
+      "startTime": "2018-12-14T01:11:35.102269436Z"
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:11:35.603433061Z",
+      "name": "postprocess_for_goma|postprocess_for_goma.goma_jsonstatus",
+      "startTime": "2018-12-14T01:11:35.102269436Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/postprocess_for_goma/0/steps/goma_jsonstatus/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fgoma_jsonstatus%2F0%2Fstdout",
+          "name": "stdout"
+        },
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/postprocess_for_goma/0/steps/goma_jsonstatus/0/logs/json.output/0",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fgoma_jsonstatus%2F0%2Flogs%2Fjson.output%2F0",
+          "name": "json.output"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:11:36.105229592Z",
+      "name": "postprocess_for_goma|postprocess_for_goma.goma_stat",
+      "startTime": "2018-12-14T01:11:35.603852976Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/postprocess_for_goma/0/steps/goma_stat/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fgoma_stat%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:11:36.638390650Z",
+      "name": "postprocess_for_goma|postprocess_for_goma.stop_goma",
+      "startTime": "2018-12-14T01:11:36.105773641Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/postprocess_for_goma/0/steps/stop_goma/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fstop_goma%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "name": "postprocess_for_goma|postprocess_for_goma.upload_log",
+      "startTime": "2018-12-14T01:11:36.638890476Z",
+      "endTime": "2018-12-14T01:12:12.869796283Z",
+      "summaryMarkdown": "* [compiler_proxy_log](https://chromium-build-stats.appspot.com/compiler_proxy_log/2018/12/14/swarm582-c4/compiler_proxy.swarm582-c4.chrome-bot.log.INFO.20181213-170346.21326.gz)\n* [ninja_log](https://chromium-build-stats.appspot.com/ninja_log/2018/12/14/swarm582-c4/ninja_log.swarm582-c4.chrome-bot.20181213-171129.15062.gz)",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/postprocess_for_goma/0/steps/upload_log/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fupload_log%2F0%2Fstdout",
+          "name": "stdout"
+        },
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/postprocess_for_goma/0/steps/upload_log/0/logs/json.output/0",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fupload_log%2F0%2Flogs%2Fjson.output%2F0",
+          "name": "json.output"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:12:14.402247573Z",
+      "name": "postprocess_for_goma|postprocess_for_goma.stop cloudtail",
+      "startTime": "2018-12-14T01:12:12.870238683Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/postprocess_for_goma/0/steps/stop_cloudtail/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fstop_cloudtail%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:12:43.357041741Z",
+      "name": "archive_build",
+      "startTime": "2018-12-14T01:12:14.403383068Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/archive_build/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Farchive_build%2F0%2Fstdout",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:12:43.358325497Z",
+      "name": "test_pre_run",
+      "startTime": "2018-12-14T01:12:43.358206727Z"
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:12:46.888353529Z",
+      "name": "sizes",
+      "startTime": "2018-12-14T01:12:43.359391022Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/sizes/0/stdout",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fsizes%2F0%2Fstdout",
+          "name": "stdout"
+        },
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/sizes/0/logs/json.output/0",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Fsizes%2F0%2Flogs%2Fjson.output%2F0",
+          "name": "json.output"
+        }
+      ]
+    },
+    {
+      "status": "SUCCESS",
+      "endTime": "2018-12-14T01:12:46.889300996Z",
+      "name": "recipe result",
+      "startTime": "2018-12-14T01:12:46.888929802Z",
+      "logs": [
+        {
+          "url": "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/recipe_result/0/logs/result/0",
+          "viewUrl": "https://logs.chromium.org/v/?s=chromium%2Fbuildbucket%2Fcr-buildbucket.appspot.com%2F8927206632544641856%2F%2B%2Fsteps%2Frecipe_result%2F0%2Flogs%2Fresult%2F0",
+          "name": "result"
+        }
+      ]
+    }
+  ],
+  "startTime": "2018-12-14T01:02:21.404334Z",
+  "output": {
+    "properties": {
+      "got_nacl_revision": "14b228f23bb875bd4a25d3e88bd5f15d1bc8c87a",
+      "got_swarming_client_revision": "0e3e1c4dc4e79f25a5b58fcbc135dc93183c0c54",
+      "got_revision": "62c93f6041326a2c4781680583e433bbfad93884",
+      "recipe": "chromium",
+      "got_dawn_revision": "ff9562f7927b614f16449f3c757c57c70543eb37",
+      "got_webrtc_revision_cp": "refs/heads/master@{#25992}",
+      "$recipe_engine/path": {
+        "cache_dir": "/b/swarming/w/ir/cache",
+        "temp_dir": "/b/swarming/w/ir/tmp/rt"
+      },
+      "got_revision_cp": "refs/heads/master@{#616534}",
+      "branch": "refs/heads/master",
+      "revision": "62c93f6041326a2c4781680583e433bbfad93884",
+      "repository": "https://chromium.googlesource.com/chromium/src.git",
+      "buildername": "linux-rel",
+      "got_webrtc_revision": "f7f13e0742a999c991ea3d2871dd99a042736c28",
+      "mastername": "chromium",
+      "got_angle_revision": "91002266bd1e1aff9d0c8aeb288480be3da188e0",
+      "buildbucket": {
+        "hostname": "cr-buildbucket.appspot.com",
+        "build": {
+          "created_ts": 1544749339498335,
+          "tags": [
+            "builder:linux-rel",
+            "buildset:commit/git/62c93f6041326a2c4781680583e433bbfad93884",
+            "buildset:commit/gitiles/chromium.googlesource.com/chromium/src/+/62c93f6041326a2c4781680583e433bbfad93884",
+            "gitiles_ref:refs/heads/master",
+            "scheduler_invocation_id:9092636694632938592",
+            "scheduler_job_id:chromium/linux-rel",
+            "user_agent:luci-scheduler"
+          ],
+          "bucket": "luci.chromium.ci",
+          "created_by": "user:luci-scheduler@appspot.gserviceaccount.com",
+          "project": "chromium",
+          "id": "8927206632544641856"
+        }
+      },
+      "got_v8_revision": "d373bc28c00ac547aa61a7b4e025d728724eb476",
+      "got_v8_revision_cp": "refs/heads/7.3.132@{#1}",
+      "$recipe_engine/runtime": {
+        "is_experimental": false,
+        "is_luci": true
+      },
+      "buildnumber": 13052,
+      "path_config": "generic",
+      "bot_id": "swarm582-c4",
+      "got_buildtools_revision": "5cce74c6ae2e0a24751e92b3ed3f92f8e76935ec"
+    }
+  },
+  "input": {
+    "properties": {
+      "$recipe_engine/runtime": {
+        "is_experimental": false,
+        "is_luci": true
+      },
+      "repository": "https://chromium.googlesource.com/chromium/src.git",
+      "buildername": "linux-rel",
+      "mastername": "chromium",
+      "buildnumber": 13052.0,
+      "buildbucket": {
+        "hostname": "cr-buildbucket.appspot.com",
+        "build": {
+          "created_ts": 1544749339498335.0,
+          "tags": [
+            "builder:linux-rel",
+            "buildset:commit/git/62c93f6041326a2c4781680583e433bbfad93884",
+            "buildset:commit/gitiles/chromium.googlesource.com/chromium/src/+/62c93f6041326a2c4781680583e433bbfad93884",
+            "gitiles_ref:refs/heads/master",
+            "scheduler_invocation_id:9092636694632938592",
+            "scheduler_job_id:chromium/linux-rel",
+            "user_agent:luci-scheduler"
+          ],
+          "bucket": "luci.chromium.ci",
+          "created_by": "user:luci-scheduler@appspot.gserviceaccount.com",
+          "project": "chromium",
+          "id": "8927206632544641856"
+        }
+      },
+      "$kitchen": {
+        "devshell": true,
+        "git_auth": true
+      },
+      "branch": "refs/heads/master",
+      "revision": "62c93f6041326a2c4781680583e433bbfad93884"
+    },
+    "gitilesCommit": {
+      "project": "chromium/src",
+      "host": "chromium.googlesource.com",
+      "id": "62c93f6041326a2c4781680583e433bbfad93884"
+    }
+  },
+  "endTime": "2018-12-14T01:12:56.253875Z",
+  "createTime": "2018-12-14T01:02:19.498335Z",
+  "infra": {
+    "buildbucket": {
+      "serviceConfigRevision": "daaff082e95b94bec84fa6e440a8b97677d6f76d"
+    },
+    "recipe": {
+      "name": "chromium",
+      "cipdPackage": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build"
+    },
+    "swarming": {
+      "taskServiceAccount": "chromium-ci-builder@chops-service-accounts.iam.gserviceaccount.com",
+      "hostname": "chromium-swarm.appspot.com",
+      "priority": 30,
+      "botDimensions": [
+        {
+          "value": "linux-archive-rel",
+          "key": "builder"
+        },
+        {
+          "value": "linux-rel",
+          "key": "builder"
+        },
+        {
+          "value": "builder_3864ec50ed02f46932ac4406ad4722a4ac567f1f2f5d155253b8a9746ffa0321_v2",
+          "key": "caches"
+        },
+        {
+          "value": "git",
+          "key": "caches"
+        },
+        {
+          "value": "goma_v2",
+          "key": "caches"
+        },
+        {
+          "value": "vpython",
+          "key": "caches"
+        },
+        {
+          "value": "32",
+          "key": "cores"
+        },
+        {
+          "value": "x86",
+          "key": "cpu"
+        },
+        {
+          "value": "x86-64",
+          "key": "cpu"
+        },
+        {
+          "value": "x86-64-Haswell_GCE",
+          "key": "cpu"
+        },
+        {
+          "value": "x86-64-avx2",
+          "key": "cpu"
+        },
+        {
+          "value": "1",
+          "key": "gce"
+        },
+        {
+          "value": "none",
+          "key": "gpu"
+        },
+        {
+          "value": "swarm582-c4",
+          "key": "id"
+        },
+        {
+          "value": "chrome-trusty-18042300-b7223b463e3",
+          "key": "image"
+        },
+        {
+          "value": "0",
+          "key": "inside_docker"
+        },
+        {
+          "value": "1",
+          "key": "kvm"
+        },
+        {
+          "value": "n1-standard-32",
+          "key": "machine_type"
+        },
+        {
+          "value": "Linux",
+          "key": "os"
+        },
+        {
+          "value": "Ubuntu",
+          "key": "os"
+        },
+        {
+          "value": "Ubuntu-14.04",
+          "key": "os"
+        },
+        {
+          "value": "luci.chromium.ci",
+          "key": "pool"
+        },
+        {
+          "value": "2.7.6",
+          "key": "python"
+        },
+        {
+          "value": "3937-62425bd",
+          "key": "server_version"
+        },
+        {
+          "value": "us",
+          "key": "zone"
+        },
+        {
+          "value": "us-central",
+          "key": "zone"
+        },
+        {
+          "value": "us-central1",
+          "key": "zone"
+        },
+        {
+          "value": "us-central1-b",
+          "key": "zone"
+        }
+      ],
+      "taskId": "41c30ddc76b2e910",
+      "taskDimensions": [
+        {
+          "value": "linux-rel",
+          "key": "builder"
+        },
+        {
+          "value": "builder_3864ec50ed02f46932ac4406ad4722a4ac567f1f2f5d155253b8a9746ffa0321_v2",
+          "key": "caches"
+        },
+        {
+          "value": "32",
+          "key": "cores"
+        },
+        {
+          "value": "x86-64",
+          "key": "cpu"
+        },
+        {
+          "value": "Ubuntu-14.04",
+          "key": "os"
+        },
+        {
+          "value": "luci.chromium.ci",
+          "key": "pool"
+        }
+      ]
+    },
+    "logdog": {
+      "project": "chromium",
+      "prefix": "buildbucket/cr-buildbucket.appspot.com/8927206632544641856",
+      "hostname": "logs.chromium.org"
+    }
+  }
+}

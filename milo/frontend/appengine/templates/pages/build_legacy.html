@@ -17,14 +17,11 @@
 {{end}}
 
 {{define "head"}}
+<script>
+  const useTabs = false;
+</script>
 <script src="/static/common/js/build.js"></script>
 <link rel="stylesheet" href="/static/common/css/tabs.css" type="text/css">
-{{if .TimelineJSON}}
-  <link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
-  <script>
-    const timelineData = JSON.parse({{ .TimelineJSON }});
-  </script>
-{{end}}
 {{end}}
 
 {{define "interval"}}
@@ -125,25 +122,19 @@
 
     <div id="tabs" style="display: none;">
       <ul>
-        <li><a href="#results-tab">Results</a></li>
-        <li><a href="#properties-tab">Properties</a></li>
-        <li><a href="#changes-tab">Changes</a></li>
-        {{ if .TimelineJSON }}
-          <li><a href="#timeline-tab">Timeline</a></li>
-        {{ end }}
+        <li><a href="#overview-tab">Overview</a></li>
       </ul>
-      <div id="results-tab">{{ template "results" . }}</div>
-      <div id="properties-tab">{{ template "properties" . }}</div>
-      <div id="changes-tab">{{ template "changes" . }}</div>
-      {{ if .TimelineJSON }}
-        <div id="timeline-tab">{{ template "timeline" . }}</div>
-      {{ end }}
+      <div id="overview-tab">
+        {{ template "overview" . }}
+        {{ template "properties" . }}
+        {{ template "changes" . }}
+      </div>
     </div>
   </div>
 {{end}}
 
-{{define "results"}}
-  <div id="results">
+{{define "overview"}}
+  <div id="results" class="column">
     <h2>Results:</h2>
     {{ with .Build.Summary }}
       <p class="result status-{{.Status}}">
@@ -273,7 +264,7 @@
 {{end}}
 
 {{define "properties"}}
-  <div id="properties">
+  <div id="properties" class="column">
     <h2>Build Properties:</h2>
 
     <table class="info BuildProperties" width="100%">
@@ -336,7 +327,7 @@
 {{end}}
 
 {{define "changes"}}
-  <div id="changes">
+  <div id="changes" class="column">
     {{ if .Build.Blame }}
     <h2>All Changes:</h2>
     <ol>
@@ -391,11 +382,5 @@
     {{ end }}
     </ol>
     {{ end }}
-  </div>
-{{end}}
-
-{{define "timeline"}}
-  <div id="timeline">
-    <div id="timeline-rendering">Rendering...</div>
   </div>
 {{end}}
