@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a0c0138d_3075d6d9",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "faa85816_dfb8afd5",
+      "range": {
+        "startLine": 153,
+        "startChar": 4,
+        "endLine": 153,
+        "endChar": 35
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cc69c964_cb3c00f3",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 12
@@ -65,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "18ef4da0_a4b246d9",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29378fdf_be9144f4",
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "02645164_8cc542eb",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 12
@@ -85,6 +127,30 @@
       "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b2fe64d_0917a760",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 12
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "That\u0027s what the todo is.  Really this should be a butterbar and rolled into the base template, but I want to do that later.\n\nAdded class\u003d\"status FAILURE\", which (should?) give it a scary red background.",
+      "parentUuid": "02645164_8cc542eb",
+      "range": {
+        "startLine": 107,
+        "startChar": 7,
+        "endLine": 107,
+        "endChar": 8
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "f5abab17_4aa85ac5",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c4a4157_c9c8f05c",
+      "range": {
+        "startLine": 212,
+        "startChar": 3,
+        "endLine": 212,
+        "endChar": 4
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4a76593d_f888b20d",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 12
@@ -131,6 +221,30 @@
       "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5995f76e_9a9b5df6",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "semantically, if the ts is not nil but still invalid for whatever reason, we still want a zero\u0027ed out time.Time.  Nil checks just happen to be the most common case, but if ts is out of range, then we want time.Time to still be zero.  At least, this makes the most sense to me.",
+      "parentUuid": "4a76593d_f888b20d",
+      "range": {
+        "startLine": 264,
+        "startChar": 1,
+        "endLine": 264,
+        "endChar": 62
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "542b6221_588740c5",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "oops.",
+      "parentUuid": "f8ad8857_3134dd3a",
+      "range": {
+        "startLine": 61,
+        "startChar": 35,
+        "endLine": 61,
+        "endChar": 43
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17a05570_de9e5356",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 12
@@ -180,6 +318,30 @@
     },
     {
       "key": {
+        "uuid": "17d69e96_e02d5759",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s unrealistic.  build.proto is user data, and Milo should behave well even with invalid user data.  It could panic, but at least panic with a better message than \"segfault\" or something.",
+      "parentUuid": "17a05570_de9e5356",
+      "range": {
+        "startLine": 98,
+        "startChar": 28,
+        "endLine": 98,
+        "endChar": 61
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb0d8e18_f8428d85",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 12
@@ -194,6 +356,24 @@
       "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bb3c8b6_ad58a8a5",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s that unrealistic.  The user can ask Milo to load any arbitrary build.proto by uploading one to logdog and pointing to it.  The difference between having this check and not having this check is the user thinking \"Milo is broken\" vs \"My build proto is broken\".\n\nIf b.Project is \"\", then it either won\u0027t crash Milo (since it\u0027s not a pointer), or will fail earlier in the chain.",
+      "parentUuid": "eb0d8e18_f8428d85",
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -220,6 +400,30 @@
     },
     {
       "key": {
+        "uuid": "4d6387f2_3c285b03",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75d60af2_69831248",
+      "range": {
+        "startLine": 126,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 4
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1119a811_bcc5a3d9",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 12
@@ -240,6 +444,30 @@
       "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0e478eb_36f72944",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T20:19:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1119a811_bcc5a3d9",
+      "range": {
+        "startLine": 42,
+        "startChar": 37,
+        "endLine": 42,
+        "endChar": 62
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
