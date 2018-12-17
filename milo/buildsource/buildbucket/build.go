@@ -16,108 +16,46 @@ package buildbucket
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/url"
+	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/golang/protobuf/ptypes"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
-	miloProto "go.chromium.org/luci/common/proto/milo"
-	logDogTypes "go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/milo/buildsource/rawpresentation"
-	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
-	"go.chromium.org/luci/milo/git"
 )
 
 var ErrNotFound = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
 
-// GetSwarmingTaskID returns the swarming task ID of a buildbucket build.
-// TODO(hinoka): BuildInfo and Skia requires this.
-// Remove this when buildbucket v2 is out and Skia is on Kitchen.
-// TODO(nodir): delete this. It is used only in deprecated BuildInfo API.
-func GetSwarmingTaskID(c context.Context, buildAddress string) (host, taskId string, err error) {
-	host, err = getHost(c)
-	if err != nil {
-		return
+// BuildAddress constructs the build address of a buildbucketpb.Build.
+// This is used as the key for the BuildSummary entity.
+func BuildAddress(build *buildbucketpb.Build) string {
+	if build == nil {
+		return ""
 	}
-
-	bs := &model.BuildSummary{BuildKey: MakeBuildKey(c, host, buildAddress)}
-	switch err = datastore.Get(c, bs); err {
-	case nil:
-		for _, ctx := range bs.ContextURI {
-			u, err := url.Parse(ctx)
-			if err != nil {
-				continue
-			}
-			if u.Scheme == "swarming" && len(u.Path) > 1 {
-				toks := strings.Split(u.Path[1:], "/")
-				if toks[0] == "task" {
-					return u.Host, toks[1], nil
-				}
-			}
-		}
-		// continue to the fallback code below.
-
-	case datastore.ErrNoSuchEntity:
-		// continue to the fallback code below.
-
-	default:
-		return
+	num := strconv.FormatInt(build.Id, 10)
+	if build.Number != 0 {
+		num = strconv.FormatInt(int64(build.Number), 10)
 	}
-
-	// DEPRECATED(2017-12-01) {{
-	// This makes an RPC to buildbucket to obtain the swarming task ID.
-	// Now that we include this data in the BuildSummary.ContextUI we should never
-	// need to do this extra RPC. However, we have this codepath in place for old
-	// builds.
-	//
-	// After the deprecation date, this code can be removed; the only effect will
-	// be that buildbucket builds before 2017-11-03 will not render.
-	client, err := newBuildbucketClient(c, host)
-	if err != nil {
-		return
-	}
-	build, err := buildbucket.GetByAddress(c, client, buildAddress)
-	switch {
-	case err != nil:
-		err = errors.Annotate(err, "could not get build at %q", buildAddress).Err()
-		return
-	case build == nil:
-		err = errors.Reason("build at %q not found", buildAddress).Tag(common.CodeNotFound).Err()
-		return
-	}
-
-	host = build.Tags.Get("swarming_hostname")
-	taskId = build.Tags.Get("swarming_task_id")
-	if host == "" || taskId == "" {
-		err = errors.New("not a valid LUCI build")
-	}
-	return
-	// }}
-
+	b := build.Builder
+	return fmt.Sprintf("luci.%s.%s/%s/%s", b.Project, b.Bucket, b.Builder, num)
 }
 
-// simplisticBlamelist returns the ui.MiloBuildLegacy.Blame field from the
-// commit/gitiles buildset (if any).
+// simplisticBlamelist returns a slice of ui.Blame for a build.
 //
 // HACK(iannucci) - Getting the frontend to render a proper blamelist will
 // require some significant refactoring. To do this properly, we'll need:
@@ -191,154 +129,6 @@ func uiCommit(commit *gitpb.Commit, repoURL string) *ui.Commit {
 	return res
 }
 
-// extractDetails extracts the following from a build message's ResultDetailsJson:
-// * Build Info Text
-// * Swarming Bot ID
-// TODO(hinoka, nodir): Delete after buildbucket v2.
-func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string, err error) {
-	var resultDetails struct {
-		// TODO(nodir,iannucci): define a proto for build UI data
-		UI struct {
-			Info string `json:"info"`
-		} `json:"ui"`
-		Swarming struct {
-			TaskResult struct {
-				BotID string `json:"bot_id"`
-			} `json:"task_result"`
-			BotDimensions struct {
-				ID []string `json:"id"`
-			} `json:"bot_dimensions"`
-		} `json:"swarming"`
-	}
-	if msg.ResultDetailsJson != "" {
-		err = json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails)
-		info = resultDetails.UI.Info
-		botID = resultDetails.Swarming.TaskResult.BotID
-		if botID == "" && len(resultDetails.Swarming.BotDimensions.ID) > 0 {
-			botID = resultDetails.Swarming.BotDimensions.ID[0]
-		}
-	}
-	return
-}
-
-// toMiloBuildInMemory converts a buildbucket build to a milo build in memory.
-// Does not make RPCs.
-// In case of an error, returns a build with a description of the error
-// and logs the error.
-func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBuildLegacy, error) {
-	// Parse the build message into a buildbucket.Build struct, filling in the
-	// input and output properties that we expect to receive.
-	var b buildbucket.Build
-	var props struct {
-		Revision string `json:"revision"`
-	}
-	var resultDetails struct {
-		GotRevision string `json:"got_revision"`
-	}
-	b.Input.Properties = &props
-	b.Output.Properties = &resultDetails
-	if err := b.ParseMessage(msg); err != nil {
-		return nil, err
-	}
-	// TODO(hinoka,nodir): Replace the following lines after buildbucket v2.
-	info, botID, err := extractDetails(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	// Now that all the data is parsed, put them all in the correct places.
-	pendingEnd := b.StartTime
-	if pendingEnd.IsZero() {
-		// Maybe the build expired and never started.  Use the expiration time, if any.
-		pendingEnd = b.CompletionTime
-	}
-	result := &ui.MiloBuildLegacy{
-		Summary: ui.BuildComponent{
-			PendingTime:   ui.NewInterval(c, b.CreationTime, pendingEnd),
-			ExecutionTime: ui.NewInterval(c, b.StartTime, b.CompletionTime),
-			Status:        parseStatus(b.Status),
-		},
-		Trigger: &ui.Trigger{},
-	}
-	// Add in revision information, if available.
-	if resultDetails.GotRevision != "" {
-		result.Trigger.Commit.Revision = ui.NewEmptyLink(resultDetails.GotRevision)
-	}
-	if props.Revision != "" {
-		result.Trigger.Commit.RequestRevision = ui.NewEmptyLink(props.Revision)
-	}
-
-	if b.Experimental {
-		result.Summary.Text = []string{"Experimental"}
-	}
-	if info != "" {
-		result.Summary.Text = append(result.Summary.Text, strings.Split(info, "\n")...)
-	}
-	if botID != "" {
-		result.Summary.Bot = ui.NewLink(
-			botID,
-			fmt.Sprintf(
-				"https://%s/bot?id=%s", b.Tags.Get("swarming_hostname"), botID),
-			fmt.Sprintf("Swarming Bot %s", botID))
-	}
-
-	for _, bs := range b.BuildSets {
-		// ignore rietveld.
-		cl, ok := bs.(*buildbucketpb.GerritChange)
-		if !ok {
-			continue
-		}
-
-		// support only one CL per build.
-		link := ui.NewPatchLink(cl)
-		result.Blame = []*ui.Commit{{
-			Changelist:      link,
-			RequestRevision: ui.NewLink(props.Revision, "", fmt.Sprintf("request revision %s", props.Revision)),
-		}}
-		result.Trigger.Changelist = link
-
-		result.Blame[0].AuthorEmail, err = git.Get(c).CLEmail(c, cl.Host, cl.Change)
-		switch {
-		case err == context.DeadlineExceeded:
-			result.Blame[0].AuthorEmail = "<Gerrit took too long respond>"
-			fallthrough
-		case err != nil:
-			logging.WithError(err).Errorf(c, "failed to load CL author for build %d", b.ID)
-		}
-		break
-	}
-
-	// Sprinkle in some extra information from Swarming
-	swarmingTags := strpair.ParseMap(b.Tags["swarming_tag"])
-	swarming.AddBanner(result, swarmingTags)
-	swarming.AddRecipeLink(result, swarmingTags)
-	swarming.AddProjectInfo(result, swarmingTags)
-	task := b.Tags.Get("swarming_task_id")
-	result.Summary.Source = ui.NewLink(
-		"Task "+task,
-		swarming.TaskPageURL(b.Tags.Get("swarming_hostname"), task).String(),
-		"Swarming task page for task "+task)
-
-	result.Summary.ParentLabel = ui.NewLink(
-		b.Builder,
-		fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, b.Bucket, b.Builder),
-		fmt.Sprintf("builder %s", b.Builder))
-	if b.Number != nil {
-		numStr := strconv.Itoa(*b.Number)
-		result.Summary.Label = ui.NewLink(
-			numStr,
-			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
-			fmt.Sprintf("build #%s", numStr))
-	} else {
-		idStr := strconv.FormatInt(b.ID, 10)
-		result.Summary.Label = ui.NewLink(
-			idStr,
-			fmt.Sprintf("/b/%s", idStr),
-			fmt.Sprintf("build #%s", idStr))
-	}
-	return result, nil
-}
-
 // GetBuildSummary fetches a build summary where the Context URI matches the
 // given address.
 func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
@@ -356,118 +146,80 @@ func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 	}
 }
 
-// GetRawBuild fetches a buildbucket build given its address.
-func GetRawBuild(c context.Context, address string) (*bbv1.ApiCommonBuildMessage, error) {
+// getBlame fetches blame information from Gitiles.
+// This requires the BuildSummary to be indexed in Milo.
+func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Commit, error) {
+	commit := b.GetInput().GetGitilesCommit()
+	// No commit? No blamelist.
+	if commit == nil {
+		return nil, nil
+	}
+	// TODO(hinoka): This converts a buildbucketpb.Commit into a string
+	// and back into a buildbucketpb.Commit.  That's a bit silly.
+	return simplisticBlamelist(c, &model.BuildSummary{
+		BuildKey:  MakeBuildKey(c, host, BuildAddress(b)),
+		BuildSet:  []string{commit.BuildSetString()},
+		BuilderID: BuilderID{BuilderID: *b.Builder}.String(),
+	})
+}
+
+func buildbucketClient(c context.Context, host string) (buildbucketpb.BuildsClient, error) {
+	t, err := auth.GetRPCTransport(c, auth.AsUser)
+	if err != nil {
+		return nil, err
+	}
+	return buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
+		C:    &http.Client{Transport: t},
+		Host: host,
+	}), nil
+}
+
+// GetBuild returns the buildbucketpb.Build from a build request.
+func GetBuild(c context.Context, host string, bid buildbucketpb.GetBuildRequest) (*buildbucketpb.Build, error) {
+	client, err := buildbucketClient(c, host)
+	if err != nil {
+		return nil, err
+	}
+	return client.GetBuild(c, &bid)
+}
+
+var fullBuildMask = &field_mask.FieldMask{
+	// TODO(hinoka): Add statusReason here.
+	Paths: []string{
+		"id",
+		"builder",
+		"number",
+		"created_by",
+		"create_time",
+		"start_time",
+		"end_time",
+		"update_time",
+		"status",
+		"input",
+		"output",
+		"steps",
+		"infra",
+	},
+}
+
+// GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
+// Including the blamelist and other auxiliary information.
+func GetBuildPage(c context.Context, br buildbucketpb.GetBuildRequest) (*ui.BuildPage, error) {
+	br.Fields = fullBuildMask
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
 	}
-
-	client, err := newBuildbucketClient(c, host)
+	b, err := GetBuild(c, host, br)
 	if err != nil {
 		return nil, err
 	}
-	// This runs a search RPC against BuildBucket, but it is optimized for speed.
-	build, err := bbv1.GetByAddress(c, client, address)
-	switch {
-	case err != nil:
-		return nil, errors.Annotate(err, "could not get build at %q", address).Err()
-	case build == nil && auth.CurrentUser(c).Identity == identity.AnonymousIdentity:
-		return nil, errors.Reason("not logged in").Tag(common.CodeUnauthorized).Err()
-	case build == nil:
-		return nil, errors.Reason("build at %q not found", address).Tag(common.CodeNotFound).Err()
-	default:
-		return build, nil
-	}
-}
-
-// getStep fetches returns the Step annoations from LogDog.
-func getStep(c context.Context, bbBuildMessage *bbv1.ApiCommonBuildMessage) (*logDogTypes.StreamAddr, *miloProto.Step, error) {
-	swarmingTags := strpair.ParseMap(bbBuildMessage.Tags)["swarming_tag"]
-	logLocation := strpair.ParseMap(swarmingTags).Get("log_location")
-	if logLocation == "" {
-		return nil, nil, errors.New("Build is missing log_location")
-	}
-	addr, err := logDogTypes.ParseURL(logLocation)
-	if err != nil {
-		return nil, nil, errors.Annotate(err, "%s is invalid", addr).Err()
-	}
-
-	step, err := rawpresentation.ReadAnnotations(c, addr)
-	return addr, step, err
-}
-
-// getBlame fetches blame information from Gitiles.  This requires the
-// BuildSummary to be indexed in Milo.
-func getBlame(c context.Context, msg *bbv1.ApiCommonBuildMessage) ([]*ui.Commit, error) {
-	host, err := getHost(c)
+	blame, err := getBlame(c, host, b)
 	if err != nil {
 		return nil, err
 	}
-	tags := strpair.ParseMap(msg.Tags)
-	bSet, _ := tags["buildset"]
-	bid := NewBuilderID(msg.Bucket, tags.Get("builder"))
-	bs := &model.BuildSummary{
-		BuildKey:  MakeBuildKey(c, host, tags.Get("build_address")),
-		BuildSet:  bSet,
-		BuilderID: bid.String(),
-	}
-	return simplisticBlamelist(c, bs)
-}
-
-// GetBuild is a shortcut for GetRawBuild and ToMiloBuild.
-func GetBuild(c context.Context, address string, fetchFull bool) (*ui.MiloBuildLegacy, error) {
-	bbBuildMessage, err := GetRawBuild(c, address)
-	if err != nil {
-		return nil, err
-	}
-	return ToMiloBuild(c, bbBuildMessage, fetchFull)
-}
-
-// ToMiloBuild converts a raw buildbucket build to a milo build.
-//
-// Returns an error only on failure to reach buildbucket.
-// Other errors are surfaced in the returned build.
-//
-// TODO(hinoka): Some of this can be done concurrently. Investigate if this call
-// takes >500ms on average.
-// TODO(crbug.com/850113): stop loading steps from logdog.
-func ToMiloBuild(c context.Context, b *bbv1.ApiCommonBuildMessage, fetchFull bool) (*ui.MiloBuildLegacy, error) {
-	mb, err := toMiloBuildInMemory(c, b)
-	if err != nil {
-		return nil, err
-	}
-
-	if !fetchFull {
-		return mb, nil
-	}
-
-	// Add step information from LogDog.  If this fails, we still have perfectly
-	// valid information from Buildbucket, so just annotate the build with the
-	// error and continue.
-	if b.StartedTs != 0 {
-		if addr, step, err := getStep(c, b); err == nil {
-			ub := rawpresentation.NewURLBuilder(addr)
-			mb.Components, mb.PropertyGroup = rawpresentation.SubStepsToUI(c, ub, step.Substep)
-		} else if b.Status == bbv1.StatusCompleted {
-			// TODO(hinoka): This might be better placed in a error butterbar.
-			mb.Components = append(mb.Components, &ui.BuildComponent{
-				Label:  ui.NewEmptyLink("Failed to fetch step information from LogDog"),
-				Text:   strings.Split(err.Error(), "\n"),
-				Status: model.InfraFailure,
-			})
-		}
-	}
-
-	// Add blame information.  If this fails, just add in a placeholder with an error.
-	if blame, err := getBlame(c, b); err == nil {
-		mb.Blame = blame
-	} else {
-		logging.WithError(err).Warningf(c, "failed to fetch blame information")
-		mb.Blame = []*ui.Commit{{
-			Description: fmt.Sprintf("Failed to fetch blame information\n%s", err.Error()),
-		}}
-	}
-
-	return mb, nil
+	return &ui.BuildPage{
+		Build: *b,
+		Blame: blame,
+	}, nil
 }
