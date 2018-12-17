@@ -22,6 +22,30 @@
       "revId": "15e7bc2a02c86270465a6ee356ace2687db2e4ca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0ba8f68_951fc0d5",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 14
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T22:40:34Z",
+      "side": 1,
+      "message": "Done. (via global const)",
+      "parentUuid": "04988505_02f14d3c",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 112,
+        "endChar": 22
+      },
+      "revId": "15e7bc2a02c86270465a6ee356ace2687db2e4ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

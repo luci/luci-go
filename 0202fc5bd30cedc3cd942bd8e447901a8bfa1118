@@ -390,6 +390,30 @@
     },
     {
       "key": {
+        "uuid": "da009150_c666458d",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-17T22:40:34Z",
+      "side": 1,
+      "message": "Yeah a panic still isn\u0027t very well behaved.  I\u0027ll add a TODO to make this more well behaved.",
+      "parentUuid": "4bb042d0_e8166552",
+      "range": {
+        "startLine": 98,
+        "startChar": 28,
+        "endLine": 98,
+        "endChar": 61
+      },
+      "revId": "0202fc5bd30cedc3cd942bd8e447901a8bfa1118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb0d8e18_f8428d85",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 12
