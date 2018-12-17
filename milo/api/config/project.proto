@@ -26,6 +26,34 @@ message Project {
   // This field is optional. The logo URL must have a host of
   // storage.googleapis.com.
   string logo_url = 4;
+
+  // BugTemplate is the template for making a custom feedback link for
+  // the build page. This field is optional. Supported interpolations
+  // for the "summary" and "description" fields in this context are:
+  //
+  // {{.Build.Builder.Project}}
+  // {{.Build.Builder.Bucket}}
+  // {{.Build.Builder.Builder}}
+  //
+  // If any specified placeholder cannot be satisfied then a default URL
+  // is rendered for the feedback link.
+  BugTemplate build_bug_template = 5;
+}
+
+// BugTemplate defines how to make custom feedback links to file Monorail
+// bugs. The intention is for this to be used to insert a bug into a triage
+// queue. The "summary" and "description" fields are templates for generating
+// summary and description text, respectively. The template fields are
+// interpolated with values specific to the context.
+// See https://golang.org/pkg/text/template for the full template specification.
+message BugTemplate {
+  string summary = 1;
+  string description = 2;
+  string monorail_project = 3;
+  // Components identifies the monorail component(s) that the bug should
+  // exist under in the hierarchical ">" separated format. For example:
+  // "Infra>Client>ChromeOS>CI"
+  repeated string components = 4;
 }
 
 // Link is a link to an internet resource, which will be rendered out as

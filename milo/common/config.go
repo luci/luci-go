@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
-
 	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
@@ -34,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
+	cfgclientAccess "go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/caching"
@@ -48,8 +48,9 @@ import (
 // Project is a datastore entity representing a single project.  Its children
 // are consoles.
 type Project struct {
-	ID      string `gae:"$id"`
-	LogoURL string
+	ID               string `gae:"$id"`
+	LogoURL          string
+	BuildBugTemplate config.BugTemplate
 }
 
 // Console is a datastore entity representing a single console.
@@ -367,6 +368,9 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 	knownConsoles := stringset.New(len(proj.Consoles))
 	// Save the project into the datastore.
 	project := Project{ID: projectID, LogoURL: proj.LogoUrl}
+	if proj.BuildBugTemplate != nil {
+		project.BuildBugTemplate = *proj.BuildBugTemplate
+	}
 	if err := datastore.Put(c, &project); err != nil {
 		return nil, err
 	}
@@ -517,6 +521,20 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 	})
 	con, _ := itm.([]*Console)
 	return con, err
+}
+
+func GetProject(c context.Context, project string) (*Project, error) {
+	allowed, err := IsAllowed(c, project)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, cfgclientAccess.ErrNoAccess
+	}
+	proj := Project{
+		ID: project,
+	}
+	return &proj, datastore.Get(c, &proj)
 }
 
 // GetAllProjects returns all projects the current user has access to.
