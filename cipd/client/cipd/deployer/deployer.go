@@ -279,19 +279,19 @@ type deployerImpl struct {
 	fs fs.FileSystem
 }
 
-func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst pkg.Instance) (common.Pin, error) {
-	if err := common.ValidateSubdir(subdir); err != nil {
+func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst pkg.Instance) (pin common.Pin, err error) {
+	if err = common.ValidateSubdir(subdir); err != nil {
 		return common.Pin{}, err
 	}
 
-	pin := inst.Pin()
+	pin = inst.Pin()
 	logging.Infof(ctx, "Deploying %s into %s(/%s)", pin, d.fs.Root(), subdir)
 
 	// Be paranoid (but not too much).
-	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
+	if err = common.ValidatePin(pin, common.AnyHash); err != nil {
 		return common.Pin{}, err
 	}
-	if _, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), subdir)); err != nil {
+	if _, err = d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), subdir)); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -358,6 +358,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	// delete them later. This is important when updating files to directories:
 	// removeFromSiteRoot should not try to delete a directory that used to be
 	// a file.
+	logging.Infof(ctx, "Moving files to their final destination...")
 	keep, err := d.addToSiteRoot(ctx, subdir, newManifest.Files, installMode, pkgPath, destPath)
 	if err != nil {
 		return common.Pin{}, err
@@ -372,8 +373,16 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	deleteFailedInstall = false
 
 	// Wait for async cleanup to finish.
+	logging.Infof(ctx, "Cleaning up...")
 	wg := sync.WaitGroup{}
-	defer wg.Wait()
+	defer func() {
+		wg.Wait()
+		if err == nil {
+			logging.Infof(ctx, "Deployed %s", pin)
+		} else {
+			logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
+		}
+	}()
 
 	// When using 'copy' install mode all files (except .cipdpkg/*) are moved away
 	// from 'destPath', leaving only an empty husk with directory structure.
@@ -408,15 +417,11 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, NotParanoid, pkg.WithoutManifest)
 	switch {
 	case err != nil:
-		logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
 		return common.Pin{}, err
 	case !state.Deployed: // should not happen really...
-		logging.Errorf(ctx, "Failed to deploy %s: the package is reported as not installed", pin)
-		return common.Pin{}, fmt.Errorf("unknown error when deploying, see logs")
+		return common.Pin{}, fmt.Errorf("the package is reported as not installed, see logs")
 	case state.Pin.InstanceID != pin.InstanceID:
-		err = fmt.Errorf("other instance (%s) was deployed concurrently", state.Pin.InstanceID)
-		logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
-		return state.Pin, err
+		return state.Pin, fmt.Errorf("other instance (%s) was deployed concurrently", state.Pin.InstanceID)
 	default:
 		return pin, nil
 	}
