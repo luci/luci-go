@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "74aab49f_717b1457",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1316,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:27:17Z",
+      "side": 1,
+      "message": ":D does it really matter though?\nin fact, for really deep leafs, len(Nodes) can be \u003e len(leafs)",
+      "range": {
+        "startLine": 1316,
+        "startChar": 51,
+        "endLine": 1316,
+        "endChar": 73
+      },
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "240a9c16_e5fda979",
+        "filename": "cipd/client/cipd/deployer/deployer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1306,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:27:17Z",
+      "side": 1,
+      "message": "nitty: P and p look alike, so maybe choose D and d instead?",
+      "range": {
+        "startLine": 1306,
+        "startChar": 24,
+        "endLine": 1306,
+        "endChar": 25
+      },
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0880804_7603595b",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:27:17Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 43,
+        "startChar": 38,
+        "endLine": 43,
+        "endChar": 50
+      },
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e63f9b2d_e228a656",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:27:17Z",
+      "side": 1,
+      "message": "why do you ignore failure to remove this file?\ni think you shouldn\u0027t.",
+      "range": {
+        "startLine": 200,
+        "startChar": 3,
+        "endLine": 200,
+        "endChar": 30
+      },
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
