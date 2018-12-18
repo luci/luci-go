@@ -88,6 +88,24 @@
     },
     {
       "key": {
+        "uuid": "c81e4701_613a2c3a",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-18T00:31:53Z",
+      "side": 1,
+      "message": "Er, I mean; how many `fsImpl` are constructed per process. Obviously sync.Once means calling it many times isn\u0027t a problem.",
+      "parentUuid": "f2651ea2_8c4aa8f0",
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e63f9b2d_e228a656",
         "filename": "cipd/client/cipd/fs/fs.go",
         "patchSetId": 2
