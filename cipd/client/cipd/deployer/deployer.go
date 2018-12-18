@@ -1045,31 +1045,63 @@ func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (pk
 // addToSiteRoot moves or symlinks files into the site root directory (depending
 // on passed installMode).
 //
-// On success returns a set of all file system paths (files and dirs) covered
-// by added entries. It is later used in removeFromSiteRoot to avoid deleting
-// files or directories that were just added. This is important when a file is
-// replaced with a directory during an in-place upgrade. Such file is no longer
-// directly listed in the package manifest, nonetheless it exists as a directory
-// and must not be removed.
-func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo, installMode pkg.InstallMode, pkgDir, srcDir string) (pathSet, error) {
-	touched := pathSet{}
+// On success returns a set of all file system paths that should be exempt from
+// deletion in removeFromSiteRoot.
+//
+// This is important when a file is replaced with a directory during an in-place
+// upgrade. Such file is no longer directly listed in the package manifest,
+// nonetheless it exists as a directory and must not be removed.
+//
+// Similarly when a directory is replaced with a symlink, we should not attempt
+// to delete paths from within this directory (these paths now point to
+// completely different files).
+func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo, installMode pkg.InstallMode, pkgDir, srcDir string) (*pathTree, error) {
+	// Build a set of all added paths (including intermediary directories). It
+	// will be used to ensure all intermediary file system nodes are directories,
+	// not symlinks (more about this below).
+	touched := newPathTree(len(files))
+	for _, f := range files {
+		// Mark the file and all its parents and children as alive. For file "a/b/c"
+		// this adds ["a", "a/b", "a/b/c", "a/b/c/*"] to the set.
+		//
+		// Marking all children as alive is important for the case when a regular
+		// directory "a/b/c" (e.g. with a file "a/b/c/d" inside) is converted to
+		// a symlink "a/b/c". In this case "a/b/c/d" is technically no longer part
+		// of the package, and removeFromSiteRoot will attempt to remove it, and may
+		// even succeed (by following "a/b/c" symlink and removing some completely
+		// different "d").
+		touched.add(filepath.Join(subdir, filepath.FromSlash(f.Name)))
+	}
 
+	// Names of files in CIPD package manifests NEVER have symlinks as part of
+	// paths. If some intermediary node in pathTree is currently a symlink on
+	// the disk, it means we are upgrading this symlink to be a directory. Remove
+	// such symlinks right away. If we don't do this, fs.Replace below will follow
+	// these symlinks and create files in wrong places.
+	touched.visitIntermediatesBF(func(rootRel string) bool {
+		abs, err := d.fs.RootRelToAbs(rootRel)
+		if err != nil {
+			logging.Warningf(ctx, "Invalid relative path %q: %s", rootRel, err)
+			return true
+		}
+		if fi, err := os.Lstat(abs); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+			if err := os.Remove(abs); err != nil {
+				logging.Warningf(ctx, "Failed to delete symlink %q: %s", rootRel, err)
+			}
+		}
+		return true
+	})
+
+	// Finally create all leaf files.
 	for _, f := range files {
 		// Native path relative to the subdir, e.g. bin/tool
 		relPath := filepath.FromSlash(f.Name)
-		// Native path relative to the deployment root, e.g. <subdir>/bin/tool
-		rootRel := filepath.Join(subdir, relPath)
 		// Native absolute path, e.g. <base>/<subdir>/bin/tool
-		destAbs, err := d.fs.RootRelToAbs(rootRel)
+		destAbs, err := d.fs.RootRelToAbs(filepath.Join(subdir, relPath))
 		if err != nil {
 			logging.Warningf(ctx, "Invalid relative path %q: %s", relPath, err)
 			return nil, err
 		}
-
-		// Mark the file and all its parents as alive. For file "a/b/c" this adds
-		// ["a", "a/b", "a/b/c"] to the set.
-		touched.add(rootRel)
-
 		switch installMode {
 		case pkg.InstallModeSymlink:
 			// e.g. <base>/.cipd/pkgs/name/_current/bin/tool
@@ -1106,7 +1138,7 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files [
 // are present in the 'keep' set.
 //
 // Best effort. Logs errors and carries on.
-func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo, keep pathSet) {
+func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo, keep *pathTree) {
 	dirsToCleanup := stringset.New(0)
 
 	for _, f := range files {
@@ -1249,26 +1281,98 @@ func (d *deployerImpl) checkIntegrity(ctx context.Context, p *DeployedPackage) (
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
-// pathSet is a set of native path relative to the deployer root.
+// pathTree is a tree of native file system paths relative to the deployer root.
+//
+// It is not a full representation of the file system, just a subset of paths
+// involved during deployment.
+//
+// Think of it as a tree where each node (intermediate and leafs) is a path and
+// leaf nodes additionally represent infinite subtrees rooted at these leafs.
+//
+// For example: ["a", "a/b", "a/b/c", "a/b/c/*"]. Here ["a", "a/b"] are
+// intermediate nodes, "a/b/c" is a leaf and anything under "a/b/c" is also
+// considered to be part of the tree (e.g. has("a/b/c/d") returns true).
 //
 // All methods assume paths have been properly cleaned already and do not have
 // "." or "..".
-type pathSet map[string]struct{}
-
-// add adds a native path 'rel' and all its parents to the path set.
-func (p pathSet) add(rel string) {
-	for i, r := range rel {
-		if r == filepath.Separator && i > 0 {
-			p[rel[:i]] = struct{}{}
-		}
-	}
-	p[rel] = struct{}{}
+type pathTree struct {
+	nodes stringset.Set // intermediate tree nodes
+	leafs stringset.Set // leafs (also roots of their infinite subtrees)
 }
 
-// has returns true if a native path 'rel' is in the set.
-func (p pathSet) has(rel string) bool {
-	_, ok := p[rel]
-	return ok
+// newPathTree initializes the path tree, allocating the given capacity.
+func newPathTree(capacity int) *pathTree {
+	return &pathTree{
+		nodes: stringset.New(capacity / 5), // educated guess
+		leafs: stringset.New(capacity),     // exact
+	}
+}
+
+// add adds a native path 'rel', all its parents and all its children to the
+// path tree.
+func (p *pathTree) add(rel string) {
+	p.leafs.Add(rel)
+	parentDirs(rel, func(par string) bool {
+		p.nodes.Add(par)
+		return true
+	})
+}
+
+// has returns true if a native path 'rel' is in the tree.
+//
+// nil pathTree is considered empty.
+func (p *pathTree) has(rel string) bool {
+	if p == nil {
+		return false
+	}
+
+	// It matches some added entry exactly?
+	if p.leafs.Has(rel) {
+		return true
+	}
+	// Was added as a parent of some entry?
+	if p.nodes.Has(rel) {
+		return true
+	}
+
+	// Maybe it has some added entry as its parent?
+	found := false
+	parentDirs(rel, func(par string) bool {
+		found = p.leafs.Has(par)
+		return !found
+	})
+	return found
+}
+
+// visitIntermediatesBF calls cb() for all non-leaf nodes in the tree in
+// breadth-first order (i.e. smallest paths come first).
+//
+// nil pathTree is considered empty.
+func (p *pathTree) visitIntermediatesBF(cb func(string) bool) {
+	if p == nil {
+		return
+	}
+	nodes := p.nodes.ToSlice()
+	sort.Strings(nodes)
+	for _, path := range nodes {
+		if !cb(path) {
+			return
+		}
+	}
+}
+
+// parentDirs takes a native path "a/b/c/d" and calls 'cb' with "a", "a/b"
+// and "a/b/c".
+//
+// Purely lexicographical operation.
+//
+// Stops if the callback returns false. Note that it doesn't visit 'rel' itself.
+func parentDirs(rel string, cb func(p string) bool) {
+	for i, r := range rel {
+		if r == filepath.Separator && !cb(rel[:i]) {
+			return
+		}
+	}
 }
 
 // scanPackageDir finds a set of regular files (and symlinks) in a package
