@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "df62a42d_80b0549f",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-18T03:09:11Z",
+      "side": 1,
+      "message": "FWIU this means that the following code will fail\n  \n  multiErr :\u003d MultiError{fmt.Errof(\"err\")}\n  So(multiErr, ShouldContainErr)\n\nbut if one reads the english of the code (\"multiError should contain err\"), a failure might be very surprising. As a reader, I\u0027d expect the semantics to be \"should contain an error, no matter which one\". WDYT?",
+      "range": {
+        "startLine": 35,
+        "startChar": 2,
+        "endLine": 35,
+        "endChar": 47
+      },
+      "revId": "ee0e32d7d6600aa0cdb781790e1f72ee2dee6f9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

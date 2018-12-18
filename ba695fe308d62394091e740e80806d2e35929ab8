@@ -257,6 +257,30 @@
     },
     {
       "key": {
+        "uuid": "583518cd_ce438552",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-18T03:09:11Z",
+      "side": 1,
+      "message": "ah, i didn\u0027t see it. I am fine with either in this CL, but if you can fix ShouldErrLike\u0027s inconsistency with other functions in this file, that would be nice. PS2 lgtm",
+      "parentUuid": "cad3c817_b3e7a06f",
+      "range": {
+        "startLine": 61,
+        "startChar": 22,
+        "endLine": 61,
+        "endChar": 29
+      },
+      "revId": "ba695fe308d62394091e740e80806d2e35929ab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b851864f_b789cd16",
         "filename": "common/testing/assertions/error_tests.go",
         "patchSetId": 1
