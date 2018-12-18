@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e45c6791_cfd46c7a",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-18T02:10:15Z",
+      "side": 1,
+      "message": "sorry for the delay, let\u0027s fix it on the server, so that new code (this) does not have the cruft",
+      "parentUuid": "7773a452_31737c18",
+      "range": {
+        "startLine": 112,
+        "startChar": 3,
+        "endLine": 114,
+        "endChar": 70
+      },
+      "revId": "224e718a673558c16618c7caee3d91590302e852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d7f817a5_3af2c483",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 1
