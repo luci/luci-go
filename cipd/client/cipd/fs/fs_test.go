@@ -26,6 +26,20 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func TestCaseSensitive(t *testing.T) {
+	Convey("CaseSensitive doesn't crash", t, func() {
+		fs := tempFileSystem()
+
+		_, err := fs.CaseSensitive()
+		So(err, ShouldBeNil)
+
+		// No garbage left around.
+		fis, err := ioutil.ReadDir(fs.join(""))
+		So(err, ShouldBeNil)
+		So(fis, ShouldHaveLength, 0)
+	})
+}
+
 func TestCwdRelToAbs(t *testing.T) {
 	Convey("CwdRelToAbs works", t, func() {
 		fs := tempFileSystem()

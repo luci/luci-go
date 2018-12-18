@@ -1056,10 +1056,15 @@ func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (pk
 // to delete paths from within this directory (these paths now point to
 // completely different files).
 func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo, installMode pkg.InstallMode, pkgDir, srcDir string) (*pathTree, error) {
+	caseSens, err := d.fs.CaseSensitive()
+	if err != nil {
+		return nil, err
+	}
+
 	// Build a set of all added paths (including intermediary directories). It
 	// will be used to ensure all intermediary file system nodes are directories,
 	// not symlinks (more about this below).
-	touched := newPathTree(len(files))
+	touched := newPathTree(caseSens, len(files))
 	for _, f := range files {
 		// Mark the file and all its parents and children as alive. For file "a/b/c"
 		// this adds ["a", "a/b", "a/b/c", "a/b/c/*"] to the set.
@@ -1296,21 +1301,27 @@ func (d *deployerImpl) checkIntegrity(ctx context.Context, p *DeployedPackage) (
 // All methods assume paths have been properly cleaned already and do not have
 // "." or "..".
 type pathTree struct {
+	caseSensitive bool // true to treat file case as important
+
 	nodes stringset.Set // intermediate tree nodes
 	leafs stringset.Set // leafs (also roots of their infinite subtrees)
 }
 
 // newPathTree initializes the path tree, allocating the given capacity.
-func newPathTree(capacity int) *pathTree {
+func newPathTree(caseSensitive bool, capacity int) *pathTree {
 	return &pathTree{
-		nodes: stringset.New(capacity / 5), // educated guess
-		leafs: stringset.New(capacity),     // exact
+		caseSensitive: caseSensitive,
+		nodes:         stringset.New(capacity / 5), // educated guess
+		leafs:         stringset.New(capacity),     // exact
 	}
 }
 
 // add adds a native path 'rel', all its parents and all its children to the
 // path tree.
 func (p *pathTree) add(rel string) {
+	if !p.caseSensitive {
+		rel = strings.ToLower(rel)
+	}
 	p.leafs.Add(rel)
 	parentDirs(rel, func(par string) bool {
 		p.nodes.Add(par)
@@ -1324,6 +1335,10 @@ func (p *pathTree) add(rel string) {
 func (p *pathTree) has(rel string) bool {
 	if p == nil {
 		return false
+	}
+
+	if !p.caseSensitive {
+		rel = strings.ToLower(rel)
 	}
 
 	// It matches some added entry exactly?
@@ -1346,6 +1361,9 @@ func (p *pathTree) has(rel string) bool {
 
 // visitIntermediatesBF calls cb() for all non-leaf nodes in the tree in
 // breadth-first order (i.e. smallest paths come first).
+//
+// On case-insensitive file systems, all visited nodes are in lowercase,
+// regardless in what case they were added to the tree.
 //
 // nil pathTree is considered empty.
 func (p *pathTree) visitIntermediatesBF(cb func(string) bool) {

@@ -1288,6 +1288,81 @@ func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
 	})
 }
 
+func TestDeployInstanceChangeInCase(t *testing.T) {
+	t.Parallel()
+
+	Convey("DeployInstance handle change in file name case", t, func(c C) {
+		ctx := withMemLogger()
+		tempDir := mkTempDir()
+		deployer := New(tempDir).(*deployerImpl)
+
+		caseSensitiveFS, err := deployer.fs.CaseSensitive()
+		So(err, ShouldBeNil)
+		c.Printf("File system is case-sensitive: %v", caseSensitiveFS)
+
+		pkg1 := makeTestInstance("test/package", []fs.File{
+			fs.NewTestFile("keep", "keep", fs.TestFileOpts{}),
+			fs.NewTestFile("some/dir/file_b", "old data 1", fs.TestFileOpts{}),
+			fs.NewTestFile("some/D/f1", "old data 2", fs.TestFileOpts{}),
+			fs.NewTestFile("some/d/f2", "old data 3", fs.TestFileOpts{}),
+			fs.NewTestFile("some/path/file_a", "old data 4", fs.TestFileOpts{}),
+		}, pkg.InstallModeCopy)
+		pkg1.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
+
+		pkg2 := makeTestInstance("test/package", []fs.File{
+			fs.NewTestFile("keep", "keep", fs.TestFileOpts{}),
+			fs.NewTestFile("some/DIR/file_b", "new data 1", fs.TestFileOpts{}),
+			fs.NewTestFile("some/D/f2", "new data 2", fs.TestFileOpts{}),
+			fs.NewTestFile("some/d/f1", "new data 3", fs.TestFileOpts{}),
+			fs.NewTestFile("some/path/file_A", "new data 4", fs.TestFileOpts{}),
+		}, pkg.InstallModeCopy)
+		pkg2.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
+
+		_, err = deployer.DeployInstance(ctx, "sub/dir", pkg1)
+		So(err, ShouldBeNil)
+		_, err = deployer.DeployInstance(ctx, "sub/dir", pkg2)
+		So(err, ShouldBeNil)
+
+		got := scanDir(filepath.Join(tempDir, "sub", "dir"))
+		sort.Strings(got)
+
+		if caseSensitiveFS {
+			// File case matches pkg2 exactly.
+			So(got, ShouldResemble, []string{
+				"keep",
+				"some/D/f2",
+				"some/DIR/file_b",
+				"some/d/f1",
+				"some/path/file_A",
+			})
+		} else {
+			// Case of the files is somewhat random... It shouldn't really matter much
+			// (since the file system is case-insensitive anyway).
+			So(got[:len(got)-1], ShouldResemble, []string{
+				"keep",
+				"some/D/f1",
+				"some/D/f2",
+				"some/dir/file_b",
+			})
+			// On some file systems the original case (fila_a) is preserved, on some
+			// it is switched to a new case (file_A). Go figure...
+			So(got[len(got)-1], ShouldBeIn, []string{
+				"some/path/file_A",
+				"some/path/file_a",
+			})
+		}
+
+		// Can read files through their new names, regardless of case-sensitivity of
+		// the file system.
+		So(readFile(tempDir, "sub/dir/some/DIR/file_b"), ShouldEqual, "new data 1")
+		So(readFile(tempDir, "sub/dir/some/D/f2"), ShouldEqual, "new data 2")
+		So(readFile(tempDir, "sub/dir/some/d/f1"), ShouldEqual, "new data 3")
+		So(readFile(tempDir, "sub/dir/some/path/file_A"), ShouldEqual, "new data 4")
+
+		So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+	})
+}
+
 func TestFindDeployed(t *testing.T) {
 	t.Parallel()
 
@@ -2127,7 +2202,7 @@ func scanDir(root string) (out []string) {
 		return nil
 	})
 	if err != nil {
-		panic("Failed to walk a directory")
+		panic(fmt.Sprintf("Failed to walk a directory: %s", err))
 	}
 	return
 }
