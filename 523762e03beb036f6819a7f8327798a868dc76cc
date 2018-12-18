@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e66faba4_8df1c2ab",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1316,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:18:22Z",
+      "side": 1,
+      "message": "It doesn\u0027t matter much. 20% value is pulled out of xcode package.",
+      "parentUuid": "74aab49f_717b1457",
+      "range": {
+        "startLine": 1316,
+        "startChar": 51,
+        "endLine": 1316,
+        "endChar": 73
+      },
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "240a9c16_e5fda979",
         "filename": "cipd/client/cipd/deployer/deployer_test.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "2b6de527_da91d560",
+        "filename": "cipd/client/cipd/deployer/deployer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1306,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:18:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "240a9c16_e5fda979",
+      "range": {
+        "startLine": 1306,
+        "startChar": 24,
+        "endLine": 1306,
+        "endChar": 25
+      },
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0880804_7603595b",
         "filename": "cipd/client/cipd/fs/fs.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "664ee8db_74498b74",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:18:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0880804_7603595b",
+      "range": {
+        "startLine": 43,
+        "startChar": 38,
+        "endLine": 43,
+        "endChar": 50
+      },
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -106,6 +178,24 @@
     },
     {
       "key": {
+        "uuid": "34e5da8e_4d8be722",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:18:22Z",
+      "side": 1,
+      "message": "cipd.Client has deployer.Deployer inside, which has fs.FileSystem inside.\n\nSo it should be 1 check per \u0027cipd\u0027 invocation (since there\u0027s only one instance of cipd.Client).",
+      "parentUuid": "c81e4701_613a2c3a",
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e63f9b2d_e228a656",
         "filename": "cipd/client/cipd/fs/fs.go",
         "patchSetId": 2
@@ -126,6 +216,30 @@
       "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9f040e3_cb524da6",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:18:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e63f9b2d_e228a656",
+      "range": {
+        "startLine": 200,
+        "startChar": 3,
+        "endLine": 200,
+        "endChar": 30
+      },
+      "revId": "523762e03beb036f6819a7f8327798a868dc76cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
