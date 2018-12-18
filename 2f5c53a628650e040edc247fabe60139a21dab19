@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "3d94a3e3_d6f50155",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:01:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d4a87dcb_58a8d6ce",
+      "range": {
+        "startLine": 24,
+        "startChar": 69,
+        "endLine": 24,
+        "endChar": 72
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3d4a678b_8afb3772",
         "filename": "/COMMIT_MSG",
         "patchSetId": 4
@@ -65,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "aef818e3_d7b99b27",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:01:28Z",
+      "side": 1,
+      "message": "This is guaranteed for existing packages built with CIPD client of any version. I think this is also sort of guaranteed by structures of zip files, but there\u0027s probably no enforcement anywhere. Packages that don\u0027t conform may get installed/updated in a broken way.",
+      "parentUuid": "3d4a678b_8afb3772",
+      "range": {
+        "startLine": 35,
+        "startChar": 11,
+        "endLine": 35,
+        "endChar": 41
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a7f38230_174d2790",
         "filename": "cipd/client/cipd/deployer/deployer.go",
         "patchSetId": 4
@@ -79,6 +127,24 @@
       "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3298f42_088512ce",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1081,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:01:28Z",
+      "side": 1,
+      "message": "Yes, order matters. Renamed.",
+      "parentUuid": "a7f38230_174d2790",
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -128,6 +194,30 @@
     },
     {
       "key": {
+        "uuid": "99b5c02f_d92ba62e",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1284,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:01:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9cc121d_922fe314",
+      "range": {
+        "startLine": 1284,
+        "startChar": 24,
+        "endLine": 1284,
+        "endChar": 25
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8c025055_f5fc6756",
         "filename": "cipd/client/cipd/deployer/deployer.go",
         "patchSetId": 4
@@ -151,6 +241,30 @@
     },
     {
       "key": {
+        "uuid": "6271d01f_72920352",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1299,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:01:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c025055_f5fc6756",
+      "range": {
+        "startLine": 1299,
+        "startChar": 3,
+        "endLine": 1299,
+        "endChar": 8
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cff54e96_d859b420",
         "filename": "cipd/client/cipd/deployer/deployer.go",
         "patchSetId": 4
@@ -171,6 +285,30 @@
       "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "348827ab_cb387450",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1301,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:01:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cff54e96_d859b420",
+      "range": {
+        "startLine": 1301,
+        "startChar": 18,
+        "endLine": 1301,
+        "endChar": 26
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -220,6 +358,30 @@
     },
     {
       "key": {
+        "uuid": "e10e1afa_fcc8e138",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1347,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:01:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1d0fe62_84e2d11b",
+      "range": {
+        "startLine": 1347,
+        "startChar": 50,
+        "endLine": 1347,
+        "endChar": 54
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0af49e4_9045c9d7",
         "filename": "cipd/client/cipd/deployer/deployer.go",
         "patchSetId": 4
@@ -243,6 +405,30 @@
     },
     {
       "key": {
+        "uuid": "8cbb0899_e446854d",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1348,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:01:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e0af49e4_9045c9d7",
+      "range": {
+        "startLine": 1347,
+        "startChar": 68,
+        "endLine": 1348,
+        "endChar": 30
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d1abff6f_f202de91",
         "filename": "cipd/client/cipd/deployer/deployer.go",
         "patchSetId": 4
@@ -263,6 +449,30 @@
       "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5695651a_3ed00d1c",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1357,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-18T01:01:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d1abff6f_f202de91",
+      "range": {
+        "startLine": 1353,
+        "startChar": 1,
+        "endLine": 1357,
+        "endChar": 20
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
