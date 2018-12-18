@@ -2,6 +2,63 @@
   "comments": [
     {
       "key": {
+        "uuid": "f076bb7e_72073092",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "👍 awesome explanation.",
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d4a87dcb_58a8d6ce",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "is",
+      "range": {
+        "startLine": 24,
+        "startChar": 69,
+        "endLine": 24,
+        "endChar": 72
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7f38230_174d2790",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1081,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "I think here it actually matters that you do it in BFS/DFS order. So, maybe rename visitIntermediates to BFS?",
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4e2b5f71_e3938bda",
         "filename": "cipd/client/cipd/deployer/deployer.go",
         "patchSetId": 4
@@ -22,6 +79,190 @@
       "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e9cc121d_922fe314",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1284,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "native",
+      "range": {
+        "startLine": 1284,
+        "startChar": 24,
+        "endLine": 1284,
+        "endChar": 25
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c025055_f5fc6756",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1299,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "i found \u0027nil\u0027 confusing, thinking you mean special value of string.  How about\n\nCalling read-only methods on nil pathTree object is allowed, implying empty tree.\n\nThat said, IMO, move this to comment to each of 2 read-only methods instead :)",
+      "range": {
+        "startLine": 1299,
+        "startChar": 3,
+        "endLine": 1299,
+        "endChar": 8
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cff54e96_d859b420",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1301,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "minor: struct{} is obscuring logic below :(\nAny downside to using stringset.Set? I see only upsides, e.g. \"if p.nodes.Has(x)\" is more readable than \"if _, ok :\u003d ..; ok\"",
+      "range": {
+        "startLine": 1301,
+        "startChar": 18,
+        "endLine": 1301,
+        "endChar": 26
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cd81394_9b3d5a40",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1343,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "man, i wish Go supported sugar for converting this to for loop :\u0027(",
+      "range": {
+        "startLine": 1340,
+        "startChar": 1,
+        "endLine": 1343,
+        "endChar": 3
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a1d0fe62_84e2d11b",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1347,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "nodeS",
+      "range": {
+        "startLine": 1347,
+        "startChar": 50,
+        "endLine": 1347,
+        "endChar": 54
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0af49e4_9045c9d7",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1348,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "ie BFS :)",
+      "range": {
+        "startLine": 1347,
+        "startChar": 68,
+        "endLine": 1348,
+        "endChar": 30
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1abff6f_f202de91",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1357,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "plug: stringset fits perfectly :)",
+      "range": {
+        "startLine": 1353,
+        "startChar": 1,
+        "endLine": 1357,
+        "endChar": 20
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d0de72e_95e01fd8",
+        "filename": "cipd/client/cipd/deployer/deployer_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1241,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-18T00:13:55Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 1241,
+        "startChar": 4,
+        "endLine": 1241,
+        "endChar": 5
+      },
+      "revId": "2f5c53a628650e040edc247fabe60139a21dab19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
