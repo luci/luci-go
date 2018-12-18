@@ -31,9 +31,13 @@ message Project {
   // the build page. This field is optional. Supported interpolations
   // for the "summary" and "description" fields in this context are:
   //
+  // Some populated fields of the standard build proto:
   // {{.Build.Builder.Project}}
   // {{.Build.Builder.Bucket}}
   // {{.Build.Builder.Builder}}
+  //
+  // Others:
+  // {{.MiloBuildUrl}}
   //
   // If any specified placeholder cannot be satisfied then a default URL
   // is rendered for the feedback link.
