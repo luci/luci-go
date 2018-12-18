@@ -40,6 +40,10 @@ type FileSystem interface {
 	// All FS actions are restricted to this directory.
 	Root() string
 
+	// CaseSensitive returns true if the file system that has the root is
+	// case-sensitive.
+	CaseSensitive() (bool, error)
+
 	// CwdRelToAbs converts a path relative to cwd to an absolute one.
 	//
 	// If also verifies the path is under the root path of the FileSystem object.
@@ -138,7 +142,7 @@ func NewFileSystem(root, trash string) FileSystem {
 	} else {
 		trash = filepath.Join(root, ".cipd_trash")
 	}
-	return &fsImpl{root, trash}
+	return &fsImpl{root: root, trash: trash}
 }
 
 // EnsureFile creates a file with the given content.
@@ -156,6 +160,7 @@ type fsImplErr struct {
 }
 
 func (f *fsImplErr) Root() string                                                   { return "" }
+func (f *fsImplErr) CaseSensitive() (bool, error)                                   { return false, f.err }
 func (f *fsImplErr) CwdRelToAbs(string) (string, error)                             { return "", f.err }
 func (f *fsImplErr) RootRelToAbs(string) (string, error)                            { return "", f.err }
 func (f *fsImplErr) OpenFile(string) (*os.File, error)                              { return nil, f.err }
@@ -174,10 +179,43 @@ func (f *fsImplErr) CleanupTrash(context.Context)                               
 type fsImpl struct {
 	root  string
 	trash string
+
+	once        sync.Once
+	caseSens    bool
+	caseSensErr error
 }
 
 func (f *fsImpl) Root() string {
 	return f.root
+}
+
+func (f *fsImpl) CaseSensitive() (bool, error) {
+	f.once.Do(func() {
+		f.caseSens, f.caseSensErr = func() (sens bool, err error) {
+			tmp, err := ioutil.TempFile(f.root, ".test_case.*.tmp")
+			if err != nil {
+				return false, fmt.Errorf("cannot create a file to test case-sensitivity of %q - %s", f.root, err)
+			}
+			tmp.Close() // for Windows, it may act funny with open files
+
+			defer func() {
+				if rmErr := os.Remove(tmp.Name()); err == nil && rmErr != nil {
+					err = fmt.Errorf("failed to remove the file during case-sensitivity test of %q - %s", f.root, rmErr)
+				}
+			}()
+
+			altName := filepath.Join(f.root, strings.ToUpper(filepath.Base(tmp.Name())))
+			switch _, err = os.Stat(altName); {
+			case err == nil:
+				return false, nil // case-insensitive
+			case os.IsNotExist(err):
+				return true, nil // case-sensitive
+			default:
+				return false, fmt.Errorf("cannot stat file when testing case-sensitivity of %q - %s", f.root, err)
+			}
+		}()
+	})
+	return f.caseSens, f.caseSensErr
 }
 
 func (f *fsImpl) CwdRelToAbs(p string) (string, error) {
