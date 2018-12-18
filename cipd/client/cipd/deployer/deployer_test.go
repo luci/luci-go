@@ -1218,6 +1218,76 @@ func TestDeployInstanceUpgradeFileToDir(t *testing.T) {
 	})
 }
 
+func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping on windows")
+	}
+
+	t.Parallel()
+
+	Convey("With packages", t, func() {
+		ctx := withMemLogger()
+		tempDir := mkTempDir()
+
+		// Here "some/path" is a directory.
+		pkgWithDir := makeTestInstance("test/package", []fs.File{
+			fs.NewTestFile("some/path/file1", "old data 1", fs.TestFileOpts{}),
+			fs.NewTestFile("some/path/a/file2", "old data 2", fs.TestFileOpts{}),
+			fs.NewTestFile("some/path/a/b/file3", "old data 3", fs.TestFileOpts{}),
+		}, pkg.InstallModeCopy)
+		pkgWithDir.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
+
+		// And here "some/path" is a symlink to some new directory that also has
+		// the same files (and a bunch more).
+		pkgWithSym := makeTestInstance("test/package", []fs.File{
+			fs.NewTestSymlink("some/path", "another"),
+			fs.NewTestFile("some/another/file1", "new data 1", fs.TestFileOpts{}),
+			fs.NewTestFile("some/another/a/file2", "new data 2", fs.TestFileOpts{}),
+			fs.NewTestFile("some/another/a/b/file3", "new data 3", fs.TestFileOpts{}),
+			fs.NewTestFile("some/another/a/file4", "new data 4", fs.TestFileOpts{}),
+		}, pkg.InstallModeCopy)
+		pkgWithSym.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
+
+		Convey("Replace directory with symlink", func() {
+			_, err := New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithDir)
+			So(err, ShouldBeNil)
+			_, err = New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithSym)
+			So(err, ShouldBeNil)
+
+			So(scanDir(filepath.Join(tempDir, "sub", "dir")), ShouldResemble, []string{
+				"some/another/a/b/file3",
+				"some/another/a/file2",
+				"some/another/a/file4",
+				"some/another/file1",
+				"some/path:another",
+			})
+
+			So(readFile(tempDir, "sub/dir/some/path/file1"), ShouldEqual, "new data 1")
+			So(readFile(tempDir, "sub/dir/some/path/a/file2"), ShouldEqual, "new data 2")
+
+			So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+		})
+
+		Convey("Replace symlink with directory", func() {
+			_, err := New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithSym)
+			So(err, ShouldBeNil)
+			_, err = New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithDir)
+			So(err, ShouldBeNil)
+
+			So(scanDir(filepath.Join(tempDir, "sub", "dir")), ShouldResemble, []string{
+				"some/path/a/b/file3",
+				"some/path/a/file2",
+				"some/path/file1",
+			})
+
+			So(readFile(tempDir, "sub/dir/some/path/file1"), ShouldEqual, "old data 1")
+			So(readFile(tempDir, "sub/dir/some/path/a/file2"), ShouldEqual, "old data 2")
+
+			So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+		})
+	})
+}
+
 func TestFindDeployed(t *testing.T) {
 	t.Parallel()
 
