@@ -16,6 +16,70 @@
       "revId": "75498f76751af31b04472e16258d0020aae6c437",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1aa95469_f995ae4f",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-19T22:22:29Z",
+      "side": 1,
+      "message": "intent - OK. but implementation-wise, i\u0027m uneasy about tying this to golang library, I\u0027d rather be lang agnostic. I wish there was an RFC standard or similar. But given that this method is fairly simple, we\u0027ll be able to migrate. So, lgtm.",
+      "parentUuid": "e7ffcb4a_8691de03",
+      "revId": "75498f76751af31b04472e16258d0020aae6c437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2aea86ba_7cb90f0b",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-19T22:22:29Z",
+      "side": 1,
+      "message": "inline, \"at.Unix() + ...\" is easier to read than remember what t is.",
+      "range": {
+        "startLine": 107,
+        "startChar": 1,
+        "endLine": 107,
+        "endChar": 15
+      },
+      "revId": "75498f76751af31b04472e16258d0020aae6c437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6deed480_7988adba",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-19T22:22:29Z",
+      "side": 1,
+      "message": "just return ... and save 3 lines below :)",
+      "range": {
+        "startLine": 111,
+        "startChar": 1,
+        "endLine": 111,
+        "endChar": 10
+      },
+      "revId": "75498f76751af31b04472e16258d0020aae6c437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
