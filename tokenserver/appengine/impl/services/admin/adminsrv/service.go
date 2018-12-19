@@ -20,11 +20,12 @@ package adminsrv
 
 import (
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
-
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
+	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
 	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
+	projectscopeutils "go.chromium.org/luci/tokenserver/appengine/impl/utils/projectscope"
 )
 
 // AdminServer implements admin.AdminServer RPC interface.
@@ -34,7 +35,10 @@ type AdminServer struct {
 	delegation.InspectDelegationTokenRPC
 	machinetoken.InspectMachineTokenRPC
 	serviceaccounts.ImportServiceAccountsConfigsRPC
+	projectscope.ImportProjectScopedServiceAccountsConfigsRPC
 	serviceaccounts.InspectOAuthTokenGrantRPC
+	serviceaccounts.CreateProjectScopedServiceAccountRPC
+	serviceaccounts.LookupProjectScopedServiceAccountRPC
 }
 
 // NewServer returns prod AdminServer implementation.
@@ -55,9 +59,18 @@ func NewServer() *AdminServer {
 		ImportServiceAccountsConfigsRPC: serviceaccounts.ImportServiceAccountsConfigsRPC{
 			RulesCache: serviceaccounts.GlobalRulesCache,
 		},
+		ImportProjectScopedServiceAccountsConfigsRPC: projectscope.ImportProjectScopedServiceAccountsConfigsRPC{
+			RulesCache: projectscope.GlobalRulesCache,
+		},
 		InspectOAuthTokenGrantRPC: serviceaccounts.InspectOAuthTokenGrantRPC{
 			Signer: signer,
 			Rules:  serviceaccounts.GlobalRulesCache.Rules,
 		},
+		CreateProjectScopedServiceAccountRPC: serviceaccounts.CreateProjectScopedServiceAccountRPC{
+			ScopedIdentities:     projectscopeutils.GetScopedIdentities(),
+			GcpProjectResolver:   projectscopeutils.DefaultGcpProjectResolver,
+			CreateServiceAccount: projectscopeutils.NewServiceAccountCreator(projectscopeutils.DefaultGcpProjectResolver),
+		},
+		LookupProjectScopedServiceAccountRPC: serviceaccounts.LookupProjectScopedServiceAccountRPC{},
 	}
 }

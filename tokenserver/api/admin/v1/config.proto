@@ -38,6 +38,7 @@ message CertificateAuthorityConfig {
 
   // KnownDomains describes parameters to use for each particular domain.
   repeated DomainConfig known_domains = 5;
+
 }
 
 
@@ -185,6 +186,32 @@ message ServiceAccountsPermissions {
   // See docs for individual fields to figure out how defaults are merged into
   // the rules.
   ServiceAccountRuleDefaults defaults = 2;
+}
+
+
+// ProjectScopedServiceAccounts is read from project_scoped_service_accounts.cfg in luci-config.
+message ProjectScopedServiceAccounts {
+
+  // Services specify the association between LUCI services and their GCP project.
+  //
+  // Services define a mapping {LUCI service -> GCP Project},
+  // where GCP Project is used by tokenserver to host the LUCI service's
+  // scoped service accounts under. Every service account is assigned a LUCI project
+  // scoped so when the service acquires a token for that account its operations
+  // are limited to objects inside that LUCI project.
+  repeated ServiceConfig services = 1;
+}
+
+message ServiceConfig {
+  // Service describes a LUCI service to be associated with the cloud project.
+  string service = 1;
+
+  // CloudProject is the GCP project to which service is associated with.
+  string cloud_project_id = 2;
+
+  // Maximum allowed validity duration (sec) of minted project scoped service
+  // account tokens. Default is one hour. Max is one hour.
+  int64 max_validity_duration = 3;
 }
 
 
