@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5da93812_0e258fa8",
+        "filename": "gce/api/tasks/v1/tasks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-19T00:15:55Z",
+      "side": 1,
+      "message": "It\u0027s the same name as in config.proto and documented the same way. What\u0027s unclear about \"Swarming server\"? How else would you refer to it besides hostname?\n\nAnyways, added clarification.",
+      "parentUuid": "dae662d6_12520dff",
+      "range": {
+        "startLine": 26,
+        "startChar": 9,
+        "endLine": 26,
+        "endChar": 17
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "159898fd_7d16d52d",
         "filename": "gce/appengine/backend/cron.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c90ebdcd_4f94e670",
+        "filename": "gce/appengine/backend/cron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-19T00:15:55Z",
+      "side": 1,
+      "message": "It\u0027ll probably need to be batched well before 1M, in the Python app we batch any time there are even hundreds. By default the Python equivalent of this cron uses a generator so not too many are loaded in memory at once.\n\nThe plan is to get this working, then optimize later (but before OOMs happen in practice). I haven\u0027t really looked into what the go code for datastore.GetAll is doing.",
+      "parentUuid": "159898fd_7d16d52d",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 95,
+        "endChar": 54
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "e566bb89_13fbbfdd",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-19T00:15:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d47b57bc_43bc4f78",
+      "range": {
+        "startLine": 170,
+        "startChar": 7,
+        "endLine": 170,
+        "endChar": 10
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a06c41c8_492dc7a8",
         "filename": "gce/appengine/backend/instances.go",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "7118d166_8dc36502",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-19T00:15:55Z",
+      "side": 1,
+      "message": "I\u0027ve been using %q for short strings and %s for paths and URLs. I don\u0027t like how \"https://chromium-swarm-dev.appspot.com\" looks. It doesn\u0027t seem to need to be quoted since URL semantics make it somewhat obvious where the URL begins and ends, so I\u0027ve been using \": \" as a delimiter for them.\n\nSee, for example, create above:\n\"creating instance %q\", hostname -\u003e \"creating instance \u0027whatever\u0027\"\n\"created instance: %s\", URL -\u003e \"created instance: https://www.googleapis.com/compute/v1/projects/p/zones/z/instances/whatever\"",
+      "parentUuid": "a06c41c8_492dc7a8",
+      "range": {
+        "startLine": 226,
+        "startChar": 38,
+        "endLine": 226,
+        "endChar": 39
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca1a91b6_12345003",
         "filename": "gce/appengine/frontend/queue.yaml",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "619bc8ff_12bf025b",
+        "filename": "gce/appengine/frontend/queue.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-19T00:15:55Z",
+      "side": 1,
+      "message": "I think Swarming can handle the load, given that each of its bots is polling every minute anyways (same frequency as the cron job which launches these task queues). If we want to reduce load, we can trivially just adjust the cron to be every 5 minutes or every 10 minutes, can\u0027t we? Do we need the timestamp semantics you propose?\n\nI\u0027d rather not use pub/sub, it\u0027s been catastrophically bad in the past because retransmission semantics are ill-defined (e.g. message that is pulled but not acked will be resent, but when?). See https://crbug.com/626501 and https://crbug.com/709284 for some background.",
+      "parentUuid": "ca1a91b6_12345003",
+      "range": {
+        "startLine": 18,
+        "startChar": 8,
+        "endLine": 18,
+        "endChar": 13
+      },
+      "revId": "f32a785aec3c39b84ea81fa9bfbb7fb1c3c34d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
