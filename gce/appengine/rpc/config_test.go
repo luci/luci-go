@@ -119,7 +119,6 @@ func TestValidateBlock(t *testing.T) {
 				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 					Id: "id",
 					Vms: &config.Block{
-						Prefix: "prefix",
 						Attributes: &config.VM{
 							MachineType: "type",
 							NetworkInterface: []*config.NetworkInterface{
@@ -128,6 +127,10 @@ func TestValidateBlock(t *testing.T) {
 							Project: "project",
 							Zone:    "zone",
 						},
+						Lifetime: &config.Block_Seconds{
+							Seconds: 3600,
+						},
+						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "disk is required")
@@ -138,7 +141,6 @@ func TestValidateBlock(t *testing.T) {
 				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 					Id: "id",
 					Vms: &config.Block{
-						Prefix: "prefix",
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -149,6 +151,10 @@ func TestValidateBlock(t *testing.T) {
 							Project: "project",
 							Zone:    "zone",
 						},
+						Lifetime: &config.Block_Seconds{
+							Seconds: 3600,
+						},
+						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "machine type is required")
@@ -160,7 +166,6 @@ func TestValidateBlock(t *testing.T) {
 					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 						Id: "id",
 						Vms: &config.Block{
-							Prefix: "prefix",
 							Attributes: &config.VM{
 								Disk: []*config.Disk{
 									{},
@@ -175,6 +180,10 @@ func TestValidateBlock(t *testing.T) {
 								Project: "project",
 								Zone:    "zone",
 							},
+							Lifetime: &config.Block_Seconds{
+								Seconds: 3600,
+							},
+							Prefix: "prefix",
 						},
 					})
 					So(err, ShouldErrLike, "metadata from text must be in key:value form")
@@ -185,7 +194,6 @@ func TestValidateBlock(t *testing.T) {
 					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 						Id: "id",
 						Vms: &config.Block{
-							Prefix: "prefix",
 							Attributes: &config.VM{
 								Disk: []*config.Disk{
 									{},
@@ -204,6 +212,10 @@ func TestValidateBlock(t *testing.T) {
 								Project: "project",
 								Zone:    "zone",
 							},
+							Lifetime: &config.Block_Seconds{
+								Seconds: 3600,
+							},
+							Prefix: "prefix",
 						},
 					})
 					So(err, ShouldErrLike, "metadata from text must be in key:value form")
@@ -215,7 +227,6 @@ func TestValidateBlock(t *testing.T) {
 				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 					Id: "id",
 					Vms: &config.Block{
-						Prefix: "prefix",
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -224,6 +235,10 @@ func TestValidateBlock(t *testing.T) {
 							Project:     "project",
 							Zone:        "zone",
 						},
+						Lifetime: &config.Block_Seconds{
+							Seconds: 3600,
+						},
+						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "network interface is required")
@@ -234,7 +249,6 @@ func TestValidateBlock(t *testing.T) {
 				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 					Id: "id",
 					Vms: &config.Block{
-						Prefix: "prefix",
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -245,6 +259,10 @@ func TestValidateBlock(t *testing.T) {
 							},
 							Zone: "zone",
 						},
+						Lifetime: &config.Block_Seconds{
+							Seconds: 3600,
+						},
+						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "project is required")
@@ -255,7 +273,6 @@ func TestValidateBlock(t *testing.T) {
 				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 					Id: "id",
 					Vms: &config.Block{
-						Prefix: "prefix",
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -266,10 +283,88 @@ func TestValidateBlock(t *testing.T) {
 								{},
 							},
 						},
+						Lifetime: &config.Block_Seconds{
+							Seconds: 3600,
+						},
+						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "zone is required")
 				So(v, ShouldBeNil)
+			})
+
+			Convey("lifetime", func() {
+				Convey("missing", func() {
+					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+						Id: "id",
+						Vms: &config.Block{
+							Attributes: &config.VM{
+								Disk: []*config.Disk{
+									{},
+								},
+								MachineType: "type",
+								Project:     "project",
+								NetworkInterface: []*config.NetworkInterface{
+									{},
+								},
+								Zone: "zone",
+							},
+							Prefix: "prefix",
+						},
+					})
+					So(err, ShouldErrLike, "lifetime seconds must be positive")
+					So(v, ShouldBeNil)
+				})
+
+				Convey("negative", func() {
+					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+						Id: "id",
+						Vms: &config.Block{
+							Attributes: &config.VM{
+								Disk: []*config.Disk{
+									{},
+								},
+								MachineType: "type",
+								Project:     "project",
+								NetworkInterface: []*config.NetworkInterface{
+									{},
+								},
+								Zone: "zone",
+							},
+							Lifetime: &config.Block_Seconds{
+								Seconds: -3600,
+							},
+							Prefix: "prefix",
+						},
+					})
+					So(err, ShouldErrLike, "lifetime seconds must be positive")
+					So(v, ShouldBeNil)
+				})
+
+				Convey("duration", func() {
+					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+						Id: "id",
+						Vms: &config.Block{
+							Attributes: &config.VM{
+								Disk: []*config.Disk{
+									{},
+								},
+								MachineType: "type",
+								Project:     "project",
+								NetworkInterface: []*config.NetworkInterface{
+									{},
+								},
+								Zone: "zone",
+							},
+							Lifetime: &config.Block_Duration{
+								Duration: "1h",
+							},
+							Prefix: "prefix",
+						},
+					})
+					So(err, ShouldErrLike, "lifetime seconds must be positive")
+					So(v, ShouldBeNil)
+				})
 			})
 		})
 
@@ -288,6 +383,9 @@ func TestValidateBlock(t *testing.T) {
 						Project: "project",
 						Zone:    "zone",
 					},
+					Lifetime: &config.Block_Seconds{
+						Seconds: 3600,
+					},
 					Prefix: "prefix",
 				},
 			})
@@ -303,6 +401,9 @@ func TestValidateBlock(t *testing.T) {
 						{},
 					},
 					Zone: "zone",
+				},
+				Lifetime: &config.Block_Seconds{
+					Seconds: 3600,
 				},
 				Prefix: "prefix",
 			})

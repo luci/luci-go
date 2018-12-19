@@ -56,11 +56,16 @@ type VM struct {
 	ID string `gae:"$id"`
 	// Attributes is the config.VM describing the GCE instance to create.
 	Attributes config.VM `gae:"attributes"`
+	// Deadline is the Unix time when the GCE instance should be deleted.
+	// This time is in UTC and in seconds.
+	Deadline int64 `gae:"deadline"`
 	// Hostname is the short hostname of the GCE instance to create.
 	Hostname string `gae:"hostname"`
+	// Lifetime is the number of seconds the GCE instance should live for.
+	Lifetime int64 `gae:"lifetime"`
 	// Prefix is the prefix to use when naming the GCE instance.
 	Prefix string `gae:"prefix"`
-	// Swarming is the Swarming server the GCE instance connects to.
+	// Swarming is hostname of the Swarming server the GCE instance connects to.
 	Swarming string `gae:"swarming"`
 	// URL is the URL of the created GCE instance.
 	URL string `gae:"url"`
