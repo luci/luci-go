@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7ffcb4a_8691de03",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-19T04:09:30Z",
+      "side": 1,
+      "message": "More config-only shorthand (like metadata.from_file) so users can write e.g. \"24h\" instead of 86400. Handling duration and converting to seconds isn\u0027t implemented yet.",
+      "revId": "75498f76751af31b04472e16258d0020aae6c437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
