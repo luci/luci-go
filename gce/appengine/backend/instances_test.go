@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -256,6 +257,87 @@ func TestCreate(t *testing.T) {
 					datastore.Get(c, v)
 					So(v.URL, ShouldEqual, "url")
 				})
+			})
+		})
+	})
+}
+
+func TestManage(t *testing.T) {
+	t.Parallel()
+
+	Convey("manage", t, func() {
+		dsp := &tq.Dispatcher{}
+		registerTasks(dsp)
+		srv := &rpc.Config{}
+		rt := &roundtripper.JSONRoundTripper{}
+		swr, err := swarming.New(&http.Client{Transport: rt})
+		So(err, ShouldBeNil)
+		c := withSwarming(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), swr)
+		tqt := tqtesting.GetTestable(c, dsp)
+		tqt.CreateQueues()
+
+		Convey("invalid", func() {
+			Convey("nil", func() {
+				err := manage(c, nil)
+				So(err, ShouldErrLike, "unexpected payload")
+			})
+
+			Convey("empty", func() {
+				err := manage(c, &tasks.Manage{})
+				So(err, ShouldErrLike, "ID is required")
+			})
+
+			Convey("missing", func() {
+				err := manage(c, &tasks.Manage{
+					Id: "id",
+				})
+				So(err, ShouldErrLike, "failed to fetch VM")
+			})
+		})
+
+		Convey("valid", func() {
+			Convey("error", func() {
+				rt.Handler = func(_ interface{}) (int, interface{}) {
+					return http.StatusConflict, nil
+				}
+				datastore.Put(c, &model.VM{
+					ID:  "id",
+					URL: "url",
+				})
+				err := manage(c, &tasks.Manage{
+					Id: "id",
+				})
+				So(err, ShouldErrLike, "failed to fetch bot")
+			})
+
+			Convey("missing", func() {
+				rt.Handler = func(_ interface{}) (int, interface{}) {
+					return http.StatusNotFound, nil
+				}
+				datastore.Put(c, &model.VM{
+					ID:  "id",
+					URL: "url",
+				})
+				err := manage(c, &tasks.Manage{
+					Id: "id",
+				})
+				So(err, ShouldBeNil)
+			})
+
+			Convey("found", func() {
+				rt.Handler = func(_ interface{}) (int, interface{}) {
+					return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
+						BotId: "id",
+					}
+				}
+				datastore.Put(c, &model.VM{
+					ID:  "id",
+					URL: "url",
+				})
+				err := manage(c, &tasks.Manage{
+					Id: "id",
+				})
+				So(err, ShouldBeNil)
 			})
 		})
 	})

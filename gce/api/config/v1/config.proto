@@ -123,7 +123,7 @@ message Block {
   // The prefix to use when naming VMs in this block.
   string prefix = 4;
 
-  // The Swarming server VMs in this block should connect to.
+  // The hostname of the Swarming server VMs in this block should connect to.
   string swarming = 5;
 }
 

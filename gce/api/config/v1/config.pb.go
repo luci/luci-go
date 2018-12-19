@@ -532,7 +532,7 @@ type Block struct {
 	Kind string `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
 	// The prefix to use when naming VMs in this block.
 	Prefix string `protobuf:"bytes,4,opt,name=prefix,proto3" json:"prefix,omitempty"`
-	// The Swarming server VMs in this block should connect to.
+	// The hostname of the Swarming server VMs in this block should connect to.
 	Swarming             string   `protobuf:"bytes,5,opt,name=swarming,proto3" json:"swarming,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

@@ -60,6 +60,8 @@ type VM struct {
 	Hostname string `gae:"hostname"`
 	// Prefix is the prefix to use when naming the GCE instance.
 	Prefix string `gae:"prefix"`
+	// Swarming is the Swarming server the GCE instance connects to.
+	Swarming string `gae:"swarming"`
 	// URL is the URL of the created GCE instance.
 	URL string `gae:"url"`
 }

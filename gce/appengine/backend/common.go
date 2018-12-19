@@ -22,6 +22,7 @@ import (
 	"google.golang.org/api/compute/v1"
 
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
@@ -48,6 +49,7 @@ func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.Create{}, create, createQueue, nil)
 	dsp.RegisterTask(&tasks.Ensure{}, ensure, ensureQueue, nil)
 	dsp.RegisterTask(&tasks.Expand{}, expand, expandQueue, nil)
+	dsp.RegisterTask(&tasks.Manage{}, manage, manageQueue, nil)
 }
 
 // cfgKey is the key to a config.ConfigServer in the context.
@@ -89,6 +91,32 @@ func newCompute(c context.Context) *compute.Service {
 	return gce
 }
 
+// swrKey is the key to a *swarming.Service in the context.
+var swrKey = "swr"
+
+// withSwarming returns a new context with the given *swarming.Service installed.
+func withSwarming(c context.Context, swr *swarming.Service) context.Context {
+	return context.WithValue(c, &swrKey, swr)
+}
+
+// getSwarming returns the *swarming.Service installed in the current context.
+func getSwarming(c context.Context) *swarming.Service {
+	return c.Value(&swrKey).(*swarming.Service)
+}
+
+// newSwarming returns a new *swarming.Service. Panics on error.
+func newSwarming(c context.Context) *swarming.Service {
+	t, err := auth.GetRPCTransport(c, auth.AsSelf)
+	if err != nil {
+		panic(err)
+	}
+	swr, err := swarming.New(&http.Client{Transport: t})
+	if err != nil {
+		panic(err)
+	}
+	return swr
+}
+
 // InstallHandlers installs HTTP request handlers into the given router.
 func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	dsp := &tq.Dispatcher{}
@@ -98,9 +126,11 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		c.Context = withDispatcher(c.Context, dsp)
 		c.Context = withConfig(c.Context, &rpc.Config{})
 		c.Context = withCompute(c.Context, newCompute(c.Context))
+		c.Context = withSwarming(c.Context, newSwarming(c.Context))
 		next(c)
 	})
 	dsp.InstallRoutes(r, mw)
 	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstances))
 	r.GET("/internal/cron/expand-vms", mw, newHTTPHandler(expandVMs))
+	r.GET("/internal/cron/manage-instances", mw, newHTTPHandler(manageInstances))
 }

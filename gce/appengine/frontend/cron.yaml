@@ -3,3 +3,5 @@ cron:
   schedule: every 1 minutes
 - url: /internal/cron/expand-vms
   schedule: every 1 minutes
+- url: /internal/cron/manage-instances
+  schedule: every 1 minutes
