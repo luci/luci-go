@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "5ca0f0d3_139fe10a",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-19T22:38:08Z",
+      "side": 1,
+      "message": "I may use something custom, since time.ParseDuration doesn\u0027t recognize e.g. days and I don\u0027t want people to have to write 168h for 7 day lifetime. Really I just need \u003cnumber\u003e\u003cunits\u003e, I don\u0027t need advanced stuff like 24h30m2.5s which time.ParseDuration supports.",
+      "parentUuid": "1aa95469_f995ae4f",
+      "revId": "75498f76751af31b04472e16258d0020aae6c437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2aea86ba_7cb90f0b",
         "filename": "gce/appengine/backend/instances.go",
         "patchSetId": 1
@@ -60,6 +78,30 @@
     },
     {
       "key": {
+        "uuid": "1c073f38_b44ac97d",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-19T22:38:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2aea86ba_7cb90f0b",
+      "range": {
+        "startLine": 107,
+        "startChar": 1,
+        "endLine": 107,
+        "endChar": 15
+      },
+      "revId": "75498f76751af31b04472e16258d0020aae6c437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6deed480_7988adba",
         "filename": "gce/appengine/backend/instances.go",
         "patchSetId": 1
@@ -80,6 +122,30 @@
       "revId": "75498f76751af31b04472e16258d0020aae6c437",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca4cfe3a_535273fb",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-19T22:38:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6deed480_7988adba",
+      "range": {
+        "startLine": 111,
+        "startChar": 1,
+        "endLine": 111,
+        "endChar": 10
+      },
+      "revId": "75498f76751af31b04472e16258d0020aae6c437",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
