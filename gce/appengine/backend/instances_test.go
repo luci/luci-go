@@ -175,7 +175,8 @@ func TestCreate(t *testing.T) {
 							// This request should have no body.
 							So(*(req.(*map[string]string)), ShouldHaveLength, 0)
 							return http.StatusOK, &compute.Instance{
-								SelfLink: "url",
+								CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
+								SelfLink:          "url",
 							}
 						}
 					}
@@ -192,6 +193,7 @@ func TestCreate(t *testing.T) {
 						ID: "id",
 					}
 					datastore.Get(c, v)
+					So(v.Deadline, ShouldNotEqual, 0)
 					So(v.URL, ShouldEqual, "url")
 				})
 			})
@@ -238,6 +240,7 @@ func TestCreate(t *testing.T) {
 						So(ok, ShouldBeTrue)
 						So(inst.Name, ShouldEqual, "name")
 						return http.StatusOK, &compute.Operation{
+							EndTime:    "2018-12-14T15:07:48.200-08:00",
 							Status:     "DONE",
 							TargetLink: "url",
 						}
@@ -255,6 +258,7 @@ func TestCreate(t *testing.T) {
 						ID: "id",
 					}
 					datastore.Get(c, v)
+					So(v.Deadline, ShouldNotEqual, 0)
 					So(v.URL, ShouldEqual, "url")
 				})
 			})

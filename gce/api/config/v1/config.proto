@@ -120,11 +120,22 @@ message Block {
   // The name of a kind of VM.
   string kind = 3;
 
+  // The lifetime of VMs in this block.
+  // At the end of their lifetime, each VM is deleted and replaced.
+  oneof lifetime {
+    // The lifetime of VMs in this block as a duration string.
+    // https://golang.org/pkg/time/#ParseDuration.
+    string duration = 4;
+
+    // The lifetime of VMs in this block in seconds.
+    int64 seconds = 5;
+  }
+
   // The prefix to use when naming VMs in this block.
-  string prefix = 4;
+  string prefix = 6;
 
   // The hostname of the Swarming server VMs in this block should connect to.
-  string swarming = 5;
+  string swarming = 7;
 }
 
 // A VMs config.

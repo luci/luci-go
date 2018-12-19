@@ -76,6 +76,9 @@ func (*Config) EnsureVMs(c context.Context, req *config.EnsureVMsRequest) (*conf
 		return nil, status.Errorf(codes.InvalidArgument, "project is required")
 	case req.Vms.Attributes.Zone == "":
 		return nil, status.Errorf(codes.InvalidArgument, "zone is required")
+	case req.Vms.GetSeconds() < 1:
+		// Implicitly rejects Duration, which is only supported in configs.
+		return nil, status.Errorf(codes.InvalidArgument, "lifetime seconds must be positive")
 	}
 	vms := &model.VMs{
 		ID:     req.Id,

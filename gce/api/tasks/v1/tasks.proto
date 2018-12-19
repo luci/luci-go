@@ -20,10 +20,12 @@ message Ensure {
   string id = 1;
   // The attributes of the VM.
   config.VM attributes = 2;
+  // The lifetime of the VM in seconds.
+  int64 lifetime = 3;
   // The prefix to use when naming this VM.
-  string prefix = 3;
+  string prefix = 4;
   // The hostname of the Swarming server this VM connects to.
-  string swarming = 4;
+  string swarming = 5;
 }
 
 // A task to expand a VMs config into VM entities.
