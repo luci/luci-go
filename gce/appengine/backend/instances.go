@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
@@ -101,8 +102,9 @@ func resetVM(c context.Context, id string) error {
 	}, nil)
 }
 
-// setURL sets the VM's URL in the datastore if it isn't already.
-func setURL(c context.Context, id, url string) error {
+// setCreated sets the VM as created in the datastore if it isn't already.
+func setCreated(c context.Context, id, url string, at time.Time) error {
+	t := at.Unix()
 	vm := &model.VM{
 		ID: id,
 	}
@@ -111,6 +113,7 @@ func setURL(c context.Context, id, url string) error {
 			return errors.Annotate(err, "failed to fetch VM").Err()
 		}
 		if vm.URL == "" {
+			vm.Deadline = t + vm.Lifetime
 			vm.URL = url
 			if err := datastore.Put(c, vm); err != nil {
 				return errors.Annotate(err, "failed to store VM").Err()
@@ -181,7 +184,11 @@ func create(c context.Context, payload proto.Message) error {
 			}
 			// Instance exists in this zone.
 			logging.Debugf(c, "instance exists: %s", inst.SelfLink)
-			return setURL(c, task.Id, inst.SelfLink)
+			t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
+			if err != nil {
+				return errors.Annotate(err, "failed to parse instance creation time").Err()
+			}
+			return setCreated(c, task.Id, inst.SelfLink, t)
 		}
 		if err := resetVM(c, task.Id); err != nil {
 			return errors.Annotate(err, "failed to create instance").Err()
@@ -199,7 +206,11 @@ func create(c context.Context, payload proto.Message) error {
 	}
 	if op.Status == "DONE" {
 		logging.Debugf(c, "created instance: %s", op.TargetLink)
-		return setURL(c, task.Id, op.TargetLink)
+		t, err := time.Parse(time.RFC3339, op.EndTime)
+		if err != nil {
+			return errors.Annotate(err, "failed to parse instance creation time").Err()
+		}
+		return setCreated(c, task.Id, op.TargetLink, t)
 	}
 	return nil
 }
