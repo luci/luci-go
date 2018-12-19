@@ -34,6 +34,7 @@ type JSONRoundTripper struct {
 	// Returns an HTTP status code and an interface{} to marshal as JSON in an *http.Response.
 	Handler func(interface{}) (int, interface{})
 	// Type is the reflect.Type to unmarshal *http.Request.Body into.
+	// Defaults to map[string]string{}.
 	Type reflect.Type
 }
 
@@ -41,6 +42,9 @@ type JSONRoundTripper struct {
 // Panics on error. Implements http.RoundTripper.
 func (t *JSONRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Unmarshal *http.Request.Body.
+	if t.Type == nil {
+		t.Type = reflect.TypeOf(map[string]string{})
+	}
 	val := reflect.New(t.Type).Interface()
 	if req.Body != nil {
 		err := json.NewDecoder(req.Body).Decode(&val)

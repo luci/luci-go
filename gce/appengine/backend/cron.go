@@ -87,3 +87,27 @@ func expandVMs(c context.Context) error {
 	}
 	return nil
 }
+
+// manageInstances creates task queue tasks to manage each GCE instance.
+func manageInstances(c context.Context) error {
+	var keys []*datastore.Key
+	// TODO(smut): Fetch in batches.
+	q := datastore.NewQuery(model.VMKind).Gt("url", "")
+	if err := datastore.GetAll(c, q, &keys); err != nil {
+		return errors.Annotate(err, "failed to fetch VMs").Err()
+	}
+	t := make([]*tq.Task, len(keys))
+	for i, k := range keys {
+		id := k.StringID()
+		t[i] = &tq.Task{
+			Payload: &tasks.Manage{
+				Id: id,
+			},
+		}
+		logging.Debugf(c, "found VM %q", id)
+	}
+	if err := getDispatcher(c).AddTask(c, t...); err != nil {
+		return errors.Annotate(err, "failed to schedule tasks").Err()
+	}
+	return nil
+}

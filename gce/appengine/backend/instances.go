@@ -22,7 +22,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 
-	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/datastore"
@@ -155,31 +154,30 @@ func create(c context.Context, payload proto.Message) error {
 	// Generate a request ID based on the hostname.
 	// Ensures duplicate operations aren't created in GCE.
 	rID := uuid.NewSHA1(uuid.Nil, []byte(vm.Hostname))
-	srv := compute.NewInstancesService(getCompute(c))
+	srv := getCompute(c).Instances
 	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.GetInstance())
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
-		err := err.(*googleapi.Error)
-		logErrors(c, err)
-		if err.Code == http.StatusConflict {
+		gerr := err.(*googleapi.Error)
+		logErrors(c, gerr)
+		if gerr.Code == http.StatusConflict {
 			// Conflict with an existing instance. Conflicts arise from name collisions.
 			// Hostnames are required to be unique per project. Either this instance already
 			// exists, or a same-named instance exists in a different zone. Figure out which.
 			call := srv.Get(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 			inst, err := call.Context(c).Do()
 			if err != nil {
-				err := err.(*googleapi.Error)
-				logErrors(c, err)
-				switch err.Code {
-				case http.StatusNotFound:
-					// Instance doesn't exist in this zone.
-					if err := resetVM(c, task.Id); err != nil {
-						return errors.Annotate(err, "instance exists in another zone").Err()
+				if gerr, ok := err.(*googleapi.Error); ok {
+					logErrors(c, gerr)
+					if gerr.Code == http.StatusNotFound {
+						// Instance doesn't exist in this zone.
+						if err := resetVM(c, task.Id); err != nil {
+							return errors.Annotate(err, "instance exists in another zone").Err()
+						}
+						return errors.Reason("instance exists in another zone").Err()
 					}
-					return errors.Reason("instance exists in another zone").Err()
-				default:
-					return errors.Reason("failed to fetch instance").Err()
 				}
+				return errors.Annotate(err, "failed to fetch instance").Err()
 			}
 			// Instance exists in this zone.
 			logging.Debugf(c, "instance exists: %s", inst.SelfLink)
@@ -202,6 +200,53 @@ func create(c context.Context, payload proto.Message) error {
 	if op.Status == "DONE" {
 		logging.Debugf(c, "created instance: %s", op.TargetLink)
 		return setURL(c, task.Id, op.TargetLink)
+	}
+	return nil
+}
+
+// manageQueue is the name of the manage task handler queue.
+const manageQueue = "manage-instance"
+
+// manage manages a created GCE instance.
+func manage(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.Manage)
+	switch {
+	case !ok:
+		return errors.Reason("unexpected payload %q", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("ID is required").Err()
+	}
+	vm, err := getVM(c, task.Id)
+	if err != nil {
+		return err
+	}
+	if vm.URL == "" {
+		return errors.Reason("instance %q does not exist", vm.URL).Err()
+	}
+	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
+	srv := getSwarming(c)
+	srv.BasePath = vm.Swarming + "/_ah/api/swarming/v1/"
+	rsp, err := srv.Bot.Get(vm.Hostname).Context(c).Do()
+	if err != nil {
+		if gerr, ok := err.(*googleapi.Error); ok {
+			logErrors(c, gerr)
+			if gerr.Code == http.StatusNotFound {
+				// Bot hasn't connected to Swarming yet.
+				// TODO(smut): Delete the instance if it's been too long.
+				logging.Debugf(c, "bot not found")
+				return nil
+			}
+		}
+		return errors.Annotate(err, "failed to fetch bot").Err()
+	}
+	logging.Debugf(c, "found bot")
+	switch {
+	case rsp.Deleted:
+		// TODO(smut): Delete the instance.
+		logging.Debugf(c, "bot deleted")
+	case rsp.IsDead:
+		// TODO(smut): Delete the bot and the instance.
+		logging.Debugf(c, "bot dead")
 	}
 	return nil
 }
