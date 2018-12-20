@@ -62,7 +62,9 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 
 		// '__native__' is NOT public API. It should be used only through public
 		// @stdlib functions.
-		"__native__": native(),
+		"__native__": native(starlark.StringDict{
+			"re_submatches": builtins.RegexpMatcher("submatches"),
+		}),
 	}
 	for k, v := range in.testPredeclared {
 		predeclared[k] = v
