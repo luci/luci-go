@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b2313a7c_47ada3d3",
+        "filename": "lucicfg/native.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T23:06:41Z",
+      "side": 1,
+      "message": "To collect names of all (well, besided declNative) exposed built-in functions in a single place. Here: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1385679/3/lucicfg/generator.go#53",
+      "parentUuid": "6b1a6575_c93c2e08",
+      "range": {
+        "startLine": 71,
+        "startChar": 12,
+        "endLine": 71,
+        "endChar": 17
+      },
+      "revId": "7666766be46ce0581b227f6d32f9fd591b10f3fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9250a5f8_9f528e59",
         "filename": "starlark/builtins/regexp.go",
         "patchSetId": 3
@@ -36,6 +60,24 @@
       "writtenOn": "2018-12-20T22:05:54Z",
       "side": 1,
       "message": "noop comment.\nFWIW this serializes all compilations.\nThis can be optimized (maybe with sync.Map), if really needed.",
+      "revId": "7666766be46ce0581b227f6d32f9fd591b10f3fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9b2bf512_3556b953",
+        "filename": "starlark/builtins/regexp.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T23:06:41Z",
+      "side": 1,
+      "message": "I don\u0027t think it will be a problem in practice, since lucicfg is single threaded. I\u0027ve added sync.RWMutex only because starlark/builtins package can potentially be reused from other starlark-based programs, which may have concurrency.",
+      "parentUuid": "9250a5f8_9f528e59",
       "revId": "7666766be46ce0581b227f6d32f9fd591b10f3fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -62,6 +104,30 @@
       "revId": "7666766be46ce0581b227f6d32f9fd591b10f3fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db716bb9_a8a774e2",
+        "filename": "starlark/builtins/regexp.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T23:06:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ff8d1c2_be7f168d",
+      "range": {
+        "startLine": 97,
+        "startChar": 2,
+        "endLine": 97,
+        "endChar": 17
+      },
+      "revId": "7666766be46ce0581b227f6d32f9fd591b10f3fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
