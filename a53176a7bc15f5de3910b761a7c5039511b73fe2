@@ -166,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "636ca81a_720295f6",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-20T03:51:44Z",
+      "side": 1,
+      "message": "I\u0027ll add, if you don\u0027t trust secondary indices (why? services like Swarming are relying on them), we can just avoid filtering at the query level. GCE Backend literally does queries over 5000 entities like:\nfor vm in VMs.query():\n  if vm.pending_deletion:\n    delete(vm)\n\nSo as long as we use datastore.Run to avoid loading them all into memory at once,\nq :\u003d datastore.NewQuery(model.VMKind)\nWithout any further filters should be fine.",
+      "parentUuid": "62b680fd_742d4a81",
+      "range": {
+        "startLine": 136,
+        "startChar": 56,
+        "endLine": 136,
+        "endChar": 82
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4ee9c217_d567980f",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 1
