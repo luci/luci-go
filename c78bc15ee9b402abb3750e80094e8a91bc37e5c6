@@ -70,6 +70,30 @@
       "revId": "c78bc15ee9b402abb3750e80094e8a91bc37e5c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "428c02ea_e7864c81",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T03:10:44Z",
+      "side": 1,
+      "message": "I expect idempotent nodes to be used only internally. For publicly visible stuff, I prefer redeclaring something (even with exact same properties) to be an error. At very least to avoid copy-paste mistakes (when some code that should have been deleted or changed is mistakenly left as is, identical to something else).",
+      "parentUuid": "f69e1d09_0c24f183",
+      "range": {
+        "startLine": 9,
+        "startChar": 36,
+        "endLine": 10,
+        "endChar": 42
+      },
+      "revId": "c78bc15ee9b402abb3750e80094e8a91bc37e5c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
