@@ -371,7 +371,7 @@ func (g *Graph) Children(parent *Key, kind, orderBy string) ([]*Node, error) {
 	// Filter children by kind.
 	var out []*Node
 	for _, child := range n.listChildren() {
-		if k, _ := child.Key.Last(); k == kind {
+		if child.Key.Kind() == kind {
 			out = append(out, child)
 		}
 	}

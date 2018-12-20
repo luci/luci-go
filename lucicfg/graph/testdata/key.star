@@ -19,6 +19,19 @@ def test_keys_work():
   assert.eq(d[k2], '1')
 
 
+def test_keys_attrs():
+  g = new_graph()
+
+  k = g.key('k1', 'i1', 'k2', 'i2', 'k3', 'i3')
+  assert.eq(dir(k), ['container', 'id', 'kind'])
+  assert.eq(k.id, 'i3')
+  assert.eq(k.kind, 'k3')
+
+  assert.eq(k.container, g.key('k1', 'i1', 'k2', 'i2'))
+  assert.eq(k.container.container, g.key('k1', 'i1'))
+  assert.eq(k.container.container.container, None)
+
+
 def test_keys_fail():
   g = new_graph()
 
@@ -38,5 +51,6 @@ def test_keys_incomparable():
 
 
 test_keys_work()
+test_keys_attrs()
 test_keys_fail()
 test_keys_incomparable()
