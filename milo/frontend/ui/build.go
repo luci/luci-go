@@ -276,23 +276,19 @@ func (bp *BuildPage) Timeline() string {
 	if bp.timelineData != "" {
 		return bp.timelineData
 	}
-	// TODO(hinoka): This doesn't currently return correct data.
-	return "\"timeline goes here\""
 
 	// stepData is extra data to deliver with the groups and items (see below) for the
 	// Javascript vis Timeline component.
 	type stepData struct {
-		Label           string    `json:"label"`
-		Text            string    `json:"text"`
-		Duration        string    `json:"duration"`
-		MainLink        LinkSet   `json:"mainLink"`
-		SubLink         []LinkSet `json:"subLink"`
-		StatusClassName string    `json:"statusClassName"`
+		Label           string       `json:"label"`
+		Text            string       `json:"text"`
+		Duration        string       `json:"duration"`
+		Links           []model.Link `json:"links"`
+		StatusClassName string       `json:"statusClassName"`
 	}
 
-	// group corresponds to, and matches the shape of, a Group for the Javascript
-	// vis Timeline component http://visjs.org/docs/timeline/#groups. Data
-	// rides along as an extra property (unused by vis Timeline itself) used
+	// group corresponds to a group in vis: http://visjs.org/docs/timeline/#groups.
+	// Data rides along as an extra property (unused by vis Timeline itself) used
 	// in client side rendering. Each Group is rendered as its own row in the
 	// timeline component on to which Items are rendered. Currently we only render
 	// one Item per Group, that is one thing per row.
@@ -301,10 +297,9 @@ func (bp *BuildPage) Timeline() string {
 		Data stepData `json:"data"`
 	}
 
-	// item corresponds to, and matches the shape of, an Item for the Javascript
-	// vis Timeline component http://visjs.org/docs/timeline/#items. Data
-	// rides along as an extra property (unused by vis Timeline itself) used
-	// in client side rendering. Each Item is rendered to a Group which corresponds
+	// item corresponds to an item in vis: http://visjs.org/docs/timeline/#items.
+	// Data rides along as an extra property (unused by vis Timeline itself) used
+	// by the client template. Each Item is rendered to a Group which corresponds
 	// to a row. Currently we only render one Item per Group, that is one thing per
 	// row.
 	type item struct {
@@ -321,13 +316,25 @@ func (bp *BuildPage) Timeline() string {
 	items := make([]item, len(bp.Build.Steps))
 	for i, step := range bp.Build.Steps {
 		groupID := strconv.Itoa(i)
-		statusClassName := fmt.Sprintf("status-%s", step.Status)
+		statusClassName := fmt.Sprintf("%s", step.Status)
+		stepName := step.Name
+		if i := strings.LastIndex(stepName, "|"); i > 0 {
+			stepName = stepName[i+1:]
+		}
+		links := make([]model.Link, len(step.Logs))
+		for i, l := range step.Logs {
+			links[i] = model.Link{
+				Label: l.Name,
+				URL:   l.Url,
+			}
+		}
 		data := stepData{
-			Label: html.EscapeString(step.Name),
-			Text:  html.EscapeString(step.SummaryMarkdown),
+			Label: html.EscapeString(stepName),
 			// TODO(hinoka): HumanDuration
 			Duration:        "duration goes here",
 			StatusClassName: statusClassName,
+			// TODO(hinoka): SummaryMarkdown, but split by <br>
+			Links: links,
 		}
 		groups[i] = group{groupID, data}
 		start, _ := ptypes.Timestamp(step.StartTime)
