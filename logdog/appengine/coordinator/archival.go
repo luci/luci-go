@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
@@ -22,19 +23,23 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 )
 
-// ErrArchiveTasked is returned by ArchivalParams' PublishTask if the supplied
-// LogStream indicates that it has already had an archival request dispatched.
-var ErrArchiveTasked = errors.New("archival already tasked for this stream")
+// ErrStreamArchived is returned by ArchivalParams' PublishTask if the supplied
+// LogStream is already archived.
+var ErrStreamArchived = errors.New("stream is already archived")
 
 // ArchivalParams is the archival configuration.
 type ArchivalParams struct {
 	// RequestID is the unique request ID to use as a random base for the
 	// archival key.
 	RequestID string
+
+	// PreviousKey (rescheduled tasks only) is the archive key of the previous archive task.
+	PreviousKey []byte
 
 	// SettleDelay is the amount of settle delay to attach to this request.
 	SettleDelay time.Duration
@@ -55,14 +60,22 @@ type ArchivalParams struct {
 // transaction for transactional safety.
 //
 // If the task is created successfully, this will return nil. If the LogStream
-// already had a task dispatched, it will return ErrArchiveTasked.
+// already had a task dispatched, it will return ErrStreamArchived.
 func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, lst *LogStreamState) error {
-	if as := lst.ArchivalState(); as.Archived() || as == ArchiveTasked {
+	if lst.ArchivalState().Archived() {
 		// An archival task has already been dispatched for this log stream.
-		return ErrArchiveTasked
+		return ErrStreamArchived
 	}
 
 	id := lst.ID()
+	if len(lst.ArchivalKey) > 0 {
+		// This is a rescheduled task. Check to see if the key matches.
+		if !bytes.Equal(p.PreviousKey, lst.ArchivalKey) {
+			logging.Warningf(c, "Key does not match, this is probably a duplicate request, discarding.")
+			return nil
+		}
+		lst.ArchiveRetryCount++
+	}
 	msg := logdog.ArchiveTask{
 		Project:      string(Project(c)),
 		Id:           string(id),

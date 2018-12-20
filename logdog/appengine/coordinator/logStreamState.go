@@ -93,6 +93,10 @@ type LogStreamState struct {
 	// archived with no log entries.
 	TerminalIndex int64 `gae:",noindex"`
 
+	// ArchiveRetryCount is the number of times this stream has attempted
+	// archival.
+	ArchiveRetryCount int64
+
 	// ArchivedTime is the Coordinator's record of when this log stream was
 	// archived. If this is non-zero, it means that the log entry has been
 	// archived.

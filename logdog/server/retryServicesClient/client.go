@@ -58,6 +58,17 @@ func (c *client) GetConfig(ctx context.Context, in *empty.Empty, opts ...grpc.Ca
 	return
 }
 
+func (c *client) RescheduleArchiveTask(ctx context.Context, in *s.ArchiveDispatchTask, opts ...grpc.CallOption) (
+	r *empty.Empty, err error) {
+
+	err = retry.Retry(ctx, c.f, func() (err error) {
+		r, err = c.c.RescheduleArchiveTask(ctx, in, opts...)
+		err = grpcutil.WrapIfTransient(err)
+		return
+	}, callback(ctx, "schedule archive task"))
+	return
+}
+
 func (c *client) RegisterStream(ctx context.Context, in *s.RegisterStreamRequest, opts ...grpc.CallOption) (
 	r *s.RegisterStreamResponse, err error) {
 

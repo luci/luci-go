@@ -15,27 +15,9 @@ message ArchiveDispatchTask {
   // The hash ID for the log stream to archive.
   string id = 1;
 
-  // The type of archival task.
-  enum Tag {
-    TERMINATED = 0;
-    EXPIRED = 1;
-  }
-  Tag tag = 2;
-
-  // Don't waste time archiving the log stream until it is at least this old.
-  //
-  // This is in place to prevent overly-aggressive archivals from wasting time
-  // trying, then failing, becuase the log stream data is still being collected
-  // into intermediate storage.
-  google.protobuf.Duration settle_delay = 3;
-
-  // The amount of time after the task was created that log stream completeness
-  // will be used as a success criteria. If the task's age is older than this
-  // value, completeness will not be enforced.
-  //
-  // The task's age can be calculated by subtracting its lease expiration time
-  // (leaseTimestamp) from its enqueued timestamp (enqueueTimestamp).
-  google.protobuf.Duration complete_period = 4;
+  // The archival key of the previous archive task, to ensure only a single
+  // retry is tasked.
+  bytes key = 2;
 }
 
 // ArchiveTask is a task queue task description for the archival of a single

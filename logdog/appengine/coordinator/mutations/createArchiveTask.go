@@ -42,6 +42,10 @@ type CreateArchiveTask struct {
 	// entity itself.
 	ID coordinator.HashID
 
+	// Key is the archive key of the previous archive attempt.
+	// This is only provided if this archive task is a re-task.
+	Key []byte
+
 	// SettleDelay is the settle delay (see ArchivalParams).
 	SettleDelay time.Duration
 	// CompletePeriod is the complete period to use (see ArchivalParams).
@@ -65,6 +69,7 @@ var (
 // RollForward implements tumble.DelayedMutation.
 func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, error) {
 	c = log.SetField(c, "id", m.ID)
+	c = log.SetField(c, "key", m.Key)
 
 	svc := endpoints.GetServices(c)
 	ap, err := svc.ArchivalPublisher(c)
@@ -112,12 +117,13 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 
 	params := coordinator.ArchivalParams{
 		RequestID:      info.RequestID(c),
+		PreviousKey:    m.Key,
 		SettleDelay:    m.SettleDelay,
 		CompletePeriod: m.CompletePeriod,
 	}
 	if err = params.PublishTask(c, ap, state); err != nil {
-		if err == coordinator.ErrArchiveTasked {
-			log.Warningf(c, "Archival already tasked, skipping.")
+		if err == coordinator.ErrStreamArchived {
+			log.Warningf(c, "Stream already archived, skipping.")
 			return nil, nil
 		}
 
