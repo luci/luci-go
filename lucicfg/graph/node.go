@@ -26,9 +26,10 @@ import (
 
 // Node is an element of the graph.
 type Node struct {
-	Key   *Key                         // unique ID of the node
-	Props *starlarkstruct.Struct       // struct(...) with frozen properties
-	Trace *builtins.CapturedStacktrace // where the node was defined
+	Key        *Key                         // unique ID of the node
+	Props      *starlarkstruct.Struct       // struct(...) with frozen properties
+	Trace      *builtins.CapturedStacktrace // where the node was defined
+	Idempotent bool                         // true if it's fine to redeclare this node
 
 	children []*Edge // edges from us (the parent) to the children
 	parents  []*Edge // edges from the parents to us (the child)
@@ -48,9 +49,10 @@ type Edge struct {
 // declare marks the node as declared.
 //
 // Freezes properties as a side effect.
-func (n *Node) declare(props *starlarkstruct.Struct, trace *builtins.CapturedStacktrace) {
+func (n *Node) declare(props *starlarkstruct.Struct, idempotent bool, trace *builtins.CapturedStacktrace) {
 	props.Freeze()
 	n.Props = props
+	n.Idempotent = idempotent
 	n.Trace = trace
 }
 
