@@ -111,8 +111,7 @@ func (n *Node) listChildren() []*Node {
 // globally unique, but usually "unique enough" to identify the node in error
 // messages.
 func (n *Node) String() string {
-	kind, id := n.Key.Last()
-	return fmt.Sprintf("%s(%q)", kind, id)
+	return fmt.Sprintf("%s(%q)", n.Key.Kind(), n.Key.ID())
 }
 
 // Type is a part of starlark.Value interface.
