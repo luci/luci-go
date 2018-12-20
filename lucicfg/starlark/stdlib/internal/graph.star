@@ -32,8 +32,12 @@ def _key(*args):
   return __native__.graph().key(*args)
 
 
-def _add_node(key, props=None, trace=None):
-  """Adds a node to the graph or fails if such node already exists.
+def _add_node(key, props=None, idempotent=False, trace=None):
+  """Adds a node to the graph.
+
+  If such node already exists, either fails right away (if 'idempotent' is
+  false), or verifies the existing node has also been marked as idempotent and
+  has exact same props dict as being passed here.
 
   Also fails if used from a generator callback: at this point the graph is
   frozen and can't be extended.
@@ -41,13 +45,14 @@ def _add_node(key, props=None, trace=None):
   Args:
     key: a node key, as returned by graph.key(...).
     props: a dict with node properties, will be frozen.
+    idempotent: True if this node can be redeclared, but only with same props.
     trace: a stack trace to associate with the node.
 
   Returns:
     graph.node object representing the node.
   """
   return __native__.graph().add_node(
-      key, props or {}, trace or stacktrace(skip=1))
+      key, props or {}, bool(idempotent), trace or stacktrace(skip=1))
 
 
 def _add_edge(parent, child, title=None, trace=None):
