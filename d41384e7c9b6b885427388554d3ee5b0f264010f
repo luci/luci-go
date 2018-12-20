@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "709e824e_e8d5bb64",
+        "filename": "lucicfg/graph/keyset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T00:24:14Z",
+      "side": 1,
+      "message": "no changes here, just extracted into a separate file",
+      "revId": "d41384e7c9b6b885427388554d3ee5b0f264010f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
