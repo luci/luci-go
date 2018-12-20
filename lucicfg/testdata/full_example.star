@@ -29,6 +29,38 @@ core.bucket(
 )
 
 
+core.builder(
+    name = 'test builder',
+    bucket = 'ci',
+)
+
+core.builder(
+    name = 'some ci builder',
+    bucket = 'ci',
+)
+
+core.builder(
+    name = 'test builder',
+    bucket = 'try',
+)
+
+core.builder(
+    name = 'some try builder',
+    bucket = 'try',
+)
+
+
+core.builder_group(
+    name = 'test group',
+    builders = [
+        'some ci builder',
+        'some try builder',
+        'ci/test builder',
+        'try/test builder',
+    ],
+)
+
+
 # Expect configs:
 #
 # === cr-buildbucket.cfg
