@@ -19,13 +19,14 @@ child('c2', 'world')
 def gen(ctx):
   msg = []
   for c in graph.children(root, 'child'):
-    msg.append(c.props.msg)
-  ctx.config_set['output.txt'] = ' '.join(msg) + '\n'
+    msg.append('%s: %s' % (c.props.msg, graph.parents(c.key, 'root')))
+  ctx.config_set['output.txt'] = '\n'.join(msg) + '\n'
 core.generator(impl = gen)
 
 
 # Expect configs:
 #
 # === output.txt
-# hello world
+# hello: [root("root")]
+# world: [root("root")]
 # ===
