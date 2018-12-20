@@ -16,6 +16,7 @@ package graph
 
 import (
 	"fmt"
+	"strings"
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -133,11 +134,21 @@ func (n *Node) listParents() []*Node {
 
 // String is a part of starlark.Value interface.
 //
-// Returns a node title as derived from the last component of its key. It's not
-// globally unique, but usually "unique enough" to identify the node in error
-// messages.
+// Returns a node title as derived from the kind of last component of its key
+// and IDs of all key components. It's not 1-to-1 mapping to the full
+// information in the key, but usually "unique enough" to identify the node in
+// error messages.
 func (n *Node) String() string {
-	return fmt.Sprintf("%s(%q)", n.Key.Kind(), n.Key.ID())
+	ids := make([]string, 0, 5) // overestimate
+	p := n.Key
+	for p != nil {
+		ids = append(ids, p.ID())
+		p = p.Container()
+	}
+	for l, r := 0, len(ids)-1; l < r; l, r = l+1, r-1 {
+		ids[l], ids[r] = ids[r], ids[l]
+	}
+	return fmt.Sprintf("%s(%q)", n.Key.Kind(), strings.Join(ids, "/"))
 }
 
 // Type is a part of starlark.Value interface.
