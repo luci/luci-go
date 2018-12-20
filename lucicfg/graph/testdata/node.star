@@ -44,6 +44,33 @@ def test_redeclaration():
 test_redeclaration()
 
 
+def test_idempotent_nodes():
+  g = new_graph()
+  k1 = g.key('t1', 'id1')
+  k2 = g.key('t1', 'id2')
+  k3 = g.key('t1', 'id3')
+
+  # Declaring idempotent node twice with exact same props is OK.
+  g.add_node(k1, {'a': [1, 1]}, idempotent=True)
+  g.add_node(k1, {'a': [1, 1]}, idempotent=True)
+  # Redeclaring idempotent node as non-idempotent is not OK.
+  assert.fails(
+      lambda: g.add_node(k1, {'a': [1, 1]}, idempotent=False), 'redeclared')
+  # Redeclaring idempotent node with different props is not OK.
+  assert.fails(
+      lambda: g.add_node(k1, {'a': [1, 2]}, idempotent=True), 'redeclared')
+
+  # A node declared as non-idempotent cannot be redeclared as idempotent.
+  g.add_node(k2, idempotent=False)
+  assert.fails(lambda: g.add_node(k2, idempotent=True), 'redeclared')
+
+  # A node declared as idempotent cannot be redeclared as non-idempotent.
+  g.add_node(k3, idempotent=True)
+  assert.fails(lambda: g.add_node(k3, idempotent=False), 'redeclared')
+
+test_idempotent_nodes()
+
+
 def test_freezes_props():
   g = new_graph()
   k = g.key('t1', 'id1')

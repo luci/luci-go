@@ -157,7 +157,7 @@ func (e *DanglingEdgeError) Backtrace() string {
 //
 // Graph implements starlark.HasAttrs interface and have the following methods:
 //   * key(kind1: string, id1: string, kind2: string, id2: string, ...): graph.key
-//   * add_node(key: graph.key, props={}, trace=stacktrace()): graph.node
+//   * add_node(key: graph.key, props={}, idempotent=False, trace=stacktrace()): graph.node
 //   * add_edge(parent: graph.Key, child: graph.Key, title='', trace=stacktrace())
 //   * finalize(): []string
 //   * node(key: graph.key): graph.node
@@ -183,7 +183,8 @@ func (g *Graph) validateKey(title string, k *Key) error {
 //
 // The newly added node is in "predeclared" state: it has no Props or Trace.
 // A predeclared node is moved to the fully declared state by AddNode, this can
-// happen only once.
+// happen only once for non-idempotent nodes or more than once for idempotent
+// nodes, if each time their props dict is exactly same.
 //
 // Panics if the graph is finalized.
 func (g *Graph) initNode(k *Key) *Node {
@@ -203,13 +204,16 @@ func (g *Graph) initNode(k *Key) *Node {
 
 //// API to mutate the graph before it is finalized.
 
-// AddNode adds a node to the graph or returns an error if such node already
-// exists.
+// AddNode adds a node to the graph.
+//
+// If such node already exists, either returns an error right away (if
+// 'idempotent' is false), or verifies the existing node has also been marked
+// as idempotent and has exact same props dict as being passed here.
 //
 // Trying to use AddNode after the graph has been finalized is an error.
 //
 // Freezes props.values() as a side effect.
-func (g *Graph) AddNode(k *Key, props *starlark.Dict, trace *builtins.CapturedStacktrace) (*Node, error) {
+func (g *Graph) AddNode(k *Key, props *starlark.Dict, idempotent bool, trace *builtins.CapturedStacktrace) (*Node, error) {
 	if g.finalized {
 		return nil, ErrFinalized
 	}
@@ -223,14 +227,25 @@ func (g *Graph) AddNode(k *Key, props *starlark.Dict, trace *builtins.CapturedSt
 			return nil, fmt.Errorf("non-string key %s in 'props'", pk)
 		}
 	}
+	propsStruct := starlarkstruct.FromKeywords(starlark.String("props"), props.Items())
 
-	// A node can be fully declared only once.
 	n := g.initNode(k)
-	if n.Declared() {
-		return nil, &NodeRedeclarationError{Trace: trace, Previous: n}
+	if !n.Declared() {
+		n.declare(propsStruct, idempotent, trace)
+		return n, nil
 	}
-	n.declare(starlarkstruct.FromKeywords(starlark.String("props"), props.Items()), trace)
-	return n, nil
+
+	// Only idempotent nodes can be redeclared, and only if all declarations
+	// are marked as idempotent and they specify exact same props.
+	if n.Idempotent && idempotent {
+		switch eq, err := starlark.Equal(propsStruct, n.Props); {
+		case err != nil:
+			return nil, err
+		case eq:
+			return n, nil
+		}
+	}
+	return nil, &NodeRedeclarationError{Trace: trace, Previous: n}
 }
 
 // AddEdge adds an edge to the graph.
@@ -479,12 +494,19 @@ var graphAttrs = map[string]*starlark.Builtin{
 		return b.Receiver().(*Graph).Key(pairs...)
 	}),
 
-	// add_node(key: graph.key, props={}, trace=stacktrace()): graph.node
+	// add_node(key: graph.key, props={}, idempotent=False, trace=stacktrace()): graph.node
 	"add_node": starlark.NewBuiltin("add_node", func(th *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		var key *Key
 		var props *starlark.Dict
+		var idempotent starlark.Bool
 		var trace *builtins.CapturedStacktrace
-		if err := starlark.UnpackArgs("add_node", args, kwargs, "key", &key, "props?", &props, "trace?", &trace); err != nil {
+		err := starlark.UnpackArgs("add_node", args, kwargs,
+			"key", &key,
+			"props?", &props,
+			"idempotent?", &idempotent,
+			"trace?", &trace,
+		)
+		if err != nil {
 			return nil, err
 		}
 		if props == nil {
@@ -496,7 +518,7 @@ var graphAttrs = map[string]*starlark.Builtin{
 				return nil, err
 			}
 		}
-		return b.Receiver().(*Graph).AddNode(key, props, trace)
+		return b.Receiver().(*Graph).AddNode(key, props, bool(idempotent), trace)
 	}),
 
 	// add_edge(parent: graph.Key, child: graph.Key, title='', trace=stacktrace())
