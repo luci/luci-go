@@ -46,6 +46,30 @@
       "revId": "c78bc15ee9b402abb3750e80094e8a91bc37e5c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f69e1d09_0c24f183",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T02:38:47Z",
+      "side": 1,
+      "message": "ok, read the code. The code LGTM, but I don\u0027t understand why not make all nodes idempotent. If someone is trying to redeclare a node identical to the one already existing, in general, why do we care? How does a node kind author decides whether it should be idempotent or not?",
+      "parentUuid": "91599c11_e7714e9e",
+      "range": {
+        "startLine": 9,
+        "startChar": 36,
+        "endLine": 10,
+        "endChar": 42
+      },
+      "revId": "c78bc15ee9b402abb3750e80094e8a91bc37e5c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
