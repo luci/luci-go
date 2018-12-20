@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2515cef8_834a82fc",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T20:54:38Z",
+      "side": 1,
+      "message": "looks like gerrit somehow ate my comment in the previous CL:\n\n.BuildPage is the only parameter passed to the page, so there is not much value in spelling it out everywhere explicitly. Can we do it once in the {{define \"body\"}} like this:\n\n  {{ with .BuildPage }} ... {{ end }}\n\nso that the rest of the code does not have to do this. Fine to do in a separate CL",
+      "range": {
+        "startLine": 2,
+        "startChar": 6,
+        "endLine": 2,
+        "endChar": 15
+      },
+      "revId": "3b361e3eda5e0b88268f36ca7e3c266984a00ff9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67a99dd1_a3be49e2",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T20:54:38Z",
+      "side": 1,
+      "message": "inconsistent with L2\n\nbelow too\n\n---\n\nafter reading go code: apparently that\u0027s not the same thing. It would be more obvious if the function had a different name. Note that BuildPage embed Build",
+      "range": {
+        "startLine": 33,
+        "startChar": 10,
+        "endLine": 33,
+        "endChar": 26
+      },
+      "revId": "3b361e3eda5e0b88268f36ca7e3c266984a00ff9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee7cba96_6d43ffde",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T20:54:38Z",
+      "side": 1,
+      "message": "nit: nil",
+      "range": {
+        "startLine": 446,
+        "startChar": 24,
+        "endLine": 446,
+        "endChar": 32
+      },
+      "revId": "3b361e3eda5e0b88268f36ca7e3c266984a00ff9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38651322_5b995726",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T20:54:38Z",
+      "side": 1,
+      "message": "friendly?",
+      "range": {
+        "startLine": 113,
+        "startChar": 26,
+        "endLine": 113,
+        "endChar": 32
+      },
+      "revId": "3b361e3eda5e0b88268f36ca7e3c266984a00ff9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6a2569e_2f5faee6",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T20:54:38Z",
+      "side": 1,
+      "message": "it always returns 0 or 1 logos. Is this return type still appropriate?",
+      "range": {
+        "startLine": 163,
+        "startChar": 31,
+        "endLine": 163,
+        "endChar": 46
+      },
+      "revId": "3b361e3eda5e0b88268f36ca7e3c266984a00ff9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
