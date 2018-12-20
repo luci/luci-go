@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "940ebc0b_479bda8d",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T03:56:40Z",
+      "side": 1,
+      "message": "Done. Cool.",
+      "parentUuid": "b9bff45e_6f02a92d",
+      "range": {
+        "startLine": 358,
+        "startChar": 57,
+        "endLine": 360,
+        "endChar": 2
+      },
+      "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ddb2c38c_4ac6d9ce",
         "filename": "lucicfg/graph/graph.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "268f59a3_6e966a43",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T03:56:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ddb2c38c_4ac6d9ce",
+      "range": {
+        "startLine": 375,
+        "startChar": 55,
+        "endLine": 377,
+        "endChar": 2
+      },
+      "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "87d1bcab_97b9ca1f",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T03:56:40Z",
+      "side": 1,
+      "message": "Normalizing how exactly? Things are pretty deterministic already. I like to keep the graph in the original declaration order, since it may be important for some user-visible things (like an order of milo column definitions or something).",
+      "parentUuid": "45582106_c952df22",
+      "range": {
+        "startLine": 381,
+        "startChar": 16,
+        "endLine": 381,
+        "endChar": 29
+      },
+      "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2b79e8c9_c8140cad",
         "filename": "lucicfg/graph/graph.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c89d0144_6f3beeff",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T03:56:40Z",
+      "side": 1,
+      "message": "No: arguments to copy have different element types: []starlark.Value and []*Node",
+      "parentUuid": "2b79e8c9_c8140cad",
+      "range": {
+        "startLine": 463,
+        "startChar": 1,
+        "endLine": 465,
+        "endChar": 2
+      },
+      "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
