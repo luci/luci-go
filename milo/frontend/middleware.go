@@ -434,10 +434,23 @@ func GetReload(r *http.Request, def int) int {
 	return refresh
 }
 
+var rLinkBreak = regexp.MustCompile("<br */?>")
+
 // renderMarkdown renders the given text as markdown HTML.
-// TODO(hinoka): Implement me.
+// TODO(hinoka): This doesn't actually render markdown, but it should.
 func renderMarkdown(t string) (results template.HTML) {
-	return template.HTML(fmt.Sprintf("<pre>%s</pre>", template.HTMLEscapeString(t)))
+	// HACK(hinoka): Once upon a time, we used a packaged CI system called BuildBot.
+	// BuildBot supported the idea of step texts, where the user could specify
+	// custom text to display alongside each step.  BuildBot also allowed a user to inject
+	// arbitrary HTML inside the step text.
+	// Because of this, we would often find <br> in place of newlines.
+	// Even though we use now, the legacy of the <br> remains, and users
+	// still expect the <br> to represent line break.
+	split := rLinkBreak.Split(t, -1)
+	for i, s := range split {
+		split[i] = template.HTMLEscapeString(s)
+	}
+	return template.HTML(strings.Join(split, "<br>"))
 }
 
 // renderProperties renders a structpb.Struct as a properties table.
