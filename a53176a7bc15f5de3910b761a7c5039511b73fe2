@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e8cf64e_bfa61ce4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-20T02:43:40Z",
+      "side": 1,
+      "message": "btw, how do you intend to drain VM blocks removed entirely?",
+      "range": {
+        "startLine": 7,
+        "startChar": 6,
+        "endLine": 8,
+        "endChar": 0
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d1e5641_6046fb5f",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-20T02:43:40Z",
+      "side": 1,
+      "message": "can you add a comment here explaining what\u0027ll happen next now that flag is switched?\n(this also relates to my request to document this flag below)",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 19
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "977be809_3100edfc",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-20T02:43:40Z",
+      "side": 1,
+      "message": "now that you handle drain, \"expand\" can confusingly read as \"expand number of VMs in a block\". WDYT about \"fanout\"?",
+      "range": {
+        "startLine": 103,
+        "startChar": 5,
+        "endLine": 103,
+        "endChar": 11
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c93826e_de212c5e",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-20T02:43:40Z",
+      "side": 1,
+      "message": "I still don\u0027t trust datastore secondary indexes, so i\u0027m wondering why previous ID scheme was not good enough?\n\n.Gte would work just fine and instead of Eq, you\u0027d need .Lte, but the upside is that primary index is used now, so you don\u0027t need secondary indexes. The downside is that VM.id scheme is now important.",
+      "range": {
+        "startLine": 136,
+        "startChar": 56,
+        "endLine": 136,
+        "endChar": 82
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ee9c217_d567980f",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-20T02:43:40Z",
+      "side": 1,
+      "message": "can you expand on meaning of \"drained\" in this context?",
+      "range": {
+        "startLine": 62,
+        "startChar": 45,
+        "endLine": 62,
+        "endChar": 56
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
