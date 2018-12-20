@@ -217,6 +217,14 @@ message BuildInfra {
     // Whether canary version of the swarming task template was used for this
     // build.
     bool canary = 4;
+
+    // Properties that were specified in ScheduleBuildRequest to create this
+    // build.
+    //
+    // In particular, CQ uses this to decide whether the build created by
+    // someone else is appropriate for CQ, e.g. it was created with the same
+    // properties that CQ would use.
+    google.protobuf.Struct requested_properties = 5;
   }
 
   // Swarming-specific information.
