@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e6ed905d_2224e990",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-20T03:47:11Z",
+      "side": 1,
+      "message": "Ultimately, the VM block itself needs to be drained, and then the ensure handler would add the condition that if the entire block is drained, drain all VM entities instead of only draining entities above the specified amount in the block.\n\nThis can be accomplished by changing the semantics of the internal-only Delete RPC to simply mark the block as drained instead of deleting it outright.\n\nThen the ensure handler can further be updated to finally delete the block if it\u0027s drained and the query for its outstanding VM entities returns nothing.",
+      "parentUuid": "3e8cf64e_bfa61ce4",
+      "range": {
+        "startLine": 7,
+        "startChar": 6,
+        "endLine": 8,
+        "endChar": 0
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4d1e5641_6046fb5f",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "097e3192_3a6994ba",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-20T03:47:11Z",
+      "side": 1,
+      "message": "Added comment in model package. Eventually will add a README explaining what \"drained\" generally means.",
+      "parentUuid": "4d1e5641_6046fb5f",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 19
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "62b680fd_742d4a81",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-20T03:47:11Z",
+      "side": 1,
+      "message": "What query are you proposing that relies on the string ID and still works?\n\ne.g. \"trusty-10\" \u003c \"trusty-9\" because the char \"1\" is smaller than the char \"9\", but \"10\" should be drained before \"9\". These need to be compared numerically.",
+      "parentUuid": "8c93826e_de212c5e",
+      "range": {
+        "startLine": 136,
+        "startChar": 56,
+        "endLine": 136,
+        "endChar": 82
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4ee9c217_d567980f",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 1
@@ -114,6 +186,30 @@
       "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdf4f2ad_01891496",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-20T03:47:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ee9c217_d567980f",
+      "range": {
+        "startLine": 62,
+        "startChar": 45,
+        "endLine": 62,
+        "endChar": 56
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
