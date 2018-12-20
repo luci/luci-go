@@ -94,6 +94,30 @@
       "revId": "c78bc15ee9b402abb3750e80094e8a91bc37e5c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51c504e4_c1518d5a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-20T03:49:12Z",
+      "side": 1,
+      "message": "Here\u0027s what I had in mind: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1385675",
+      "parentUuid": "428c02ea_e7864c81",
+      "range": {
+        "startLine": 9,
+        "startChar": 36,
+        "endLine": 10,
+        "endChar": 42
+      },
+      "revId": "c78bc15ee9b402abb3750e80094e8a91bc37e5c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
