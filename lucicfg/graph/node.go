@@ -29,8 +29,11 @@ type Node struct {
 	Props *starlarkstruct.Struct       // struct(...) with frozen properties
 	Trace *builtins.CapturedStacktrace // where the node was defined
 
-	children     []*Edge // edges from us (the parent) to the children
+	children []*Edge // edges from us (the parent) to the children
+	parents  []*Edge // edges from the parents to us (the child)
+
 	childrenList []*Node // memoized result of listChildren()
+	parentsList  []*Node // memoised result of listParents()
 }
 
 // Edge is a single 'Parent -> Child' edge in the graph.
@@ -103,6 +106,29 @@ func (n *Node) listChildren() []*Node {
 		}
 	}
 	return n.childrenList
+}
+
+// listParents returns a slice with a set of direct parents of the node, in
+// order corresponding edges were declared.
+//
+// Must be used only with finalized graphs, since the function caches its result
+// internally on a first call. For the same reason the result must not be
+// directly mutated.
+func (n *Node) listParents() []*Node {
+	if n.parentsList == nil {
+		// Note: we want to allocate a new slice even if it is empty, so that
+		// n.parentsList is not nil anymore (to indicate we did the calculation
+		// already).
+		n.parentsList = make([]*Node, 0, len(n.parents))
+		seen := make(map[*Key]struct{}, len(n.parents))
+		for _, edge := range n.parents {
+			if _, ok := seen[edge.Parent.Key]; !ok {
+				seen[edge.Parent.Key] = struct{}{}
+				n.parentsList = append(n.parentsList, edge.Parent)
+			}
+		}
+	}
+	return n.parentsList
 }
 
 // String is a part of starlark.Value interface.

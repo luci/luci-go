@@ -162,6 +162,7 @@ func (e *DanglingEdgeError) Backtrace() string {
 //   * finalize(): []string
 //   * node(key: graph.key): graph.node
 //   * children(parent: graph.key, kind: string, order_by='key'): []graph.node
+//   * parents(child: graph.key, kind: string, order_by='key'): []graph.node
 type Graph struct {
 	KeySet
 
@@ -287,6 +288,7 @@ func (g *Graph) AddEdge(parent, child *Key, title string, trace *builtins.Captur
 	}
 
 	edge.Parent.children = append(edge.Parent.children, edge)
+	edge.Child.parents = append(edge.Child.parents, edge)
 	g.edges = append(g.edges, edge)
 	return nil
 }
@@ -353,32 +355,52 @@ func (g *Graph) Node(k *Key) (*Node, error) {
 //
 // Trying to use Children before the graph has been finalized is an error.
 func (g *Graph) Children(parent *Key, kind, orderBy string) ([]*Node, error) {
+	return g.sortedListing(parent, "parent", kind, orderBy, (*Node).listChildren)
+}
+
+// Parents returns direct parents of a node (given by its key) that have the
+// given kind (based on the last component of their keys).
+//
+// The order of the result depends on a value of 'orderBy':
+//   'key': nodes are ordered lexicographically by their keys (smaller first).
+//   'exec': nodes are ordered by the order edges to them were defined during
+//        the execution (earlier first).
+//
+// Any other value of 'orderBy' causes an error.
+//
+// Trying to use Parents before the graph has been finalized is an error.
+func (g *Graph) Parents(child *Key, kind, orderBy string) ([]*Node, error) {
+	return g.sortedListing(child, "child", kind, orderBy, (*Node).listParents)
+}
+
+// sortedListing is a common implementation of Children and Parents.
+func (g *Graph) sortedListing(key *Key, attr, kind, orderBy string, cb func(n *Node) []*Node) ([]*Node, error) {
 	if !g.finalized {
 		return nil, ErrNotFinalized
 	}
-	if err := g.validateKey("parent", parent); err != nil {
+	if err := g.validateKey(attr, key); err != nil {
 		return nil, err
 	}
 	if orderBy != "key" && orderBy != "exec" {
 		return nil, fmt.Errorf("unknown order %q, expecting either \"key\" or \"exec\"", orderBy)
 	}
 
-	n := g.nodes[parent]
+	n := g.nodes[key]
 	if n == nil {
-		return nil, nil // no parent at all -> no children
+		return nil, nil // no node at all -> no related nodes
 	}
 
-	// Filter children by kind.
+	// Filter relatives by kind.
 	var out []*Node
-	for _, child := range n.listChildren() {
-		if child.Key.Kind() == kind {
-			out = append(out, child)
+	for _, relative := range cb(n) {
+		if relative.Key.Kind() == kind {
+			out = append(out, relative)
 		}
 	}
 
-	// Optionally sort. listChildren() returns children in order they were defined
-	// which matches orderBy == "exec", so need to sort only if asked to order by
-	// key.
+	// Optionally sort. cb is supposed to return relatives in order they were
+	// defined which matches orderBy == "exec", so need to sort only if asked to
+	// order by key.
 	if orderBy == "key" {
 		sort.Slice(out, func(i, j int) bool { return out[i].Key.Less(out[j].Key) })
 	}
@@ -431,6 +453,14 @@ func (g *Graph) Attr(name string) (starlark.Value, error) {
 }
 
 //// Starlark bindings for individual graph methods.
+
+func nodesList(nodes []*Node) *starlark.List {
+	vals := make([]starlark.Value, len(nodes))
+	for i, n := range nodes {
+		vals[i] = n
+	}
+	return starlark.NewList(vals)
+}
 
 var graphAttrs = map[string]*starlark.Builtin{
 	// key(kind1: string, id1: string, kind2: string, id2: string, ...): graph.key
@@ -536,10 +566,25 @@ var graphAttrs = map[string]*starlark.Builtin{
 		if err != nil {
 			return nil, err
 		}
-		vals := make([]starlark.Value, len(nodes))
-		for i, n := range nodes {
-			vals[i] = n
+		return nodesList(nodes), nil
+	}),
+
+	// parents(child: graph.key, kind: string, order_by='key'): []graph.node
+	"parents": starlark.NewBuiltin("parents", func(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		var child *Key
+		var kind starlark.String
+		var orderBy starlark.String = "key"
+		err := starlark.UnpackArgs("parents", args, kwargs,
+			"child", &child,
+			"kind", &kind,
+			"order_by?", &orderBy)
+		if err != nil {
+			return nil, err
 		}
-		return starlark.NewList(vals), nil
+		nodes, err := b.Receiver().(*Graph).Parents(child, kind.GoString(), orderBy.GoString())
+		if err != nil {
+			return nil, err
+		}
+		return nodesList(nodes), nil
 	}),
 }
