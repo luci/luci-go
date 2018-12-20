@@ -33,6 +33,16 @@ import (
 	"go.chromium.org/luci/server/templates"
 )
 
+// handleDevBuild renders a canned build for development.
+func handleDevBuild(c *router.Context) error {
+	name := c.Params.ByName("name")
+	b, err := buildbucket.GetTestBuild(c.Context, "../../buildsource/buildbucket", name)
+	if err != nil {
+		return err
+	}
+	return renderBuild(c, &ui.BuildPage{Build: *b}, nil)
+}
+
 // handleLUCIBuild renders a LUCI build.
 func handleLUCIBuild(c *router.Context) error {
 	bucket := c.Params.ByName("bucket")

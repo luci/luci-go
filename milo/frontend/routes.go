@@ -64,6 +64,12 @@ func Run(templatePath string) {
 		withGitMiddleware,
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
+	devHtmlMW := baseMW.Extend(
+		middleware.WithContextTimeout(time.Minute),
+		auth.Authenticate(server.CookieAuth),
+		withGitMiddleware,
+		templates.WithTemplates(getTemplateBundle(templatePath)),
+	)
 	projectMW := htmlMW.Extend(projectACLMiddleware)
 	backendMW := baseMW.Extend(middleware.WithContextTimeout(10 * time.Minute))
 	cronMW := backendMW.Extend(gaemiddleware.RequireCron)
@@ -75,6 +81,9 @@ func Run(templatePath string) {
 
 	// Admin and cron endpoints.
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
+
+	// Dev endpoints.
+	r.GET("/admin/debug/build/:name", devHtmlMW, handleError(handleDevBuild))
 
 	// Cron endpoints
 	r.GET("/internal/cron/stats", cronMW, cronHandler(buildbot.StatsHandler))
