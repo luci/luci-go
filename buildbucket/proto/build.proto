@@ -217,6 +217,10 @@ message BuildInfra {
     // Whether canary version of the swarming task template was used for this
     // build.
     bool canary = 4;
+
+    // Properties that were specified in ScheduleBuildRequest to create this
+    // build.
+    google.protobuf.Struct requested_properties = 5;
   }
 
   // Swarming-specific information.
