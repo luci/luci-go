@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6b1a6575_c93c2e08",
+        "filename": "lucicfg/native.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T22:05:54Z",
+      "side": 1,
+      "message": "i\u0027m sure you have reasons, but I didn\u0027t understand why do we need this layer of indirection. Why not define submatches right here?",
+      "range": {
+        "startLine": 71,
+        "startChar": 12,
+        "endLine": 71,
+        "endChar": 17
+      },
+      "revId": "7666766be46ce0581b227f6d32f9fd591b10f3fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9250a5f8_9f528e59",
+        "filename": "starlark/builtins/regexp.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T22:05:54Z",
+      "side": 1,
+      "message": "noop comment.\nFWIW this serializes all compilations.\nThis can be optimized (maybe with sync.Map), if really needed.",
+      "revId": "7666766be46ce0581b227f6d32f9fd591b10f3fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6ff8d1c2_be7f168d",
+        "filename": "starlark/builtins/regexp.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T22:05:54Z",
+      "side": 1,
+      "message": "nit: would be nice to have a comment that we don\u0027t expect it often so we don\u0027t cache errors",
+      "range": {
+        "startLine": 97,
+        "startChar": 2,
+        "endLine": 97,
+        "endChar": 17
+      },
+      "revId": "7666766be46ce0581b227f6d32f9fd591b10f3fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
