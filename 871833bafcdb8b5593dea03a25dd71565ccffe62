@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9fb8eb38_f7b22f10",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T02:05:52Z",
+      "side": 1,
+      "message": "consider making it build-agnostic (.MiloUrl?) so that the same parameter can be used in potential future templates",
+      "range": {
+        "startLine": 40,
+        "startChar": 12,
+        "endLine": 40,
+        "endChar": 17
+      },
+      "revId": "871833bafcdb8b5593dea03a25dd71565ccffe62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
