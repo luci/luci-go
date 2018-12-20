@@ -24,6 +24,82 @@ load('@stdlib//internal/graph.star', 'graph')
 #   core.project: root
 #   core.project -> core.logdog
 #   core.project -> [core.bucket]
+#   core.project -> [core.builder_group]
+#   core.bucket -> [core.builder]
+#   core.builder_group -> [core.builder]
+
+
+# Keys of some nodes (e.g. 'core.builder') are generally scoped to some bucket,
+# but to simplify referring to them there are "alias" nodes, with keys in the
+# global scope.
+#
+# For a node [(BUCKET, bucket), (BUILDER, id)], the alias node has a key
+# [(BUILDER, id)] and empty body. It has the original node as a child.
+#
+# Other nodes that want to link to a builder can either link directly to the
+# builder node, or to its global alias node. During the generation phase, links
+# to aliases are followed to find the original node (or discover there are
+# multiple nodes that have same name and thus link to the same alias node).
+
+
+def _bucket_scoped(kind, name):
+  """Returns either a bucket-scoped or a global key of the given kind.
+
+  Args:
+    kind: kind of the key.
+    name: either "<bucket>/<name>" or just "<name>".
+  """
+  chunks = name.split('/', 1)
+  if len(chunks) == 1:
+    return graph.key(kind, chunks[0])
+  return graph.key(kinds.BUCKET, chunks[0], kind, chunks[1])
+
+
+def _declare_alias(key):
+  """Declares an alias node in the global namespace.
+
+  Given a key [(BUCKET, b), (KIND, id)], adds a node with the key [(KIND, id)],
+  and links it back to the original node.
+
+  This allows to later discover all nodes with given (KIND, id) pair, without
+  knowing their full keys.
+
+  Args:
+    key: graph.key to setup an alias for.
+  """
+  alias_key = graph.key(key.kind, key.id)
+  graph.add_node(alias_key, idempotent=True)
+  graph.add_edge(alias_key, key)
+
+
+def _resolve_alias(node):
+  """Given an alias node, finds the single original node.
+
+  Errors if there are multiple nodes with the same alias.
+
+  Args:
+    node: either a concrete node, or a global alias node.
+  """
+  if node.key.container != None:
+    return node  # already resolved
+  variants = graph.children(node.key, node.key.kind)
+  if not variants:
+    fail('alias.resolve: unexpectedly 0 matching nodes')
+  elif len(variants) != 1:
+    fail('ambiguous reference %s, possible variants:\n  %s' % (
+        node,
+        '\n  '.join([
+            '%s/%s' % (b.key.container.id, b.key.id) for b in variants
+        ]),
+    ))
+  return variants[0]
+
+
+# Utilities for working with alias nodes.
+alias = struct(
+    declare = _declare_alias,
+    resolve = _resolve_alias,
+)
 
 
 # Kinds is a enum-like struct with node kinds of various LUCI config nodes.
@@ -31,6 +107,8 @@ kinds = struct(
     PROJECT = 'core.project',
     LOGDOG = 'core.logdog',
     BUCKET = 'core.bucket',
+    BUILDER = 'core.builder',
+    BUILDER_GROUP = 'core.builder_group',
 )
 
 
@@ -39,4 +117,6 @@ keys = struct(
     project = lambda: graph.key(kinds.PROJECT, '...'),  # singleton
     logdog = lambda: graph.key(kinds.LOGDOG, '...'),  # singleton
     bucket = lambda name: graph.key(kinds.BUCKET, name),
+    builder = lambda name: _bucket_scoped(kinds.BUILDER, name),
+    builder_group = lambda name: graph.key(kinds.BUILDER_GROUP, name),
 )

@@ -16,7 +16,7 @@
 
 load('@stdlib//internal/generator.star', 'generator')
 load('@stdlib//internal/graph.star', 'graph')
-load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
+load('@stdlib//internal/luci/common.star', 'alias', 'keys', 'kinds')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
@@ -29,6 +29,7 @@ def register():
   generator(impl = gen_project_cfg)
   generator(impl = gen_logdog_cfg)
   generator(impl = gen_buildbucket_cfg)
+  generator(impl = gen_visit_builder_groups)
 
 
 ################################################################################
@@ -73,6 +74,32 @@ def get_bucket_acls(bucket):
 def filter_acls(acls, roles):
   """Keeps only ACL entries that have any of given roles."""
   return [a for a in acls if a.role in roles]
+
+
+def resolve_builder(builder):
+  """Finds the node with the builder definition if given a global alias node.
+
+  Returns 'builder' as is if it's already a real builder definition node,
+  not just an alias.
+
+  Args:
+    builder: either a bucket-scoped builder node, or a global alias node.
+  """
+  if builder.key.kind != kinds.BUILDER:
+    fail('resolve_builder: got a non-builder node %s' % builder)
+  if builder.key.container != None:
+    return builder  # already resolved
+  variants = graph.children(builder.key, kinds.BUILDER)
+  if not variants:
+    fail('resolve_builder: unexpectedly 0 matching builders')
+  elif len(variants) != 1:
+    fail('ambiguous reference %s, clarify by specifying the bucket:\n  %s' % (
+        builder,
+        '\n  '.join([
+            '%s/%s' % (b.key.container.id, b.key.id) for b in variants
+        ]),
+    ))
+  return variants[0]
 
 
 ################################################################################
@@ -180,3 +207,14 @@ def gen_buildbucket_acls(bucket):
       )
       for a in filter_acls(get_bucket_acls(bucket), _bb_roles.keys())
   ]
+
+
+################################################################################
+## Temporary stuff to show case usage of alias.resolve.
+
+
+def gen_visit_builder_groups(ctx):
+  for bg in graph.children(keys.project(), kinds.BUILDER_GROUP):
+    for b in graph.children(bg.key, kinds.BUILDER):
+      b = alias.resolve(b)
+      print('%s/%s' % (b.props.bucket, b.props.name))
