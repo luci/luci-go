@@ -68,8 +68,8 @@ func declNative(name string, f nativeFunc) {
 // This struct is put into the global starlark namespace as '__native__'. Native
 // functions can access the generator state through the context associated with
 // the starlark thread that executes them.
-func native() starlark.Value {
-	dict := make(starlark.StringDict, len(nativeFuncs))
+func native(extra starlark.StringDict) starlark.Value {
+	dict := make(starlark.StringDict, len(nativeFuncs)+len(extra))
 	for name, cb := range nativeFuncs {
 		cb := cb
 		dict[name] = starlark.NewBuiltin(name, func(th *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -83,6 +83,9 @@ func native() starlark.Value {
 				Kwargs: kwargs,
 			})
 		})
+	}
+	for k, v := range extra {
+		dict[k] = v
 	}
 	return starlarkstruct.FromStringDict(starlark.String("__native__"), dict)
 }
