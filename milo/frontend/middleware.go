@@ -28,12 +28,14 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	blackfriday "gopkg.in/russross/blackfriday.v2"
 
 	"go.chromium.org/gae/service/info"
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/text/sanitizehtml"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/analytics"
@@ -437,20 +439,15 @@ func GetReload(r *http.Request, def int) int {
 var rLinkBreak = regexp.MustCompile("<br */?>")
 
 // renderMarkdown renders the given text as markdown HTML.
-// TODO(hinoka): This doesn't actually render markdown, but it should.
+// This uses blackfriday to convert from markdown to HTML,
+// and sanitizehtml to allow only a small subset of HTML through.
 func renderMarkdown(t string) (results template.HTML) {
-	// HACK(hinoka): Once upon a time, we used a packaged CI system called BuildBot.
-	// BuildBot supported the idea of step texts, where the user could specify
-	// custom text to display alongside each step.  BuildBot also allowed a user to inject
-	// arbitrary HTML inside the step text.
-	// Because of this, we would often find <br> in place of newlines.
-	// Even though we use now, the legacy of the <br> remains, and users
-	// still expect the <br> to represent line break.
-	split := rLinkBreak.Split(t, -1)
-	for i, s := range split {
-		split[i] = template.HTMLEscapeString(s)
+	buf := bytes.NewBuffer(blackfriday.Run([]byte(t)))
+	out := bytes.NewBuffer([]byte{})
+	if err := sanitizehtml.Sanitize(out, buf); err != nil {
+		return template.HTML(fmt.Sprintf("Failed to render markdown: %s", template.HTMLEscapeString(err.Error())))
 	}
-	return template.HTML(strings.Join(split, "<br>"))
+	return template.HTML(out.String())
 }
 
 // renderProperties renders a structpb.Struct as a properties table.

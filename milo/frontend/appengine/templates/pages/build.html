@@ -48,12 +48,10 @@
            {{- if .Children }} substeps
              {{- if .Collapsed }} collapsed{{ end }}
            {{- end }}">
-  <div class="status {{.Step.Status}} result">
+  <div class="step status {{.Step.Status}} result">
       {{ template "interval" toInterval .StartTime .EndTime }}
     <b>{{.ShortName}}</b>
-    <span>
-      {{ .Step.SummaryMarkdown | renderMarkdown }}
-    </span>
+    {{ .Step.SummaryMarkdown | renderMarkdown }}
   </div>
   <ul>
     {{ range .Logs }}

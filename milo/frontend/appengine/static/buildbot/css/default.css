@@ -862,6 +862,10 @@ form.command_forcebuild .force-any .force-text {
   display: inline;
 }
 
+.step.status p {
+  display: inline;
+}
+
 div.step-text:first-child {
     display: inline;
 }
