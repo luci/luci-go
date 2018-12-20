@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b9bff45e_6f02a92d",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T02:25:03Z",
+      "side": 1,
+      "message": "(*Node).listChildren",
+      "range": {
+        "startLine": 358,
+        "startChar": 57,
+        "endLine": 360,
+        "endChar": 2
+      },
+      "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddb2c38c_4ac6d9ce",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T02:25:03Z",
+      "side": 1,
+      "message": "nit: (*Node).listParents",
+      "range": {
+        "startLine": 375,
+        "startChar": 55,
+        "endLine": 377,
+        "endChar": 2
+      },
+      "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45582106_c952df22",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T02:25:03Z",
+      "side": 1,
+      "message": "did you consider normalizing the graph on finalization? some other things may become more deterministic",
+      "range": {
+        "startLine": 381,
+        "startChar": 16,
+        "endLine": 381,
+        "endChar": 29
+      },
+      "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b79e8c9_c8140cad",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-20T02:25:03Z",
+      "side": 1,
+      "message": "does copy(vals, nodes) work?",
+      "range": {
+        "startLine": 463,
+        "startChar": 1,
+        "endLine": 465,
+        "endChar": 2
+      },
+      "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
