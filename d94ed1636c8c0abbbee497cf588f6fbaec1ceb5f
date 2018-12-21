@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e4d3ff5b_b073b961",
+        "filename": "starlark/builtins/fail.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-21T02:37:57Z",
+      "side": 1,
+      "message": "nit: the",
+      "range": {
+        "startLine": 126,
+        "startChar": 12,
+        "endLine": 126,
+        "endChar": 13
+      },
+      "revId": "d94ed1636c8c0abbbee497cf588f6fbaec1ceb5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0dc7bd89_b68b0790",
+        "filename": "starlark/builtins/fail.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-21T02:37:57Z",
+      "side": 1,
+      "message": "i don\u0027t see it being used in *this* CL, so maybe don\u0027t add until necessary?",
+      "range": {
+        "startLine": 127,
+        "startChar": 28,
+        "endLine": 127,
+        "endChar": 33
+      },
+      "revId": "d94ed1636c8c0abbbee497cf588f6fbaec1ceb5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
