@@ -195,15 +195,22 @@ func (a *Archivist) ArchiveTask(c context.Context, task Task) {
 	log.Debugf(c, "Received archival task.")
 
 	err := a.archiveTaskImpl(c, task)
-
-	failure := isFailure(err)
-	log.Fields{
-		log.ErrorKey: err,
-		"failure":    failure,
-	}.Infof(c, "Finished archive task.")
+	if err == nil {
+		log.Fields{
+			"success": true,
+		}.Infof(c, "Finished archive task successfully.")
+	} else {
+		log.Fields{
+			"success": false,
+			"error":   err.Error(),
+		}.Infof(c, "Finished archive task with error, will retry.")
+		a.Service.RescheduleArchiveTask(c, &logdog.ArchiveDispatchTask{
+			Id: task.Task().GetId,
+		})
+	}
 
 	// Add a result metric.
-	tsCount.Add(c, 1, !failure)
+	tsCount.Add(c, 1, err == nil)
 }
 
 // archiveTaskImpl performs the actual task archival.
@@ -216,8 +223,9 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 
 	// Validate the project name.
 	if err := types.ProjectName(at.Project).Validate(); err != nil {
-		task.Consume()
-		return fmt.Errorf("invalid project name %q: %s", at.Project, err)
+		log.WithError(err).Errorf(c, "invalid project name %q: %s", at.Project, err)
+		// Ignore this error and don't retry.
+		return nil
 	}
 
 	// Load the log stream's current state. If it is already archived, we will
@@ -238,13 +246,11 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 
 	case ls.State.Purged:
 		log.Warningf(c, "Log stream is purged. Discarding archival request.")
-		task.Consume()
-		return statusErr(errors.New("log stream is purged"))
+		return nil
 
 	case ls.State.Archived:
 		log.Infof(c, "Log stream is already archived. Discarding archival request.")
-		task.Consume()
-		return statusErr(errors.New("log stream is archived"))
+		return nil
 
 	case !bytes.Equal(ls.ArchivalKey, at.Key):
 		if len(ls.ArchivalKey) == 0 {
@@ -259,7 +265,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 			// Less than 5 minutes ago: try again later.
 			// More than 5 minutes ago: drop it.
 			if dt, err := ptypes.Timestamp(at.DispatchedAt); err == nil && clock.Now(c).Before(dt.Add(5*time.Minute)) {
-				return statusErr(errors.New("premature archival request"))
+				return errors.New("premature archival request")
 			}
 		}
 
@@ -271,19 +277,20 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 			"logStreamArchivalKey": hex.EncodeToString(ls.ArchivalKey),
 			"requestArchivalKey":   hex.EncodeToString(at.Key),
 		}.Infof(c, "Superfluous archival request (keys do not match). Discarding.")
-		task.Consume()
-		return statusErr(errors.New("superfluous archival request"))
+		return nil
 
 	case ls.State.ProtoVersion != logpb.Version:
 		log.Fields{
 			"protoVersion":    ls.State.ProtoVersion,
 			"expectedVersion": logpb.Version,
-		}.Errorf(c, "Unsupported log stream protobuf version.")
-		return errors.New("unsupported log stream protobuf version")
+		}.Errorf(c, "Unsupported log stream protobuf version. Discarding.")
+		// We don't care about these, since they're more or less permanent until
+		// a code push.
+		return nil
 
 	case ls.Desc == nil:
-		log.Errorf(c, "Log stream did not include a descriptor.")
-		return errors.New("log stream did not include a descriptor")
+		log.Errorf(c, "Log stream did not include a descriptor. Discarding.")
+		return nil
 	}
 
 	// If the archival request is younger than the settle delay, kick it back to
@@ -294,7 +301,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 			"age":         age,
 			"settleDelay": settle,
 		}.Infof(c, "Log stream is younger than the settle delay. Returning task to queue.")
-		return statusErr(errors.New("log stream is within settle delay"))
+		return errors.New("log stream is within settle delay")
 	}
 
 	// Load archival settings for this project.
@@ -303,10 +310,9 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		log.Fields{
 			log.ErrorKey: err,
 			"project":    at.Project,
-		}.Errorf(c, "Failed to load settings for project.")
+		}.Errorf(c, "Failed to load settings for project. Discarding.")
 		// This project has bad or no archival settings, this is non-transient, discard the task.
-		task.Consume()
-		return err
+		return nil
 	}
 
 	ar := logdog.ArchiveStreamRequest{
@@ -317,8 +323,9 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	// Build our staged archival plan. This doesn't actually do any archiving.
 	staged, err := a.makeStagedArchival(c, types.ProjectName(at.Project), settings, ls, task.UniqueID())
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
-		return err
+		// This only fails if the stream descriptor is invalid.
+		log.WithError(err).Errorf(c, "Failed to create staged archival plan. Discarding.")
+		return nil
 	}
 
 	// Are we required to archive a complete log stream?
@@ -406,9 +413,6 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		return err
 	}
 
-	// Archival is complete and acknowledged by Coordinator. Consume the archival
-	// task.
-	task.Consume()
 	return nil
 }
 
@@ -765,39 +769,4 @@ func (sa *stagedArchival) getStagingPaths() []*stagingPaths {
 		&sa.index,
 		&sa.data,
 	}
-}
-
-// statusErrorWrapper is an error wrapper. It is detected by IsFailure and used to
-// determine whether the supplied error represents a failure or just a status
-// error.
-type statusErrorWrapper struct {
-	inner error
-}
-
-var _ interface {
-	error
-	errors.Wrapped
-} = (*statusErrorWrapper)(nil)
-
-func statusErr(inner error) error {
-	return &statusErrorWrapper{inner}
-}
-
-func (e *statusErrorWrapper) Error() string {
-	if e.inner != nil {
-		return e.inner.Error()
-	}
-	return ""
-}
-
-func (e *statusErrorWrapper) InnerError() error {
-	return e.inner
-}
-
-func isFailure(err error) bool {
-	if err == nil {
-		return false
-	}
-	_, ok := err.(*statusErrorWrapper)
-	return !ok
 }
