@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "80ba8c5c_93161b5a",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-21T03:40:39Z",
+      "side": 1,
+      "message": "i meant sorting edges in all nodes, but i didn\u0027t expect that declaration order may be important. I thought you explicitly don\u0027t want it to be important anywhere.",
+      "parentUuid": "87d1bcab_97b9ca1f",
+      "range": {
+        "startLine": 381,
+        "startChar": 16,
+        "endLine": 381,
+        "endChar": 29
+      },
+      "revId": "06347f440a2b6bd810857a6f26711b41ab9ed49a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2b79e8c9_c8140cad",
         "filename": "lucicfg/graph/graph.go",
         "patchSetId": 3
