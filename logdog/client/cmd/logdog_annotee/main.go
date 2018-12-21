@@ -245,6 +245,9 @@ func mainImpl(args []string) int {
 	e := executor.Executor{
 		Options: annotee.Options{
 			Base:                   types.StreamName(a.nameBase),
+			Host:                   a.logdogHost,
+			Project:                a.project,
+			Prefix:                 prefix,
 			Client:                 client,
 			MetadataUpdateInterval: time.Duration(a.annotationInterval),
 			CloseSteps:             true,
@@ -253,15 +256,6 @@ func mainImpl(args []string) int {
 		},
 
 		Stdin: os.Stdin,
-	}
-
-	linkGen := &annotee.CoordinatorLinkGenerator{
-		Host:    a.logdogHost,
-		Project: a.project,
-		Prefix:  prefix,
-	}
-	if linkGen.CanGenerateLinks() {
-		e.Options.LinkGenerator = linkGen
 	}
 
 	if a.tee.enabled() {
