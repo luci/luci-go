@@ -8,6 +8,14 @@ def gen2(ctx):
   fail("gen2 failed", trace=trace)
 core.generator(impl = gen2)
 
+def gen3(ctx):
+  fail("dedupped error", trace=trace)
+core.generator(impl = gen3)
+
+def gen4(ctx):
+  fail("dedupped error", trace=trace)
+core.generator(impl = gen4)
+
 # Expect errors:
 #
 # Traceback (most recent call last):
@@ -17,3 +25,7 @@ core.generator(impl = gen2)
 # Traceback (most recent call last):
 #   //testdata/misc/generator_errors.star:5: in <toplevel>
 # Error: gen2 failed
+#
+# Traceback (most recent call last):
+#   //testdata/misc/generator_errors.star:5: in <toplevel>
+# Error: dedupped error
