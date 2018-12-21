@@ -19,6 +19,7 @@ import (
 
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucicfg/graph"
 )
@@ -33,9 +34,11 @@ type State struct {
 	Inputs  Inputs            // all inputs, exactly as passed to Generate.
 	Configs map[string]string // all generated config files, populated at the end
 
-	errors     errors.MultiError // all errors emitted during the generation (if any)
-	generators generators        // callbacks that generate config files based on state
-	graph      graph.Graph       // the graph with config entities defined so far
+	errors   errors.MultiError // all errors emitted during the generation (if any)
+	seenErrs stringset.Set     // set of all string backtraces in 'errors', for deduping
+
+	generators generators  // callbacks that generate config files based on state
+	graph      graph.Graph // the graph with config entities defined so far
 }
 
 // clear resets the state.
@@ -43,9 +46,17 @@ func (s *State) clear() {
 	*s = State{Inputs: s.Inputs}
 }
 
-// err adds errors to the list of errors and returns the list as MultiError.
+// err adds errors to the list of errors and returns the list as MultiError,
+// deduplicating errors with identical backtraces.
 func (s *State) err(err ...error) error {
-	s.errors = append(s.errors, err...)
+	if s.seenErrs == nil {
+		s.seenErrs = stringset.New(len(err))
+	}
+	for _, e := range err {
+		if bt, _ := e.(BacktracableError); bt == nil || s.seenErrs.Add(bt.Backtrace()) {
+			s.errors = append(s.errors, e)
+		}
+	}
 	return s.errors
 }
 
