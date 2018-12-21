@@ -9,7 +9,7 @@
     }
   },
   "basePath": "/_ah/api/config/v1",
-  "baseUrl": "https://luci-config.appspot.com/_ah/api/config/v1",
+  "baseUrl": "https://luci-config-dev.appspot.com/_ah/api/config/v1",
   "batchPath": "batch",
   "description": "API to access configurations.",
   "discoveryVersion": "v1",
@@ -290,11 +290,14 @@
     }
   },
   "protocol": "rest",
-  "rootUrl": "https://luci-config.appspot.com/_ah/api/",
+  "rootUrl": "https://luci-config-dev.appspot.com/_ah/api/",
   "schemas": {
     "ComponentsConfigEndpointValidationMessage": {
       "id": "ComponentsConfigEndpointValidationMessage",
       "properties": {
+        "path": {
+          "type": "string"
+        },
         "severity": {
           "enum": [
             "CRITICAL",
