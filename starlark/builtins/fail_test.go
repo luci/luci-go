@@ -26,29 +26,35 @@ func TestFail(t *testing.T) {
 	t.Parallel()
 
 	runScript := func(code string) error {
-		_, err := starlark.ExecFile(&starlark.Thread{}, "main", code, starlark.StringDict{
-			"fail": Fail,
+		th := &starlark.Thread{}
+		fc := &FailureCollector{}
+		fc.Install(th)
+		_, err := starlark.ExecFile(th, "main", code, starlark.StringDict{
+			"fail":       Fail,
+			"stacktrace": Stacktrace,
 		})
+		if f := fc.LatestFailure(); f != nil {
+			return f
+		}
 		return err
 	}
 
-	Convey("Works", t, func() {
+	Convey("Works with default trace", t, func() {
 		err := runScript(`fail("boo")`)
-		So(err.(*starlark.EvalError).Msg, ShouldEqual, "boo")
+		So(err.Error(), ShouldEqual, "boo")
+		So(err.(*Failure).Backtrace(), ShouldContainSubstring, "main:1: in <toplevel>")
 	})
 
-	Convey("Does type cast", t, func() {
-		err := runScript(`fail(123)`)
-		So(err.(*starlark.EvalError).Msg, ShouldEqual, "123")
-	})
+	Convey("Works with custom trace", t, func() {
+		err := runScript(`
+def capture():
+	return stacktrace()
 
-	Convey("Wants 1 arg", t, func() {
-		err := runScript(`fail(123, 456)`)
-		So(err.(*starlark.EvalError).Msg, ShouldEqual, "'fail' got 2 arguments, wants 1")
-	})
+s = capture()
 
-	Convey("Doesn't like kwargs", t, func() {
-		err := runScript(`fail(msg=123)`)
-		So(err.(*starlark.EvalError).Msg, ShouldEqual, "'fail' doesn't accept kwargs")
+fail("boo", trace=s)
+`)
+		So(err.Error(), ShouldEqual, "boo")
+		So(err.(*Failure).Backtrace(), ShouldContainSubstring, "main:3: in capture")
 	})
 }

@@ -21,23 +21,109 @@ import (
 	"go.starlark.net/starlark"
 )
 
-// Fail is fail(msg) builtin.
+// Failure is an error emitted by fail(...) and captured by FailureCollector.
+type Failure struct {
+	Message   string              // the error message, as passed to fail(...)
+	UserTrace *CapturedStacktrace // value of 'trace' passed to fail or nil
+	FailTrace *CapturedStacktrace // where 'fail' itself was called
+}
+
+// Error is the short error message, as passed to fail(...).
+func (f *Failure) Error() string {
+	return f.Message
+}
+
+// Backtrace returns a user-friendly error message describing the stack of
+// calls that led to this error.
 //
-//  def fail(msg):
-//    """Aborts the script execution with an error message."""
-var Fail = starlark.NewBuiltin("fail", func(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	if len(kwargs) != 0 {
-		return nil, fmt.Errorf("'fail' doesn't accept kwargs")
+// If fail(...) was called with a custom stack trace, this trace is shown here.
+// Otherwise the trace of where fail(...) happened is used.
+func (f *Failure) Backtrace() string {
+	tr := f.UserTrace
+	if tr == nil {
+		tr = f.FailTrace
 	}
-	if len(args) != 1 {
-		return nil, fmt.Errorf("'fail' got %d arguments, wants 1", len(args))
+	return tr.String() + "Error: " + f.Message
+}
+
+// Fail is fail(msg, trace=None) builtin.
+//
+//  def fail(msg, trace=None):
+//    """Aborts the script execution with an error message."
+//
+//    Args:
+//      msg: the error message string.
+//      trace: a trace (as returned by stacktrace()) to attach to the error.
+//    """
+//
+// Custom stack traces are recoverable through FailureCollector. This is due
+// to Starlark's insistence on stringying all errors. If there's no
+// FailureCollector in the thread locals, custom traces are silently ignored.
+var Fail = starlark.NewBuiltin("fail", func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var msg starlark.String
+	var trace starlark.Value
+	err := starlark.UnpackArgs("fail", args, kwargs,
+		"msg", &msg,
+		"trace?", &trace)
+	if err != nil {
+		return nil, err
 	}
-	msg, ok := starlark.AsString(args[0])
-	if !ok {
-		msg = args[0].String()
+
+	var userTrace *CapturedStacktrace
+	if trace != nil && trace != starlark.None {
+		if userTrace, _ = trace.(*CapturedStacktrace); userTrace == nil {
+			return nil, fmt.Errorf("fail: bad 'trace' - got %s, expecting stacktrace", trace.Type())
+		}
 	}
-	// Note: starlark.ExecFile returns *EvalError on errors which have the
-	// original error flattened into a string, so returning a structured error
-	// here makes no difference.
-	return nil, errors.New(msg)
+
+	if fc := GetFailureCollector(th); fc != nil {
+		failTrace, _ := CaptureStacktrace(th, 0)
+		fc.failure = &Failure{
+			Message:   msg.GoString(),
+			UserTrace: userTrace,
+			FailTrace: failTrace,
+		}
+	}
+
+	return nil, errors.New(msg.GoString())
 })
+
+// A key in thread.Locals to hold *FailureCollector.
+const failSlotKey = "go.chromium.org/luci/starlark/builtins.FailureCollector"
+
+// FailureCollector receives structured error messages from fail(...).
+//
+// It should be installed into Starlark thread locals (via Install) for
+// fail(...) to be able to discover it. If it's not there, fail(...) will not
+// return any additional information (like a custom stack trace) besides the
+// information contained in *starlark.EvalError.
+type FailureCollector struct {
+	// failure is the error passed to fail(...).
+	//
+	// fail(...) aborts the execution of starlark scripts, so its fine to keep
+	// only one error. There can't really be more.
+	failure *Failure
+}
+
+// GetFailureCollector returns a failure collector installed in the thread.
+func GetFailureCollector(th *starlark.Thread) *FailureCollector {
+	fc, _ := th.Local(failSlotKey).(*FailureCollector)
+	return fc
+}
+
+// Install installs this failure collector into the thread.
+func (fc *FailureCollector) Install(t *starlark.Thread) {
+	t.SetLocal(failSlotKey, fc)
+}
+
+// LatestFailure returns the latest captured failure or nil if there are none.
+func (fc *FailureCollector) LatestFailure() *Failure {
+	return fc.failure
+}
+
+// Clear resets the state.
+//
+// Useful if the same FailureCollector is reused between calls to Starlark.
+func (fc *FailureCollector) Clear() {
+	fc.failure = nil
+}
