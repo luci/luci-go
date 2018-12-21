@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/common/fetcher"
+	"go.chromium.org/luci/logdog/client/coordinator/fetcher"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
