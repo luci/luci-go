@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/memory"
@@ -48,7 +48,6 @@ type testTask struct {
 	task           *logdog.ArchiveTask
 	assertLeaseErr error
 	assertCount    int
-	consumed       bool
 }
 
 func (t *testTask) UniqueID() string {
@@ -59,18 +58,6 @@ func (t *testTask) Task() *logdog.ArchiveTask {
 	return t.task
 }
 
-func (t *testTask) Consume() {
-	t.consumed = true
-}
-
-func (t *testTask) AssertLease(context.Context) error {
-	if err := t.assertLeaseErr; err != nil {
-		return err
-	}
-	t.assertCount++
-	return nil
-}
-
 // testServicesClient implements logdog.ServicesClient sufficient for testing
 // and instrumentation.
 type testServicesClient struct {
@@ -78,6 +65,7 @@ type testServicesClient struct {
 
 	lsCallback func(*logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error)
 	asCallback func(*logdog.ArchiveStreamRequest) error
+	rsCallback func(*logdog.ArchiveDispatchTask) error
 }
 
 func (sc *testServicesClient) LoadStream(c context.Context, req *logdog.LoadStreamRequest, o ...grpc.CallOption) (
@@ -86,6 +74,16 @@ func (sc *testServicesClient) LoadStream(c context.Context, req *logdog.LoadStre
 		return cb(req)
 	}
 	return nil, errors.New("no callback implemented")
+}
+
+func (sc *testServicesClient) RescheduleArchiveTask(c context.Context, req *logdog.ArchiveDispatchTask, o ...grpc.CallOption) (
+	*empty.Empty, error) {
+	if cb := sc.rsCallback; cb != nil {
+		if err := cb(req); err != nil {
+			return nil, err
+		}
+	}
+	return &empty.Empty{}, nil
 }
 
 func (sc *testServicesClient) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest, o ...grpc.CallOption) (
@@ -305,6 +303,8 @@ func TestHandleArchive(t *testing.T) {
 
 		var archiveRequest *logdog.ArchiveStreamRequest
 		var archiveStreamErr error
+		var rescheduleTask *logdog.ArchiveDispatchTask
+		var rescheduleTaskErr error
 		sc := testServicesClient{
 			lsCallback: func(req *logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
 				return &stream, nil
@@ -312,6 +312,10 @@ func TestHandleArchive(t *testing.T) {
 			asCallback: func(req *logdog.ArchiveStreamRequest) error {
 				archiveRequest = req
 				return archiveStreamErr
+			},
+			rsCallback: func(req *logdog.ArchiveDispatchTask) error {
+				rescheduleTask = req
+				return rescheduleTaskErr
 			},
 		}
 
@@ -361,22 +365,19 @@ func TestHandleArchive(t *testing.T) {
 			}
 
 			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "does not exist")
-			So(task.consumed, ShouldBeFalse)
 		})
 
-		Convey(`Will consume task and refrain from archiving if the stream is already archived.`, func() {
+		Convey(`Will return nil and refrain from archiving if the stream is already archived.`, func() {
 			stream.State.Archived = true
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is archived")
-			So(task.consumed, ShouldBeTrue)
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 			So(archiveRequest, ShouldBeNil)
 		})
 
-		Convey(`Will consume task and refrain from archiving if the stream is purged.`, func() {
+		Convey(`Will return nil and refrain from archiving if the stream is purged.`, func() {
 			stream.State.Purged = true
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is purged")
-			So(task.consumed, ShouldBeTrue)
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 			So(archiveRequest, ShouldBeNil)
 		})
 
@@ -384,7 +385,6 @@ func TestHandleArchive(t *testing.T) {
 			stream.Age = google.NewDuration(time.Second)
 
 			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is within settle delay")
-			So(task.consumed, ShouldBeFalse)
 			So(archiveRequest, ShouldBeNil)
 		})
 
@@ -394,16 +394,14 @@ func TestHandleArchive(t *testing.T) {
 			task.task.DispatchedAt, _ = ptypes.TimestampProto(testclock.TestTimeUTC.Add(-1 * time.Minute))
 
 			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "premature archival request")
-			So(task.consumed, ShouldBeFalse)
 			So(archiveRequest, ShouldBeNil)
 		})
 
-		Convey(`Will consume task and refrain from archiving if archival keys don't match.`, func() {
+		Convey(`Will return nil and refrain from archiving if archival keys don't match.`, func() {
 			stream.Age = google.NewDuration(expired)
 			stream.ArchivalKey = []byte("non-matching archival key")
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "superfluous archival request")
-			So(task.consumed, ShouldBeTrue)
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 			So(archiveRequest, ShouldBeNil)
 		})
 
@@ -414,7 +412,6 @@ func TestHandleArchive(t *testing.T) {
 		// it behaves correctly regardless.
 		Convey(`Will refuse to archive a complete stream with no terminal index.`, func() {
 			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "completeness required, but stream has no terminal index")
-			So(task.consumed, ShouldBeFalse)
 		})
 
 		Convey(`With terminal index "3"`, func() {
@@ -422,21 +419,18 @@ func TestHandleArchive(t *testing.T) {
 
 			Convey(`Will not consume the task if the log stream has no entries.`, func() {
 				So(ar.archiveTaskImpl(c, task), ShouldEqual, storage.ErrDoesNotExist)
-				So(task.consumed, ShouldBeFalse)
 			})
 
 			Convey(`Will fail to archive {0, 1, 2, 4} (incomplete).`, func() {
 				addTestEntry(project, 0, 1, 2, 4)
 
 				So(ar.archiveTaskImpl(c, task), ShouldErrLike, "missing log entry")
-				So(task.consumed, ShouldBeFalse)
 			})
 
 			Convey(`Will successfully archive {0, 1, 2, 3, 4}, stopping at the terminal index.`, func() {
 				addTestEntry(project, 0, 1, 2, 3, 4)
 
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(task.consumed, ShouldBeTrue)
 
 				So(hasStreams(true, true, true), ShouldBeTrue)
 				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -456,7 +450,6 @@ func TestHandleArchive(t *testing.T) {
 				gsc.newWriterErr = func(*testGSWriter) error { return errors.New("test error", transient.Tag) }
 
 				So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
-				So(task.consumed, ShouldBeFalse)
 			})
 
 			Convey(`When a non-transient archival error occurs`, func() {
@@ -464,11 +457,15 @@ func TestHandleArchive(t *testing.T) {
 				archiveErr := errors.New("archive failure error")
 				gsc.newWriterErr = func(*testGSWriter) error { return archiveErr }
 
-				Convey(`If remote report returns an error, do not consume the task.`, func() {
+				Convey(`If remote report returns an error, reschedule the task.`, func() {
 					archiveStreamErr = errors.New("test error")
 
-					So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
-					So(task.consumed, ShouldBeFalse)
+					ar.ArchiveTask(c, task)
+
+					So(rescheduleTask, ShouldResemble, &logdog.ArchiveDispatchTask{
+						Id: archiveTask.Id,
+					})
+					So(rescheduleTaskErr, ShouldBeNil)
 
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
@@ -477,9 +474,8 @@ func TestHandleArchive(t *testing.T) {
 					})
 				})
 
-				Convey(`If remote report returns success, the task is consumed.`, func() {
+				Convey(`If remote report returns success.`, func() {
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(task.consumed, ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      archiveTask.Id,
@@ -491,7 +487,6 @@ func TestHandleArchive(t *testing.T) {
 					archiveErr = errors.New("")
 
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(task.consumed, ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      archiveTask.Id,
@@ -507,7 +502,6 @@ func TestHandleArchive(t *testing.T) {
 			Convey(`With no terminal index`, func() {
 				Convey(`Will successfully archive if there are no entries.`, func() {
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(task.consumed, ShouldBeTrue)
 
 					So(hasStreams(true, true, false), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -526,7 +520,6 @@ func TestHandleArchive(t *testing.T) {
 					addTestEntry(project, 0, 1, 2, 4)
 
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(task.consumed, ShouldBeTrue)
 
 					So(hasStreams(true, true, true), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -547,7 +540,6 @@ func TestHandleArchive(t *testing.T) {
 
 				Convey(`Will successfully archive if there are no entries.`, func() {
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(task.consumed, ShouldBeTrue)
 
 					So(hasStreams(true, true, false), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -566,7 +558,6 @@ func TestHandleArchive(t *testing.T) {
 					addTestEntry(project, 0, 1, 2, 4)
 
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(task.consumed, ShouldBeTrue)
 
 					So(hasStreams(true, true, true), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -591,7 +582,6 @@ func TestHandleArchive(t *testing.T) {
 
 			Convey(`Will not emit a data stream if no binary file extension is specified.`, func() {
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(task.consumed, ShouldBeTrue)
 
 				So(hasStreams(true, true, false), ShouldBeTrue)
 				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -610,7 +600,6 @@ func TestHandleArchive(t *testing.T) {
 				reloadDesc()
 
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(task.consumed, ShouldBeTrue)
 
 				So(hasStreams(true, true, true), ShouldBeTrue)
 				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -626,18 +615,16 @@ func TestHandleArchive(t *testing.T) {
 			})
 		})
 
-		Convey(`With an empty project name, will fail and consume the task.`, func() {
+		Convey(`With an empty project name, will succeed.`, func() {
 			archiveTask.Project = ""
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "invalid project name")
-			So(task.consumed, ShouldBeTrue)
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 		})
 
-		Convey(`With an invalid project name, will fail and consume the task.`, func() {
+		Convey(`With an invalid project name, will succeed.`, func() {
 			archiveTask.Project = "!!! invalid project name !!!"
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "invalid project name")
-			So(task.consumed, ShouldBeTrue)
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 		})
 
 		// Simulate failures during the various stream generation operations.
@@ -710,7 +697,6 @@ func TestHandleArchive(t *testing.T) {
 						testCase.setup()
 
 						So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
-						So(task.consumed, ShouldBeFalse)
 						So(archiveRequest, ShouldBeNil)
 					})
 				}

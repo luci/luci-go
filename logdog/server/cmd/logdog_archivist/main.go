@@ -185,39 +185,22 @@ func (a *application) runArchivist(c context.Context) error {
 				"messageID": msg.ID,
 			})
 
-			// ACK or NACK the message based on whether our task was consumed.
-			deleteTask := false
-			defer func() {
-				// ACK the message if it is completed. If not, NACK it.
-				if deleteTask {
-					msg.Ack()
-				} else {
-					msg.Nack()
-				}
-			}()
+			// Always ack the message as long as we didn't crash.
+			defer msg.Ack()
 
 			// Time how long task processing takes for metrics.
 			startTime := clock.Now(c)
 			defer func() {
 				duration := clock.Now(c).Sub(startTime)
-
-				if deleteTask {
-					log.Fields{
-						"duration": duration,
-					}.Infof(c, "Task successfully processed; deleting.")
-				} else {
-					log.Fields{
-						"duration": duration,
-					}.Infof(c, "Task processing incomplete. Not deleting.")
-				}
-
+				log.Fields{
+					"duration": duration,
+				}.Infof(c, "Task successfully processed; deleting.")
 				// Add to our processing time metric.
-				tsTaskProcessingTime.Add(c, duration.Seconds()*1000, deleteTask)
+				tsTaskProcessingTime.Add(c, duration.Seconds()*1000, true)
 			}()
 
 			task, err := makePubSubArchivistTask(c, psSubscriptionName, msg)
 			c = log.SetFields(c, log.Fields{
-				"consumed":         task.consumed,
 				"subscriptionName": task.subscriptionName,
 				"taskTimestamp":    task.timestamp.Format(time.RFC3339Nano),
 				"archiveTask":      task.at,
@@ -234,12 +217,10 @@ func (a *application) runArchivist(c context.Context) error {
 			}
 			if err != nil {
 				log.WithError(err).Errorf(c, "Failed to unmarshal archive task from message.")
-				deleteTask = true
 				return
 			}
 
 			ar.ArchiveTask(c, task)
-			deleteTask = task.consumed
 		}))
 	}, func(err error, d time.Duration) {
 		log.Fields{
