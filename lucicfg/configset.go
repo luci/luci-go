@@ -23,6 +23,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/starlarkproto"
 )
 
@@ -100,21 +102,30 @@ func (g *generators) add(cb starlark.Callable) error {
 	return nil
 }
 
-// call calls all registered callbacks sequentially until the first failure.
-func (g *generators) call(th *starlark.Thread, ctx *genCtx) error {
+// call calls all registered callbacks sequentially, collecting all errors.
+func (g *generators) call(th *starlark.Thread, ctx *genCtx) (errs errors.MultiError) {
 	if g.frozen {
-		return fmt.Errorf("generators list is frozen, nested iteration?")
+		return errors.MultiError{
+			fmt.Errorf("generators list is frozen, nested iteration?"),
+		}
 	}
 	g.frozen = true
 	defer func() { g.frozen = false }()
 
+	fc := builtins.GetFailureCollector(th)
+
 	for _, cb := range g.gen {
+		fc.Clear()
 		_, err := starlark.Call(th, cb, starlark.Tuple{ctx}, nil)
 		if err != nil {
-			return err
+			if f := fc.LatestFailure(); f != nil {
+				errs = append(errs, f)
+			} else {
+				errs = append(errs, err)
+			}
 		}
 	}
-	return nil
+	return
 }
 
 func init() {
@@ -142,6 +153,13 @@ func init() {
 		if err := call.unpack(1, &ctx); err != nil {
 			return nil, err
 		}
-		return starlark.None, call.State.generators.call(call.Thread, ctx)
+		switch errs := call.State.generators.call(call.Thread, ctx); {
+		case len(errs) == 0:
+			return starlark.None, nil
+		case len(errs) == 1:
+			return starlark.None, errs[0]
+		default:
+			return starlark.None, errs
+		}
 	})
 }

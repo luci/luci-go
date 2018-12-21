@@ -69,7 +69,7 @@ func TestAllStarlark(t *testing.T) {
 
 				// Expose 'assert' module, hook up error reporting to 't'.
 				testPredeclared: predeclared,
-				testThreadModified: func(th *starlark.Thread) {
+				testThreadModifier: func(th *starlark.Thread) {
 					starlarktest.HookThread(th, t)
 				},
 			})

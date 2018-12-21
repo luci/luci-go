@@ -45,9 +45,13 @@ def get_project(required=True):
 
 def get_service(kind, why):
   """Returns service struct (see service.star), reading it from project node."""
-  svc = getattr(get_project().props, kind)
+  proj = get_project()
+  svc = getattr(proj.props, kind)
   if not svc:
-    fail('missing %r in core.project(...), it is required for %s' % (kind, why))
+    fail(
+        'missing %r in core.project(...), it is required for %s' % (kind, why),
+        trace=proj.trace,
+    )
   return svc
 
 

@@ -34,6 +34,7 @@ type BacktracableError interface {
 
 var (
 	_ BacktracableError = (*starlark.EvalError)(nil)
+	_ BacktracableError = (*builtins.Failure)(nil)
 	_ BacktracableError = (*Error)(nil)
 	_ BacktracableError = (*graph.NodeRedeclarationError)(nil)
 	_ BacktracableError = (*graph.EdgeRedeclarationError)(nil)
