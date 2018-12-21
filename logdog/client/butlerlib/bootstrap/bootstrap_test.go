@@ -138,17 +138,13 @@ func TestBootstrapURLGeneration(t *testing.T) {
 
 		Convey(`Can generate viewer URLs`, func() {
 			for _, tc := range []struct {
-				paths []types.StreamPath
-				url   string
+				path types.StreamPath
+				url  string
 			}{
-				{[]types.StreamPath{"foo/bar/+/baz"}, "https://example.appspot.com/logs/test/foo/bar/+/baz"},
-				{[]types.StreamPath{
-					"foo/bar/+/baz",
-					"foo/bar/+/qux",
-				}, "https://example.appspot.com/v/?s=test%2Ffoo%2Fbar%2F%2B%2Fbaz&s=test%2Ffoo%2Fbar%2F%2B%2Fqux"},
+				{types.StreamPath("foo/bar/+/baz"), "https://example.appspot.com/logs/test/foo/bar/+/baz"},
 			} {
-				Convey(fmt.Sprintf(`Will generate [%s] from %q`, tc.url, tc.paths), func() {
-					url, err := bs.GetViewerURL(tc.paths...)
+				Convey(fmt.Sprintf(`Will generate [%s] from %q`, tc.url, tc.path), func() {
+					url, err := bs.GetViewerURL(tc.path)
 					So(err, ShouldBeNil)
 					So(url, ShouldEqual, tc.url)
 				})
@@ -178,18 +174,14 @@ func TestBootstrapURLGeneration(t *testing.T) {
 			So(bs.initializeClient("test:", &reg), ShouldBeNil)
 			So(bs.Client, ShouldHaveSameTypeAs, &sentinelClient{})
 
-			Convey(`Can generate viewer URLs for streams.`, func() {
+			Convey(`Can generate viewer URLs for stream.`, func() {
 				barS, err := bs.Client.NewStream(streamproto.Flags{Name: "bar"})
 				So(err, ShouldBeNil)
 				defer barS.Close()
 
-				bazS, err := bs.Client.NewStream(streamproto.Flags{Name: "baz"})
+				url, err := bs.GetViewerURLForStream(barS)
 				So(err, ShouldBeNil)
-				defer bazS.Close()
-
-				url, err := bs.GetViewerURLForStreams(barS, bazS)
-				So(err, ShouldBeNil)
-				So(url, ShouldEqual, "https://example.appspot.com/v/?s=test%2Ffoo%2F%2B%2Fbar&s=test%2Ffoo%2F%2B%2Fbaz")
+				So(url, ShouldEqual, "https://example.appspot.com/logs/test/foo/+/bar")
 			})
 
 			Convey(`Will not generate viewer URLs if a prefix is not defined.`, func() {
@@ -199,7 +191,7 @@ func TestBootstrapURLGeneration(t *testing.T) {
 				So(err, ShouldBeNil)
 				defer barS.Close()
 
-				_, err = bs.GetViewerURLForStreams(barS)
+				_, err = bs.GetViewerURLForStream(barS)
 				So(err, ShouldErrLike, "no prefix is configured")
 			})
 		})

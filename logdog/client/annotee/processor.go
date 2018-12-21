@@ -78,10 +78,6 @@ type Stream struct {
 	// included in any output streams.
 	StripAnnotations bool
 
-	// EmitAllLink, if true, instructs an "all STDOUT/STDERR" link to be injected
-	// into this Stream.
-	EmitAllLink bool
-
 	// BufferSize is the size of the read buffer that will be used when processing
 	// this stream's data.
 	BufferSize int
@@ -92,16 +88,21 @@ type Options struct {
 	// Base is the base log stream name. This is prepended to every log name, as
 	// well as any generate log names.
 	Base types.StreamName
+
+	// Host is the name of the LogDog host, used for link generation.
+	Host string
+
+	// Project is the name of the LogDog project, used for link generation.
+	Project types.ProjectName
+
+	// Prefix is the stream prefix for this run, used for link generation.
+	Prefix types.StreamName
+
 	// AnnotationSubpath is the path underneath of Base where the annotation
 	// stream will be written.
 	//
 	// If empty, DefaultAnnotationSubpath will be used.
 	AnnotationSubpath types.StreamName
-
-	// LinkGenerator generates links to alias for a given log stream.
-	//
-	// If nil, no link annotations will be injected.
-	LinkGenerator LinkGenerator
 
 	// Client is the LogDog Butler Client to use for stream creation.
 	Client streamclient.Client
@@ -304,14 +305,6 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 
 	// Determine our injected annotations.
 	injectedAnnotations := h.flushInjectedAnnotations()
-
-	// Emit the "all" link if configured (at most once).
-	if lg := p.o.LinkGenerator; lg != nil && s.EmitAllLink {
-		injectedAnnotations = append(injectedAnnotations,
-			buildAliasAnnotation("all", "stdio", lg.GetLink("**/stdout", "**/stderr")))
-
-		s.EmitAllLink = false
-	}
 
 	// Get our root log stream handler. As an optimization, if "step" is
 	// the root step, then "h" is already the root handler, so we don't need
@@ -738,18 +731,18 @@ func (h *stepHandler) flushInjectedTextStreamLines() []string {
 	return flushStringSlice(&h.injectedTextStreamLines)
 }
 
-func (h *stepHandler) maybeInjectLink(base, text string, names ...types.StreamName) {
-	if lg := h.processor.o.LinkGenerator; lg != nil {
-		link := lg.GetLink(names...)
-
-		h.injectedAnnotations = append(h.injectedAnnotations, buildAliasAnnotation(base, text, link))
-		h.injectedTextStreamLines = append(h.injectedTextStreamLines, fmt.Sprintf("LogDog Link [%s]: %s", base, link))
+func (h *stepHandler) maybeInjectLink(base, text string, name types.StreamName) {
+	if h.processor == nil {
+		return
 	}
-}
-
-func (h *stepHandler) maybeInjectTextStreamLink(name string, stream types.StreamName) {
-	if lg := h.processor.o.LinkGenerator; lg != nil {
+	options := h.processor.o
+	if options == nil {
+		return
 	}
+	link := fmt.Sprintf("https://%s/logs/%s/%s", options.Host, options.Project, options.Prefix.AsPathPrefix(name))
+
+	h.injectedAnnotations = append(h.injectedAnnotations, buildAliasAnnotation(base, text, link))
+	h.injectedTextStreamLines = append(h.injectedTextStreamLines, fmt.Sprintf("LogDog Link [%s]: %s", base, link))
 }
 
 func buildAliasAnnotation(base, text, link string) string {
