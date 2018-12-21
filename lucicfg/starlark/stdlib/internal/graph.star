@@ -114,6 +114,30 @@ def _children(parent, kind=None, order_by=_KEY_ORDER):
   return out
 
 
+def _descendants(root, visitor=None, order_by=_KEY_ORDER):
+  """Recursively visits 'root' (given by its key) and all its children, in
+  breadth first order, ordering edges by 'order_by'.
+
+  Returns the list of all visited nodes, in order they were visited.
+
+  Each node is visited only once, even if it is reachable through multiple
+  paths. Note that the graph has no cycles (by construction).
+
+  The visitor callback (if not None) is called for each visited node. It decides
+  what children to visit next. The callback always see all children of the
+  node, even if some of them have already been visited.
+
+  Args:
+    root: a key of the root node, as returned by graph.key(...).
+    visitor: func(node: graph.node, children: []graph.node): []graph.node.
+    order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
+
+  Returns:
+    List of visited graph.node objects, starting with the root.
+  """
+  return __native__.graph().descendants(root, visitor, order_by)
+
+
 def _parents(child, kind=None, order_by=_KEY_ORDER):
   """Returns direct parents of a node (given by its key), optionally filtering
   them by kind.
@@ -145,5 +169,6 @@ graph = struct(
     add_edge = _add_edge,
     node = _node,
     children = _children,
+    descendants = _descendants,
     parents = _parents,
 )
