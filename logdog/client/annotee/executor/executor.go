@@ -73,14 +73,14 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 		return fmt.Errorf("failed to create STDOUT pipe: %s", err)
 	}
 	defer stdoutRC.Close()
-	stdout := e.configStream(stdoutRC, annotee.STDOUT, e.TeeStdout, true)
+	stdout := e.configStream(stdoutRC, annotee.STDOUT, e.TeeStdout)
 
 	stderrRC, err := cmd.StderrPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create STDERR pipe: %s", err)
 	}
 	defer stderrRC.Close()
-	stderr := e.configStream(stderrRC, annotee.STDERR, e.TeeStderr, false)
+	stderr := e.configStream(stderrRC, annotee.STDERR, e.TeeStderr)
 
 	// Start our process.
 	if err := cmd.Start(); err != nil {
@@ -153,14 +153,13 @@ func (e *Executor) Executed() bool {
 	return e.executed
 }
 
-func (e *Executor) configStream(r io.Reader, name types.StreamName, tee io.Writer, emitAll bool) *annotee.Stream {
+func (e *Executor) configStream(r io.Reader, name types.StreamName, tee io.Writer) *annotee.Stream {
 	s := &annotee.Stream{
-		Reader:      r,
-		Name:        name,
-		Tee:         tee,
-		Alias:       "stdio",
-		Annotate:    true,
-		EmitAllLink: emitAll,
+		Reader:   r,
+		Name:     name,
+		Tee:      tee,
+		Alias:    "stdio",
+		Annotate: true,
 	}
 	return s
 }
