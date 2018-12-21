@@ -93,38 +93,40 @@ def _node(key):
   return __native__.graph().node(key)
 
 
-def _children(parent, kind, order_by=_KEY_ORDER):
-  """Returns direct children of a node (given by its key) with the given kind.
+def _children(parent, kind=None, order_by=_KEY_ORDER):
+  """Returns direct children of a node (given by its key), optionally filtering
+  them by kind.
 
   Fails if called not from a generator callback: a graph under construction
   can't be queried.
 
   Args:
     parent: a key of the parent node, as returned by graph.key(...).
-    kind: a string with a kind of children to return.
+    kind: a string with a kind of children to return or None for all.
     order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
 
   Returns:
     List of graph.node objects.
   """
-  return __native__.graph().children(parent, kind, order_by)
+  return __native__.graph().children(parent, kind or '', order_by)
 
 
-def _parents(child, kind, order_by=_KEY_ORDER):
-  """Returns direct parents of a node (given by its key) with the given kind.
+def _parents(child, kind=None, order_by=_KEY_ORDER):
+  """Returns direct parents of a node (given by its key), optionally filtering
+  them by kind.
 
   Fails if called not from a generator callback: a graph under construction
   can't be queried.
 
   Args:
     child: a key of the node to find parents of, as returned by graph.key(...).
-    kind: a string with a kind of parents to return.
+    kind: a string with a kind of parents to return or None for all.
     order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
 
   Returns:
     List of graph.node objects.
   """
-  return __native__.graph().parents(child, kind, order_by)
+  return __native__.graph().parents(child, kind or '', order_by)
 
 
 # Public API of this module.
