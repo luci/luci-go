@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/logdog/common/viewer"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation/internal"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -224,7 +223,7 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
 			prefix = b.Prefix
 		}
 
-		u := viewer.GetURL(server, b.Project, prefix.Join(types.StreamName(ls.Name)))
+		u := fmt.Sprintf("https://%s/logs/%s/%s", server, b.Project, prefix.Join(types.StreamName(ls.Name)))
 		link := ui.NewLink(l.Label, u, fmt.Sprintf("logdog link for %s", l.Label))
 		if link.Label == "" {
 			link.Label = ls.Name
