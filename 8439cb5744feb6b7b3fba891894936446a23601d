@@ -22,6 +22,30 @@
       "revId": "8439cb5744feb6b7b3fba891894936446a23601d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57b8ef94_8220c3a2",
+        "filename": "lucicfg/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-21T02:19:34Z",
+      "side": 1,
+      "message": "\u0027continue\u0027 is important to skip append(...) below",
+      "parentUuid": "c99ace04_05de2591",
+      "range": {
+        "startLine": 57,
+        "startChar": 3,
+        "endLine": 61,
+        "endChar": 21
+      },
+      "revId": "8439cb5744feb6b7b3fba891894936446a23601d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
