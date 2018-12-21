@@ -35,6 +35,8 @@ def test_children_query():
   assert.eq(q(par, 'b', 'key'), [t1_b1])
   # Filtering by unknown kind is OK.
   assert.eq(q(par, 'unknown', 'key'), [])
+  # No filtering at all is OK.
+  assert.eq(q(par, '', 'key'), [t1_a1, t1_a2, t1_b1, t2_a1])
   # Asking for children of non-existing node is OK.
   assert.eq(q(g.key('t', 'missing'), 'a', 'key'), [])
 
