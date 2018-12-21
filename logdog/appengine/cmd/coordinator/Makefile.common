@@ -54,7 +54,7 @@ $(error Missing required variable: GKE_SERVICES_YAML)
 endif
 
 # Define services.
-ALL_SERVICES = default logs services backend static
+ALL_SERVICES = default logs services backend
 YAMLS = dispatch queue cron index
 ALL_GKE_CLUSTERS = collector archivist
 
@@ -71,7 +71,7 @@ define HELP_BODY
 Manage LogDog distributions.
 
 Management targets:
-  web: Builds static web content into the 'static' module.
+  web: Builds static web content into the 'default' module.
 
 Service Targets for: $(subst $(space),$(comma),$(ALL_SERVICES))
   upload: uploads all AppEngie
@@ -90,9 +90,6 @@ Cluster Targets for: $(subst $(space),$(comma),$(ALL_GKE_CLUSTERS))
 Special Service Targets:
   update-{$(subst $(space),$(comma),$(YAMLS))}
     Explicitly update one of the configuration YAML files.
-  upload-static-dev: special command to upload an instance of the static
-    module named "dev". This can be whitelisted for OAuth for authenticated
-    testing.
 
 endef
 
@@ -110,16 +107,14 @@ web:
 	-rm -rf $(APP_DIR)static/dist
 	$(LUCI_GO_DIR)/web/web.py build \
 		--build-dir $(APP_DIR)static \
-		logdog-app \
-		logdog-view \
 		rpcexplorer
 
 # Default resources definition.
 .PHONY: $(addsuffix -resources,$(ALL_SERVICES))
 $(addsuffix -resources,$(ALL_SERVICES))::
 
-# The "static" module requires additional resources.
-static-resources:: web
+# The "default" module requires additional resources.
+default-resources:: web
 
 ##
 # Per-module Build Rules
@@ -160,19 +155,6 @@ switch:
 			--project $(CLOUD_PROJECT) \
 			app services set-traffic $(ALL_SERVICES) \
 				--splits=$(GAE_VERSION)=100
-
-# This is a special make target to upload the static module named "dev". This
-# version can be specifically whitelisted by the service account to enable
-# authentication and test a production instance.
-.PHONY: upload-static-dev
-upload-static-dev: static-resources yamls
-	cd $(APP_DIR) && \
-		gcloud app deploy \
-			--project $(CLOUD_PROJECT) \
-			--version "dev" \
-			--quiet \
-			--no-promote \
-			static/module-static.yaml
 
 $(addprefix update-,$(YAMLS)): update-%:
 	cd $(APP_DIR) && \
