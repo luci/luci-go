@@ -22,6 +22,30 @@
       "revId": "afae6ac15e0d7a93f90cc6fe361426c42b10a4ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c00c484_231bfd47",
+        "filename": "lucicfg/graph/testdata/children.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-21T04:32:17Z",
+      "side": 1,
+      "message": "It doesn\u0027t, it fails, expecting a string. That\u0027s why graph.star has \"or \u0027\u0027\" part. I was too lazy to add None check. \n\nActually, now that keys are examinable through Starlark, there\u0027s no sense in keeping filtering by kind inside the go code, since it can be done just as easily in Starlark. This simplifies Go part a little bit. It will also make the recursive graph traversal method (that I\u0027m adding now because I realized I need it) look more consistent, since it doesn\u0027t do any filtering by kind at all.",
+      "parentUuid": "79dba39c_78bf7071",
+      "range": {
+        "startLine": 39,
+        "startChar": 19,
+        "endLine": 39,
+        "endChar": 21
+      },
+      "revId": "afae6ac15e0d7a93f90cc6fe361426c42b10a4ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
