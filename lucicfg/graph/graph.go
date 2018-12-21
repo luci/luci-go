@@ -15,6 +15,7 @@
 package graph
 
 import (
+	"container/list"
 	"fmt"
 	"sort"
 
@@ -162,6 +163,7 @@ func (e *DanglingEdgeError) Backtrace() string {
 //   * finalize(): []string
 //   * node(key: graph.key): graph.node
 //   * children(parent: graph.key, order_by='key'): []graph.node
+//   * descendants(root: graph.key, callback=None, order_by='key'): []graph.Node
 //   * parents(child: graph.key, order_by='key'): []graph.node
 type Graph struct {
 	KeySet
@@ -169,6 +171,18 @@ type Graph struct {
 	nodes     map[*Key]*Node // all declared and "predeclared" nodes
 	edges     []*Edge        // all defined edges, in their definition order
 	finalized bool           // true if the graph is no longer mutable
+}
+
+// Visitor visits a node, looks at next possible candidates for a visit and
+// returns ones that it really wants to visit.
+type Visitor func(n *Node, next []*Node) ([]*Node, error)
+
+// validateOrder returns an error if the edge traversal order is unrecognized.
+func validateOrder(orderBy string) error {
+	if orderBy != "key" && orderBy != "exec" {
+		return fmt.Errorf("unknown order %q, expecting either \"key\" or \"exec\"", orderBy)
+	}
+	return nil
 }
 
 // validateKey returns an error if the key is not from this graph.
@@ -372,6 +386,85 @@ func (g *Graph) Children(parent *Key, orderBy string) ([]*Node, error) {
 	return g.orderedListing(parent, "parent", orderBy, (*Node).listChildren)
 }
 
+// Descendants recursively visits 'root' and all its children, in breadth
+// first order, ordering edges by 'orderBy'.
+//
+// Returns the list of all visited nodes, in order they were visited.
+//
+// Each node is visited only once, even if it is reachable through multiple
+// paths. Note that the graph has no cycles (by construction).
+//
+// The visitor callback (if not nil) is called for each visited node. It decides
+// what children to visit next. The callback always sees all children of the
+// node, even if some of them (or all) have already been visited. Visited nodes
+// will be skipped even if the visitor returns them.
+func (g *Graph) Descendants(root *Key, orderBy string, visitor Visitor) ([]*Node, error) {
+	if !g.finalized {
+		return nil, ErrNotFinalized
+	}
+	if err := g.validateKey("root", root); err != nil {
+		return nil, err
+	}
+	if err := validateOrder(orderBy); err != nil {
+		return nil, err
+	}
+
+	queue := list.New()
+	if n := g.nodes[root]; n != nil {
+		queue.PushBack(n)
+	}
+
+	var visited []*Node
+	var visitedSet = map[*Node]struct{}{}
+
+	for {
+		// Pop the node we want to visit.
+		var cur *Node
+		if elem := queue.Front(); elem != nil {
+			cur = queue.Remove(elem).(*Node)
+		} else {
+			return visited, nil // the queue is empty, visited all nodes
+		}
+
+		// Been here before?
+		if _, yes := visitedSet[cur]; yes {
+			continue
+		}
+		visited = append(visited, cur)
+		visitedSet[cur] = struct{}{}
+
+		// Prepare to visit all children by default.
+		children := orderNodes(cur.listChildren(), orderBy)
+		next := children
+
+		// Ask the visitor callback to decide where it wants to go next. Verify the
+		// callback didn't sneakily returned some *Node it saved somewhere before.
+		// This may cause infinite recursion and other weird stuff.
+		if visitor != nil {
+			var err error
+			if next, err = visitor(cur, children); err != nil {
+				return nil, err
+			}
+			allowed := make(map[*Node]struct{}, len(children))
+			for _, n := range children {
+				allowed[n] = struct{}{}
+			}
+			for _, n := range next {
+				if _, yes := allowed[n]; !yes {
+					return nil, fmt.Errorf("the callback unexpectedly returned %s which is not a child of %s", n, cur)
+				}
+			}
+		}
+
+		// Enqueue nodes for the visit.
+		for _, n := range next {
+			if _, yes := visitedSet[n]; !yes {
+				queue.PushBack(n)
+			}
+		}
+	}
+}
+
 // Parents returns direct parents of a node (given by its key).
 //
 // The order of the result depends on a value of 'orderBy':
@@ -382,6 +475,8 @@ func (g *Graph) Children(parent *Key, orderBy string) ([]*Node, error) {
 // Any other value of 'orderBy' causes an error.
 //
 // Trying to use Parents before the graph has been finalized is an error.
+//
+// TODO(vadimsh): Do I really need this? Candidate for removal.
 func (g *Graph) Parents(child *Key, orderBy string) ([]*Node, error) {
 	return g.orderedListing(child, "child", orderBy, (*Node).listParents)
 }
@@ -394,27 +489,33 @@ func (g *Graph) orderedListing(key *Key, attr, orderBy string, cb func(n *Node) 
 	if err := g.validateKey(attr, key); err != nil {
 		return nil, err
 	}
-	if orderBy != "key" && orderBy != "exec" {
-		return nil, fmt.Errorf("unknown order %q, expecting either \"key\" or \"exec\"", orderBy)
+	if err := validateOrder(orderBy); err != nil {
+		return nil, err
 	}
-
-	n := g.nodes[key]
-	if n == nil {
-		return nil, nil // no node at all -> no related nodes
+	if n := g.nodes[key]; n != nil {
+		return orderNodes(cb(n), orderBy), nil
 	}
-	out := cb(n)
+	return nil, nil // no node at all -> no related nodes
+}
 
-	// Optionally sort. cb is supposed to return relatives in order they were
-	// defined which matches orderBy == "exec", so need to sort only if asked to
-	// order by key.
-	if orderBy == "key" {
-		// Note that 'out' isn't allowed to be modified in-place, see
+// orderNodes order nodes according to 'orderBy'.
+//
+// Assumes 'nodes' came from euther .listChildren() or .listParents(), and thus
+// are already ordered by 'exec' order.
+func orderNodes(nodes []*Node, orderBy string) []*Node {
+	switch orderBy {
+	case "exec":
+		return nodes
+	case "key":
+		// Note that 'nodes' isn't allowed to be modified in-place, see
 		// Node.listChildren() and Node.listParents() doc.
-		out = append([]*Node(nil), out...)
+		out := append([]*Node(nil), nodes...)
 		sort.Slice(out, func(i, j int) bool { return out[i].Key.Less(out[j].Key) })
+		return out
+	default:
+		// Must not happen, orderBy must already be validated here.
+		panic(fmt.Sprintf("unknown order %q", orderBy))
 	}
-
-	return out, nil
 }
 
 //// starlark.Value interface implementation.
@@ -577,6 +678,57 @@ var graphAttrs = map[string]*starlark.Builtin{
 			return nil, err
 		}
 		nodes, err := b.Receiver().(*Graph).Children(parent, orderBy.GoString())
+		if err != nil {
+			return nil, err
+		}
+		return nodesList(nodes), nil
+	}),
+
+	// descendants(root: graph.key, callback=None, order_by='key'): []graph.Node.
+	//
+	// where 'callback' is func(node graph.node, children []graph.node): []graph.node.
+	"descendants": starlark.NewBuiltin("descendants", func(th *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		var root *Key
+		var callback starlark.Value
+		var orderBy starlark.String = "key"
+		err := starlark.UnpackArgs("descendants", args, kwargs,
+			"root", &root,
+			"callback?", &callback,
+			"order_by?", &orderBy)
+		if err != nil {
+			return nil, err
+		}
+
+		// Glue layer between Go callback and Starlark callback.
+		var visitor Visitor
+		if callback != nil && callback != starlark.None {
+			visitor = func(node *Node, children []*Node) ([]*Node, error) {
+				// Call callback(node, children).
+				ret, err := starlark.Call(th, callback, starlark.Tuple{node, nodesList(children)}, nil)
+				if err != nil {
+					return nil, err
+				}
+				// The callback is expected to return a list.
+				lst, _ := ret.(*starlark.List)
+				if lst == nil {
+					return nil, fmt.Errorf(
+						"descendants: callback %s unexpectedly returned %s instead of a list",
+						callback, ret.Type())
+				}
+				// And it should be a list of nodes.
+				out := make([]*Node, lst.Len())
+				for i := range out {
+					if out[i], _ = lst.Index(i).(*Node); out[i] == nil {
+						return nil, fmt.Errorf(
+							"descendants: callback %s unexpectedly returned %s as element #%d instead of a graph.node",
+							callback, lst.Index(i).Type(), i)
+					}
+				}
+				return out, nil
+			}
+		}
+
+		nodes, err := b.Receiver().(*Graph).Descendants(root, orderBy.GoString(), visitor)
 		if err != nil {
 			return nil, err
 		}
