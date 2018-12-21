@@ -156,6 +156,15 @@
         "https://www.googleapis.com/auth/userinfo.email"
       ]
     },
+    "fix_builds": {
+      "description": "Fixes all builds.",
+      "httpMethod": "POST",
+      "id": "buildbucket.fix_builds",
+      "path": "fix_builds",
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
     "get": {
       "description": "Returns a build by id.",
       "httpMethod": "GET",
@@ -355,15 +364,6 @@
       "response": {
         "$ref": "ApiPutBatchResponseMessage"
       },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
-    "reput_builds": {
-      "description": "Reputs every build, recomputing its properties.",
-      "httpMethod": "POST",
-      "id": "buildbucket.reput_builds",
-      "path": "reput_builds",
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
       ]
