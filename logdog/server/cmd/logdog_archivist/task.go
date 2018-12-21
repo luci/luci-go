@@ -40,9 +40,6 @@ type pubSubArchivistTask struct {
 
 	// at is the unmarshalled ArchiveTask from msg.
 	at logdog.ArchiveTask
-
-	// consumed is true if this task has been marked for consumption.
-	consumed bool
 }
 
 func makePubSubArchivistTask(c context.Context, s string, msg *gcps.Message) (*pubSubArchivistTask, error) {
@@ -69,9 +66,3 @@ func (t *pubSubArchivistTask) UniqueID() string {
 func (t *pubSubArchivistTask) Task() *logdog.ArchiveTask {
 	return &t.at
 }
-
-func (t *pubSubArchivistTask) Consume() {
-	t.consumed = true
-}
-
-func (t *pubSubArchivistTask) AssertLease(c context.Context) error { return nil }
