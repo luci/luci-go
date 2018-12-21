@@ -295,6 +295,9 @@
     "ComponentsConfigEndpointValidationMessage": {
       "id": "ComponentsConfigEndpointValidationMessage",
       "properties": {
+        "path": {
+          "type": "string"
+        },
         "severity": {
           "enum": [
             "CRITICAL",
