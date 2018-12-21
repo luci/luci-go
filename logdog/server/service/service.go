@@ -51,7 +51,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/logdog/common/types"
