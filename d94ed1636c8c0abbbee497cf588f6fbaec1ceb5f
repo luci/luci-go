@@ -45,6 +45,30 @@
       "revId": "d94ed1636c8c0abbbee497cf588f6fbaec1ceb5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e0cf720_e5227b7b",
+        "filename": "starlark/builtins/fail.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-21T02:39:30Z",
+      "side": 1,
+      "message": "nvm, i see it used in follow up CL.",
+      "parentUuid": "0dc7bd89_b68b0790",
+      "range": {
+        "startLine": 127,
+        "startChar": 28,
+        "endLine": 127,
+        "endChar": 33
+      },
+      "revId": "d94ed1636c8c0abbbee497cf588f6fbaec1ceb5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
