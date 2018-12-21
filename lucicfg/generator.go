@@ -38,13 +38,16 @@ type Inputs struct {
 
 	// Used to setup additional facilities for unit tests.
 	testPredeclared    starlark.StringDict
-	testThreadModified func(th *starlark.Thread)
+	testThreadModifier func(th *starlark.Thread)
 }
 
 // Generate interprets the high-level config.
 //
 // Returns a multi-error with all captured errors. Some of them may implement
 // BacktracableError interface.
+//
+// TODO(vadimsh): Dedup identical errors. May happen if different generator
+// callbacks hit exact same error condition.
 func Generate(ctx context.Context, in Inputs) (*State, error) {
 	state := &State{Inputs: in}
 	ctx = withState(ctx, state)
@@ -77,17 +80,31 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	pkgs[interpreter.MainPkg] = in.Code
 	pkgs["proto"] = protoLoader() // see protos.go
 
+	// Capture details of fail(...) calls happening inside Starlark code.
+	failures := builtins.FailureCollector{}
+
 	// Execute the config script in this environment. Return errors unwrapped so
 	// that callers can sniff out various sorts of Starlark errors.
 	intr := interpreter.Interpreter{
-		Predeclared:    predeclared,
-		Packages:       pkgs,
-		ThreadModifier: in.testThreadModified,
+		Predeclared: predeclared,
+		Packages:    pkgs,
+		ThreadModifier: func(th *starlark.Thread) {
+			failures.Install(th)
+			if in.testThreadModifier != nil {
+				in.testThreadModifier(th)
+			}
+		},
 	}
-	if err := intr.Init(ctx); err != nil {
-		return nil, state.err(err)
+
+	// Load builtins.star, and then execute the user-supplied script.
+	var err error
+	if err = intr.Init(ctx); err == nil {
+		_, err = intr.LoadModule(ctx, interpreter.MainPkg, in.Entry)
 	}
-	if _, err := intr.LoadModule(ctx, interpreter.MainPkg, in.Entry); err != nil {
+	if err != nil {
+		if f := failures.LatestFailure(); f != nil {
+			err = f // prefer this error, it has custom stack trace
+		}
 		return nil, state.err(err)
 	}
 
@@ -102,8 +119,8 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// transform it into actual config files (living in a config set). Run these
 	// callbacks now.
 	genCtx := newGenCtx()
-	if err := state.generators.call(intr.Thread(ctx), genCtx); err != nil {
-		return nil, state.err(err)
+	if errs := state.generators.call(intr.Thread(ctx), genCtx); len(errs) != 0 {
+		return nil, state.err(errs...)
 	}
 	cfgs, err := genCtx.configSet.asTextProto(in.TextPBHeader)
 	if err != nil {
