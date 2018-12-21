@@ -45,9 +45,6 @@ type Inputs struct {
 //
 // Returns a multi-error with all captured errors. Some of them may implement
 // BacktracableError interface.
-//
-// TODO(vadimsh): Dedup identical errors. May happen if different generator
-// callbacks hit exact same error condition.
 func Generate(ctx context.Context, in Inputs) (*State, error) {
 	state := &State{Inputs: in}
 	ctx = withState(ctx, state)
