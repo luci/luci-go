@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c99ace04_05de2591",
+        "filename": "lucicfg/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-21T02:15:07Z",
+      "side": 1,
+      "message": "just s.seenErrs.Add(bte.Backtrace()), Add is idempotent.",
+      "range": {
+        "startLine": 57,
+        "startChar": 3,
+        "endLine": 61,
+        "endChar": 21
+      },
+      "revId": "8439cb5744feb6b7b3fba891894936446a23601d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
