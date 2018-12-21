@@ -16,6 +16,5 @@ package main
 
 // newStrategy returns a new Windows-specific PlatformStrategy.
 func newStrategy() PlatformStrategy {
-	// TODO(smut): Support Windows.
-	panic("unsupported platform")
+	return &WindowsStrategy{}
 }
