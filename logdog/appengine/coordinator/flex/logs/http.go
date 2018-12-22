@@ -642,13 +642,11 @@ var errorTemplate = template.Must(template.New("error").Parse(`
 
 var lineTemplate = template.Must(template.New("line").Parse(`
 <div class="line" id="{{.ID}}">
-	{{ if .DurationInfo.Text }}
-		<div class="timestamp" onclick="window.location.hash='{{.ID}}'"
-				 data-timestamp="{{.DataTimestamp}}" data-delta="{{.DurationInfo.Delta}}"
-				 onmouseover="utils.maybeFormatTime(this)" style="{{.DurationInfo.Style}}">
-			{{.DurationInfo.Text}}
-		</div>
-	{{ end }}
+	<div class="timestamp" onclick="window.location.hash='{{.ID}}'"
+			 data-timestamp="{{.DataTimestamp}}" data-delta="{{.DurationInfo.Delta}}"
+			 onmouseover="utils.maybeFormatTime(this)" style="{{.DurationInfo.Style}}">
+		{{.DurationInfo.Text}}
+	</div>
 	<span class="text">{{.Text}}</span>
 </div>`))
 
@@ -701,13 +699,14 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 					Text: string(line.GetValue()),
 				}
 				// Add in timestamp information, if available.
-				if duration, perr := ptypes.Duration(log.GetTimeOffset()); perr == nil {
-					lt.DataTimestamp = data.logStream.Timestamp.Add(duration).UnixNano() / 1e6
-					lt.DurationInfo = durationInfo(prevDuration, duration)
-					prevDuration = duration
-				} else {
+				duration, perr := ptypes.Duration(log.GetTimeOffset())
+				if perr != nil {
 					logging.WithError(perr).Debugf(c, "Got error while converting duration")
+					duration = prevDuration
 				}
+				lt.DataTimestamp = data.logStream.Timestamp.Add(duration).UnixNano() / 1e6
+				lt.DurationInfo = durationInfo(prevDuration, duration)
+				prevDuration = duration
 				ierr = lineTemplate.Execute(w, lt)
 			case formatHTMLLite:
 				text := template.HTMLEscapeString(string(line.GetValue()))
