@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22baa949_c06e7c48",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-23T05:50:03Z",
+      "side": 1,
+      "message": "why is this necessary? I\u0027m rusty on Go flags (last time touched them in early 2015), but looking at nearby existing code, just aliasing []string should be good enough: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/10/1375310/1/common/flag/int64slice.go#26 is it not?",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "252bd9a5_9adc1cf5",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-23T05:50:03Z",
+      "side": 1,
+      "message": "so you only need this because \u0027s\u0027 is private? if so , then why have s private?",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c22d6d2_d2ffd095",
+        "filename": "common/flag/commalist_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-23T05:50:03Z",
+      "side": 1,
+      "message": "what about \u0027-list first -list second\u0027?\n\nintslices we have actually support this: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/10/1375310/1/common/flag/int64slice.go#37",
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79126218_9fdcfdc1",
+        "filename": "common/flag/jsonmap.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-23T05:50:03Z",
+      "side": 1,
+      "message": "same comments as for slice apply.",
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
