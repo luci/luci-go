@@ -21,6 +21,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/client/internal/common"
@@ -60,8 +61,20 @@ type fileNode struct {
 	// Whether we expect the file to be ignored, per a given blacklist.
 	expectIgnored bool
 
-	// A symbolic link source.
-	symlink string
+	// Symlink information about the file.
+	symlink *symlinkData
+}
+
+// Data about any symlinking related to the file.
+type symlinkData struct {
+	// Source of the link.
+	src string
+
+	// Name of the link.
+	name string
+
+	// Whether the link's source is in the directory being pushed.
+	inTree bool
 }
 
 func TestPushDirectory(t *testing.T) {
@@ -84,7 +97,7 @@ func TestPushDirectory(t *testing.T) {
 		a := New(emptyContext, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 
 		for _, node := range nodes {
-			if node.symlink != "" {
+			if node.symlink != nil {
 				continue
 			}
 			fullPath := filepath.Join(root, node.relPath)
@@ -92,6 +105,7 @@ func TestPushDirectory(t *testing.T) {
 		}
 
 		item := PushDirectory(a, root, "", blacklist)
+		So(item.Error(), ShouldBeNil)
 		So(item.DisplayName, ShouldResemble, filepath.Base(root)+".isolated")
 		item.WaitForHashed()
 		So(a.Close(), ShouldBeNil)
@@ -105,7 +119,7 @@ func TestPushDirectory(t *testing.T) {
 				continue
 			}
 			files[node.relPath] = node.expectedFile
-			if node.symlink != "" {
+			if node.symlink != nil && node.symlink.inTree {
 				continue
 			}
 			expectedBytesPushed += int(len(node.contents))
@@ -203,9 +217,28 @@ func TestPushDirectory(t *testing.T) {
 	}
 
 	if !common.IsWindows() {
+		otherDir, err := ioutil.TempDir("", "archiver")
+		if err != nil {
+			t.Fail()
+		}
+		defer func() {
+			if err := os.RemoveAll(otherDir); err != nil {
+				t.Fail()
+			}
+		}()
+
+		outOfTreeContents := "I am out of the tree"
+		outOfTreeFile := filepath.Join(otherDir, "out", "of", "tree")
+		if err := os.MkdirAll(filepath.Dir(outOfTreeFile), 0700); err != nil {
+			t.Fail()
+		}
+		if err := ioutil.WriteFile(outOfTreeFile, []byte(outOfTreeContents), mode); err != nil {
+			t.Fail()
+		}
+
 		cases = append(cases,
 			testCase{
-				name: "Can push with a symlinked file",
+				name: "Can push with a symlinked file in-tree",
 				nodes: []fileNode{
 					{
 						relPath:      "a",
@@ -214,11 +247,64 @@ func TestPushDirectory(t *testing.T) {
 					},
 					{
 						relPath:      "b",
-						contents:     "foo",
 						expectedFile: isolated.SymLink("a"),
-						symlink:      "a",
+						symlink: &symlinkData{
+							src:    "a",
+							name:   filepath.Join("$ROOT", "b"),
+							inTree: true,
+						},
 					},
 				},
+			},
+			testCase{
+				name: "Can push with a symlinked file out-of-tree",
+				nodes: []fileNode{
+					{
+						relPath:      "a",
+						contents:     "foo",
+						expectedFile: basicFile("foo"),
+					},
+					{
+						relPath:      "b",
+						contents:     outOfTreeContents,
+						expectedFile: basicFile(outOfTreeContents),
+						symlink: &symlinkData{
+							src:    outOfTreeFile,
+							name:   filepath.Join("$ROOT", "b"),
+							inTree: false,
+						},
+					},
+				},
+			},
+			testCase{
+				name: "Can push with a symlinked directory out-of-tree",
+				nodes: []fileNode{
+					{
+						relPath:      filepath.Join("of", "tree"),
+						contents:     outOfTreeContents,
+						expectedFile: basicFile(outOfTreeContents),
+						symlink: &symlinkData{
+							src:    filepath.Join(otherDir, "out"),
+							name:   filepath.Join("$ROOT", "d"),
+							inTree: false,
+						},
+					},
+				},
+			},
+			testCase{
+				name: "Can push with a symlinked directory out-of-tree and a blacklist",
+				nodes: []fileNode{
+					{
+						relPath:       filepath.Join("of", "tree"),
+						expectIgnored: true,
+						symlink: &symlinkData{
+							src:    filepath.Join(otherDir, "out"),
+							name:   filepath.Join("$ROOT", "d"),
+							inTree: false,
+						},
+					},
+				},
+				blacklist: []string{filepath.Join("*", "tree")},
 			},
 		)
 	}
@@ -235,9 +321,11 @@ func TestPushDirectory(t *testing.T) {
 			}()
 			for _, node := range testCase.nodes {
 				fullPath := filepath.Join(tmpDir, node.relPath)
-				So(os.MkdirAll(filepath.Dir(fullPath), 0700), ShouldBeNil)
-				if node.symlink != "" {
-					So(os.Symlink(node.symlink, fullPath), ShouldBeNil)
+				if node.symlink == nil {
+					So(os.MkdirAll(filepath.Dir(fullPath), 0700), ShouldBeNil)
+				} else {
+					linkname := strings.Replace(node.symlink.name, "$ROOT", tmpDir, 1)
+					So(os.Symlink(node.symlink.src, linkname), ShouldBeNil)
 				}
 			}
 			expectValidPush(t, tmpDir, testCase.nodes, testCase.blacklist)
