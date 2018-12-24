@@ -62,6 +62,30 @@
       "revId": "e60798685ec25c446aea6a231392f1d5c2e116cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0357406_90593bac",
+        "filename": "client/archiver/directory_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2018-12-24T07:51:37Z",
+      "side": 1,
+      "message": "Ah, I was passing Mode() and not Mode().Perm(). Fixed.",
+      "parentUuid": "43f9e012_70b4285f",
+      "range": {
+        "startLine": 102,
+        "startChar": 93,
+        "endLine": 102,
+        "endChar": 107
+      },
+      "revId": "e60798685ec25c446aea6a231392f1d5c2e116cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
