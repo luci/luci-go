@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/isolated"
@@ -137,16 +138,23 @@ func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) 
 			item.relPath = filepath.Join(relDir, item.relPath)
 		}
 		mode := item.info.Mode()
+		basicFile := isolated.BasicFile("", int(mode.Perm()), item.info.Size())
 		if mode&os.ModeSymlink == os.ModeSymlink {
 			l, err := os.Readlink(item.fullPath)
 			if err != nil {
 				s.SetErr(fmt.Errorf("readlink(%s): %s", item.fullPath, err))
 				continue
 			}
-			i.Files[item.relPath] = isolated.SymLink(l)
+			println(l)
+			if strings.HasPrefix(l, root) {
+				i.Files[item.relPath] = isolated.SymLink(l)
+			} else {
+				i.Files[item.relPath] = basicFile
+				items = append(items, a.PushFile(item.relPath, l, item.info.Size()))
+			}
 		} else {
-			i.Files[item.relPath] = isolated.BasicFile("", int(mode.Perm()), item.info.Size())
-			items = append(items, a.PushFile(item.relPath, item.fullPath, -item.info.Size()))
+			i.Files[item.relPath] = basicFile
+			items = append(items, a.PushFile(item.relPath, item.fullPath, item.info.Size()))
 		}
 	}
 	if s.Error() != nil {
