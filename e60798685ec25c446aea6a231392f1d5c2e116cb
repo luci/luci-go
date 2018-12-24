@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f05bbf6b_5de0b5ef",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2018-12-24T07:04:04Z",
+      "side": 1,
+      "message": "To be submitted after January 2, when the current code freeze ends.",
+      "revId": "e60798685ec25c446aea6a231392f1d5c2e116cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19f9cd0b_9a53fb7e",
+        "filename": "client/archiver/directory_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2018-12-24T07:04:04Z",
+      "side": 1,
+      "message": "Is that correct?",
+      "range": {
+        "startLine": 96,
+        "startChar": 42,
+        "endLine": 96,
+        "endChar": 49
+      },
+      "revId": "e60798685ec25c446aea6a231392f1d5c2e116cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43f9e012_70b4285f",
+        "filename": "client/archiver/directory_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2018-12-24T07:04:04Z",
+      "side": 1,
+      "message": "For some reason this is showing up as 134218239 instead of 511; everything else matches. Any idea why that is?",
+      "range": {
+        "startLine": 102,
+        "startChar": 93,
+        "endLine": 102,
+        "endChar": 107
+      },
+      "revId": "e60798685ec25c446aea6a231392f1d5c2e116cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
