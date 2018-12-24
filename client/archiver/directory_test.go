@@ -32,6 +32,11 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const (
+	// Digest associated to a file content of "foo".
+	fooDigest = isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
+)
+
 func TestPushDirectory(t *testing.T) {
 	// Uploads a real directory. 2 times the same file.
 	t.Parallel()
@@ -56,8 +61,15 @@ func TestPushDirectory(t *testing.T) {
 		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
 		So(ioutil.WriteFile(filepath.Join(baseDir, "bar"), []byte("foo"), 0600), ShouldBeNil)
 		So(ioutil.WriteFile(filepath.Join(baseDir, "bar_dupe"), []byte("foo"), 0600), ShouldBeNil)
+		outOfTreeFile, err := ioutil.TempFile("", "out-of-tree")
+		So(err, ShouldBeNil)
+		_, err = outOfTreeFile.Write([]byte("foo"))
+		So(err, ShouldBeNil)
+		defer outOfTreeFile.Close()
+
 		if !common.IsWindows() {
-			So(os.Symlink("bar", filepath.Join(baseDir, "link")), ShouldBeNil)
+			So(os.Symlink(filepath.Join(baseDir, "bar"), filepath.Join(baseDir, "link_inside")), ShouldBeNil)
+			So(os.Symlink(outOfTreeFile.Name(), filepath.Join(baseDir, "link_outside")), ShouldBeNil)
 		}
 		So(ioutil.WriteFile(filepath.Join(baseDir, "ignored2"), []byte("ignored"), 0600), ShouldBeNil)
 		So(os.Mkdir(ignoredDir, 0700), ShouldBeNil)
@@ -72,25 +84,35 @@ func TestPushDirectory(t *testing.T) {
 		if common.IsWindows() {
 			mode = 0666
 		}
+		basicFooFile := isolated.BasicFile(fooDigest, mode, 3)
 		isolatedData := isolated.Isolated{
 			Algo: "sha-1",
 			Files: map[string]isolated.File{
-				filepath.Join("base", "bar"):      isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
-				filepath.Join("base", "bar_dupe"): isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
+				filepath.Join("base", "bar"):      basicFooFile,
+				filepath.Join("base", "bar_dupe"): basicFooFile,
 			},
 			Version: isolated.IsolatedFormatVersion,
 		}
+		expectedMisses := 3                      // bar + bar_dupe + ignored
+		expectedBytesPushed := units.Size(3 + 3) // "foo" + "foo"
 		if !common.IsWindows() {
-			isolatedData.Files[filepath.Join("base", "link")] = isolated.SymLink("bar")
+			isolatedData.Files[filepath.Join("base", "link_inside")] = isolated.SymLink(filepath.Join(baseDir, "bar"))
+			info, err := os.Lstat(filepath.Join(baseDir, "link_outside"))
+			mode := info.Mode()
+			So(err, ShouldBeNil)
+			isolatedData.Files[filepath.Join("base", "link_outside")] = isolated.BasicFile(fooDigest, int(mode.Perm()), info.Size())
+			expectedMisses += 1
+			expectedBytesPushed += units.Size(3)
 		}
 		encoded, err := json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
 		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
+		expectedBytesPushed += units.Size(len(isolatedEncoded))
 
 		expected := map[string]string{
-			"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
-			string(isolatedHash):                       isolatedEncoded,
+			string(fooDigest):    "foo",
+			string(isolatedHash): isolatedEncoded,
 		}
 		actual := map[string]string{}
 		for k, v := range server.Contents() {
@@ -101,10 +123,10 @@ func TestPushDirectory(t *testing.T) {
 
 		stats := a.Stats()
 		So(stats.TotalHits(), ShouldResemble, 0)
-		// There're 3 cache misses even if the same content is looked up twice.
-		So(stats.TotalMisses(), ShouldResemble, 3)
+		// There're 4 cache misses even if the same content is looked up twice.
+		So(stats.TotalMisses(), ShouldResemble, expectedMisses)
 		So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
-		So(stats.TotalBytesPushed(), ShouldResemble, units.Size(3+3+len(isolatedEncoded)))
+		So(stats.TotalBytesPushed(), ShouldResemble, expectedBytesPushed)
 
 		So(server.Error(), ShouldBeNil)
 	})
