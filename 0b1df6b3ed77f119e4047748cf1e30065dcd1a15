@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2de24bd7_a9244194",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-26T22:42:44Z",
+      "side": 1,
+      "message": "this behavior is not documented. Looks like you prefer to return empty list, as opposed to an error. Maybe it should be documented then, here and in Parents/Children",
+      "range": {
+        "startLine": 424,
+        "startChar": 24,
+        "endLine": 424,
+        "endChar": 32
+      },
+      "revId": "0b1df6b3ed77f119e4047748cf1e30065dcd1a15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b6e524c_55db949c",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-26T22:42:44Z",
+      "side": 1,
+      "message": "nit: i think it would be cleaner and more typical to have this condition in L431:\n\n  for queue.Len() \u003e 0 {\n\nthen L433-438 is oneliner",
+      "revId": "0b1df6b3ed77f119e4047748cf1e30065dcd1a15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ef0a934_da81803c",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 510,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-26T22:42:44Z",
+      "side": 1,
+      "message": "orders",
+      "range": {
+        "startLine": 510,
+        "startChar": 14,
+        "endLine": 510,
+        "endChar": 19
+      },
+      "revId": "0b1df6b3ed77f119e4047748cf1e30065dcd1a15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10eb4db7_2af423df",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 512,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-26T22:42:44Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 512,
+        "startChar": 29,
+        "endLine": 512,
+        "endChar": 35
+      },
+      "revId": "0b1df6b3ed77f119e4047748cf1e30065dcd1a15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
