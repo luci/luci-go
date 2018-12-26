@@ -22,6 +22,30 @@
       "revId": "0278bffb5d75aff79f73b8df24de29149a2aafc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd3b9d70_9b85d848",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-26T21:44:46Z",
+      "side": 1,
+      "message": "yes, that\u0027s what i meant. done",
+      "parentUuid": "6b30ca8c_d7e65e53",
+      "range": {
+        "startLine": 216,
+        "startChar": 5,
+        "endLine": 216,
+        "endChar": 13
+      },
+      "revId": "0278bffb5d75aff79f73b8df24de29149a2aafc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
