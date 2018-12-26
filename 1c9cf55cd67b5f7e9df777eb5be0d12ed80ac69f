@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2b0d5870_3ee3a4d4",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-26T22:05:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "924edc85_9d4a3f13",
+      "revId": "1c9cf55cd67b5f7e9df777eb5be0d12ed80ac69f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f5aef874_ff8ff1e3",
         "filename": "lucicfg/starlark/stdlib/internal/graph.star",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "1c9cf55cd67b5f7e9df777eb5be0d12ed80ac69f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9df7e041_2eeaa5c1",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-26T22:05:38Z",
+      "side": 1,
+      "message": "I may pull it into Starlark later if needed. For now it\u0027s more trouble than its worth (need to implement \u0027\u003c\u0027 for node.key).",
+      "parentUuid": "f5aef874_ff8ff1e3",
+      "range": {
+        "startLine": 111,
+        "startChar": 44,
+        "endLine": 111,
+        "endChar": 52
+      },
+      "revId": "1c9cf55cd67b5f7e9df777eb5be0d12ed80ac69f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
