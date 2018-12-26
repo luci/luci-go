@@ -19,18 +19,18 @@ def error(msg, *args, **kwargs):
   execution is considered failed.
 
   Either captures the current stack trace for the traceback or uses a
-  previously captured one if it was passed via 'stack' keyword argument:
+  previously captured one if it was passed via 'trace' keyword argument:
 
-    stack = stacktrace()
+    trace = stacktrace()
     ...
-    error('Boom, %s', 'arg', stack=stack)
+    error('Boom, %s', 'arg', trace=trace)
 
   Args:
     msg: error message format string.
     *args: arguments for the format string.
-    **kwargs: either empty of contains single 'stack' var with a stack trace.
+    **kwargs: either empty of contains single 'trace' var with a stack trace.
   """
-  stack = kwargs.pop('stack', None) or stacktrace(skip=1)
+  trace = kwargs.pop('trace', None) or stacktrace(skip=1)
   if len(kwargs) != 0:
-    fail('expecting stack=... kwargs only')
-  __native__.emit_error(msg % args, stack)
+    fail('expecting trace=... kwargs only')
+  __native__.emit_error(msg % args, trace)
