@@ -8,9 +8,9 @@ def test_children_query():
 
   par = mk('parent', 'parent')
 
-  def q(parent, kind, order_by):
+  def q(parent, order_by):
     keys = []
-    for n in g.children(parent, kind, order_by):
+    for n in g.children(parent, order_by):
       keys.append(n.key)
     return keys
 
@@ -28,17 +28,13 @@ def test_children_query():
   g.finalize()
 
   # Querying in 'exec' order returns nodes in order we defined edges.
-  assert.eq(q(par, 'a', 'exec'), [t2_a1, t1_a2, t1_a1])
+  assert.eq(q(par, 'exec'), [t1_b1, t2_a1, t1_a2, t1_a1])
   # Querying by key order returns nodes in lexicographical order.
-  assert.eq(q(par, 'a', 'key'), [t1_a1, t1_a2, t2_a1])
-  # Filtering by another kind.
-  assert.eq(q(par, 'b', 'key'), [t1_b1])
-  # Filtering by unknown kind is OK.
-  assert.eq(q(par, 'unknown', 'key'), [])
+  assert.eq(q(par, 'key'), [t1_a1, t1_a2, t1_b1, t2_a1])
   # Asking for children of non-existing node is OK.
-  assert.eq(q(g.key('t', 'missing'), 'a', 'key'), [])
+  assert.eq(q(g.key('t', 'missing'), 'key'), [])
 
   # order_by is validated.
-  assert.fails(lambda: q(par, 'a', 'blah'), 'unknown order "blah"')
+  assert.fails(lambda: q(par, 'blah'), 'unknown order "blah"')
 
 test_children_query()
