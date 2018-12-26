@@ -67,7 +67,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 21.
+// Next tag: 23.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -135,11 +135,13 @@ message Builder {
     // To avoid affecting and being affected by other projects, prefix the cache
     // name with something project-specific, e.g. "v8-".
     string name = 1;
+
     // Relative path where the cache in mapped into. Required.
     // Must use POSIX format (forward slashes).
     // In most cases, it does not need slashes at all.
     // Must be unique in the given builder.
     string path = 2;
+
     // Number of seconds to wait for a bot with a warm cache to pick up the
     // task, before falling back to a bot with a cold (non-existent) cache.
     //
@@ -158,7 +160,8 @@ message Builder {
   message Recipe {
     // Repository URL of the recipe package.
     // Value "-" is treated as unset.
-  string repository = 1;
+    string repository = 1;
+
     // Name of the recipe to run.
     string name = 2;
 
@@ -190,6 +193,7 @@ message Builder {
     // Use this field for string properties and use properties_j for other
     // types.
     repeated string properties = 3;
+
     // Same as properties, but the value must valid JSON. For example
     //   properties_j: "a:1"
     // means property a is a number 1, not string "1".
@@ -207,6 +211,11 @@ message Builder {
   // If a builder name, will be propagated to "builder" build tag and
   // "buildername" recipe property.
   string name = 1;
+
+  // Hostname of the swarming instance, e.g. "chromium-swarm.appspot.com".
+  // Required, but defaults to deprecated Swarming.hostname.
+  string swarming_host = 21;
+
   // Names of mixins to apply to this builder definition.
   //
   // FLATTENING
@@ -303,12 +312,15 @@ message Builder {
   //
   // Circular references are prohibited.
   repeated string mixins = 10;
+
   // Builder category. Will be used for visual grouping, for example in Code Review.
   string category = 6;
+
   // Will be become to swarming task tags.
   // Each tag will end up in "swarming_tag" buildbucket tag, for example
   // "swarming_tag:builder:release"
   repeated string swarming_tags = 2;
+
   // A requirement for a bot to execute the build.
   //
   // Supports 3 forms:
@@ -328,24 +340,32 @@ message Builder {
   // If this builder is defined in a bucket, dimension "pool" is defaulted
   // to the name of the bucket. See Bucket message below.
   repeated string dimensions = 3;
+
   // Specifies that a recipe to run.
   Recipe recipe = 4;
+
   // Swarming task priority.
   uint32 priority = 5;
+
   // Maximum build execution time. Not to be confused with pending time.
   uint32 execution_timeout_secs = 7;
+
   // Maximum build pending time.
   uint32 expiration_secs = 20;
+
   // Caches that should be present on the bot.
   repeated CacheEntry caches = 9;
+
   // If YES, generate monotonically increasing contiguous numbers for each
   // build, unique within the builder.
   // Note: this limits the build creation rate in this builder to 5 per second.
   Toggle build_numbers = 16;
+
   // Email of a service account to run the build as or literal 'bot' string to
   // use Swarming bot's account (if available). Passed directly to Swarming.
   // Subject to Swarming's ACLs.
   string service_account = 12;
+
   // If YES, each builder will get extra dimension "builder:<builder name>"
   // added. Default is UNSET.
   //
@@ -370,12 +390,14 @@ message Builder {
   // (see also http://docs.buildbot.net/0.8.9/manual/cfg-properties.html#interpolate)
   // but are currently against complicating config with this.
   Toggle auto_builder_dimension = 17;
+
   // If YES, by default a new build in this builder will be marked as
   // experimental.
   // This is useful for inherently experimental builders that use production
   // recipes.
   // See also luci_migration_host field.
   Toggle experimental = 18;
+
   // If not empty and not "-", and a build request is not marked as
   // experimental/prod explicitly and has "mastername" property, buildbucket
   // will contact this instance of luci-migration app to determine whether the
@@ -387,11 +409,17 @@ message Builder {
   // Useful in a builder that wants to override luci_migration_host
   // specified in builder_defaults or mixin.
   string luci_migration_host = 19;
+
+  // Percentage of builds that should use a canary swarming task template.
+  // A value from 0 to 100.
+  // If omitted, a global server-defined default percentage is used.
+  google.protobuf.UInt32Value task_template_canary_percentage = 22;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.
 message Swarming {
-  // Hostname of the swarming instance, e.g. "chromium-swarm.appspot.com".
+  // DEPERECATED. Use builder_defaults.swarming_host instead.
+  // Setting this fields sets builder_defaults.swarming_host.
   string hostname = 1;
   // DEPRECATED, IGNORED.
   // Used to generate a URL for Build, may contain parameters
@@ -407,9 +435,8 @@ message Swarming {
   // explicitly specified.
   repeated Builder builders = 4;
 
-  // Percentage of builds that should use a canary swarming task template.
-  // A value from 0 to 100.
-  // If omitted, default percentage is used.
+  // DEPRECATED. Use builder_defaults.task_template_canary_percentage instead.
+  // Setting this field sets builder_defaults.task_template_canary_percentage.
   google.protobuf.UInt32Value task_template_canary_percentage = 5;
 }
 
