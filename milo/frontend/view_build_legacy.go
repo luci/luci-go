@@ -131,7 +131,8 @@ func makeFeedbackLink(c *router.Context, build *ui.MiloBuildLegacy) string {
 	}
 
 	link, err := MakeFeedbackLink(&project.BuildBugTemplate, map[string]interface{}{
-		"Build": makeBuild(c.Params, build),
+		"Build":        makeBuild(c.Params, build),
+		"MiloBuildUrl": c.Request.URL.String(),
 	})
 
 	if err != nil {
