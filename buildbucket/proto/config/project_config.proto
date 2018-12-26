@@ -67,7 +67,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 21.
+// Next tag: 23.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -387,11 +387,21 @@ message Builder {
   // Useful in a builder that wants to override luci_migration_host
   // specified in builder_defaults or mixin.
   string luci_migration_host = 19;
+
+  // Hostname of the swarming instance, e.g. "chromium-swarm.appspot.com".
+  // Required.
+  string swarming_host = 21;
+
+  // Percentage of builds that should use a canary swarming task template.
+  // A value from 0 to 100.
+  // If omitted, a global server-defined default percentage is used.
+  google.protobuf.UInt32Value task_template_canary_percentage = 22;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.
 message Swarming {
-  // Hostname of the swarming instance, e.g. "chromium-swarm.appspot.com".
+  // DEPERECATED. Use builder_defaults.swarming_host instead.
+  // Setting this fields sets builder_defaults.swarming_host.
   string hostname = 1;
   // DEPRECATED, IGNORED.
   // Used to generate a URL for Build, may contain parameters
@@ -407,9 +417,8 @@ message Swarming {
   // explicitly specified.
   repeated Builder builders = 4;
 
-  // Percentage of builds that should use a canary swarming task template.
-  // A value from 0 to 100.
-  // If omitted, default percentage is used.
+  // DEPRECATED. Use builder_defaults.task_template_canary_percentage instead.
+  // Setting this field sets builder_defaults.task_template_canary_percentage.
   google.protobuf.UInt32Value task_template_canary_percentage = 5;
 }
 
