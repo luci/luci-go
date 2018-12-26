@@ -27,16 +27,20 @@ message Project {
   // storage.googleapis.com.
   string logo_url = 4;
 
-  // BugTemplate is the template for making a custom feedback link for
+  // BuildBugTemplate is the template for making a custom feedback link for
   // the build page. This field is optional. Supported interpolations
   // for the "summary" and "description" fields in this context are:
   //
+  // Some populated fields of the standard build proto:
   // {{.Build.Builder.Project}}
   // {{.Build.Builder.Bucket}}
   // {{.Build.Builder.Builder}}
   //
-  // If any specified placeholder cannot be satisfied then a default URL
-  // is rendered for the feedback link.
+  // Others:
+  // {{.MiloBuildUrl}}
+  //
+  // If any specified placeholder cannot be satisfied then no URL
+  // is rendered for the build page feedback link.
   BugTemplate build_bug_template = 5;
 }
 
