@@ -12,7 +12,7 @@ def func2():
 s = func2()
 
 func1()
-error("another err", stack=s)
+error("another err", trace=s)
 
 # Expect errors:
 #
