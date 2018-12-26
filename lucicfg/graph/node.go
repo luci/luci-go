@@ -92,8 +92,7 @@ func (n *Node) visitDescendants(path []*Edge, cb func(*Node, []*Edge) error) err
 // order corresponding edges were declared.
 //
 // Must be used only with finalized graphs, since the function caches its result
-// internally on a first call. For the same reason the result must not be
-// directly mutated.
+// internally on a first call. Returns a copy of the cached result.
 func (n *Node) listChildren() []*Node {
 	if n.childrenList == nil {
 		// Note: we want to allocate a new slice even if it is empty, so that
@@ -108,15 +107,14 @@ func (n *Node) listChildren() []*Node {
 			}
 		}
 	}
-	return n.childrenList
+	return append([]*Node(nil), n.childrenList...)
 }
 
 // listParents returns a slice with a set of direct parents of the node, in
 // order corresponding edges were declared.
 //
 // Must be used only with finalized graphs, since the function caches its result
-// internally on a first call. For the same reason the result must not be
-// directly mutated.
+// internally on a first call. Returns a copy of the cached result.
 func (n *Node) listParents() []*Node {
 	if n.parentsList == nil {
 		// Note: we want to allocate a new slice even if it is empty, so that
@@ -131,7 +129,7 @@ func (n *Node) listParents() []*Node {
 			}
 		}
 	}
-	return n.parentsList
+	return append([]*Node(nil), n.parentsList...)
 }
 
 // String is a part of starlark.Value interface.
