@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "924edc85_9d4a3f13",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-26T21:53:10Z",
+      "side": 1,
+      "message": "this should be unconditional because otherwise the pointer is returned by public (*Graph).Children and Parents",
+      "revId": "1c9cf55cd67b5f7e9df777eb5be0d12ed80ac69f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5aef874_ff8ff1e3",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-26T21:53:10Z",
+      "side": 1,
+      "message": "now this is inconsistent with filtering. Ordering can be done in starlark too, it has `sorted` function (doesn\u0027t have lambda functions, though).\n\nnot a big deal though",
+      "range": {
+        "startLine": 111,
+        "startChar": 44,
+        "endLine": 111,
+        "endChar": 52
+      },
+      "revId": "1c9cf55cd67b5f7e9df777eb5be0d12ed80ac69f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
