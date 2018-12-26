@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6b30ca8c_d7e65e53",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-26T21:37:06Z",
+      "side": 1,
+      "message": "how are you going to deploy this change? All existing configs will suddenly become broken. Did you mean \"Required, but defaults to deprecated Swarming.hostname\"?",
+      "range": {
+        "startLine": 216,
+        "startChar": 5,
+        "endLine": 216,
+        "endChar": 13
+      },
+      "revId": "0278bffb5d75aff79f73b8df24de29149a2aafc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
