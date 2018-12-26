@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9dd8c807_94649331",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-26T14:22:37Z",
+      "side": 1,
+      "message": "Readlink() returns the unprocessed link destination. It could be as varied as \"..\", \".\", \"/var/log\" or \"../foo/../bar\". You need to normalize the path first, based on on filepath.Dir(item.fullPath). filepath.EvalSymlinks() may be useful to find the true destination.",
+      "revId": "48ce462b428eb6e2c1dd3085ddd33b63baa7cfda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
