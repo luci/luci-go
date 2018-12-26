@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f034de94_8be5294e",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2018-12-26T23:12:03Z",
+      "side": 1,
+      "message": "Ack. I don\u0027t think this is a problem.",
+      "parentUuid": "8329cb28_3b07b522",
+      "range": {
+        "startLine": 123,
+        "startChar": 0,
+        "endLine": 123,
+        "endChar": 1
+      },
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

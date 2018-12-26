@@ -155,6 +155,30 @@
     },
     {
       "key": {
+        "uuid": "abfd67c7_fd92e743",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2018-12-26T23:12:03Z",
+      "side": 1,
+      "message": "Done in https://chromium-review.googlesource.com/c/infra/luci/luci-py/+/1390284",
+      "parentUuid": "e45c6791_cfd46c7a",
+      "range": {
+        "startLine": 112,
+        "startChar": 3,
+        "endLine": 114,
+        "endChar": 70
+      },
+      "revId": "224e718a673558c16618c7caee3d91590302e852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7f817a5_3af2c483",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 1
