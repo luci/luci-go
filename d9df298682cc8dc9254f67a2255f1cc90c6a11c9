@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "7dfc4317_097ed389",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:46:28Z",
+      "side": 1,
+      "message": "why CommandList type is public in the first place? int64SliceFlag is internal and that\u0027s right.\nMaking CommaList internal would be even more cheaper.\n\nthis is inconsistent with other flag types. I don\u0027t see anything specific enough in \"comma-separated list\" format to require inconsistency",
+      "parentUuid": "b2eb74db_8067df2b",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "252bd9a5_9adc1cf5",
         "filename": "common/flag/commalist.go",
         "patchSetId": 1
@@ -117,6 +141,29 @@
       "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d38f62e8_03c57f99",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:46:28Z",
+      "side": 1,
+      "message": "nil",
+      "range": {
+        "startLine": 55,
+        "startChar": 9,
+        "endLine": 55,
+        "endChar": 19
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -205,6 +252,52 @@
       "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6c803fa1_7e0024bf",
+        "filename": "common/flag/jsonmap.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:46:28Z",
+      "side": 1,
+      "message": "map is already a pointer. Why do we need a pointer to a pointer?",
+      "range": {
+        "startLine": 24,
+        "startChar": 3,
+        "endLine": 24,
+        "endChar": 7
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "637ebcee_3eed42db",
+        "filename": "common/flag/jsonmap.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:46:28Z",
+      "side": 1,
+      "message": "why is it restricted to a string-to-string map? currently this does not appear generic enough to be in this package. I don\u0027t see anything in this impl requiring to be a map. If this is interface{}, then it can work with any json-unmarshalable Go type, including a struct with `json` fields.",
+      "range": {
+        "startLine": 28,
+        "startChar": 18,
+        "endLine": 28,
+        "endChar": 36
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
