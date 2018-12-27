@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "155c83c6_a8b43a7a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-27T03:37:00Z",
+      "side": 1,
+      "message": "this looks like:\n\nTraceback (most recent call last):\n  //full_example.star:60: in \u003ctoplevel\u003e\n  @stdlib//internal/luci/rules/builder_group.star:32: in builder_group\nError: ambiguous reference \"test builder\" in core.builder_group(\"test group\"), possible variants:\n  core.builder(\"ci/test builder\")\n  core.builder(\"try/test builder\")\n\n(which hopefully should give enough clues)\n\nNote that it\u0027s possible a builder group is named like a builder, in this case the error looks like:\n\nTraceback (most recent call last):\n  //full_example.star:60: in \u003ctoplevel\u003e\n  @stdlib//internal/luci/rules/builder_group.star:32: in builder_group\nError: ambiguous reference \"test builder\" in core.builder_group(\"test group\"), possible variants:\n  core.builder(\"ci/test builder\")\n  core.builder(\"try/test builder\")\n  core.builder_group(\"test builder\")\n\n(That\u0027s the reason I left name of the kind in the error message).",
+      "range": {
+        "startLine": 113,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 9
+      },
+      "revId": "9a836139b815b240933603b51f51f96e849f9ba7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
