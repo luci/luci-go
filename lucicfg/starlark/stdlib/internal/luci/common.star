@@ -17,6 +17,7 @@
 Should not import other LUCI modules to avoid dependency cycles.
 """
 
+load('@stdlib//internal/error.star', 'error')
 load('@stdlib//internal/graph.star', 'graph')
 
 
@@ -24,6 +25,24 @@ load('@stdlib//internal/graph.star', 'graph')
 #   core.project: root
 #   core.project -> core.logdog
 #   core.project -> [core.bucket]
+#   core.bucket -> [core.builder]
+#   core.builder_group -> [core.builder_ref]
+#   core.builder_ref -> core.builder | core.builder_group
+
+
+def _bucket_scoped_key(kind, name):
+  """Returns either a bucket-scoped or a global key of the given kind.
+
+  Bucket-scoped keys have (BUCKET, <name>) as the first component of the key.
+
+  Args:
+    kind: kind of the key.
+    name: either "<bucket>/<name>" or just "<name>".
+  """
+  chunks = name.split('/', 1)
+  if len(chunks) == 1:
+    return graph.key(kind, chunks[0])
+  return graph.key(kinds.BUCKET, chunks[0], kind, chunks[1])
 
 
 # Kinds is a enum-like struct with node kinds of various LUCI config nodes.
@@ -31,6 +50,9 @@ kinds = struct(
     PROJECT = 'core.project',
     LOGDOG = 'core.logdog',
     BUCKET = 'core.bucket',
+    BUILDER = 'core.builder',
+    BUILDER_GROUP = 'core.builder_group',
+    BUILDER_REF = 'core.builder_ref',
 )
 
 
@@ -39,4 +61,70 @@ keys = struct(
     project = lambda: graph.key(kinds.PROJECT, '...'),  # singleton
     logdog = lambda: graph.key(kinds.LOGDOG, '...'),  # singleton
     bucket = lambda name: graph.key(kinds.BUCKET, name),
+    builder = lambda name: _bucket_scoped_key(kinds.BUILDER, name),
+    builder_group = lambda name: graph.key(kinds.BUILDER_GROUP, name),
+    builder_ref = lambda name: _bucket_scoped_key(kinds.BUILDER_REF, name),
+)
+
+
+################################################################################
+## builder_ref implementation.
+
+
+def _builder_ref_add(name, target):
+  """Adds a builder_ref node that has 'target' (given via its key) as a child.
+
+  Builder refs are pointers to either a builder or a builder group that can be
+  used in places were builders are expected.
+
+  Each builder has two such pointers: one is bucket scoped (for when the builder
+  is referenced using its full name "<bucket>/<name"), another is global (for
+  when the builder is referenced just as "<name>").
+
+  Thus the builder_ref node added here can either have a bucket-scoped key
+  (if 'name' has form "<bucket>/<name>") or a global key (if 'name' is just
+  "<name>").
+
+  Args:
+    name: name of the builder_ref node (either a buckets-scoped or global).
+    target: a graph.key (a builder or builder group) the ref points to.
+  """
+  graph.add_node(keys.builder_ref(name), idempotent=True)
+  graph.add_edge(keys.builder_ref(name), target)
+
+
+def _builder_ref_validate(ref_node, context_node):
+  """Emits an error and returns False if 'ref_node' has more than one child.
+
+  This indicates this ref is ambiguous and can't be used to specify a single
+  builder.
+
+  Args:
+    ref_node: graph.node with the ref.
+    context_node: graph.node where this ref is used, for error messages.
+  """
+  if ref_node.key.kind != kinds.BUILDER_REF:
+    fail('%s is not builder_ref' % ref_node)
+
+  # builder_ref nodes are always linked to something, see _builder_ref_add.
+  variants = graph.children(ref_node.key)
+  if not variants:
+    fail('%s is unexpectedly unconnected' % ref_node)
+
+  # Emit the error, but carry one the execution to collect more errors.
+  if len(variants) != 1:
+    error(
+        'ambiguous reference %r in %s, possible variants:\n  %s',
+        ref_node.key.id, context_node, '\n  '.join([str(v) for v in variants]),
+        trace=context_node.trace,
+    )
+    return False
+
+  return True
+
+
+# Additional API for dealing with builder_refs.
+builder_ref = struct(
+    add = _builder_ref_add,
+    validate = _builder_ref_validate,
 )
