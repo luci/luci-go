@@ -1,0 +1,10 @@
+{
+  'WATCHLIST_DEFINITIONS': {
+    'common': {
+      'filepath': '^common/',
+    },
+  },
+  'WATCHLISTS': {
+    'common': ['nodir+luci-go-common@google.com'],
+  },
+}
