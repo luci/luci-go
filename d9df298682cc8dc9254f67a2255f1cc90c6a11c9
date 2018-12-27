@@ -169,6 +169,30 @@
     },
     {
       "key": {
+        "uuid": "136376f2_299bed8d",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2018-12-27T22:15:59Z",
+      "side": 1,
+      "message": "That makes sense, but I disagree, kind of like how required fields in protobufs are strongly discouraged, because no matter how much foresight you think you might have, hindsight is always clearer.\n\nWith that said, I\u0027m happy to go with the flag.Value approach if that makes you happy, because to me neither way is superior to the other, just with different trandeoffs.  \n\nHowever, I\u0027m evaluating whether this is appropriate for LUCI common, especially the JSONMap.  If CommaList still makes sense, I may land this CL with only that.  In the meantime, I can just copy this to an internal to unblock myself since it\u0027s very little code.\n\nRegarding LUCI backward compatibility, I see LUCI as a FOSS project and thus it should value backward compatibility for external users.  I know that we don\u0027t care since we pin it, and we don\u0027t guarantee API stability, but I think that is a selfish stance to take as a FOSS project (but I don\u0027t mean to force that policy on all LUCI developers, it\u0027s just the stance I personally take when contributing to FOSS projects, whether or not the project itself enforces backward compatibility strictly.)",
+      "parentUuid": "529afd69_2422b3a6",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "252bd9a5_9adc1cf5",
         "filename": "common/flag/commalist.go",
         "patchSetId": 1
