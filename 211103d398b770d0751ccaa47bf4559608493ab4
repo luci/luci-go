@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb8ebe8b_2d4fc59c",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-27T18:08:47Z",
+      "side": 1,
+      "message": "I guess Mike liked using the RFC3339 UTC time format? (Note, this parenthetical might be really confusing to some future readers...)",
+      "range": {
+        "startLine": 31,
+        "startChar": 27,
+        "endLine": 31,
+        "endChar": 42
+      },
+      "revId": "211103d398b770d0751ccaa47bf4559608493ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "faed7c0e_a9da3b29",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-27T18:08:47Z",
+      "side": 1,
+      "message": "allows one to share",
+      "range": {
+        "startLine": 65,
+        "startChar": 15,
+        "endLine": 65,
+        "endChar": 30
+      },
+      "revId": "211103d398b770d0751ccaa47bf4559608493ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "376a77ef_8bee8651",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-27T18:08:47Z",
+      "side": 1,
+      "message": "actually has rights",
+      "range": {
+        "startLine": 126,
+        "startChar": 21,
+        "endLine": 126,
+        "endChar": 40
+      },
+      "revId": "211103d398b770d0751ccaa47bf4559608493ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cde6ec2_e09754dc",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-27T18:08:47Z",
+      "side": 1,
+      "message": "Buildbucket",
+      "range": {
+        "startLine": 136,
+        "startChar": 52,
+        "endLine": 136,
+        "endChar": 63
+      },
+      "revId": "211103d398b770d0751ccaa47bf4559608493ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf4e60ec_13773c31",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-27T18:08:47Z",
+      "side": 1,
+      "message": "For consistency, we should decide now whether this is one word or two words -- the inconsistency of \"tryjobs\"/\"try jobs\"/\"try-jobs\" can sometimes make it harder to remember what some functions and variables are called.\n\nIn other places, I think we mostly settled on using one word, \"tryjobs\", so perhaps we shall do so here? If so, TryJobVerifier should be TryjobVerifier, and try_job should be tryjob.",
+      "range": {
+        "startLine": 138,
+        "startChar": 37,
+        "endLine": 138,
+        "endChar": 45
+      },
+      "revId": "211103d398b770d0751ccaa47bf4559608493ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "738c51a0_3a80b5d6",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-27T18:08:47Z",
+      "side": 1,
+      "message": "Buildbucket",
+      "range": {
+        "startLine": 231,
+        "startChar": 36,
+        "endLine": 231,
+        "endChar": 47
+      },
+      "revId": "211103d398b770d0751ccaa47bf4559608493ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
