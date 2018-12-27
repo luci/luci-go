@@ -120,18 +120,16 @@ message ConfigGroup {
 // describes types of verifiers that should be applied to each CL and their
 // parameters.
 message Verifiers {
-  // TODO(tandrii): remove "Verifier" from each message name inside here.
-
-  // Required. GerritCQAbilityVerifier ensures that a user who triggered
+  // Required. GerritCQAbility ensures that a user who triggered
   // this CQ attempt actually has rights to do so based on 3 factors:
   //  * membership of the user in committers & dryrunners group,
   //  * the state of CL/patchset on which CQ is triggered,
   //  * relationship of the user to the CL.
-  GerritCQAbilityVerifier gerrit_cq_ability = 1;
+  GerritCQAbility gerrit_cq_ability = 1;
 
   // This verifier is used to check tree status before committing a CL. If the
   // tree is closed, then the verifier will wait until it is reopened.
-  TreeStatusVerifier tree_status = 2;
+  TreeStatus tree_status = 2;
 
   // This verifier triggers a set of builds through Buildbucket.
   //
@@ -142,16 +140,16 @@ message Verifiers {
   // Typically, builds from Buildbucket are executed on LUCI stack, however, CQ
   // is agnostic to how and where builds are executed.
   // TODO(tandrii): retname try_job and try-job to tryjob everywhere in CQ.
-  TryJobVerifier try_job = 3;
+  TryJob try_job = 3;
 
   // Deprecator is for internal CQ use only. DO NOT USE IN YOUR cq.cfg.
-  DeprecatorVerifier deprecator = 4;
+  Deprecator deprecator = 4;
 
   // Fake is for internal CQ use only. DO NOT USE IN YOUR cq.cfg.
-  FakeVerifier fake = 5;
+  Fake fake = 5;
 
 
-  message GerritCQAbilityVerifier {
+  message GerritCQAbility {
     // Required. Name of the chrome-infra-auth group, which contains the list of
     // identities authorized to trigger CQ runs on any CLs in projects specified
     // in the config group.
@@ -182,12 +180,12 @@ message Verifiers {
     bool allow_submit_with_open_deps = 3;
   }
 
-  message TreeStatusVerifier {
+  message TreeStatus {
     // Required. URL of the project tree status app.
     string url = 1;
   }
 
-  message TryJobVerifier {
+  message TryJob {
     // Builders on which tryjobs should be triggered.
     repeated Builder builders = 1;
 
@@ -306,7 +304,7 @@ message Verifiers {
       // These options currently can not be combined with the following other options:
       //   * experiment_percentage
       //   * triggered_by
-      //   * GerritCQAbilityVerifier.allow_submit_with_open_deps
+      //   * GerritCQAbility.allow_submit_with_open_deps
       // If you need to combine them, please talk to CQ owners.
       //
       // Examples:
@@ -380,11 +378,11 @@ message Verifiers {
     }
   }
 
-  // DeprecatorVerifier is for internal use in CQ.
-  message DeprecatorVerifier{}
+  // Deprecator is for internal use in CQ.
+  message Deprecator{}
 
-  // FakeVerifier is for internal use in CQ.
-  message FakeVerifier {
+  // Fake is for internal use in CQ.
+  message Fake {
     string name = 1;
     string eventual_state = 2;
     int32 delay = 3;
