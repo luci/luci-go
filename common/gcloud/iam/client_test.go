@@ -192,4 +192,5 @@ func TestClient(t *testing.T) {
 		So(token.AccessToken, ShouldResemble, "token1")
 		So(token.Expiry, ShouldResemble, expireTime)
 	})
+
 }
