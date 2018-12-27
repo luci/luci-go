@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "630ad098_7c682f1e",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:32:43Z",
+      "side": 1,
+      "message": "this mutates request-global c.Request.URL. Please create a new url: https://godoc.org/net/url#Parse",
+      "range": {
+        "startLine": 134,
+        "startChar": 20,
+        "endLine": 134,
+        "endChar": 39
+      },
+      "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b149ede_a0caa5e9",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:32:43Z",
+      "side": 1,
+      "message": "can it be empty? can ParentLabel be nil? if so, maybe builderUrl should be just \"\"",
+      "range": {
+        "startLine": 134,
+        "startChar": 40,
+        "endLine": 134,
+        "endChar": 69
+      },
+      "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd00e461_a84f35d6",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:32:43Z",
+      "side": 1,
+      "message": "nit: \"buildURL\" and \"builderURL\", because of https://github.com/golang/go/wiki/CodeReviewComments#initialisms",
+      "range": {
+        "startLine": 134,
+        "startChar": 8,
+        "endLine": 134,
+        "endChar": 11
+      },
+      "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a0ab7d1_e93c566d",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:32:43Z",
+      "side": 1,
+      "message": "now we have two places in this func that produces similar error messages. Please reword to entail that we\u0027ve failed to parse parentLabel.URL.",
+      "range": {
+        "startLine": 136,
+        "startChar": 43,
+        "endLine": 136,
+        "endChar": 80
+      },
+      "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
