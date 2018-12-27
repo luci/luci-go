@@ -43,7 +43,7 @@ def _add_node(key, props=None, idempotent=False, trace=None):
   frozen and can't be extended.
 
   Args:
-    key: a node key, as returned by graph.key(...).
+    key: a node key, see graph.key(...).
     props: a dict with node properties, will be frozen.
     idempotent: True if this node can be redeclared, but only with same props.
     trace: a stack trace to associate with the node.
@@ -69,8 +69,8 @@ def _add_edge(parent, child, title=None, trace=None):
   frozen and can't be extended.
 
   Args:
-    parent: a parent node key, as returned by graph.key(...).
-    child: a child node key, as returned by graph.key(...).
+    parent: a parent node key, see graph.key(...).
+    child: a child node key, see graph.key(...).
     title: a title for the edge, used in error messages.
     trace: a stack trace to associate with the edge.
   """
@@ -85,7 +85,7 @@ def _node(key):
   can't be queried.
 
   Args:
-    key: a node key, as returned by graph.key(...).
+    key: a node key, see graph.key(...).
 
   Returns:
     graph.node object representing the node.
@@ -101,7 +101,7 @@ def _children(parent, kind=None, order_by=_KEY_ORDER):
   can't be queried.
 
   Args:
-    parent: a key of the parent node, as returned by graph.key(...).
+    parent: a key of the parent node, see graph.key(...).
     kind: a string with a kind of children to return or None for all.
     order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
 
@@ -114,6 +114,33 @@ def _children(parent, kind=None, order_by=_KEY_ORDER):
   return out
 
 
+def _descendants(root, visitor=None, order_by=_KEY_ORDER):
+  """Recursively visits 'root' (given by its key) and all its children, in
+  breadth first order, ordering edges by 'order_by'.
+
+  Returns the list of all visited nodes, in order they were visited. Fails if
+  called not from a generator callback: a graph under construction can't be
+  queried.
+
+  Each node is visited only once, even if it is reachable through multiple
+  paths. Note that the graph has no cycles (by construction).
+
+  The visitor callback (if not None) is called for each visited node. It decides
+  what children to visit next. The callback always sees all children of the
+  node, even if some of them (or all) have already been visited. Visited nodes
+  will be skipped even if the visitor returns them.
+
+  Args:
+    root: a key of the node to start the traversal from, see graph.key(...).
+    visitor: func(node: graph.node, children: []graph.node): []graph.node.
+    order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
+
+  Returns:
+    List of visited graph.node objects, starting with the root.
+  """
+  return __native__.graph().descendants(root, visitor, order_by)
+
+
 def _parents(child, kind=None, order_by=_KEY_ORDER):
   """Returns direct parents of a node (given by its key), optionally filtering
   them by kind.
@@ -122,7 +149,7 @@ def _parents(child, kind=None, order_by=_KEY_ORDER):
   can't be queried.
 
   Args:
-    child: a key of the node to find parents of, as returned by graph.key(...).
+    child: a key of the node to find parents of, see graph.key(...).
     kind: a string with a kind of parents to return or None for all.
     order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
 
@@ -145,5 +172,6 @@ graph = struct(
     add_edge = _add_edge,
     node = _node,
     children = _children,
+    descendants = _descendants,
     parents = _parents,
 )
