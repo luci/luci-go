@@ -145,6 +145,30 @@
     },
     {
       "key": {
+        "uuid": "603c1463_b15efc37",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T22:02:49Z",
+      "side": 1,
+      "message": "to clarify: \"return concrete type\" argument applies when the concrete type is exported. In this case, it shouldn\u0027t be exported because it increases complexity without adding value.",
+      "parentUuid": "529afd69_2422b3a6",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "252bd9a5_9adc1cf5",
         "filename": "common/flag/commalist.go",
         "patchSetId": 1
