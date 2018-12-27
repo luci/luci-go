@@ -12,6 +12,7 @@ def test_finalization():
   # But not queried.
   assert.fails(lambda: g.node(k1), 'cannot query a graph under construction')
   assert.fails(lambda: g.children(k1), 'cannot query a graph under construction')
+  assert.fails(lambda: g.descendants(k1), 'cannot query a graph under construction')
 
   # Can be finalized. Refinalizing is noop.
   assert.eq(g.finalize(), [])
@@ -23,6 +24,7 @@ def test_finalization():
 
   # But is it queryable now.
   assert.true(g.node(k1) != None)
-  assert.true(g.children(k1), [g.node(k2)])
+  assert.eq(g.children(k1), [g.node(k2)])
+  assert.eq(g.descendants(k1), [g.node(k1), g.node(k2)])
 
 test_finalization()
