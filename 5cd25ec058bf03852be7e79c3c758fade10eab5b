@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "79f3abaa_1d105da0",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T18:38:49Z",
+      "side": 1,
+      "message": "Yes, it\u0027ll return nil always, but the function must meet validation.Func interface (see line #32-33 above and  https://godoc.org/go.chromium.org/luci/config/validation#RuleSet.Add)\n\nvalidation.Context.Error does more than just add an error to MultiError, see https://godoc.org/go.chromium.org/luci/config/validation#Context\nand its Enter() / Exit() methods.",
+      "parentUuid": "151d1124_0a7705b2",
+      "range": {
+        "startLine": 47,
+        "startChar": 8,
+        "endLine": 47,
+        "endChar": 11
+      },
+      "revId": "5cd25ec058bf03852be7e79c3c758fade10eab5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "54957d6c_3b943e9c",
         "filename": "cq/appengine/config/legacy.go",
         "patchSetId": 5
@@ -36,6 +60,30 @@
       "writtenOn": "2018-12-27T18:26:34Z",
       "side": 1,
       "message": "Does this also record an error and continue?",
+      "range": {
+        "startLine": 30,
+        "startChar": 2,
+        "endLine": 30,
+        "endChar": 12
+      },
+      "revId": "5cd25ec058bf03852be7e79c3c758fade10eab5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "039e2995_b3bb2e41",
+        "filename": "cq/appengine/config/legacy.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T18:38:49Z",
+      "side": 1,
+      "message": "yep.",
+      "parentUuid": "54957d6c_3b943e9c",
       "range": {
         "startLine": 30,
         "startChar": 2,
