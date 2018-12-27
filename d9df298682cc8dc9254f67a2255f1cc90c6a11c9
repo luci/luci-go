@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "b2eb74db_8067df2b",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T00:49:43Z",
+      "side": 1,
+      "message": "To summarize our discussion, let me list pros/cons of each approach to the best of my understanding:\n\n1) as is in this patchset:\n + allows evolution of impl, w/o interfaces changes, hence cheaper.\n - more complex interface\n\n2) using int64slice design:\n - can\u0027t evolve much w/o interface changes, hence evolution is costlier.\n + easier interface, easier implementation\n\nPlease, correct me if I am wrong.\n\nAnd if you agree with above, then I posit that 2) beats 1) because evolution is unlikely, and even if evolution must be done, backwards incompatible changes have been done to **code** in this repo, it\u0027s not an insurmountable problem because:\n * it\u0027s Go, so one can use gorename and friends, compiler makes such changes less costly and less risky (vs Python)\n * we pin all luci-go repo usages and recommend others to do the same (see README.md of this repo)), hence propagating refactoring is also straightforward (but, yes, will take more CLs)\n\nHave I convinced you? :)",
+      "parentUuid": "8b73ef46_118fb62d",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "252bd9a5_9adc1cf5",
         "filename": "common/flag/commalist.go",
         "patchSetId": 1
@@ -128,6 +152,24 @@
       "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "90df3324_f7f2dbf5",
+        "filename": "common/flag/commalist_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T00:49:43Z",
+      "side": 1,
+      "message": "so, the options we have are:\n\n1) multiple flags support: -flag A,B -flag X -flag Y  \u003d\u003e [A,B,C,Z]\n + consistent with other flags in this package\n + supports required A,B case\n - may surprise users who think \"-flag X -flag Y\" means \"Y\".\n\n2) multiple flags is error : -flag A,B -flag X  \u003d\u003e error\n - inconsistent with other flags in this package\n   \u003d can be fixed, but would be backwards incompatible\n + supports required A,B case\n + no surprises for users\n\n3) multiple flags override: -flag A,B -flag X  \u003d\u003e [X]\n - inconsistent with other flags in this package\n + supports required A,B case\n - surprises for users who think multiple flags accumulate\n\nNote that i\u0027m not claiming that existing flags in this package are awesome\n(though I admit i prefer \"-flag X -flag Y to accumulate OR error out, but not silently overwrite).\nI claim that because int64slice exists here and has been used in binaries we shipped to users, it must not be ignored.\n\nAmong these choices, I vote for 1) because it is least bad IMO.\nAnd 2) or 3) may be OKish if it wasn\u0027t part of the common package, but inlined into package of your tool itself,  but of course I prefer we settle on common approach.",
+      "parentUuid": "cf1502b0_93c87333",
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
