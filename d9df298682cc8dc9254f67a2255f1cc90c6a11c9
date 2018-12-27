@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8b73ef46_118fb62d",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2018-12-27T00:21:56Z",
+      "side": 1,
+      "message": "The pointer is necessary because otherwise it cannot be changed when passed as an argument.\nThe struct is necessary because I don\u0027t want this to be interchangeable as a slice.\nIf I make this a slice now, it can\u0027t be made into not a slice without breaking backward compatibility.\n\nConversely, I can make this into a slice going forward since it has no exported struct fields.",
+      "parentUuid": "22baa949_c06e7c48",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "252bd9a5_9adc1cf5",
         "filename": "common/flag/commalist.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "904b3e6c_3a043253",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2018-12-27T00:21:56Z",
+      "side": 1,
+      "message": "I don\u0027t see a reason to commit to it permanently as part of the public API.  It can always be exported but not made private again without breaking backward compatibility.",
+      "parentUuid": "252bd9a5_9adc1cf5",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1c22d6d2_d2ffd095",
         "filename": "common/flag/commalist_test.go",
         "patchSetId": 1
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "cf1502b0_93c87333",
+        "filename": "common/flag/commalist_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2018-12-27T00:21:56Z",
+      "side": 1,
+      "message": "Because we use foo,bar format in all of our tools already.  I don\u0027t think it\u0027s worth surprising all of our users with a different format now.\n\n(I find the -list first -list second behavior to be unexpected.  Usually supplying a flag a second time overrides the first value.)",
+      "parentUuid": "1c22d6d2_d2ffd095",
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "79126218_9fdcfdc1",
         "filename": "common/flag/jsonmap.go",
         "patchSetId": 1
@@ -79,6 +145,24 @@
       "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ddeca28_cba7cd66",
+        "filename": "common/flag/jsonmap.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2018-12-27T00:21:56Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "79126218_9fdcfdc1",
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
