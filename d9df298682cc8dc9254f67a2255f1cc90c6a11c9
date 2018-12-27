@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "1eaf3d66_11946f6c",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2018-12-27T21:13:14Z",
+      "side": 1,
+      "message": "Andrii, if I understand correctly your argument is that the current interface is more complex.  It is not, it is basically the same:\n\n var s []int64\n flag.Var(Int64Slice(\u0026s), \"blah\", \"blah\")\n\n var s []string\n flag.Var(NewCommaList(\u0026s), \"blah\", \"blah\")\n\nI think you are also arguing that it is more complex to implement.  It\u0027s like three or four more lines of very simple code, I don\u0027t think completely cutting off future extensibility is worth saving three lines of code.\n\nNodir, because Golang best practice is to return concrete types rather than interfaces.  flag.Value which is returned by the others is an interface.  Because interfaces are satisfied implicitly, there\u0027s basically no functional difference, see my example above.\n\nHowever, concrete types can be extended while still satisfying the interface.  But you can\u0027t retroactively add methods or fields to flag.Value.",
+      "parentUuid": "7dfc4317_097ed389",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "252bd9a5_9adc1cf5",
         "filename": "common/flag/commalist.go",
         "patchSetId": 1
@@ -278,6 +302,30 @@
     },
     {
       "key": {
+        "uuid": "4c56b96b_81b85bcd",
+        "filename": "common/flag/jsonmap.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2018-12-27T21:13:14Z",
+      "side": 1,
+      "message": "Because json.Marshal requires it.  I believe it may also allocate a new map so it needs the pointer.",
+      "parentUuid": "6c803fa1_7e0024bf",
+      "range": {
+        "startLine": 24,
+        "startChar": 3,
+        "endLine": 24,
+        "endChar": 7
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "637ebcee_3eed42db",
         "filename": "common/flag/jsonmap.go",
         "patchSetId": 1
@@ -289,6 +337,30 @@
       "writtenOn": "2018-12-27T19:46:28Z",
       "side": 1,
       "message": "why is it restricted to a string-to-string map? currently this does not appear generic enough to be in this package. I don\u0027t see anything in this impl requiring to be a map. If this is interface{}, then it can work with any json-unmarshalable Go type, including a struct with `json` fields.",
+      "range": {
+        "startLine": 28,
+        "startChar": 18,
+        "endLine": 28,
+        "endChar": 36
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0174ff97_16c5c3e6",
+        "filename": "common/flag/jsonmap.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2018-12-27T21:13:14Z",
+      "side": 1,
+      "message": "True.  I think I will pause this CL for now and pursue it at a later date.",
+      "parentUuid": "637ebcee_3eed42db",
       "range": {
         "startLine": 28,
         "startChar": 18,
