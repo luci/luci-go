@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "915a01e4_ceb4b65a",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-27T02:58:03Z",
+      "side": 1,
+      "message": "did you mean validateRefCfg?",
+      "range": {
+        "startLine": 33,
+        "startChar": 64,
+        "endLine": 33,
+        "endChar": 82
+      },
+      "revId": "a77e42db69f8cda0e39b613e8cf7ff41c7ed7bc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b71b4416_9079af9d",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-27T02:58:03Z",
+      "side": 1,
+      "message": "I think it would be cleaner to move legacy stuff to its own *.go file.",
+      "range": {
+        "startLine": 36,
+        "startChar": 28,
+        "endLine": 36,
+        "endChar": 34
+      },
+      "revId": "a77e42db69f8cda0e39b613e8cf7ff41c7ed7bc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
