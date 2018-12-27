@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4aa622d_0b6b7c99",
+        "filename": "cq/appengine/config/config_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-27T18:18:22Z",
+      "side": 1,
+      "message": "It\u0027s a bit mysterious to me why validation.Rules.ConfigPatterns(context.Background()) give two config patterns ... I guess they\u0027re set in init(), but I\u0027m not sure where init is called. Perhaps a comment might be helpful.\n\nAlso, very minor nit: this Convey block could potentially be split into two or more Convey blocks.",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 52
+      },
+      "revId": "25f39e549a4c2c76f4d7c21bf73b2ac06113adb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
