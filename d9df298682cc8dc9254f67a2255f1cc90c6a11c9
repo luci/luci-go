@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "529afd69_2422b3a6",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T21:57:18Z",
+      "side": 1,
+      "message": "I understand the argument about returning concrete types, but the reasons behind do not quite apply here. There is no reason to expose the impl of the interface in the first place. There is no function diff, but there is more complexity: increased API surface, increased number of exported symbols, the length of index of godoc page is longer that necessary, a godoc reader has to read more. Exporting the concrete type adds complexity without adding any value, thus it is worse.\n\nWhy would we add methods or fields to CommaList? It has a single purpose/responsibility. We\u0027d need to add more fields or methods only iff we increase its responsibility scope, which would\u0027t be bad in the first place.",
+      "parentUuid": "1eaf3d66_11946f6c",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "252bd9a5_9adc1cf5",
         "filename": "common/flag/commalist.go",
         "patchSetId": 1
@@ -323,6 +347,30 @@
       "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "23464f3c_caa3d1f3",
+        "filename": "common/flag/jsonmap.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T21:57:18Z",
+      "side": 1,
+      "message": "you can just do json.Marshal(\u0026f.m) in L34",
+      "parentUuid": "4c56b96b_81b85bcd",
+      "range": {
+        "startLine": 24,
+        "startChar": 3,
+        "endLine": 24,
+        "endChar": 7
+      },
+      "revId": "d9df298682cc8dc9254f67a2255f1cc90c6a11c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
