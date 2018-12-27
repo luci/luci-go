@@ -16,7 +16,7 @@
 
 load('@stdlib//internal/generator.star', 'generator')
 load('@stdlib//internal/graph.star', 'graph')
-load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
+load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'kinds')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
@@ -77,6 +77,45 @@ def get_bucket_acls(bucket):
 def filter_acls(acls, roles):
   """Keeps only ACL entries that have any of given roles."""
   return [a for a in acls if a.role in roles]
+
+
+def get_builders(root):
+  """Traverses descendants of 'root' and finds all core.builders defined there.
+
+  Emits errors if there are ambiguities in references to builders, i.e. if some
+  node refers to a builder "<b>", and there are multiple "<b>" in different
+  buckets. The user is advised (through an error message) to use full builder
+  name ("<bucket>/<b>") in such case.
+
+  Args:
+    root: graph.node to start the traversal from.
+
+  Returns:
+    List of discovered graph.node of BUILDER kind.
+  """
+  def visitor(node, children):
+    # If the current node (whatever it is) has an ambiguous ref, report it, and
+    # skip it. We do this detection here (rather than when visiting the ref
+    # itself) to be able to use node.trace in error messages: this is where this
+    # ambiguous relation is defined.
+    children = [
+        c for c in children
+        if c.key.kind != kinds.BUILDER_REF or builder_ref.validate(c, node)
+    ]
+    # Found a leaf builder node, great. Stop here.
+    if node != root and node.key.kind == kinds.BUILDER:
+      return []
+    # Descend into builder groups and follow (already validated) refs.
+    if node.key.kind in (kinds.BUILDER_GROUP, kinds.BUILDER_REF):
+      return children
+    # Don't follow any other relations.
+    return []
+  # 'graph.descendants' returns all visited nodes, including intermediates. We
+  # are interested only in leafs (which have kind BUILDER).
+  return [
+      n for n in graph.descendants(root.key, visitor)
+      if n != root and n.key.kind == kinds.BUILDER
+  ]
 
 
 ################################################################################
