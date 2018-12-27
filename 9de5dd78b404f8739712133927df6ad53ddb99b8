@@ -2,6 +2,109 @@
   "comments": [
     {
       "key": {
+        "uuid": "32a8925b_428a159b",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:25:32Z",
+      "side": 1,
+      "message": "stale",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 37
+      },
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acc932b6_f3a1cc59",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:25:32Z",
+      "side": 1,
+      "message": "nit: if we returned nil result when returning an error\n\n  return nil, err\n\nthen we could declare this var later\n\nand if validateResult.ErrorMessage was a list of pointers (as opposed to list of structs), then we don\u0027t need this variable at all: \n\n  return \u0026validateResult{resp.Messages}, fmt.Errorf(\"Some files were invalid\")",
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6e833ef_edde82dc",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:25:32Z",
+      "side": 1,
+      "message": "vr.done will print err too, so this duplicates the error.\nSee \"Only handle errors once\" in https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully\nplease wrap the err with \"Error validating configs\" and return it without printing",
+      "range": {
+        "startLine": 98,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 51
+      },
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ed0fe12_56405548",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:25:32Z",
+      "side": 1,
+      "message": "nit: i think it would be more readable if this condition was before the loop, inverted (\u003d\u003d0), in which case we can just return (nil, nil). Then there is no condition after the loop, we can just return fmt.Errorf(\"Some files were invalid\")",
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e06a997_847a5bf1",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:25:32Z",
+      "side": 1,
+      "message": "nit: file system",
+      "range": {
+        "startLine": 111,
+        "startChar": 33,
+        "endLine": 111,
+        "endChar": 45
+      },
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f034de94_8be5294e",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 4
@@ -23,6 +126,23 @@
       "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4e84044d_f76254dc",
+        "filename": "lucicfg/cli/validate_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-27T19:25:32Z",
+      "side": 1,
+      "message": "luci-go uses GoConvey. Perhaps we should it here too, for consistency",
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
