@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "30e114b2_e728b57a",
+        "filename": "cq/api/config/v1/gen.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "true. However, I\u0027ll delete legacy config folder by end of January, so copying is fine with that horizon.",
+      "parentUuid": "231929fc_f934d31b",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 20
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cba2c143_50b197d5",
         "filename": "cq/api/config/v1/gen.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40994b99_04c7f73d",
+        "filename": "cq/api/config/v1/gen.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "ah, not yet true, but will be, e.g. something like https://commit-queue.appspot.com/restricted/configs. That said, only for v2, and so edited this away.",
+      "parentUuid": "cba2c143_50b197d5",
+      "range": {
+        "startLine": 19,
+        "startChar": 3,
+        "endLine": 19,
+        "endChar": 60
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "022cd18a_e0288911",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc63f578_b191a6d6",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 3,
+        "endChar": 29
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0ea9003e_9f5187bc",
         "filename": "cq/api/config/v2/cq.proto",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "137cbc1a_c6c79cbb",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "looks nice to me: https://chrome-internal-review.googlesource.com/c/infra/infra_internal/+/746402/1/infra_internal/services/cq/test/projects_utils_test.py",
+      "parentUuid": "0ea9003e_9f5187bc",
+      "range": {
+        "startLine": 51,
+        "startChar": 18,
+        "endLine": 51,
+        "endChar": 26
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "7079254f_7e44c61f",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "i\u0027d say it\u0027s not yet true, because it\u0027s not yet validated :D but other v1 regexes (path_regexp) are using Go standard library.",
+      "parentUuid": "bfe1da0f_21a65a6d",
+      "range": {
+        "startLine": 90,
+        "startChar": 44,
+        "endLine": 90,
+        "endChar": 73
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b11b5d4_69f65f82",
         "filename": "cq/api/config/v2/cq.proto",
         "patchSetId": 4
@@ -128,6 +248,30 @@
       "writtenOn": "2018-12-27T02:55:09Z",
       "side": 1,
       "message": "nit: this suffix may be dropped, since full name of the type already contains \"Verifiers.\".",
+      "range": {
+        "startLine": 118,
+        "startChar": 17,
+        "endLine": 118,
+        "endChar": 25
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81db389d_43fab9d9",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "Good point! Will cleanup, but as a follow up, since I\u0027ll also need to regenerate Python code and there is already a python CL which I don\u0027t want to make more complex.",
+      "parentUuid": "4b11b5d4_69f65f82",
       "range": {
         "startLine": 118,
         "startChar": 17,
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "54a2487c_a96ff8b5",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "07296d0f_dfd916fd",
+      "range": {
+        "startLine": 143,
+        "startChar": 59,
+        "endLine": 143,
+        "endChar": 74
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d54dda30_d5aa0ae9",
         "filename": "cq/api/config/v2/cq.proto",
         "patchSetId": 4
@@ -183,6 +351,30 @@
       "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34e0a3c7_e12dfe0f",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "updated.",
+      "parentUuid": "d54dda30_d5aa0ae9",
+      "range": {
+        "startLine": 150,
+        "startChar": 41,
+        "endLine": 150,
+        "endChar": 54
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "08aef12e_cec19047",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "No, oversight.",
+      "parentUuid": "a0438f82_c2147183",
+      "range": {
+        "startLine": 151,
+        "startChar": 33,
+        "endLine": 151,
+        "endChar": 34
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e1794f9_a2859f63",
         "filename": "cq/api/config/v2/cq.proto",
         "patchSetId": 4
@@ -220,6 +436,30 @@
       "writtenOn": "2018-12-27T02:55:09Z",
       "side": 1,
       "message": "regardless of whether CQ verified dependent CLs or not?",
+      "range": {
+        "startLine": 162,
+        "startChar": 68,
+        "endLine": 163,
+        "endChar": 65
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d480e9f_c3c4ee85",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "correct. The idea is that if you submit the whole stack, you don\u0027t care about individual CL correctness.",
+      "parentUuid": "2e1794f9_a2859f63",
       "range": {
         "startLine": 162,
         "startChar": 68,
@@ -252,6 +492,30 @@
       "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7cb5de36_d090d641",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-27T07:10:23Z",
+      "side": 1,
+      "message": "nope, that\u0027s an oversight when I removed \"bucket\" field.",
+      "parentUuid": "3c898f45_af618408",
+      "range": {
+        "startLine": 339,
+        "startChar": 25,
+        "endLine": 339,
+        "endChar": 26
+      },
+      "revId": "c657a0dc9b7f28d64aeecc2e79b96b2d4dc848ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
