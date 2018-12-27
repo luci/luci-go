@@ -130,8 +130,17 @@ func makeFeedbackLink(c *router.Context, build *ui.MiloBuildLegacy) string {
 		return ""
 	}
 
+	buildUrl := c.Request.URL
+	builderUrl, err := c.Request.URL.Parse(build.Summary.ParentLabel.URL)
+	if err != nil {
+		logging.WithError(err).Errorf(c.Context, "Unable to make custom feedback link")
+		return ""
+	}
+
 	link, err := MakeFeedbackLink(&project.BuildBugTemplate, map[string]interface{}{
-		"Build": makeBuild(c.Params, build),
+		"Build":          makeBuild(c.Params, build),
+		"MiloBuildUrl":   buildUrl,
+		"MiloBuilderUrl": builderUrl,
 	})
 
 	if err != nil {
