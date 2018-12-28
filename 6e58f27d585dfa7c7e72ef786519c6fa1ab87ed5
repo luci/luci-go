@@ -71,6 +71,78 @@
     },
     {
       "key": {
+        "uuid": "ded95657_031b299e",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-28T21:35:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd00e461_a84f35d6",
+      "range": {
+        "startLine": 134,
+        "startChar": 8,
+        "endLine": 134,
+        "endChar": 11
+      },
+      "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d348e49e_9d33cecd",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-28T21:35:47Z",
+      "side": 1,
+      "message": "Looking at the code, which ends up using URL\u0027s resolve reference:\n\nhttps://godoc.org/net/url#URL.ResolveReference\n\n\"ResolveReference always returns a new URL instance, even if the returned URL is identical to either the base or reference\"\n\nand this example from the playground:\n\nhttps://play.golang.org/p/FkhD6svyb9U\n\nindicates that this does not mutate c.Request.URL.",
+      "parentUuid": "630ad098_7c682f1e",
+      "range": {
+        "startLine": 134,
+        "startChar": 20,
+        "endLine": 134,
+        "endChar": 39
+      },
+      "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "83c6d212_90c2b8c1",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-28T21:35:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b149ede_a0caa5e9",
+      "range": {
+        "startLine": 134,
+        "startChar": 40,
+        "endLine": 134,
+        "endChar": 69
+      },
+      "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a0ab7d1_e93c566d",
         "filename": "milo/frontend/view_build_legacy.go",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "017f4a8f_df959342",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-28T21:35:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a0ab7d1_e93c566d",
+      "range": {
+        "startLine": 136,
+        "startChar": 43,
+        "endLine": 136,
+        "endChar": 80
+      },
+      "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
