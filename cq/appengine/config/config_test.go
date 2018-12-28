@@ -58,10 +58,20 @@ func TestValidationLegacy(t *testing.T) {
 			So(validateRefCfg(vctx, configSet, path, content), ShouldBeNil)
 			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
 		})
-		Convey("Loading OK proto", func() {
-			content := []byte(` version: 2 `)
-			So(validateRefCfg(vctx, configSet, path, content), ShouldErrLike, "not implemented")
+		Convey("Loading OK config", func() {
+			content := []byte(`
+				version: 1
+				gerrit {}
+				git_repo_url: "https://x.googlesource.com/re/po.git"
+				verifiers {
+					gerrit_cq_ability { committer_list: "blah" }
+				}
+			`)
+			So(validateRefCfg(vctx, configSet, path, content), ShouldBeNil)
+			err := vctx.Finalize()
+			So(err, ShouldBeNil)
 		})
+		// The rest of legacy config validation tests are in legacy_test.go.
 	})
 }
 

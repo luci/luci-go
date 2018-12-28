@@ -43,8 +43,8 @@ func validateRefCfg(ctx *validation.Context, configSet, path string, content []b
 		ctx.Error(err)
 		return nil
 	}
-	// TODO(tandrii): move legacy implementation from infra_internal repo here.
-	return errors.New("not implemented")
+	validateV1(ctx, &cfg)
+	return nil
 }
 
 // validateProjectCfg validates project-level cq.cfg.
