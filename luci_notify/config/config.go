@@ -183,7 +183,7 @@ func updateProjects(c context.Context) error {
 				continue
 			}
 
-			logging.Warningf(
+			logging.Infof(
 				c, "upgrading config of project %q: %q => %q",
 				cfg.ConfigSet.Project(), curRev, cfg.Revision)
 
