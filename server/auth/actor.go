@@ -88,6 +88,8 @@ func (c *cachedOAuth2Token) toToken() *oauth2.Token {
 	}
 }
 
+type ServiceAccountCreator func(context.Context, string, string) (bool, error)
+
 // MintAccessTokenForServiceAccount produces an access token for some service
 // account that the current service has "iam.serviceAccountActor" role in.
 //
