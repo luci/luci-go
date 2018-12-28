@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7e2837d4_f1dfd76c",
+        "filename": "cq/appengine/config/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-28T00:54:39Z",
+      "side": 1,
+      "message": "this is not necessary",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 7
+      },
+      "revId": "9c2914259dacf30911bde748a0e14b0688bfc6a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "042fb33c_c1144940",
+        "filename": "cq/appengine/config/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-28T00:54:39Z",
+      "side": 1,
+      "message": "stringset.Set?",
+      "revId": "9c2914259dacf30911bde748a0e14b0688bfc6a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60ea1f09_0d8e574e",
+        "filename": "cq/appengine/config/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-28T00:54:39Z",
+      "side": 1,
+      "message": "bucketNames or just buckets",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 13
+      },
+      "revId": "9c2914259dacf30911bde748a0e14b0688bfc6a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16560ba0_72f62d6c",
+        "filename": "cq/appengine/config/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-28T00:54:39Z",
+      "side": 1,
+      "message": "consider using ctx.Enter/Exit to provide context for the error (e.g. index of the bucket).",
+      "range": {
+        "startLine": 106,
+        "startChar": 3,
+        "endLine": 106,
+        "endChar": 13
+      },
+      "revId": "9c2914259dacf30911bde748a0e14b0688bfc6a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04240848_2b97e70d",
+        "filename": "cq/appengine/config/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-28T00:54:39Z",
+      "side": 1,
+      "message": "nit: considered it is appears 4 times, it may make sense to put it into a local \u0027name\u0027 variable",
+      "range": {
+        "startLine": 110,
+        "startChar": 27,
+        "endLine": 110,
+        "endChar": 42
+      },
+      "revId": "9c2914259dacf30911bde748a0e14b0688bfc6a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "993fc1bf_35739939",
+        "filename": "cq/appengine/config/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-28T00:54:39Z",
+      "side": 1,
+      "message": "stringsets?",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 127,
+        "endChar": 31
+      },
+      "revId": "9c2914259dacf30911bde748a0e14b0688bfc6a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3246eb6_1049a0a5",
+        "filename": "cq/appengine/config/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-28T00:54:39Z",
+      "side": 1,
+      "message": "this is definitely a usecase for Enter/Exit",
+      "range": {
+        "startLine": 136,
+        "startChar": 17,
+        "endLine": 136,
+        "endChar": 28
+      },
+      "revId": "9c2914259dacf30911bde748a0e14b0688bfc6a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c270e009_0c414e5e",
+        "filename": "cq/appengine/config/legacy.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-28T00:54:39Z",
+      "side": 1,
+      "message": "Consider restructuring this whole code as:\n\ntype visitor func(buck *v1.Verifiers_TryJobVerifier_Bucket, b *v1.BuilderProto)\n\nfunc visitBuilders(ctx *validation.Context, tryCfg *v1.Verifiers_TryJobVerifier, cb visitor) {\n  for _, buck :\u003d range tryCfg.Buckets {\n    ctx.Enter(\"bucket %s:\", buck.Name)\n    for _, b :\u003d range buck.Builders {\n      ctx.Enter(\"builder %s:\", b.Name)\n      cb(buck, b)\n      ctx.Exit()\n    }\n    ctx.Exit()\n  }\n}\n\nAnd then make two passes using this visitor: one to collect all the various maps, and another to do the actual validation. I think it will somewhat reduce nesting and clutter.\n\n(Also I gave up reviewing this CL from scratch at this point, will review only the diff).",
+      "range": {
+        "startLine": 182,
+        "startChar": 28,
+        "endLine": 182,
+        "endChar": 53
+      },
+      "revId": "9c2914259dacf30911bde748a0e14b0688bfc6a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
