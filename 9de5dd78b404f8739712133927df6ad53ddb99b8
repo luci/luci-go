@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f5105f40_1eb0a573",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2018-12-28T01:17:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "32a8925b_428a159b",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 37
+      },
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "acc932b6_f3a1cc59",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 4
@@ -39,6 +63,24 @@
       "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55a19b6c_68f3d892",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2018-12-28T01:17:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "acc932b6_f3a1cc59",
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "c82b4c18_6ddd2c39",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2018-12-28T01:17:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6e833ef_edde82dc",
+      "range": {
+        "startLine": 98,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 51
+      },
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6ed0fe12_56405548",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 4
@@ -79,6 +145,24 @@
       "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a27d2245_e3568d7e",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2018-12-28T01:17:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ed0fe12_56405548",
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -102,6 +186,30 @@
       "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60d10d1a_3ecb3c37",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2018-12-28T01:17:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e06a997_847a5bf1",
+      "range": {
+        "startLine": 111,
+        "startChar": 33,
+        "endLine": 111,
+        "endChar": 45
+      },
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -143,6 +251,24 @@
       "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "faffb360_aca95b96",
+        "filename": "lucicfg/cli/validate_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2018-12-28T01:17:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e84044d_f76254dc",
+      "revId": "9de5dd78b404f8739712133927df6ad53ddb99b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
