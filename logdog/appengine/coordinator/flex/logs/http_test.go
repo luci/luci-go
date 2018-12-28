@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,10 +44,9 @@ func TestHTTP(t *testing.T) {
 		fakeData := func(data []logResp) logData {
 			ch := make(chan logResp)
 			result := logData{
-				ch:             ch,
-				options:        options,
-				logStream:      *tls.Stream,
-				logStreamState: *tls.State,
+				ch:         ch,
+				options:    options,
+				logStreams: []*coordinator.LogStream{tls.Stream},
 			}
 			go func() {
 				defer close(ch)
@@ -65,7 +65,7 @@ func TestHTTP(t *testing.T) {
 		Convey(`Single Log raw`, func() {
 			options.format = "raw"
 			data := fakeData([]logResp{
-				{log: tls.LogEntry(c, 0)},
+				{stream: tls.Stream, log: tls.LogEntry(c, 0)},
 			})
 			So(serve(c, data, resp), ShouldBeNil)
 			So(resp.Body.String(), ShouldResemble, "log entry #0\n")
@@ -77,8 +77,8 @@ func TestHTTP(t *testing.T) {
 			tc.Add(time.Minute)
 			l2 := tls.LogEntry(c, 1)
 			data := fakeData([]logResp{
-				{log: l1},
-				{log: l2},
+				{stream: tls.Stream, log: l1},
+				{stream: tls.Stream, log: l2},
 			})
 			So(serve(c, data, resp), ShouldBeNil)
 			body := resp.Body.String()
