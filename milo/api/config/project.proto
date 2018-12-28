@@ -35,8 +35,12 @@ message Project {
   // {{.Build.Builder.Bucket}}
   // {{.Build.Builder.Builder}}
   //
-  // If any specified placeholder cannot be satisfied then a default URL
-  // is rendered for the feedback link.
+  // Others:
+  // {{.MiloBuildUrl}}
+  // {{.MiloBuilderUrl}}
+  //
+  // If any specified placeholder cannot be satisfied then no URL
+  // is rendered for the build page feedback link.
   BugTemplate build_bug_template = 5;
 }
 
