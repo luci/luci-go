@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9640ec97_301f00e7",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-29T02:10:57Z",
+      "side": 1,
+      "message": "maybe: not purged streams of text type matching pattern",
+      "range": {
+        "startLine": 263,
+        "startChar": 24,
+        "endLine": 263,
+        "endChar": 84
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3107a705_477fb521",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-29T02:10:57Z",
+      "side": 1,
+      "message": "can you make it named standalone func s.t. one can test what resulting regex was actually produced?\n\nAlso, I wonder, are the following allowed:\n.../**/xyz\n.../**/xyz/*\n.../*/xyz/**\n.../***/\nand if not, at which point is it disallowed?",
+      "range": {
+        "startLine": 268,
+        "startChar": 1,
+        "endLine": 275,
+        "endChar": 2
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dec7598b_f04bb879",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-29T02:10:57Z",
+      "side": 1,
+      "message": "resolveStreams",
+      "range": {
+        "startLine": 293,
+        "startChar": 3,
+        "endLine": 293,
+        "endChar": 15
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d3d920c_7626dbf4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-29T02:10:57Z",
+      "side": 1,
+      "message": "return nil, coordinator.ErrPathNotFound\n\nmerge case len(streams) \u003d\u003d 0 and err!\u003dnil below, and you\u0027d not need fallthrough (or i misread the code, in which case perhaps it\u0027s too complex anyway? :P)",
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cc5a762_50799399",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-29T02:10:57Z",
+      "side": 1,
+      "message": "suggestion: initParams\nsince there is nothing being resolved here.",
+      "range": {
+        "startLine": 331,
+        "startChar": 5,
+        "endLine": 331,
+        "endChar": 18
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f07b2a2c_87465911",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-29T02:10:57Z",
+      "side": 1,
+      "message": "move to L346, right before it\u0027s used.",
+      "range": {
+        "startLine": 333,
+        "startChar": 1,
+        "endLine": 333,
+        "endChar": 44
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9e0057c_1a70986a",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-29T02:10:57Z",
+      "side": 1,
+      "message": "These?",
+      "range": {
+        "startLine": 345,
+        "startChar": 40,
+        "endLine": 345,
+        "endChar": 44
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98e13d28_c9c49058",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 504,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-29T02:10:57Z",
+      "side": 1,
+      "message": "👍 for readability!",
+      "range": {
+        "startLine": 502,
+        "startChar": 0,
+        "endLine": 504,
+        "endChar": 29
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
