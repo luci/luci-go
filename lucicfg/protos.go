@@ -21,6 +21,12 @@ package lucicfg
 import (
 	"go.chromium.org/luci/starlark/interpreter"
 
+	_ "github.com/golang/protobuf/ptypes/any"
+	_ "github.com/golang/protobuf/ptypes/duration"
+	_ "github.com/golang/protobuf/ptypes/empty"
+	_ "github.com/golang/protobuf/ptypes/timestamp"
+	_ "github.com/golang/protobuf/ptypes/wrappers"
+
 	_ "go.chromium.org/luci/buildbucket/proto/config"
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
@@ -89,6 +95,22 @@ var publicProtos = map[string]struct {
 		"scheduler.config",
 		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
 	},
+
+	// Various well-known proto types.
+	//
+	// TODO(vadimsh): 'struct.proto' is not supported yet, since it uses map<...>
+	// not yet supported by starlarkproto package.
+	//
+	// load("@proto//google/protobuf/any.proto", any_pb="google.protobuf")
+	// load("@proto//google/protobuf/duration.proto", duration_pb="google.protobuf")
+	// load("@proto//google/protobuf/empty.proto", empty_pb="google.protobuf")
+	// load("@proto//google/protobuf/timestamp.proto", timestamp_pb="google.protobuf")
+	// load("@proto//google/protobuf/wrappers.proto", wrappers_pb="google.protobuf")
+	"google/protobuf/any.proto":       {"google.protobuf", "google/protobuf/any.proto"},
+	"google/protobuf/duration.proto":  {"google.protobuf", "google/protobuf/duration.proto"},
+	"google/protobuf/empty.proto":     {"google.protobuf", "google/protobuf/empty.proto"},
+	"google/protobuf/timestamp.proto": {"google.protobuf", "google/protobuf/timestamp.proto"},
+	"google/protobuf/wrappers.proto":  {"google.protobuf", "google/protobuf/wrappers.proto"},
 }
 
 // protoLoader returns a loader that is capable of loading publicProtos.
