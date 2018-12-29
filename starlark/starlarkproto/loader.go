@@ -95,8 +95,12 @@ func messageCtor(ns string, desc *descpb.DescriptorProto) (starlark.Value, error
 	// Attach constructors of the nested messages to it as attributes.
 	attrs := starlark.StringDict{}
 	for _, nested := range desc.NestedType {
-		if attrs[nested.GetName()], err = messageCtor(name, nested); err != nil {
-			return nil, err
+		// map<...> fields are represented by magical map message types. We
+		// represent maps using Starlark dicts, so we skip map message types.
+		if !nested.GetOptions().GetMapEntry() {
+			if attrs[nested.GetName()], err = messageCtor(name, nested); err != nil {
+				return nil, err
+			}
 		}
 	}
 

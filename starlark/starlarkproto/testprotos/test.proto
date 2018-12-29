@@ -75,3 +75,11 @@ message RefsOtherProtos {
   AnotherMessage another_msg = 1;
   google.protobuf.Timestamp ts = 2;
 }
+
+message MapWithPrimitiveType {
+  map<string, int64> m = 1;
+}
+
+message MapWithMessageType {
+  map<string, Simple> m = 1;
+}
