@@ -43,7 +43,7 @@ Files are referenced by their hash`,
 			c.commonFlags.Init(authOpts)
 			// TODO(mknyszek): Add support for downloading individual files.
 			c.Flags.StringVar(&c.outputDir, "output-dir", ".", "The directory where files will be downloaded to.")
-			c.Flags.StringVar(&c.outputFiles, "output-files", ".", "File into which the full list of downloaded files is written to.")
+			c.Flags.StringVar(&c.outputFiles, "output-files", "", "File into which the full list of downloaded files is written to.")
 			c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of a .isolated tree to download.")
 			return &c
 		},
