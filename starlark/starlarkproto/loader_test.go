@@ -50,6 +50,8 @@ func TestLoader(t *testing.T) {
 			"Complex",
 			"ENUM_DEFAULT",
 			"ENUM_VAL_1",
+			"MapWithMessageType",
+			"MapWithPrimitiveType",
 			"MessageFields",
 			"RefsOtherProtos",
 			"Simple",

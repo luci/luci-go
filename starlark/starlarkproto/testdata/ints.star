@@ -43,7 +43,7 @@ assert.fails(set_bad, 'can\'t assign list to a value of kind "int64"')
 # Setting to a message fails.
 def set_msg():
   m2.i64 = testprotos.SimpleFields()
-assert.fails(set_msg, 'can\'t assign proto struct to a value of type "int64"')
+assert.fails(set_msg, 'can\'t assign proto struct to a value of kind "int64"')
 
 # We don't support implicit conversions from float to int. Callers should use
 # int(...) cast explicitly.

@@ -49,6 +49,9 @@ func newDefaultValue(typ reflect.Type) (starlark.Value, error) {
 			return nil, fmt.Errorf("can't instantiate value for go type %q - %s", typ, err)
 		}
 		return NewMessage(t), nil
+
+	case reflect.Map: // a map<k,v> field
+		return &starlark.Dict{}, nil
 	}
 
 	return nil, fmt.Errorf("do not know how to instantiate starlark value for go type %q", typ)

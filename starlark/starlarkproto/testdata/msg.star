@@ -38,12 +38,12 @@ assert.eq(m.single.i, 0)
 # Setting wrong type is forbidden.
 def set_as_int():
   m.single = 123
-assert.fails(set_as_int, 'can\'t assign integer to a value of kind "ptr"')
+assert.fails(set_as_int, 'can\'t assign integer to a testprotos.Simple message')
 
 # Setting to a message of a wrong type is also forbidden.
 def set_as_msg():
   m.single = testprotos.MessageFields()
-assert.fails(set_as_msg, 'incompatible types "Simple" and "MessageFields"')
+assert.fails(set_as_msg, 'can\'t assign a testprotos.MessageFields message to a testprotos.Simple message')
 
 # The full type-correctness of the inner message is checked only during
 # serialization.
