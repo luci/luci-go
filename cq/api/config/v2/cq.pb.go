@@ -336,15 +336,15 @@ func (m *ConfigGroup_Gerrit_Project) GetRefRegexp() []string {
 // describes types of verifiers that should be applied to each CL and their
 // parameters.
 type Verifiers struct {
-	// Required. GerritCQAbilityVerifier ensures that a user who triggered
+	// Required. GerritCQAbility ensures that a user who triggered
 	// this CQ attempt actually has rights to do so based on 3 factors:
 	//  * membership of the user in committers & dryrunners group,
 	//  * the state of CL/patchset on which CQ is triggered,
 	//  * relationship of the user to the CL.
-	GerritCqAbility *Verifiers_GerritCQAbilityVerifier `protobuf:"bytes,1,opt,name=gerrit_cq_ability,json=gerritCqAbility,proto3" json:"gerrit_cq_ability,omitempty"`
+	GerritCqAbility *Verifiers_GerritCQAbility `protobuf:"bytes,1,opt,name=gerrit_cq_ability,json=gerritCqAbility,proto3" json:"gerrit_cq_ability,omitempty"`
 	// This verifier is used to check tree status before committing a CL. If the
 	// tree is closed, then the verifier will wait until it is reopened.
-	TreeStatus *Verifiers_TreeStatusVerifier `protobuf:"bytes,2,opt,name=tree_status,json=treeStatus,proto3" json:"tree_status,omitempty"`
+	TreeStatus *Verifiers_TreeStatus `protobuf:"bytes,2,opt,name=tree_status,json=treeStatus,proto3" json:"tree_status,omitempty"`
 	// This verifier triggers a set of builds through Buildbucket.
 	//
 	// CQ automatically retries failed try-jobs and only allows CL to land if each
@@ -354,14 +354,14 @@ type Verifiers struct {
 	// Typically, builds from Buildbucket are executed on LUCI stack, however, CQ
 	// is agnostic to how and where builds are executed.
 	// TODO(tandrii): retname try_job and try-job to tryjob everywhere in CQ.
-	TryJob *Verifiers_TryJobVerifier `protobuf:"bytes,3,opt,name=try_job,json=tryJob,proto3" json:"try_job,omitempty"`
+	TryJob *Verifiers_TryJob `protobuf:"bytes,3,opt,name=try_job,json=tryJob,proto3" json:"try_job,omitempty"`
 	// Deprecator is for internal CQ use only. DO NOT USE IN YOUR cq.cfg.
-	Deprecator *Verifiers_DeprecatorVerifier `protobuf:"bytes,4,opt,name=deprecator,proto3" json:"deprecator,omitempty"`
+	Deprecator *Verifiers_Deprecator `protobuf:"bytes,4,opt,name=deprecator,proto3" json:"deprecator,omitempty"`
 	// Fake is for internal CQ use only. DO NOT USE IN YOUR cq.cfg.
-	Fake                 *Verifiers_FakeVerifier `protobuf:"bytes,5,opt,name=fake,proto3" json:"fake,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
-	XXX_unrecognized     []byte                  `json:"-"`
-	XXX_sizecache        int32                   `json:"-"`
+	Fake                 *Verifiers_Fake `protobuf:"bytes,5,opt,name=fake,proto3" json:"fake,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *Verifiers) Reset()         { *m = Verifiers{} }
@@ -389,42 +389,42 @@ func (m *Verifiers) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Verifiers proto.InternalMessageInfo
 
-func (m *Verifiers) GetGerritCqAbility() *Verifiers_GerritCQAbilityVerifier {
+func (m *Verifiers) GetGerritCqAbility() *Verifiers_GerritCQAbility {
 	if m != nil {
 		return m.GerritCqAbility
 	}
 	return nil
 }
 
-func (m *Verifiers) GetTreeStatus() *Verifiers_TreeStatusVerifier {
+func (m *Verifiers) GetTreeStatus() *Verifiers_TreeStatus {
 	if m != nil {
 		return m.TreeStatus
 	}
 	return nil
 }
 
-func (m *Verifiers) GetTryJob() *Verifiers_TryJobVerifier {
+func (m *Verifiers) GetTryJob() *Verifiers_TryJob {
 	if m != nil {
 		return m.TryJob
 	}
 	return nil
 }
 
-func (m *Verifiers) GetDeprecator() *Verifiers_DeprecatorVerifier {
+func (m *Verifiers) GetDeprecator() *Verifiers_Deprecator {
 	if m != nil {
 		return m.Deprecator
 	}
 	return nil
 }
 
-func (m *Verifiers) GetFake() *Verifiers_FakeVerifier {
+func (m *Verifiers) GetFake() *Verifiers_Fake {
 	if m != nil {
 		return m.Fake
 	}
 	return nil
 }
 
-type Verifiers_GerritCQAbilityVerifier struct {
+type Verifiers_GerritCQAbility struct {
 	// Required. Name of the chrome-infra-auth group, which contains the list of
 	// identities authorized to trigger CQ runs on any CLs in projects specified
 	// in the config group.
@@ -456,53 +456,53 @@ type Verifiers_GerritCQAbilityVerifier struct {
 	XXX_sizecache           int32    `json:"-"`
 }
 
-func (m *Verifiers_GerritCQAbilityVerifier) Reset()         { *m = Verifiers_GerritCQAbilityVerifier{} }
-func (m *Verifiers_GerritCQAbilityVerifier) String() string { return proto.CompactTextString(m) }
-func (*Verifiers_GerritCQAbilityVerifier) ProtoMessage()    {}
-func (*Verifiers_GerritCQAbilityVerifier) Descriptor() ([]byte, []int) {
+func (m *Verifiers_GerritCQAbility) Reset()         { *m = Verifiers_GerritCQAbility{} }
+func (m *Verifiers_GerritCQAbility) String() string { return proto.CompactTextString(m) }
+func (*Verifiers_GerritCQAbility) ProtoMessage()    {}
+func (*Verifiers_GerritCQAbility) Descriptor() ([]byte, []int) {
 	return fileDescriptor_59a2f489dbd601ec, []int{3, 0}
 }
 
-func (m *Verifiers_GerritCQAbilityVerifier) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Verifiers_GerritCQAbilityVerifier.Unmarshal(m, b)
+func (m *Verifiers_GerritCQAbility) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Verifiers_GerritCQAbility.Unmarshal(m, b)
 }
-func (m *Verifiers_GerritCQAbilityVerifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Verifiers_GerritCQAbilityVerifier.Marshal(b, m, deterministic)
+func (m *Verifiers_GerritCQAbility) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Verifiers_GerritCQAbility.Marshal(b, m, deterministic)
 }
-func (m *Verifiers_GerritCQAbilityVerifier) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Verifiers_GerritCQAbilityVerifier.Merge(m, src)
+func (m *Verifiers_GerritCQAbility) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Verifiers_GerritCQAbility.Merge(m, src)
 }
-func (m *Verifiers_GerritCQAbilityVerifier) XXX_Size() int {
-	return xxx_messageInfo_Verifiers_GerritCQAbilityVerifier.Size(m)
+func (m *Verifiers_GerritCQAbility) XXX_Size() int {
+	return xxx_messageInfo_Verifiers_GerritCQAbility.Size(m)
 }
-func (m *Verifiers_GerritCQAbilityVerifier) XXX_DiscardUnknown() {
-	xxx_messageInfo_Verifiers_GerritCQAbilityVerifier.DiscardUnknown(m)
+func (m *Verifiers_GerritCQAbility) XXX_DiscardUnknown() {
+	xxx_messageInfo_Verifiers_GerritCQAbility.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Verifiers_GerritCQAbilityVerifier proto.InternalMessageInfo
+var xxx_messageInfo_Verifiers_GerritCQAbility proto.InternalMessageInfo
 
-func (m *Verifiers_GerritCQAbilityVerifier) GetCommitterList() string {
+func (m *Verifiers_GerritCQAbility) GetCommitterList() string {
 	if m != nil {
 		return m.CommitterList
 	}
 	return ""
 }
 
-func (m *Verifiers_GerritCQAbilityVerifier) GetDryRunAccessList() string {
+func (m *Verifiers_GerritCQAbility) GetDryRunAccessList() string {
 	if m != nil {
 		return m.DryRunAccessList
 	}
 	return ""
 }
 
-func (m *Verifiers_GerritCQAbilityVerifier) GetAllowSubmitWithOpenDeps() bool {
+func (m *Verifiers_GerritCQAbility) GetAllowSubmitWithOpenDeps() bool {
 	if m != nil {
 		return m.AllowSubmitWithOpenDeps
 	}
 	return false
 }
 
-type Verifiers_TreeStatusVerifier struct {
+type Verifiers_TreeStatus struct {
 	// Required. URL of the project tree status app.
 	Url                  string   `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -510,88 +510,88 @@ type Verifiers_TreeStatusVerifier struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Verifiers_TreeStatusVerifier) Reset()         { *m = Verifiers_TreeStatusVerifier{} }
-func (m *Verifiers_TreeStatusVerifier) String() string { return proto.CompactTextString(m) }
-func (*Verifiers_TreeStatusVerifier) ProtoMessage()    {}
-func (*Verifiers_TreeStatusVerifier) Descriptor() ([]byte, []int) {
+func (m *Verifiers_TreeStatus) Reset()         { *m = Verifiers_TreeStatus{} }
+func (m *Verifiers_TreeStatus) String() string { return proto.CompactTextString(m) }
+func (*Verifiers_TreeStatus) ProtoMessage()    {}
+func (*Verifiers_TreeStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_59a2f489dbd601ec, []int{3, 1}
 }
 
-func (m *Verifiers_TreeStatusVerifier) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Verifiers_TreeStatusVerifier.Unmarshal(m, b)
+func (m *Verifiers_TreeStatus) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Verifiers_TreeStatus.Unmarshal(m, b)
 }
-func (m *Verifiers_TreeStatusVerifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Verifiers_TreeStatusVerifier.Marshal(b, m, deterministic)
+func (m *Verifiers_TreeStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Verifiers_TreeStatus.Marshal(b, m, deterministic)
 }
-func (m *Verifiers_TreeStatusVerifier) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Verifiers_TreeStatusVerifier.Merge(m, src)
+func (m *Verifiers_TreeStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Verifiers_TreeStatus.Merge(m, src)
 }
-func (m *Verifiers_TreeStatusVerifier) XXX_Size() int {
-	return xxx_messageInfo_Verifiers_TreeStatusVerifier.Size(m)
+func (m *Verifiers_TreeStatus) XXX_Size() int {
+	return xxx_messageInfo_Verifiers_TreeStatus.Size(m)
 }
-func (m *Verifiers_TreeStatusVerifier) XXX_DiscardUnknown() {
-	xxx_messageInfo_Verifiers_TreeStatusVerifier.DiscardUnknown(m)
+func (m *Verifiers_TreeStatus) XXX_DiscardUnknown() {
+	xxx_messageInfo_Verifiers_TreeStatus.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Verifiers_TreeStatusVerifier proto.InternalMessageInfo
+var xxx_messageInfo_Verifiers_TreeStatus proto.InternalMessageInfo
 
-func (m *Verifiers_TreeStatusVerifier) GetUrl() string {
+func (m *Verifiers_TreeStatus) GetUrl() string {
 	if m != nil {
 		return m.Url
 	}
 	return ""
 }
 
-type Verifiers_TryJobVerifier struct {
+type Verifiers_TryJob struct {
 	// Builders on which tryjobs should be triggered.
-	Builders []*Verifiers_TryJobVerifier_Builder `protobuf:"bytes,1,rep,name=builders,proto3" json:"builders,omitempty"`
+	Builders []*Verifiers_TryJob_Builder `protobuf:"bytes,1,rep,name=builders,proto3" json:"builders,omitempty"`
 	// Optional, defaulting to no retries whatsoever.
-	RetryConfig          *Verifiers_TryJobVerifier_RetryConfig `protobuf:"bytes,2,opt,name=retry_config,json=retryConfig,proto3" json:"retry_config,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                              `json:"-"`
-	XXX_unrecognized     []byte                                `json:"-"`
-	XXX_sizecache        int32                                 `json:"-"`
+	RetryConfig          *Verifiers_TryJob_RetryConfig `protobuf:"bytes,2,opt,name=retry_config,json=retryConfig,proto3" json:"retry_config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
 }
 
-func (m *Verifiers_TryJobVerifier) Reset()         { *m = Verifiers_TryJobVerifier{} }
-func (m *Verifiers_TryJobVerifier) String() string { return proto.CompactTextString(m) }
-func (*Verifiers_TryJobVerifier) ProtoMessage()    {}
-func (*Verifiers_TryJobVerifier) Descriptor() ([]byte, []int) {
+func (m *Verifiers_TryJob) Reset()         { *m = Verifiers_TryJob{} }
+func (m *Verifiers_TryJob) String() string { return proto.CompactTextString(m) }
+func (*Verifiers_TryJob) ProtoMessage()    {}
+func (*Verifiers_TryJob) Descriptor() ([]byte, []int) {
 	return fileDescriptor_59a2f489dbd601ec, []int{3, 2}
 }
 
-func (m *Verifiers_TryJobVerifier) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Verifiers_TryJobVerifier.Unmarshal(m, b)
+func (m *Verifiers_TryJob) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Verifiers_TryJob.Unmarshal(m, b)
 }
-func (m *Verifiers_TryJobVerifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Verifiers_TryJobVerifier.Marshal(b, m, deterministic)
+func (m *Verifiers_TryJob) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Verifiers_TryJob.Marshal(b, m, deterministic)
 }
-func (m *Verifiers_TryJobVerifier) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Verifiers_TryJobVerifier.Merge(m, src)
+func (m *Verifiers_TryJob) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Verifiers_TryJob.Merge(m, src)
 }
-func (m *Verifiers_TryJobVerifier) XXX_Size() int {
-	return xxx_messageInfo_Verifiers_TryJobVerifier.Size(m)
+func (m *Verifiers_TryJob) XXX_Size() int {
+	return xxx_messageInfo_Verifiers_TryJob.Size(m)
 }
-func (m *Verifiers_TryJobVerifier) XXX_DiscardUnknown() {
-	xxx_messageInfo_Verifiers_TryJobVerifier.DiscardUnknown(m)
+func (m *Verifiers_TryJob) XXX_DiscardUnknown() {
+	xxx_messageInfo_Verifiers_TryJob.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Verifiers_TryJobVerifier proto.InternalMessageInfo
+var xxx_messageInfo_Verifiers_TryJob proto.InternalMessageInfo
 
-func (m *Verifiers_TryJobVerifier) GetBuilders() []*Verifiers_TryJobVerifier_Builder {
+func (m *Verifiers_TryJob) GetBuilders() []*Verifiers_TryJob_Builder {
 	if m != nil {
 		return m.Builders
 	}
 	return nil
 }
 
-func (m *Verifiers_TryJobVerifier) GetRetryConfig() *Verifiers_TryJobVerifier_RetryConfig {
+func (m *Verifiers_TryJob) GetRetryConfig() *Verifiers_TryJob_RetryConfig {
 	if m != nil {
 		return m.RetryConfig
 	}
 	return nil
 }
 
-type Verifiers_TryJobVerifier_Builder struct {
+type Verifiers_TryJob_Builder struct {
 	// Required. Name of the builder as <project>/<bucket>/<builder>
 	//
 	// Examples:
@@ -666,7 +666,7 @@ type Verifiers_TryJobVerifier_Builder struct {
 	//
 	// Note: none of the equivalent builders should be part of triggered_by
 	// chain, although CQ may eventually relax this requirement.
-	EquivalentTo *Verifiers_TryJobVerifier_EquivalentBuilder `protobuf:"bytes,5,opt,name=equivalent_to,json=equivalentTo,proto3" json:"equivalent_to,omitempty"`
+	EquivalentTo *Verifiers_TryJob_EquivalentBuilder `protobuf:"bytes,5,opt,name=equivalent_to,json=equivalentTo,proto3" json:"equivalent_to,omitempty"`
 	// Optional. Require this builder only if location_regexp matches a file in
 	// this CL.
 	//
@@ -696,7 +696,7 @@ type Verifiers_TryJobVerifier_Builder struct {
 	// These options currently can not be combined with the following other options:
 	//   * experiment_percentage
 	//   * triggered_by
-	//   * GerritCQAbilityVerifier.allow_submit_with_open_deps
+	//   * GerritCQAbility.allow_submit_with_open_deps
 	// If you need to combine them, please talk to CQ owners.
 	//
 	// Examples:
@@ -723,81 +723,81 @@ type Verifiers_TryJobVerifier_Builder struct {
 	XXX_sizecache         int32    `json:"-"`
 }
 
-func (m *Verifiers_TryJobVerifier_Builder) Reset()         { *m = Verifiers_TryJobVerifier_Builder{} }
-func (m *Verifiers_TryJobVerifier_Builder) String() string { return proto.CompactTextString(m) }
-func (*Verifiers_TryJobVerifier_Builder) ProtoMessage()    {}
-func (*Verifiers_TryJobVerifier_Builder) Descriptor() ([]byte, []int) {
+func (m *Verifiers_TryJob_Builder) Reset()         { *m = Verifiers_TryJob_Builder{} }
+func (m *Verifiers_TryJob_Builder) String() string { return proto.CompactTextString(m) }
+func (*Verifiers_TryJob_Builder) ProtoMessage()    {}
+func (*Verifiers_TryJob_Builder) Descriptor() ([]byte, []int) {
 	return fileDescriptor_59a2f489dbd601ec, []int{3, 2, 0}
 }
 
-func (m *Verifiers_TryJobVerifier_Builder) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Verifiers_TryJobVerifier_Builder.Unmarshal(m, b)
+func (m *Verifiers_TryJob_Builder) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Verifiers_TryJob_Builder.Unmarshal(m, b)
 }
-func (m *Verifiers_TryJobVerifier_Builder) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Verifiers_TryJobVerifier_Builder.Marshal(b, m, deterministic)
+func (m *Verifiers_TryJob_Builder) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Verifiers_TryJob_Builder.Marshal(b, m, deterministic)
 }
-func (m *Verifiers_TryJobVerifier_Builder) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Verifiers_TryJobVerifier_Builder.Merge(m, src)
+func (m *Verifiers_TryJob_Builder) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Verifiers_TryJob_Builder.Merge(m, src)
 }
-func (m *Verifiers_TryJobVerifier_Builder) XXX_Size() int {
-	return xxx_messageInfo_Verifiers_TryJobVerifier_Builder.Size(m)
+func (m *Verifiers_TryJob_Builder) XXX_Size() int {
+	return xxx_messageInfo_Verifiers_TryJob_Builder.Size(m)
 }
-func (m *Verifiers_TryJobVerifier_Builder) XXX_DiscardUnknown() {
-	xxx_messageInfo_Verifiers_TryJobVerifier_Builder.DiscardUnknown(m)
+func (m *Verifiers_TryJob_Builder) XXX_DiscardUnknown() {
+	xxx_messageInfo_Verifiers_TryJob_Builder.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Verifiers_TryJobVerifier_Builder proto.InternalMessageInfo
+var xxx_messageInfo_Verifiers_TryJob_Builder proto.InternalMessageInfo
 
-func (m *Verifiers_TryJobVerifier_Builder) GetName() string {
+func (m *Verifiers_TryJob_Builder) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *Verifiers_TryJobVerifier_Builder) GetDisableReuse() bool {
+func (m *Verifiers_TryJob_Builder) GetDisableReuse() bool {
 	if m != nil {
 		return m.DisableReuse
 	}
 	return false
 }
 
-func (m *Verifiers_TryJobVerifier_Builder) GetTriggeredBy() string {
+func (m *Verifiers_TryJob_Builder) GetTriggeredBy() string {
 	if m != nil {
 		return m.TriggeredBy
 	}
 	return ""
 }
 
-func (m *Verifiers_TryJobVerifier_Builder) GetExperimentPercentage() float32 {
+func (m *Verifiers_TryJob_Builder) GetExperimentPercentage() float32 {
 	if m != nil {
 		return m.ExperimentPercentage
 	}
 	return 0
 }
 
-func (m *Verifiers_TryJobVerifier_Builder) GetEquivalentTo() *Verifiers_TryJobVerifier_EquivalentBuilder {
+func (m *Verifiers_TryJob_Builder) GetEquivalentTo() *Verifiers_TryJob_EquivalentBuilder {
 	if m != nil {
 		return m.EquivalentTo
 	}
 	return nil
 }
 
-func (m *Verifiers_TryJobVerifier_Builder) GetLocationRegexp() []string {
+func (m *Verifiers_TryJob_Builder) GetLocationRegexp() []string {
 	if m != nil {
 		return m.LocationRegexp
 	}
 	return nil
 }
 
-func (m *Verifiers_TryJobVerifier_Builder) GetLocationRegexpExclude() []string {
+func (m *Verifiers_TryJob_Builder) GetLocationRegexpExclude() []string {
 	if m != nil {
 		return m.LocationRegexpExclude
 	}
 	return nil
 }
 
-type Verifiers_TryJobVerifier_EquivalentBuilder struct {
+type Verifiers_TryJob_EquivalentBuilder struct {
 	// Required. Name of this builder.
 	// Format is the same in the same format as Builder.name.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -829,50 +829,46 @@ type Verifiers_TryJobVerifier_EquivalentBuilder struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) Reset() {
-	*m = Verifiers_TryJobVerifier_EquivalentBuilder{}
-}
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) String() string {
-	return proto.CompactTextString(m)
-}
-func (*Verifiers_TryJobVerifier_EquivalentBuilder) ProtoMessage() {}
-func (*Verifiers_TryJobVerifier_EquivalentBuilder) Descriptor() ([]byte, []int) {
+func (m *Verifiers_TryJob_EquivalentBuilder) Reset()         { *m = Verifiers_TryJob_EquivalentBuilder{} }
+func (m *Verifiers_TryJob_EquivalentBuilder) String() string { return proto.CompactTextString(m) }
+func (*Verifiers_TryJob_EquivalentBuilder) ProtoMessage()    {}
+func (*Verifiers_TryJob_EquivalentBuilder) Descriptor() ([]byte, []int) {
 	return fileDescriptor_59a2f489dbd601ec, []int{3, 2, 1}
 }
 
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Verifiers_TryJobVerifier_EquivalentBuilder.Unmarshal(m, b)
+func (m *Verifiers_TryJob_EquivalentBuilder) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Verifiers_TryJob_EquivalentBuilder.Unmarshal(m, b)
 }
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Verifiers_TryJobVerifier_EquivalentBuilder.Marshal(b, m, deterministic)
+func (m *Verifiers_TryJob_EquivalentBuilder) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Verifiers_TryJob_EquivalentBuilder.Marshal(b, m, deterministic)
 }
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Verifiers_TryJobVerifier_EquivalentBuilder.Merge(m, src)
+func (m *Verifiers_TryJob_EquivalentBuilder) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Verifiers_TryJob_EquivalentBuilder.Merge(m, src)
 }
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) XXX_Size() int {
-	return xxx_messageInfo_Verifiers_TryJobVerifier_EquivalentBuilder.Size(m)
+func (m *Verifiers_TryJob_EquivalentBuilder) XXX_Size() int {
+	return xxx_messageInfo_Verifiers_TryJob_EquivalentBuilder.Size(m)
 }
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) XXX_DiscardUnknown() {
-	xxx_messageInfo_Verifiers_TryJobVerifier_EquivalentBuilder.DiscardUnknown(m)
+func (m *Verifiers_TryJob_EquivalentBuilder) XXX_DiscardUnknown() {
+	xxx_messageInfo_Verifiers_TryJob_EquivalentBuilder.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Verifiers_TryJobVerifier_EquivalentBuilder proto.InternalMessageInfo
+var xxx_messageInfo_Verifiers_TryJob_EquivalentBuilder proto.InternalMessageInfo
 
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) GetName() string {
+func (m *Verifiers_TryJob_EquivalentBuilder) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) GetPercentage() float32 {
+func (m *Verifiers_TryJob_EquivalentBuilder) GetPercentage() float32 {
 	if m != nil {
 		return m.Percentage
 	}
 	return 0
 }
 
-func (m *Verifiers_TryJobVerifier_EquivalentBuilder) GetOwnerWhitelistGroup() string {
+func (m *Verifiers_TryJob_EquivalentBuilder) GetOwnerWhitelistGroup() string {
 	if m != nil {
 		return m.OwnerWhitelistGroup
 	}
@@ -882,7 +878,7 @@ func (m *Verifiers_TryJobVerifier_EquivalentBuilder) GetOwnerWhitelistGroup() st
 // Collection of parameters for deciding whether to retry a single build.
 // If parameter is not specified, its value defaults to 0 (per proto3).
 // Thus, omitting all parameters means no retries of any kind.
-type Verifiers_TryJobVerifier_RetryConfig struct {
+type Verifiers_TryJob_RetryConfig struct {
 	// Retry quota for a single tryjob.
 	SingleQuota int32 `protobuf:"varint,1,opt,name=single_quota,json=singleQuota,proto3" json:"single_quota,omitempty"`
 	// Retry quota for all tryjobs in a CL.
@@ -898,100 +894,100 @@ type Verifiers_TryJobVerifier_RetryConfig struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Verifiers_TryJobVerifier_RetryConfig) Reset()         { *m = Verifiers_TryJobVerifier_RetryConfig{} }
-func (m *Verifiers_TryJobVerifier_RetryConfig) String() string { return proto.CompactTextString(m) }
-func (*Verifiers_TryJobVerifier_RetryConfig) ProtoMessage()    {}
-func (*Verifiers_TryJobVerifier_RetryConfig) Descriptor() ([]byte, []int) {
+func (m *Verifiers_TryJob_RetryConfig) Reset()         { *m = Verifiers_TryJob_RetryConfig{} }
+func (m *Verifiers_TryJob_RetryConfig) String() string { return proto.CompactTextString(m) }
+func (*Verifiers_TryJob_RetryConfig) ProtoMessage()    {}
+func (*Verifiers_TryJob_RetryConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_59a2f489dbd601ec, []int{3, 2, 2}
 }
 
-func (m *Verifiers_TryJobVerifier_RetryConfig) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Verifiers_TryJobVerifier_RetryConfig.Unmarshal(m, b)
+func (m *Verifiers_TryJob_RetryConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Verifiers_TryJob_RetryConfig.Unmarshal(m, b)
 }
-func (m *Verifiers_TryJobVerifier_RetryConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Verifiers_TryJobVerifier_RetryConfig.Marshal(b, m, deterministic)
+func (m *Verifiers_TryJob_RetryConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Verifiers_TryJob_RetryConfig.Marshal(b, m, deterministic)
 }
-func (m *Verifiers_TryJobVerifier_RetryConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Verifiers_TryJobVerifier_RetryConfig.Merge(m, src)
+func (m *Verifiers_TryJob_RetryConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Verifiers_TryJob_RetryConfig.Merge(m, src)
 }
-func (m *Verifiers_TryJobVerifier_RetryConfig) XXX_Size() int {
-	return xxx_messageInfo_Verifiers_TryJobVerifier_RetryConfig.Size(m)
+func (m *Verifiers_TryJob_RetryConfig) XXX_Size() int {
+	return xxx_messageInfo_Verifiers_TryJob_RetryConfig.Size(m)
 }
-func (m *Verifiers_TryJobVerifier_RetryConfig) XXX_DiscardUnknown() {
-	xxx_messageInfo_Verifiers_TryJobVerifier_RetryConfig.DiscardUnknown(m)
+func (m *Verifiers_TryJob_RetryConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_Verifiers_TryJob_RetryConfig.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Verifiers_TryJobVerifier_RetryConfig proto.InternalMessageInfo
+var xxx_messageInfo_Verifiers_TryJob_RetryConfig proto.InternalMessageInfo
 
-func (m *Verifiers_TryJobVerifier_RetryConfig) GetSingleQuota() int32 {
+func (m *Verifiers_TryJob_RetryConfig) GetSingleQuota() int32 {
 	if m != nil {
 		return m.SingleQuota
 	}
 	return 0
 }
 
-func (m *Verifiers_TryJobVerifier_RetryConfig) GetGlobalQuota() int32 {
+func (m *Verifiers_TryJob_RetryConfig) GetGlobalQuota() int32 {
 	if m != nil {
 		return m.GlobalQuota
 	}
 	return 0
 }
 
-func (m *Verifiers_TryJobVerifier_RetryConfig) GetFailureWeight() int32 {
+func (m *Verifiers_TryJob_RetryConfig) GetFailureWeight() int32 {
 	if m != nil {
 		return m.FailureWeight
 	}
 	return 0
 }
 
-func (m *Verifiers_TryJobVerifier_RetryConfig) GetTransientFailureWeight() int32 {
+func (m *Verifiers_TryJob_RetryConfig) GetTransientFailureWeight() int32 {
 	if m != nil {
 		return m.TransientFailureWeight
 	}
 	return 0
 }
 
-func (m *Verifiers_TryJobVerifier_RetryConfig) GetTimeoutWeight() int32 {
+func (m *Verifiers_TryJob_RetryConfig) GetTimeoutWeight() int32 {
 	if m != nil {
 		return m.TimeoutWeight
 	}
 	return 0
 }
 
-// DeprecatorVerifier is for internal use in CQ.
-type Verifiers_DeprecatorVerifier struct {
+// Deprecator is for internal use in CQ.
+type Verifiers_Deprecator struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Verifiers_DeprecatorVerifier) Reset()         { *m = Verifiers_DeprecatorVerifier{} }
-func (m *Verifiers_DeprecatorVerifier) String() string { return proto.CompactTextString(m) }
-func (*Verifiers_DeprecatorVerifier) ProtoMessage()    {}
-func (*Verifiers_DeprecatorVerifier) Descriptor() ([]byte, []int) {
+func (m *Verifiers_Deprecator) Reset()         { *m = Verifiers_Deprecator{} }
+func (m *Verifiers_Deprecator) String() string { return proto.CompactTextString(m) }
+func (*Verifiers_Deprecator) ProtoMessage()    {}
+func (*Verifiers_Deprecator) Descriptor() ([]byte, []int) {
 	return fileDescriptor_59a2f489dbd601ec, []int{3, 3}
 }
 
-func (m *Verifiers_DeprecatorVerifier) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Verifiers_DeprecatorVerifier.Unmarshal(m, b)
+func (m *Verifiers_Deprecator) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Verifiers_Deprecator.Unmarshal(m, b)
 }
-func (m *Verifiers_DeprecatorVerifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Verifiers_DeprecatorVerifier.Marshal(b, m, deterministic)
+func (m *Verifiers_Deprecator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Verifiers_Deprecator.Marshal(b, m, deterministic)
 }
-func (m *Verifiers_DeprecatorVerifier) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Verifiers_DeprecatorVerifier.Merge(m, src)
+func (m *Verifiers_Deprecator) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Verifiers_Deprecator.Merge(m, src)
 }
-func (m *Verifiers_DeprecatorVerifier) XXX_Size() int {
-	return xxx_messageInfo_Verifiers_DeprecatorVerifier.Size(m)
+func (m *Verifiers_Deprecator) XXX_Size() int {
+	return xxx_messageInfo_Verifiers_Deprecator.Size(m)
 }
-func (m *Verifiers_DeprecatorVerifier) XXX_DiscardUnknown() {
-	xxx_messageInfo_Verifiers_DeprecatorVerifier.DiscardUnknown(m)
+func (m *Verifiers_Deprecator) XXX_DiscardUnknown() {
+	xxx_messageInfo_Verifiers_Deprecator.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Verifiers_DeprecatorVerifier proto.InternalMessageInfo
+var xxx_messageInfo_Verifiers_Deprecator proto.InternalMessageInfo
 
-// FakeVerifier is for internal use in CQ.
-type Verifiers_FakeVerifier struct {
+// Fake is for internal use in CQ.
+type Verifiers_Fake struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	EventualState        string   `protobuf:"bytes,2,opt,name=eventual_state,json=eventualState,proto3" json:"eventual_state,omitempty"`
 	Delay                int32    `protobuf:"varint,3,opt,name=delay,proto3" json:"delay,omitempty"`
@@ -1000,46 +996,46 @@ type Verifiers_FakeVerifier struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Verifiers_FakeVerifier) Reset()         { *m = Verifiers_FakeVerifier{} }
-func (m *Verifiers_FakeVerifier) String() string { return proto.CompactTextString(m) }
-func (*Verifiers_FakeVerifier) ProtoMessage()    {}
-func (*Verifiers_FakeVerifier) Descriptor() ([]byte, []int) {
+func (m *Verifiers_Fake) Reset()         { *m = Verifiers_Fake{} }
+func (m *Verifiers_Fake) String() string { return proto.CompactTextString(m) }
+func (*Verifiers_Fake) ProtoMessage()    {}
+func (*Verifiers_Fake) Descriptor() ([]byte, []int) {
 	return fileDescriptor_59a2f489dbd601ec, []int{3, 4}
 }
 
-func (m *Verifiers_FakeVerifier) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Verifiers_FakeVerifier.Unmarshal(m, b)
+func (m *Verifiers_Fake) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Verifiers_Fake.Unmarshal(m, b)
 }
-func (m *Verifiers_FakeVerifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Verifiers_FakeVerifier.Marshal(b, m, deterministic)
+func (m *Verifiers_Fake) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Verifiers_Fake.Marshal(b, m, deterministic)
 }
-func (m *Verifiers_FakeVerifier) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Verifiers_FakeVerifier.Merge(m, src)
+func (m *Verifiers_Fake) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Verifiers_Fake.Merge(m, src)
 }
-func (m *Verifiers_FakeVerifier) XXX_Size() int {
-	return xxx_messageInfo_Verifiers_FakeVerifier.Size(m)
+func (m *Verifiers_Fake) XXX_Size() int {
+	return xxx_messageInfo_Verifiers_Fake.Size(m)
 }
-func (m *Verifiers_FakeVerifier) XXX_DiscardUnknown() {
-	xxx_messageInfo_Verifiers_FakeVerifier.DiscardUnknown(m)
+func (m *Verifiers_Fake) XXX_DiscardUnknown() {
+	xxx_messageInfo_Verifiers_Fake.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Verifiers_FakeVerifier proto.InternalMessageInfo
+var xxx_messageInfo_Verifiers_Fake proto.InternalMessageInfo
 
-func (m *Verifiers_FakeVerifier) GetName() string {
+func (m *Verifiers_Fake) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *Verifiers_FakeVerifier) GetEventualState() string {
+func (m *Verifiers_Fake) GetEventualState() string {
 	if m != nil {
 		return m.EventualState
 	}
 	return ""
 }
 
-func (m *Verifiers_FakeVerifier) GetDelay() int32 {
+func (m *Verifiers_Fake) GetDelay() int32 {
 	if m != nil {
 		return m.Delay
 	}
@@ -1053,14 +1049,14 @@ func init() {
 	proto.RegisterType((*ConfigGroup_Gerrit)(nil), "cq.config.ConfigGroup.Gerrit")
 	proto.RegisterType((*ConfigGroup_Gerrit_Project)(nil), "cq.config.ConfigGroup.Gerrit.Project")
 	proto.RegisterType((*Verifiers)(nil), "cq.config.Verifiers")
-	proto.RegisterType((*Verifiers_GerritCQAbilityVerifier)(nil), "cq.config.Verifiers.GerritCQAbilityVerifier")
-	proto.RegisterType((*Verifiers_TreeStatusVerifier)(nil), "cq.config.Verifiers.TreeStatusVerifier")
-	proto.RegisterType((*Verifiers_TryJobVerifier)(nil), "cq.config.Verifiers.TryJobVerifier")
-	proto.RegisterType((*Verifiers_TryJobVerifier_Builder)(nil), "cq.config.Verifiers.TryJobVerifier.Builder")
-	proto.RegisterType((*Verifiers_TryJobVerifier_EquivalentBuilder)(nil), "cq.config.Verifiers.TryJobVerifier.EquivalentBuilder")
-	proto.RegisterType((*Verifiers_TryJobVerifier_RetryConfig)(nil), "cq.config.Verifiers.TryJobVerifier.RetryConfig")
-	proto.RegisterType((*Verifiers_DeprecatorVerifier)(nil), "cq.config.Verifiers.DeprecatorVerifier")
-	proto.RegisterType((*Verifiers_FakeVerifier)(nil), "cq.config.Verifiers.FakeVerifier")
+	proto.RegisterType((*Verifiers_GerritCQAbility)(nil), "cq.config.Verifiers.GerritCQAbility")
+	proto.RegisterType((*Verifiers_TreeStatus)(nil), "cq.config.Verifiers.TreeStatus")
+	proto.RegisterType((*Verifiers_TryJob)(nil), "cq.config.Verifiers.TryJob")
+	proto.RegisterType((*Verifiers_TryJob_Builder)(nil), "cq.config.Verifiers.TryJob.Builder")
+	proto.RegisterType((*Verifiers_TryJob_EquivalentBuilder)(nil), "cq.config.Verifiers.TryJob.EquivalentBuilder")
+	proto.RegisterType((*Verifiers_TryJob_RetryConfig)(nil), "cq.config.Verifiers.TryJob.RetryConfig")
+	proto.RegisterType((*Verifiers_Deprecator)(nil), "cq.config.Verifiers.Deprecator")
+	proto.RegisterType((*Verifiers_Fake)(nil), "cq.config.Verifiers.Fake")
 }
 
 func init() {
@@ -1068,71 +1064,70 @@ func init() {
 }
 
 var fileDescriptor_59a2f489dbd601ec = []byte{
-	// 1049 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x55, 0xcb, 0x6e, 0xdb, 0x46,
-	0x14, 0x85, 0x64, 0x5b, 0x96, 0xae, 0x1e, 0x89, 0x27, 0x76, 0xac, 0x2a, 0x48, 0xe0, 0x38, 0x75,
-	0x63, 0xa0, 0x2d, 0x05, 0x28, 0x70, 0x51, 0xb4, 0x06, 0x0a, 0x3f, 0x12, 0x07, 0x45, 0x81, 0x24,
-	0x63, 0xa3, 0x2e, 0xb2, 0x19, 0x90, 0xd4, 0x15, 0x35, 0x09, 0xc5, 0xa1, 0x86, 0x43, 0xdb, 0x42,
-	0xff, 0xa3, 0x9b, 0xae, 0xfa, 0x01, 0xfd, 0x9e, 0x2e, 0xda, 0x55, 0xbf, 0x24, 0x98, 0x87, 0x28,
-	0x39, 0x56, 0x02, 0xef, 0x38, 0xe7, 0x9e, 0x73, 0xe7, 0xce, 0x7d, 0x11, 0xbc, 0x48, 0x78, 0xe1,
-	0x50, 0x8a, 0x11, 0xcf, 0x47, 0x9e, 0x90, 0x51, 0x37, 0xce, 0x43, 0xde, 0x0d, 0xc7, 0x5d, 0x3f,
-	0xe5, 0xdd, 0x50, 0x24, 0x03, 0x1e, 0x75, 0x2f, 0x7a, 0xdd, 0x70, 0xec, 0xa5, 0x52, 0x28, 0x41,
-	0x6a, 0xe1, 0xd8, 0xb3, 0x70, 0xe7, 0x51, 0x24, 0x44, 0x14, 0x63, 0xd7, 0x18, 0x82, 0x7c, 0xd0,
-	0xed, 0xe7, 0xd2, 0x57, 0x5c, 0x24, 0x96, 0xba, 0xfd, 0x5f, 0x09, 0x2a, 0x47, 0x86, 0x4a, 0x3c,
-	0xb8, 0xd7, 0x97, 0x3e, 0x4f, 0x78, 0x12, 0xb1, 0x4c, 0xf9, 0x52, 0x31, 0xc5, 0x47, 0xd8, 0x2e,
-	0x6d, 0x95, 0x76, 0x6b, 0x74, 0x6d, 0x6a, 0x3a, 0xd5, 0x96, 0x33, 0x3e, 0x42, 0xf2, 0x25, 0xb4,
-	0xc2, 0xb1, 0x66, 0xaa, 0x3c, 0x63, 0x43, 0x91, 0xa9, 0x76, 0xd9, 0x50, 0x1b, 0xe1, 0xf8, 0xd4,
-	0x80, 0x2f, 0x45, 0xa6, 0xc8, 0x4f, 0xd0, 0xca, 0xf2, 0x60, 0xc4, 0x15, 0x13, 0xa9, 0xbe, 0x37,
-	0x6b, 0x2f, 0x6d, 0x95, 0x76, 0xeb, 0xbd, 0xb6, 0x57, 0x04, 0xe9, 0x9d, 0x1a, 0xc2, 0x2b, 0x6b,
-	0xa7, 0xcd, 0x6c, 0xfe, 0x48, 0x7e, 0x84, 0xa6, 0xa5, 0xb1, 0x48, 0x8a, 0x3c, 0xcd, 0xda, 0xcb,
-	0x5b, 0x4b, 0xbb, 0xf5, 0xde, 0xfd, 0x39, 0xbd, 0x7d, 0xc0, 0x89, 0x36, 0xd3, 0x46, 0x38, 0x3b,
-	0x64, 0xdb, 0x43, 0x68, 0x5e, 0x73, 0x4e, 0x1e, 0x40, 0x6d, 0xe4, 0x5f, 0xb1, 0x20, 0x97, 0x99,
-	0x32, 0x4f, 0x5b, 0xa1, 0xd5, 0x91, 0x7f, 0x75, 0xa8, 0xcf, 0xe4, 0x07, 0xa8, 0x1b, 0x03, 0xeb,
-	0x63, 0xec, 0x4f, 0xcc, 0x73, 0xea, 0xbd, 0x2f, 0x3c, 0x9b, 0x42, 0x6f, 0x9a, 0x42, 0xef, 0xd8,
-	0xa5, 0x90, 0x82, 0x61, 0x1f, 0x6b, 0xf2, 0xf6, 0x1f, 0x65, 0xa8, 0xcf, 0xc5, 0x41, 0xf6, 0xa0,
-	0x12, 0xa1, 0x94, 0x5c, 0xdf, 0xa2, 0xe3, 0x7d, 0xb8, 0x38, 0x5e, 0xef, 0xc4, 0x90, 0xa8, 0x23,
-	0x93, 0x1e, 0xd4, 0x2e, 0x50, 0xf2, 0x01, 0x47, 0x99, 0xb9, 0x00, 0xd6, 0xe7, 0x94, 0xbf, 0x4e,
-	0x6d, 0x74, 0x46, 0xeb, 0xfc, 0x59, 0x82, 0x8a, 0x75, 0x43, 0xee, 0xc2, 0x52, 0x2e, 0x63, 0x57,
-	0x33, 0xfd, 0x49, 0x0e, 0xa0, 0x9a, 0x4a, 0xf1, 0x0e, 0x43, 0xa5, 0xfd, 0xe9, 0x48, 0x76, 0x3e,
-	0x1b, 0x89, 0xf7, 0xda, 0xb2, 0x69, 0x21, 0xeb, 0xec, 0xc3, 0xaa, 0x03, 0x09, 0x81, 0xe5, 0xc4,
-	0x2f, 0x9a, 0xc2, 0x7c, 0x93, 0x87, 0x00, 0x12, 0x07, 0x4c, 0x62, 0x84, 0x57, 0xa9, 0xb9, 0xa3,
-	0x46, 0x6b, 0x12, 0x07, 0xd4, 0x00, 0xdb, 0x7f, 0x35, 0xa0, 0x56, 0x84, 0x4d, 0x7e, 0x83, 0x35,
-	0xfb, 0x52, 0x16, 0x8e, 0x99, 0x1f, 0xf0, 0x98, 0xab, 0x89, 0xf1, 0x56, 0xef, 0x7d, 0xb3, 0xe8,
-	0x9d, 0x2e, 0xaa, 0xa3, 0x37, 0x07, 0x96, 0x3b, 0x35, 0xd0, 0x3b, 0xd6, 0xcd, 0xd1, 0xd8, 0x19,
-	0xc8, 0x4b, 0xa8, 0x2b, 0x89, 0xe8, 0x1a, 0xd2, 0xe5, 0xee, 0xe9, 0x42, 0x9f, 0x67, 0x12, 0xd1,
-	0xb6, 0x68, 0xe1, 0x0e, 0x54, 0x81, 0x91, 0x7d, 0x58, 0x55, 0x72, 0xc2, 0xde, 0x89, 0xc0, 0xf5,
-	0xea, 0x93, 0x4f, 0x78, 0x99, 0xfc, 0x2c, 0x82, 0xc2, 0x43, 0x45, 0x99, 0x33, 0x39, 0x01, 0xe8,
-	0x63, 0x2a, 0x31, 0xf4, 0x95, 0x90, 0xed, 0xe5, 0xcf, 0x84, 0x71, 0x5c, 0xd0, 0x66, 0x61, 0xcc,
-	0xa4, 0x64, 0x0f, 0x96, 0x07, 0xfe, 0x7b, 0x6c, 0xaf, 0x18, 0x17, 0x8f, 0x17, 0xba, 0x78, 0xe1,
-	0xbf, 0xc7, 0x42, 0x6c, 0xe8, 0x9d, 0xbf, 0x4b, 0xb0, 0xf9, 0x89, 0xa4, 0x91, 0x1d, 0x68, 0x85,
-	0x62, 0x34, 0xe2, 0x4a, 0xa1, 0x64, 0x31, 0x77, 0x23, 0x50, 0xa3, 0xcd, 0x02, 0xfd, 0x85, 0x67,
-	0x8a, 0x7c, 0xab, 0x37, 0xc1, 0x84, 0xc9, 0x3c, 0x61, 0x7e, 0x18, 0x62, 0x96, 0x59, 0xae, 0x1d,
-	0xef, 0xbb, 0x7d, 0x39, 0xa1, 0x79, 0x72, 0x60, 0x0c, 0x86, 0xbe, 0x0f, 0x0f, 0xfc, 0x38, 0x16,
-	0x97, 0xcc, 0x0d, 0xfa, 0x25, 0x57, 0x43, 0x26, 0x52, 0x4c, 0x58, 0x1f, 0x53, 0x3b, 0xef, 0x55,
-	0xba, 0x69, 0x28, 0x76, 0x18, 0xcf, 0xb9, 0x1a, 0xbe, 0x4a, 0x31, 0x39, 0xc6, 0x34, 0xeb, 0x7c,
-	0x05, 0xe4, 0x66, 0x3d, 0x6e, 0x36, 0x72, 0xe7, 0xff, 0x0a, 0xb4, 0xae, 0xa7, 0x9c, 0x9c, 0x40,
-	0x35, 0xc8, 0x79, 0xdc, 0xd7, 0xb3, 0x62, 0xa7, 0xec, 0xeb, 0x5b, 0x54, 0xca, 0x3b, 0xb4, 0x1a,
-	0x5a, 0x88, 0x09, 0x85, 0x86, 0x44, 0x5d, 0x73, 0x2b, 0x75, 0xcd, 0xd3, 0xbd, 0x8d, 0x33, 0xaa,
-	0x75, 0x76, 0x8c, 0x68, 0x5d, 0xce, 0x0e, 0x9d, 0x7f, 0xca, 0xb0, 0xea, 0x6e, 0x5a, 0x38, 0x36,
-	0x4f, 0xa0, 0xd9, 0xe7, 0x99, 0x1f, 0xc4, 0xc8, 0x24, 0xe6, 0x19, 0x9a, 0x4b, 0xab, 0xb4, 0xe1,
-	0x40, 0xaa, 0x31, 0xf2, 0x18, 0x1a, 0x4a, 0xf2, 0x28, 0x42, 0x89, 0x7d, 0x16, 0x4c, 0x4c, 0x2e,
-	0x6b, 0xb4, 0x5e, 0x60, 0x87, 0x13, 0xf2, 0x0c, 0x36, 0xf0, 0x2a, 0x45, 0xc9, 0x47, 0x98, 0x28,
-	0x96, 0xa2, 0x0c, 0x31, 0x51, 0x7e, 0x84, 0xa6, 0xf5, 0xca, 0x74, 0x7d, 0x66, 0x7c, 0x5d, 0xd8,
-	0xc8, 0x5b, 0x68, 0xe2, 0x38, 0xe7, 0x17, 0x7e, 0xac, 0x45, 0x4a, 0xb8, 0x26, 0xdb, 0xbb, 0xcd,
-	0x8b, 0x9f, 0x17, 0xc2, 0x69, 0x22, 0x1b, 0x33, 0x5f, 0x67, 0x82, 0x3c, 0x85, 0x3b, 0xb1, 0x08,
-	0xcd, 0x86, 0x9c, 0x2e, 0x85, 0x8a, 0x59, 0x0a, 0xad, 0x29, 0x6c, 0x37, 0x03, 0xf9, 0x0e, 0x36,
-	0x3f, 0x22, 0x32, 0xbc, 0x0a, 0xe3, 0xbc, 0x8f, 0xed, 0x55, 0x23, 0xd8, 0xb8, 0x2e, 0x78, 0x6e,
-	0x8d, 0x9d, 0xdf, 0x61, 0xed, 0x46, 0x0c, 0x0b, 0x53, 0xfc, 0x08, 0x60, 0x2e, 0x1f, 0x65, 0x93,
-	0x8f, 0x39, 0x84, 0xf4, 0x60, 0x43, 0x5c, 0x26, 0x28, 0xd9, 0xe5, 0x90, 0x2b, 0xd4, 0x3d, 0x6e,
-	0xff, 0x31, 0x2e, 0xcd, 0xf7, 0x8c, 0xf1, 0x7c, 0x6a, 0x33, 0x5b, 0xb2, 0xf3, 0x6f, 0x09, 0xea,
-	0x73, 0x35, 0xd7, 0x15, 0xca, 0x78, 0x12, 0xc5, 0xc8, 0xc6, 0xb9, 0x50, 0xbe, 0xfb, 0xa7, 0xd4,
-	0x2d, 0xf6, 0x46, 0x43, 0x9a, 0x12, 0xc5, 0x22, 0xf0, 0x63, 0x47, 0x29, 0x5b, 0x8a, 0xc5, 0x2c,
-	0x65, 0x07, 0x5a, 0x03, 0x9f, 0xc7, 0xb9, 0x44, 0x76, 0x89, 0x3c, 0x1a, 0x2a, 0x13, 0xc2, 0x0a,
-	0x6d, 0x3a, 0xf4, 0xdc, 0x80, 0xe4, 0x7b, 0x68, 0x2b, 0xe9, 0x27, 0x19, 0xd7, 0x55, 0xfb, 0x48,
-	0xb0, 0x6c, 0x04, 0xf7, 0x0b, 0xfb, 0x8b, 0x6b, 0xca, 0x1d, 0x68, 0xe9, 0xbf, 0xb9, 0xc8, 0xd5,
-	0x94, 0xbf, 0x62, 0x2f, 0x70, 0xa8, 0xa5, 0x75, 0xd6, 0x81, 0xdc, 0xdc, 0x4a, 0x1d, 0x06, 0x8d,
-	0xf9, 0x45, 0xb3, 0x30, 0xd7, 0x3b, 0xd0, 0xc2, 0x0b, 0x4c, 0x54, 0xee, 0xc7, 0x66, 0x05, 0xa3,
-	0x5b, 0x17, 0xcd, 0x29, 0xaa, 0x07, 0x1c, 0xc9, 0x3a, 0xac, 0xd8, 0x9f, 0xab, 0x7d, 0x9f, 0x3d,
-	0x1c, 0x56, 0xdf, 0x56, 0x6c, 0xd7, 0x05, 0x15, 0xf3, 0x97, 0x7d, 0xf6, 0x21, 0x00, 0x00, 0xff,
-	0xff, 0xda, 0xda, 0xc6, 0x40, 0xf3, 0x08, 0x00, 0x00,
+	// 1039 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x55, 0xcd, 0x6e, 0x1b, 0x37,
+	0x17, 0x85, 0x64, 0x59, 0x96, 0xee, 0x48, 0x72, 0xcc, 0xd8, 0x89, 0x3e, 0x19, 0xf1, 0xe7, 0x3a,
+	0x31, 0xe2, 0x8d, 0x47, 0x80, 0xd2, 0x16, 0x45, 0x1b, 0x20, 0xf5, 0x4f, 0x92, 0x22, 0x28, 0x10,
+	0x87, 0x36, 0x6a, 0xa0, 0x1b, 0x62, 0x34, 0xba, 0x1a, 0x31, 0x19, 0x0d, 0x47, 0x1c, 0x8e, 0x6d,
+	0xa1, 0xef, 0xd1, 0x4d, 0xd7, 0x7d, 0x88, 0x6e, 0xfb, 0x02, 0x7d, 0x80, 0xf6, 0x61, 0x0a, 0xfe,
+	0x68, 0x24, 0x3b, 0xaa, 0x57, 0x33, 0x3c, 0xf7, 0x1c, 0xf2, 0xf2, 0xf0, 0x5e, 0x12, 0xfc, 0x48,
+	0xf8, 0xe1, 0x48, 0x8a, 0x31, 0xcf, 0xc7, 0xbe, 0x90, 0x51, 0x37, 0xce, 0x43, 0xde, 0x0d, 0x27,
+	0xdd, 0x20, 0xe5, 0xdd, 0x50, 0x24, 0x43, 0x1e, 0x75, 0xaf, 0x7a, 0xdd, 0x70, 0xe2, 0xa7, 0x52,
+	0x28, 0x41, 0xea, 0xe1, 0xc4, 0xb7, 0x70, 0x67, 0x27, 0x12, 0x22, 0x8a, 0xb1, 0x6b, 0x02, 0xfd,
+	0x7c, 0xd8, 0x1d, 0xe4, 0x32, 0x50, 0x5c, 0x24, 0x96, 0xba, 0xf7, 0x4f, 0x09, 0xaa, 0x27, 0x86,
+	0x4a, 0x7c, 0x78, 0x38, 0x90, 0x01, 0x4f, 0x78, 0x12, 0xb1, 0x4c, 0x05, 0x52, 0x31, 0xc5, 0xc7,
+	0xd8, 0x2e, 0xed, 0x96, 0x0e, 0xea, 0x74, 0x63, 0x16, 0x3a, 0xd7, 0x91, 0x0b, 0x3e, 0x46, 0xf2,
+	0x0c, 0x5a, 0xe1, 0x44, 0x33, 0x55, 0x9e, 0xb1, 0x91, 0xc8, 0x54, 0xbb, 0x6c, 0xa8, 0x8d, 0x70,
+	0x72, 0x6e, 0xc0, 0x1f, 0x44, 0xa6, 0xc8, 0x2b, 0x68, 0x65, 0x79, 0x7f, 0xcc, 0x15, 0x13, 0xa9,
+	0x5e, 0x37, 0x6b, 0xaf, 0xec, 0x96, 0x0e, 0xbc, 0x5e, 0xdb, 0x2f, 0x92, 0xf4, 0xcf, 0x0d, 0xe1,
+	0xbd, 0x8d, 0xd3, 0x66, 0xb6, 0x38, 0x24, 0xdf, 0x41, 0xd3, 0xd2, 0x58, 0x24, 0x45, 0x9e, 0x66,
+	0xed, 0xca, 0xee, 0xca, 0x81, 0xd7, 0x7b, 0xb4, 0xa0, 0xb7, 0x1b, 0x78, 0xab, 0xc3, 0xb4, 0x11,
+	0xce, 0x07, 0xd9, 0xde, 0x08, 0x9a, 0xb7, 0x26, 0x27, 0xdb, 0x50, 0x1f, 0x07, 0x37, 0xac, 0x9f,
+	0xcb, 0x4c, 0x99, 0xad, 0xad, 0xd2, 0xda, 0x38, 0xb8, 0x39, 0xd6, 0x63, 0xf2, 0x2d, 0x78, 0x26,
+	0xc0, 0x06, 0x18, 0x07, 0x53, 0xb3, 0x1d, 0xaf, 0xf7, 0x3f, 0xdf, 0x5a, 0xe8, 0xcf, 0x2c, 0xf4,
+	0x4f, 0x9d, 0x85, 0x14, 0x0c, 0xfb, 0x54, 0x93, 0xf7, 0x7e, 0x2d, 0x83, 0xb7, 0x90, 0x07, 0xf9,
+	0x0a, 0xaa, 0x11, 0x4a, 0xc9, 0xf5, 0x2a, 0x3a, 0xdf, 0x27, 0xcb, 0xf3, 0xf5, 0xdf, 0x1a, 0x12,
+	0x75, 0x64, 0xd2, 0x83, 0xfa, 0x15, 0x4a, 0x3e, 0xe4, 0x28, 0x33, 0x97, 0xc0, 0xe6, 0x82, 0xf2,
+	0xa7, 0x59, 0x8c, 0xce, 0x69, 0x9d, 0xdf, 0x4a, 0x50, 0xb5, 0xd3, 0x90, 0x07, 0xb0, 0x92, 0xcb,
+	0xd8, 0x9d, 0x99, 0xfe, 0x25, 0x47, 0x50, 0x4b, 0xa5, 0xf8, 0x88, 0xa1, 0xd2, 0xf3, 0xe9, 0x4c,
+	0xf6, 0xef, 0xcd, 0xc4, 0x3f, 0xb3, 0x6c, 0x5a, 0xc8, 0x3a, 0x2f, 0x61, 0xcd, 0x81, 0x84, 0x40,
+	0x25, 0x09, 0x8a, 0xa2, 0x30, 0xff, 0xe4, 0x09, 0x80, 0xc4, 0x21, 0x93, 0x18, 0xe1, 0x4d, 0x6a,
+	0xd6, 0xa8, 0xd3, 0xba, 0xc4, 0x21, 0x35, 0xc0, 0xde, 0x1f, 0x1e, 0xd4, 0x8b, 0xb4, 0xc9, 0x19,
+	0x6c, 0xd8, 0x9d, 0xb2, 0x70, 0xc2, 0x82, 0x3e, 0x8f, 0xb9, 0x9a, 0x9a, 0xd9, 0xbc, 0xde, 0xb3,
+	0x65, 0xfb, 0x74, 0x59, 0x9d, 0x7c, 0x38, 0xb2, 0x5c, 0xba, 0x6e, 0xe5, 0x27, 0x13, 0x07, 0x90,
+	0xef, 0xc1, 0x53, 0x12, 0xd1, 0x15, 0xa2, 0xf3, 0xec, 0xff, 0x4b, 0xe7, 0xba, 0x90, 0x88, 0xb6,
+	0x34, 0x29, 0xa8, 0xe2, 0x9f, 0x7c, 0x09, 0x6b, 0x4a, 0x4e, 0xd9, 0x47, 0xd1, 0x77, 0xb5, 0xb9,
+	0xfd, 0x1f, 0xea, 0xe9, 0x3b, 0xd1, 0xa7, 0x55, 0x65, 0xbe, 0xe4, 0x15, 0xc0, 0x00, 0x53, 0x89,
+	0x61, 0xa0, 0x84, 0x6c, 0x57, 0xee, 0x59, 0xf6, 0xb4, 0xa0, 0xd1, 0x05, 0x09, 0x39, 0x84, 0xca,
+	0x30, 0xf8, 0x84, 0xed, 0x55, 0x57, 0x66, 0xcb, 0xa4, 0x6f, 0x82, 0x4f, 0x48, 0x0d, 0xad, 0xf3,
+	0x7b, 0x09, 0xd6, 0xef, 0x98, 0x41, 0xf6, 0xa1, 0x15, 0x8a, 0xf1, 0x98, 0x2b, 0x85, 0x92, 0xc5,
+	0xdc, 0x95, 0x74, 0x9d, 0x36, 0x0b, 0xf4, 0x47, 0x9e, 0x29, 0x72, 0xa8, 0x3b, 0x7b, 0xca, 0x64,
+	0x9e, 0xb0, 0x20, 0x0c, 0x31, 0xcb, 0x2c, 0xd7, 0xb6, 0xeb, 0x83, 0x81, 0x9c, 0xd2, 0x3c, 0x39,
+	0x32, 0x01, 0x43, 0x7f, 0x09, 0xdb, 0x41, 0x1c, 0x8b, 0x6b, 0xe6, 0x1a, 0xf7, 0x9a, 0xab, 0x11,
+	0x13, 0x29, 0x26, 0x6c, 0x80, 0xa9, 0xed, 0xdf, 0x1a, 0x7d, 0x6c, 0x28, 0xb6, 0xb9, 0x2e, 0xb9,
+	0x1a, 0xbd, 0x4f, 0x31, 0x39, 0xc5, 0x34, 0xeb, 0xec, 0x00, 0xcc, 0x7d, 0xfe, 0xbc, 0x20, 0x3b,
+	0x7f, 0x56, 0xa1, 0x7a, 0x31, 0xb3, 0xb0, 0xd6, 0xcf, 0x79, 0x3c, 0xd0, 0xb5, 0x6e, 0xbb, 0xe4,
+	0xe9, 0x3d, 0xce, 0xfb, 0xc7, 0x96, 0x4b, 0x0b, 0x11, 0x79, 0x07, 0x0d, 0x89, 0xfa, 0xec, 0xac,
+	0xc4, 0x1d, 0xfe, 0xf3, 0xfb, 0x26, 0xa1, 0x9a, 0x6f, 0xcb, 0x9e, 0x7a, 0x72, 0x3e, 0xe8, 0xfc,
+	0x55, 0x86, 0x35, 0xb7, 0xc2, 0xd2, 0x32, 0x7f, 0x0a, 0xcd, 0x01, 0xcf, 0x82, 0x7e, 0x8c, 0x4c,
+	0x62, 0x9e, 0xa1, 0x59, 0xac, 0x46, 0x1b, 0x0e, 0xa4, 0x1a, 0x23, 0x5f, 0x40, 0x43, 0x49, 0x1e,
+	0x45, 0x28, 0x71, 0xc0, 0xfa, 0x53, 0xe3, 0x55, 0x9d, 0x7a, 0x05, 0x76, 0x3c, 0x25, 0x2f, 0x60,
+	0x0b, 0x6f, 0x52, 0x94, 0x7c, 0x8c, 0x89, 0x62, 0x29, 0xca, 0x10, 0x13, 0x15, 0x44, 0x68, 0x4a,
+	0xa8, 0x4c, 0x37, 0xe7, 0xc1, 0xb3, 0x22, 0x46, 0x28, 0x34, 0x71, 0x92, 0xf3, 0xab, 0x20, 0xd6,
+	0x22, 0x25, 0x5c, 0xd1, 0x1c, 0xde, 0xb7, 0xd3, 0xd7, 0x85, 0x60, 0x66, 0x5c, 0x63, 0x3e, 0xc7,
+	0x85, 0x20, 0xcf, 0x61, 0x3d, 0x16, 0xa1, 0xb9, 0xc9, 0x66, 0xcd, 0x5b, 0x35, 0xcd, 0xdb, 0x9a,
+	0xc1, 0xb6, 0x83, 0xc9, 0xd7, 0xf0, 0xf8, 0x0e, 0x91, 0xe1, 0x4d, 0x18, 0xe7, 0x03, 0x6c, 0xaf,
+	0x19, 0xc1, 0xd6, 0x6d, 0xc1, 0x6b, 0x1b, 0xec, 0xfc, 0x02, 0x1b, 0x9f, 0xe5, 0xb0, 0xd4, 0xda,
+	0x1d, 0x80, 0x05, 0x1f, 0xca, 0xc6, 0x87, 0x05, 0x84, 0xf4, 0x60, 0x4b, 0x5c, 0x27, 0x28, 0xd9,
+	0xf5, 0x88, 0x2b, 0xd4, 0xb5, 0x6b, 0xdf, 0x02, 0x67, 0xef, 0x43, 0x13, 0xbc, 0x9c, 0xc5, 0xcc,
+	0x6d, 0xd6, 0xf9, 0xbb, 0x04, 0xde, 0xc2, 0x59, 0xeb, 0x93, 0xc9, 0x78, 0x12, 0xc5, 0xc8, 0x26,
+	0xb9, 0x50, 0x81, 0xbb, 0xfb, 0x3d, 0x8b, 0x7d, 0xd0, 0x90, 0xa6, 0x44, 0xb1, 0xe8, 0x07, 0xb1,
+	0xa3, 0x94, 0x2d, 0xc5, 0x62, 0x96, 0xb2, 0x0f, 0xad, 0x61, 0xc0, 0xe3, 0x5c, 0x22, 0xbb, 0x46,
+	0x1e, 0x8d, 0x94, 0x49, 0x61, 0x95, 0x36, 0x1d, 0x7a, 0x69, 0x40, 0xf2, 0x0d, 0xb4, 0x95, 0x0c,
+	0x92, 0x8c, 0xeb, 0xd3, 0xba, 0x23, 0xa8, 0x18, 0xc1, 0xa3, 0x22, 0xfe, 0xe6, 0x96, 0x72, 0x1f,
+	0x5a, 0xfa, 0xd5, 0x15, 0xb9, 0x9a, 0xf1, 0x57, 0xed, 0x02, 0x0e, 0xb5, 0xb4, 0x4e, 0x03, 0x60,
+	0x7e, 0xab, 0x74, 0x2e, 0xa1, 0xa2, 0x2f, 0x8a, 0xa5, 0xde, 0xee, 0x43, 0x0b, 0xaf, 0x30, 0x51,
+	0x79, 0x10, 0x9b, 0x2b, 0x12, 0x5d, 0xdb, 0x37, 0x67, 0xa8, 0x6e, 0x54, 0x24, 0x9b, 0xb0, 0x6a,
+	0x1f, 0x3d, 0xbb, 0x1f, 0x3b, 0x38, 0xae, 0xfd, 0x5c, 0xb5, 0xd5, 0xd5, 0xaf, 0x9a, 0xd7, 0xef,
+	0xc5, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x1f, 0xf3, 0xf5, 0xd0, 0x8b, 0x08, 0x00, 0x00,
 }
