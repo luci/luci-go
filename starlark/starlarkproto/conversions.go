@@ -54,11 +54,11 @@ func getAssigner(typ reflect.Type, sv starlark.Value) (func(reflect.Value) error
 
 	switch val := sv.(type) {
 	case starlark.NoneType:
-		return nil, fmt.Errorf("can't assign nil to a value of kind %q", typ.Kind())
+		return nil, fmt.Errorf("can't assign nil to %s", typDesc(typ))
 
 	case starlark.Bool:
 		if typ.Kind() != reflect.Bool {
-			return nil, fmt.Errorf("can't assign boolean to a value of kind %q", typ.Kind())
+			return nil, fmt.Errorf("can't assign boolean to %s", typDesc(typ))
 		}
 		return func(gv reflect.Value) error {
 			gv.SetBool(bool(val))
@@ -67,7 +67,7 @@ func getAssigner(typ reflect.Type, sv starlark.Value) (func(reflect.Value) error
 
 	case starlark.Float:
 		if typ.Kind() != reflect.Float64 && typ.Kind() != reflect.Float32 {
-			return nil, fmt.Errorf("can't assign float to a value of kind %q", typ.Kind())
+			return nil, fmt.Errorf("can't assign float to %s", typDesc(typ))
 		}
 		return func(gv reflect.Value) error {
 			gv.SetFloat(float64(val))
@@ -82,7 +82,7 @@ func getAssigner(typ reflect.Type, sv starlark.Value) (func(reflect.Value) error
 		// Otherwise check that assigning to an int, and the value is in range.
 		intRange, ok := intRanges[typ.Kind()]
 		if !ok {
-			return nil, fmt.Errorf("can't assign integer to a value of kind %q", typ.Kind())
+			return nil, fmt.Errorf("can't assign integer to %s", typDesc(typ))
 		}
 		if intRange.signed {
 			asInt64, ok := val.Int64()
@@ -106,7 +106,7 @@ func getAssigner(typ reflect.Type, sv starlark.Value) (func(reflect.Value) error
 
 	case starlark.String:
 		if typ.Kind() != reflect.String {
-			return nil, fmt.Errorf("can't assign string to a value of kind %q", typ.Kind())
+			return nil, fmt.Errorf("can't assign string to %s", typDesc(typ))
 		}
 		return func(gv reflect.Value) error {
 			gv.SetString(string(val))
@@ -115,7 +115,7 @@ func getAssigner(typ reflect.Type, sv starlark.Value) (func(reflect.Value) error
 
 	case *starlark.List, starlark.Tuple:
 		if typ.Kind() != reflect.Slice {
-			return nil, fmt.Errorf("can't assign list to a value of kind %q", typ.Kind())
+			return nil, fmt.Errorf("can't assign list to %s", typDesc(typ))
 		}
 		return func(gv reflect.Value) error {
 			slice := reflect.MakeSlice(gv.Type(), 0, 0) // ~ slice := []T{}
@@ -142,11 +142,11 @@ func getAssigner(typ reflect.Type, sv starlark.Value) (func(reflect.Value) error
 	case *Message:
 		// 'typ' is expected to be *Struct{}
 		if typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Struct {
-			return nil, fmt.Errorf("can't assign proto struct to a value of type %q", typ)
+			return nil, fmt.Errorf("can't assign proto struct to %s", typDesc(typ))
 		}
 		rightTyp := val.MessageType().Type() // also should be *Struct{}
 		if typ != rightTyp {
-			return nil, fmt.Errorf("incompatible types %q and %q", typ.Elem().Name(), rightTyp.Elem().Name())
+			return nil, fmt.Errorf("can't assign %s to %s", typDesc(rightTyp), typDesc(typ))
 		}
 		return func(gv reflect.Value) error {
 			rightMsg, err := val.ToProto()
@@ -154,6 +154,32 @@ func getAssigner(typ reflect.Type, sv starlark.Value) (func(reflect.Value) error
 				return err
 			}
 			gv.Set(reflect.ValueOf(rightMsg))
+			return nil
+		}, nil
+
+	case *starlark.Dict:
+		// 'typ' is expected to be a map.
+		if typ.Kind() != reflect.Map {
+			return nil, fmt.Errorf("can't assign a dict to %s", typDesc(typ))
+		}
+		return func(gv reflect.Value) error {
+			mapKeyTyp := typ.Key()
+			mapValTyp := typ.Elem()
+
+			m := reflect.MakeMapWithSize(typ, val.Len()) // ~ m := make(map[k]v, len(val))
+			for _, kv := range val.Items() {
+				k := reflect.New(mapKeyTyp).Elem()
+				if err := assign(k, kv[0]); err != nil {
+					return fmt.Errorf("bad key %s - %s", kv[0], err)
+				}
+				v := reflect.New(mapValTyp).Elem()
+				if err := assign(v, kv[1]); err != nil {
+					return fmt.Errorf("bad value at key %s - %s", kv[0], err)
+				}
+				m.SetMapIndex(k, v)
+			}
+
+			gv.Set(m)
 			return nil
 		}, nil
 	}
@@ -176,4 +202,17 @@ func assign(gv reflect.Value, sv starlark.Value) error {
 		return err
 	}
 	return assigner(gv)
+}
+
+// typDesc returns a human readable description of the type, for error messages.
+//
+// Recognize proto types and report their proto names. Otherwise just reports
+// typ's kind.
+func typDesc(typ reflect.Type) string {
+	if typ.Kind() == reflect.Ptr {
+		if msgT, err := GetMessageType(typ); err == nil {
+			return fmt.Sprintf("a %s message", msgT.Name())
+		}
+	}
+	return fmt.Sprintf("a value of kind %q", typ.Kind())
 }

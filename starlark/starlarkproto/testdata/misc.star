@@ -47,9 +47,9 @@ assert.true(m1 == m1)
 assert.true(m1 != m2)
 
 # Assigning totally unsupported types to fields fails.
-def set_dict():
-  m.i = {'a': 'b'}
-assert.fails(set_dict, 'don\'t know how to handle starlark value of type "dict"')
+def set_unrelated():
+  m.i = set([])
+assert.fails(set_unrelated, 'don\'t know how to handle starlark value of type "set"')
 
 # Grabbing unknown field fails.
 def get_unknown():

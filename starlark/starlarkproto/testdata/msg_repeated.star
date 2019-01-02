@@ -35,7 +35,7 @@ assert.eq(m.rep[0].i, 456)
 m.rep = [testprotos.Simple(i=456), testprotos.MessageFields()]
 def serialize():
   proto.to_pbtext(m)
-assert.fails(serialize, 'list item #1 - incompatible types "Simple" and "MessageFields"')
+assert.fails(serialize, 'list item #1 - can\'t assign a testprotos.MessageFields message to a testprotos.Simple message')
 
 # Serialization to text proto works.
 text = proto.to_pbtext(testprotos.MessageFields(
