@@ -37,6 +37,7 @@ func (m *MockGerritClient) EXPECT() *MockGerritClientMockRecorder {
 
 // GetChange mocks base method
 func (m *MockGerritClient) GetChange(ctx context.Context, in *GetChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
@@ -49,12 +50,14 @@ func (m *MockGerritClient) GetChange(ctx context.Context, in *GetChangeRequest, 
 
 // GetChange indicates an expected call of GetChange
 func (mr *MockGerritClientMockRecorder) GetChange(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritClient)(nil).GetChange), varargs...)
 }
 
 // CreateChange mocks base method
 func (m *MockGerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
@@ -67,12 +70,14 @@ func (m *MockGerritClient) CreateChange(ctx context.Context, in *CreateChangeReq
 
 // CreateChange indicates an expected call of CreateChange
 func (mr *MockGerritClientMockRecorder) CreateChange(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateChange", reflect.TypeOf((*MockGerritClient)(nil).CreateChange), varargs...)
 }
 
 // ChangeEditFileContent mocks base method
 func (m *MockGerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
@@ -85,12 +90,14 @@ func (m *MockGerritClient) ChangeEditFileContent(ctx context.Context, in *Change
 
 // ChangeEditFileContent indicates an expected call of ChangeEditFileContent
 func (mr *MockGerritClientMockRecorder) ChangeEditFileContent(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditFileContent", reflect.TypeOf((*MockGerritClient)(nil).ChangeEditFileContent), varargs...)
 }
 
 // ChangeEditPublish mocks base method
 func (m *MockGerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
@@ -103,12 +110,14 @@ func (m *MockGerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEdit
 
 // ChangeEditPublish indicates an expected call of ChangeEditPublish
 func (mr *MockGerritClientMockRecorder) ChangeEditPublish(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditPublish", reflect.TypeOf((*MockGerritClient)(nil).ChangeEditPublish), varargs...)
 }
 
 // SetReview mocks base method
 func (m *MockGerritClient) SetReview(ctx context.Context, in *SetReviewRequest, opts ...grpc.CallOption) (*ReviewResult, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
@@ -121,12 +130,14 @@ func (m *MockGerritClient) SetReview(ctx context.Context, in *SetReviewRequest, 
 
 // SetReview indicates an expected call of SetReview
 func (mr *MockGerritClientMockRecorder) SetReview(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReview", reflect.TypeOf((*MockGerritClient)(nil).SetReview), varargs...)
 }
 
 // SubmitChange mocks base method
 func (m *MockGerritClient) SubmitChange(ctx context.Context, in *SubmitChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
@@ -139,12 +150,14 @@ func (m *MockGerritClient) SubmitChange(ctx context.Context, in *SubmitChangeReq
 
 // SubmitChange indicates an expected call of SubmitChange
 func (mr *MockGerritClientMockRecorder) SubmitChange(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitChange", reflect.TypeOf((*MockGerritClient)(nil).SubmitChange), varargs...)
 }
 
 // AbandonChange mocks base method
 func (m *MockGerritClient) AbandonChange(ctx context.Context, in *AbandonChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
@@ -157,6 +170,7 @@ func (m *MockGerritClient) AbandonChange(ctx context.Context, in *AbandonChangeR
 
 // AbandonChange indicates an expected call of AbandonChange
 func (mr *MockGerritClientMockRecorder) AbandonChange(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritClient)(nil).AbandonChange), varargs...)
 }
@@ -186,6 +200,7 @@ func (m *MockGerritServer) EXPECT() *MockGerritServerMockRecorder {
 
 // GetChange mocks base method
 func (m *MockGerritServer) GetChange(arg0 context.Context, arg1 *GetChangeRequest) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChange", arg0, arg1)
 	ret0, _ := ret[0].(*ChangeInfo)
 	ret1, _ := ret[1].(error)
@@ -194,11 +209,13 @@ func (m *MockGerritServer) GetChange(arg0 context.Context, arg1 *GetChangeReques
 
 // GetChange indicates an expected call of GetChange
 func (mr *MockGerritServerMockRecorder) GetChange(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritServer)(nil).GetChange), arg0, arg1)
 }
 
 // CreateChange mocks base method
 func (m *MockGerritServer) CreateChange(arg0 context.Context, arg1 *CreateChangeRequest) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateChange", arg0, arg1)
 	ret0, _ := ret[0].(*ChangeInfo)
 	ret1, _ := ret[1].(error)
@@ -207,11 +224,13 @@ func (m *MockGerritServer) CreateChange(arg0 context.Context, arg1 *CreateChange
 
 // CreateChange indicates an expected call of CreateChange
 func (mr *MockGerritServerMockRecorder) CreateChange(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateChange", reflect.TypeOf((*MockGerritServer)(nil).CreateChange), arg0, arg1)
 }
 
 // ChangeEditFileContent mocks base method
 func (m *MockGerritServer) ChangeEditFileContent(arg0 context.Context, arg1 *ChangeEditFileContentRequest) (*empty.Empty, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeEditFileContent", arg0, arg1)
 	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
@@ -220,11 +239,13 @@ func (m *MockGerritServer) ChangeEditFileContent(arg0 context.Context, arg1 *Cha
 
 // ChangeEditFileContent indicates an expected call of ChangeEditFileContent
 func (mr *MockGerritServerMockRecorder) ChangeEditFileContent(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditFileContent", reflect.TypeOf((*MockGerritServer)(nil).ChangeEditFileContent), arg0, arg1)
 }
 
 // ChangeEditPublish mocks base method
 func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeEditPublishRequest) (*empty.Empty, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeEditPublish", arg0, arg1)
 	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
@@ -233,11 +254,13 @@ func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeE
 
 // ChangeEditPublish indicates an expected call of ChangeEditPublish
 func (mr *MockGerritServerMockRecorder) ChangeEditPublish(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditPublish", reflect.TypeOf((*MockGerritServer)(nil).ChangeEditPublish), arg0, arg1)
 }
 
 // SetReview mocks base method
 func (m *MockGerritServer) SetReview(arg0 context.Context, arg1 *SetReviewRequest) (*ReviewResult, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetReview", arg0, arg1)
 	ret0, _ := ret[0].(*ReviewResult)
 	ret1, _ := ret[1].(error)
@@ -246,11 +269,13 @@ func (m *MockGerritServer) SetReview(arg0 context.Context, arg1 *SetReviewReques
 
 // SetReview indicates an expected call of SetReview
 func (mr *MockGerritServerMockRecorder) SetReview(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReview", reflect.TypeOf((*MockGerritServer)(nil).SetReview), arg0, arg1)
 }
 
 // SubmitChange mocks base method
 func (m *MockGerritServer) SubmitChange(arg0 context.Context, arg1 *SubmitChangeRequest) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitChange", arg0, arg1)
 	ret0, _ := ret[0].(*ChangeInfo)
 	ret1, _ := ret[1].(error)
@@ -259,11 +284,13 @@ func (m *MockGerritServer) SubmitChange(arg0 context.Context, arg1 *SubmitChange
 
 // SubmitChange indicates an expected call of SubmitChange
 func (mr *MockGerritServerMockRecorder) SubmitChange(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitChange", reflect.TypeOf((*MockGerritServer)(nil).SubmitChange), arg0, arg1)
 }
 
 // AbandonChange mocks base method
 func (m *MockGerritServer) AbandonChange(arg0 context.Context, arg1 *AbandonChangeRequest) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AbandonChange", arg0, arg1)
 	ret0, _ := ret[0].(*ChangeInfo)
 	ret1, _ := ret[1].(error)
@@ -272,5 +299,6 @@ func (m *MockGerritServer) AbandonChange(arg0 context.Context, arg1 *AbandonChan
 
 // AbandonChange indicates an expected call of AbandonChange
 func (mr *MockGerritServerMockRecorder) AbandonChange(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritServer)(nil).AbandonChange), arg0, arg1)
 }

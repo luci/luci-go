@@ -134,17 +134,19 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 }
 
 type changeInput struct {
-	Project string `json:"project"`
-	Branch  string `json:"branch"`
-	Subject string `json:"subject"`
+	Project    string `json:"project"`
+	Branch     string `json:"branch"`
+	Subject    string `json:"subject"`
+	BaseCommit string `json:"base_commit"`
 }
 
 func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
 	var resp changeInfo
 	data := &changeInput{
-		Project: req.Project,
-		Branch:  req.Ref,
-		Subject: req.Subject,
+		Project:    req.Project,
+		Branch:     req.Ref,
+		Subject:    req.Subject,
+		BaseCommit: req.BaseCommit,
 	}
 
 	if _, err := c.call(ctx, "POST", "/changes/", url.Values{}, data, &resp, http.StatusCreated); err != nil {
