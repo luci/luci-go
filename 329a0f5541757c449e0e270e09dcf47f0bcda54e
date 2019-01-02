@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ce508cfa_1ba528a7",
+        "filename": "starlark/starlarkproto/conversions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-02T21:02:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "045accb6_86e317f9",
+      "range": {
+        "startLine": 163,
+        "startChar": 47,
+        "endLine": 163,
+        "endChar": 74
+      },
+      "revId": "329a0f5541757c449e0e270e09dcf47f0bcda54e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bb2641a2_4a00e061",
         "filename": "starlark/starlarkproto/testdata/msg.star",
         "patchSetId": 1
