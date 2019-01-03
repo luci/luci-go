@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "aed75b9c_fedac098",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-03T22:57:14Z",
+      "side": 1,
+      "message": "this confused me. nit: Edges",
+      "range": {
+        "startLine": 24,
+        "startChar": 2,
+        "endLine": 24,
+        "endChar": 19
+      },
+      "revId": "9a836139b815b240933603b51f51f96e849f9ba7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "155c83c6_a8b43a7a",
         "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
         "patchSetId": 2
@@ -19,6 +42,23 @@
         "endLine": 113,
         "endChar": 9
       },
+      "revId": "9a836139b815b240933603b51f51f96e849f9ba7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5daf5e81_3c236397",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder_group.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-03T22:57:14Z",
+      "side": 1,
+      "message": "will this be used in milo? builder refs in milo have \"category\" field. It is critical to express builder hierarchy on UI.",
       "revId": "9a836139b815b240933603b51f51f96e849f9ba7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
