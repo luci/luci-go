@@ -34,8 +34,9 @@ type State struct {
 	Inputs  Inputs            // all inputs, exactly as passed to Generate.
 	Configs map[string]string // all generated config files, populated at the end
 
-	errors   errors.MultiError // all errors emitted during the generation (if any)
-	seenErrs stringset.Set     // set of all string backtraces in 'errors', for deduping
+	errors     errors.MultiError // all errors emitted during the generation (if any)
+	seenErrs   stringset.Set     // set of all string backtraces in 'errors', for deduping
+	failOnErrs bool              // if true, 'emit_error' aborts the execution
 
 	generators generators  // callbacks that generate config files based on state
 	graph      graph.Graph // the graph with config entities defined so far
