@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "faf8a933_a2dd6217",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-03T23:38:50Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2515cef8_834a82fc",
+      "range": {
+        "startLine": 2,
+        "startChar": 6,
+        "endLine": 2,
+        "endChar": 15
+      },
+      "revId": "3b361e3eda5e0b88268f36ca7e3c266984a00ff9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "67a99dd1_a3be49e2",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "58945101_29e4ce0d",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-03T23:38:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67a99dd1_a3be49e2",
+      "range": {
+        "startLine": 33,
+        "startChar": 10,
+        "endLine": 33,
+        "endChar": 26
+      },
+      "revId": "3b361e3eda5e0b88268f36ca7e3c266984a00ff9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee7cba96_6d43ffde",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 5
@@ -68,6 +116,30 @@
       "revId": "3b361e3eda5e0b88268f36ca7e3c266984a00ff9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58a392ca_a05266a3",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-03T23:38:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee7cba96_6d43ffde",
+      "range": {
+        "startLine": 446,
+        "startChar": 24,
+        "endLine": 446,
+        "endChar": 32
+      },
+      "revId": "3b361e3eda5e0b88268f36ca7e3c266984a00ff9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
