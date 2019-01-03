@@ -97,6 +97,9 @@ def _children(parent, kind=None, order_by=_KEY_ORDER):
   """Returns direct children of a node (given by its key), optionally filtering
   them by kind.
 
+  Depending on 'order_by', the children are either ordered lexicographically by
+  their keys or by the order edges to them were defined.
+
   Fails if called not from a generator callback: a graph under construction
   can't be queried.
 
@@ -145,6 +148,9 @@ def _parents(child, kind=None, order_by=_KEY_ORDER):
   """Returns direct parents of a node (given by its key), optionally filtering
   them by kind.
 
+  Depending on 'order_by', the parents are either ordered lexicographically by
+  their key or by the order edges from them were defined.
+
   Fails if called not from a generator callback: a graph under construction
   can't be queried.
 
@@ -162,6 +168,22 @@ def _parents(child, kind=None, order_by=_KEY_ORDER):
   return out
 
 
+def _sorted_nodes(nodes, order_by=_KEY_ORDER):
+  """Returns a new sorted list of nodes.
+
+  Depending on 'order_by', the nodes are either ordered lexicographically by
+  their keys or by the order they were defined in the graph.
+
+  Args:
+    nodes: an iterable of graph.node objects.
+    order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
+
+  Returns:
+    List of graph.node objects.
+  """
+  return __native__.graph().sorted_nodes(nodes, order_by)
+
+
 # Public API of this module.
 graph = struct(
     KEY_ORDER = _KEY_ORDER,
@@ -174,4 +196,5 @@ graph = struct(
     children = _children,
     descendants = _descendants,
     parents = _parents,
+    sorted_nodes = _sorted_nodes,
 )
