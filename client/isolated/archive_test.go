@@ -107,7 +107,7 @@ func TestArchive(t *testing.T) {
 		topIsolated := isolated.New()
 		topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
 		if !isWindows() {
-			topIsolated.Files["link"] = isolated.SymLink(filepath.Join("base", "bar"))
+			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(barData), mode, int64(len(barData)))
 		} else {
 			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(winLinkData), 0666, int64(len(winLinkData)))
 		}
