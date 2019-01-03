@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fb905f9e_1c2773e5",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 496,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-03T20:47:09Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 496,
+        "startChar": 38,
+        "endLine": 496,
+        "endChar": 39
+      },
+      "revId": "dcf4ff38442188643fa1eb342728c9aa919cb5b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f0cf482_2a96628f",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 498,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-03T20:47:09Z",
+      "side": 1,
+      "message": "have you considered using \"def\" instead? i think it\u0027s clearer to the end user.",
+      "range": {
+        "startLine": 498,
+        "startChar": 6,
+        "endLine": 498,
+        "endChar": 10
+      },
+      "revId": "dcf4ff38442188643fa1eb342728c9aa919cb5b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2c29ef7_c0868182",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 544,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-03T20:47:09Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 544,
+        "startChar": 18,
+        "endLine": 544,
+        "endChar": 20
+      },
+      "revId": "dcf4ff38442188643fa1eb342728c9aa919cb5b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "720641ff_72cc4311",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 544,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-03T20:47:09Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 544,
+        "startChar": 2,
+        "endLine": 544,
+        "endChar": 3
+      },
+      "revId": "dcf4ff38442188643fa1eb342728c9aa919cb5b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06dbac5e_d367460d",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-03T20:47:09Z",
+      "side": 1,
+      "message": "ditto! While technically \"Execution_order\" is exactly right, \"definition_order\" is more user friendly, and that\u0027s how you explain it in docs anyway :)",
+      "range": {
+        "startLine": 179,
+        "startChar": 34,
+        "endLine": 179,
+        "endChar": 49
+      },
+      "revId": "dcf4ff38442188643fa1eb342728c9aa919cb5b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
