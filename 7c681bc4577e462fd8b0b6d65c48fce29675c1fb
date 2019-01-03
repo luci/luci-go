@@ -22,6 +22,30 @@
       "revId": "7c681bc4577e462fd8b0b6d65c48fce29675c1fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da9e0b7b_53d6a781",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-03T22:31:35Z",
+      "side": 1,
+      "message": "Yeah, but assert.fails(...) actually \"catches\" the error and resumes the execution (after assert.fails(...) call, just like try: catch: does). So there can be multiple emit_error calls within a single test.",
+      "parentUuid": "ee65dc62_9e4548b4",
+      "range": {
+        "startLine": 12,
+        "startChar": 13,
+        "endLine": 12,
+        "endChar": 14
+      },
+      "revId": "7c681bc4577e462fd8b0b6d65c48fce29675c1fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
