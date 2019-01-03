@@ -18,6 +18,7 @@ load('@stdlib//internal/generator.star', _generator='generator')
 # Individual LUCI rules.
 load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
 load('@stdlib//internal/luci/rules/builder.star', _builder='builder')
+load('@stdlib//internal/luci/rules/gitiles_poller.star', _gitiles_poller='gitiles_poller')
 load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
 load('@stdlib//internal/luci/rules/project.star', _project='project')
 
@@ -35,6 +36,7 @@ core = struct(
 
     bucket = _bucket,
     builder = _builder,
+    gitiles_poller = _gitiles_poller,
     logdog =  _logdog,
     project = _project,
 )
