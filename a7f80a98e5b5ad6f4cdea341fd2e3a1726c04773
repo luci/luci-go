@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a706e320_a52ac3f4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-03T22:51:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "622aa446_cae28f8e",
+      "range": {
+        "startLine": 9,
+        "startChar": 5,
+        "endLine": 9,
+        "endChar": 6
+      },
+      "revId": "a7f80a98e5b5ad6f4cdea341fd2e3a1726c04773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e8ad3ce_c1538eb9",
         "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
         "patchSetId": 10
@@ -39,6 +63,24 @@
       "revId": "a7f80a98e5b5ad6f4cdea341fd2e3a1726c04773",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ed2553d_05db5a34",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-03T22:51:56Z",
+      "side": 1,
+      "message": "I haven\u0027t thought too much about it (considering it is a very niche use case). My thoughts so far:\n  1. As you\u0027ve noticed node key namespace is hierarchical.\n  2. I imagine we can import another project node graph into a key subspace (PROJECT, \u003cname\u003e, *). \n  3. Then BUILDER_REF nodes of an external project would be (PROJECT, \u003cname\u003e, BUCKET, \u003cb\u003e, BUILDER_REF, \u003cn\u003e) (and the one without the bucket).\n  4. keys.builder_ref can learn to understand some additional syntax, e.g. \"[infra]/ci/builder\" will result in (PROJECT, \u0027infra\u0027, BUCKET, \u0027ci\u0027, BUILDER_REF, \u0027builder\u0027). (\u0027[]\u0027 is needed to distinguish between \"\u003cproject\u003e/\u003cbuilder\u003e\" (a bucketless reference to a builder in another project) and \"\u003cbucket\u003e/\u003cbuilder\u003e\" (bucket-scoped reference to a builder within main project) references. (We can also bikeshed this syntax ad infinitum).\n\nI\u0027m not planning on doing this any time soon, but I believe it should be relatively simple.",
+      "parentUuid": "8e8ad3ce_c1538eb9",
+      "revId": "a7f80a98e5b5ad6f4cdea341fd2e3a1726c04773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "a7f80a98e5b5ad6f4cdea341fd2e3a1726c04773",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b35c30a1_c7925cab",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-03T22:51:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a58b07d_d7fbb932",
+      "range": {
+        "startLine": 87,
+        "startChar": 15,
+        "endLine": 87,
+        "endChar": 16
+      },
+      "revId": "a7f80a98e5b5ad6f4cdea341fd2e3a1726c04773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
