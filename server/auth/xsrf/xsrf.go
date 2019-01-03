@@ -23,6 +23,7 @@ package xsrf
 import (
 	"context"
 	"fmt"
+	"html"
 	"html/template"
 	"net/http"
 	"time"
@@ -70,7 +71,7 @@ func TokenField(c context.Context) template.HTML {
 	if err != nil {
 		panic(err)
 	}
-	return template.HTML(fmt.Sprintf(`<input type="hidden" name="xsrf_token" value="%s">`, tok))
+	return template.HTML(fmt.Sprintf(`<input type="hidden" name="xsrf_token" value="%s">`, html.EscapeString(tok)))
 }
 
 // WithTokenCheck is middleware that checks validity of XSRF tokens.
