@@ -27,6 +27,7 @@ import (
 // Node is an element of the graph.
 type Node struct {
 	Key        *Key                         // unique ID of the node
+	Index      int                          // index of the node in the graph
 	Props      *starlarkstruct.Struct       // struct(...) with frozen properties
 	Trace      *builtins.CapturedStacktrace // where the node was defined
 	Idempotent bool                         // true if it's fine to redeclare this node
@@ -49,11 +50,17 @@ type Edge struct {
 // declare marks the node as declared.
 //
 // Freezes properties as a side effect.
-func (n *Node) declare(props *starlarkstruct.Struct, idempotent bool, trace *builtins.CapturedStacktrace) {
+func (n *Node) declare(idx int, props *starlarkstruct.Struct, idempotent bool, trace *builtins.CapturedStacktrace) {
 	props.Freeze()
+	n.Index = idx
 	n.Props = props
 	n.Idempotent = idempotent
 	n.Trace = trace
+}
+
+// BelongsTo returns true if the node was declared in the given graph.
+func (n *Node) BelongsTo(g *Graph) bool {
+	return n.Key.set == &g.KeySet
 }
 
 // Declared is true if the node was fully defined via AddNode and false if

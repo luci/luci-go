@@ -30,7 +30,8 @@ core.generator(impl = gen1)
 
 def gen2(ctx):
   ctx.config_set['recursive.txt'] = ' '.join([
-      n.props.msg for n in graph.descendants(root)
+      n.props.msg for n in graph.sorted_nodes(
+          graph.descendants(root), graph.DEFINITION_ORDER)
   ]) + '\n'
 core.generator(impl = gen2)
 

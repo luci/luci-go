@@ -163,13 +163,15 @@ func (e *DanglingEdgeError) Backtrace() string {
 //   * finalize(): []string
 //   * node(key: graph.key): graph.node
 //   * children(parent: graph.key, order_by='key'): []graph.node
-//   * descendants(root: graph.key, callback=None, order_by='key'): []graph.Node
+//   * descendants(root: graph.key, callback=None, order_by='key'): []graph.node
 //   * parents(child: graph.key, order_by='key'): []graph.node
+//   * sorted_nodes(nodes: iterable<graph.node>, order_by='key'): []graph.node
 type Graph struct {
 	KeySet
 
 	nodes     map[*Key]*Node // all declared and "predeclared" nodes
 	edges     []*Edge        // all defined edges, in their definition order
+	nextIndex int            // index to assign to the next node, for ordering
 	finalized bool           // true if the graph is no longer mutable
 }
 
@@ -179,8 +181,8 @@ type Visitor func(n *Node, next []*Node) ([]*Node, error)
 
 // validateOrder returns an error if the edge traversal order is unrecognized.
 func validateOrder(orderBy string) error {
-	if orderBy != "key" && orderBy != "exec" {
-		return fmt.Errorf("unknown order %q, expecting either \"key\" or \"exec\"", orderBy)
+	if orderBy != "key" && orderBy != "def" {
+		return fmt.Errorf("unknown order %q, expecting either \"key\" or \"def\"", orderBy)
 	}
 	return nil
 }
@@ -245,7 +247,8 @@ func (g *Graph) AddNode(k *Key, props *starlark.Dict, idempotent bool, trace *bu
 
 	n := g.initNode(k)
 	if !n.Declared() {
-		n.declare(propsStruct, idempotent, trace)
+		n.declare(g.nextIndex, propsStruct, idempotent, trace)
+		g.nextIndex++
 		return n, nil
 	}
 
@@ -376,7 +379,7 @@ func (g *Graph) Node(k *Key) (*Node, error) {
 //
 // The order of the result depends on a value of 'orderBy':
 //   'key': nodes are ordered lexicographically by their keys (smaller first).
-//   'exec': nodes are ordered by the order edges to them were defined during
+//   'def': nodes are ordered by the order edges to them were defined during
 //        the execution (earlier first).
 //
 // Any other value of 'orderBy' causes an error.
@@ -385,7 +388,7 @@ func (g *Graph) Node(k *Key) (*Node, error) {
 //
 // Trying to use Children before the graph has been finalized is an error.
 func (g *Graph) Children(parent *Key, orderBy string) ([]*Node, error) {
-	return g.orderedListing(parent, "parent", orderBy, (*Node).listChildren)
+	return g.orderedRelatives(parent, "parent", orderBy, (*Node).listChildren)
 }
 
 // Descendants recursively visits 'root' and all its children, in breadth
@@ -397,7 +400,7 @@ func (g *Graph) Children(parent *Key, orderBy string) ([]*Node, error) {
 // The order of enumeration of direct children of a node depends on a value of
 // 'orderBy':
 //   'key': nodes are ordered lexicographically by their keys (smaller first).
-//   'exec': nodes are ordered by the order edges to them were defined during
+//   'def': nodes are ordered by the order edges to them were defined during
 //        the execution (earlier first).
 //
 // Any other value of 'orderBy' causes an error.
@@ -440,7 +443,7 @@ func (g *Graph) Descendants(root *Key, orderBy string, visitor Visitor) ([]*Node
 		visitedSet[cur] = struct{}{}
 
 		// Prepare to visit all children by default.
-		children := orderNodes(cur.listChildren(), orderBy)
+		children := sortByEdgeOrder(cur.listChildren(), orderBy)
 		next := children
 
 		// Ask the visitor callback to decide where it wants to go next. Verify the
@@ -476,7 +479,7 @@ func (g *Graph) Descendants(root *Key, orderBy string, visitor Visitor) ([]*Node
 //
 // The order of the result depends on a value of 'orderBy':
 //   'key': nodes are ordered lexicographically by their keys (smaller first).
-//   'exec': nodes are ordered by the order edges to them were defined during
+//   'def': nodes are ordered by the order edges to them were defined during
 //        the execution (earlier first).
 //
 // Any other value of 'orderBy' causes an error.
@@ -485,11 +488,43 @@ func (g *Graph) Descendants(root *Key, orderBy string, visitor Visitor) ([]*Node
 //
 // Trying to use Parents before the graph has been finalized is an error.
 func (g *Graph) Parents(child *Key, orderBy string) ([]*Node, error) {
-	return g.orderedListing(child, "child", orderBy, (*Node).listParents)
+	return g.orderedRelatives(child, "child", orderBy, (*Node).listParents)
 }
 
-// orderedListing is a common implementation of Children and Parents.
-func (g *Graph) orderedListing(key *Key, attr, orderBy string, cb func(n *Node) []*Node) ([]*Node, error) {
+// SortNodes sorts a slice of nodes of this graph in-place.
+//
+// The order of the result depends on the value of 'orderBy':
+//   'key': nodes are ordered lexicographically by their keys (smaller first).
+//   'def': nodes are ordered by the order they were defined in the graph.
+//
+// Any other value of 'orderBy' causes an error.
+func (g *Graph) SortNodes(nodes []*Node, orderBy string) error {
+	if err := validateOrder(orderBy); err != nil {
+		return err
+	}
+
+	// Only nodes from the same graph are comparable to each other. Comparing
+	// .Index from different graphs makes no sense.
+	for _, n := range nodes {
+		if !n.BelongsTo(g) {
+			return fmt.Errorf("bad node %s - from another graph", n)
+		}
+	}
+
+	switch orderBy {
+	case "def":
+		sort.Slice(nodes, func(i, j int) bool { return nodes[i].Index < nodes[j].Index })
+	case "key":
+		sort.Slice(nodes, func(i, j int) bool { return nodes[i].Key.Less(nodes[j].Key) })
+	default:
+		// Must not happen, orderBy must already be validated here.
+		panic(fmt.Sprintf("unknown order %q", orderBy))
+	}
+	return nil
+}
+
+// orderedRelatives is a common implementation of Children and Parents.
+func (g *Graph) orderedRelatives(key *Key, attr, orderBy string, cb func(n *Node) []*Node) ([]*Node, error) {
 	if !g.finalized {
 		return nil, ErrNotFinalized
 	}
@@ -500,18 +535,23 @@ func (g *Graph) orderedListing(key *Key, attr, orderBy string, cb func(n *Node) 
 		return nil, err
 	}
 	if n := g.nodes[key]; n != nil {
-		return orderNodes(cb(n), orderBy), nil
+		return sortByEdgeOrder(cb(n), orderBy), nil
 	}
 	return nil, nil // no node at all -> no related nodes
 }
 
-// orderNodes orders nodes according to 'orderBy'.
+// sortByEdgeOrder orders either children or parents of some node according to
+// the order of edges to/from them.
 //
 // Assumes 'nodes' came from either .listChildren() or .listParents(), and thus
-// are mutable copies, which are already ordered by 'exec' order.
-func orderNodes(nodes []*Node, orderBy string) []*Node {
+// are mutable copies, which are already ordered by 'def' order.
+//
+// Note that 'def' order here means "in order edges were defined". This is
+// different from "in order nodes themselves were defined". This is different
+// from the meaning of 'def' order in SortNodes.
+func sortByEdgeOrder(nodes []*Node, orderBy string) []*Node {
 	switch orderBy {
-	case "exec":
+	case "def":
 		break
 	case "key":
 		sort.Slice(nodes, func(i, j int) bool { return nodes[i].Key.Less(nodes[j].Key) })
@@ -754,5 +794,35 @@ var graphAttrs = map[string]*starlark.Builtin{
 			return nil, err
 		}
 		return nodesList(nodes), nil
+	}),
+
+	// sorted_nodes(nodes: iterable<graph.node>, order_by='key'): []graph.node
+	"sorted_nodes": starlark.NewBuiltin("sorted_nodes", func(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		var nodes starlark.Iterable
+		var orderBy starlark.String = "key"
+		err := starlark.UnpackArgs("sorted_nodes", args, kwargs,
+			"nodes", &nodes,
+			"order_by?", &orderBy)
+		if err != nil {
+			return nil, err
+		}
+
+		iter := nodes.Iterate()
+		defer iter.Done()
+
+		var toSort []*Node
+		var val starlark.Value
+		for iter.Next(&val) {
+			node, ok := val.(*Node)
+			if !ok {
+				return nil, fmt.Errorf("sorted_nodes: got %s, expecting graph.node", val)
+			}
+			toSort = append(toSort, node)
+		}
+
+		if err := b.Receiver().(*Graph).SortNodes(toSort, orderBy.GoString()); err != nil {
+			return nil, err
+		}
+		return nodesList(toSort), nil
 	}),
 }

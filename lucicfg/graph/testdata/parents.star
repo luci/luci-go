@@ -27,8 +27,8 @@ def test_parents_query():
 
   g.finalize()
 
-  # Querying in 'exec' order returns nodes in order we defined edges.
-  assert.eq(q(child, 'exec'), [t1_b1, t2_a1, t1_a2, t1_a1])
+  # Querying in 'def' order returns nodes in order we defined edges.
+  assert.eq(q(child, 'def'), [t1_b1, t2_a1, t1_a2, t1_a1])
   # Querying by key order returns nodes in lexicographical order.
   assert.eq(q(child, 'key'), [t1_a1, t1_a2, t1_b1, t2_a1])
   # Asking for parents of non-existing node is OK.

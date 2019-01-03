@@ -14,7 +14,7 @@
 
 
 _KEY_ORDER = 'key'
-_EXECUTION_ORDER = 'exec'
+_DEFINITION_ORDER = 'def'
 
 
 def _key(*args):
@@ -97,13 +97,16 @@ def _children(parent, kind=None, order_by=_KEY_ORDER):
   """Returns direct children of a node (given by its key), optionally filtering
   them by kind.
 
+  Depending on 'order_by', the children are either ordered lexicographically by
+  their keys or by the order edges to them were defined.
+
   Fails if called not from a generator callback: a graph under construction
   can't be queried.
 
   Args:
     parent: a key of the parent node, see graph.key(...).
     kind: a string with a kind of children to return or None for all.
-    order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
+    order_by: either KEY_ORDER or DEFINITION_ORDER, default KEY_ORDER.
 
   Returns:
     List of graph.node objects.
@@ -133,7 +136,7 @@ def _descendants(root, visitor=None, order_by=_KEY_ORDER):
   Args:
     root: a key of the node to start the traversal from, see graph.key(...).
     visitor: func(node: graph.node, children: []graph.node): []graph.node.
-    order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
+    order_by: either KEY_ORDER or DEFINITION_ORDER, default KEY_ORDER.
 
   Returns:
     List of visited graph.node objects, starting with the root.
@@ -145,13 +148,16 @@ def _parents(child, kind=None, order_by=_KEY_ORDER):
   """Returns direct parents of a node (given by its key), optionally filtering
   them by kind.
 
+  Depending on 'order_by', the parents are either ordered lexicographically by
+  their key or by the order edges from them were defined.
+
   Fails if called not from a generator callback: a graph under construction
   can't be queried.
 
   Args:
     child: a key of the node to find parents of, see graph.key(...).
     kind: a string with a kind of parents to return or None for all.
-    order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
+    order_by: either KEY_ORDER or DEFINITION_ORDER, default KEY_ORDER.
 
   Returns:
     List of graph.node objects.
@@ -162,10 +168,26 @@ def _parents(child, kind=None, order_by=_KEY_ORDER):
   return out
 
 
+def _sorted_nodes(nodes, order_by=_KEY_ORDER):
+  """Returns a new sorted list of nodes.
+
+  Depending on 'order_by', the nodes are either ordered lexicographically by
+  their keys or by the order they were defined in the graph.
+
+  Args:
+    nodes: an iterable of graph.node objects.
+    order_by: either KEY_ORDER or DEFINITION_ORDER, default KEY_ORDER.
+
+  Returns:
+    List of graph.node objects.
+  """
+  return __native__.graph().sorted_nodes(nodes, order_by)
+
+
 # Public API of this module.
 graph = struct(
     KEY_ORDER = _KEY_ORDER,
-    EXECUTION_ORDER = _EXECUTION_ORDER,
+    DEFINITION_ORDER = _DEFINITION_ORDER,
 
     key = _key,
     add_node = _add_node,
@@ -174,4 +196,5 @@ graph = struct(
     children = _children,
     descendants = _descendants,
     parents = _parents,
+    sorted_nodes = _sorted_nodes,
 )
