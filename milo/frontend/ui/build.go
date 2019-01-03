@@ -110,6 +110,26 @@ func (bp *BuildPage) Steps() []*Step {
 	return bp.steps
 }
 
+// Status returns a human friendly string for the status.
+func (bp *BuildPage) HumanStatus() string {
+	switch bp.Build.Status {
+	case buildbucketpb.Status_SCHEDULED:
+		return "Pending"
+	case buildbucketpb.Status_STARTED:
+		return "Running"
+	case buildbucketpb.Status_SUCCESS:
+		return "Success"
+	case buildbucketpb.Status_FAILURE:
+		return "Failure"
+	case buildbucketpb.Status_INFRA_FAILURE:
+		return "Infra Failure"
+	case buildbucketpb.Status_CANCELED:
+		return "Cancelled"
+	default:
+		return "Unknown status"
+	}
+}
+
 func (bp *BuildPage) Builder() *Link {
 	if bp.Build.Builder == nil {
 		panic("Invalid build")
@@ -141,44 +161,39 @@ func (bp *BuildPage) BuildID() *Link {
 // * OS, as determined by swarming dimensions.
 // TODO(hinoka): For device builders, display device type, and number of devices.
 func (bp *BuildPage) Banners() (result []Logo) {
-	if bp.Infra == nil {
-		return
-	}
-	if bp.Infra.Swarming == nil {
-		return
-	}
-	for _, dim := range bp.Infra.Swarming.BotDimensions {
+	var os, ver string
+	// A swarming dimension may have multiple values.  Eg.
+	// Linux, Ubuntu, Ubuntu-14.04.  We want the most specific one.
+	// The most specific one always comes last.
+	for _, dim := range bp.GetInfra().GetSwarming().GetBotDimensions() {
 		if dim.Key != "os" {
 			continue
 		}
-		os := dim.Value
+		os = dim.Value
 		parts := strings.SplitN(os, "-", 2)
-		var ver string
 		if len(parts) == 2 {
 			os = parts[0]
 			ver = parts[1]
 		}
-
-		var base LogoBase
-		switch os {
-		case "Ubuntu":
-			base = Ubuntu
-		case "Windows":
-			base = Windows
-		case "Mac":
-			base = OSX
-		case "Android":
-			base = Android
-		default:
-			return
-		}
-		result = append(result, Logo{
-			LogoBase: base,
-			Subtitle: ver,
-			Count:    1,
-		})
 	}
-	return // We didn't find an OS dimension.
+	var base LogoBase
+	switch os {
+	case "Ubuntu":
+		base = Ubuntu
+	case "Windows":
+		base = Windows
+	case "Mac":
+		base = OSX
+	case "Android":
+		base = Android
+	default:
+		return
+	}
+	return []Logo{{
+		LogoBase: base,
+		Subtitle: ver,
+		Count:    1,
+	}}
 }
 
 // StepDisplayPref is the display preference for the steps.

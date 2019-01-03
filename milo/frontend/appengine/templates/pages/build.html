@@ -1,15 +1,7 @@
 {{define "title"}}
-  {{ with .BuildPage.Build -}}
-    {{ if eq .Status.String "INFRA_FAILURE" }}
-      Infra Failure
-    {{ else if eq .Status.String "FAILURE" }}
-      Failed
-    {{ else if eq .Status.String "SCHEDULED" }}
-      Pending
-    {{ else }}
-      {{ .Status.String }}
-    {{ end }}
+  {{ .BuildPage.HumanStatus}}
     -
+  {{ with .BuildPage.Build -}}
     {{ with .Builder }}{{ .Builder }}{{ end }}
     {{ if .Number }}{{ .Number }}{{ else }}{{ .Id }}{{ end }}
   {{- end }}
@@ -59,10 +51,19 @@
   <div class="status {{.Step.Status}} result">
       {{ template "interval" toInterval .StartTime .EndTime }}
     <b>{{.ShortName}}</b>
-    <span>
-      <div class="summary-markdown">{{ .Step.SummaryMarkdown | renderMarkdown }}</div>
+    <span class="summary-markdown">
+      {{ .Step.SummaryMarkdown | renderMarkdown }}
     </span>
   </div>
+  <ul>
+    {{ range .Logs }}
+      <li class="sublink">
+        <a href="{{ .ViewUrl }}">{{ .Name }}</a>
+      </li>
+    {{ else }}
+      <li class="sublink"> - no logs - </li>
+    {{ end }}
+  </ul>
   {{ if .Children }}
     <ol>
     {{ range .Children  }}
@@ -81,8 +82,7 @@
     {{ end }}
     Build {{ .BuildPage.BuildID.HTML }}
     {{ range .BuildPage.Banners }}
-      <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
-           width="25px">
+      <img src="/static/common/logos/{{.Img}}" alt="{{.Alt}}" width="25px">
     {{ end }}
     </h1>
 
@@ -109,6 +109,7 @@
     {{ end }}
     <h2>Overview</h2>
     <p class="result status {{.BuildPage.Status}}">
+      {{ .BuildPage.HumanStatus }}<br>
       {{ .BuildPage.Output.SummaryMarkdown | renderMarkdown }}
     </p>
 
@@ -173,7 +174,7 @@
     <label for="showNonGreen">Non-Green</label>
 
     <ol id="steps" {{- if eq .BuildPage.StepDisplayPref "non-green" }} class="non-green"{{ end }}>
-      {{ range .Steps }}
+      {{ range .BuildPage.Steps }}
         {{ template "step" . }}
       {{ end }}
     </ol>
