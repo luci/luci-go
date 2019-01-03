@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9ba79e75_8174453b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 12
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-03T23:35:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd6f2882_09609049",
+      "range": {
+        "startLine": 24,
+        "startChar": 7,
+        "endLine": 24,
+        "endChar": 19
+      },
+      "revId": "0d170f4ecb493ca81835db36cbf59cfa915e409d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "54523bac_9d521170",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 12
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "8477281d_439f161d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 12
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-03T23:35:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54523bac_9d521170",
+      "revId": "0d170f4ecb493ca81835db36cbf59cfa915e409d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "11cb2996_b0ed22dd",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 12
@@ -56,6 +98,24 @@
       "revId": "0d170f4ecb493ca81835db36cbf59cfa915e409d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87a9417b_f613f8e2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 12
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-03T23:35:07Z",
+      "side": 1,
+      "message": "This is sort-of TODO, to show what fields I\u0027ll need to populate. It already has been helpful, since I discovered buildbucket.cfg uses wrappers.proto (which prompted me to submit CL 1392589 and CL 1392588).",
+      "parentUuid": "11cb2996_b0ed22dd",
+      "revId": "0d170f4ecb493ca81835db36cbf59cfa915e409d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
