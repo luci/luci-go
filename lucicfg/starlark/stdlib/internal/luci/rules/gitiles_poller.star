@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
-load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'triggerer')
+load('@stdlib//internal/luci/common.star', 'keys', 'triggerer')
 load('@stdlib//internal/luci/lib/validate.star', 'validate')
 
 
@@ -21,36 +21,29 @@ load('@stdlib//internal/luci/lib/validate.star', 'validate')
 # structure of nodes and their relations.
 
 
-def builder(name, bucket, triggers=None, triggered_by=None):
-  """Defines a generic builder.
+def gitiles_poller(name, bucket, triggers=None):
+  """Defines a gitiles poller which can trigger builders on git commits.
 
   Args:
-    name: name of the builder, to refer to it from other rules.
-    bucket: name of the bucket the builder belongs to.
+    name: name of the poller, to refer to it from other rules.
+    bucket: name of the bucket the poller belongs to.
     triggers: names of builders it triggers.
-    triggered_by: names of builders or pollers it is triggered by.
   """
   name = validate.string('name', name)
   bucket = validate.string('bucket', bucket)
 
-  # Node that carries the full definition of the builder.
-  builder_key = keys.builder('%s/%s' % (bucket, name))
-  graph.add_node(builder_key, props = {
+  # Node that carries the full definition of the poller.
+  poller_key = keys.gitiles_poller('%s/%s' % (bucket, name))
+  graph.add_node(poller_key, props = {
       'name': name,
       'bucket': bucket,
   })
-  graph.add_edge(keys.bucket(bucket), builder_key)
+  graph.add_edge(keys.bucket(bucket), poller_key)
 
-  # Allow this builder to be referenced from other nodes via its bucket-scoped
-  # name and via a global (perhaps ambiguous) name. Ambiguity is checked during
-  # the graph traversal via builder_ref.follow.
-  builder_ref_key = builder_ref.add('%s/%s' % (bucket, name), builder_key)
-  builder_ref.add(name, builder_key)
-
-  # Setup nodes that indicates this builder can be referenced in 'triggered_by'
+  # Setup nodes that indicates this poller can be referenced in 'triggered_by'
   # relations (either via its bucket-scoped name or via its global name).
-  triggerer_key = triggerer.add('%s/%s' % (bucket, name), builder_key)
-  triggerer.add(name, builder_key)
+  triggerer_key = triggerer.add('%s/%s' % (bucket, name), poller_key)
+  triggerer.add(name, poller_key)
 
   # Link to builders triggered by this builder.
   for t in validate.list('triggers', triggers):
@@ -58,12 +51,4 @@ def builder(name, bucket, triggers=None, triggered_by=None):
         parent = triggerer_key,
         child = keys.builder_ref(validate.string('triggers', t)),
         title = 'triggers',
-    )
-
-  # And link to nodes this builder is triggered by.
-  for t in validate.list('triggered_by', triggered_by):
-    graph.add_edge(
-        parent = keys.triggerer(t),
-        child = builder_ref_key,
-        title = 'triggered_by',
     )
