@@ -16,7 +16,7 @@
 
 load('@stdlib//internal/generator.star', 'generator')
 load('@stdlib//internal/graph.star', 'graph')
-load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
+load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'kinds')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
@@ -77,6 +77,36 @@ def get_bucket_acls(bucket):
 def filter_acls(acls, roles):
   """Keeps only ACL entries that have any of given roles."""
   return [a for a in acls if a.role in roles]
+
+
+def get_builders(root):
+  """Enumerates children of 'root' and finds all core.builder nodes there,
+  following builder_ref references.
+
+  Emits errors if there are ambiguities in references, i.e. if the node refers
+  to a builder "<b>", and there are multiple "<b>" in different buckets. The
+  user is advised (through an error message) to use full builder name
+  ("<bucket>/<b>") in such case.
+
+  Args:
+    root: graph.node to start the traversal from.
+
+  Returns:
+    List of discovered graph.node of BUILDER kind.
+  """
+  out = []
+  seen = set()
+  for n in graph.children(root.key):
+    if n.key.kind == kinds.BUILDER_REF:
+      n = builder_ref.follow(n, root)
+      if not n:
+        continue  # skip ambiguous ref, the error has been reported
+    elif n.key.kind != kinds.BUILDER:
+      continue  # interested only in builders
+    if n not in seen:
+      out.append(n)
+      seen = seen.union([n])
+  return out
 
 
 ################################################################################
@@ -168,8 +198,7 @@ def gen_buildbucket_cfg(ctx):
         name = bucket.props.name,
         acl_sets = [bucket.props.name],
         swarming = buildbucket_pb.Swarming(
-            hostname = swarming.host,
-            builders = [],  # TODO
+            builders = gen_buildbucket_builders(bucket, swarming.host),
         ),
     ))
 
@@ -184,3 +213,32 @@ def gen_buildbucket_acls(bucket):
       )
       for a in filter_acls(get_bucket_acls(bucket), _bb_roles.keys())
   ]
+
+
+def gen_buildbucket_builders(bucket, swarming_host):
+  """core.bucket(...) node => [buildbucket_pb.Builder]."""
+  out = []
+  for node in graph.children(bucket.key, kinds.BUILDER):
+    # TODO(vadimsh): Fill in all properties.
+    b = buildbucket_pb.Builder(
+        name = node.props.name,
+        swarming_host = swarming_host,
+        category = "",  # huh?
+        swarming_tags = [],
+        dimensions = [],
+        recipe = None,
+        priority = 0,
+        execution_timeout_secs = 0,
+        expiration_secs = 0,
+        caches = [],
+        build_numbers = 0,
+        service_account = '',
+        auto_builder_dimension = 0,
+        experimental = 0,
+        luci_migration_host = "",
+        task_template_canary_percentage = None,
+    )
+    # TODO(vadimsh): Apply recipe-based mutators to e.g. add named caches the
+    # recipe depends on.
+    out.append(b)
+  return out
