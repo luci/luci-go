@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee65dc62_9e4548b4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-03T20:37:46Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be singular? Presumably, you failing happens first error.",
+      "range": {
+        "startLine": 12,
+        "startChar": 13,
+        "endLine": 12,
+        "endChar": 14
+      },
+      "revId": "7c681bc4577e462fd8b0b6d65c48fce29675c1fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
