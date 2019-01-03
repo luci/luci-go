@@ -37,8 +37,8 @@ def test_descendants():
       node('leaf'),
   ])
 
-  # In 'exec' order.
-  assert.eq(g.descendants(root, order_by='exec'), [
+  # In 'def' order.
+  assert.eq(g.descendants(root, order_by='def'), [
       node('root'),
       node('3'),
       node('2'),
@@ -64,12 +64,12 @@ def test_descendants():
       (node('leaf'), []),  # visited only once
   ])
 
-  # In 'exec' order.
+  # In 'def' order.
   visited = []
   def visitor(node, children):
     visited.append((node, children))
     return children
-  g.descendants(root, visitor, 'exec')
+  g.descendants(root, visitor, 'def')
   assert.eq(visited, [
       (node('root'), [node('3'), node('2'), node('1')]),
       (node('3'), []),
