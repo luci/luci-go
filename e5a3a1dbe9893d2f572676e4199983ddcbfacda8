@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d95616c1_d0adb66a",
+        "filename": "server/auth/xsrf/xsrf.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1307248
+      },
+      "writtenOn": "2019-01-03T22:09:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ede6b343_25101325",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 1
+      },
+      "revId": "e5a3a1dbe9893d2f572676e4199983ddcbfacda8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
