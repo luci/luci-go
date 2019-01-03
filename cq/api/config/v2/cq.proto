@@ -133,14 +133,13 @@ message Verifiers {
 
   // This verifier triggers a set of builds through Buildbucket.
   //
-  // CQ automatically retries failed try-jobs and only allows CL to land if each
+  // CQ automatically retries failed tryjobs and only allows CL to land if each
   // builder has succeeded in the latest retry.
   // If a given tryjob result is too old (>1 day) it is ignored.
   //
   // Typically, builds from Buildbucket are executed on LUCI stack, however, CQ
   // is agnostic to how and where builds are executed.
-  // TODO(tandrii): retname try_job and try-job to tryjob everywhere in CQ.
-  TryJob try_job = 3;
+  Tryjob tryjob = 3;
 
   // Deprecator is for internal CQ use only. DO NOT USE IN YOUR cq.cfg.
   Deprecator deprecator = 4;
@@ -185,7 +184,7 @@ message Verifiers {
     string url = 1;
   }
 
-  message TryJob {
+  message Tryjob {
     // Builders on which tryjobs should be triggered.
     repeated Builder builders = 1;
 
@@ -240,7 +239,7 @@ message Verifiers {
       //   * If `triggered_by` (parent) builder succeeds, but doesn't set
       //     the right `triggered_build_ids` s.t. CQ can't find this (child)
       //     builder among triggered builds, then CQ will wait till
-      //     TRY_JOB_PENDING_TIMEOUT is reached, currently hardcoded at 2 hours.
+      //     TRYJOB_PENDING_TIMEOUT is reached, currently hardcoded at 2 hours.
       //     TODO(tandrii,sergiyb): improve this.
       //   * If this (child) builder fails and CQ still has retry budget,
       //     CQ will retry a parent builder.
