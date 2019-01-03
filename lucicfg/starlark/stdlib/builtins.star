@@ -17,6 +17,7 @@ load('@stdlib//internal/generator.star', _generator='generator')
 
 # Individual LUCI rules.
 load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
+load('@stdlib//internal/luci/rules/builder.star', _builder='builder')
 load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
 load('@stdlib//internal/luci/rules/project.star', _project='project')
 
@@ -33,6 +34,7 @@ core = struct(
     generator = _generator,
 
     bucket = _bucket,
+    builder = _builder,
     logdog =  _logdog,
     project = _project,
 )

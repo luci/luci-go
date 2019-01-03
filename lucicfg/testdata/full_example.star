@@ -12,20 +12,37 @@ core.project(
     ],
 )
 
-core.logdog(
-    gs_bucket = 'chromium-luci-logdog',
+core.logdog(gs_bucket = 'chromium-luci-logdog')
+
+# CI builders.
+
+core.bucket(name = 'ci')
+
+core.builder(
+    name = 'linux ci builder',
+    bucket = 'ci',
+)
+core.builder(
+    name = 'shared builder',
+    bucket = 'ci',
 )
 
-core.bucket(
-    name = 'ci',
-)
+# Try builders.
 
 core.bucket(
     name = 'try',
-
     acls = [
         acl.entry(acl.BUILDBUCKET_SCHEDULER, groups='infra-try-access'),
     ],
+)
+
+core.builder(
+    name = 'linux try builder',
+    bucket = 'try',
+)
+core.builder(
+    name = 'shared builder',
+    bucket = 'try',
 )
 
 
@@ -36,14 +53,28 @@ core.bucket(
 #   name: "ci"
 #   acl_sets: "ci"
 #   swarming: <
-#     hostname: "chromium-swarm.appspot.com"
+#     builders: <
+#       name: "linux ci builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#     >
+#     builders: <
+#       name: "shared builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#     >
 #   >
 # >
 # buckets: <
 #   name: "try"
 #   acl_sets: "try"
 #   swarming: <
-#     hostname: "chromium-swarm.appspot.com"
+#     builders: <
+#       name: "linux try builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#     >
+#     builders: <
+#       name: "shared builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#     >
 #   >
 # >
 # acl_sets: <

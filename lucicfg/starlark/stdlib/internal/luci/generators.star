@@ -168,8 +168,7 @@ def gen_buildbucket_cfg(ctx):
         name = bucket.props.name,
         acl_sets = [bucket.props.name],
         swarming = buildbucket_pb.Swarming(
-            hostname = swarming.host,
-            builders = [],  # TODO
+            builders = gen_buildbucket_builders(bucket, swarming.host),
         ),
     ))
 
@@ -184,3 +183,31 @@ def gen_buildbucket_acls(bucket):
       )
       for a in filter_acls(get_bucket_acls(bucket), _bb_roles.keys())
   ]
+
+
+def gen_buildbucket_builders(bucket, swarming_host):
+  """core.bucket(...) node => [buildbucket_pb.Builder]."""
+  out = []
+  for node in graph.children(bucket.key, kinds.BUILDER):
+    # TODO(vadimsh): Fill in all properties.
+    b = buildbucket_pb.Builder(
+        name = node.props.name,
+        swarming_host = swarming_host,
+        swarming_tags = [],
+        dimensions = [],
+        recipe = None,
+        priority = 0,
+        execution_timeout_secs = 0,
+        expiration_secs = 0,
+        caches = [],
+        build_numbers = 0,
+        service_account = '',
+        auto_builder_dimension = 0,
+        experimental = 0,
+        luci_migration_host = "",
+        task_template_canary_percentage = None,
+    )
+    # TODO(vadimsh): Apply recipe-based mutators to e.g. add named caches the
+    # recipe depends on.
+    out.append(b)
+  return out
