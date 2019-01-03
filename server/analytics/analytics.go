@@ -53,5 +53,5 @@ setTimeout(function() {
 	ga('send', 'pageview');
 }, 0);
 </script>
-`, id))
+`, template.JSEscapeString(id)))
 }
