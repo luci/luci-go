@@ -18,8 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config/validation"
+	v2 "go.chromium.org/luci/cq/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -55,7 +58,7 @@ func TestValidationLegacy(t *testing.T) {
 		path := "cq.cfg"
 		Convey("Loading bad proto", func() {
 			content := []byte(` bad: "config" `)
-			So(validateRefCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(validateRef(vctx, configSet, path, content), ShouldBeNil)
 			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
 		})
 		Convey("Loading OK config", func() {
@@ -67,13 +70,25 @@ func TestValidationLegacy(t *testing.T) {
 					gerrit_cq_ability { committer_list: "blah" }
 				}
 			`)
-			So(validateRefCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(validateRef(vctx, configSet, path, content), ShouldBeNil)
 			err := vctx.Finalize()
 			So(err, ShouldBeNil)
 		})
 		// The rest of legacy config validation tests are in legacy_test.go.
 	})
 }
+
+const validConfigTextPB = `
+  draining_start_time: "2017-12-23T15:47:58Z"
+  cq_status_host: "example.com"
+  submit_options {
+    max_burst: 2
+  	burst_delay { seconds: 120 }
+  }
+  config_groups {
+    # TODO(tandrii): finish valid config.
+  }
+`
 
 func TestValidation(t *testing.T) {
 	t.Parallel()
@@ -83,14 +98,61 @@ func TestValidation(t *testing.T) {
 		vctx := &validation.Context{Context: c}
 		configSet := "projects/foo"
 		path := "cq.cfg"
+
 		Convey("Loading bad proto", func() {
 			content := []byte(` bad: "config" `)
-			So(validateProjectCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(validateProject(vctx, configSet, path, content), ShouldBeNil)
 			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
 		})
-		Convey("Loading OK proto", func() {
-			content := []byte(` draining_start_time: "2017-12-23T15:47:58Z" `)
-			So(validateProjectCfg(vctx, configSet, path, content), ShouldErrLike, "not implemented")
+
+		// It's easier to manipulate Go struct than text.
+		cfg := v2.Config{}
+		So(proto.UnmarshalText(validConfigTextPB, &cfg), ShouldBeNil)
+
+		Convey("OK", func() {
+			Convey("good proto, good config", func() {
+				So(validateProject(vctx, configSet, path, []byte(validConfigTextPB)), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+			Convey("good config", func() {
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+		})
+
+		Convey("Top-level config", func() {
+			Convey("Top level opts can be omitted", func() {
+				cfg.DrainingStartTime = ""
+				cfg.CqStatusHost = ""
+				cfg.SubmitOptions = nil
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+			Convey("Bad draining time", func() {
+				cfg.DrainingStartTime = "meh"
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "failed to parse draining_start_time \"meh\" as RFC3339 format")
+			})
+			Convey("Bad cq_status_host", func() {
+				cfg.CqStatusHost = "h://@test:123//not//://@adsfhost."
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldNotBeNil)
+			})
+			Convey("cq_status_host not just host", func() {
+				cfg.CqStatusHost = "example.com/path#fragment"
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, `should be just a host "example.com"`)
+			})
+			Convey("Bad max_burst", func() {
+				cfg.SubmitOptions.MaxBurst = -1
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldNotBeNil)
+			})
+			Convey("Bad burst_delay ", func() {
+				cfg.SubmitOptions.BurstDelay.Seconds = -1
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldNotBeNil)
+			})
 		})
 	})
 }

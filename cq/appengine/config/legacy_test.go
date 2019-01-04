@@ -27,7 +27,7 @@ const refConfigSet = "projects/foo/refs/heads/master"
 
 func assertValidConfig(config string, t *testing.T) {
 	ctx := &validation.Context{Context: context.Background()}
-	if err := validateRefCfg(ctx, refConfigSet, "cq.cfg", []byte(config)); err != nil {
+	if err := validateRef(ctx, refConfigSet, "cq.cfg", []byte(config)); err != nil {
 		t.Errorf("failed to validate %s", err)
 		return
 	}
@@ -38,7 +38,7 @@ func assertValidConfig(config string, t *testing.T) {
 
 func assertConfigMessages(config string, t *testing.T, expectedMessages ...string) {
 	ctx := &validation.Context{Context: context.Background()}
-	if err := validateRefCfg(ctx, refConfigSet, "cq.cfg", []byte(config)); err != nil {
+	if err := validateRef(ctx, refConfigSet, "cq.cfg", []byte(config)); err != nil {
 		t.Errorf("failed to validate %s", err)
 		return
 	}
