@@ -17,15 +17,14 @@
 load('@stdlib//internal/luci/lib/validate.star', 'validate')
 
 
-def _from_host(attr, host, required=False):
+def _from_host(attr, host):
   """Validates a service host name and returns a struct with the service info.
 
   Args:
     attr: name of the attribute, e.g. 'buildbucket' (for error messages).
     host: a service host name, e.g. 'buildbucket.appspot.com'.
-    required: if True, fails if host is None or '' instead of returning None.
   """
-  host = validate.string(attr, host, required=required)
+  host = validate.string(attr, host, default='')
   if not host:
     return None
 
