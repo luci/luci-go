@@ -17,6 +17,7 @@ package frontend
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -130,9 +131,20 @@ func makeFeedbackLink(c *router.Context, build *ui.MiloBuildLegacy) string {
 		return ""
 	}
 
+	buildURL := c.Request.URL
+	var builderURL *url.URL
+	if build.Summary.ParentLabel != nil && build.Summary.ParentLabel.URL != "" {
+		builderURL, err = buildURL.Parse(build.Summary.ParentLabel.URL)
+		if err != nil {
+			logging.WithError(err).Errorf(c.Context, "Unable to parse build.Summary.ParentLabel.URL for custom feedback link")
+			return ""
+		}
+	}
+
 	link, err := MakeFeedbackLink(&project.BuildBugTemplate, map[string]interface{}{
-		"Build":        makeBuild(c.Params, build),
-		"MiloBuildUrl": c.Request.URL.String(),
+		"Build":          makeBuild(c.Params, build),
+		"MiloBuildUrl":   buildURL,
+		"MiloBuilderUrl": builderURL,
 	})
 
 	if err != nil {
