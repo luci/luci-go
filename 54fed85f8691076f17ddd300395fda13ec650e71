@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1673757b_3d3a71b3",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T00:22:49Z",
+      "side": 1,
+      "message": "i think this should be nil, otherwise simple {{ if }} or {{ with }} wouldn\u0027t work in the template\nthis value is discarded in L137 anyway",
+      "range": {
+        "startLine": 135,
+        "startChar": 15,
+        "endLine": 135,
+        "endChar": 25
+      },
+      "revId": "54fed85f8691076f17ddd300395fda13ec650e71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

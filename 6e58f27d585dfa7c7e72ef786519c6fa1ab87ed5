@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "9eddd72f_1157109e",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T00:22:49Z",
+      "side": 1,
+      "message": "you are right, nevermind",
+      "parentUuid": "d348e49e_9d33cecd",
+      "range": {
+        "startLine": 134,
+        "startChar": 20,
+        "endLine": 134,
+        "endChar": 39
+      },
+      "revId": "6e58f27d585dfa7c7e72ef786519c6fa1ab87ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a0ab7d1_e93c566d",
         "filename": "milo/frontend/view_build_legacy.go",
         "patchSetId": 2
