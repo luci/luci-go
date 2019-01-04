@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2ae3a80e_bc9aebdd",
+        "filename": "lucicfg/duration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T15:43:14Z",
+      "side": 1,
+      "message": "maybe add a comment that this is milliseconds. I didn\u0027t know that until I read String()",
+      "revId": "bcfe41686e03262fca3a734df781ad39bd15e13c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa35d3c3_1d38e5f3",
+        "filename": "lucicfg/duration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T15:43:14Z",
+      "side": 1,
+      "message": "nit:\n\n\txv :\u003d x.Int\n\tyv :\u003d y\n\tif y, ok :\u003d y.(duration); ok {\n\t\tyv \u003d y.Int\n\t}\n\tzv, err :\u003d starlark.Binary(op, xv, yv)\n\tif err !\u003d nil {\n\t\treturn nil, err\n\t}\n\tzn, err :\u003d starlark.NumberToInt(zv)\n\tif err !\u003d nil {\n\t\treturn nil, err\n\t}\n\treturn duration{zn}, nil\n\nis shorter and supports `1.5 * time.hour`",
+      "revId": "bcfe41686e03262fca3a734df781ad39bd15e13c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f2e63ed_590385ae",
+        "filename": "lucicfg/duration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T15:43:14Z",
+      "side": 1,
+      "message": "consider reusing starlark.Unary",
+      "revId": "bcfe41686e03262fca3a734df781ad39bd15e13c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
