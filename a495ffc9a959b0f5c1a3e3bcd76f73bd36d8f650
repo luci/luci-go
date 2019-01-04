@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0149c90f_5f433491",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T16:56:29Z",
+      "side": 1,
+      "message": "why? error messages usually don\u0027t have \\n in the end, like below",
+      "range": {
+        "startLine": 96,
+        "startChar": 68,
+        "endLine": 96,
+        "endChar": 70
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7e73041_f793bab9",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T16:56:29Z",
+      "side": 1,
+      "message": "nit: error messages must start with lowercase, because they are often appended to other errors, like here",
+      "range": {
+        "startLine": 96,
+        "startChar": 40,
+        "endLine": 96,
+        "endChar": 41
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a22cf206_8e369948",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T16:56:29Z",
+      "side": 1,
+      "message": "FWIW I\u0027ve just realized that this treats any warning (without errors) as a failure. Not a big deal probably, almost nobody uses warnings, and they tend to be ignored if they are not enforced like this",
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "10a182ef_13561465",
+        "filename": "lucicfg/cli/validate_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T16:56:29Z",
+      "side": 1,
+      "message": "nit: please place dot-import to the very last import block (block of dot imports)",
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
