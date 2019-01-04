@@ -14,40 +14,123 @@
 
 """Generic value validators."""
 
+load('@stdlib//internal/time.star', 'time')
 
-def _string(attr, val, default='', required=True):
+
+def _string(attr, val, default=None):
+  """Validates that the value is a string and returns it.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    default: a value to use if 'val' is None, or None if the value is required.
+
+  Returns:
+    The validated string.
+  """
   if val == None:
-    if required:
+    if default == None:
       fail('bad %r: missing' % attr)
-    return default
+    val = default
+
   if type(val) != 'string':
-    fail('bad %r: got %s %r, expecting string' % (attr, type(val), val))
+    fail('bad %r: got %s, want string' % (attr, type(val)))
+
   return val
 
 
-def _list(attr, val, default=None, required=False):
-  if val != None and type(val) != 'list':
-    fail('bad %r: got %s %r, expecting list' % (attr, type(val), val))
-  if val:
-    return val
-  if required:
-    fail('bad %r: missing' % attr)
-  return default or []
+def _duration(attr, val, precision=time.second, min=time.zero, max=None, default=None):
+  """Validates that the value is a duration specified at the given precision.
 
+  For example, if 'precision' is time.second, will validate that the given
+  duration has a whole number of seconds and will return them (as integer).
+  Fails if truncating the duration to the given precision loses information.
 
-def _struct(attr, val, sym, default=None, required=True):
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    precision: a time unit to divide 'val' by to get the output.
+    min: minimal allowed duration (inclusive) or None for unbounded.
+    max: maximal allowed duration (inclusive) or None for unbounded.
+    default: a value to use if 'val' is None, or None if the value is required.
+
+  Returns:
+    An integer: a whole number of 'precision' units in the given duration value.
+  """
   if val == None:
-    if required:
+    if default == None:
       fail('bad %r: missing' % attr)
-    return default
+    val = default
+
+  if type(val) != 'duration':
+    fail('bad %r: got %s, want duration' % (attr, type(val)))
+
+  if min != None and val < min:
+    fail('bad %r: %s should be >= %s' % (attr, val, min))
+  if max != None and val > max:
+    fail('bad %r: %s should be <= %s' % (attr, val, max))
+
+  res = val / precision
+  if res * precision != val:
+    fail((
+        'bad %r: losing precision when truncating %s to %s units, ' +
+        'use time.truncate(...) to acknowledge') % (attr, val, precision))
+
+  return res
+
+
+def _list(attr, val, required=False):
+  """Validates that the value is a list and returns it.
+
+  None is treated as an empty list.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    required: if True, reject empty lists.
+
+  Returns:
+    The validated list.
+  """
+  if val == None:
+    val = []
+
+  if type(val) != 'list':
+    fail('bad %r: got %s, want list' % (attr, type(val)))
+
+  if required and not val:
+    fail('bad %r: missing' % attr)
+
+  return val
+
+
+def _struct(attr, val, sym, default=None):
+  """Validates that the value is a struct of the given flavor and returns it.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    sym: a name of the constructor that produced the struct.
+    default: a value to use if 'val' is None, or None if the value is required.
+
+  Returns:
+    The validated struct.
+  """
+  if val == None:
+    if default == None:
+      fail('bad %r: missing' % attr)
+    val = default
+
   tp = ctor(val) or type(val)  # ctor(...) return None for non-structs
   if tp != sym:
-    fail('bad %r: got %s %r, expecting %s' % (attr, tp, val, sym))
+    fail('bad %r: got %s, want %s' % (attr, tp, sym))
+
   return val
 
 
 validate = struct(
     string = _string,
+    duration = _duration,
     list = _list,
     struct = _struct,
 )
