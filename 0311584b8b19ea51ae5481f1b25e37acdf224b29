@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6cfc64e3_aea81884",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-04T22:19:43Z",
+      "side": 1,
+      "message": "trying to understand the justification for this inconsistency\n\nwouldn\u0027t we still be able to catch cycles if we reversed the triggerer-\u003etriggeree relation?\n\n  builder(\u0027ci/b\u0027) --triggered-by -\u003e triggerer(\u0027b\u0027) -\u003e builder_ref(\u0027b\u0027) -\u003e builder(\u0027ci/b\u0027)",
+      "range": {
+        "startLine": 19,
+        "startChar": 39,
+        "endLine": 19,
+        "endChar": 45
+      },
+      "revId": "0311584b8b19ea51ae5481f1b25e37acdf224b29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
