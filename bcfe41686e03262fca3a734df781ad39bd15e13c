@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b55ffddd_56c14852",
+        "filename": "lucicfg/duration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-04T20:46:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ae3a80e_bc9aebdd",
+      "revId": "bcfe41686e03262fca3a734df781ad39bd15e13c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa35d3c3_1d38e5f3",
         "filename": "lucicfg/duration.go",
         "patchSetId": 4
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "c403ca4b_e90938fc",
+        "filename": "lucicfg/duration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-04T20:46:02Z",
+      "side": 1,
+      "message": "I explicitly don\u0027t want to support floats, since they introduce complications (like, what 1.5 * time.minute / time.hour should be: 1.5 or 1?).\n\nThe suggestion also allows \"int / duration\" which also doesn\u0027t make sense. And it doesn\u0027t handle \u0027side\u0027 correctly (\u0027xv\u0027 and \u0027yv\u0027 need to be swapped if it is starlark.Right). In the end the code won\u0027t be simpler.",
+      "parentUuid": "fa35d3c3_1d38e5f3",
+      "revId": "bcfe41686e03262fca3a734df781ad39bd15e13c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f2e63ed_590385ae",
         "filename": "lucicfg/duration.go",
         "patchSetId": 4
@@ -50,6 +86,24 @@
       "revId": "bcfe41686e03262fca3a734df781ad39bd15e13c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d43585f_f430bc6d",
+        "filename": "lucicfg/duration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-04T20:46:02Z",
+      "side": 1,
+      "message": "Considered. Code is more straightforward without it, imho. starlark.Unary requires explicitly rejecting op \u003d\u003d \u0027~\u0027 and then also a type cast from starlark.Value to starlark.Int, before wrapping int in duration{...}.",
+      "parentUuid": "2f2e63ed_590385ae",
+      "revId": "bcfe41686e03262fca3a734df781ad39bd15e13c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
