@@ -14,6 +14,7 @@
 
 # Non-LUCI features.
 load('@stdlib//internal/generator.star', _generator='generator')
+load('@stdlib//internal/time.star', _time='time')
 
 # Individual LUCI rules.
 load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
@@ -39,3 +40,4 @@ core = struct(
     project = _project,
 )
 acl = _acl
+time = _time
