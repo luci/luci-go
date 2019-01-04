@@ -498,11 +498,11 @@ func writeErrorPage(ctx *router.Context, err error, data logData) {
 		// Redirect to login screen.
 		var u string
 		u, ierr = auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
-		if err == nil {
+		if ierr == nil {
 			http.Redirect(ctx.Writer, ctx.Request, u, http.StatusFound)
 			return
 		}
-		logging.WithError(err).Errorf(ctx.Context, "Error getting Login URL")
+		logging.WithError(ierr).Errorf(ctx.Context, "Error getting Login URL")
 		fallthrough
 	case codes.Internal:
 		// Hide internal errors, expose all other errors.
