@@ -25,10 +25,10 @@ def test_roles_validation():
   # Invalid type is NOT ok.
   assert.fails(
       lambda: acl.entry('zzz'),
-      'bad "roles": got string "zzz", expecting acl.role')
+      'bad "roles": got string, want acl.role')
   assert.fails(
       lambda: acl.entry(['zzz']),
-      'bad "roles": got string "zzz", expecting acl.role')
+      'bad "roles": got string, want acl.role')
 
 
 def test_groups_validation():
@@ -53,7 +53,7 @@ def test_groups_validation():
   # Wrong type is not OK.
   assert.fails(
       lambda: acl.entry(acl.BUILDBUCKET_READER, groups=123),
-      'bad "groups": got int 123, expecting string')
+      'bad "groups": got int, want string')
 
 
 def test_users_validation():
@@ -80,7 +80,7 @@ def test_users_validation():
   # Wrong type is not OK.
   assert.fails(
       lambda: acl.entry(acl.BUILDBUCKET_READER, users=123),
-      'bad "users": got int 123, expecting string')
+      'bad "users": got int, want string')
 
 
 def test_group_only_roles():

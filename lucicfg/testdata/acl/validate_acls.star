@@ -16,10 +16,10 @@ def test_works():
   # Wrong type is NOT ok.
   assert.fails(
       lambda: aclimpl.validate_acls(111),
-      'bad "acls": got int 111, expecting list')
+      'bad "acls": got int, want list')
   assert.fails(
       lambda: aclimpl.validate_acls([111]),
-      'bad "acls": got int 111, expecting acl.entry')
+      'bad "acls": got int, want acl.entry')
 
   # Checks project_level_only.
   assert.true(acl.PROJECT_CONFIGS_READER.project_level_only)
