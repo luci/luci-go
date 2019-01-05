@@ -14,15 +14,17 @@
 
 """Generic value validators."""
 
+load('@stdlib//internal/re.star', 're')
 load('@stdlib//internal/time.star', 'time')
 
 
-def _string(attr, val, default=None):
+def _string(attr, val, regexp=None, default=None):
   """Validates that the value is a string and returns it.
 
   Args:
     attr: field name with this value, for error messages.
     val: a value to validate.
+    regexp: a regular expression to check 'val' against.
     default: a value to use if 'val' is None, or None if the value is required.
 
   Returns:
@@ -35,6 +37,9 @@ def _string(attr, val, default=None):
 
   if type(val) != 'string':
     fail('bad %r: got %s, want string' % (attr, type(val)))
+
+  if regexp and not re.submatches(regexp, val):
+    fail('bad %r: %r should match %r' % (attr, val, regexp))
 
   return val
 

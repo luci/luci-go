@@ -7,10 +7,12 @@ def test_validate_string():
   assert.eq(call('a', 'zzz'), 'zzz')
   assert.eq(call('a', '', default='zzz'), '')
   assert.eq(call('a', None, default='zzz'), 'zzz')
+  assert.eq(call('a', 'abc', regexp='a.c$'), 'abc')
   assert.fails(lambda: call('a', None), 'bad "a"\: missing')
   assert.fails(lambda: call('a', 1), 'bad "a"\: got int, want string')
   assert.fails(lambda: call('a', [], default='zzz'), 'bad "a": got list, want string')
   assert.fails(lambda: call('a', None, default=1), 'bad "a"\: got int, want string')
+  assert.fails(lambda: call('a', 'abcd', regexp='a.c$'), 'bad "a": "abcd" should match "a\.c\$"')
 
 
 def test_validate_duration():
