@@ -86,9 +86,11 @@ func TestGetRPCTransport(t *testing.T) {
 			t, err := GetRPCTransport(ctx, AsUser, WithDelegationTags("a:b", "c:d"), &rpcMocks{
 				MintDelegationToken: func(ic context.Context, p DelegationTokenParams) (*delegation.Token, error) {
 					c.So(p, ShouldResemble, DelegationTokenParams{
-						TargetHost: "example.com",
-						Tags:       []string{"a:b", "c:d"},
-						MinTTL:     10 * time.Minute,
+						TokenParams{
+							TargetHost: "example.com",
+							Tags:       []string{"a:b", "c:d"},
+							MinTTL:     10 * time.Minute,
+						},
 					})
 					return &delegation.Token{Token: "deleg_tok"}, nil
 				},
@@ -229,6 +231,39 @@ func TestGetRPCTransport(t *testing.T) {
 
 		Convey("in AsActor mode without account, error", func(C C) {
 			_, err := GetRPCTransport(ctx, AsActor)
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("in AsProjectScoped mode anonymous", func(C C) {
+			mocks := &rpcMocks{
+				MintScopedToken: func(ic context.Context, p ScopedTokenParams) (*oauth2.Token, error) {
+					So(p, ShouldResemble, ScopedTokenParams{
+						TokenParams: TokenParams{
+							MinTTL: 10 * time.Minute,
+						},
+						LuciProject: "luci-project-1234",
+						OAuthScopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+					})
+					return &oauth2.Token{
+						TokenType: "Bearer",
+						AccessToken: "blah-blah",
+					}, nil
+				},
+			}
+
+			t, err := GetRPCTransport(ctx, AsProjectScoped, WithProject("luci-project-1234"), mocks)
+			So(err, ShouldBeNil)
+
+			_, err = t.RoundTrip(makeReq("https://example.com"))
+			So(err, ShouldBeNil)
+			So(mock.reqs[0].Header, ShouldResemble, http.Header{
+				"Authorization": {"Bearer blah-blah"},
+			})
+		})
+
+
+		Convey("in AsProjectScoped mode without project, error", func(C C) {
+			_, err := GetRPCTransport(ctx, AsProjectScoped)
 			So(err, ShouldNotBeNil)
 		})
 	})
