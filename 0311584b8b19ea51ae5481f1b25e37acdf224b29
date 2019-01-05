@@ -22,6 +22,30 @@
       "revId": "0311584b8b19ea51ae5481f1b25e37acdf224b29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5177953_82b6e66f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-05T00:38:17Z",
+      "side": 1,
+      "message": "What you propose is isomorphic to what I have, except I\u0027ll (probably) need to reverse direction of traversal in \u0027targets()\u0027 from .children() to .parents().\n\nIt\u0027s like multiplying negative numbers. If I reverse a direction of an edge in one place, I need to have a reversal somewhere else too to keep same logic.\n\nI started with the mental model of how I imagine the \u0027triggers\u0027 edge (and the traversal logic) should look like and arrived to the necessity to have \u0027poller\u0027 ---owns---\u003e \u0027triggerrer\u0027 ---triggers---\u003e \u0027builder_ref\u0027 ordering.\n\nIf we start with a requirement \u0027builder_ref\u0027 ---triggered_by--\u003e \u0027triggerer\u0027 ---owned_by---\u003e \u0027poller\u0027 we\u0027ll arrive to a traversal logic that may (or may not) look odd.\n\nI\u0027ll try it in the next patch set to see how it looks.",
+      "parentUuid": "6cfc64e3_aea81884",
+      "range": {
+        "startLine": 19,
+        "startChar": 39,
+        "endLine": 19,
+        "endChar": 45
+      },
+      "revId": "0311584b8b19ea51ae5481f1b25e37acdf224b29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
