@@ -46,6 +46,30 @@
       "revId": "0311584b8b19ea51ae5481f1b25e37acdf224b29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01066426_c2ceffaa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-05T02:25:07Z",
+      "side": 1,
+      "message": "I tried. There are difficulties.\n\nCurrently we have this edge: triggerer ---triggers---\u003e builder_ref.\n\nBoth sides of it are \"ref-like\", it allows to use bucket-less names in both triggers\u003d[...] and triggered_by\u003d[...] fields.\n\nThis property is crucial and should be retained if we want to replace --triggers--\u003e with --triggered_by--\u003e. So we\u0027ll have builder_ref ---triggered_by---\u003e triggerer.\n\nNote that we can\u0027t simply have builder ---triggered_by---\u003e triggerer. Because this will require us to always use full builder names in poller(..., triggers\u003d[\u0027bucket/builder\u0027]) (to find a concrete \u0027builder\u0027 node to attach an edge to). Using builder_ref allows us to do stuff like poller(..., triggers\u003d[\u0027builder\u0027]).\n\nNow imagine a definition builder(\u0027b\u0027, triggers\u003d[\u0027b\u0027\u0027]). It would result in the following graph:\n\nbuilder_ref(\u0027b\u0027) ---points_to--\u003e builder(\u0027b\u0027)\ntriggerer(\u0027b\u0027) ---points_to---\u003e builder(\u0027b\u0027)\nbuilder_ref(\u0027b\u0027) ---triggered_by---\u003e triggerer(\u0027b\u0027)\n\nThere\u0027s no cycles here, which is wrong.\n\nSo it appears, no matter how we position edges, builder\u003c-\u003etriggerer and builder\u003c-\u003ebuilder_ref should always have opposite directions. There\u0027s probably some deeper meaning behind it....\n\n-----\n\nWe can also try replace \u0027triggerer ---points_to---\u003e builder\u0027 with \u0027triggerer ---points_to---\u003e builder_ref ---points_to---\u003e builder\u0027. But now \u0027triggerer --\u003e builder_ref\u0027 edge is ambiguous (does it mean \u0027points_to\u0027 or \u0027triggererd_by\u0027?). And I don\u0027t want to complicate the base model even more by introducing different flavors of edges (existing \u0027title\u0027 attribute is purely decorative).\n\n-----\n\nWe can also try to allow \u0027builder ---triggered_by---\u003e triggerer\u0027 (that\u0027s what in your proposal). It will catch some cycles (that involve \u0027triggered_by\u003d[...]\u0027). But consider builder(\u0027ci/b\u0027, triggers\u003d[\u0027b\u0027]). Here we\u0027ll need to attach X ---triggered_by--\u003etriggerer(\u0027ci/b\u0027) to something named \u0027b\u0027. We don\u0027t know that it is builder(\u0027ci/b\u0027). So we forced to use builder_ref(\u0027b\u0027) and end up with the following graph:\n\nbuilder_ref(\u0027b\u0027) ---points_to--\u003e builder(\u0027b\u0027)\ntriggerer(\u0027b\u0027) ---points_to--\u003e builder(\u0027b\u0027)\nbuilder_ref(\u0027b\u0027) ---triggered_by--\u003e triggerer(\u0027b\u0027)\n\nAgain, no cycles here.\n\n-----\n\nI\u0027m really sorry this part is so complicated, but I believe this complexity will not spread further. For generator callbacks, it is all hidden behind single triggerer.targets(...) function. You give it a poller or a builder and it returns a list of builders triggered by it. Very simple. Generators currently don\u0027t even know there are builder_ref and trigger nodes, they operate only with gitiles_poller and builder.",
+      "parentUuid": "f5177953_82b6e66f",
+      "range": {
+        "startLine": 19,
+        "startChar": 39,
+        "endLine": 19,
+        "endChar": 45
+      },
+      "revId": "0311584b8b19ea51ae5481f1b25e37acdf224b29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
