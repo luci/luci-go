@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "6989900e_0cb960eb",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-05T02:38:02Z",
+      "side": 1,
+      "message": "nit: validate -config-set \u003cname\u003e [CONFIG_DIR]\n\n(Considering -config-set is required).",
+      "range": {
+        "startLine": 38,
+        "startChar": 14,
+        "endLine": 38,
+        "endChar": 35
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0149c90f_5f433491",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 5
@@ -48,6 +71,29 @@
     },
     {
       "key": {
+        "uuid": "cb58d405_31073b82",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-05T02:38:02Z",
+      "side": 1,
+      "message": "Please either use luci-go\u0027s logging module (preferred) or just plain old fmt.Printf. Other parts of luci-go (linked from this code) use luci-go\u0027s logging. Mixing different logging systems is bad.\n\nSo something like:\n\nlogging.Logf(ctx, lvl, \"%s: %s\", message.Path, message.Text)\n\nwhere \u0027lvl\u0027 is either logging.Warning or logging.Error based on message.Severity.\n\n\u0027logging\u0027 is http://go.chromium.org/luci/common/logging",
+      "range": {
+        "startLine": 102,
+        "startChar": 2,
+        "endLine": 102,
+        "endChar": 12
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a22cf206_8e369948",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 5
@@ -62,6 +108,29 @@
       "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b70efb35_f6bc3925",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-05T02:38:02Z",
+      "side": 1,
+      "message": "nit: merge this two lines, it is pretty common thing to do in go",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 131,
+        "endChar": 49
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
