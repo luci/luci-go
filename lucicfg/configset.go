@@ -115,11 +115,13 @@ func (g *generators) call(th *starlark.Thread, ctx *genCtx) (errs errors.MultiEr
 	fc := builtins.GetFailureCollector(th)
 
 	for _, cb := range g.gen {
-		fc.Clear()
-		_, err := starlark.Call(th, cb, starlark.Tuple{ctx}, nil)
-		if err != nil {
-			if f := fc.LatestFailure(); f != nil {
-				errs = append(errs, f)
+		if fc != nil {
+			fc.Clear()
+		}
+		if _, err := starlark.Call(th, cb, starlark.Tuple{ctx}, nil); err != nil {
+			if fc != nil && fc.LatestFailure() != nil {
+				// Prefer this error, it has custom stack trace.
+				errs = append(errs, fc.LatestFailure())
 			} else {
 				errs = append(errs, err)
 			}

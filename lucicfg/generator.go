@@ -37,8 +37,9 @@ type Inputs struct {
 	TextPBHeader string // a header to put into generated textpb files
 
 	// Used to setup additional facilities for unit tests.
-	testPredeclared    starlark.StringDict
-	testThreadModifier func(th *starlark.Thread)
+	testPredeclared             starlark.StringDict
+	testThreadModifier          func(th *starlark.Thread)
+	testDisableFailureCollector bool
 }
 
 // Generate interprets the high-level config.
@@ -86,7 +87,9 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		Predeclared: predeclared,
 		Packages:    pkgs,
 		ThreadModifier: func(th *starlark.Thread) {
-			failures.Install(th)
+			if !in.testDisableFailureCollector {
+				failures.Install(th)
+			}
 			if in.testThreadModifier != nil {
 				in.testThreadModifier(th)
 			}
