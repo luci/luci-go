@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e0ae17bd_db6161ae",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-07T20:00:08Z",
+      "side": 1,
+      "message": "nit: char (0-9a-f) :)",
+      "range": {
+        "startLine": 225,
+        "startChar": 8,
+        "endLine": 225,
+        "endChar": 13
+      },
+      "revId": "3b11edd4144fe2f80fa92e644c9e5fd6fb2f04db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
