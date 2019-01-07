@@ -24,7 +24,7 @@ def _from_host(attr, host):
     attr: name of the attribute, e.g. 'buildbucket' (for error messages).
     host: a service host name, e.g. 'buildbucket.appspot.com'.
   """
-  host = validate.string(attr, host, default='')
+  host = validate.string(attr, host, required=False)
   if not host:
     return None
 
