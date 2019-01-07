@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "670fa6be_9fe16bdd",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2019-01-07T20:46:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6989900e_0cb960eb",
+      "range": {
+        "startLine": 38,
+        "startChar": 14,
+        "endLine": 38,
+        "endChar": 35
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0149c90f_5f433491",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 5
@@ -71,6 +95,54 @@
     },
     {
       "key": {
+        "uuid": "8f972450_17afc2d8",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2019-01-07T20:46:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7e73041_f793bab9",
+      "range": {
+        "startLine": 96,
+        "startChar": 40,
+        "endLine": 96,
+        "endChar": 41
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c1d88adf_d6531501",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2019-01-07T20:46:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0149c90f_5f433491",
+      "range": {
+        "startLine": 96,
+        "startChar": 68,
+        "endLine": 96,
+        "endChar": 70
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cb58d405_31073b82",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 5
@@ -91,6 +163,30 @@
       "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f149e7cb_861a8f89",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2019-01-07T20:46:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cb58d405_31073b82",
+      "range": {
+        "startLine": 102,
+        "startChar": 2,
+        "endLine": 102,
+        "endChar": 12
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +230,30 @@
     },
     {
       "key": {
+        "uuid": "990b2e52_a06a44d0",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2019-01-07T20:46:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b70efb35_f6bc3925",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 131,
+        "endChar": 49
+      },
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "10a182ef_13561465",
         "filename": "lucicfg/cli/validate_test.go",
         "patchSetId": 5
@@ -148,6 +268,24 @@
       "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4da0b4d7_b75d28df",
+        "filename": "lucicfg/cli/validate_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2019-01-07T20:46:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10a182ef_13561465",
+      "revId": "a495ffc9a959b0f5c1a3e3bcd76f73bd36d8f650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
