@@ -221,6 +221,11 @@ message CreateChangeRequest {
   string ref = 2;
 
   string subject = 3;
+
+  // 40-digit hex SHA-1 of the git commit which will be the parent commit of the
+  // newly created change. If set, it must be a merged commit on the destination
+  // branch.
+  string base_commit = 4;
 }
 
 // Information to submit a change.

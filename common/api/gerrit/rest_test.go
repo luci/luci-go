@@ -135,9 +135,10 @@ func TestRestCreateChange(t *testing.T) {
 		defer srv.Close()
 
 		req := gerritpb.CreateChangeRequest{
-			Project: "example/repo",
-			Ref:     "refs/heads/master",
-			Subject: "example subject",
+			Project:    "example/repo",
+			Ref:        "refs/heads/master",
+			Subject:    "example subject",
+			BaseCommit: "someOpaqueHash",
 		}
 		res, err := c.CreateChange(ctx, &req)
 		So(err, ShouldBeNil)
@@ -152,9 +153,10 @@ func TestRestCreateChange(t *testing.T) {
 		err = json.Unmarshal(actualBody, &ci)
 		So(err, ShouldBeNil)
 		So(ci, ShouldResemble, changeInput{
-			Project: "example/repo",
-			Branch:  "refs/heads/master",
-			Subject: "example subject",
+			Project:    "example/repo",
+			Branch:     "refs/heads/master",
+			Subject:    "example subject",
+			BaseCommit: "someOpaqueHash",
 		})
 	})
 }
