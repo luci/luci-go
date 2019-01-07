@@ -25,6 +25,6 @@ def logdog(gs_bucket=None):
         to this bucket/path.
   """
   graph.add_node(keys.logdog(), props = {
-      'gs_bucket': validate.string('gs_bucket', gs_bucket, default=''),
+      'gs_bucket': validate.string('gs_bucket', gs_bucket, required=False),
   })
   graph.add_edge(keys.project(), keys.logdog())
