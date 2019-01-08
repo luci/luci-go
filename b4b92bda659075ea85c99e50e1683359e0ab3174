@@ -22,6 +22,30 @@
       "revId": "b4b92bda659075ea85c99e50e1683359e0ab3174",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4b91a6c_f85da1f7",
+        "filename": "gce/cmd/agent/windows.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-08T22:40:58Z",
+      "side": 1,
+      "message": "I only included username when the error was user-related (e.g. failed to look up uid or gid). If the os.Chown call itself fails, it doesn\u0027t emit username, only path. Same here, if the actual Windows equivalent of chown fails, it doesn\u0027t emit username, only path.\n\nFor os.Chown, no errors.Annotate is needed to emit path because os.Chown itself seems to include the path:\n$ ./agent connect -dir /b/s -server chromium-swarm-dev.appspot.com -user root\n[E2019-01-08T14:37:05.185784-08:00 234013 0 connect.go:62] failed to chown: /b/s: chown /b/s: operation not permitted",
+      "parentUuid": "aa42fb7d_2ae104ba",
+      "range": {
+        "startLine": 72,
+        "startChar": 50,
+        "endLine": 72,
+        "endChar": 51
+      },
+      "revId": "b4b92bda659075ea85c99e50e1683359e0ab3174",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
