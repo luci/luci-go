@@ -108,8 +108,8 @@ def _duration(attr, val, precision=time.second, min=time.zero, max=None, default
   """Validates that the value is a duration specified at the given precision.
 
   For example, if 'precision' is time.second, will validate that the given
-  duration has a whole number of seconds and will return them (as integer).
-  Fails if truncating the duration to the given precision loses information.
+  duration has a whole number of seconds. Fails if truncating the duration to
+  the requested precision loses information.
 
   Args:
     attr: field name with this value, for error messages.
@@ -121,8 +121,7 @@ def _duration(attr, val, precision=time.second, min=time.zero, max=None, default
     required: if False, allow 'val' to be None, return 'default' in this case.
 
   Returns:
-    An integer: a whole number of 'precision' units in the given duration value
-    or None if required is False and default is None.
+    The validated duration or None if required is False and default is None.
   """
   if val == None:
     if required:
@@ -139,13 +138,12 @@ def _duration(attr, val, precision=time.second, min=time.zero, max=None, default
   if max != None and val > max:
     fail('bad %r: %s should be <= %s' % (attr, val, max))
 
-  res = val / precision
-  if res * precision != val:
+  if time.truncate(val, precision) != val:
     fail((
         'bad %r: losing precision when truncating %s to %s units, ' +
         'use time.truncate(...) to acknowledge') % (attr, val, precision))
 
-  return res
+  return val
 
 
 def _list(attr, val, required=False):
