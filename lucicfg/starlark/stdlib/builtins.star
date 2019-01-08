@@ -22,6 +22,7 @@ load('@stdlib//internal/luci/rules/builder.star', _builder='builder')
 load('@stdlib//internal/luci/rules/gitiles_poller.star', _gitiles_poller='gitiles_poller')
 load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
 load('@stdlib//internal/luci/rules/project.star', _project='project')
+load('@stdlib//internal/luci/rules/recipe.star', _recipe='recipe')
 
 # LUCI helper modules.
 load('@stdlib//internal/luci/lib/acl.star', _acl='acl')
@@ -41,6 +42,7 @@ core = struct(
     gitiles_poller = _gitiles_poller,
     logdog =  _logdog,
     project = _project,
+    recipe = _recipe,
 )
 acl = _acl
 swarming = _swarming
