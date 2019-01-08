@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8e99068_86e18e04",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-08T23:27:22Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 16
+      },
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dc653674_8df98f5d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-08T23:27:22Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 29,
+        "startChar": 9,
+        "endLine": 29,
+        "endChar": 10
+      },
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dce940e7_91814b5f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-08T23:27:22Z",
+      "side": 1,
+      "message": "do we really need to support deprecated way? TBH, i thought it no longer works in pure LUCI.",
+      "range": {
+        "startLine": 32,
+        "startChar": 56,
+        "endLine": 34,
+        "endChar": 34
+      },
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b97a633_1315e498",
+        "filename": "lucicfg/testdata/errors/ambiguous_references.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-08T23:27:22Z",
+      "side": 1,
+      "message": "nit: i\u0027d avoid giving examples of legacy anywhere w/o annotating them as legacy (because of codesearch)",
+      "range": {
+        "startLine": 9,
+        "startChar": 4,
+        "endLine": 9,
+        "endChar": 47
+      },
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92dd1fe7_2f3b9d36",
+        "filename": "lucicfg/testdata/errors/poller_builder_clash.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-08T23:27:22Z",
+      "side": 1,
+      "message": "ditto.",
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
