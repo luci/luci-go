@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6599f74_3bc3bbe0",
+        "filename": "client/archiver/directory_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-01-08T23:11:22Z",
+      "side": 1,
+      "message": "Please create a second test case that does the same, but where the symlink destination is to a directory (instead of a file) and this directory contains a file.",
+      "revId": "5fa1658f4d22c5ad0f03ece25a24de87b4f369ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
