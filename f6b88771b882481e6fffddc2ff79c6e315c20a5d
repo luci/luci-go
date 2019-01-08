@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "87f1dd5f_77d49bff",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 15
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-08T15:18:58Z",
+      "side": 1,
+      "message": "should this comment be in L30 too? maybe I don\u0027t understand its positioning",
+      "range": {
+        "startLine": 31,
+        "startChar": 45,
+        "endLine": 31,
+        "endChar": 71
+      },
+      "revId": "f6b88771b882481e6fffddc2ff79c6e315c20a5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea4a353e_2823e614",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 15
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-08T15:18:58Z",
+      "side": 1,
+      "message": "define",
+      "range": {
+        "startLine": 235,
+        "startChar": 65,
+        "endLine": 235,
+        "endChar": 72
+      },
+      "revId": "f6b88771b882481e6fffddc2ff79c6e315c20a5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "321efa83_f60c4b22",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 15
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-08T15:18:58Z",
+      "side": 1,
+      "message": "cycles in specifically `builders` graph is what we actually want to prevent. But yeah, it would require edges to have a non-decorative name. We can do it later if we want.",
+      "revId": "f6b88771b882481e6fffddc2ff79c6e315c20a5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e55de5cc_dd49dba2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 15
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-08T15:18:58Z",
+      "side": 1,
+      "message": "indicate",
+      "range": {
+        "startLine": 49,
+        "startChar": 21,
+        "endLine": 49,
+        "endChar": 30
+      },
+      "revId": "f6b88771b882481e6fffddc2ff79c6e315c20a5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ca5f59b_9cbd13a3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 15
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-08T15:18:58Z",
+      "side": 1,
+      "message": "indicate",
+      "range": {
+        "startLine": 43,
+        "startChar": 21,
+        "endLine": 43,
+        "endChar": 30
+      },
+      "revId": "f6b88771b882481e6fffddc2ff79c6e315c20a5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

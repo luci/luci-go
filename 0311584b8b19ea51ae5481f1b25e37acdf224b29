@@ -70,6 +70,30 @@
       "revId": "0311584b8b19ea51ae5481f1b25e37acdf224b29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "722f460c_b4221000",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-08T15:18:58Z",
+      "side": 1,
+      "message": "ok, as long as public API does not reflect this decision (maybe add scary warning signs) then we will be able to revisit it in the future, if needed.\n\nOverall, i feel like we are trying to solve a concrete problem (disallow builder triggering itself directly or indirectly) via a very abstract solution (no cycles in the graph of everything) and the abstraction does not work very well for this / is being applied weirdly, but it\u0027s fine if this is encapsulated. We can revisit later.",
+      "parentUuid": "01066426_c2ceffaa",
+      "range": {
+        "startLine": 19,
+        "startChar": 39,
+        "endLine": 19,
+        "endChar": 45
+      },
+      "revId": "0311584b8b19ea51ae5481f1b25e37acdf224b29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
