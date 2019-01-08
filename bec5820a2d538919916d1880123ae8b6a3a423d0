@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c725f49a_df04179e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T04:52:52Z",
+      "side": 1,
+      "message": "Done. But the doc is really misleading then and it needs to change... I attempted to change it to match my understanding.",
+      "parentUuid": "6b8a9d19_334f3400",
+      "revId": "bec5820a2d538919916d1880123ae8b6a3a423d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca7b5ad6_5da35a09",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2019-01-08T04:09:29Z",
       "side": 1,
       "message": "https://chromium-review.googlesource.com/c/infra/infra/+/1268921 adds support for repeated dimensions in the config, at least for caches. So this has to be list. WDYT about\n\n  [\n    swarming.dimension(\u0027os\u0027, \u0027Linux\u0027),\n    ...\n  ]",
+      "range": {
+        "startLine": 20,
+        "startChar": 19,
+        "endLine": 20,
+        "endChar": 20
+      },
+      "revId": "bec5820a2d538919916d1880123ae8b6a3a423d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2f4eb6c_2428a19a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T04:52:52Z",
+      "side": 1,
+      "message": "Can you describe what the intended usage of the repeated dimensions? It\u0027s not clear from the CL nor *.proto.\n\nI considered using a list of (key, val, exp) tuples, but it may make the most common case looks unnecessary convoluted. We may also need helpers to merge/filter such list of dimensions (since we can\u0027t just override a dict key or pop an item from it). I\u0027m not sure yet.",
+      "parentUuid": "ca7b5ad6_5da35a09",
       "range": {
         "startLine": 20,
         "startChar": 19,
