@@ -22,6 +22,30 @@
       "revId": "a3069140c7cf217fe00fa443b18e7003d9ed5382",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f118ea8_5d93b15c",
+        "filename": "starlark/builtins/fail.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T20:24:57Z",
+      "side": 1,
+      "message": "I don\u0027t think it would be accepted. starlarktest package and it assert module target mostly starlark-go\u0027s own needs, so extending it is not really a good solution from starlark-go POV.\n\nA better pull request would be stop stringying all errors. Then the whole FailureCollector thing is unnecessary. But it is a big change and I prefer to punt it for now.",
+      "parentUuid": "409308cf_144adf34",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 66,
+        "endChar": 43
+      },
+      "revId": "a3069140c7cf217fe00fa443b18e7003d9ed5382",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
