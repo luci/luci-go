@@ -26,7 +26,11 @@ load('@stdlib//internal/graph.star', 'graph')
 #   core.project -> core.logdog
 #   core.project -> [core.bucket]
 #   core.bucket -> [core.builder]
+#   core.bucket -> [core.gitiles_poller]
 #   core.builder_ref -> core.builder
+#   core.builder -> [core.triggerer]
+#   core.gitiles_poller -> [core.triggerer]
+#   core.triggerer -> [core.builder_ref]
 
 
 def _bucket_scoped_key(kind, name):
@@ -51,9 +55,11 @@ kinds = struct(
     LOGDOG = 'core.logdog',
     BUCKET = 'core.bucket',
     BUILDER = 'core.builder',
+    GITILES_POLLER = 'core.gitiles_poller',
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = 'core.builder_ref',
+    TRIGGERER = 'core.triggerer',
 )
 
 
@@ -64,9 +70,11 @@ keys = struct(
     logdog = lambda: graph.key(kinds.LOGDOG, '...'),  # singleton
     bucket = lambda name: graph.key(kinds.BUCKET, name),
     builder = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.BUILDER, name),
+    gitiles_poller = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.GITILES_POLLER, name),
 
     # Internal nodes.
     builder_ref = lambda name: _bucket_scoped_key(kinds.BUILDER_REF, name),
+    triggerer = lambda name: _bucket_scoped_key(kinds.TRIGGERER, name),
 )
 
 
@@ -151,4 +159,103 @@ def _builder_ref_follow(ref_node, context_node):
 builder_ref = struct(
     add = _builder_ref_add,
     follow = _builder_ref_follow,
+)
+
+
+################################################################################
+## triggerer implementation.
+
+
+def _triggerer_add(owner):
+  """Adds two 'triggerer' nodes ("<bucket>/<name>" and "<name>") that have
+  'owner' as a parent.
+
+  Triggerer nodes are essentially nothing more than a way to associate a node
+  of arbitrary kind ('owner') to a list of builder_ref's of builders it
+  triggers (children of added 'triggerer' node).
+
+  We need this indirection to make 'triggered_by' relation work: when a builder
+  'B' is triggered by something named 'T', we don't know whether 'T' is another
+  builder or a gitiles poller ('T' may not even be defined yet). So instead
+  all things that can trigger builders have an associated 'triggerer' node and
+  'T' names such a node.
+
+  To allow omitting bucket name when it is not important, each triggering entity
+  actually defines two 'triggerer' nodes: a bucket-scoped one and a global one.
+  During the graph traversal phase, children of both nodes are merged.
+
+  If a globally named 'triggerer' node has more than one parent, it means there
+  are multiple things in different buckets that have the same name. Using such
+  references in 'triggered_by' relation is ambiguous. This situation is detected
+  during the graph traversal phase, see triggerer.targets(...).
+
+  Args:
+    owner: a graph.key to setup triggerers for.
+
+  Returns:
+    graph.key of added bucket-scoped TRIGGERER node ("<bucket>/<name>" one).
+  """
+  if not owner.container or owner.container.kind != kinds.BUCKET:
+    fail('got %s, expecting a bucket-scoped key' % (owner,))
+
+  bucket = owner.container.id  # name of the bucket, as string
+  name = owner.id              # name of the builder or poller, as string
+
+  short = keys.triggerer(name)
+  graph.add_node(short, idempotent=True)  # there may be such node already
+  graph.add_edge(owner, short)
+
+  full = keys.triggerer("%s/%s" % (bucket, name))
+  graph.add_node(full)
+  graph.add_edge(owner, full)
+
+  return full
+
+
+def _triggerer_targets(root):
+  """Collects all BUILDER nodes triggered by the given node.
+
+  Enumerates all TRIGGERER children of 'root', and collects all BUILDER nodes
+  they refer to, following BUILDER_REF references.
+
+  Various ambiguities are reported as errors (which marks the generation phase
+  as failed). Corresponding nodes are skipped, to collect as many errors as
+  possible before giving up.
+
+  Args:
+    root: a graph.node that represents the triggering entity: something that has
+        a triggerer as a child.
+
+  Returns:
+    List of graph.node of BUILDER kind, sorted by keys.
+  """
+  out = set()
+
+  for t in graph.children(root.key, kinds.TRIGGERER):
+    parents = graph.parents(t.key)
+
+    for ref in graph.children(t.key, kinds.BUILDER_REF):
+      # Resolve builder_ref to a concrete builder. This may return None if the
+      # ref is ambiguous.
+      builder = builder_ref.follow(ref, root)
+      if not builder:
+        continue
+
+      # If 't' has multiple parents, it can't be used in 'triggered_by'
+      # relations, since it is ambiguous. Report this situation.
+      if len(parents) != 1:
+        error(
+            'ambiguous reference %r in %s, possible variants:\n  %s',
+            t.key.id, builder, '\n  '.join([str(v) for v in parents]),
+            trace=builder.trace,
+        )
+      else:
+        out = out.union([builder])
+
+  return graph.sorted_nodes(out)
+
+
+triggerer = struct(
+    add = _triggerer_add,
+    targets = _triggerer_targets,
 )

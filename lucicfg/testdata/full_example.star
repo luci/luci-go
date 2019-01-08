@@ -14,20 +14,28 @@ core.project(
 
 core.logdog(gs_bucket = 'chromium-luci-logdog')
 
-# CI builders.
+# CI bucket.
 
 core.bucket(name = 'ci')
+
+core.gitiles_poller(
+    name = 'master-poller',
+    bucket = 'ci',
+)
 
 core.builder(
     name = 'linux ci builder',
     bucket = 'ci',
+    triggered_by = ['master-poller'],
 )
 core.builder(
-    name = 'shared builder',
+    name = 'generically named builder',
     bucket = 'ci',
+    triggered_by = ['master-poller'],
 )
 
-# Try builders.
+
+# Try bucket.
 
 core.bucket(
     name = 'try',
@@ -41,7 +49,7 @@ core.builder(
     bucket = 'try',
 )
 core.builder(
-    name = 'shared builder',
+    name = 'generically named builder',
     bucket = 'try',
 )
 
@@ -54,11 +62,11 @@ core.builder(
 #   acl_sets: "ci"
 #   swarming: <
 #     builders: <
-#       name: "linux ci builder"
+#       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #     >
 #     builders: <
-#       name: "shared builder"
+#       name: "linux ci builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #     >
 #   >
@@ -68,11 +76,11 @@ core.builder(
 #   acl_sets: "try"
 #   swarming: <
 #     builders: <
-#       name: "linux try builder"
+#       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #     >
 #     builders: <
-#       name: "shared builder"
+#       name: "linux try builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #     >
 #   >

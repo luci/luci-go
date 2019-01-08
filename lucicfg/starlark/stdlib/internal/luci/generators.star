@@ -16,7 +16,7 @@
 
 load('@stdlib//internal/generator.star', 'generator')
 load('@stdlib//internal/graph.star', 'graph')
-load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
+load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'triggerer')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
@@ -29,6 +29,7 @@ def register():
   generator(impl = gen_project_cfg)
   generator(impl = gen_logdog_cfg)
   generator(impl = gen_buildbucket_cfg)
+  generator(impl = gen_scheduler_cfg)
 
 
 ################################################################################
@@ -211,3 +212,42 @@ def gen_buildbucket_builders(bucket, swarming_host):
     # recipe depends on.
     out.append(b)
   return out
+
+
+################################################################################
+## scheduler.cfg.
+
+
+def gen_scheduler_cfg(ctx):
+  """Generates scheduler.cfg."""
+  buckets = get_buckets()
+  if not buckets:
+    return
+
+  # Discover who triggers who, validate there are no ambiguities in 'triggers'
+  # and 'triggered_by' relations (triggerer.targets reports them as errors).
+
+  pollers = {}   # GITILES_POLLER node -> list of BUILDER nodes it triggers.
+  builders = {}  # BUILDER node -> list of BUILDER nodes it triggers.
+
+  for bucket in buckets:
+    for poller in graph.children(bucket.key, kinds.GITILES_POLLER):
+      # Note: the list of targets may be empty. We still want to define a
+      # poller, so add the entry to the dict regardless. This may be useful to
+      # confirm a poller works before making it trigger anything.
+      pollers[poller] = triggerer.targets(poller)
+
+    for builder in graph.children(bucket.key, kinds.BUILDER):
+      targets = triggerer.targets(builder)
+      if targets:
+        builders[builder] = targets
+
+  # The scheduler service is not used at all? Don't require its hostname then.
+  if not pollers and not builders:
+    return
+
+  # TODO(vadimsh): Actually generate configs:
+  #   1. Add per-bucket ACL sets to use as base ACLs.
+  #   2. Add gitiles Trigger entry for each key in 'pollers' dict.
+  #   3. Add Job entry for each builder appearing in 'pollers' and 'builders'.
+  #   4. Add Job-scoped TRIGGERER ACL per 'builders' map.
