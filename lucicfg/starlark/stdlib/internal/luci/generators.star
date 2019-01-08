@@ -19,6 +19,8 @@ load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'triggerer')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
+load("@proto//google/protobuf/wrappers.proto", wrappers_pb="google.protobuf")
+
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
 load('@proto//luci/buildbucket/project_config.proto', buildbucket_pb='buildbucket')
 load('@proto//luci/config/project_config.proto', config_pb='config')
@@ -190,28 +192,76 @@ def gen_buildbucket_builders(bucket, swarming_host):
   """core.bucket(...) node => [buildbucket_pb.Builder]."""
   out = []
   for node in graph.children(bucket.key, kinds.BUILDER):
-    # TODO(vadimsh): Fill in all properties.
     b = buildbucket_pb.Builder(
         name = node.props.name,
         swarming_host = swarming_host,
-        swarming_tags = [],
-        dimensions = [],
-        recipe = None,
-        priority = 0,
-        execution_timeout_secs = 0,
-        expiration_secs = 0,
-        caches = [],
-        build_numbers = 0,
-        service_account = '',
-        auto_builder_dimension = 0,
-        experimental = 0,
-        luci_migration_host = "",
-        task_template_canary_percentage = None,
+        recipe = _bb_recipe(node),
+        service_account = node.props.service_account,
+        caches = _bb_caches(node.props.caches),
+        execution_timeout_secs = node.props.execution_timeout_sec,
+        dimensions = _bb_dimensions(node.props.dimensions),
+        priority = node.props.priority,
+        swarming_tags = node.props.tags,
+        expiration_secs = node.props.expiration_sec,
+        build_numbers = _bb_toggle(node.props.build_numbers),
+        experimental = _bb_toggle(node.props.experimental),
+        luci_migration_host = node.props.luci_migration_host,
+        task_template_canary_percentage = _optional_UInt32Value(
+            node.props.task_template_canary_percentage),
     )
     # TODO(vadimsh): Apply recipe-based mutators to e.g. add named caches the
     # recipe depends on.
     out.append(b)
   return out
+
+
+def _bb_recipe(node):
+  """Builder node -> buildbucket_pb.Builder.Recipe."""
+  # TODO(vadimsh): Implement fully.
+  return buildbucket_pb.Builder.Recipe(
+      properties_j = [
+          '%s:%s' % (k, to_json(v)) for k, v in node.props.properties.items()
+      ],
+  )
+
+
+def _bb_caches(caches):
+  """[swarming.cache] -> [buildbucket_pb.Builder.CacheEntry]."""
+  out = []
+  for c in caches:
+    out.append(buildbucket_pb.Builder.CacheEntry(
+        name = c.name,
+        path = c.path,
+        wait_for_warm_cache_secs = (
+            None if c.wait_mins == None else c.wait_mins * 60
+        ),
+    ))
+  return out
+
+
+def _bb_dimensions(dims):
+  """{str: swarming.dimension} -> [str] for 'dimensions' field."""
+  out = []
+  for k, d in dims.items():
+    if d.expiration_mins == None:
+      out.append('%s:%s' % (k, d.value))
+    else:
+      out.append('%d:%s:%s' % (d.expiration_mins*60, k, d.value))
+  return out
+
+
+def _bb_toggle(val):
+  """Bool|None -> buildbucket_pb.Toggle."""
+  if val == None:
+    return buildbucket_pb.UNSET
+  return buildbucket_pb.YES if val else buildbucket_pb.NO
+
+
+def _optional_UInt32Value(val):
+  """int|None -> google.protobuf.UInt32Value."""
+  if val == None:
+    return None
+  return wrappers_pb.UInt32Value(value=val)
 
 
 ################################################################################
