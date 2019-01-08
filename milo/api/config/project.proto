@@ -38,6 +38,7 @@ message Project {
   //
   // Others:
   // {{.MiloBuildUrl}}
+  // {{.MiloBuilderUrl}}
   //
   // If any specified placeholder cannot be satisfied then no URL
   // is rendered for the build page feedback link.
