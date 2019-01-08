@@ -218,8 +218,15 @@ def gen_buildbucket_builders(bucket, swarming_host):
 
 def _bb_recipe(node):
   """Builder node -> buildbucket_pb.Builder.Recipe."""
-  # TODO(vadimsh): Implement fully.
+  recipes = graph.children(node.key, kinds.RECIPE)
+  if len(recipes) != 1:
+    fail('impossible: the builder should have a reference to a recipe')
+  recipe = recipes[0]
   return buildbucket_pb.Builder.Recipe(
+      name = recipe.props.recipe,
+      repository = recipe.props.repository,
+      cipd_package = recipe.props.cipd_package,
+      cipd_version = recipe.props.cipd_version,
       properties_j = sorted([
           '%s:%s' % (k, to_json(v)) for k, v in node.props.properties.items()
       ]),
