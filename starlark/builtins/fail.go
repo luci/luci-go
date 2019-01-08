@@ -59,6 +59,11 @@ func (f *Failure) Backtrace() string {
 // Custom stack traces are recoverable through FailureCollector. This is due
 // to Starlark's insistence on stringying all errors. If there's no
 // FailureCollector in the thread locals, custom traces are silently ignored.
+//
+// Note that the assert.fails(...) check in the default starlark tests library
+// doesn't clear the failure collector state when it "catches" an error, so
+// tests that use assert.fails(...) should be careful with using the failure
+// collector (or just don't use it at all).
 var Fail = starlark.NewBuiltin("fail", func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var msg starlark.String
 	var trace starlark.Value

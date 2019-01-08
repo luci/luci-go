@@ -53,10 +53,16 @@ func TestAllStarlark(t *testing.T) {
 		Executor: func(t *testing.T, path, body string, predeclared starlark.StringDict) error {
 			expectErrExct := readCommentBlock(body, "Expect errors:")
 			expectErrLike := readCommentBlock(body, "Expect errors like:")
+			expectCfg := readCommentBlock(body, "Expect configs:")
 			if expectErrExct != "" && expectErrLike != "" {
-				t.Errorf("Cannot use 'Expecte errors' and 'Expect errors like' at the same time")
+				t.Errorf("Cannot use 'Expect errors' and 'Expect errors like' at the same time")
 				return nil
 			}
+
+			// We treat tests that compare the generator output to some expected
+			// output as "integration tests", and everything else is a unit tests.
+			// See below for why this is important.
+			integrationTest := expectErrExct != "" || expectErrLike != "" || expectCfg != ""
 
 			// Use slash path to make stack traces look uniform across OSes.
 			path = filepath.ToSlash(path)
@@ -72,6 +78,28 @@ func TestAllStarlark(t *testing.T) {
 				testThreadModifier: func(th *starlark.Thread) {
 					starlarktest.HookThread(th, t)
 				},
+
+				// Failure collector interferes with assert.fails() in a bad way.
+				// assert.fails() captures errors, but it doesn't clear the failure
+				// collector state, so we may end up in a situation when the script
+				// fails with one error (some native starlark error, e.g. invalid
+				// function call, not 'fail'), but the failure collector remembers
+				// another (stale!) error, emitted by 'fail' before and caught by
+				// assert.fails(). This results in invalid error message at the end
+				// of the script execution.
+				//
+				// Unfortunately, it is not easy to modify assert.fails() without
+				// forking it. So instead we do a cheesy thing and disable the failure
+				// collector if the file under test appears to be unit-testy (rather
+				// than integration-testy). We define integration tests to be tests
+				// that examine the output of the generator using "Expect ..." blocks
+				// (see above), and unit tests are tests that use asserts.
+				//
+				// Disabling the failure collector results in fail(..., trace=t)
+				// ignoring the custom stack trace 't'. But unit tests don't generally
+				// check the stack trace (only the error message), so it's not a big
+				// deal for them.
+				testDisableFailureCollector: !integrationTest,
 			})
 
 			// If test was expected to fail on Starlark side, make sure it did, in
@@ -110,7 +138,7 @@ func TestAllStarlark(t *testing.T) {
 			}
 
 			// If was expecting to see some configs, assert we did see them.
-			if expectCfg := readCommentBlock(body, "Expect configs:"); expectCfg != "" {
+			if expectCfg != "" {
 				files := make([]string, 0, len(state.Configs))
 				for f := range state.Configs {
 					files = append(files, f)
