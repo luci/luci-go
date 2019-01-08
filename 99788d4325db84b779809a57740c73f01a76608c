@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3bfacff3_2c401633",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/validate.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-08T01:21:47Z",
+      "side": 1,
+      "message": "None or empty",
+      "range": {
+        "startLine": 184,
+        "startChar": 42,
+        "endLine": 184,
+        "endChar": 46
+      },
+      "revId": "99788d4325db84b779809a57740c73f01a76608c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
