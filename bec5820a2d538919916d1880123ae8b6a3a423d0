@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "6b8a9d19_334f3400",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-08T04:09:29Z",
+      "side": 1,
+      "message": "i believe it is the path that must be required, not name. I believe it is a common mistake, because usually name is the key, but in caches, we map paths/dirs to named caches, and usually name matches dir name.",
+      "revId": "bec5820a2d538919916d1880123ae8b6a3a423d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca7b5ad6_5da35a09",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-08T04:09:29Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/infra/+/1268921 adds support for repeated dimensions in the config, at least for caches. So this has to be list. WDYT about\n\n  [\n    swarming.dimension(\u0027os\u0027, \u0027Linux\u0027),\n    ...\n  ]",
+      "range": {
+        "startLine": 20,
+        "startChar": 19,
+        "endLine": 20,
+        "endChar": 20
+      },
+      "revId": "bec5820a2d538919916d1880123ae8b6a3a423d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "21389127_8c57be57",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
         "patchSetId": 1
