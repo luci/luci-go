@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "ac9be5a3_840f2a07",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T23:37:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc653674_8df98f5d",
+      "range": {
+        "startLine": 29,
+        "startChar": 9,
+        "endLine": 29,
+        "endChar": 10
+      },
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dce940e7_91814b5f",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
         "patchSetId": 1
@@ -68,6 +92,30 @@
       "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a54788c_93f2aea5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T23:37:11Z",
+      "side": 1,
+      "message": "I asked Nodir and he told me there are buildbucket users that still use \u0027repository\u0027.\n\nThe cost of supporting it in lucicfg is negligible anyway.",
+      "parentUuid": "dce940e7_91814b5f",
+      "range": {
+        "startLine": 32,
+        "startChar": 56,
+        "endLine": 34,
+        "endChar": 34
+      },
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "980130b1_4f555fab",
+        "filename": "lucicfg/testdata/errors/ambiguous_references.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T23:37:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b97a633_1315e498",
+      "range": {
+        "startLine": 9,
+        "startChar": 4,
+        "endLine": 9,
+        "endChar": 47
+      },
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92dd1fe7_2f3b9d36",
         "filename": "lucicfg/testdata/errors/poller_builder_clash.star",
         "patchSetId": 1
@@ -108,6 +180,24 @@
       "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06db1965_07916b5a",
+        "filename": "lucicfg/testdata/errors/poller_builder_clash.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T23:37:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92dd1fe7_2f3b9d36",
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
