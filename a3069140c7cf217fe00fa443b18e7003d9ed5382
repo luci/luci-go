@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "409308cf_144adf34",
+        "filename": "starlark/builtins/fail.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-08T20:20:23Z",
+      "side": 1,
+      "message": "as a user, worrying about this isn\u0027t nice. Will you consider doing pull request against starlark to add required public method to assert library?",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 66,
+        "endChar": 43
+      },
+      "revId": "a3069140c7cf217fe00fa443b18e7003d9ed5382",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
