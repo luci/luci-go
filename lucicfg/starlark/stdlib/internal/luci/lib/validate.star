@@ -18,21 +18,24 @@ load('@stdlib//internal/re.star', 're')
 load('@stdlib//internal/time.star', 'time')
 
 
-def _string(attr, val, regexp=None, default=None):
+def _string(attr, val, regexp=None, default=None, required=True):
   """Validates that the value is a string and returns it.
 
   Args:
     attr: field name with this value, for error messages.
     val: a value to validate.
     regexp: a regular expression to check 'val' against.
-    default: a value to use if 'val' is None, or None if the value is required.
+    default: a value to use if 'val' is None, ignored if required is True.
+    required: if False, allow 'val' to be None, return 'default' in this case.
 
   Returns:
-    The validated string.
+    The validated string or None if required is False and default is None.
   """
   if val == None:
-    if default == None:
+    if required:
       fail('bad %r: missing' % attr)
+    if default == None:
+      return None
     val = default
 
   if type(val) != 'string':
@@ -44,7 +47,64 @@ def _string(attr, val, regexp=None, default=None):
   return val
 
 
-def _duration(attr, val, precision=time.second, min=time.zero, max=None, default=None):
+def _int(attr, val, min=None, max=None, default=None, required=True):
+  """Validates that the value is an integer and returns it.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    min: minimal allowed value (inclusive) or None for unbounded.
+    max: maximal allowed value (inclusive) or None for unbounded.
+    default: a value to use if 'val' is None, ignored if required is True.
+    required: if False, allow 'val' to be None, return 'default' in this case.
+
+  Returns:
+    The validated int or None if required is False and default is None.
+  """
+  if val == None:
+    if required:
+      fail('bad %r: missing' % attr)
+    if default == None:
+      return None
+    val = default
+
+  if type(val) != 'int':
+    fail('bad %r: got %s, want int' % (attr, type(val)))
+
+  if min != None and val < min:
+    fail('bad %r: %s should be >= %s' % (attr, val, min))
+  if max != None and val > max:
+    fail('bad %r: %s should be <= %s' % (attr, val, max))
+
+  return val
+
+
+def _bool(attr, val, default=None, required=True):
+  """Validates that the value can be converted to a boolean.
+
+  Zero values other than None (0, "", [], etc) are treated as False. None
+  indicates "use default". If required is False and val is None, returns None
+  (indicating no value was passed).
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    default: a value to use if 'val' is None, ignored if required is True.
+    required: if False, allow 'val' to be None, return 'default' in this case.
+
+  Returns:
+    The boolean or None if required is False and default is None.
+  """
+  if val == None:
+    if required:
+      fail('bad %r: missing' % attr)
+    if default == None:
+      return None
+    val = default
+  return bool(val)
+
+
+def _duration(attr, val, precision=time.second, min=time.zero, max=None, default=None, required=True):
   """Validates that the value is a duration specified at the given precision.
 
   For example, if 'precision' is time.second, will validate that the given
@@ -57,14 +117,18 @@ def _duration(attr, val, precision=time.second, min=time.zero, max=None, default
     precision: a time unit to divide 'val' by to get the output.
     min: minimal allowed duration (inclusive) or None for unbounded.
     max: maximal allowed duration (inclusive) or None for unbounded.
-    default: a value to use if 'val' is None, or None if the value is required.
+    default: a value to use if 'val' is None, ignored if required is True.
+    required: if False, allow 'val' to be None, return 'default' in this case.
 
   Returns:
-    An integer: a whole number of 'precision' units in the given duration value.
+    An integer: a whole number of 'precision' units in the given duration value
+    or None if required is False and default is None.
   """
   if val == None:
-    if default == None:
+    if required:
       fail('bad %r: missing' % attr)
+    if default == None:
+      return None
     val = default
 
   if type(val) != 'duration':
@@ -92,7 +156,8 @@ def _list(attr, val, required=False):
   Args:
     attr: field name with this value, for error messages.
     val: a value to validate.
-    required: if True, reject empty lists.
+    required: if False, allow 'val' to be None or empty, return empty list in
+        this case.
 
   Returns:
     The validated list.
@@ -109,21 +174,56 @@ def _list(attr, val, required=False):
   return val
 
 
-def _struct(attr, val, sym, default=None):
+def _str_dict(attr, val, required=False):
+  """Validates that the value is a dict with non-empty string keys.
+
+  None is treated as an empty dict.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    required: if False, allow 'val' to be None or empty, return empty dict in
+        this case.
+
+  Returns:
+    The validated dict.
+  """
+  if val == None:
+    val = {}
+
+  if type(val) != 'dict':
+    fail('bad %r: got %s, want dict' % (attr, type(val)))
+
+  if required and not val:
+    fail('bad %r: missing' % attr)
+
+  for k in val:
+    if type(k) != 'string':
+      fail('bad %r: got %s key, want string' % (attr, type(k)))
+    if not k:
+      fail('bad %r: got empty key' % attr)
+
+  return val
+
+
+def _struct(attr, val, sym, default=None, required=True):
   """Validates that the value is a struct of the given flavor and returns it.
 
   Args:
     attr: field name with this value, for error messages.
     val: a value to validate.
     sym: a name of the constructor that produced the struct.
-    default: a value to use if 'val' is None, or None if the value is required.
+    default: a value to use if 'val' is None, ignored if required is True.
+    required: if False, allow 'val' to be None, return 'default' in this case.
 
   Returns:
-    The validated struct.
+    The validated struct or None if required is False and default is None.
   """
   if val == None:
-    if default == None:
+    if required:
       fail('bad %r: missing' % attr)
+    if default == None:
+      return None
     val = default
 
   tp = ctor(val) or type(val)  # ctor(...) return None for non-structs
@@ -135,7 +235,10 @@ def _struct(attr, val, sym, default=None):
 
 validate = struct(
     string = _string,
+    int = _int,
+    bool = _bool,
     duration = _duration,
     list = _list,
+    str_dict = _str_dict,
     struct = _struct,
 )
