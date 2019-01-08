@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "21389127_8c57be57",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T03:51:31Z",
+      "side": 1,
+      "message": "I have a feeling English here was violently violated. I just (mostly) copy-pasted this from existing proto doc.",
+      "range": {
+        "startLine": 111,
+        "startChar": 37,
+        "endLine": 115,
+        "endChar": 22
+      },
+      "revId": "bec5820a2d538919916d1880123ae8b6a3a423d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e144507a_2cc95718",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T03:51:31Z",
+      "side": 1,
+      "message": "Validation rules copied from buildbucket\n\nI also noticed it probably doesn\u0027t handle \"C:/dir\" case correctly (as is, it will allow it, causing usage of absolute paths on Windows). Maybe swarming does the validation better, I haven\u0027t checked.",
+      "range": {
+        "startLine": 130,
+        "startChar": 2,
+        "endLine": 130,
+        "endChar": 25
+      },
+      "revId": "bec5820a2d538919916d1880123ae8b6a3a423d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b6100d35_657142af",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T03:51:31Z",
+      "side": 1,
+      "message": "I couldn\u0027t find anyone actually using \"\u003cexp\u003e:\u003ckey\u003e:\u003cvalue\u003e\" syntax in their cr-buildbucket.cfg. So I think most users won\u0027t ever touch swarming.dimension(...) and will use simple {str: str} dicts.\n\nBut need something for completness.",
+      "range": {
+        "startLine": 227,
+        "startChar": 4,
+        "endLine": 228,
+        "endChar": 28
+      },
+      "revId": "bec5820a2d538919916d1880123ae8b6a3a423d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "88eaa7ba_b447f022",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-08T03:51:31Z",
+      "side": 1,
+      "message": "Looks like Swarming only checks \"\u0027:\u0027 in tag\" *shrug*\n\nhttps://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/swarming/server/task_request.py#345\n\n(and also length, which I skipped...)",
+      "range": {
+        "startLine": 246,
+        "startChar": 36,
+        "endLine": 246,
+        "endChar": 45
+      },
+      "revId": "bec5820a2d538919916d1880123ae8b6a3a423d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
