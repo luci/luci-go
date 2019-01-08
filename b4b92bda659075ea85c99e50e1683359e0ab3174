@@ -46,6 +46,30 @@
       "revId": "b4b92bda659075ea85c99e50e1683359e0ab3174",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2eb6de45_87955d67",
+        "filename": "gce/cmd/agent/windows.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-08T23:22:09Z",
+      "side": 1,
+      "message": "i see. Thanks for detailed explanation!",
+      "parentUuid": "e4b91a6c_f85da1f7",
+      "range": {
+        "startLine": 72,
+        "startChar": 50,
+        "endLine": 72,
+        "endChar": 51
+      },
+      "revId": "b4b92bda659075ea85c99e50e1683359e0ab3174",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
