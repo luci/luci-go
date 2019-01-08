@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "10412b91_cfe9c7e4",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-08T23:28:19Z",
+      "side": 1,
+      "message": "Oh, sorry. I\u0027m not sure I like fanout, it sounds \"creative\" to me whereas part of the work here is draining VMs, which seems \"destructive\".\n\nHow about process? The queue name would be process-config then, which is what\u0027s happening.",
+      "parentUuid": "595f1518_f239b0dd",
+      "range": {
+        "startLine": 103,
+        "startChar": 5,
+        "endLine": 103,
+        "endChar": 11
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8c93826e_de212c5e",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
@@ -250,6 +274,30 @@
       "side": 1,
       "message": "\u003e \"trusty-10\" \u003c \"trusty-9\" \n\nYou are correct. Sorry, one would need to pad numbers with leading zeros, probably 6 digits is good enough for long foreseeable future.\n\n\u003e  why? services like Swarming are relying on them\n\nIndeed, swarming does rely on them, and whenever datastore index lags, we get weird swarming behavior (most recent happened in October). Similarly, this hit Buildbukcet at least twice, resulting in CQ not noticing builds it just scheduled, so Nodir had to make buildset search after new build inserting consistent.\n\nI\u0027m not against secondary indexes in general, my point is don\u0027t add them when not necessary. And here they aren\u0027t.\n\nAnd, composite primary keys are normal thing in scalable databases, e.g., https://aws.amazon.com/blogs/database/choosing-the-right-dynamodb-partition-key/ (secondary part called sort key there).\n\n\n\u003e GCE Backend literally does queries over 5000 entities like...\n\nyeah, i noticed :) But in this case it doesn\u0027t need to...",
       "parentUuid": "636ca81a_720295f6",
+      "range": {
+        "startLine": 136,
+        "startChar": 56,
+        "endLine": 136,
+        "endChar": 82
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dd67a6c_b49291ab",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-08T23:28:19Z",
+      "side": 1,
+      "message": "I don\u0027t like the idea of padding it, no we\u0027re never going to have 6 figures of instances of one type, but I don\u0027t like introducing arbitrary limitations like that. If someone asks \"why\u0027s it called gce-trusty-000001\" it seems weird to answer \"because it makes the code easier to write\", especially because it makes talking about the Swarming bot itself more annoying. I\u0027d prefer to just query over 5000 entities at that point.\n\nI\u0027ll do the secondary index-less query for now, it can always be revised later.",
+      "parentUuid": "d1411fb3_da31522b",
       "range": {
         "startLine": 136,
         "startChar": 56,
