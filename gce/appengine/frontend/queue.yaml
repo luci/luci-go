@@ -4,17 +4,22 @@ queue:
   retry_parameters:
     task_retry_limit: 0
 
+- name: drain-vm
+  rate: 100/s
+  retry_parameters:
+    task_retry_limit: 0
+
 - name: ensure-vm
   rate: 100/s
   retry_parameters:
     task_retry_limit: 0
 
-- name: expand-config
+- name: manage-instance
   rate: 100/s
   retry_parameters:
     task_retry_limit: 0
 
-- name: manage-instance
+- name: process-config
   rate: 100/s
   retry_parameters:
     task_retry_limit: 0

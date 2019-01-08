@@ -72,9 +72,9 @@ func TestCron(t *testing.T) {
 			})
 		})
 
-		Convey("expandVMs", func() {
+		Convey("processVMs", func() {
 			Convey("none", func() {
-				err := expandVMs(c)
+				err := processVMs(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
@@ -90,7 +90,7 @@ func TestCron(t *testing.T) {
 						Prefix: "prefix",
 					},
 				})
-				err := expandVMs(c)
+				err := processVMs(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})
@@ -104,7 +104,7 @@ func TestCron(t *testing.T) {
 						},
 					})
 				}
-				err := expandVMs(c)
+				err := processVMs(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
 			})
