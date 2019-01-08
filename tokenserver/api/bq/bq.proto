@@ -165,3 +165,13 @@ message OAuthToken {
   // Revision of groups database used to authorize this call.
   int64 auth_db_rev = 15;
 }
+
+// Active Service Accounts that tie a LUCI service to a particular LUCI project.
+message ProjectScopedServiceAccount {
+  // Service is the LUCI service which is bound to the LUCI project via the SA.
+  string service = 1;
+  // Project is the LUCI project to which the service account authority binds.
+  string project = 2;
+  // AccountId is the service account id of the service account being managed.
+  string account_id = 3;
+}
