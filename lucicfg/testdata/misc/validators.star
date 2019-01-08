@@ -45,8 +45,8 @@ def test_validate_bool():
 def test_validate_duration():
   call = validate.duration
   m = time.minute
-  assert.eq(call('a', m), 60)
-  assert.eq(call('a', None, default=m, required=False), 60)
+  assert.eq(call('a', m), m)
+  assert.eq(call('a', None, default=m, required=False), m)
   assert.eq(call('a', None, required=False), None)
   assert.fails(lambda: call('a', None), 'bad "a": missing')
   assert.fails(lambda: call('a', 1), 'bad "a": got int, want duration')
