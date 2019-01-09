@@ -29,6 +29,7 @@ load('@stdlib//internal/graph.star', 'graph')
 #   core.bucket -> [core.gitiles_poller]
 #   core.builder_ref -> core.builder
 #   core.builder -> [core.triggerer]
+#   core.builder -> core.recipe
 #   core.gitiles_poller -> [core.triggerer]
 #   core.triggerer -> [core.builder_ref]
 
@@ -55,6 +56,7 @@ kinds = struct(
     LOGDOG = 'core.logdog',
     BUCKET = 'core.bucket',
     BUILDER = 'core.builder',
+    RECIPE = 'core.recipe',
     GITILES_POLLER = 'core.gitiles_poller',
 
     # Internal nodes (declared internally as dependency of other nodes).
@@ -70,6 +72,7 @@ keys = struct(
     logdog = lambda: graph.key(kinds.LOGDOG, '...'),  # singleton
     bucket = lambda name: graph.key(kinds.BUCKET, name),
     builder = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.BUILDER, name),
+    recipe = lambda name: graph.key(kinds.RECIPE, name),
     gitiles_poller = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.GITILES_POLLER, name),
 
     # Internal nodes.
