@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5b2e0269_49ca3ad7",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:43:47Z",
+      "side": 1,
+      "message": "perhaps docstring should be updated",
+      "range": {
+        "startLine": 47,
+        "startChar": 18,
+        "endLine": 47,
+        "endChar": 22
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15a1e6c4_017214e9",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:43:47Z",
+      "side": 1,
+      "message": "[nil] is not empty, but it still does not contain an error\nsee MultiError semantics, including First() and Summary()",
+      "range": {
+        "startLine": 48,
+        "startChar": 20,
+        "endLine": 48,
+        "endChar": 36
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59e49046_dbe6b4f6",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:43:47Z",
+      "side": 1,
+      "message": "`case nil:` in the switch below",
+      "range": {
+        "startLine": 51,
+        "startChar": 16,
+        "endLine": 51,
+        "endChar": 22
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11f9c37a_52f285ec",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:43:47Z",
+      "side": 1,
+      "message": "[nil] strictly speaking contains a nil?\ndo we have a use case for this behavior?",
+      "range": {
+        "startLine": 52,
+        "startChar": 32,
+        "endLine": 52,
+        "endChar": 38
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b1f68ed_016077d6",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:43:47Z",
+      "side": 1,
+      "message": "why this isn\u0027t a `case` in the switch below?",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 8
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
