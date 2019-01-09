@@ -215,6 +215,30 @@
     },
     {
       "key": {
+        "uuid": "57a1eb93_3ed0c284",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-09T02:04:31Z",
+      "side": 1,
+      "message": "processVMs is taken. Once the starlark stuff is done and we no longer need the kinds shorthand for configs I plan on renaming VMs to Config so there\u0027s less confusion with VM, so I can\u0027t call it processConfig either (processVMs -\u003e processConfig at some point).\n\nI don\u0027t want to block on this, so I\u0027m just going to submit, but I don\u0027t want to seem like I\u0027m ignoring this either, I\u0027m happy to keep discussing until we figure out what\u0027s best here.\n\nAside from this one, there are two other cron jobs which schedule task queue tasks. They are named (cron -\u003e queue):\ncreateInstances -\u003e create\nmanageInstances -\u003e manage\n\nWe could go back to the Python GCE Backend style, which would be something like (cron -\u003e queue):\nscheduleInstanceCreation -\u003e createInstance\nscheduleInstanceManagement -\u003e manageInstance\n\nAnd then it would follow that:\nscheduleConfigProcessing -\u003e processConfig\n\nWhat do you think? This naming scheme has the advantage of making it clear that the cron job itself isn\u0027t actually doing any work.",
+      "parentUuid": "794e52d8_df629bd3",
+      "range": {
+        "startLine": 103,
+        "startChar": 5,
+        "endLine": 103,
+        "endChar": 11
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8c93826e_de212c5e",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
