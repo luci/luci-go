@@ -226,9 +226,16 @@ acl = struct(
         # Fetching info about a build, searching for builds in a bucket.
         _role('BUILDBUCKET_READER'),
         # Same as BUILDBUCKET_READER + scheduling and canceling builds.
-        _role('BUILDBUCKET_SCHEDULER'),
+        _role('BUILDBUCKET_TRIGGERER'),
         # Have full access to the bucket (should be used rarely).
-        _role('BUILDBUCKET_WRITER'),
+        _role('BUILDBUCKET_OWNER'),
+
+        # Viewing Scheduler jobs, invocations and their debug logs.
+        _role('SCHEDULER_READER'),
+        # Same as SCHEDULER_READER + ability to trigger jobs.
+        _role('SCHEDULER_TRIGGERER'),
+        # Have full access to jobs, including ability to abort them.
+        _role('SCHEDULER_OWNER'),
     ])
 )
 

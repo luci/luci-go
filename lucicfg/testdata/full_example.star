@@ -6,9 +6,14 @@ core.project(
     logdog = 'luci-logdog.appspot.com',
 
     acls = [
-        acl.entry(acl.PROJECT_CONFIGS_READER, groups='all'),
-        acl.entry(acl.BUILDBUCKET_READER, groups='all'),
-        acl.entry(acl.LOGDOG_READER, groups='all'),
+        acl.entry(
+            roles = [
+                acl.PROJECT_CONFIGS_READER,
+                acl.BUILDBUCKET_READER,
+                acl.LOGDOG_READER,
+            ],
+            groups = ['all'],
+        ),
     ],
 )
 
@@ -82,7 +87,7 @@ core.builder(
 core.bucket(
     name = 'try',
     acls = [
-        acl.entry(acl.BUILDBUCKET_SCHEDULER, groups='infra-try-access'),
+        acl.entry(acl.BUILDBUCKET_TRIGGERER, groups='infra-try-access'),
     ],
 )
 

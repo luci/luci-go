@@ -5,7 +5,7 @@ def test_works():
   # Works in general.
   acls = [
       acl.entry(acl.BUILDBUCKET_READER),
-      acl.entry(acl.BUILDBUCKET_WRITER),
+      acl.entry(acl.BUILDBUCKET_OWNER),
   ]
   assert.eq(aclimpl.validate_acls(acls), acls)
 
