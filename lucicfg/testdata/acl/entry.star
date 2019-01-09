@@ -15,8 +15,8 @@ def test_roles_validation():
   )
   # Many roles is OK.
   check_entry(
-      entry = acl.entry([acl.BUILDBUCKET_READER, acl.BUILDBUCKET_SCHEDULER]),
-      roles = [acl.BUILDBUCKET_READER, acl.BUILDBUCKET_SCHEDULER],
+      entry = acl.entry([acl.BUILDBUCKET_READER, acl.BUILDBUCKET_TRIGGERER]),
+      roles = [acl.BUILDBUCKET_READER, acl.BUILDBUCKET_TRIGGERER],
   )
   # No roles is NOT ok.
   assert.fails(lambda: acl.entry([]), 'bad "roles": missing')
