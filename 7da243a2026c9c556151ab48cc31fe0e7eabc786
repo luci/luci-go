@@ -119,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "2bc6e042_80a55904",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:17:58Z",
+      "side": 1,
+      "message": "yes, there are users that still use repository. It does not mean we want to support them.\nThey still use repository only because they never updated their config (and we are too lazy to do that).\nSupporting repository in starlark would a lost opportunity to force the migration and delete the feature. The feature is currently supported by buildbucket and kitchen code. Would be nice to delete it.",
+      "parentUuid": "1a54788c_93f2aea5",
+      "range": {
+        "startLine": 32,
+        "startChar": 56,
+        "endLine": 34,
+        "endChar": 34
+      },
+      "revId": "7da243a2026c9c556151ab48cc31fe0e7eabc786",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2b97a633_1315e498",
         "filename": "lucicfg/testdata/errors/ambiguous_references.star",
         "patchSetId": 1

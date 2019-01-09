@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "89b4127a_d2f853b2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:17:58Z",
+      "side": 1,
+      "message": "let\u0027s drop this feature while it is easy",
+      "revId": "ff7861e45d35ab4c6e9086c486ba0f9db21151c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8566a945_0f91ab00",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:17:58Z",
+      "side": 1,
+      "message": "let\u0027s require this",
+      "range": {
+        "startLine": 61,
+        "startChar": 72,
+        "endLine": 61,
+        "endChar": 77
+      },
+      "revId": "ff7861e45d35ab4c6e9086c486ba0f9db21151c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2718da55_a2023f34",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:17:58Z",
+      "side": 1,
+      "message": "i think \"refs/heads/master\" would be a reasonable default, and consistent with other applications of CIPD where \"latest\" ref is used by default. WDYT?",
+      "revId": "ff7861e45d35ab4c6e9086c486ba0f9db21151c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
