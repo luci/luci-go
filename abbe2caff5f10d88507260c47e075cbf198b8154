@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e06b7da8_3c153c21",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 9
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T00:21:22Z",
+      "side": 1,
+      "message": "project is also there, effectively\n\ni assume this was copied from a doc that assumed v1 bucket names",
+      "range": {
+        "startLine": 82,
+        "startChar": 54,
+        "endLine": 82,
+        "endChar": 55
+      },
+      "revId": "abbe2caff5f10d88507260c47e075cbf198b8154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6e271c5_ca0c2218",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 9
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T00:21:22Z",
+      "side": 1,
+      "message": "it is one word \"thereof\"",
+      "range": {
+        "startLine": 222,
+        "startChar": 15,
+        "endLine": 222,
+        "endChar": 23
+      },
+      "revId": "abbe2caff5f10d88507260c47e075cbf198b8154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
