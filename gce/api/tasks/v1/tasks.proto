@@ -14,10 +14,16 @@ message Create {
   string id = 1;
 }
 
+// A task to drain a particular VM entity.
+message Drain {
+  // The ID of the VM entity to drain.
+  string id = 1;
+}
+
 // A task to create or update a particular VM entity.
 message Ensure {
-  // The ID of the VM entity to create or update.
-  string id = 1;
+  // The index of the VM entity to create or update.
+  int32 index = 1;
   // The attributes of the VM.
   config.VM attributes = 2;
   // The lifetime of the VM in seconds.
@@ -26,16 +32,18 @@ message Ensure {
   string prefix = 4;
   // The hostname of the Swarming server this VM connects to.
   string swarming = 5;
-}
-
-// A task to expand a VMs config into VM entities.
-message Expand {
-  // The ID of the VMs block to expand.
-  string id = 1;
+  // The ID of the VMs block this VM entity belongs to.
+  string vms = 6;
 }
 
 // A task to manage a GCE instance created from a VM entity.
 message Manage {
   // The ID of the VM entity to manage a GCE instance for.
+  string id = 1;
+}
+
+// A task to process a VMs config.
+message Process {
+  // The ID of the VMs block to process.
   string id = 1;
 }

@@ -47,9 +47,10 @@ func getDispatcher(c context.Context) *tq.Dispatcher {
 // registerTasks registers task handlers with the given *tq.Dispatcher.
 func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.Create{}, create, createQueue, nil)
+	dsp.RegisterTask(&tasks.Drain{}, drain, drainQueue, nil)
 	dsp.RegisterTask(&tasks.Ensure{}, ensure, ensureQueue, nil)
-	dsp.RegisterTask(&tasks.Expand{}, expand, expandQueue, nil)
 	dsp.RegisterTask(&tasks.Manage{}, manage, manageQueue, nil)
+	dsp.RegisterTask(&tasks.Process{}, process, processQueue, nil)
 }
 
 // cfgKey is the key to a config.ConfigServer in the context.
@@ -131,6 +132,6 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	})
 	dsp.InstallRoutes(r, mw)
 	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstances))
-	r.GET("/internal/cron/expand-vms", mw, newHTTPHandler(expandVMs))
 	r.GET("/internal/cron/manage-instances", mw, newHTTPHandler(manageInstances))
+	r.GET("/internal/cron/process-vms", mw, newHTTPHandler(processVMs))
 }

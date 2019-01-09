@@ -66,8 +66,8 @@ func createInstances(c context.Context) error {
 	return nil
 }
 
-// expandVMs creates task queue tasks to expand each VMs block.
-func expandVMs(c context.Context) error {
+// processVMs creates task queue tasks to process each VMs block.
+func processVMs(c context.Context) error {
 	var keys []*datastore.Key
 	if err := datastore.GetAll(c, datastore.NewQuery(model.VMsKind), &keys); err != nil {
 		return errors.Annotate(err, "failed to fetch VMs blocks").Err()
@@ -76,7 +76,7 @@ func expandVMs(c context.Context) error {
 	for i, k := range keys {
 		id := k.StringID()
 		t[i] = &tq.Task{
-			Payload: &tasks.Expand{
+			Payload: &tasks.Process{
 				Id: id,
 			},
 		}

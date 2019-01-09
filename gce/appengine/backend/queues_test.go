@@ -40,8 +40,53 @@ func TestQueues(t *testing.T) {
 		registerTasks(dsp)
 		srv := &rpc.Config{}
 		c := withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv)
+		datastore.GetTestable(c).AutoIndex(true)
+		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
+
+		Convey("drain", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					err := drain(c, nil)
+					So(err, ShouldErrLike, "unexpected payload")
+				})
+
+				Convey("empty", func() {
+					err := drain(c, &tasks.Drain{})
+					So(err, ShouldErrLike, "ID is required")
+				})
+			})
+
+			Convey("valid", func() {
+				Convey("drained", func() {
+					datastore.Put(c, &model.VM{
+						ID:      "id-2",
+						Drained: false,
+					})
+					err := drain(c, &tasks.Drain{
+						Id: "id-2",
+					})
+					So(err, ShouldBeNil)
+					v := &model.VM{
+						ID: "id-2",
+					}
+					datastore.Get(c, v)
+					So(v.Drained, ShouldBeTrue)
+				})
+
+				Convey("non-existent", func() {
+					err := drain(c, &tasks.Drain{
+						Id: "id-2",
+					})
+					So(err, ShouldBeNil)
+					err = datastore.Get(c, &model.VM{
+						ID: "id-2",
+					})
+					So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+				})
+			})
+		})
 
 		Convey("ensure", func() {
 			Convey("invalid", func() {
@@ -52,37 +97,39 @@ func TestQueues(t *testing.T) {
 
 				Convey("empty", func() {
 					err := ensure(c, &tasks.Ensure{})
-					So(err, ShouldErrLike, "ID is required")
+					So(err, ShouldErrLike, "VMs is required")
 				})
 			})
 
 			Convey("valid", func() {
 				Convey("nil", func() {
 					err := ensure(c, &tasks.Ensure{
-						Id: "id",
+						Index: 2,
+						Vms:   "id",
 					})
 					So(err, ShouldBeNil)
 					err = datastore.Get(c, &model.VM{
-						ID: "id",
+						ID: "id-2",
 					})
 					So(err, ShouldBeNil)
 				})
 
 				Convey("empty", func() {
 					err := ensure(c, &tasks.Ensure{
-						Id:         "id",
 						Attributes: &config.VM{},
+						Index:      2,
+						Vms:        "id",
 					})
 					So(err, ShouldBeNil)
 					err = datastore.Get(c, &model.VM{
-						ID: "id",
+						ID:      "id-2",
+						Drained: false,
 					})
 					So(err, ShouldBeNil)
 				})
 
 				Convey("non-empty", func() {
 					err := ensure(c, &tasks.Ensure{
-						Id: "id",
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{
@@ -90,15 +137,17 @@ func TestQueues(t *testing.T) {
 								},
 							},
 						},
+						Index: 2,
+						Vms:   "id",
 					})
 					So(err, ShouldBeNil)
 					v := &model.VM{
-						ID: "id",
+						ID: "id-2",
 					}
 					err = datastore.Get(c, v)
 					So(err, ShouldBeNil)
 					So(v, ShouldResemble, &model.VM{
-						ID: "id",
+						ID: "id-2",
 						Attributes: config.VM{
 							Disk: []*config.Disk{
 								{
@@ -106,54 +155,62 @@ func TestQueues(t *testing.T) {
 								},
 							},
 						},
+						Drained: false,
+						Index:   2,
+						VMs:     "id",
 					})
 				})
 
 				Convey("updated", func() {
 					datastore.Put(c, &model.VM{
-						ID: "id",
+						ID: "id-0",
 						Attributes: config.VM{
 							Zone: "zone",
 						},
+						Drained: true,
 					})
 					err := ensure(c, &tasks.Ensure{
-						Id: "id",
 						Attributes: &config.VM{
 							Project: "project",
 						},
+						Index: 2,
+						Vms:   "id",
 					})
 					So(err, ShouldBeNil)
 					v := &model.VM{
-						ID: "id",
+						ID: "id-2",
 					}
 					err = datastore.Get(c, v)
 					So(err, ShouldBeNil)
 					So(v, ShouldResemble, &model.VM{
-						ID: "id",
+						ID: "id-2",
 						Attributes: config.VM{
 							Project: "project",
 						},
+						Drained: false,
+						Index:   2,
+						VMs:     "id",
 					})
 				})
 			})
 		})
 
-		Convey("expand", func() {
+		Convey("process", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {
-					err := expand(c, nil)
+					err := process(c, nil)
 					So(err, ShouldErrLike, "unexpected payload")
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
 				Convey("empty", func() {
-					err := expand(c, &tasks.Expand{})
+					err := process(c, &tasks.Process{})
 					So(err, ShouldErrLike, "ID is required")
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
 				Convey("missing", func() {
-					err := expand(c, &tasks.Expand{
+					err := process(c, &tasks.Process{
 						Id: "id",
 					})
 					So(err, ShouldErrLike, "failed to get VMs block")
@@ -162,26 +219,50 @@ func TestQueues(t *testing.T) {
 			})
 
 			Convey("valid", func() {
-				Convey("zero", func() {
+				Convey("none", func() {
 					srv.EnsureVMs(c, &config.EnsureVMsRequest{
 						Id:  "id",
 						Vms: &config.Block{},
 					})
-					err := expand(c, &tasks.Expand{Id: "id"})
+					err := process(c, &tasks.Process{Id: "id"})
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
-				Convey("one", func() {
+				Convey("ensure", func() {
 					srv.EnsureVMs(c, &config.EnsureVMsRequest{
 						Id: "id",
 						Vms: &config.Block{
-							Amount: 1,
+							Amount: 3,
 						},
 					})
-					err := expand(c, &tasks.Expand{Id: "id"})
+					err := process(c, &tasks.Process{Id: "id"})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
+					task, ok := tqt.GetScheduledTasks()[2].Payload.(*tasks.Ensure)
+					So(ok, ShouldBeTrue)
+					So(task.Index, ShouldEqual, 2)
+					So(task.Vms, ShouldEqual, "id")
+				})
+
+				Convey("drain", func() {
+					datastore.Put(c, &model.VM{
+						ID:    "id-2",
+						Index: 2,
+						VMs:   "id",
+					})
+					srv.EnsureVMs(c, &config.EnsureVMsRequest{
+						Id: "id",
+						Vms: &config.Block{
+							Amount: 0,
+						},
+					})
+					err := process(c, &tasks.Process{Id: "id"})
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+					task, ok := tqt.GetScheduledTasks()[0].Payload.(*tasks.Drain)
+					So(ok, ShouldBeTrue)
+					So(task.Id, ShouldEqual, "id-2")
 				})
 			})
 		})

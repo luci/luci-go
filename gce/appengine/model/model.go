@@ -59,8 +59,14 @@ type VM struct {
 	// Deadline is the Unix time when the GCE instance should be deleted.
 	// This time is in UTC and in seconds.
 	Deadline int64 `gae:"deadline"`
+	// Drained indicates whether or not this VM is drained.
+	// A GCE instance should not be created for a drained VM.
+	// Any existing GCE instance should be deleted regardless of deadline.
+	Drained bool `gae:"drained"`
 	// Hostname is the short hostname of the GCE instance to create.
 	Hostname string `gae:"hostname"`
+	// Index is this VM's number with respect to its VMs entity.
+	Index int32 `gae:"index"`
 	// Lifetime is the number of seconds the GCE instance should live for.
 	Lifetime int64 `gae:"lifetime"`
 	// Prefix is the prefix to use when naming the GCE instance.
@@ -69,6 +75,8 @@ type VM struct {
 	Swarming string `gae:"swarming"`
 	// URL is the URL of the created GCE instance.
 	URL string `gae:"url"`
+	// VMs is the ID of the VMs entity this VM was created from.
+	VMs string `gae:"vms"`
 }
 
 // getDisks returns a []*compute.AttachedDisk representation of this VM's disks.
