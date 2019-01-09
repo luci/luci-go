@@ -21,9 +21,9 @@ load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
 def builder(
       name,
       bucket,
+      recipe,
 
-      # Run what and how.
-      recipe=None,            # TODO(vadimsh): Implement
+      # Execution environment parameters.
       properties=None,
       service_account=None,
       caches=None,
@@ -95,8 +95,8 @@ def builder(
   Args:
     name: name of the builder, will show up in UIs and logs.
     bucket: name of the bucket the builder belongs to.
+    recipe: name of a recipe to run, see core.recipe(...) rule.
 
-    recipe: (TODO) name of a recipe to run, see core.recipe(...) rule.
     properties: a dict with string keys and JSON-serializable values, defining
         properties to pass to the recipe.
     service_account: an email of a service account to run the recipe under:
@@ -143,6 +143,7 @@ def builder(
   """
   name = validate.string('name', name)
   bucket = validate.string('bucket', bucket)
+  recipe = validate.string('recipe', recipe)
 
   # Node that carries the full definition of the builder.
   builder_key = keys.builder(bucket, name)
@@ -163,6 +164,7 @@ def builder(
       'luci_migration_host': validate.string('luci_migration_host', luci_migration_host, required=False)
   })
   graph.add_edge(keys.bucket(bucket), builder_key)
+  graph.add_edge(builder_key, keys.recipe(recipe))
 
   # Allow this builder to be referenced from other nodes via its bucket-scoped
   # name and via a global (perhaps ambiguous) name. See builder_ref.add(...).
