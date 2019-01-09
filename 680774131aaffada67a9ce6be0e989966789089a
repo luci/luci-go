@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "c674f973_25b950e7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T02:32:49Z",
+      "side": 1,
+      "message": "same as not specifying the field in the proto (i.e. they are set to their default values)",
+      "parentUuid": "ab30a287_8aca9617",
+      "range": {
+        "startLine": 204,
+        "startChar": 8,
+        "endLine": 204,
+        "endChar": 19
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fc7abcdb_f5d055fb",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 3
@@ -139,6 +163,30 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b51ba589_1df309c6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T02:32:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b29e2d58_aa531219",
+      "range": {
+        "startLine": 62,
+        "startChar": 56,
+        "endLine": 62,
+        "endChar": 59
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -270,6 +318,30 @@
       "writtenOn": "2019-01-09T02:07:48Z",
       "side": 1,
       "message": "i think this should remain swarming_tags because ChromeOS is asking for builder-level tags to annotate builders with domain-specific stuff.\n\nAlternatively, we can leave this as is, but repurpose later when builder gains builder-level tags.\n\nWDYT?",
+      "range": {
+        "startLine": 94,
+        "startChar": 4,
+        "endLine": 94,
+        "endChar": 8
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "891106f0_4ecc03e2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T02:32:49Z",
+      "side": 1,
+      "message": "When we have builder tags, will we ever use swarming_tags separately from builder_tags?\n\nI named this just \"tags\" because most other scheduling-related attributes here (dimensions, priority, etc) do not have \u0027swarming_\u0027 prefix in them, even though they are passed directly to Swarming and Buildbucket doesn\u0027t really care about them.\n\n\u003e Alternatively, we can leave this as is, but repurpose later when builder gains builder-level tags.\n\nWhen we introduce builder tags, will we be able to say that \"all builder tags are passed to Swarming as swarming tags unaltered\"?",
+      "parentUuid": "b51098e4_bc506281",
       "range": {
         "startLine": 94,
         "startChar": 4,
@@ -490,6 +562,30 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a97db49d_9fa0b95a",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T02:32:49Z",
+      "side": 1,
+      "message": "I don\u0027t yet fully understand all this caches stuff, so I renamed the field to something else.\n\nIn particular I don\u0027t understand how wait_for_warm_cache mixes with expiring \u0027caches\u0027 dimension. Also magical status of \u0027caches\u0027 dimension is not documented in buildbucket proto (its my main source of understanding).",
+      "parentUuid": "517db325_5004689d",
+      "range": {
+        "startLine": 47,
+        "startChar": 9,
+        "endLine": 47,
+        "endChar": 14
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
