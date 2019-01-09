@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "ef28d16d_e0963a30",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-09T02:34:35Z",
+      "side": 1,
+      "message": "niche use case - yes.",
+      "parentUuid": "75bc65a9_1ecccd6b",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 69,
+        "endChar": 0
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6b1e0dda_9850693b",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 3
@@ -401,6 +425,30 @@
     },
     {
       "key": {
+        "uuid": "1c0aabd3_96b6efdc",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-09T02:34:35Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "79ea67a1_7696a0e8",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 97,
+        "endChar": 14
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f92ffb4d_75760f72",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 3
@@ -436,6 +484,30 @@
       "side": 1,
       "message": "I want to convey there\u0027s a stage when builds are waiting to be picked up by bots. Reformulated a bit.",
       "parentUuid": "f92ffb4d_75760f72",
+      "range": {
+        "startLine": 97,
+        "startChar": 53,
+        "endLine": 98,
+        "endChar": 39
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "14d124ef_6a7e2de7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-09T02:34:35Z",
+      "side": 1,
+      "message": "much much better, thanks!",
+      "parentUuid": "3be13cca_3bff9aa8",
       "range": {
         "startLine": 97,
         "startChar": 53,
