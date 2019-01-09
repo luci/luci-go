@@ -266,6 +266,152 @@ func TestCreate(t *testing.T) {
 	})
 }
 
+func TestDestroy(t *testing.T) {
+	t.Parallel()
+
+	Convey("destroy", t, func() {
+		dsp := &tq.Dispatcher{}
+		registerTasks(dsp)
+		srv := &rpc.Config{}
+		rt := &roundtripper.JSONRoundTripper{}
+		gce, err := compute.New(&http.Client{Transport: rt})
+		So(err, ShouldBeNil)
+		c := withCompute(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), gce)
+		tqt := tqtesting.GetTestable(c, dsp)
+		tqt.CreateQueues()
+
+		Convey("invalid", func() {
+			Convey("nil", func() {
+				err := destroy(c, nil)
+				So(err, ShouldErrLike, "unexpected payload")
+			})
+
+			Convey("empty", func() {
+				err := destroy(c, &tasks.Destroy{})
+				So(err, ShouldErrLike, "ID is required")
+			})
+
+			Convey("url", func() {
+				err := destroy(c, &tasks.Destroy{
+					Id: "id",
+				})
+				So(err, ShouldErrLike, "URL is required")
+			})
+		})
+
+		Convey("valid", func() {
+			Convey("deleted", func() {
+				err := destroy(c, &tasks.Destroy{
+					Id:  "id",
+					Url: "url",
+				})
+				So(err, ShouldBeNil)
+			})
+
+			Convey("error", func() {
+				Convey("http", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						return http.StatusInternalServerError, nil
+					}
+					datastore.Put(c, &model.VM{
+						ID:  "id",
+						URL: "url",
+					})
+					err := destroy(c, &tasks.Destroy{
+						Id:  "id",
+						Url: "url",
+					})
+					So(err, ShouldErrLike, "failed to destroy instance")
+					v := &model.VM{
+						ID: "id",
+					}
+					datastore.Get(c, v)
+					So(v.URL, ShouldEqual, "url")
+				})
+
+				Convey("operation", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						return http.StatusOK, &compute.Operation{
+							Error: &compute.OperationError{
+								Errors: []*compute.OperationErrorErrors{
+									{},
+								},
+							},
+						}
+					}
+					datastore.Put(c, &model.VM{
+						ID:  "id",
+						URL: "url",
+					})
+					err := destroy(c, &tasks.Destroy{
+						Id:  "id",
+						Url: "url",
+					})
+					So(err, ShouldErrLike, "failed to destroy instance")
+					v := &model.VM{
+						ID: "id",
+					}
+					datastore.Get(c, v)
+					So(v.URL, ShouldEqual, "url")
+				})
+			})
+
+			Convey("destroys", func() {
+				Convey("pending", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						return http.StatusOK, &compute.Operation{}
+					}
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Deadline: 1,
+						Hostname: "name",
+						URL:      "url",
+					})
+					err := destroy(c, &tasks.Destroy{
+						Id:  "id",
+						Url: "url",
+					})
+					So(err, ShouldBeNil)
+					v := &model.VM{
+						ID: "id",
+					}
+					datastore.Get(c, v)
+					So(v.Deadline, ShouldEqual, 1)
+					So(v.Hostname, ShouldEqual, "name")
+					So(v.URL, ShouldEqual, "url")
+				})
+
+				Convey("done", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						return http.StatusOK, &compute.Operation{
+							Status:     "DONE",
+							TargetLink: "url",
+						}
+					}
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Deadline: 1,
+						Hostname: "name",
+						URL:      "url",
+					})
+					err := destroy(c, &tasks.Destroy{
+						Id:  "id",
+						Url: "url",
+					})
+					So(err, ShouldBeNil)
+					v := &model.VM{
+						ID: "id",
+					}
+					datastore.Get(c, v)
+					So(v.Deadline, ShouldEqual, 0)
+					So(v.Hostname, ShouldBeEmpty)
+					So(v.URL, ShouldBeEmpty)
+				})
+			})
+		})
+	})
+}
+
 func TestManage(t *testing.T) {
 	t.Parallel()
 
@@ -329,19 +475,58 @@ func TestManage(t *testing.T) {
 			})
 
 			Convey("found", func() {
-				rt.Handler = func(_ interface{}) (int, interface{}) {
-					return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-						BotId: "id",
+				Convey("dead", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
+							BotId:  "id",
+							IsDead: true,
+						}
 					}
-				}
-				datastore.Put(c, &model.VM{
-					ID:  "id",
-					URL: "url",
+					datastore.Put(c, &model.VM{
+						ID:  "id",
+						URL: "url",
+					})
+					err := manage(c, &tasks.Manage{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 				})
-				err := manage(c, &tasks.Manage{
-					Id: "id",
+
+				Convey("deleted", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
+							BotId:   "id",
+							Deleted: true,
+						}
+					}
+					datastore.Put(c, &model.VM{
+						ID:  "id",
+						URL: "url",
+					})
+					err := manage(c, &tasks.Manage{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 				})
-				So(err, ShouldBeNil)
+
+				Convey("alive", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
+							BotId: "id",
+						}
+					}
+					datastore.Put(c, &model.VM{
+						ID:  "id",
+						URL: "url",
+					})
+					err := manage(c, &tasks.Manage{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
 			})
 		})
 	})

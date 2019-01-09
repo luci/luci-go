@@ -26,6 +26,7 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -111,12 +112,37 @@ func setCreated(c context.Context, id, url string, at time.Time) error {
 		if err := datastore.Get(c, vm); err != nil {
 			return errors.Annotate(err, "failed to fetch VM").Err()
 		}
-		if vm.URL == "" {
-			vm.Deadline = at.Unix() + vm.Lifetime
-			vm.URL = url
-			if err := datastore.Put(c, vm); err != nil {
-				return errors.Annotate(err, "failed to store VM").Err()
-			}
+		if vm.URL != "" {
+			// Already created.
+			return nil
+		}
+		vm.Deadline = at.Unix() + vm.Lifetime
+		vm.URL = url
+		if err := datastore.Put(c, vm); err != nil {
+			return errors.Annotate(err, "failed to store VM").Err()
+		}
+		return nil
+	}, nil)
+}
+
+// setDestroyed sets the VM as destroyed in the datastore if it isn't already.
+func setDestroyed(c context.Context, id, url string) error {
+	vm := &model.VM{
+		ID: id,
+	}
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		if err := datastore.Get(c, vm); err != nil {
+			return errors.Annotate(err, "failed to fetch VM").Err()
+		}
+		if vm.URL != url {
+			// Already destroyed. A new one may even be created.
+			return nil
+		}
+		vm.Deadline = 0
+		vm.Hostname = ""
+		vm.URL = ""
+		if err := datastore.Put(c, vm); err != nil {
+			return errors.Annotate(err, "failed to store VM").Err()
 		}
 		return nil
 	}, nil)
@@ -208,6 +234,60 @@ func create(c context.Context, payload proto.Message) error {
 		}
 		return setCreated(c, task.Id, op.TargetLink, t)
 	}
+	// Instance creation is pending.
+	return nil
+}
+
+// destroyQueue is the name of the destroy task handler queue.
+const destroyQueue = "destroy-instance"
+
+// destroy destroys a GCE instance.
+func destroy(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.Destroy)
+	switch {
+	case !ok:
+		return errors.Reason("unexpected payload type %T", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("ID is required").Err()
+	case task.GetUrl() == "":
+		return errors.Reason("URL is required").Err()
+	}
+	vm, err := getVM(c, task.Id)
+	switch {
+	case err != nil:
+		return nil
+	case vm.URL != task.Url:
+		// Instance is already destroyed and replaced. Don't destroy the new one.
+		return errors.Reason("instance does not exist: %s", task.Url).Err()
+	}
+	logging.Debugf(c, "destroying instance %q", vm.Hostname)
+	// Generate a request ID based on the hostname.
+	// Ensures duplicate operations aren't created in GCE.
+	rID := uuid.NewSHA1(uuid.Nil, []byte(vm.Hostname))
+	srv := getCompute(c).Instances
+	call := srv.Delete(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
+	op, err := call.RequestId(rID.String()).Context(c).Do()
+	if err != nil {
+		gerr := err.(*googleapi.Error)
+		logErrors(c, gerr)
+		if gerr.Code == http.StatusNotFound {
+			// Instance is already destroyed.
+			logging.Debugf(c, "instance does not exist: %s", vm.URL)
+			return setDestroyed(c, task.Id, vm.URL)
+		}
+		return errors.Reason("failed to destroy instance").Err()
+	}
+	if op.Error != nil && len(op.Error.Errors) > 0 {
+		for _, err := range op.Error.Errors {
+			logging.Errorf(c, "%s: %s", err.Code, err.Message)
+		}
+		return errors.Reason("failed to destroy instance").Err()
+	}
+	if op.Status == "DONE" {
+		logging.Debugf(c, "destroyed instance: %s", op.TargetLink)
+		return setDestroyed(c, task.Id, op.TargetLink)
+	}
+	// Instance destruction is pending.
 	return nil
 }
 
@@ -228,8 +308,9 @@ func manage(c context.Context, payload proto.Message) error {
 		return err
 	}
 	if vm.URL == "" {
-		return errors.Reason("instance %q does not exist", vm.URL).Err()
+		return errors.Reason("instance does not exist: %s", vm.URL).Err()
 	}
+	del := false
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
 	srv := getSwarming(c)
 	srv.BasePath = vm.Swarming + "/_ah/api/swarming/v1/"
@@ -239,7 +320,7 @@ func manage(c context.Context, payload proto.Message) error {
 			logErrors(c, gerr)
 			if gerr.Code == http.StatusNotFound {
 				// Bot hasn't connected to Swarming yet.
-				// TODO(smut): Delete the instance if it's been too long.
+				// TODO(smut): Delete the GCE instance if it's been too long.
 				logging.Debugf(c, "bot not found")
 				return nil
 			}
@@ -249,11 +330,25 @@ func manage(c context.Context, payload proto.Message) error {
 	logging.Debugf(c, "found bot")
 	switch {
 	case rsp.Deleted:
-		// TODO(smut): Delete the instance.
+		// TODO(smut): Delete the Swarming bot.
 		logging.Debugf(c, "bot deleted")
+		del = true
 	case rsp.IsDead:
-		// TODO(smut): Delete the bot and the instance.
+		// TODO(smut): Delete the Swarming bot.
 		logging.Debugf(c, "bot dead")
+		del = true
+	}
+	// TODO(smut): Check the deadline.
+	if del {
+		t := &tq.Task{
+			Payload: &tasks.Destroy{
+				Id:  task.Id,
+				Url: vm.URL,
+			},
+		}
+		if err := getDispatcher(c).AddTask(c, t); err != nil {
+			return errors.Annotate(err, "failed to schedule destroy tasks").Err()
+		}
 	}
 	return nil
 }

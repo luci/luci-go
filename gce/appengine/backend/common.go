@@ -47,6 +47,7 @@ func getDispatcher(c context.Context) *tq.Dispatcher {
 // registerTasks registers task handlers with the given *tq.Dispatcher.
 func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.Create{}, create, createQueue, nil)
+	dsp.RegisterTask(&tasks.Destroy{}, destroy, destroyQueue, nil)
 	dsp.RegisterTask(&tasks.Drain{}, drain, drainQueue, nil)
 	dsp.RegisterTask(&tasks.Ensure{}, ensure, ensureQueue, nil)
 	dsp.RegisterTask(&tasks.Manage{}, manage, manageQueue, nil)
