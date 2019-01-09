@@ -378,6 +378,30 @@
     },
     {
       "key": {
+        "uuid": "17a9c8e0_e78d7bc6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T03:01:20Z",
+      "side": 1,
+      "message": "builder_tags and swarming_tags would be used for disjoint sets of tags.\n\nin reality, swarming_tags are used ONLY for \"vpython:native-python-wrapper\" flag that enables something that Robbie knows about. This was meant to be a temporary switch during migration, but it was never cleaned up. I am not sure anyone actually uses swarming_tags to specify swarming tags, i.e. nobody cares about the tags of the underlying build tasks. I\u0027d rather remove this feature, i.e. hardcode \"vpython:native-python-wrapper\" in starlark, so that configs always have it. +Robbie, how hard would be to make \"vpython:native-python-wrapper\" a default, so we don\u0027t have bring this here?\n\n\u003e When we introduce builder tags, will we be able to say that \"all builder tags are passed to Swarming as swarming tags unaltered\"?\n\nnot sure what you mean. If we introduce builder tags, they would not propagate to builds and tasks. They would remain a property of the builder definition, so they would not propagate to swarming.",
+      "parentUuid": "891106f0_4ecc03e2",
+      "range": {
+        "startLine": 94,
+        "startChar": 4,
+        "endLine": 94,
+        "endChar": 8
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3ee2b02d_d0eec53a",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 3
@@ -658,6 +682,30 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "23e09d07_d6a110e9",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T03:01:20Z",
+      "side": 1,
+      "message": "right, the \"caches\" became magical after proto was updated, during review of the impl.\n\ngood point about the mixing. It appears buildbucket and swarming do not reject a request that requires a caches dimension without mounting it. wait_for_warm_cache automatically adds caches dimension, so you probably never want to specify \"caches\" among dimensions. I should probably disallow \"caches\" dimension in config validation too\n\ni think this essentially means we never allow multiple values per key in dimensions... \nnow comment\nhttps://chromium-review.googlesource.com/c/infra/infra/+/1268921/9#message-352fa0b69373cdc94201bcc2db782ed25f6c3b9f\nmakes no sense to me. I will followup there...",
+      "parentUuid": "a97db49d_9fa0b95a",
+      "range": {
+        "startLine": 47,
+        "startChar": 9,
+        "endLine": 47,
+        "endChar": 14
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
