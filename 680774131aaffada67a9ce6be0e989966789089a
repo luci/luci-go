@@ -49,6 +49,29 @@
     },
     {
       "key": {
+        "uuid": "ab30a287_8aca9617",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:07:48Z",
+      "side": 1,
+      "message": "how does this react to None?\n\nsame for other primitive fields",
+      "range": {
+        "startLine": 204,
+        "startChar": 8,
+        "endLine": 204,
+        "endChar": 19
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fc7abcdb_f5d055fb",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 3
@@ -93,6 +116,29 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b29e2d58_aa531219",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:07:48Z",
+      "side": 1,
+      "message": "is",
+      "range": {
+        "startLine": 62,
+        "startChar": 56,
+        "endLine": 62,
+        "endChar": 59
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -143,6 +189,29 @@
     },
     {
       "key": {
+        "uuid": "6b1e0dda_9850693b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:07:48Z",
+      "side": 1,
+      "message": "please mention that it must be JSON-object-serializable. \"with string keys\" is not sufficient",
+      "range": {
+        "startLine": 75,
+        "startChar": 22,
+        "endLine": 75,
+        "endChar": 39
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b96d6b78_702be36d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 3
@@ -187,6 +256,29 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b51098e4_bc506281",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:07:48Z",
+      "side": 1,
+      "message": "i think this should remain swarming_tags because ChromeOS is asking for builder-level tags to annotate builders with domain-specific stuff.\n\nAlternatively, we can leave this as is, but repurpose later when builder gains builder-level tags.\n\nWDYT?",
+      "range": {
+        "startLine": 94,
+        "startChar": 4,
+        "endLine": 94,
+        "endChar": 8
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -375,6 +467,29 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "517db325_5004689d",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:07:48Z",
+      "side": 1,
+      "message": "it is \"caches\" 🤷🏻‍♂️",
+      "range": {
+        "startLine": 47,
+        "startChar": 9,
+        "endLine": 47,
+        "endChar": 14
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
