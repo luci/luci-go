@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f0c8baed_ce1ddfd2",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:21:03Z",
+      "side": 1,
+      "message": "this is an internal symbol, so it cannot be mentioned here. Perhaps a part of the L24 sentence would be more appropriate here",
+      "range": {
+        "startLine": 28,
+        "startChar": 23,
+        "endLine": 28,
+        "endChar": 36
+      },
+      "revId": "5ad8d1afac85bb4c6c679bf1cbf6699eb8adfd55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a032a7a7_4fbe5101",
+        "filename": "common/flag/commalist.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-09T02:21:03Z",
+      "side": 1,
+      "message": "why not nil",
+      "range": {
+        "startLine": 51,
+        "startChar": 9,
+        "endLine": 51,
+        "endChar": 19
+      },
+      "revId": "5ad8d1afac85bb4c6c679bf1cbf6699eb8adfd55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
