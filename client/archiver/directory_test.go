@@ -32,80 +32,215 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+// Input to a PushDirectory test case: the given nodes (with respect to a blacklist) are
+// isolated and the server contents are validated against the expected files specified
+// within the nodes.
+type testCase struct {
+	// Name of the test case.
+	name string
+
+	// List of file nodes.
+	nodes []fileNode
+
+	// List of file patterns to ignore.
+	blacklist []string
+}
+
+// Represents a file in a tree with relevant isolated metadata.
+type fileNode struct {
+	// The relative path to a file within the directory.
+	relPath string
+
+	// The contents of the file.
+	contents string
+
+	// The expected isolated.File to be constructed.
+	expectedFile isolated.File
+
+	// Whether we expect the file to be ignored, per a given blacklist.
+	expectIgnored bool
+
+	// A symbolic link source.
+	symlink string
+}
+
 func TestPushDirectory(t *testing.T) {
-	// Uploads a real directory. 2 times the same file.
 	t.Parallel()
 	emptyContext := context.Background()
 
-	Convey(`Pushing a real directory should upload the directory.`, t, func() {
+	mode := os.FileMode(0600)
+	if common.IsWindows() {
+		mode = os.FileMode(0666)
+	}
+
+	basicFile := func(contents string) isolated.File {
+		return isolated.BasicFile(isolated.HashBytes([]byte(contents)), int(mode), int64(len(contents)))
+	}
+
+	expectValidPush := func(t *testing.T, root string, nodes []fileNode, blacklist []string) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		a := New(emptyContext, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 
-		// Setup temporary directory.
-		tmpDir, err := ioutil.TempDir("", "archiver")
-		So(err, ShouldBeNil)
-		defer func() {
-			if err := os.RemoveAll(tmpDir); err != nil {
-				t.Fail()
+		for _, node := range nodes {
+			if node.symlink != "" {
+				continue
 			}
-		}()
-		baseDir := filepath.Join(tmpDir, "base")
-		ignoredDir := filepath.Join(tmpDir, "ignored1")
-		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
-		So(ioutil.WriteFile(filepath.Join(baseDir, "bar"), []byte("foo"), 0600), ShouldBeNil)
-		So(ioutil.WriteFile(filepath.Join(baseDir, "bar_dupe"), []byte("foo"), 0600), ShouldBeNil)
-		if !common.IsWindows() {
-			So(os.Symlink("bar", filepath.Join(baseDir, "link")), ShouldBeNil)
+			fullPath := filepath.Join(root, node.relPath)
+			So(ioutil.WriteFile(fullPath, []byte(node.contents), mode), ShouldBeNil)
 		}
-		So(ioutil.WriteFile(filepath.Join(baseDir, "ignored2"), []byte("ignored"), 0600), ShouldBeNil)
-		So(os.Mkdir(ignoredDir, 0700), ShouldBeNil)
-		So(ioutil.WriteFile(filepath.Join(ignoredDir, "really"), []byte("ignored"), 0600), ShouldBeNil)
 
-		item := PushDirectory(a, tmpDir, "", []string{"ignored1", filepath.Join("*", "ignored2")})
-		So(item.DisplayName, ShouldResemble, filepath.Base(tmpDir)+".isolated")
+		item := PushDirectory(a, root, "", blacklist)
+		So(item.DisplayName, ShouldResemble, filepath.Base(root)+".isolated")
 		item.WaitForHashed()
 		So(a.Close(), ShouldBeNil)
 
-		mode := 0600
-		if common.IsWindows() {
-			mode = 0666
+		expectedServerContents := make(map[string]string)
+		expectedMisses := 1
+		expectedBytesPushed := 0
+		files := make(map[string]isolated.File)
+		for _, node := range nodes {
+			if node.expectIgnored {
+				continue
+			}
+			files[node.relPath] = node.expectedFile
+			if node.symlink != "" {
+				continue
+			}
+			expectedBytesPushed += int(len(node.contents))
+			expectedMisses += 1
+			digest := isolated.HashBytes([]byte(node.contents))
+			expectedServerContents[string(digest)] = node.contents
 		}
+
 		isolatedData := isolated.Isolated{
-			Algo: "sha-1",
-			Files: map[string]isolated.File{
-				filepath.Join("base", "bar"):      isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
-				filepath.Join("base", "bar_dupe"): isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
-			},
+			Algo:    "sha-1",
+			Files:   files,
 			Version: isolated.IsolatedFormatVersion,
-		}
-		if !common.IsWindows() {
-			isolatedData.Files[filepath.Join("base", "link")] = isolated.SymLink("bar")
 		}
 		encoded, err := json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
 		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
+		expectedServerContents[string(isolatedHash)] = isolatedEncoded
+		expectedBytesPushed += len(isolatedEncoded)
 
-		expected := map[string]string{
-			"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
-			string(isolatedHash):                       isolatedEncoded,
-		}
-		actual := map[string]string{}
+		actualServerContents := map[string]string{}
 		for k, v := range server.Contents() {
-			actual[string(k)] = string(v)
+			actualServerContents[string(k)] = string(v)
 		}
-		So(actual, ShouldResemble, expected)
+		So(actualServerContents, ShouldResemble, expectedServerContents)
 		So(item.Digest(), ShouldResemble, isolatedHash)
 
 		stats := a.Stats()
+		So(stats.TotalMisses(), ShouldResemble, expectedMisses)
+		So(stats.TotalBytesPushed(), ShouldResemble, units.Size(expectedBytesPushed))
 		So(stats.TotalHits(), ShouldResemble, 0)
-		// There're 3 cache misses even if the same content is looked up twice.
-		So(stats.TotalMisses(), ShouldResemble, 3)
 		So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
-		So(stats.TotalBytesPushed(), ShouldResemble, units.Size(3+3+len(isolatedEncoded)))
-
 		So(server.Error(), ShouldBeNil)
-	})
+	}
+
+	cases := []testCase{
+		{
+			name: "Can push a directory",
+			nodes: []fileNode{
+				{
+					relPath:      "a",
+					contents:     "foo",
+					expectedFile: basicFile("foo"),
+				},
+				{
+					relPath:      filepath.Join("b", "c"),
+					contents:     "bar",
+					expectedFile: basicFile("bar"),
+				},
+			},
+		},
+		{
+			name: "Can push with two identical files",
+			nodes: []fileNode{
+				{
+					relPath:      "a",
+					contents:     "foo",
+					expectedFile: basicFile("foo"),
+				},
+				{
+					relPath:      filepath.Join("b"),
+					contents:     "foo",
+					expectedFile: basicFile("foo"),
+				},
+			},
+		},
+		{
+			name: "Can push with a blacklist",
+			nodes: []fileNode{
+				{
+					relPath:      "a",
+					contents:     "foo",
+					expectedFile: basicFile("foo"),
+				},
+				{
+					relPath:      filepath.Join("b", "c"),
+					contents:     "bar",
+					expectedFile: basicFile("bar"),
+				},
+				{
+					relPath:       filepath.Join("ignored1", "d"),
+					contents:      "ignore me",
+					expectedFile:  basicFile("ignore me"),
+					expectIgnored: true,
+				},
+				{
+					relPath:       filepath.Join("also", "ignored2"),
+					contents:      "ignore me too",
+					expectedFile:  basicFile("ignore me too"),
+					expectIgnored: true,
+				},
+			},
+			blacklist: []string{"ignored1", filepath.Join("*", "ignored2")},
+		},
+	}
+
+	if !common.IsWindows() {
+		cases = append(cases,
+			testCase{
+				name: "Can push with a symlinked file",
+				nodes: []fileNode{
+					{
+						relPath:      "a",
+						contents:     "foo",
+						expectedFile: basicFile("foo"),
+					},
+					{
+						relPath:      "b",
+						contents:     "foo",
+						expectedFile: isolated.SymLink("a"),
+						symlink:      "a",
+					},
+				},
+			},
+		)
+	}
+
+	for _, testCase := range cases {
+		Convey(testCase.name, t, func() {
+			// Setup temporary directory.
+			tmpDir, err := ioutil.TempDir("", "archiver")
+			So(err, ShouldBeNil)
+			defer func() {
+				if err := os.RemoveAll(tmpDir); err != nil {
+					t.Fail()
+				}
+			}()
+			for _, node := range testCase.nodes {
+				fullPath := filepath.Join(tmpDir, node.relPath)
+				So(os.MkdirAll(filepath.Dir(fullPath), 0700), ShouldBeNil)
+				if node.symlink != "" {
+					So(os.Symlink(node.symlink, fullPath), ShouldBeNil)
+				}
+			}
+			expectValidPush(t, tmpDir, testCase.nodes, testCase.blacklist)
+		})
+	}
 }
