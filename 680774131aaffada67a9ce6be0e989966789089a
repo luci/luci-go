@@ -284,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "f001ed48_8d25a0b5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T03:29:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b1e0dda_9850693b",
+      "range": {
+        "startLine": 75,
+        "startChar": 22,
+        "endLine": 75,
+        "endChar": 39
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b96d6b78_702be36d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 3
@@ -399,6 +423,30 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a98b5e94_0f801042",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T03:29:02Z",
+      "side": 1,
+      "message": "Renamed to swarming_tags. When/if they no longer needed, we can remove them here too. Builder tags (when they are configurable) will be settable through \u0027tags\u0027 field.",
+      "parentUuid": "17a9c8e0_e78d7bc6",
+      "range": {
+        "startLine": 94,
+        "startChar": 4,
+        "endLine": 94,
+        "endChar": 8
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
