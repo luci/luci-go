@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "dfaf6918_cf7e7432",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T01:54:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a21330be_dcb7b1d8",
+      "range": {
+        "startLine": 13,
+        "startChar": 13,
+        "endLine": 13,
+        "endChar": 14
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fc7abcdb_f5d055fb",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad98c10f_576efb26",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T01:54:01Z",
+      "side": 1,
+      "message": "Yes. The pattern is that a rule function (core.builder in this case) validates and normalizes everything (using swarming.validate_dimensions in this case) and puts validated and normalized stuff into \u0027props\u0027. So at the generation phase all props are assumed to be validated and normalized.",
+      "parentUuid": "fc7abcdb_f5d055fb",
+      "range": {
+        "startLine": 245,
+        "startChar": 3,
+        "endLine": 245,
+        "endChar": 23
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "75bc65a9_1ecccd6b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T01:54:01Z",
+      "side": 1,
+      "message": "Hm. They can use \u0027triggers\u0027/\u0027triggered_by\u0027 (e.g. to prepare the CQ to expect this), but buildbucket ACLs will have to be modified manually (by adding acl.entry(...) to core.bucket(..., acls\u003d...)).\n\nThe problem is that buildbucket ACLs are very coarse. I don\u0027t want to allow a builder to trigger _any_ other builder by default whenever \u0027triggers\u003d...\u0027 is used, since I believe in majority of cases (at least in Chromium) this is harmful and not necessary, since triggering is done through Scheduler and Scheduler\u0027s ACLs are per-job, so we can surgically change only what we want there.\n\nAdded the explanation to the doc. I consider this a niche use case though, so I think we can tolerate this edge case.",
+      "parentUuid": "eee8a35c_82c01dc4",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 69,
+        "endChar": 0
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b96d6b78_702be36d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abb9b6a5_d7dec167",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T01:54:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b96d6b78_702be36d",
+      "range": {
+        "startLine": 85,
+        "startChar": 27,
+        "endLine": 85,
+        "endChar": 30
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "79ea67a1_7696a0e8",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T01:54:01Z",
+      "side": 1,
+      "message": "I used the field name from the proto. I guess expiration_timeout will be more consistent. Changed.",
+      "parentUuid": "3ee2b02d_d0eec53a",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 97,
+        "endChar": 14
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f92ffb4d_75760f72",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 3
@@ -137,6 +257,30 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3be13cca_3bff9aa8",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T01:54:01Z",
+      "side": 1,
+      "message": "I want to convey there\u0027s a stage when builds are waiting to be picked up by bots. Reformulated a bit.",
+      "parentUuid": "f92ffb4d_75760f72",
+      "range": {
+        "startLine": 97,
+        "startChar": 53,
+        "endLine": 98,
+        "endChar": 39
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "427b1889_9bb4c424",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T01:54:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd8ecce1_834664c2",
+      "range": {
+        "startLine": 106,
+        "startChar": 26,
+        "endLine": 106,
+        "endChar": 31
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db0439d6_02d89919",
         "filename": "lucicfg/testdata/full_example.star",
         "patchSetId": 3
@@ -183,6 +351,30 @@
       "revId": "680774131aaffada67a9ce6be0e989966789089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0eea6d31_c1c748be",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T01:54:01Z",
+      "side": 1,
+      "message": "swarming.validate_dimensions(...) in core.builder",
+      "parentUuid": "db0439d6_02d89919",
+      "range": {
+        "startLine": 44,
+        "startChar": 4,
+        "endLine": 47,
+        "endChar": 18
+      },
+      "revId": "680774131aaffada67a9ce6be0e989966789089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
