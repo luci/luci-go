@@ -239,6 +239,30 @@
     },
     {
       "key": {
+        "uuid": "c4e30c58_0513f662",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-09T02:24:03Z",
+      "side": 1,
+      "message": "np with submitting as is, that\u0027s why i gave you lgtm. tbh, I don\u0027t understand why you can\u0027t rename VMs to config now?\nI like python\u0027s gce backend style; I think we used similar scheme in scheduler but with \"cron\" prefix.\n  cronBlah -\u003e blah.",
+      "parentUuid": "57a1eb93_3ed0c284",
+      "range": {
+        "startLine": 103,
+        "startChar": 5,
+        "endLine": 103,
+        "endChar": 11
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8c93826e_de212c5e",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
