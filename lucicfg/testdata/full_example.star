@@ -6,9 +6,22 @@ core.project(
     logdog = 'luci-logdog.appspot.com',
 
     acls = [
-        acl.entry(acl.PROJECT_CONFIGS_READER, groups='all'),
-        acl.entry(acl.BUILDBUCKET_READER, groups='all'),
-        acl.entry(acl.LOGDOG_READER, groups='all'),
+        acl.entry(
+            roles = [
+                acl.PROJECT_CONFIGS_READER,
+                acl.LOGDOG_READER,
+                acl.BUILDBUCKET_READER,
+                acl.SCHEDULER_READER,
+            ],
+            groups = ['all'],
+        ),
+        acl.entry(
+            roles = [
+                acl.BUILDBUCKET_OWNER,
+                acl.SCHEDULER_OWNER,
+            ],
+            groups = ['admins'],
+        ),
     ],
 )
 
@@ -26,7 +39,16 @@ core.recipe(
 
 # CI bucket.
 
-core.bucket(name = 'ci')
+core.bucket(
+    name = 'ci',
+
+    # Allow developers to force-launch CI builds through Scheduler. But not
+    # directly through Buildbucket, where they can override properties or just
+    # build a giant queue of pending builds.
+    acls = [
+        acl.entry(acl.SCHEDULER_TRIGGERER, groups = ['devs']),
+    ],
+)
 
 core.gitiles_poller(
     name = 'master-poller',
@@ -67,7 +89,6 @@ core.builder(
     build_numbers = True,
 )
 
-
 core.builder(
     name = 'generically named builder',
     bucket = 'ci',
@@ -81,8 +102,11 @@ core.builder(
 
 core.bucket(
     name = 'try',
+
+    # Allow developers to launch try jobs directly with whatever parameters
+    # they want.
     acls = [
-        acl.entry(acl.BUILDBUCKET_SCHEDULER, groups='infra-try-access'),
+        acl.entry(acl.BUILDBUCKET_TRIGGERER, groups='devs'),
     ],
 )
 
@@ -91,6 +115,7 @@ core.builder(
     bucket = 'try',
     recipe = 'main/recipe',
 )
+
 core.builder(
     name = 'generically named builder',
     bucket = 'try',
@@ -178,17 +203,25 @@ core.builder(
 # acl_sets: <
 #   name: "ci"
 #   acls: <
+#     role: WRITER
+#     group: "admins"
+#   >
+#   acls: <
 #     group: "all"
 #   >
 # >
 # acl_sets: <
 #   name: "try"
 #   acls: <
+#     role: WRITER
+#     group: "admins"
+#   >
+#   acls: <
 #     group: "all"
 #   >
 #   acls: <
 #     role: SCHEDULER
-#     group: "infra-try-access"
+#     group: "devs"
 #   >
 # >
 # ===
