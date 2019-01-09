@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b0ecab38_4bd72b86",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T23:03:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4038e1f4_e2108dd0",
+      "range": {
+        "startLine": 9,
+        "startChar": 49,
+        "endLine": 9,
+        "endChar": 50
+      },
+      "revId": "33ef50f0e4f38aebb6085012ba5e7026e8bd2435",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "480296dd_83a3d9ea",
         "filename": "/COMMIT_MSG",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "33ef50f0e4f38aebb6085012ba5e7026e8bd2435",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "278de26f_544c731b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T23:03:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "480296dd_83a3d9ea",
+      "revId": "33ef50f0e4f38aebb6085012ba5e7026e8bd2435",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "b18665a1_6cdc3154",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T23:03:38Z",
+      "side": 1,
+      "message": "Clarified. Scheduler allows overriding only properties and tags (so the actual function stays fixed, and if it does proper inputs validation, it should be relatively safe), but afaik Buildbucket allows overriding EVERYTHING: recipe, service account, etc (so \"run whatever you want\").",
+      "parentUuid": "0ed04d35_75485b58",
+      "range": {
+        "startLine": 46,
+        "startChar": 36,
+        "endLine": 46,
+        "endChar": 71
+      },
+      "revId": "33ef50f0e4f38aebb6085012ba5e7026e8bd2435",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8974b125_36f8e27c",
         "filename": "lucicfg/testdata/full_example.star",
         "patchSetId": 2
@@ -85,6 +151,30 @@
       "revId": "33ef50f0e4f38aebb6085012ba5e7026e8bd2435",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e68e267_2f4e1f9d",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T23:03:38Z",
+      "side": 1,
+      "message": "Clarified.",
+      "parentUuid": "8974b125_36f8e27c",
+      "range": {
+        "startLine": 47,
+        "startChar": 6,
+        "endLine": 47,
+        "endChar": 43
+      },
+      "revId": "33ef50f0e4f38aebb6085012ba5e7026e8bd2435",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
