@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "45408680_0f532684",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-09T03:05:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b2e0269_49ca3ad7",
+      "range": {
+        "startLine": 47,
+        "startChar": 18,
+        "endLine": 47,
+        "endChar": 22
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "15a1e6c4_017214e9",
         "filename": "common/testing/assertions/error_tests.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee6baff5_7c736d2d",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-09T03:05:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "15a1e6c4_017214e9",
+      "range": {
+        "startLine": 48,
+        "startChar": 20,
+        "endLine": 48,
+        "endChar": 36
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "93da1367_e81c3223",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-09T03:05:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59e49046_dbe6b4f6",
+      "range": {
+        "startLine": 51,
+        "startChar": 16,
+        "endLine": 51,
+        "endChar": 22
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "11f9c37a_52f285ec",
         "filename": "common/testing/assertions/error_tests.go",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "0488d1f9_99dcaa9d",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-09T03:05:30Z",
+      "side": 1,
+      "message": "I don\u0027t have a use case in mind for any of these edge cases. I also grepped the code and some of ShouldErrLike\u0027s edge cases similarly have no use case.\n\nWhat would you prefer here? So(me, ShouldContainErr, nil) should assert that me is a non-nil MultiError that contains a nil? Done.",
+      "parentUuid": "11f9c37a_52f285ec",
+      "range": {
+        "startLine": 52,
+        "startChar": 32,
+        "endLine": 52,
+        "endChar": 38
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b1f68ed_016077d6",
         "filename": "common/testing/assertions/error_tests.go",
         "patchSetId": 3
@@ -114,6 +210,30 @@
       "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7cab7530_a0f4f5d6",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-09T03:05:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b1f68ed_016077d6",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 8
+      },
+      "revId": "8d8d386bf32da00d5cdb03fc3ee6eeb8041e172d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
