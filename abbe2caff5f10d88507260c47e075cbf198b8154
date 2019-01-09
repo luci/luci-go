@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e57107fa_18475e4e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 9
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T00:46:00Z",
+      "side": 1,
+      "message": "Added \u003cproject\u003e. Yeah, this is from existing *.proto. It has also stale comment about accepted length of \u0027name\u0027 field (it says 128, while in reality it is 4096 for some reason...).",
+      "parentUuid": "e06b7da8_3c153c21",
+      "range": {
+        "startLine": 82,
+        "startChar": 54,
+        "endLine": 82,
+        "endChar": 55
+      },
+      "revId": "abbe2caff5f10d88507260c47e075cbf198b8154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b6e271c5_ca0c2218",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "abbe2caff5f10d88507260c47e075cbf198b8154",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6b40821_437d9de6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 9
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T00:46:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6e271c5_ca0c2218",
+      "range": {
+        "startLine": 222,
+        "startChar": 15,
+        "endLine": 222,
+        "endChar": 23
+      },
+      "revId": "abbe2caff5f10d88507260c47e075cbf198b8154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
