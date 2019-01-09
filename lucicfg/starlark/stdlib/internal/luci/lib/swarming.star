@@ -163,7 +163,7 @@ def _dimension(value, expiration=None):
     value: string value of the dimension.
     expiration: how long to wait (with minutes precision) for a bot with this
         dimension to become available and pick up the build, or None to wait
-        until the overall build expiration deadline.
+        until the overall build expiration timeout.
 
   Returns:
     swarming.dimension struct.
