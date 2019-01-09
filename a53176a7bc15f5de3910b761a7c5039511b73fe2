@@ -263,6 +263,30 @@
     },
     {
       "key": {
+        "uuid": "d79bb9c2_23d5ac73",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-09T02:43:11Z",
+      "side": 1,
+      "message": "We can rename VMs to Config now, but it wouldn\u0027t have solved this problem (it would\u0027ve gone from \"process\" triggers \"processVMs\" to \"process\" triggers \"processConfig\"). The reason I didn\u0027t use Config initially is because it kind of looks odd having two configs: Kinds and Config, I thought Kinds and VMs made more sense, but I guess it doesn\u0027t really matter since Kinds is temporary. Plus calling it VMs introduced other stupidities (hard to distinguish between a plurality of VM entities and one VMs entity).\n\nI\u0027ll use scheduleX triggers X and rename VMs to Config then.",
+      "parentUuid": "c4e30c58_0513f662",
+      "range": {
+        "startLine": 103,
+        "startChar": 5,
+        "endLine": 103,
+        "endChar": 11
+      },
+      "revId": "a53176a7bc15f5de3910b761a7c5039511b73fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8c93826e_de212c5e",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
