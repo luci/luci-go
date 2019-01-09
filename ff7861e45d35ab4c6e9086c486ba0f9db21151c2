@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7adaca66_034f60f6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T02:45:00Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "89b4127a_d2f853b2",
+      "revId": "ff7861e45d35ab4c6e9086c486ba0f9db21151c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8566a945_0f91ab00",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
         "patchSetId": 5
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "c37d10fb_fba09779",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T02:45:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8566a945_0f91ab00",
+      "range": {
+        "startLine": 61,
+        "startChar": 72,
+        "endLine": 61,
+        "endChar": 77
+      },
+      "revId": "ff7861e45d35ab4c6e9086c486ba0f9db21151c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2718da55_a2023f34",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
         "patchSetId": 5
@@ -56,6 +98,24 @@
       "revId": "ff7861e45d35ab4c6e9086c486ba0f9db21151c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fa78c9f_add2b082",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/recipe.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-09T02:45:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2718da55_a2023f34",
+      "revId": "ff7861e45d35ab4c6e9086c486ba0f9db21151c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
