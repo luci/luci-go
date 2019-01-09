@@ -14,6 +14,16 @@ core.project(
 
 core.logdog(gs_bucket = 'chromium-luci-logdog')
 
+
+# Recipes.
+
+core.recipe(
+    name = 'main/recipe',
+    cipd_package = 'recipe/bundles/main',
+    cipd_version = 'refs/heads/master',
+)
+
+
 # CI bucket.
 
 core.bucket(name = 'ci')
@@ -26,6 +36,8 @@ core.gitiles_poller(
 core.builder(
     name = 'linux ci builder',
     bucket = 'ci',
+    recipe = 'main/recipe',
+
     triggered_by = ['master-poller'],
 
     properties = {
@@ -59,6 +71,8 @@ core.builder(
 core.builder(
     name = 'generically named builder',
     bucket = 'ci',
+    recipe = 'main/recipe',
+
     triggered_by = ['master-poller'],
 )
 
@@ -75,10 +89,12 @@ core.bucket(
 core.builder(
     name = 'linux try builder',
     bucket = 'try',
+    recipe = 'main/recipe',
 )
 core.builder(
     name = 'generically named builder',
     bucket = 'try',
+    recipe = 'main/recipe',
 )
 
 
@@ -93,6 +109,9 @@ core.builder(
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
 #       >
 #     >
 #     builders: <
@@ -105,6 +124,9 @@ core.builder(
 #       dimensions: "300:prefer_if_available:first-choice"
 #       dimensions: "prefer_if_available:fallback"
 #       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
 #         properties_j: "prop1:\"val1\""
 #         properties_j: "prop2:[\"val2\",123]"
 #       >
@@ -137,12 +159,18 @@ core.builder(
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
 #       >
 #     >
 #     builders: <
 #       name: "linux try builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
 #       >
 #     >
 #   >
