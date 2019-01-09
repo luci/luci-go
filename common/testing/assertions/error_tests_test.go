@@ -18,6 +18,8 @@ import (
 	"errors"
 	"testing"
 
+	multierror "go.chromium.org/luci/common/errors"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -30,6 +32,46 @@ func TestShouldErrLike(t *testing.T) {
 
 	ce := customError{}
 	e := errors.New("e is for error")
+	f := errors.New("f is not for error")
+	me := multierror.MultiError{
+		e,
+		nil,
+		ce,
+	}
+
+	Convey("Test ShouldContainErr", t, func() {
+		Convey("too many params", func() {
+			So(ShouldContainErr(nil, nil, nil), ShouldContainSubstring, "requires 0 or 1")
+		})
+		Convey("no expectation", func() {
+			So(ShouldContainErr(multierror.MultiError(nil)), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
+			So(ShouldContainErr(me), ShouldEqual, "")
+		})
+		Convey("nil expectation", func() {
+			So(ShouldContainErr(multierror.MultiError(nil), nil), ShouldContainSubstring, "expected MultiError to contain")
+			So(ShouldContainErr(me, nil), ShouldEqual, "")
+		})
+		Convey("nil actual", func() {
+			So(ShouldContainErr(nil, nil), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
+			So(ShouldContainErr(nil, "wut"), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
+		})
+		Convey("not a multierror", func() {
+			So(ShouldContainErr(100, "wut"), ShouldContainSubstring, "Expected '100' to be: 'errors.MultiError'")
+		})
+		Convey("string actual", func() {
+			So(ShouldContainErr(me, "is for error"), ShouldEqual, "")
+			So(ShouldContainErr(me, "customError"), ShouldEqual, "")
+			So(ShouldContainErr(me, "is not for error"), ShouldContainSubstring, "expected MultiError to contain")
+		})
+		Convey("error actual", func() {
+			So(ShouldContainErr(me, e), ShouldEqual, "")
+			So(ShouldContainErr(me, ce), ShouldEqual, "")
+			So(ShouldContainErr(me, f), ShouldContainSubstring, "expected MultiError to contain")
+		})
+		Convey("bad expected type", func() {
+			So(ShouldContainErr(me, 20), ShouldContainSubstring, "unexpected argument type int")
+		})
+	})
 
 	Convey("Test ShouldErrLike", t, func() {
 		Convey("too many params", func() {
@@ -60,7 +102,7 @@ func TestShouldErrLike(t *testing.T) {
 			So(ShouldErrLike(ce, ce), ShouldEqual, "")
 		})
 		Convey("bad expected type", func() {
-			So(ShouldErrLike(e, 20), ShouldContainSubstring, "unknown argument type int")
+			So(ShouldErrLike(e, 20), ShouldContainSubstring, "unexpected argument type int")
 		})
 	})
 }
