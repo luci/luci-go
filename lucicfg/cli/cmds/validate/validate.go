@@ -59,7 +59,7 @@ type validateRun struct {
 }
 
 type validateResult struct {
-	ErrorMessages []*config.ComponentsConfigEndpointValidationMessage `json:"error_messages"`
+	Messages []*config.ComponentsConfigEndpointValidationMessage `json:"messages"`
 }
 
 func (vr *validateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -101,19 +101,21 @@ func processResponse(ctx context.Context, resp *config.LuciConfigValidateConfigR
 	if err != nil {
 		return &validateResult{}, fmt.Errorf("error validating configs: %v", err)
 	}
-	if len(resp.Messages) == 0 {
-		return &validateResult{}, nil
-	}
+	haveErrs := false
 	for _, message := range resp.Messages {
 		lvl := logging.Info
 		if message.Severity == "WARNING" {
 			lvl = logging.Warning
 		} else if message.Severity == "ERROR" || message.Severity == "CRITICAL" {
 			lvl = logging.Error
+			haveErrs = true
 		}
 		logging.Logf(ctx, lvl, "%s: %s", message.Path, message.Text)
 	}
-	return &validateResult{resp.Messages}, fmt.Errorf("Some files were invalid")
+	if haveErrs {
+		return &validateResult{resp.Messages}, fmt.Errorf("some files were invalid")
+	}
+	return &validateResult{resp.Messages}, nil
 }
 
 // constructRequest searches the vr.configDir for config files and constructs a

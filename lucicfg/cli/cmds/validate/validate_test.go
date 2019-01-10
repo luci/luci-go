@@ -45,10 +45,22 @@ func TestProcessResponse(t *testing.T) {
 			},
 			{
 				Path:     "bar.cfg",
-				Severity: "WARN",
+				Severity: "WARNING",
 				Text:     "Uh oh",
 			},
 		}, nil, false, 2},
+		{"warnings or infos only", []*ValidationMsg{
+			{
+				Path:     "bar.cfg",
+				Severity: "WARNING",
+				Text:     "Uh oh",
+			},
+			{
+				Path:     "bar.cfg",
+				Severity: "INFO",
+				Text:     "fyi",
+			},
+		}, nil, true, 2},
 		{"no responses", []*ValidationMsg{}, nil, true, 0},
 		{"no responses with input error", []*ValidationMsg{}, fmt.Errorf("!"), false, 0},
 		{"responses with input error", []*ValidationMsg{{
@@ -69,7 +81,7 @@ func TestProcessResponse(t *testing.T) {
 			} else {
 				So(err, ShouldNotBeNil)
 			}
-			So(tc.expectedMessageCount, ShouldEqual, len(res.ErrorMessages))
+			So(tc.expectedMessageCount, ShouldEqual, len(res.Messages))
 		})
 	}
 }
