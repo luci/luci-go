@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "17a503f1_218c4792",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-10T02:14:52Z",
+      "side": 0,
+      "message": "+nodir\n\nI wish buildbucket was renamed to \"bb\". It\u0027ll be a lot less confusing to read/write docs. Compare:\n  You specify your builder in a bucket of BB service. BB\u0027s builder correspond 1:1 to scheduler\u0027s job.\nvs\n  You specify your builder in a bucket of BuildBucket service. Buildbucket\u0027s builder correspond 1:1 to scheduler\u0027s job.\n\n(and I also wish CQ was renamed pre-commit testing, say PC for short)",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 9
+      },
+      "revId": "7ab846ac6b61e68a42f552051b197d6350e99405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

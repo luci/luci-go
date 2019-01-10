@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "b35bf085_659a51f7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-10T02:14:52Z",
+      "side": 1,
+      "message": "qq: shouldn\u0027t this always be required regardless? ie is there use case for no service account?",
+      "range": {
+        "startLine": 324,
+        "startChar": 25,
+        "endLine": 324,
+        "endChar": 54
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5827444_0c83165e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-10T02:14:52Z",
+      "side": 1,
+      "message": "nit: other",
+      "range": {
+        "startLine": 326,
+        "startChar": 55,
+        "endLine": 326,
+        "endChar": 62
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fa8dd8ed_cde19824",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
@@ -25,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "eab903ee_34aaa099",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-10T02:14:52Z",
+      "side": 1,
+      "message": "renaming jobs is actually non-trivial: some may rely on at most 1 build running at the same time.\nSo trade off is:\n 1) easy migration now \u0026\u0026 difficult later for more projects with more configs \nVS\n 2) difficult now \u0026\u0026 easier later\n\nbut \"later\" is conditional on actually switching scheduler to buckets, which is currently postponed. So, i think I agree with your decision.",
+      "parentUuid": "fa8dd8ed_cde19824",
+      "range": {
+        "startLine": 356,
+        "startChar": 0,
+        "endLine": 358,
+        "endChar": 75
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aa7d7da5_b7002c0a",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
@@ -36,6 +106,30 @@
       "writtenOn": "2019-01-10T01:11:05Z",
       "side": 1,
       "message": "I realized we have fields in the scheduler that specify \u0027properties\u0027 and \u0027tags\u0027 to pass to buildbucket when scheduler triggers a build.\n\nSince we decided to hardcode relations between buildbucket.Builder and scheduler.Job to be 1-to-1, it means we can define all properties directly in the buildbucket config, EXCEPT the following situation will no longer be possible:\n\n1. There\u0027s a builder B.\n2. When it is triggered through Buildbucket it by default gets properties {\u0027k\u0027: \u0027v\u0027}, since this is what in cr-buildbucket.cfg.\n3. When it is triggered through Scheduler it by default gets properties {\u0027k\u0027: \u0027overridden\u0027}, since this is what in luci-scheduler.cfg.\n\nShould we care?",
+      "range": {
+        "startLine": 380,
+        "startChar": 21,
+        "endLine": 380,
+        "endChar": 48
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55111a03_05d286e3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-10T02:14:52Z",
+      "side": 1,
+      "message": "i think that\u0027s rare enough to not care; if really really necessary, clients can still override this using lucicfg guts, right?",
+      "parentUuid": "aa7d7da5_b7002c0a",
       "range": {
         "startLine": 380,
         "startChar": 21,
