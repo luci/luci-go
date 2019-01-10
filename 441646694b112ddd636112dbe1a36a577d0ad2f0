@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a5f293c6_51ed0643",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T05:03:48Z",
+      "side": 1,
+      "message": "Potentially you can have a trivial computation-only recipe (or a recipe that fetches only public data) that doesn\u0027t need a service account.",
+      "parentUuid": "b35bf085_659a51f7",
+      "range": {
+        "startLine": 324,
+        "startChar": 25,
+        "endLine": 324,
+        "endChar": 54
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5827444_0c83165e",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d49e5b0_212b9c76",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T05:03:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5827444_0c83165e",
+      "range": {
+        "startLine": 326,
+        "startChar": 55,
+        "endLine": 326,
+        "endChar": 62
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "24090192_aae2ba3b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T05:03:48Z",
+      "side": 1,
+      "message": "Yeah, we are overdue for lucicfg stuff, don\u0027t want to delay it for non-substantial reasons.",
+      "parentUuid": "eab903ee_34aaa099",
+      "range": {
+        "startLine": 356,
+        "startChar": 0,
+        "endLine": 358,
+        "endChar": 75
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aa7d7da5_b7002c0a",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
@@ -130,6 +202,30 @@
       "side": 1,
       "message": "i think that\u0027s rare enough to not care; if really really necessary, clients can still override this using lucicfg guts, right?",
       "parentUuid": "aa7d7da5_b7002c0a",
+      "range": {
+        "startLine": 380,
+        "startChar": 21,
+        "endLine": 380,
+        "endChar": 48
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26ec6894_6dad4d2b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T05:03:48Z",
+      "side": 1,
+      "message": "Yes, but this is the very last, ugliest option.\n\nI forced to, we can potentially do some crap like: \n\ncore.builder(\n   properties \u003d {\n     \u0027k1\u0027: core.property(\u0027val\u0027, only_when_triggered\u003dTrue),\n     \u0027k2\u0027: \u0027v\u0027,  # gets wrapped in core.property automatically\n   },\n)\n\nOr introduce new \u0027triggered_properties\u0027 field. Or something other equivalent to it.\n\nI\u0027ll look through existing luci-scheduler.cfg configs tomorrow to see whether there\u0027ll be any problems. If no, I think we can ignore this regression for now and deal with it only when asked.",
+      "parentUuid": "55111a03_05d286e3",
       "range": {
         "startLine": 380,
         "startChar": 21,

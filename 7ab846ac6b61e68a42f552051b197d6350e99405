@@ -22,6 +22,30 @@
       "revId": "7ab846ac6b61e68a42f552051b197d6350e99405",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9b310861_10ea3581",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T05:03:48Z",
+      "side": 0,
+      "message": "BB is actually can be very easily confused with Buildbot, that\u0027s why I try to avoid it whenever I can.",
+      "parentUuid": "17a503f1_218c4792",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 9
+      },
+      "revId": "7ab846ac6b61e68a42f552051b197d6350e99405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
