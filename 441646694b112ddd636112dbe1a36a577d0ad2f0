@@ -235,6 +235,30 @@
       "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84037919_7ca56006",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-10T05:13:12Z",
+      "side": 1,
+      "message": "sg. in fact, if nobody uses it today in luci-scheduler.cfg, why not remove this possibility until someone actually asks for it?",
+      "parentUuid": "26ec6894_6dad4d2b",
+      "range": {
+        "startLine": 380,
+        "startChar": 21,
+        "endLine": 380,
+        "endChar": 48
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
