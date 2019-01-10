@@ -48,6 +48,11 @@ func (m *tokenMinterMock) MintDelegationToken(ctx context.Context, in *minter.Mi
 	return &m.response, nil
 }
 
+func (m *tokenMinterMock) MintServiceOAuthToken(ctx context.Context, in *minter.MintServiceOAuthTokenRequest, opts ...grpc.CallOption) (*minter.MintServiceOAuthTokenResponse, error) {
+	panic("Not implemented")
+	return nil, nil
+}
+
 func TestMintDelegationToken(t *testing.T) {
 	t.Parallel()
 
@@ -75,11 +80,13 @@ func TestMintDelegationToken(t *testing.T) {
 
 		Convey("Works (including caching)", func(c C) {
 			tok, err := MintDelegationToken(ctx, DelegationTokenParams{
-				TargetHost: "hostname.example.com",
-				MinTTL:     time.Hour,
-				Tags:       []string{"c:d", "a:b"},
-				Intent:     "intent",
-				rpcClient:  mockedClient,
+				TokenParams{
+					TargetHost: "hostname.example.com",
+					MinTTL:     time.Hour,
+					Tags:       []string{"c:d", "a:b"},
+					Intent:     "intent",
+					rpcClient:  mockedClient,
+				},
 			})
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &delegation.Token{
@@ -101,11 +108,13 @@ func TestMintDelegationToken(t *testing.T) {
 			// On subsequence request the cached token is used.
 			mockedClient.response.Token = "another token"
 			tok, err = MintDelegationToken(ctx, DelegationTokenParams{
-				TargetHost: "hostname.example.com",
-				MinTTL:     time.Hour,
-				Intent:     "intent",
-				Tags:       []string{"c:d", "a:b"},
-				rpcClient:  mockedClient,
+				TokenParams{
+					TargetHost: "hostname.example.com",
+					MinTTL:     time.Hour,
+					Intent:     "intent",
+					Tags:       []string{"c:d", "a:b"},
+					rpcClient:  mockedClient,
+				},
 			})
 			So(err, ShouldBeNil)
 			So(tok.Token, ShouldResemble, "tok") // old one
@@ -113,11 +122,13 @@ func TestMintDelegationToken(t *testing.T) {
 			// Unless it expires sooner than requested TTL.
 			clock.Get(ctx).(testclock.TestClock).Add(MaxDelegationTokenTTL - 30*time.Minute)
 			tok, err = MintDelegationToken(ctx, DelegationTokenParams{
-				TargetHost: "hostname.example.com",
-				MinTTL:     time.Hour,
-				Intent:     "intent",
-				Tags:       []string{"c:d", "a:b"},
-				rpcClient:  mockedClient,
+				TokenParams{
+					TargetHost: "hostname.example.com",
+					MinTTL:     time.Hour,
+					Intent:     "intent",
+					Tags:       []string{"c:d", "a:b"},
+					rpcClient:  mockedClient,
+				},
 			})
 			So(err, ShouldBeNil)
 			So(tok.Token, ShouldResemble, "another token") // new one
@@ -125,10 +136,12 @@ func TestMintDelegationToken(t *testing.T) {
 
 		Convey("Untargeted token works", func(c C) {
 			tok, err := MintDelegationToken(ctx, DelegationTokenParams{
-				Untargeted: true,
-				MinTTL:     time.Hour,
-				Intent:     "intent",
-				rpcClient:  mockedClient,
+				TokenParams{
+					Untargeted: true,
+					MinTTL:     time.Hour,
+					Intent:     "intent",
+					rpcClient:  mockedClient,
+				},
 			})
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &delegation.Token{
