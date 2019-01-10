@@ -16,7 +16,6 @@ package validate
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -33,11 +32,12 @@ func TestProcessResponse(t *testing.T) {
 	var tCases = []struct {
 		name                 string
 		inputMessages        []*ValidationMsg
-		inputErr             error
+		failOnWarnings       bool
 		errShouldBeNil       bool
 		expectedMessageCount int
 	}{
-		{"responses", []*ValidationMsg{
+		{"no responses", []*ValidationMsg{}, true, true, 0},
+		{"errors", []*ValidationMsg{
 			{
 				Path:     "foo.cfg",
 				Severity: "ERROR",
@@ -45,17 +45,41 @@ func TestProcessResponse(t *testing.T) {
 			},
 			{
 				Path:     "bar.cfg",
-				Severity: "WARN",
+				Severity: "WARNING",
 				Text:     "Uh oh",
 			},
-		}, nil, false, 2},
-		{"no responses", []*ValidationMsg{}, nil, true, 0},
-		{"no responses with input error", []*ValidationMsg{}, fmt.Errorf("!"), false, 0},
-		{"responses with input error", []*ValidationMsg{{
-			Path:     "foo.cfg",
-			Severity: "ERROR",
-			Text:     "I'm afraid I can't do that Dave",
-		}}, fmt.Errorf("!"), false, 0},
+		}, false, false, 2},
+		{"warnings and infos, failOnWarning = false", []*ValidationMsg{
+			{
+				Path:     "bar.cfg",
+				Severity: "WARNING",
+				Text:     "Uh oh",
+			},
+			{
+				Path:     "bar.cfg",
+				Severity: "INFO",
+				Text:     "fyi",
+			},
+		}, false, true, 2},
+		{"warnings and infos, failOnWarning = true", []*ValidationMsg{
+			{
+				Path:     "bar.cfg",
+				Severity: "WARNING",
+				Text:     "Uh oh",
+			},
+			{
+				Path:     "bar.cfg",
+				Severity: "INFO",
+				Text:     "fyi",
+			},
+		}, true, false, 2},
+		{"infos only, failOnWarning = true", []*ValidationMsg{
+			{
+				Path:     "bar.cfg",
+				Severity: "INFO",
+				Text:     "fyi",
+			},
+		}, true, true, 1},
 	}
 	ctx := context.Background()
 	for _, tc := range tCases {
@@ -63,13 +87,13 @@ func TestProcessResponse(t *testing.T) {
 			resp := config.LuciConfigValidateConfigResponseMessage{
 				Messages: tc.inputMessages,
 			}
-			res, err := processResponse(ctx, &resp, tc.inputErr)
+			res, err := processResponse(ctx, &resp, tc.failOnWarnings)
 			if tc.errShouldBeNil {
 				So(err, ShouldBeNil)
 			} else {
 				So(err, ShouldNotBeNil)
 			}
-			So(tc.expectedMessageCount, ShouldEqual, len(res.ErrorMessages))
+			So(tc.expectedMessageCount, ShouldEqual, len(res.Messages))
 		})
 	}
 }
