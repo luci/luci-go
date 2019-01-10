@@ -22,11 +22,12 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	"go.chromium.org/luci/lucicfg/cli"
+	"go.chromium.org/luci/lucicfg/cli/base"
 )
 
 func main() {
 	mathrand.SeedRandomly()
-	params := cli.Parameters{
+	params := base.Parameters{
 		AuthOptions:       chromeinfra.DefaultAuthOptions(),
 		ConfigServiceHost: chromeinfra.ConfigServiceHost,
 	}

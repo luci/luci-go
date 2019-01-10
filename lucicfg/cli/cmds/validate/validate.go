@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cli
+// Package validate implements 'validate' subcommand.
+package validate
 
 import (
 	"context"
@@ -23,9 +24,12 @@ import (
 	"path/filepath"
 
 	"github.com/maruel/subcommands"
+
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/lucicfg/cli/base"
 )
 
 // TODO(vadimsh): If the config set is not provided, try to guess it from the
@@ -33,13 +37,14 @@ import (
 // of GetConfigSets() listing). Present the guess to the end user, so they can
 // confirm it a put it into the flag/config.
 
-func cmdValidate(params Parameters) *subcommands.Command {
+// Cmd is 'validate' subcommand.
+func Cmd(params base.Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "validate -config-set CONFIG_SET [CONFIG_DIR]",
 		ShortDesc: "sends files under CONFIG_DIR (or CWD if not set) to LUCI Config service for validation",
 		CommandRun: func() subcommands.CommandRun {
 			vr := &validateRun{}
-			vr.init(params, true)
+			vr.Init(params, true)
 			vr.Flags.StringVar(&vr.configSet, "config-set", "<name>", "Name of the config set to validate against.")
 			return vr
 		},
@@ -47,7 +52,8 @@ func cmdValidate(params Parameters) *subcommands.Command {
 }
 
 type validateRun struct {
-	subcommand
+	base.Subcommand
+
 	configSet string
 	configDir string
 }
@@ -57,7 +63,7 @@ type validateResult struct {
 }
 
 func (vr *validateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if !vr.checkArgs(args, 0, 1) {
+	if !vr.CheckArgs(args, 0, 1) {
 		return 1
 	}
 	if len(args) == 1 {
@@ -65,17 +71,17 @@ func (vr *validateRun) Run(a subcommands.Application, args []string, env subcomm
 	} else {
 		configDir, err := os.Getwd()
 		if err != nil {
-			return vr.done(nil, err)
+			return vr.Done(nil, err)
 		}
 		vr.configDir = configDir
 	}
 	ctx := cli.GetContext(a, vr, env)
 	// Construct the service outside run to improve testability.
-	svc, err := vr.configService(ctx)
+	svc, err := vr.ConfigService(ctx)
 	if err != nil {
-		return vr.done(nil, err)
+		return vr.Done(nil, err)
 	}
-	return vr.done(vr.run(ctx, svc))
+	return vr.Done(vr.run(ctx, svc))
 }
 
 // run recursively searches vr.configDir for config files, calls svc.ValidateConfig() on them

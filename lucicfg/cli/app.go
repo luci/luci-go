@@ -22,7 +22,6 @@ import (
 	"github.com/maruel/subcommands"
 	"go.starlark.net/resolve"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/cipd/version/versioncmd"
 	"go.chromium.org/luci/common/cli"
@@ -30,16 +29,13 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 
 	"go.chromium.org/luci/lucicfg"
+	"go.chromium.org/luci/lucicfg/cli/base"
+	"go.chromium.org/luci/lucicfg/cli/cmds/generate"
+	"go.chromium.org/luci/lucicfg/cli/cmds/validate"
 )
 
-// Parameters can be used to customize CLI defaults.
-type Parameters struct {
-	AuthOptions       auth.Options // mostly for client ID and client secret
-	ConfigServiceHost string       // e.g. "luci-config.appspot.com"
-}
-
 // Main runs the lucicfg CLI.
-func Main(params Parameters, args []string) int {
+func Main(params base.Parameters, args []string) int {
 	// Enable not-yet-standard Starlark features.
 	resolve.AllowLambda = true
 	resolve.AllowNestedDef = true
@@ -52,7 +48,7 @@ func Main(params Parameters, args []string) int {
 }
 
 // GetApplication returns lucicfg cli.Application.
-func GetApplication(params Parameters) *cli.Application {
+func GetApplication(params base.Parameters) *cli.Application {
 	return &cli.Application{
 		Name:  "lucicfg",
 		Title: "LUCI config generator (" + lucicfg.UserAgent + ")",
@@ -75,8 +71,8 @@ func GetApplication(params Parameters) *cli.Application {
 			authcli.SubcommandLogout(params.AuthOptions, "auth-logout", false),
 
 			{},
-			cmdGenerate(params),
-			cmdValidate(params),
+			generate.Cmd(params),
+			validate.Cmd(params),
 		},
 	}
 }
