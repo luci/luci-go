@@ -6,9 +6,22 @@ core.project(
     logdog = 'luci-logdog.appspot.com',
 
     acls = [
-        acl.entry(acl.PROJECT_CONFIGS_READER, groups='all'),
-        acl.entry(acl.BUILDBUCKET_READER, groups='all'),
-        acl.entry(acl.LOGDOG_READER, groups='all'),
+        acl.entry(
+            roles = [
+                acl.PROJECT_CONFIGS_READER,
+                acl.LOGDOG_READER,
+                acl.BUILDBUCKET_READER,
+                acl.SCHEDULER_READER,
+            ],
+            groups = ['all'],
+        ),
+        acl.entry(
+            roles = [
+                acl.BUILDBUCKET_OWNER,
+                acl.SCHEDULER_OWNER,
+            ],
+            groups = ['admins'],
+        ),
     ],
 )
 
@@ -25,7 +38,21 @@ core.recipe(
 
 # CI bucket.
 
-core.bucket(name = 'ci')
+core.bucket(
+    name = 'ci',
+
+    # Allow developers to force-launch CI builds through Scheduler, but not
+    # directly through Buildbucket. The direct access to Buildbucket allows to
+    # override almost all aspects of the builds (e.g. what recipe is used),
+    # and Buildbucket totally ignores any concurrency limitations set in the
+    # LUCI Scheduler configs. This makes direct Buildbucket access to CI buckets
+    # dangerous. They usually have very small pool of machines, and these
+    # machines are assumed to be running only "approved" code (being post-submit
+    # builders).
+    acls = [
+        acl.entry(acl.SCHEDULER_TRIGGERER, groups = ['devs']),
+    ],
+)
 
 core.gitiles_poller(
     name = 'master-poller',
@@ -66,7 +93,6 @@ core.builder(
     build_numbers = True,
 )
 
-
 core.builder(
     name = 'generically named builder',
     bucket = 'ci',
@@ -80,8 +106,11 @@ core.builder(
 
 core.bucket(
     name = 'try',
+
+    # Allow developers to launch try jobs directly with whatever parameters
+    # they want. Try bucket is basically a free build farm for all developers.
     acls = [
-        acl.entry(acl.BUILDBUCKET_SCHEDULER, groups='infra-try-access'),
+        acl.entry(acl.BUILDBUCKET_TRIGGERER, groups='devs'),
     ],
 )
 
@@ -90,6 +119,7 @@ core.builder(
     bucket = 'try',
     recipe = 'main/recipe',
 )
+
 core.builder(
     name = 'generically named builder',
     bucket = 'try',
@@ -177,17 +207,25 @@ core.builder(
 # acl_sets: <
 #   name: "ci"
 #   acls: <
+#     role: WRITER
+#     group: "admins"
+#   >
+#   acls: <
 #     group: "all"
 #   >
 # >
 # acl_sets: <
 #   name: "try"
 #   acls: <
+#     role: WRITER
+#     group: "admins"
+#   >
+#   acls: <
 #     group: "all"
 #   >
 #   acls: <
 #     role: SCHEDULER
-#     group: "infra-try-access"
+#     group: "devs"
 #   >
 # >
 # ===
