@@ -73,27 +73,44 @@ func Archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) *
 	return item
 }
 
+// Convenience type to track pending items and their corresponding filepaths.
+type itemToPathMap map[*archiver.PendingItem]string
+
 func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (*archiver.PendingItem, error) {
 	// Archive all files.
-	fItems := make(map[*archiver.PendingItem]string, len(opts.Files))
+	fItems := make(itemToPathMap, len(opts.Files))
 	for file, wd := range opts.Files {
-		fItems[arch.PushFile(file, filepath.Join(wd, file), 0)] = wd
+		path := filepath.Join(wd, file)
+		info, err := os.Lstat(path)
+		if err != nil {
+			return nil, err
+		}
+		mode := info.Mode()
+		if mode&os.ModeSymlink == os.ModeSymlink {
+			path, err = filepath.EvalSymlinks(path)
+			if err != nil {
+				return nil, err
+			}
+		}
+		fItems[arch.PushFile(file, path, 0)] = path
 	}
 
 	// Archive all directories.
-	dItems := make(map[*archiver.PendingItem]string, len(opts.Dirs))
+	dItems := make(itemToPathMap, len(opts.Dirs))
 	for dir, wd := range opts.Dirs {
-		dItems[archiver.PushDirectory(arch, filepath.Join(wd, dir), dir, opts.Blacklist)] = wd
+		path := filepath.Join(wd, dir)
+		dItems[archiver.PushDirectory(arch, path, dir, opts.Blacklist)] = path
 	}
 
 	// Construct isolated file.
 	composite := isolated.New()
-	err := waitOnItems(fItems, func(wd, file string, digest isolated.HexDigest) error {
-		f, err := isolatedFile(filepath.Join(wd, file), digest)
+	err := waitOnItems(fItems, func(path, file string, digest isolated.HexDigest) error {
+		info, err := os.Lstat(path)
 		if err != nil {
 			return err
 		}
-		composite.Files[file] = f
+		mode := info.Mode()
+		composite.Files[file] = isolated.BasicFile(digest, int(mode.Perm()), info.Size())
 		logging.Infof(c, "%s %s", digest, file)
 		return nil
 	})
@@ -128,30 +145,14 @@ func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (
 	return compositeItem, nil
 }
 
-func isolatedFile(file string, digest isolated.HexDigest) (isolated.File, error) {
-	info, err := os.Lstat(file)
-	if err != nil {
-		return isolated.File{}, err
-	}
-	mode := info.Mode()
-	if mode&os.ModeSymlink == os.ModeSymlink {
-		l, err := os.Readlink(file)
-		if err != nil {
-			return isolated.File{}, err
-		}
-		return isolated.SymLink(l), nil
-	}
-	return isolated.BasicFile(digest, int(mode.Perm()), info.Size()), nil
-}
-
-func waitOnItems(items map[*archiver.PendingItem]string, cb func(string, string, isolated.HexDigest) error) error {
-	for item, wd := range items {
+func waitOnItems(items itemToPathMap, cb func(string, string, isolated.HexDigest) error) error {
+	for item, path := range items {
 		item.WaitForHashed()
 		if err := item.Error(); err != nil {
 			return errors.Annotate(err, "%s failed\n", item.DisplayName).Err()
 		}
 		digest := item.Digest()
-		if err := cb(wd, item.DisplayName, digest); err != nil {
+		if err := cb(path, item.DisplayName, digest); err != nil {
 			return err
 		}
 	}
