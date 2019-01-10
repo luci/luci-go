@@ -70,6 +70,30 @@
       "revId": "7ab846ac6b61e68a42f552051b197d6350e99405",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bdaa36cd_800afb76",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T20:42:20Z",
+      "side": 0,
+      "message": "These are internal symbols of an internal file, that deal specifically with generating buildbucket.cfg for Buildbucket service.",
+      "parentUuid": "b76fe8b4_e71a6d41",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 9
+      },
+      "revId": "7ab846ac6b61e68a42f552051b197d6350e99405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

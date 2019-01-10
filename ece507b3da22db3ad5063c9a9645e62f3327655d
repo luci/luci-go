@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3d95beb5_a7b618b3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T20:42:20Z",
+      "side": 1,
+      "message": "Not really. When it becomes useful, it would be trivial to change.",
+      "parentUuid": "563e8bc2_2351c671",
+      "range": {
+        "startLine": 70,
+        "startChar": 22,
+        "endLine": 70,
+        "endChar": 27
+      },
+      "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9199e964_4e88e456",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1305848a_e52a81c1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T20:42:20Z",
+      "side": 1,
+      "message": "No.",
+      "parentUuid": "9199e964_4e88e456",
+      "range": {
+        "startLine": 75,
+        "startChar": 21,
+        "endLine": 75,
+        "endChar": 32
+      },
+      "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "0488447c_5d972739",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T20:42:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95d90e5d_c95d95f2",
+      "range": {
+        "startLine": 342,
+        "startChar": 40,
+        "endLine": 342,
+        "endChar": 60
+      },
+      "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fc8b2194_b314fbfb",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 2
@@ -82,6 +154,30 @@
       "writtenOn": "2019-01-10T20:04:47Z",
       "side": 1,
       "message": "not sure i understand the problem this functions solves.\naren\u0027t scheduler job and trigger namespaces orthogonal?\n\nare we trying to prevent users from shooting themselves in the foot by using same name for entities of two different kinds? does scheduler server also do that? we don\u0027t do that for acl_sets, do we?",
+      "range": {
+        "startLine": 396,
+        "startChar": 4,
+        "endLine": 396,
+        "endChar": 31
+      },
+      "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8cc3d1a_befabc6f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T20:42:20Z",
+      "side": 1,
+      "message": "The problem it solves is\n\ncore.builder(name \u003d \u0027builder\u0027, bucket \u003d \u0027ci\u0027, triggered_by\u003d[\u0027something\u0027])\ncore.builder(name \u003d \u0027builder\u0027, bucket \u003d \u0027findit\u0027, triggered_by\u003d[\u0027something else\u0027])\n\nHere \u0027builder\u0027 can\u0027t be used as a scheduler Job IDs for these two scheduler jobs because it is ambiguous. Instead \u0027builder-ci\u0027 and \u0027builder-findit\u0027 will be picked.\n\nWhen there\u0027s no ambiguity we use builder names for scheduler job IDs, to avoid painful migrations when switching from current hand-crafted configs (that use builder names for scheduler job IDs) to lucicfg.",
+      "parentUuid": "fc8b2194_b314fbfb",
       "range": {
         "startLine": 396,
         "startChar": 4,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "0ce24f16_8f8a809c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 410,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T20:42:20Z",
+      "side": 1,
+      "message": "Yes. Done.",
+      "parentUuid": "197cae2f_b52759e4",
+      "range": {
+        "startLine": 410,
+        "startChar": 6,
+        "endLine": 410,
+        "endChar": 13
+      },
+      "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "28171334_a469ce9d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 2
@@ -131,6 +251,24 @@
       "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72ddad94_1f5ccd84",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T20:42:20Z",
+      "side": 1,
+      "message": "With what proceeded this sentence. \"He\u0027s difficult to deal with\". Reformulated.",
+      "parentUuid": "28171334_a469ce9d",
+      "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -154,6 +292,30 @@
       "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ec9dd21_064c7de3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/project.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T20:42:20Z",
+      "side": 1,
+      "message": "I disagree. I really hate hardcoding our environment details into binaries. Besides, service URLs are leaking through various UIs and logs anyway, this is inevitable. And I think it is in fact helpful to give a hint to the config readers what\u0027s involved and where to find it.\n\nMixing environments should be forbidden on some other level (e.g. ACLs).",
+      "parentUuid": "8bc92dc6_9dcad921",
+      "range": {
+        "startLine": 27,
+        "startChar": 16,
+        "endLine": 27,
+        "endChar": 20
+      },
+      "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
