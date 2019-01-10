@@ -2,8 +2,9 @@ core.project(
     name = 'infra.git',
 
     buildbucket = 'cr-buildbucket.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
     logdog = 'luci-logdog.appspot.com',
+    scheduler = 'luci-scheduler.appspot.com',
+    swarming = 'chromium-swarm.appspot.com',
 
     acls = [
         acl.entry(
@@ -65,6 +66,7 @@ core.builder(
     recipe = 'main/recipe',
 
     triggered_by = ['master-poller'],
+    triggers = ['ci/generically named builder'],
 
     properties = {
         'prop1': 'val1',
@@ -233,6 +235,51 @@ core.builder(
 # === luci-logdog.cfg
 # reader_auth_groups: "all"
 # archive_gs_bucket: "chromium-luci-logdog"
+# ===
+#
+# === luci-scheduler.cfg
+# job: <
+#   id: "generically named builder"
+#   acls: <
+#     role: TRIGGERER
+#     granted_to: "builder@example.com"
+#   >
+#   acl_sets: "ci"
+#   buildbucket: <
+#     server: "cr-buildbucket.appspot.com"
+#     bucket: "ci"
+#     builder: "generically named builder"
+#   >
+# >
+# job: <
+#   id: "linux ci builder"
+#   acl_sets: "ci"
+#   buildbucket: <
+#     server: "cr-buildbucket.appspot.com"
+#     bucket: "ci"
+#     builder: "linux ci builder"
+#   >
+# >
+# trigger: <
+#   id: "master-poller"
+#   acl_sets: "ci"
+#   triggers: "generically named builder"
+#   triggers: "linux ci builder"
+# >
+# acl_sets: <
+#   name: "ci"
+#   acls: <
+#     role: OWNER
+#     granted_to: "group:admins"
+#   >
+#   acls: <
+#     granted_to: "group:all"
+#   >
+#   acls: <
+#     role: TRIGGERER
+#     granted_to: "group:devs"
+#   >
+# >
 # ===
 #
 # === project.cfg
