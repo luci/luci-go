@@ -27,6 +27,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -66,6 +67,9 @@ type BuildPage struct {
 
 	// Mode to render the steps.
 	StepDisplayPref StepDisplayPref
+
+	// Display prefs for the timeline visualization.
+	TimelineDisplayPref TimelineDisplayPref
 
 	// timelineData caches the results from Timeline().
 	timelineData string
@@ -211,6 +215,17 @@ const (
 	StepDisplayNonGreen StepDisplayPref = "non-green"
 )
 
+// TimelineDisplayPref is the display preferences for the timeline visualization.
+type TimelineDisplayPref string
+
+const (
+	// Hide the log links in the timeline visualation.
+	TimelineDisplayDefault TimelineDisplayPref = "hide"
+
+	// Show the log links in the timeline visualization.
+	TimelineDisplayShowLogs TimelineDisplayPref = "show"
+)
+
 // Commit represents a single commit to a repository, rendered as part of a blamelist.
 type Commit struct {
 	// Who made the commit?
@@ -270,24 +285,20 @@ func (c *Commit) DescLines() []string {
 }
 
 // Timeline returns a JSON parsable string that can be fed into a viz timeline component.
-// TODO(hinoka): Reimplement me.
 func (bp *BuildPage) Timeline() string {
 	// Return the cached version, if it exists already.
 	if bp.timelineData != "" {
 		return bp.timelineData
 	}
-	// TODO(hinoka): This doesn't currently return correct data.
-	return "\"timeline goes here\""
 
 	// stepData is extra data to deliver with the groups and items (see below) for the
 	// Javascript vis Timeline component.
 	type stepData struct {
-		Label           string    `json:"label"`
-		Text            string    `json:"text"`
-		Duration        string    `json:"duration"`
-		MainLink        LinkSet   `json:"mainLink"`
-		SubLink         []LinkSet `json:"subLink"`
-		StatusClassName string    `json:"statusClassName"`
+		Label           string                    `json:"label"`
+		Text            string                    `json:"text"`
+		Duration        string                    `json:"duration"`
+		Logs            []*buildbucketpb.Step_Log `json:"logs"`
+		StatusClassName string                    `json:"statusClassName"`
 	}
 
 	// group corresponds to, and matches the shape of, a Group for the Javascript
@@ -323,10 +334,10 @@ func (bp *BuildPage) Timeline() string {
 		groupID := strconv.Itoa(i)
 		statusClassName := fmt.Sprintf("status-%s", step.Status)
 		data := stepData{
-			Label: html.EscapeString(step.Name),
-			Text:  html.EscapeString(step.SummaryMarkdown),
-			// TODO(hinoka): HumanDuration
-			Duration:        "duration goes here",
+			Label:           html.EscapeString(step.Name),
+			Text:            html.EscapeString(step.SummaryMarkdown),
+			Duration:        common.Duration(step.StartTime, step.EndTime),
+			Logs:            sanitizeLogs(step.Logs),
 			StatusClassName: statusClassName,
 		}
 		groups[i] = group{groupID, data}
@@ -354,34 +365,13 @@ func (bp *BuildPage) Timeline() string {
 	return string(timeline)
 }
 
-func sanitize(values []string) []string {
-	result := make([]string, len(values))
-	for i, value := range values {
-		result[i] = html.EscapeString(value)
-	}
-	return result
-}
-
-func sanitizeLinkSet(linkSet LinkSet) LinkSet {
-	result := make(LinkSet, len(linkSet))
-	for i, link := range linkSet {
-		result[i] = &Link{
-			Link: model.Link{
-				Label: html.EscapeString(link.Label),
-				URL:   html.EscapeString(link.URL),
-			},
-			AriaLabel: html.EscapeString(link.AriaLabel),
-			Img:       html.EscapeString(link.Img),
-			Alt:       html.EscapeString(link.Alt),
+func sanitizeLogs(logs []*buildbucketpb.Step_Log) []*buildbucketpb.Step_Log {
+	result := make([]*buildbucketpb.Step_Log, len(logs))
+	for i, log := range logs {
+		result[i] = &buildbucketpb.Step_Log{
+			Name:    html.EscapeString(log.Name),
+			ViewUrl: html.EscapeString(log.ViewUrl),
 		}
-	}
-	return result
-}
-
-func sanitizeLinkSets(linkSets []LinkSet) []LinkSet {
-	result := make([]LinkSet, len(linkSets))
-	for i, linkSet := range linkSets {
-		result[i] = sanitizeLinkSet(linkSet)
 	}
 	return result
 }
