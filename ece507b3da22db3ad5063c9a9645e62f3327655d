@@ -214,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "83847e2b_011bb80c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-10T23:27:48Z",
+      "side": 1,
+      "message": "_scheduler_disambiguate_ids takes a list of nodes that must be mapped to scheduler\u0027s ID namespace (whatever they are) and builds the corresponding mapping. This ID namespace is flat. All pollers and all *triggered* builders (regardless of the bucket) live there.\n\nThere can be multiple kinds of collisions: \n1) Builders in different buckets with same name (as in my example above). I expect it will be the only observed in practice collision, though likely there\u0027ll be no collisions at all.\n2) A poller having same name as a triggered builder (in same or different buckets). This is possible, because by graph construction we only ensure uniqueness of names of \"things that can trigger\" (NOT \"things that can trigger or be triggered\"). The fact that Scheduler needs an entity for a \"builder that can be triggered\" is internal implementation detail of the scheduler.cfg generator, and it is generator\u0027s responsibility to pick a non-conflicting name.",
+      "parentUuid": "c472a6d3_db1e5b67",
+      "range": {
+        "startLine": 396,
+        "startChar": 4,
+        "endLine": 396,
+        "endChar": 31
+      },
+      "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "197cae2f_b52759e4",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 2
