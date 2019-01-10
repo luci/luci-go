@@ -282,6 +282,11 @@
 {{end}}
 
 {{define "timeline_tab"}}
+  <div id="timeline-controls" style="display: none;">
+    <input type="checkbox" id="showTimelineLogs"
+    {{- if eq .BuildPage.TimelineDisplayPref "show" }} checked{{ end }}>
+    <label for="showTimelineLogs">Show Log Links</label>
+  </div>
   <div id="timeline">
     <div id="timeline-rendering">Rendering...</div>
   </div>
