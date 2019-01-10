@@ -146,8 +146,8 @@ def gen_logdog_cfg(ctx):
 # acl.role => buildbucket_pb.Acl.Role.
 _bb_roles = {
     acl.BUILDBUCKET_READER: buildbucket_pb.Acl.READER,
-    acl.BUILDBUCKET_SCHEDULER: buildbucket_pb.Acl.SCHEDULER,
-    acl.BUILDBUCKET_WRITER: buildbucket_pb.Acl.WRITER,
+    acl.BUILDBUCKET_TRIGGERER: buildbucket_pb.Acl.SCHEDULER,
+    acl.BUILDBUCKET_OWNER: buildbucket_pb.Acl.WRITER,
 }
 
 
