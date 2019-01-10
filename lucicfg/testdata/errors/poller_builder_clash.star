@@ -2,6 +2,7 @@ core.project(
     name = 'proj',
     buildbucket = 'cr-buildbucket.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
+    scheduler = 'luci-scheduler.appspot.com',
 )
 core.recipe(
     name = 'noop',
@@ -21,9 +22,9 @@ core.gitiles_poller(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/poller_builder_clash.star:16: in <toplevel>
+#   //testdata/errors/poller_builder_clash.star:17: in <toplevel>
 #   ...
 # Error: core.triggerer("b/clashing name") is redeclared, previous declaration:
 # Traceback (most recent call last):
-#   //testdata/errors/poller_builder_clash.star:11: in <toplevel>
+#   //testdata/errors/poller_builder_clash.star:12: in <toplevel>
 #   ...
