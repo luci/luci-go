@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cli
+// Package generate implements 'generate' subcommand.
+package generate
 
 import (
 	"context"
@@ -24,24 +25,27 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/starlark/interpreter"
+
+	"go.chromium.org/luci/lucicfg"
+	"go.chromium.org/luci/lucicfg/cli/base"
 )
 
-func cmdGenerate(params Parameters) *subcommands.Command {
+// Cmd is 'generate' subcommand.
+func Cmd(params base.Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "generate <input.star>",
 		ShortDesc: "interprets a high-level config, generating *.cfg files",
 		CommandRun: func() subcommands.CommandRun {
 			c := &generateRun{}
-			c.init(params, false)
+			c.Init(params, false)
 			return c
 		},
 	}
 }
 
 type generateRun struct {
-	subcommand
+	base.Subcommand
 }
 
 type generateResult struct {
@@ -49,11 +53,11 @@ type generateResult struct {
 }
 
 func (c *generateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if !c.checkArgs(args, 1, 1) {
+	if !c.CheckArgs(args, 1, 1) {
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(c.run(ctx, args[0]))
+	return c.Done(c.run(ctx, args[0]))
 }
 
 func (c *generateRun) run(ctx context.Context, inputFile string) (*generateResult, error) {
