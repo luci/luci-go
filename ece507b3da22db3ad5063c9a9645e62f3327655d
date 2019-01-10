@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "c472a6d3_db1e5b67",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-10T21:46:53Z",
+      "side": 1,
+      "message": "i see. i was confused by using a single node_to_id dict for both pollers and builders. I interpreted the intention as to disambiguate across builders and pollers, but in fact the intention is to disambiguate pollers-with-same-names-in-different-buckets and *independently* builders-with-same-names-in-different-buckets.\n\nconsider clarifying this by having two separate maps:\n\n  poller_to_id \u003d scheduler_disambiguate_ids(pollers)\n  builder_to_id \u003d scheduler_disambiguate_ids(builders)\n\nif done so, i believe use_name() is not longer needed because we are guaranteed that (bucket, name) combinations are unique per namespace (builders and pollers), since graph finalization would fail otherwise\n\nam I missing something?",
+      "parentUuid": "a8cc3d1a_befabc6f",
+      "range": {
+        "startLine": 396,
+        "startChar": 4,
+        "endLine": 396,
+        "endChar": 31
+      },
+      "revId": "ece507b3da22db3ad5063c9a9645e62f3327655d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "197cae2f_b52759e4",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 2
