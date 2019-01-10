@@ -46,6 +46,30 @@
       "revId": "7ab846ac6b61e68a42f552051b197d6350e99405",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b76fe8b4_e71a6d41",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-10T20:04:47Z",
+      "side": 0,
+      "message": "also consider to defaulting to \"LUCI builder\" since one of the goals is to encapsulate underlying services and present LUCI as a whole. The places in documentation where we explicitly want to expose underlying services should be rather an exception to this rule.\n\nIf we decide to go this route, perhaps this belongs to a different change, since it is not specific to scheduler.",
+      "parentUuid": "9b310861_10ea3581",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 9
+      },
+      "revId": "7ab846ac6b61e68a42f552051b197d6350e99405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
