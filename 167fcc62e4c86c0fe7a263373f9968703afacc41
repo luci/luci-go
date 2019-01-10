@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fffd8e99_452264f4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-10T23:39:35Z",
+      "side": 1,
+      "message": "any other assumptions? i think \"refs/heads/master\" is a very reasonable default and it is compatible with the first assumption",
+      "revId": "167fcc62e4c86c0fe7a263373f9968703afacc41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
