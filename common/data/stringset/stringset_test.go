@@ -170,5 +170,12 @@ func TestSet(t *testing.T) {
 				So(sl, ShouldBeEmpty)
 			})
 		})
+
+		Convey("Contains", func() {
+			s1 := NewFromSlice("a", "b", "c")
+			s2 := NewFromSlice("a", "b")
+			So(s1.Contains(s2), ShouldBeTrue)
+			So(s2.Contains(s1), ShouldBeFalse)
+		})
 	})
 }

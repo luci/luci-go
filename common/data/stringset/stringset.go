@@ -169,3 +169,13 @@ func (s Set) Union(other Set) Set {
 	}
 	return ret
 }
+
+// Contains returns true iff the given set contains all elements from the other set.
+func (s Set) Contains(other Set) bool {
+	for k := range other {
+		if !s.Has(k) {
+			return false
+		}
+	}
+	return true
+}
