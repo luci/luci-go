@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e51a7a56_d9f91eff",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-11T19:40:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a0f445d_a551780b",
+      "range": {
+        "startLine": 13,
+        "startChar": 28,
+        "endLine": 13,
+        "endChar": 29
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da15559d_a4f90106",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
         "patchSetId": 1
@@ -118,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "10370668_8d2498d4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-11T19:40:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ae04668_07584569",
+      "range": {
+        "startLine": 61,
+        "startChar": 64,
+        "endLine": 61,
+        "endChar": 70
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "17000422_67117502",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-11T19:40:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "118a89c9_48052db6",
+      "range": {
+        "startLine": 61,
+        "startChar": 42,
+        "endLine": 61,
+        "endChar": 43
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4127415c_79cec125",
         "filename": "lucicfg/testdata/full_example.star",
         "patchSetId": 1
@@ -129,6 +201,30 @@
       "writtenOn": "2019-01-11T07:20:18Z",
       "side": 1,
       "message": "Oh, turns out \\d and \\. doesn\u0027t need escaping in starlark, even in Python. Heh.\nI\u0027ve also consulted https://github.com/google/skylark/blob/master/syntax/quote.go.",
+      "range": {
+        "startLine": 63,
+        "startChar": 20,
+        "endLine": 63,
+        "endChar": 48
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "79b50e8e_0d04c97c",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-11T19:40:43Z",
+      "side": 1,
+      "message": "repr(...) quotes them though *shrug*",
+      "parentUuid": "4127415c_79cec125",
       "range": {
         "startLine": 63,
         "startChar": 20,
