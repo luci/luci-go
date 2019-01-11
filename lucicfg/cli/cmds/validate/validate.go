@@ -44,7 +44,7 @@ func Cmd(params base.Parameters) *subcommands.Command {
 		ShortDesc: "sends files under CONFIG_DIR (or CWD if not set) to LUCI Config service for validation",
 		CommandRun: func() subcommands.CommandRun {
 			vr := &validateRun{}
-			vr.Init(params, true)
+			vr.Init(params, true, false)
 			vr.Flags.StringVar(&vr.configSet, "config-set", "<name>", "Name of the config set to validate against.")
 			vr.Flags.BoolVar(&vr.failOnWarnings, "fail-on-warnings", false, "Treat validation warnings as errors.")
 			return vr

@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 
@@ -28,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/common/api/gitiles"
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -53,6 +55,15 @@ type Parameters struct {
 	ConfigServiceHost string       // e.g. "luci-config.appspot.com"
 }
 
+// OAuthScopes returns a list of OAuth scopes to used for HTTP calls.
+func OAuthScopes(admin bool) []string {
+	scopes := []string{"https://www.googleapis.com/auth/userinfo.email"}
+	if admin {
+		scopes = append(scopes, gitiles.OAuthScope)
+	}
+	return scopes
+}
+
 // Subcommand is a base of all subcommands.
 //
 // It defines some common flags, such as logging and JSON output parameters,
@@ -64,6 +75,7 @@ type Subcommand struct {
 	subcommands.CommandRunBase
 
 	makesRPCs bool // set in init(...)
+	admin     bool // set in init(...)
 
 	jsonOutput  string
 	logConfig   logging.Config
@@ -79,8 +91,12 @@ func (c *Subcommand) ModifyContext(ctx context.Context) context.Context {
 // Init registers common flags.
 //
 // If makesRPCs is true, will register flags related to authentication and RPCs.
-func (c *Subcommand) Init(params Parameters, makesRPCs bool) {
+//
+// If admin is true, will also add Gerrit scope the list of used OAuth scoped.
+// This is used by 'admin-*' commands that talk directly to Gerrit sometimes.
+func (c *Subcommand) Init(params Parameters, makesRPCs, admin bool) {
 	c.makesRPCs = makesRPCs
+	c.admin = admin
 	c.logConfig.Level = logging.Info // default to Info level
 
 	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to.")
@@ -142,23 +158,27 @@ func (c *Subcommand) CheckArgs(args []string, minPosCount, maxPosCount int) bool
 	return true
 }
 
-// configService returns a wrapper around LUCI Config API.
-//
-// It is ready for making authenticated RPCs.
-func (c *Subcommand) ConfigService(ctx context.Context) (*config.Service, error) {
+// AuthClient returns http.Client that sends OAuth tokens in each request.
+func (c *Subcommand) AuthClient(ctx context.Context) (*http.Client, error) {
 	if !c.makesRPCs {
 		panic("the subcommand wasn't declared as one making RPCs")
 	}
-
 	authOpts, err := c.authFlags.Options()
 	if err != nil {
 		return nil, err
 	}
-	client, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+	authOpts.Scopes = OAuthScopes(c.admin)
+	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+}
+
+// configService returns a wrapper around LUCI Config API.
+//
+// It is ready for making authenticated RPCs.
+func (c *Subcommand) ConfigService(ctx context.Context) (*config.Service, error) {
+	client, err := c.AuthClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	svc, err := config.New(client)
 	if err != nil {
 		return nil, err
@@ -192,7 +212,11 @@ func (c *Subcommand) printError(err error) {
 	}
 
 	if err == auth.ErrLoginRequired {
-		fmt.Fprintf(os.Stderr, "You need to login first by running:\nlucicfg auth-login\n")
+		cmd := "lucicfg auth-login"
+		if c.admin {
+			cmd = "lucicfg admin-login"
+		}
+		fmt.Fprintf(os.Stderr, "You need to login first by running:\n%s\n", cmd)
 		return
 	}
 
@@ -206,7 +230,7 @@ func (c *Subcommand) printError(err error) {
 	})
 }
 
-// WriteJSONOutput writes result to JSON output file (if -json-output was set).
+// writeJSONOutput writes result to JSON output file (if -json-output was set).
 //
 // If writing to the output file fails and the original error is nil, returns
 // the write error. If the original error is not nil, just logs the write error

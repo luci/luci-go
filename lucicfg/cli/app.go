@@ -30,6 +30,8 @@ import (
 
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/cli/base"
+
+	"go.chromium.org/luci/lucicfg/cli/cmds/admincheckout"
 	"go.chromium.org/luci/lucicfg/cli/cmds/generate"
 	"go.chromium.org/luci/lucicfg/cli/cmds/validate"
 )
@@ -49,6 +51,12 @@ func Main(params base.Parameters, args []string) int {
 
 // GetApplication returns lucicfg cli.Application.
 func GetApplication(params base.Parameters) *cli.Application {
+	authOpts := params.AuthOptions
+	authOpts.Scopes = base.OAuthScopes(false)
+
+	adminAuthOpts := params.AuthOptions
+	adminAuthOpts.Scopes = base.OAuthScopes(true)
+
 	return &cli.Application{
 		Name:  "lucicfg",
 		Title: "LUCI config generator (" + lucicfg.UserAgent + ")",
@@ -66,13 +74,18 @@ func GetApplication(params base.Parameters) *cli.Application {
 			versioncmd.Version,
 
 			{}, // These are spacers so that the commands appear in groups.
-			authcli.SubcommandInfo(params.AuthOptions, "auth-info", true),
-			authcli.SubcommandLogin(params.AuthOptions, "auth-login", false),
-			authcli.SubcommandLogout(params.AuthOptions, "auth-logout", false),
+			authcli.SubcommandInfo(authOpts, "auth-info", true),
+			authcli.SubcommandLogin(authOpts, "auth-login", false),
+			authcli.SubcommandLogout(authOpts, "auth-logout", false),
 
 			{},
 			generate.Cmd(params),
 			validate.Cmd(params),
+
+			{Advanced: true},
+			authcli.SubcommandLogin(adminAuthOpts, "admin-login", true),
+			authcli.SubcommandLogout(adminAuthOpts, "admin-logout", true),
+			admincheckout.Cmd(params),
 		},
 	}
 }
