@@ -259,6 +259,30 @@
       "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf80f3c1_4857f461",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-11T04:16:31Z",
+      "side": 1,
+      "message": "Looked through some configs. Only ChromeOS is using this non-trivially. They have single builder \"Prod\" and a ton of different Scheduler jobs that pass different properties to this single \"Prod\" builder.\n\nOther cases I\u0027ve looked through appear to be fixable by moving properties to the builder definition.\n\nSince ChromeOS is redoing their whole stuff, and won\u0027t be using lucicfg anytime soon, I think we can ignore them for now.",
+      "parentUuid": "84037919_7ca56006",
+      "range": {
+        "startLine": 380,
+        "startChar": 21,
+        "endLine": 380,
+        "endChar": 48
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
