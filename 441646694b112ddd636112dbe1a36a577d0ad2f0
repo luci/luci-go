@@ -283,6 +283,30 @@
       "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "74634add_19d2a26c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T04:28:44Z",
+      "side": 1,
+      "message": ":( but it makes sense for them.",
+      "parentUuid": "bf80f3c1_4857f461",
+      "range": {
+        "startLine": 380,
+        "startChar": 21,
+        "endLine": 380,
+        "endChar": 48
+      },
+      "revId": "441646694b112ddd636112dbe1a36a577d0ad2f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
