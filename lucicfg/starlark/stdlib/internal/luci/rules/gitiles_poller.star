@@ -21,12 +21,16 @@ load('@stdlib//internal/luci/lib/validate.star', 'validate')
 # structure of nodes and their relations.
 
 
-def gitiles_poller(name, bucket, triggers=None):
+def gitiles_poller(
+      name=None,
+      bucket=None,
+      triggers=None,
+  ):
   """Defines a gitiles poller which can trigger builders on git commits.
 
   Args:
-    name: name of the poller, to refer to it from other rules.
-    bucket: name of the bucket the poller belongs to.
+    name: name of the poller, to refer to it from other rules. Required.
+    bucket: name of the bucket the poller belongs to. Required.
     triggers: names of builders it triggers.
   """
   name = validate.string('name', name)

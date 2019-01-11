@@ -19,9 +19,9 @@ def test_roles_validation():
       roles = [acl.BUILDBUCKET_READER, acl.BUILDBUCKET_TRIGGERER],
   )
   # No roles is NOT ok.
-  assert.fails(lambda: acl.entry([]), 'bad "roles": missing')
-  assert.fails(lambda: acl.entry(None), 'bad "roles": missing')
-  assert.fails(lambda: acl.entry([None]), 'bad "roles": missing')
+  assert.fails(lambda: acl.entry([]), 'missing required field "roles"')
+  assert.fails(lambda: acl.entry(None), 'missing required field "roles"')
+  assert.fails(lambda: acl.entry([None]), 'missing required field "roles"')
   # Invalid type is NOT ok.
   assert.fails(
       lambda: acl.entry('zzz'),

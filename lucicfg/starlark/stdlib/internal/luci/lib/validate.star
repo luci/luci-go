@@ -33,7 +33,7 @@ def _string(attr, val, regexp=None, default=None, required=True):
   """
   if val == None:
     if required:
-      fail('bad %r: missing' % attr)
+      fail('missing required field %r' % attr)
     if default == None:
       return None
     val = default
@@ -63,7 +63,7 @@ def _int(attr, val, min=None, max=None, default=None, required=True):
   """
   if val == None:
     if required:
-      fail('bad %r: missing' % attr)
+      fail('missing required field %r' % attr)
     if default == None:
       return None
     val = default
@@ -97,7 +97,7 @@ def _bool(attr, val, default=None, required=True):
   """
   if val == None:
     if required:
-      fail('bad %r: missing' % attr)
+      fail('missing required field %r' % attr)
     if default == None:
       return None
     val = default
@@ -125,7 +125,7 @@ def _duration(attr, val, precision=time.second, min=time.zero, max=None, default
   """
   if val == None:
     if required:
-      fail('bad %r: missing' % attr)
+      fail('missing required field %r' % attr)
     if default == None:
       return None
     val = default
@@ -167,7 +167,7 @@ def _list(attr, val, required=False):
     fail('bad %r: got %s, want list' % (attr, type(val)))
 
   if required and not val:
-    fail('bad %r: missing' % attr)
+    fail('missing required field %r' % attr)
 
   return val
 
@@ -193,7 +193,7 @@ def _str_dict(attr, val, required=False):
     fail('bad %r: got %s, want dict' % (attr, type(val)))
 
   if required and not val:
-    fail('bad %r: missing' % attr)
+    fail('missing required field %r' % attr)
 
   for k in val:
     if type(k) != 'string':
@@ -219,7 +219,7 @@ def _struct(attr, val, sym, default=None, required=True):
   """
   if val == None:
     if required:
-      fail('bad %r: missing' % attr)
+      fail('missing required field %r' % attr)
     if default == None:
       return None
     val = default
