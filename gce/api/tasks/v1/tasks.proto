@@ -14,6 +14,14 @@ message Create {
   string id = 1;
 }
 
+// A task to destroy a GCE instance created from a VM entity.
+message Destroy {
+  // The ID of the VM entity to destroy a GCE instance for.
+  string id = 1;
+  // The URL of the GCE instance to destroy.
+  string url = 2;
+}
+
 // A task to drain a particular VM entity.
 message Drain {
   // The ID of the VM entity to drain.
