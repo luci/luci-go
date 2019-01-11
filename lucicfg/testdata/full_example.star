@@ -58,6 +58,10 @@ core.bucket(
 core.gitiles_poller(
     name = 'master-poller',
     bucket = 'ci',
+    repo = 'https://noop.com',
+    refs = ['refs/heads/master', 'refs/tags/blah'],
+    refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+    schedule = 'with 10s interval',
 )
 
 core.builder(
@@ -262,9 +266,16 @@ core.builder(
 # >
 # trigger: <
 #   id: "master-poller"
+#   schedule: "with 10s interval"
 #   acl_sets: "ci"
 #   triggers: "generically named builder"
 #   triggers: "linux ci builder"
+#   gitiles: <
+#     repo: "https://noop.com"
+#     refs: "refs/heads/master"
+#     refs: "refs/tags/blah"
+#     refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
+#   >
 # >
 # acl_sets: <
 #   name: "ci"
