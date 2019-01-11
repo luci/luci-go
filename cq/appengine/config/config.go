@@ -18,6 +18,8 @@ package config
 
 import (
 	"net/url"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -102,8 +104,92 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		validateConfigGroup(ctx, g)
 		ctx.Exit()
 	}
+	// TODO(tandrii): it appears non-trivial if it all possible to ensure that
+	// regexp across config_groups don't overlap. But, we can catch typical
+	// copy-pasta mistakes early on by checking for equality of regexps, just like
+	// Gerrit URL and project names.
 }
 
-func validateConfigGroup(ctx *validation.Context, g *v2.ConfigGroup) {
+func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup) {
+	if len(group.Gerrit) == 0 {
+		ctx.Errorf("at least 1 gerrit is required")
+	}
+	for i, g := range group.Gerrit {
+		ctx.Enter("gerrit #%d", i+1)
+		validateGerrit(ctx, g)
+		ctx.Exit()
+	}
+	// TODO(tandrii): disallow repeated gerit URLs and project names.
+	if group.Verifiers == nil {
+		ctx.Errorf("verifiers are required")
+	} else {
+		ctx.Enter("verifiers")
+		validateVerifiers(ctx, group.Verifiers)
+		ctx.Exit()
+	}
+}
+
+func validateGerrit(ctx *validation.Context, g *v2.ConfigGroup_Gerrit) {
+	validateGerritURL(ctx, g.Url)
+	if len(g.Projects) == 0 {
+		ctx.Errorf("at least 1 project is required")
+	}
+	for i, g := range g.Projects {
+		ctx.Enter("projects #%d", i+1)
+		validateGerritProject(ctx, g)
+		ctx.Exit()
+	}
+}
+
+func validateGerritURL(ctx *validation.Context, gURL string) {
+	if gURL == "" {
+		ctx.Errorf("url is required")
+		return
+	}
+	u, err := url.Parse(gURL)
+	if err != nil {
+		ctx.Errorf("failed to parse url %q: %s", gURL, err)
+		return
+	}
+	if u.Path != "" {
+		ctx.Errorf("path component not yet allowed in url (%q specified)", u.Path)
+	}
+	if u.RawQuery != "" {
+		ctx.Errorf("query component not allowed in url (%q specified)", u.RawQuery)
+	}
+	if u.Fragment != "" {
+		ctx.Errorf("fragment component not allowed in url (%q specified)", u.Fragment)
+	}
+	if u.Scheme != "https" {
+		ctx.Errorf("only 'https' scheme supported for now (%q specified)", u.Scheme)
+	}
+	if !strings.HasSuffix(u.Host, ".googlesource.com") {
+		// TODO(tandrii): relax this.
+		ctx.Errorf("only *.googlesource.com hosts supported for now (%q specified)", u.Host)
+	}
+}
+
+func validateGerritProject(ctx *validation.Context, gp *v2.ConfigGroup_Gerrit_Project) {
+	if gp.Name == "" {
+		ctx.Errorf("name is required")
+	} else {
+		if strings.HasPrefix(gp.Name, "/") || strings.HasPrefix(gp.Name, "a/") {
+			ctx.Errorf("name must not start with '/' or 'a/'")
+		}
+		if strings.HasSuffix(gp.Name, "/") || strings.HasSuffix(gp.Name, ".git") {
+			ctx.Errorf("name must not end with '.git' or '/'")
+		}
+	}
+
+	for i, r := range gp.RefRegexp {
+		ctx.Enter("ref_regexp #%d", i+1)
+		if _, err := regexp.Compile(r); err != nil {
+			ctx.Error(err)
+		}
+		ctx.Exit()
+	}
+}
+
+func validateVerifiers(ctx *validation.Context, g *v2.Verifiers) {
 	// TODO(tandrii): implement.
 }
