@@ -86,7 +86,15 @@ const validConfigTextPB = `
   	burst_delay { seconds: 120 }
   }
   config_groups {
-    # TODO(tandrii): finish valid config.
+	  gerrit {
+			url: "https://chromium-review.googlesource.com"
+			projects {
+				name: "chromium/src"
+			}
+		}
+		verifiers {
+			# TODO(tandrii): finish valid config.
+		}
   }
 `
 
@@ -152,6 +160,85 @@ func TestValidation(t *testing.T) {
 				cfg.SubmitOptions.BurstDelay.Seconds = -1
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldNotBeNil)
+			})
+			Convey("at least 1 Config Group", func() {
+				cfg.ConfigGroups = nil
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "at least 1 config_group is required")
+			})
+		})
+
+		Convey("ConfiGroups", func() {
+			Convey("with Gerrit", func() {
+				cfg.ConfigGroups[0].Gerrit = nil
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "at least 1 gerrit is required")
+			})
+			Convey("with Verifiers", func() {
+				cfg.ConfigGroups[0].Verifiers = nil
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "verifiers are required")
+			})
+		})
+
+		Convey("Gerrit", func() {
+			g := cfg.ConfigGroups[0].Gerrit[0]
+			Convey("needs valid URL", func() {
+				g.Url = ""
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "url is required")
+
+				g.Url = ":badscheme, bad URL"
+				vctx = &validation.Context{Context: c}
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "failed to parse url")
+			})
+
+			Convey("without fancy URL components", func() {
+				g.Url = "bad://ok/path-not-good?query=too#neither-is-fragment"
+				validateProjectConfig(vctx, &cfg)
+				err := vctx.Finalize()
+				So(err, ShouldErrLike, "path component not yet allowed in url")
+				So(err, ShouldErrLike, "and 4 other errors")
+			})
+
+			Convey("current limitations", func() {
+				g.Url = "https://not.yet.allowed.com"
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "only *.googlesource.com hosts supported for now")
+
+				vctx = &validation.Context{Context: c}
+				g.Url = "new-scheme://chromium-review.googlesource.com"
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "only 'https' scheme supported for now")
+			})
+			Convey("at least 1 project required", func() {
+				g.Projects = nil
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "at least 1 project is required")
+			})
+		})
+		Convey("Gerrit Project", func() {
+			p := cfg.ConfigGroups[0].Gerrit[0].Projects[0]
+			Convey("project name required", func() {
+				p.Name = ""
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "name is required")
+			})
+			Convey("incorrect project names", func() {
+				p.Name = "a/prefix-not-allowed/so-is-.git-suffix/.git"
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldNotBeNil)
+
+				vctx = &validation.Context{Context: c}
+				p.Name = "/prefix-not-allowed/so-is-/-suffix/"
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldNotBeNil)
+			})
+			Convey("bad regexp", func() {
+				p.RefRegexp = []string{"refs/heads/master", "*is-bad-regexp"}
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "ref_regexp #2): error parsing regexp:")
 			})
 		})
 	})
