@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f43e13d_bf55d937",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-11T22:52:17Z",
+      "side": 1,
+      "message": "This is the one place I opted to keep \"vms\". Written configs will look like:\nvms.cfg:\nvms {\n // A description of a type of VMs.\n}\nvms {\n}\nvms {\n}\n...\n\nMakes more sense to me than:\ncfg {\n // A description of a type of VMs.\n}\ncfg {\n}\ncfg {\n}\n...",
+      "revId": "9369d48ddcb744964d5a49903b42d9796f124125",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
