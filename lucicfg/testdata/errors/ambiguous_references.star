@@ -2,6 +2,7 @@ core.project(
     name = 'proj',
     buildbucket = 'cr-buildbucket.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
+    scheduler = 'luci-scheduler.appspot.com',
 )
 
 
@@ -19,6 +20,7 @@ core.builder(
     name = 'b1 builder',
     bucket = 'b1',
     recipe = 'noop',
+    service_account = 'noop@example.com',
 )
 core.builder(
     name = 'ambiguous builder',
@@ -71,14 +73,14 @@ core.builder(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/ambiguous_references.star:51: in <toplevel>
+#   //testdata/errors/ambiguous_references.star:53: in <toplevel>
 #   ...
 # Error: ambiguous reference "ambiguous builder" in core.gitiles_poller("b1/ambiguous"), possible variants:
 #   core.builder("b1/ambiguous builder")
 #   core.builder("b2/ambiguous builder")
 #
 # Traceback (most recent call last):
-#   //testdata/errors/ambiguous_references.star:61: in <toplevel>
+#   //testdata/errors/ambiguous_references.star:63: in <toplevel>
 #   ...
 # Error: ambiguous reference "ambiguous builder" in core.builder("b1/triggered"), possible variants:
 #   core.builder("b1/ambiguous builder")
