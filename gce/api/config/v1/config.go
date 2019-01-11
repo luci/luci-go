@@ -22,24 +22,24 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
-// Ensure Block implements datastore.PropertyConverter.
+// Ensure Config implements datastore.PropertyConverter.
 // This allows VMs blocks to be read from and written to the datastore.
-var _ datastore.PropertyConverter = &Block{}
+var _ datastore.PropertyConverter = &Config{}
 
 // FromProperty implements datastore.PropertyConverter.
-func (b *Block) FromProperty(p datastore.Property) error {
-	return proto.UnmarshalText(p.Value().(string), b)
+func (cfg *Config) FromProperty(p datastore.Property) error {
+	return proto.UnmarshalText(p.Value().(string), cfg)
 }
 
 // ToProperty implements datastore.PropertyConverter.
-func (b *Block) ToProperty() (datastore.Property, error) {
+func (cfg *Config) ToProperty() (datastore.Property, error) {
 	p := datastore.Property{}
-	return p, p.SetValue(proto.MarshalTextString(b), false)
+	return p, p.SetValue(proto.MarshalTextString(cfg), false)
 }
 
-// Validate validates this VMs block given the allowable kinds the block may reference.
-func (b *Block) Validate(c *validation.Context, kinds stringset.Set) {
-	if b.Kind != "" && !kinds.Has(b.Kind) {
-		c.Errorf("unknown kind %q", b.Kind)
+// Validate validates this config given the allowable kinds it may reference.
+func (cfg *Config) Validate(c *validation.Context, kinds stringset.Set) {
+	if cfg.Kind != "" && !kinds.Has(cfg.Kind) {
+		c.Errorf("unknown kind %q", cfg.Kind)
 	}
 }

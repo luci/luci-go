@@ -10,9 +10,9 @@ import (
 	empty "github.com/golang/protobuf/ptypes/empty"
 )
 
-type DecoratedConfig struct {
+type DecoratedConfiguration struct {
 	// Service is the service to decorate.
-	Service ConfigServer
+	Service ConfigurationServer
 	// Prelude is called for each method before forwarding the call to Service.
 	// If Prelude returns an error, then the call is skipped and the error is
 	// processed via the Postlude (if one is defined), or it is returned directly.
@@ -25,53 +25,53 @@ type DecoratedConfig struct {
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedConfig) DeleteVMs(c context.Context, req *DeleteVMsRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedConfiguration) Delete(c context.Context, req *DeleteRequest) (rsp *empty.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "DeleteVMs", req)
+		newCtx, err = s.Prelude(c, "Delete", req)
 		if err == nil {
 			c = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.DeleteVMs(c, req)
+		rsp, err = s.Service.Delete(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "DeleteVMs", rsp, err)
+		err = s.Postlude(c, "Delete", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedConfig) EnsureVMs(c context.Context, req *EnsureVMsRequest) (rsp *Block, err error) {
+func (s *DecoratedConfiguration) Ensure(c context.Context, req *EnsureRequest) (rsp *Config, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "EnsureVMs", req)
+		newCtx, err = s.Prelude(c, "Ensure", req)
 		if err == nil {
 			c = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.EnsureVMs(c, req)
+		rsp, err = s.Service.Ensure(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "EnsureVMs", rsp, err)
+		err = s.Postlude(c, "Ensure", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedConfig) GetVMs(c context.Context, req *GetVMsRequest) (rsp *Block, err error) {
+func (s *DecoratedConfiguration) Get(c context.Context, req *GetRequest) (rsp *Config, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "GetVMs", req)
+		newCtx, err = s.Prelude(c, "Get", req)
 		if err == nil {
 			c = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.GetVMs(c, req)
+		rsp, err = s.Service.Get(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetVMs", rsp, err)
+		err = s.Postlude(c, "Get", rsp, err)
 	}
 	return
 }

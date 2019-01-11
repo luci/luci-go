@@ -26,7 +26,7 @@ import (
 )
 
 // Ensure *JSONRoundTripper implements http.RoundTripper.
-var _ http.RoundTripper = (*JSONRoundTripper)(nil)
+var _ http.RoundTripper = &JSONRoundTripper{}
 
 // JSONRoundTripper implements http.RoundTripper to handle *http.Requests with a JSON body.
 type JSONRoundTripper struct {

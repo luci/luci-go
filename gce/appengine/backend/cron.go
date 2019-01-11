@@ -43,8 +43,8 @@ func newHTTPHandler(f func(c context.Context) error) router.Handler {
 	}
 }
 
-// createInstances creates task queue tasks to create each GCE instance.
-func createInstances(c context.Context) error {
+// createInstancesAsync schedules task queue tasks to create each GCE instance.
+func createInstancesAsync(c context.Context) error {
 	var keys []*datastore.Key
 	q := datastore.NewQuery(model.VMKind).Eq("url", "")
 	if err := datastore.GetAll(c, q, &keys); err != nil {
@@ -54,7 +54,7 @@ func createInstances(c context.Context) error {
 	for i, k := range keys {
 		id := k.StringID()
 		t[i] = &tq.Task{
-			Payload: &tasks.Create{
+			Payload: &tasks.CreateInstance{
 				Id: id,
 			},
 		}
@@ -66,30 +66,8 @@ func createInstances(c context.Context) error {
 	return nil
 }
 
-// processVMs creates task queue tasks to process each VMs block.
-func processVMs(c context.Context) error {
-	var keys []*datastore.Key
-	if err := datastore.GetAll(c, datastore.NewQuery(model.VMsKind), &keys); err != nil {
-		return errors.Annotate(err, "failed to fetch VMs blocks").Err()
-	}
-	t := make([]*tq.Task, len(keys))
-	for i, k := range keys {
-		id := k.StringID()
-		t[i] = &tq.Task{
-			Payload: &tasks.Process{
-				Id: id,
-			},
-		}
-		logging.Debugf(c, "found VMs block %q", id)
-	}
-	if err := getDispatcher(c).AddTask(c, t...); err != nil {
-		return errors.Annotate(err, "failed to schedule tasks").Err()
-	}
-	return nil
-}
-
-// manageInstances creates task queue tasks to manage each GCE instance.
-func manageInstances(c context.Context) error {
+// manageInstancesAsync schedules task queue tasks to manage each GCE instance.
+func manageInstancesAsync(c context.Context) error {
 	var keys []*datastore.Key
 	// TODO(smut): Fetch in batches.
 	q := datastore.NewQuery(model.VMKind).Gt("url", "")
@@ -100,11 +78,33 @@ func manageInstances(c context.Context) error {
 	for i, k := range keys {
 		id := k.StringID()
 		t[i] = &tq.Task{
-			Payload: &tasks.Manage{
+			Payload: &tasks.ManageInstance{
 				Id: id,
 			},
 		}
 		logging.Debugf(c, "found VM %q", id)
+	}
+	if err := getDispatcher(c).AddTask(c, t...); err != nil {
+		return errors.Annotate(err, "failed to schedule tasks").Err()
+	}
+	return nil
+}
+
+// processConfigsAsync schedules task queue tasks to process each config.
+func processConfigsAsync(c context.Context) error {
+	var keys []*datastore.Key
+	if err := datastore.GetAll(c, datastore.NewQuery(model.ConfigKind), &keys); err != nil {
+		return errors.Annotate(err, "failed to fetch configs").Err()
+	}
+	t := make([]*tq.Task, len(keys))
+	for i, k := range keys {
+		id := k.StringID()
+		t[i] = &tq.Task{
+			Payload: &tasks.ProcessConfig{
+				Id: id,
+			},
+		}
+		logging.Debugf(c, "found config %q", id)
 	}
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
 		return errors.Annotate(err, "failed to schedule tasks").Err()

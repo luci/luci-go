@@ -78,7 +78,7 @@ func TestFetch(t *testing.T) {
 			k, v, err := fetch(c)
 			So(err, ShouldBeNil)
 			So(k, ShouldResemble, &gce.Kinds{})
-			So(v, ShouldResemble, &gce.VMs{})
+			So(v, ShouldResemble, &gce.Configs{})
 		})
 	})
 }
@@ -101,9 +101,9 @@ func TestMerge(t *testing.T) {
 					},
 				},
 			}
-			vms := &gce.VMs{}
-			merge(c, kinds, vms)
-			So(vms.GetVms(), ShouldHaveLength, 0)
+			cfgs := &gce.Configs{}
+			merge(c, kinds, cfgs)
+			So(cfgs.GetVms(), ShouldHaveLength, 0)
 		})
 
 		Convey("merged", func() {
@@ -123,8 +123,8 @@ func TestMerge(t *testing.T) {
 					},
 				},
 			}
-			vms := &gce.VMs{
-				Vms: []*gce.Block{
+			cfgs := &gce.Configs{
+				Vms: []*gce.Config{
 					{
 						Attributes: &gce.VM{
 							MachineType: "type",
@@ -143,8 +143,8 @@ func TestMerge(t *testing.T) {
 					},
 				},
 			}
-			merge(c, kinds, vms)
-			So(vms.GetVms(), ShouldResemble, []*gce.Block{
+			merge(c, kinds, cfgs)
+			So(cfgs.GetVms(), ShouldResemble, []*gce.Config{
 				{
 					Attributes: &gce.VM{
 						MachineType: "type",
@@ -180,24 +180,24 @@ func TestValidate(t *testing.T) {
 						{},
 					},
 				}
-				err := validate(c, kinds, &gce.VMs{})
+				err := validate(c, kinds, &gce.Configs{})
 				So(err, ShouldErrLike, "is required")
 			})
 
-			Convey("vms", func() {
-				vms := &gce.VMs{
-					Vms: []*gce.Block{
+			Convey("configs", func() {
+				cfgs := &gce.Configs{
+					Vms: []*gce.Config{
 						{},
 					},
 				}
-				err := validate(c, &gce.Kinds{}, vms)
+				err := validate(c, &gce.Kinds{}, cfgs)
 				So(err, ShouldErrLike, "is required")
 			})
 		})
 
 		Convey("valid", func() {
 			Convey("empty", func() {
-				err := validate(c, &gce.Kinds{}, &gce.VMs{})
+				err := validate(c, &gce.Kinds{}, &gce.Configs{})
 				So(err, ShouldBeNil)
 			})
 		})

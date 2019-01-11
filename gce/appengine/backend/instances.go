@@ -155,12 +155,12 @@ func logErrors(c context.Context, err *googleapi.Error) {
 	}
 }
 
-// createQueue is the name of the create task handler queue.
-const createQueue = "create-instance"
+// createInstanceQueue is the name of the create instance task handler queue.
+const createInstanceQueue = "create-instance"
 
-// create creates a GCE instance.
-func create(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.Create)
+// createInstance creates a GCE instance.
+func createInstance(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.CreateInstance)
 	switch {
 	case !ok:
 		return errors.Reason("unexpected payload %q", payload).Err()
@@ -178,7 +178,7 @@ func create(c context.Context, payload proto.Message) error {
 	logging.Debugf(c, "creating instance %q", vm.Hostname)
 	// Generate a request ID based on the hostname.
 	// Ensures duplicate operations aren't created in GCE.
-	rID := uuid.NewSHA1(uuid.Nil, []byte(vm.Hostname))
+	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("create-%s", vm.Hostname)))
 	srv := getCompute(c).Instances
 	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.GetInstance())
 	op, err := call.RequestId(rID.String()).Context(c).Do()
@@ -238,12 +238,12 @@ func create(c context.Context, payload proto.Message) error {
 	return nil
 }
 
-// destroyQueue is the name of the destroy task handler queue.
-const destroyQueue = "destroy-instance"
+// destroyInstanceQueue is the name of the destroy instance task handler queue.
+const destroyInstanceQueue = "destroy-instance"
 
-// destroy destroys a GCE instance.
-func destroy(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.Destroy)
+// destroyInstance destroys a GCE instance.
+func destroyInstance(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.DestroyInstance)
 	switch {
 	case !ok:
 		return errors.Reason("unexpected payload type %T", payload).Err()
@@ -263,7 +263,7 @@ func destroy(c context.Context, payload proto.Message) error {
 	logging.Debugf(c, "destroying instance %q", vm.Hostname)
 	// Generate a request ID based on the hostname.
 	// Ensures duplicate operations aren't created in GCE.
-	rID := uuid.NewSHA1(uuid.Nil, []byte(vm.Hostname))
+	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("destroy-%s", vm.Hostname)))
 	srv := getCompute(c).Instances
 	call := srv.Delete(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 	op, err := call.RequestId(rID.String()).Context(c).Do()
@@ -291,12 +291,12 @@ func destroy(c context.Context, payload proto.Message) error {
 	return nil
 }
 
-// manageQueue is the name of the manage task handler queue.
-const manageQueue = "manage-instance"
+// manageInstanceQueue is the name of the manage instance task handler queue.
+const manageInstanceQueue = "manage-instance"
 
-// manage manages a created GCE instance.
-func manage(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.Manage)
+// manageInstance manages a created GCE instance.
+func manageInstance(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.ManageInstance)
 	switch {
 	case !ok:
 		return errors.Reason("unexpected payload %q", payload).Err()
@@ -341,7 +341,7 @@ func manage(c context.Context, payload proto.Message) error {
 	// TODO(smut): Check the deadline.
 	if del {
 		t := &tq.Task{
-			Payload: &tasks.Destroy{
+			Payload: &tasks.DestroyInstance{
 				Id:  task.Id,
 				Url: vm.URL,
 			},

@@ -25,7 +25,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateVMs(t *testing.T) {
+func TestValidateConfigs(t *testing.T) {
 	t.Parallel()
 
 	Convey("validate", t, func() {
@@ -33,25 +33,25 @@ func TestValidateVMs(t *testing.T) {
 		k := stringset.New(0)
 
 		Convey("empty", func() {
-			vms := &VMs{}
-			vms.Validate(c, k)
+			cfgs := &Configs{}
+			cfgs.Validate(c, k)
 			So(c.Finalize(), ShouldBeNil)
 		})
 
 		Convey("prefixes", func() {
 			Convey("missing", func() {
-				vms := &VMs{
-					Vms: []*Block{
+				cfgs := &Configs{
+					Vms: []*Config{
 						{},
 					},
 				}
-				vms.Validate(c, k)
+				cfgs.Validate(c, k)
 				So(c.Finalize(), ShouldErrLike, "prefix is required")
 			})
 
 			Convey("duplicate", func() {
-				vms := &VMs{
-					Vms: []*Block{
+				cfgs := &Configs{
+					Vms: []*Config{
 						{
 							Prefix: "duplicated",
 						},
@@ -63,7 +63,7 @@ func TestValidateVMs(t *testing.T) {
 						},
 					},
 				}
-				vms.Validate(c, k)
+				cfgs.Validate(c, k)
 				So(c.Finalize(), ShouldErrLike, "is a prefix of")
 			})
 		})

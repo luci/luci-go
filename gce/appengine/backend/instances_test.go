@@ -40,7 +40,7 @@ import (
 func TestCreate(t *testing.T) {
 	t.Parallel()
 
-	Convey("create", t, func() {
+	Convey("createInstance", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		srv := &rpc.Config{}
@@ -53,17 +53,17 @@ func TestCreate(t *testing.T) {
 
 		Convey("invalid", func() {
 			Convey("nil", func() {
-				err := create(c, nil)
+				err := createInstance(c, nil)
 				So(err, ShouldErrLike, "unexpected payload")
 			})
 
 			Convey("empty", func() {
-				err := create(c, &tasks.Create{})
+				err := createInstance(c, &tasks.CreateInstance{})
 				So(err, ShouldErrLike, "ID is required")
 			})
 
 			Convey("missing", func() {
-				err := create(c, &tasks.Create{
+				err := createInstance(c, &tasks.CreateInstance{
 					Id: "id",
 				})
 				So(err, ShouldErrLike, "failed to fetch VM")
@@ -77,7 +77,7 @@ func TestCreate(t *testing.T) {
 					Hostname: "name",
 					URL:      "url",
 				})
-				err := create(c, &tasks.Create{
+				err := createInstance(c, &tasks.CreateInstance{
 					Id: "id",
 				})
 				So(err, ShouldBeNil)
@@ -93,7 +93,7 @@ func TestCreate(t *testing.T) {
 						ID:       "id",
 						Hostname: "name",
 					})
-					err := create(c, &tasks.Create{
+					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
 					So(err, ShouldErrLike, "failed to create instance")
@@ -119,7 +119,7 @@ func TestCreate(t *testing.T) {
 						ID:       "id",
 						Hostname: "name",
 					})
-					err := create(c, &tasks.Create{
+					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
 					So(err, ShouldErrLike, "failed to create instance")
@@ -151,7 +151,7 @@ func TestCreate(t *testing.T) {
 						ID:       "id",
 						Hostname: "name",
 					})
-					err := create(c, &tasks.Create{
+					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
 					So(err, ShouldErrLike, "instance exists in another zone")
@@ -185,7 +185,7 @@ func TestCreate(t *testing.T) {
 						ID:       "id",
 						Hostname: "name",
 					})
-					err := create(c, &tasks.Create{
+					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
@@ -210,7 +210,7 @@ func TestCreate(t *testing.T) {
 					datastore.Put(c, &model.VM{
 						ID: "id",
 					})
-					err := create(c, &tasks.Create{
+					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
@@ -228,7 +228,7 @@ func TestCreate(t *testing.T) {
 						ID:       "id",
 						Hostname: "name",
 					})
-					err := create(c, &tasks.Create{
+					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
@@ -250,7 +250,7 @@ func TestCreate(t *testing.T) {
 						ID:       "id",
 						Hostname: "name",
 					})
-					err := create(c, &tasks.Create{
+					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
@@ -266,10 +266,10 @@ func TestCreate(t *testing.T) {
 	})
 }
 
-func TestDestroy(t *testing.T) {
+func TestDestroyInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey("destroy", t, func() {
+	Convey("destroyInstance", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		srv := &rpc.Config{}
@@ -282,17 +282,17 @@ func TestDestroy(t *testing.T) {
 
 		Convey("invalid", func() {
 			Convey("nil", func() {
-				err := destroy(c, nil)
+				err := destroyInstance(c, nil)
 				So(err, ShouldErrLike, "unexpected payload")
 			})
 
 			Convey("empty", func() {
-				err := destroy(c, &tasks.Destroy{})
+				err := destroyInstance(c, &tasks.DestroyInstance{})
 				So(err, ShouldErrLike, "ID is required")
 			})
 
 			Convey("url", func() {
-				err := destroy(c, &tasks.Destroy{
+				err := destroyInstance(c, &tasks.DestroyInstance{
 					Id: "id",
 				})
 				So(err, ShouldErrLike, "URL is required")
@@ -301,7 +301,7 @@ func TestDestroy(t *testing.T) {
 
 		Convey("valid", func() {
 			Convey("deleted", func() {
-				err := destroy(c, &tasks.Destroy{
+				err := destroyInstance(c, &tasks.DestroyInstance{
 					Id:  "id",
 					Url: "url",
 				})
@@ -317,7 +317,7 @@ func TestDestroy(t *testing.T) {
 						ID:  "id",
 						URL: "url",
 					})
-					err := destroy(c, &tasks.Destroy{
+					err := destroyInstance(c, &tasks.DestroyInstance{
 						Id:  "id",
 						Url: "url",
 					})
@@ -343,7 +343,7 @@ func TestDestroy(t *testing.T) {
 						ID:  "id",
 						URL: "url",
 					})
-					err := destroy(c, &tasks.Destroy{
+					err := destroyInstance(c, &tasks.DestroyInstance{
 						Id:  "id",
 						Url: "url",
 					})
@@ -367,7 +367,7 @@ func TestDestroy(t *testing.T) {
 						Hostname: "name",
 						URL:      "url",
 					})
-					err := destroy(c, &tasks.Destroy{
+					err := destroyInstance(c, &tasks.DestroyInstance{
 						Id:  "id",
 						Url: "url",
 					})
@@ -394,7 +394,7 @@ func TestDestroy(t *testing.T) {
 						Hostname: "name",
 						URL:      "url",
 					})
-					err := destroy(c, &tasks.Destroy{
+					err := destroyInstance(c, &tasks.DestroyInstance{
 						Id:  "id",
 						Url: "url",
 					})
@@ -412,10 +412,10 @@ func TestDestroy(t *testing.T) {
 	})
 }
 
-func TestManage(t *testing.T) {
+func TestManageInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey("manage", t, func() {
+	Convey("manageInstance", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		srv := &rpc.Config{}
@@ -428,17 +428,17 @@ func TestManage(t *testing.T) {
 
 		Convey("invalid", func() {
 			Convey("nil", func() {
-				err := manage(c, nil)
+				err := manageInstance(c, nil)
 				So(err, ShouldErrLike, "unexpected payload")
 			})
 
 			Convey("empty", func() {
-				err := manage(c, &tasks.Manage{})
+				err := manageInstance(c, &tasks.ManageInstance{})
 				So(err, ShouldErrLike, "ID is required")
 			})
 
 			Convey("missing", func() {
-				err := manage(c, &tasks.Manage{
+				err := manageInstance(c, &tasks.ManageInstance{
 					Id: "id",
 				})
 				So(err, ShouldErrLike, "failed to fetch VM")
@@ -454,7 +454,7 @@ func TestManage(t *testing.T) {
 					ID:  "id",
 					URL: "url",
 				})
-				err := manage(c, &tasks.Manage{
+				err := manageInstance(c, &tasks.ManageInstance{
 					Id: "id",
 				})
 				So(err, ShouldErrLike, "failed to fetch bot")
@@ -468,7 +468,7 @@ func TestManage(t *testing.T) {
 					ID:  "id",
 					URL: "url",
 				})
-				err := manage(c, &tasks.Manage{
+				err := manageInstance(c, &tasks.ManageInstance{
 					Id: "id",
 				})
 				So(err, ShouldBeNil)
@@ -486,7 +486,7 @@ func TestManage(t *testing.T) {
 						ID:  "id",
 						URL: "url",
 					})
-					err := manage(c, &tasks.Manage{
+					err := manageInstance(c, &tasks.ManageInstance{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
@@ -504,7 +504,7 @@ func TestManage(t *testing.T) {
 						ID:  "id",
 						URL: "url",
 					})
-					err := manage(c, &tasks.Manage{
+					err := manageInstance(c, &tasks.ManageInstance{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
@@ -521,7 +521,7 @@ func TestManage(t *testing.T) {
 						ID:  "id",
 						URL: "url",
 					})
-					err := manage(c, &tasks.Manage{
+					err := manageInstance(c, &tasks.ManageInstance{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)

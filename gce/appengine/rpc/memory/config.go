@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package memory contains a config.ConfigServer backed by in-memory storage.
+// Package memory contains a config.ConfigurationServer backed by in-memory storage.
 package memory
 
 import (
@@ -27,32 +27,32 @@ import (
 	"go.chromium.org/luci/gce/api/config/v1"
 )
 
-// Ensure Config implements config.ConfigServer.
-var _ config.ConfigServer = (*Config)(nil)
+// Ensure Config implements config.ConfigurationServer.
+var _ config.ConfigurationServer = &Config{}
 
-// Config implements config.ConfigServer.
+// Config implements config.ConfigurationServer.
 type Config struct {
-	// vms is a map of IDs to known VMs blocks.
-	vms sync.Map
+	// cfg is a map of IDs to known configs.
+	cfg sync.Map
 }
 
-// DeleteVMs handles a request to delete a VMs block.
-func (srv *Config) DeleteVMs(c context.Context, req *config.DeleteVMsRequest) (*empty.Empty, error) {
-	srv.vms.Delete(req.GetId())
+// Delete handles a request to delete a config.
+func (srv *Config) Delete(c context.Context, req *config.DeleteRequest) (*empty.Empty, error) {
+	srv.cfg.Delete(req.GetId())
 	return &empty.Empty{}, nil
 }
 
-// EnsureVMs handles a request to create or update a VMs block.
-func (srv *Config) EnsureVMs(c context.Context, req *config.EnsureVMsRequest) (*config.Block, error) {
-	srv.vms.Store(req.GetId(), req.GetVms())
-	return req.GetVms(), nil
+// Ensure handles a request to create or update a config.
+func (srv *Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Config, error) {
+	srv.cfg.Store(req.GetId(), req.GetConfig())
+	return req.GetConfig(), nil
 }
 
-// GetVMs handles a request to get a VMs block.
-func (srv *Config) GetVMs(c context.Context, req *config.GetVMsRequest) (*config.Block, error) {
-	vms, ok := srv.vms.Load(req.GetId())
+// Get handles a request to get a config.
+func (srv *Config) Get(c context.Context, req *config.GetRequest) (*config.Config, error) {
+	cfg, ok := srv.cfg.Load(req.GetId())
 	if !ok {
-		return nil, status.Errorf(codes.NotFound, "no VMs block found with ID %q", req.GetId())
+		return nil, status.Errorf(codes.NotFound, "no config found with ID %q", req.GetId())
 	}
-	return vms.(*config.Block), nil
+	return cfg.(*config.Config), nil
 }

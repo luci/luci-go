@@ -34,7 +34,7 @@ func init() {
 	mathrand.SeedRandomly()
 	api := prpc.Server{UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil)}
 	srv := rpc.New()
-	config.RegisterConfigServer(&api, srv)
+	config.RegisterConfigurationServer(&api, srv)
 	discovery.Enable(&api)
 
 	r := router.New()

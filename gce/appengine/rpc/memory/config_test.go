@@ -29,82 +29,82 @@ import (
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeleteVMs", t, func() {
+	Convey("Delete", t, func() {
 		c := context.Background()
 		srv := &Config{}
 
 		Convey("nil", func() {
-			v, err := srv.DeleteVMs(c, nil)
+			cfg, err := srv.Delete(c, nil)
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, &empty.Empty{})
+			So(cfg, ShouldResemble, &empty.Empty{})
 		})
 
 		Convey("empty", func() {
-			v, err := srv.DeleteVMs(c, &config.DeleteVMsRequest{})
+			cfg, err := srv.Delete(c, &config.DeleteRequest{})
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, &empty.Empty{})
+			So(cfg, ShouldResemble, &empty.Empty{})
 		})
 
 		Convey("ID", func() {
-			v, err := srv.DeleteVMs(c, &config.DeleteVMsRequest{
+			cfg, err := srv.Delete(c, &config.DeleteRequest{
 				Id: "id",
 			})
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, &empty.Empty{})
+			So(cfg, ShouldResemble, &empty.Empty{})
 		})
 
 		Convey("deleted", func() {
-			srv.vms.Store("id", &config.Block{
+			srv.cfg.Store("id", &config.Config{
 				Amount: 1,
 				Attributes: &config.VM{
 					Project: "project",
 				},
 				Prefix: "prefix",
 			})
-			v, err := srv.DeleteVMs(c, &config.DeleteVMsRequest{
+			cfg, err := srv.Delete(c, &config.DeleteRequest{
 				Id: "id",
 			})
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, &empty.Empty{})
-			_, ok := srv.vms.Load("id")
+			So(cfg, ShouldResemble, &empty.Empty{})
+			_, ok := srv.cfg.Load("id")
 			So(ok, ShouldBeFalse)
 		})
 	})
 
-	Convey("EnsureVMs", t, func() {
+	Convey("Ensure", t, func() {
 		c := context.Background()
 		srv := &Config{}
 
 		Convey("nil", func() {
-			v, err := srv.EnsureVMs(c, nil)
+			cfg, err := srv.Ensure(c, nil)
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, (*config.Block)(nil))
-			_, ok := srv.vms.Load("")
+			So(cfg, ShouldResemble, (*config.Config)(nil))
+			_, ok := srv.cfg.Load("")
 			So(ok, ShouldBeTrue)
 		})
 
 		Convey("empty", func() {
-			v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{})
+			cfg, err := srv.Ensure(c, &config.EnsureRequest{})
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, (*config.Block)(nil))
-			_, ok := srv.vms.Load("")
+			So(cfg, ShouldResemble, (*config.Config)(nil))
+			_, ok := srv.cfg.Load("")
 			So(ok, ShouldBeTrue)
 		})
 
 		Convey("ID", func() {
-			v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+			cfg, err := srv.Ensure(c, &config.EnsureRequest{
 				Id: "id",
 			})
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, (*config.Block)(nil))
-			_, ok := srv.vms.Load("id")
+			So(cfg, ShouldResemble, (*config.Config)(nil))
+			_, ok := srv.cfg.Load("id")
 			So(ok, ShouldBeTrue)
 		})
 
-		Convey("VMs", func() {
-			v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+		Convey("config", func() {
+			cfg, err := srv.Ensure(c, &config.EnsureRequest{
 				Id: "id",
-				Vms: &config.Block{
+				Config: &config.Config{
 					Amount: 1,
 					Attributes: &config.VM{
 						Project: "project",
@@ -113,57 +113,57 @@ func TestConfig(t *testing.T) {
 				},
 			})
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, &config.Block{
+			So(cfg, ShouldResemble, &config.Config{
 				Amount: 1,
 				Attributes: &config.VM{
 					Project: "project",
 				},
 				Prefix: "prefix",
 			})
-			_, ok := srv.vms.Load("id")
+			_, ok := srv.cfg.Load("id")
 			So(ok, ShouldBeTrue)
 		})
 	})
 
-	Convey("GetVMs", t, func() {
+	Convey("Get", t, func() {
 		c := context.Background()
 		srv := &Config{}
 
 		Convey("not found", func() {
 			Convey("nil", func() {
-				v, err := srv.GetVMs(c, nil)
-				So(err, ShouldErrLike, "no VMs block found")
-				So(v, ShouldBeNil)
+				cfg, err := srv.Get(c, nil)
+				So(err, ShouldErrLike, "no config found")
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("empty", func() {
-				v, err := srv.GetVMs(c, &config.GetVMsRequest{})
-				So(err, ShouldErrLike, "no VMs block found")
-				So(v, ShouldBeNil)
+				cfg, err := srv.Get(c, &config.GetRequest{})
+				So(err, ShouldErrLike, "no config found")
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("ID", func() {
-				v, err := srv.GetVMs(c, &config.GetVMsRequest{
+				cfg, err := srv.Get(c, &config.GetRequest{
 					Id: "id",
 				})
-				So(err, ShouldErrLike, "no VMs block found")
-				So(v, ShouldBeNil)
+				So(err, ShouldErrLike, "no config found")
+				So(cfg, ShouldBeNil)
 			})
 		})
 
 		Convey("found", func() {
-			srv.vms.Store("id", &config.Block{
+			srv.cfg.Store("id", &config.Config{
 				Amount: 1,
 				Attributes: &config.VM{
 					Project: "project",
 				},
 				Prefix: "prefix",
 			})
-			v, err := srv.GetVMs(c, &config.GetVMsRequest{
+			cfg, err := srv.Get(c, &config.GetRequest{
 				Id: "id",
 			})
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, &config.Block{
+			So(cfg, ShouldResemble, &config.Config{
 				Amount: 1,
 				Attributes: &config.VM{
 					Project: "project",

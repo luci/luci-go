@@ -25,18 +25,18 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestVMs(t *testing.T) {
+func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("VMs", t, func() {
+	Convey("Config", t, func() {
 		c := memory.Use(context.Background())
-		v := &VMs{ID: "id"}
-		err := datastore.Get(c, v)
+		cfg := &Config{ID: "id"}
+		err := datastore.Get(c, cfg)
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
-		err = datastore.Put(c, &VMs{
+		err = datastore.Put(c, &Config{
 			ID: "id",
-			Config: config.Block{
+			Config: config.Config{
 				Attributes: &config.VM{
 					Disk: []*config.Disk{
 						{
@@ -50,11 +50,11 @@ func TestVMs(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		err = datastore.Get(c, v)
+		err = datastore.Get(c, cfg)
 		So(err, ShouldBeNil)
-		So(v, ShouldResemble, &VMs{
+		So(cfg, ShouldResemble, &Config{
 			ID: "id",
-			Config: config.Block{
+			Config: config.Config{
 				Attributes: &config.VM{
 					Disk: []*config.Disk{
 						{

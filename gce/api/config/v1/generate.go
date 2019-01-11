@@ -16,4 +16,4 @@ package config
 
 //go:generate go install go.chromium.org/luci/grpc/cmd/cproto go.chromium.org/luci/grpc/cmd/svcdec
 //go:generate cproto
-//go:generate svcdec -type ConfigServer
+//go:generate svcdec -type ConfigurationServer

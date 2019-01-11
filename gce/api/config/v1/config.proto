@@ -108,38 +108,38 @@ message Kinds {
   repeated Kind kind = 1;
 }
 
-// A block of VMs.
-message Block {
-  // The amount of VMs in this block.
+// A config for one type of VM.
+message Config {
+  // The amount of these VMs.
   int32 amount = 1;
 
-  // The attributes of VMs in this block.
+  // The attributes of these VMs.
   // Attributes here override attributes in the kind.
   VM attributes = 2;
 
   // The name of a kind of VM.
   string kind = 3;
 
-  // The lifetime of VMs in this block.
+  // The lifetime of these VMs.
   // At the end of their lifetime, each VM is deleted and replaced.
   oneof lifetime {
-    // The lifetime of VMs in this block as a duration string.
+    // The lifetime of these VMs as a duration string.
     // https://golang.org/pkg/time/#ParseDuration.
     string duration = 4;
 
-    // The lifetime of VMs in this block in seconds.
+    // The lifetime of these VMs in seconds.
     int64 seconds = 5;
   }
 
-  // The prefix to use when naming VMs in this block.
+  // The prefix to use when naming these VMs.
   string prefix = 6;
 
-  // The hostname of the Swarming server VMs in this block should connect to.
+  // The hostname of the Swarming server these VMs should connect to.
   string swarming = 7;
 }
 
-// A VMs config.
-message VMs {
-  // A block of VMs.
-  repeated Block vms = 1;
+// A config for several types of VMs.
+message Configs {
+  // The configs for different types of VMs.
+  repeated Config vms = 1;
 }

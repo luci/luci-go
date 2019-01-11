@@ -30,12 +30,12 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
-// drainQueue is the name of the drain task handler queue.
-const drainQueue = "drain-vm"
+// drainVMQueue is the name of the drain VM task handler queue.
+const drainVMQueue = "drain-vm"
 
-// drain drains a given VM entity.
-func drain(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.Drain)
+// drainVM drains a given VM entity.
+func drainVM(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.DrainVM)
 	switch {
 	case !ok:
 		return errors.Reason("unexpected payload type %T", payload).Err()
@@ -60,19 +60,19 @@ func drain(c context.Context, payload proto.Message) error {
 	}, nil)
 }
 
-// ensureQueue is the name of the ensure task handler queue.
-const ensureQueue = "ensure-vm"
+// ensureVMQueue is the name of the ensure VM task handler queue.
+const ensureVMQueue = "ensure-vm"
 
-// ensure creates or updates a given VM entity.
-func ensure(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.Ensure)
+// ensureVM creates or updates a given VM entity.
+func ensureVM(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.EnsureVM)
 	switch {
 	case !ok:
 		return errors.Reason("unexpected payload type %T", payload).Err()
-	case task.GetVms() == "":
-		return errors.Reason("VMs is required").Err()
+	case task.GetConfig() == "":
+		return errors.Reason("config is required").Err()
 	}
-	id := fmt.Sprintf("%s-%d", task.Vms, task.Index)
+	id := fmt.Sprintf("%s-%d", task.Config, task.Index)
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		vm := &model.VM{
 			ID: id,
@@ -83,12 +83,12 @@ func ensure(c context.Context, payload proto.Message) error {
 		if task.Attributes != nil {
 			vm.Attributes = *task.Attributes
 		}
+		vm.Config = task.Config
 		vm.Drained = false
 		vm.Index = task.Index
 		vm.Lifetime = task.Lifetime
 		vm.Prefix = task.Prefix
 		vm.Swarming = task.Swarming
-		vm.VMs = task.Vms
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
@@ -96,34 +96,34 @@ func ensure(c context.Context, payload proto.Message) error {
 	}, nil)
 }
 
-// processQueue is the name of the process task handler queue.
-const processQueue = "process-config"
+// processConfigQueue is the name of the process config task handler queue.
+const processConfigQueue = "process-config"
 
-// process creates task queue tasks to process each VM entity in the given VMs block.
-func process(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.Process)
+// processConfig creates task queue tasks to process each VM in the given config.
+func processConfig(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.ProcessConfig)
 	switch {
 	case !ok:
 		return errors.Reason("unexpected payload type %T", payload).Err()
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
-	vms, err := getConfig(c).GetVMs(c, &config.GetVMsRequest{Id: task.Id})
+	cfg, err := getConfig(c).Get(c, &config.GetRequest{Id: task.Id})
 	if err != nil {
-		return errors.Annotate(err, "failed to get VMs block").Err()
+		return errors.Annotate(err, "failed to get config").Err()
 	}
-	logging.Debugf(c, "found %d configured VMs", vms.Amount)
+	logging.Debugf(c, "found %d VMs", cfg.Amount)
 	// Trigger tasks to create VMs.
-	t := make([]*tq.Task, vms.Amount)
-	for i := int32(0); i < vms.Amount; i++ {
+	t := make([]*tq.Task, cfg.Amount)
+	for i := int32(0); i < cfg.Amount; i++ {
 		t[i] = &tq.Task{
-			Payload: &tasks.Ensure{
-				Attributes: vms.Attributes,
+			Payload: &tasks.EnsureVM{
+				Attributes: cfg.Attributes,
+				Config:     task.Id,
 				Index:      i,
-				Lifetime:   vms.GetSeconds(),
-				Prefix:     vms.Prefix,
-				Swarming:   vms.Swarming,
-				Vms:        task.Id,
+				Lifetime:   cfg.GetSeconds(),
+				Prefix:     cfg.Prefix,
+				Swarming:   cfg.Swarming,
 			},
 		}
 	}
@@ -133,13 +133,13 @@ func process(c context.Context, payload proto.Message) error {
 	}
 	// Trigger tasks to drain excess VMs.
 	t = make([]*tq.Task, 0)
-	q := datastore.NewQuery(model.VMKind).Eq("vms", task.Id)
+	q := datastore.NewQuery(model.VMKind).Eq("config", task.Id)
 	if err := datastore.Run(c, q, func(vm *model.VM) error {
-		if vm.Index < vms.Amount {
+		if vm.Index < cfg.Amount {
 			return nil
 		}
 		t = append(t, &tq.Task{
-			Payload: &tasks.Drain{
+			Payload: &tasks.DrainVM{
 				Id: vm.ID,
 			},
 		})
