@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da15559d_a4f90106",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-11T06:19:42Z",
+      "side": 1,
+      "message": "I made it a separate field. I don\u0027t understand why we use a magical string syntax in the proto instead of having a separate field? Should we use a magical string syntax (\"regexp:...\") here too?",
+      "range": {
+        "startLine": 51,
+        "startChar": 4,
+        "endLine": 51,
+        "endChar": 16
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
