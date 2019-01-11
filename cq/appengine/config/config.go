@@ -19,12 +19,14 @@ package config
 import (
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
 	v1 "go.chromium.org/luci/cq/api/config/v1"
@@ -104,6 +106,33 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		validateConfigGroup(ctx, g)
 		ctx.Exit()
 	}
+
+	// TODO(tandrii): remove the single project single gerrit limitation.
+	gerritURLs := stringset.Set{}
+	projectNames := stringset.Set{}
+	for _, gr := range cfg.ConfigGroups {
+		for _, g := range gr.Gerrit {
+			gerritURLs.Add(g.Url)
+			for _, p := range g.Projects {
+				projectNames.Add(p.Name)
+			}
+		}
+	}
+	// Ignore empty URLs and project names, because those already resulted in
+	// error earlier.
+	gerritURLs.Del("")
+	projectNames.Del("")
+	if gerritURLs.Len() > 1 {
+		urls := gerritURLs.ToSlice()
+		sort.Strings(urls)
+		ctx.Errorf("more than 1 different gerrit url not **yet** allowed (given: %q)", urls)
+	}
+	if projectNames.Len() > 1 {
+		names := projectNames.ToSlice()
+		sort.Strings(names)
+		ctx.Errorf("more than 1 different gerrit project names not **yet** allowed (given: %q)", names)
+	}
+
 	// TODO(tandrii): it appears non-trivial if it all possible to ensure that
 	// regexp across config_groups don't overlap. But, we can catch typical
 	// copy-pasta mistakes early on by checking for equality of regexps, just like
