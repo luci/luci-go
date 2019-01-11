@@ -19,9 +19,9 @@ load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
 
 
 def builder(
-      name,
-      bucket,
-      recipe,
+      name=None,
+      bucket=None,
+      recipe=None,
 
       # Execution environment parameters.
       properties=None,
@@ -93,9 +93,9 @@ def builder(
   This is not necessary if the recipe uses Scheduler API instead of Buildbucket.
 
   Args:
-    name: name of the builder, will show up in UIs and logs.
-    bucket: name of the bucket the builder belongs to.
-    recipe: name of a recipe to run, see core.recipe(...) rule.
+    name: name of the builder, will show up in UIs and logs. Required.
+    bucket: name of the bucket the builder belongs to. Required.
+    recipe: name of a recipe to run, see core.recipe(...) rule. Required.
 
     properties: a dict with string keys and JSON-serializable values, defining
         properties to pass to the recipe.

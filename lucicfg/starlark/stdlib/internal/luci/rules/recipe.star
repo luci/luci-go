@@ -18,8 +18,8 @@ load('@stdlib//internal/luci/lib/validate.star', 'validate')
 
 
 def recipe(
-      name,
-      cipd_package,
+      name=None,
+      cipd_package=None,
       cipd_version=None,
       recipe=None,
   ):
@@ -45,8 +45,8 @@ def recipe(
 
   Args:
     name: name of this recipe entity, to refer to it from builders. If 'recipe'
-        is None, also specifies the recipe name within the recipe bundle.
-    cipd_package: a cipd package name with the recipe bundle.
+        is None, also specifies the recipe name within the bundle. Required.
+    cipd_package: a cipd package name with the recipe bundle. Required.
     cipd_version: a version of the recipe bundle package to fetch, default
         is 'refs/heads/master'.
     recipe: name of a recipe inside the recipe bundle if it differs from

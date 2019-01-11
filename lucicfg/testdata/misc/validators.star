@@ -9,7 +9,7 @@ def test_validate_string():
   assert.eq(call('a', '', default='zzz', required=False), '')
   assert.eq(call('a', None, default='zzz', required=False), 'zzz')
   assert.eq(call('a', None, required=False), None)
-  assert.fails(lambda: call('a', None), 'bad "a": missing')
+  assert.fails(lambda: call('a', None), 'missing required field "a"')
   assert.fails(lambda: call('a', 1), 'bad "a": got int, want string')
   assert.fails(lambda: call('a', []), 'bad "a": got list, want string')
   assert.fails(lambda: call('a', None, default=1, required=False), 'bad "a": got int, want string')
@@ -22,7 +22,7 @@ def test_validate_int():
   assert.eq(call('a', 0, default=123, required=False), 0)
   assert.eq(call('a', None, default=123, required=False), 123)
   assert.eq(call('a', None, required=False), None)
-  assert.fails(lambda: call('a', None), 'bad "a": missing')
+  assert.fails(lambda: call('a', None), 'missing required field "a"')
   assert.fails(lambda: call('a', '1'), 'bad "a": got string, want int')
   assert.fails(lambda: call('a', []), 'bad "a": got list, want int')
   assert.fails(lambda: call('a', None, default='1', required=False), 'bad "a": got string, want int')
@@ -39,7 +39,7 @@ def test_validate_bool():
   assert.eq(call('a', None, default=True, required=False), True)
   assert.eq(call('a', None, default=False, required=False), False)
   assert.eq(call('a', None, required=False), None)
-  assert.fails(lambda: call('a', None), 'bad "a": missing')
+  assert.fails(lambda: call('a', None), 'missing required field "a"')
 
 
 def test_validate_duration():
@@ -48,7 +48,7 @@ def test_validate_duration():
   assert.eq(call('a', m), m)
   assert.eq(call('a', None, default=m, required=False), m)
   assert.eq(call('a', None, required=False), None)
-  assert.fails(lambda: call('a', None), 'bad "a": missing')
+  assert.fails(lambda: call('a', None), 'missing required field "a"')
   assert.fails(lambda: call('a', 1), 'bad "a": got int, want duration')
   assert.fails(lambda: call('a', []), 'bad "a": got list, want duration')
   assert.fails(lambda: call('a', -m), 'bad "a": -1m0s should be >= 0s')
@@ -66,8 +66,8 @@ def test_validate_list():
   assert.eq(call('a', None), [])
   assert.fails(lambda: call('a', 0), 'bad "a": got int, want list')
   assert.fails(lambda: call('a', {}), 'bad "a": got dict, want list')
-  assert.fails(lambda: call('a', None, required=True), 'bad "a": missing')
-  assert.fails(lambda: call('a', [], required=True), 'bad "a": missing')
+  assert.fails(lambda: call('a', None, required=True), 'missing required field "a"')
+  assert.fails(lambda: call('a', [], required=True), 'missing required field "a"')
 
 
 def test_validate_str_dict():
@@ -79,8 +79,8 @@ def test_validate_str_dict():
   assert.fails(lambda: call('a', []), 'bad "a": got list, want dict')
   assert.fails(lambda: call('a', {1: 1}), 'bad "a": got int key, want string')
   assert.fails(lambda: call('a', {'': 1}), 'bad "a": got empty key')
-  assert.fails(lambda: call('a', None, required=True), 'bad "a": missing')
-  assert.fails(lambda: call('a', {}, required=True), 'bad "a": missing')
+  assert.fails(lambda: call('a', None, required=True), 'missing required field "a"')
+  assert.fails(lambda: call('a', {}, required=True), 'missing required field "a"')
 
 
 def test_validate_struct():
@@ -89,7 +89,7 @@ def test_validate_struct():
   assert.eq(call('a', s, 'struct'), s)
   assert.eq(call('a', None, 'struct', default=s, required=False), s)
   assert.eq(call('a', None, 'struct', required=False), None)
-  assert.fails(lambda: call('a', None, 'struct'), 'bad "a": missing')
+  assert.fails(lambda: call('a', None, 'struct'), 'missing required field "a"')
   assert.fails(lambda: call('a', 1, 'struct'), 'bad "a": got int, want struct')
   assert.fails(lambda: call('a', [], 'struct'), 'bad "a": got list, want struct')
   assert.fails(lambda: call('a', None, 'struct', default=1, required=False), 'bad "a": got int, want struct')

@@ -20,7 +20,7 @@ load('@stdlib//internal/luci/lib/validate.star', 'validate')
 
 
 def project(
-      name,
+      name=None,
 
       buildbucket=None,
       logdog=None,
@@ -34,7 +34,7 @@ def project(
   There should be exactly one such definition in a single top-level config file.
 
   Args:
-    name: full name of the project.
+    name: full name of the project. Required.
     buildbucket: hostname of a Buildbucket service to use (if any).
     logdog: hostname of a LogDog service to use (if any).
     scheduler: hostname of a LUCI Scheduler service to use (if any).

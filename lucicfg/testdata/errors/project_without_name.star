@@ -1,7 +1,7 @@
-core.project(name = None)
+core.project()
 
 # Expect errors like:
 #
 # Traceback (most recent call last):
 #  ...
-# Error: bad "name": missing
+# Error: missing required field "name"
