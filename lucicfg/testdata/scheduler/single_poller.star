@@ -10,6 +10,7 @@ core.bucket(name = 'ci')
 # This poller is still defined even though it doesn't trigger anything.
 core.gitiles_poller(
     name = 'poller',
+    repo = 'https://noop.com',
     bucket = 'ci',
 )
 
@@ -31,6 +32,10 @@ core.gitiles_poller(
 # trigger: <
 #   id: "poller"
 #   acl_sets: "ci"
+#   gitiles: <
+#     repo: "https://noop.com"
+#     refs: "refs/heads/master"
+#   >
 # >
 # acl_sets: <
 #   name: "ci"

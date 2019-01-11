@@ -17,16 +17,19 @@ core.bucket(name = 'b2')
 core.gitiles_poller(
     name = 'poller',
     bucket = 'b1',
+    repo = 'https://noop.com',
 )
 core.gitiles_poller(
     name = 'poller',
     bucket = 'b2',
+    repo = 'https://noop.com',
 )
 
 # Poller<->Builder clash.
 core.gitiles_poller(
     name = 'poller-builder',
     bucket = 'b1',
+    repo = 'https://noop.com',
 )
 core.builder(
     name = 'poller-builder',
@@ -39,6 +42,7 @@ core.builder(
 core.gitiles_poller(
     name = 'some poller',
     bucket = 'b1',
+    repo = 'https://noop.com',
 )
 core.builder(
     name = 'builder-builder',
@@ -134,21 +138,37 @@ core.builder(
 # trigger: <
 #   id: "b1-poller"
 #   acl_sets: "b1"
+#   gitiles: <
+#     repo: "https://noop.com"
+#     refs: "refs/heads/master"
+#   >
 # >
 # trigger: <
 #   id: "b1-poller-builder"
 #   acl_sets: "b1"
 #   triggers: "b2-poller-builder"
+#   gitiles: <
+#     repo: "https://noop.com"
+#     refs: "refs/heads/master"
+#   >
 # >
 # trigger: <
 #   id: "b2-poller"
 #   acl_sets: "b2"
+#   gitiles: <
+#     repo: "https://noop.com"
+#     refs: "refs/heads/master"
+#   >
 # >
 # trigger: <
 #   id: "some poller"
 #   acl_sets: "b1"
 #   triggers: "b1-builder-builder"
 #   triggers: "b2-builder-builder"
+#   gitiles: <
+#     repo: "https://noop.com"
+#     refs: "refs/heads/master"
+#   >
 # >
 # acl_sets: <
 #   name: "b1"

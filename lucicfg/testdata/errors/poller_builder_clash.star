@@ -17,6 +17,7 @@ core.builder(
 core.gitiles_poller(
     name = 'clashing name',
     bucket = 'b',
+    repo = 'https://noop.com',
 )
 
 # Expect errors like:

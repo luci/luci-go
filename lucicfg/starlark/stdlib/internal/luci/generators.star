@@ -367,11 +367,15 @@ def gen_scheduler_cfg(ctx):
 
   # Add Trigger entry for each gitiles poller. Sort according to final IDs.
   for poller, targets in pollers.items():
-    # TODO(vadimsh): Add actual git details.
     cfg.trigger.append(scheduler_pb.Trigger(
         id = node_to_id[poller],
         acl_sets = [poller.props.bucket],
         triggers = [node_to_id[b] for b in targets],
+        schedule = poller.props.schedule,
+        gitiles = scheduler_pb.GitilesTask(
+            repo = poller.props.repo,
+            refs = poller.props.refs + ['regexp:'+r for r in poller.props.refs_regexps],
+        ),
     ))
   cfg.trigger = sorted(cfg.trigger, key=lambda x: x.id)
 
