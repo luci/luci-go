@@ -174,6 +174,9 @@ type RevisionInfo struct {
 
 	// The commit associated with this revision.
 	Commit CommitInfo `json:"commit,omitempty"`
+
+	// A map of modified file paths to FileInfos.
+	Files map[string]FileInfo `json:"files,omitempty"`
 }
 
 // CommitInfo contains information about a commit.
@@ -187,6 +190,18 @@ type CommitInfo struct {
 	Committer AccountInfo  `json:"committer,omitempty"`
 	Subject   string       `json:"subject,omitempty"`
 	Message   string       `json:"message,omitempty"`
+}
+
+// FileInfo contains information about a file in a patch set.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#file-info
+type FileInfo struct {
+	Status        string `json:"status,omitempty"`
+	Binary        bool   `json:"binary,omitempty"`
+	OldPath       string `json:"old_path,omitempty"`
+	LinesInserted int    `json:"lines_inserted,omitempty"`
+	LinesDeleted  int    `json:"lines_deleted,omitempty"`
+	SizeDelta     int64  `json:"size_delta"`
+	Size          int64  `json:"size"`
 }
 
 // Reviewers is a map that maps a type of reviewer to its account info.
