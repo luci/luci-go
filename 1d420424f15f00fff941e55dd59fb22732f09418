@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4433ffcc_118f71c6",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-11T00:14:10Z",
+      "side": 1,
+      "message": "yeap... that\u0027s the reason Swarming bot groups use \"bot_id_prefix\" instead of something more flexible.",
+      "range": {
+        "startLine": 107,
+        "startChar": 21,
+        "endLine": 107,
+        "endChar": 60
+      },
+      "revId": "1d420424f15f00fff941e55dd59fb22732f09418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1d922471_8c3b2af9",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-11T00:14:10Z",
+      "side": 1,
+      "message": "no longer true",
+      "range": {
+        "startLine": 185,
+        "startChar": 2,
+        "endLine": 185,
+        "endChar": 46
+      },
+      "revId": "1d420424f15f00fff941e55dd59fb22732f09418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
