@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4e790dcb_922a1776",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T00:18:07Z",
+      "side": 1,
+      "message": "well, given we support regexpes in milo and scheduler, i\u0027m afraid i can\u0027t remove this in CQ.\nAlso, at least V8\u0027s creative branching scheme won\u0027t allow for easy prefixes :(",
+      "parentUuid": "4433ffcc_118f71c6",
+      "range": {
+        "startLine": 107,
+        "startChar": 21,
+        "endLine": 107,
+        "endChar": 60
+      },
+      "revId": "1d420424f15f00fff941e55dd59fb22732f09418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1d922471_8c3b2af9",
         "filename": "cq/appengine/config/config.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "1d420424f15f00fff941e55dd59fb22732f09418",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f48f7a18_7a8bf61a",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T00:18:07Z",
+      "side": 1,
+      "message": "yep, removed in next ps. I\u0027ve sent it before I saw your feedback on ref_regexp semantics.",
+      "parentUuid": "1d922471_8c3b2af9",
+      "range": {
+        "startLine": 185,
+        "startChar": 2,
+        "endLine": 185,
+        "endChar": 46
+      },
+      "revId": "1d420424f15f00fff941e55dd59fb22732f09418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
