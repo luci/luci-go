@@ -15,11 +15,13 @@ core.bucket(name = 'ci')
 core.gitiles_poller(
     name = 'p1',
     bucket = 'ci',
+    repo = 'https://noop.com',
     triggers = ['b1', 'b2', 'b3'],
 )
 core.gitiles_poller(
     name = 'p2',
     bucket = 'ci',
+    repo = 'https://noop.com',
     triggers = ['b1', 'b2', 'b3'],
 )
 
@@ -132,6 +134,10 @@ core.builder(
 #   triggers: "b1"
 #   triggers: "b2"
 #   triggers: "b3"
+#   gitiles: <
+#     repo: "https://noop.com"
+#     refs: "refs/heads/master"
+#   >
 # >
 # trigger: <
 #   id: "p2"
@@ -139,6 +145,10 @@ core.builder(
 #   triggers: "b1"
 #   triggers: "b2"
 #   triggers: "b3"
+#   gitiles: <
+#     repo: "https://noop.com"
+#     refs: "refs/heads/master"
+#   >
 # >
 # acl_sets: <
 #   name: "ci"
