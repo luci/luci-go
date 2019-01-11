@@ -46,6 +46,7 @@ func Cmd(params base.Parameters) *subcommands.Command {
 			vr := &validateRun{}
 			vr.Init(params, true)
 			vr.Flags.StringVar(&vr.configSet, "config-set", "<name>", "Name of the config set to validate against.")
+			vr.Flags.BoolVar(&vr.failOnWarnings, "fail-on-warnings", false, "Treat validation warnings as errors.")
 			return vr
 		},
 	}
@@ -54,12 +55,13 @@ func Cmd(params base.Parameters) *subcommands.Command {
 type validateRun struct {
 	base.Subcommand
 
-	configSet string
-	configDir string
+	configSet      string
+	configDir      string
+	failOnWarnings bool
 }
 
 type validateResult struct {
-	ErrorMessages []*config.ComponentsConfigEndpointValidationMessage `json:"error_messages"`
+	Messages []*config.ComponentsConfigEndpointValidationMessage `json:"messages"`
 }
 
 func (vr *validateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -92,28 +94,35 @@ func (vr *validateRun) run(ctx context.Context, svc *config.Service) (*validateR
 		return nil, err
 	}
 	resp, err := svc.ValidateConfig(validateRequest).Context(ctx).Do()
-	return processResponse(ctx, resp, err)
-}
-
-// processResponses produces a validateResult that contains all the messages from resp.
-// Returns an error if any files were invalid or failed to be checked.
-func processResponse(ctx context.Context, resp *config.LuciConfigValidateConfigResponseMessage, err error) (*validateResult, error) {
 	if err != nil {
 		return &validateResult{}, fmt.Errorf("error validating configs: %v", err)
 	}
-	if len(resp.Messages) == 0 {
-		return &validateResult{}, nil
-	}
+	return processResponse(ctx, resp, vr.failOnWarnings)
+}
+
+// processResponses produces a validateResult that contains all the messages
+// from resp.
+//
+// Returns an error if any files were invalid or failed to be checked.
+func processResponse(ctx context.Context, resp *config.LuciConfigValidateConfigResponseMessage, failOnWarnings bool) (*validateResult, error) {
+	fail := false
 	for _, message := range resp.Messages {
 		lvl := logging.Info
 		if message.Severity == "WARNING" {
 			lvl = logging.Warning
+			if failOnWarnings {
+				fail = true
+			}
 		} else if message.Severity == "ERROR" || message.Severity == "CRITICAL" {
 			lvl = logging.Error
+			fail = true
 		}
 		logging.Logf(ctx, lvl, "%s: %s", message.Path, message.Text)
 	}
-	return &validateResult{resp.Messages}, fmt.Errorf("Some files were invalid")
+	if fail {
+		return &validateResult{resp.Messages}, fmt.Errorf("some files were invalid")
+	}
+	return &validateResult{resp.Messages}, nil
 }
 
 // constructRequest searches the vr.configDir for config files and constructs a
