@@ -34,7 +34,6 @@ core.builder(
 
 # Expect configs:
 #
-#
 # === cr-buildbucket.cfg
 # buckets: <
 #   name: "ci"
