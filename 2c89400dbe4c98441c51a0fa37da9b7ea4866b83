@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "6a0f445d_a551780b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T07:20:18Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 13,
+        "startChar": 28,
+        "endLine": 13,
+        "endChar": 29
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "da15559d_a4f90106",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
         "patchSetId": 1
@@ -22,6 +45,122 @@
       "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b621fb4f_6174ea21",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T07:20:18Z",
+      "side": 1,
+      "message": "tbh, i don\u0027t remember arguments for using magic \"regexp\" prefix either. Maybe nodir@ remembers?",
+      "parentUuid": "da15559d_a4f90106",
+      "range": {
+        "startLine": 51,
+        "startChar": 4,
+        "endLine": 51,
+        "endChar": 16
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ae04668_07584569",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T07:20:18Z",
+      "side": 1,
+      "message": "detectS",
+      "range": {
+        "startLine": 61,
+        "startChar": 64,
+        "endLine": 61,
+        "endChar": 70
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "118a89c9_48052db6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T07:20:18Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 61,
+        "startChar": 42,
+        "endLine": 61,
+        "endChar": 43
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4127415c_79cec125",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T07:20:18Z",
+      "side": 1,
+      "message": "Oh, turns out \\d and \\. doesn\u0027t need escaping in starlark, even in Python. Heh.\nI\u0027ve also consulted https://github.com/google/skylark/blob/master/syntax/quote.go.",
+      "range": {
+        "startLine": 63,
+        "startChar": 20,
+        "endLine": 63,
+        "endChar": 48
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6f8241fb_984444ee",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T07:20:18Z",
+      "side": 1,
+      "message": "all right, this convinces me quoting really works that way.",
+      "range": {
+        "startLine": 277,
+        "startChar": 6,
+        "endLine": 277,
+        "endChar": 50
+      },
+      "revId": "2c89400dbe4c98441c51a0fa37da9b7ea4866b83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
