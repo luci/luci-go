@@ -272,12 +272,13 @@ type ConfigGroup_Gerrit_Project struct {
 	//   chromium/src
 	//   chromium/tools/depot_tools
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Optionally limit CLs in this repo to only these refs.
+	// Limit CLs in this repo to only these refs. Required.
+	//
+	// If not specified, defaults to "refs/heads/master".
 	//
 	// NOTE: your Gerrit admin must configure Gerrit ACLs such that CQ has
-	// read access to these refs.
-	//
-	// If not specified, implies to work with all refs (visible to CQ).
+	// read access to these refs, otherwise your users will be waiting for CQ
+	// to act on their CLs forever.
 	//
 	// Regular expression is validated by https://github.com/google/re2 library.
 	//
