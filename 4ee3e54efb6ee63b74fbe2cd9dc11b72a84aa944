@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "c8ecefa2_ab188a81",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T07:08:49Z",
+      "side": 1,
+      "message": "i curse over inability to do this in Python2, too :(",
+      "range": {
+        "startLine": 28,
+        "startChar": 29,
+        "endLine": 28,
+        "endChar": 49
+      },
+      "revId": "4ee3e54efb6ee63b74fbe2cd9dc11b72a84aa944",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "26fa888c_8a689e81",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/bucket.star",
         "patchSetId": 1
@@ -13,6 +36,30 @@
       "writtenOn": "2019-01-11T05:30:26Z",
       "side": 1,
       "message": "I plan the documentation generator to recognize this and somehow highlight required fields in the docs.",
+      "range": {
+        "startLine": 25,
+        "startChar": 50,
+        "endLine": 25,
+        "endChar": 58
+      },
+      "revId": "4ee3e54efb6ee63b74fbe2cd9dc11b72a84aa944",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "47c78d37_539b50be",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/bucket.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-11T07:08:49Z",
+      "side": 1,
+      "message": "I was wondering today if we can somehow magically generate proto validators if \"required\" is in the description...",
+      "parentUuid": "26fa888c_8a689e81",
       "range": {
         "startLine": 25,
         "startChar": 50,
