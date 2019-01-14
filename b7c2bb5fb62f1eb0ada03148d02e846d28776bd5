@@ -22,6 +22,30 @@
       "revId": "b7c2bb5fb62f1eb0ada03148d02e846d28776bd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "65943935_da6494e9",
+        "filename": "lucicfg/docgen/ast/parser_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "are you coding in Python, or what? :)",
+      "parentUuid": "3bd71904_ddd79831",
+      "range": {
+        "startLine": 104,
+        "startChar": 5,
+        "endLine": 104,
+        "endChar": 20
+      },
+      "revId": "b7c2bb5fb62f1eb0ada03148d02e846d28776bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

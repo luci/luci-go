@@ -1,0 +1,406 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0d143595_744c540d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "is this already necessary?\nnvm, i figured it is.",
+      "range": {
+        "startLine": 13,
+        "startChar": 50,
+        "endLine": 16,
+        "endChar": 60
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c40d7d78_4165b166",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "s?",
+      "range": {
+        "startLine": 17,
+        "startChar": 15,
+        "endLine": 17,
+        "endChar": 16
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4be886c_e5a48358",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 26,
+        "startChar": 43,
+        "endLine": 26,
+        "endChar": 45
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f87ccaf_3a2ac399",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 36,
+        "startChar": 41,
+        "endLine": 36,
+        "endChar": 42
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abb351c4_06f6d8e5",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "tree?",
+      "range": {
+        "startLine": 36,
+        "startChar": 18,
+        "endLine": 36,
+        "endChar": 23
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d757e4ed_4ef3e1e3",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "do you really mean to convey here that it\u0027s one of potentially many names of some entity?",
+      "range": {
+        "startLine": 38,
+        "startChar": 12,
+        "endLine": 38,
+        "endChar": 13
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c9a937e_177ded08",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "their",
+      "range": {
+        "startLine": 42,
+        "startChar": 67,
+        "endLine": 42,
+        "endChar": 71
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88fd6180_3e6fc60a",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "nit: ,\noxford comma really helps with ambiguity while reading.",
+      "range": {
+        "startLine": 65,
+        "startChar": 51,
+        "endLine": 65,
+        "endChar": 52
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "520adb52_07221074",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 68,
+        "startChar": 39,
+        "endLine": 68,
+        "endChar": 40
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09e7fe34_81ac7f35",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "nit: s\n\nbut it appears here and below you really meant past tense, but I don\u0027t grok why :( I can get referring to ast nodes as \"represented blah\", but not to Nodes of this library.",
+      "range": {
+        "startLine": 94,
+        "startChar": 31,
+        "endLine": 94,
+        "endChar": 33
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "332fcdaa_0704db59",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "why public, given that you have Doc()?",
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc0ede64_c7a16682",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "wanted to give you witty-nit: \"extracts\" \u003d\u003d just returning it?\nbut later update: ah, i see |Docstring| is already extracted, so comment kinda makes sense. So, only above comment about public nature of |Docstring| itself bothers me.",
+      "range": {
+        "startLine": 112,
+        "startChar": 7,
+        "endLine": 112,
+        "endChar": 15
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "264f576b_3c8fdb9d",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "or a",
+      "range": {
+        "startLine": 117,
+        "startChar": 40,
+        "endLine": 117,
+        "endChar": 43
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f7c8b6f_c7167e3d",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "does order matter? or whatever since we can always sort these by syntax.Position?",
+      "range": {
+        "startLine": 143,
+        "startChar": 30,
+        "endLine": 143,
+        "endChar": 31
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc593ab6_c3652659",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 228,
+        "startChar": 7,
+        "endLine": 228,
+        "endChar": 8
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08d9f20b_68b82647",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "TODO: why care about this? Also, find examples of this syntax.",
+      "range": {
+        "startLine": 245,
+        "startChar": 2,
+        "endLine": 245,
+        "endChar": 66
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f570161_b494410a",
+        "filename": "lucicfg/docgen/ast/parser_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "hm, isn\u0027t this the same as line #48, namely no Doc string?",
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3709055a_8b02dc60",
+        "filename": "lucicfg/docgen/ast/parser_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:02:59Z",
+      "side": 1,
+      "message": "useless test, because it\u0027s too hard to check, easier to blindly set this to whatever failing goconvey says output actually was. So, how about instead comparing that \n\n\n    So(textSelect(goodInput, l.Line, l.Col, r.Line, r.Col), ShouldEqual,\n    `def func1\n    ...`)",
+      "range": {
+        "startLine": 130,
+        "startChar": 27,
+        "endLine": 130,
+        "endChar": 29
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
