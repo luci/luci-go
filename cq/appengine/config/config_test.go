@@ -166,6 +166,11 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "at least 1 config_group is required")
 			})
+			Convey("no obviously overlaping config_groups", func() {
+				cfg.ConfigGroups = append(cfg.ConfigGroups, cfg.ConfigGroups[0])
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "aliases config_group #1")
+			})
 		})
 
 		Convey("Temporary limitations", func() {
@@ -199,6 +204,11 @@ func TestValidation(t *testing.T) {
 				cfg.ConfigGroups[0].Verifiers = nil
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "verifiers are required")
+			})
+			Convey("no dup Gerrit blocks", func() {
+				cfg.ConfigGroups[0].Gerrit = append(cfg.ConfigGroups[0].Gerrit, cfg.ConfigGroups[0].Gerrit[0])
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "duplicate gerrit url in the same config_group")
 			})
 		})
 
@@ -238,6 +248,11 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "at least 1 project is required")
 			})
+			Convey("no dup project blocks", func() {
+				g.Projects = append(g.Projects, g.Projects[0])
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "duplicate project in the same gerrit")
+			})
 		})
 
 		Convey("Gerrit Project", func() {
@@ -261,6 +276,11 @@ func TestValidation(t *testing.T) {
 				p.RefRegexp = []string{"refs/heads/master", "*is-bad-regexp"}
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "ref_regexp #2): error parsing regexp:")
+			})
+			Convey("duplicate regexp", func() {
+				p.RefRegexp = []string{"refs/heads/master", "refs/heads/master"}
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "ref_regexp #2): duplicate regexp:")
 			})
 		})
 	})
