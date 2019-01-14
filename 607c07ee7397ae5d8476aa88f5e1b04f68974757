@@ -16,6 +16,144 @@
       "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4ab1a8d2_a11d381f",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:13:39Z",
+      "side": 1,
+      "message": "this doesn\u0027t have to be a set and can be a slice",
+      "range": {
+        "startLine": 341,
+        "startChar": 1,
+        "endLine": 341,
+        "endChar": 23
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bede62e4_5f586414",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:13:39Z",
+      "side": 1,
+      "message": "nit: strictly speaking this is an overkill and you could have used a slice, then there\u0027s no need to sort strings in the end",
+      "range": {
+        "startLine": 346,
+        "startChar": 18,
+        "endLine": 346,
+        "endChar": 33
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70c3aea0_72ab2cf2",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:13:39Z",
+      "side": 1,
+      "message": "this is unintuitive to me... why experimental builders or ones with location_regexps can\u0027t start builds?",
+      "range": {
+        "startLine": 371,
+        "startChar": 3,
+        "endLine": 371,
+        "endChar": 25
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3019b83b_e41a3d8c",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 385,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:13:39Z",
+      "side": 1,
+      "message": "How the end result is different from just a union(b for b in triggersMap.values())? Do you want to discard a portion of the graph disconnected from canStartTriggeringTree roots?",
+      "range": {
+        "startLine": 385,
+        "startChar": 1,
+        "endLine": 385,
+        "endChar": 15
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bb70167_92a122cd",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:13:39Z",
+      "side": 1,
+      "message": "micro nit: I think it is more customary to do \"splits\" like this in one line\n\n  var b string\n  q, b \u003d q[:len(q)-1], q[len(q)-1]",
+      "range": {
+        "startLine": 387,
+        "startChar": 2,
+        "endLine": 388,
+        "endChar": 18
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17a05aee_8509f29e",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:13:39Z",
+      "side": 1,
+      "message": "is it OK when regular builders and equivalent builders have same names? Because IIUC, this is allowed by this validator.",
+      "range": {
+        "startLine": 427,
+        "startChar": 34,
+        "endLine": 427,
+        "endChar": 43
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
