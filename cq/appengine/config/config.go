@@ -313,7 +313,134 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		validateTryjobRetry(ctx, v.RetryConfig)
 		ctx.Exit()
 	}
-	// TODO(tandrii): implement.
+	if len(v.Builders) == 0 {
+		ctx.Errorf("at least 1 builder required")
+		return
+	}
+
+	// Validation of builders is done in two passes: local and global.
+
+	visitBuilders := func(cb func(b *v2.Verifiers_Tryjob_Builder)) {
+		for i, b := range v.Builders {
+			if b.Name != "" {
+				ctx.Enter("builder %s", b.Name)
+			} else {
+				ctx.Enter("builder #%d", i+1)
+			}
+			cb(b)
+			ctx.Exit()
+		}
+	}
+
+	// Pass 1, local: verify each builder separately.
+	// Also, populate data structures for second pass.
+	names := stringset.Set{}
+	equi := stringset.Set{} // equivalent_to builder names.
+	// Subset of builders w/o any extra features that can be triggered directly
+	// and which can be relied upon to trigger other builders.
+	canStartTriggeringTree := stringset.Set{}
+	triggersMap := map[string][]string{} // who triggers whom.
+
+	visitBuilders(func(b *v2.Verifiers_Tryjob_Builder) {
+		validateBuilderName(ctx, b.Name, names)
+		specialities := stringset.Set{}
+		if b.TriggeredBy != "" {
+			specialities.Add("triggered_by")
+			// Don't validate TriggeredBy as builder name, it should just match
+			// another main builder name, which will be validated anyway.
+			triggersMap[b.TriggeredBy] = append(triggersMap[b.TriggeredBy], b.Name)
+		}
+		if b.EquivalentTo != nil {
+			specialities.Add("equivalent_to")
+			validateEquivalentBuilder(ctx, b.EquivalentTo, equi)
+		}
+		if b.ExperimentPercentage != 0 {
+			specialities.Add("experiment_percentage")
+			if b.ExperimentPercentage < 0.0 || b.ExperimentPercentage > 100.0 {
+				ctx.Errorf("experiment_percentage must between 0 and 100 (%f given)", b.ExperimentPercentage)
+			}
+		}
+		if len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0 {
+			specialities.Add("location_regexp[_exclude]")
+			validateLocationRegexp(ctx, "location_regexp", b.LocationRegexp)
+			validateLocationRegexp(ctx, "location_regexp_exclude", b.LocationRegexpExclude)
+		}
+
+		switch specialities.Len() {
+		case 0:
+			canStartTriggeringTree.Add(b.Name)
+		case 1:
+			// Builder with exactly 1 special feature can't be relied upon to trigger
+			// others, except if it itself is triggered.
+			break
+		default:
+			combined := specialities.ToSlice()
+			sort.Strings(combined)
+			ctx.Errorf("combining %s features not allowed", combined)
+		}
+	})
+
+	// Between passes, DFS into triggers-whom DAG.
+	q := canStartTriggeringTree.ToSlice()
+	canBeTriggered := stringset.NewFromSlice(q...)
+	for len(q) > 0 {
+		b := q[len(q)-1]
+		q = q[:len(q)-1]
+		for _, whom := range triggersMap[b] {
+			if canBeTriggered.Add(whom) {
+				q = append(q, whom)
+			}
+		}
+	}
+
+	// Pass 2, global: verify builder relationships.
+	visitBuilders(func(b *v2.Verifiers_Tryjob_Builder) {
+		switch {
+		case b.EquivalentTo != nil && b.EquivalentTo.Name != "" && names.Has(b.EquivalentTo.Name):
+			ctx.Errorf("equivalent_to.name must not refer to already defined %q builder", b.EquivalentTo.Name)
+		case b.TriggeredBy != "" && !names.Has(b.TriggeredBy):
+			ctx.Errorf("triggered_by must refer to existing builder, but %q given", b.TriggeredBy)
+		case b.TriggeredBy != "" && !canBeTriggered.Has(b.TriggeredBy):
+			ctx.Errorf("triggered_by must refer to existing builder without extra features, "+
+				"such as equivalent_to or location_regexp (given: %q)", b.TriggeredBy)
+		}
+	})
+}
+
+func validateBuilderName(ctx *validation.Context, name string, knownNames stringset.Set) {
+	if name == "" {
+		ctx.Errorf("name is required")
+		return
+	}
+	if !knownNames.Add(name) {
+		ctx.Errorf("duplicate name %q", name)
+	}
+	parts := strings.Split(name, "/")
+	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+		ctx.Errorf("name %q doesn't match required format project/bucket/builder, e.g. 'v8/try/linux'", name)
+	}
+}
+
+func validateEquivalentBuilder(ctx *validation.Context, b *v2.Verifiers_Tryjob_EquivalentBuilder, equiNames stringset.Set) {
+	ctx.Enter("equivalent_to")
+	defer ctx.Exit()
+	validateBuilderName(ctx, b.Name, equiNames)
+	if b.Percentage < 0 || b.Percentage > 100 {
+		ctx.Errorf("percentage must be between 0 and 100 (%f given)", b.Percentage)
+	}
+}
+
+func validateLocationRegexp(ctx *validation.Context, field string, values []string) {
+	valid := stringset.New(len(values))
+	for i, v := range values {
+		if v == "" {
+			ctx.Errorf("%s #%d: must not be empty", field, i+1)
+		} else if _, err := regexp.Compile(v); err != nil {
+			ctx.Errorf("%s %q: %s", field, v, err)
+		} else if !valid.Add(v) {
+			ctx.Errorf("duplicate %s: %q", field, v)
+		}
+	}
 }
 
 func validateTryjobRetry(ctx *validation.Context, r *v2.Verifiers_Tryjob_RetryConfig) {
