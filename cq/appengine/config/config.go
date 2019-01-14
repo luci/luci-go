@@ -106,8 +106,14 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		validateConfigGroup(ctx, g)
 		ctx.Exit()
 	}
+	ensureAtMost1Project(ctx, cfg)
+	bestEffortDisjointGroups(ctx, cfg)
+}
 
-	// TODO(tandrii): remove the single project single gerrit limitation.
+// ensureAtMost1Project enforces temporary CQ limitation of supporting only a
+// single Gerrit url/project pair.
+// TODO(tandrii): remove the single project single gerrit limitation.
+func ensureAtMost1Project(ctx *validation.Context, cfg *v2.Config) {
 	gerritURLs := stringset.Set{}
 	projectNames := stringset.Set{}
 	for _, gr := range cfg.ConfigGroups {
@@ -132,23 +138,64 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		sort.Strings(names)
 		ctx.Errorf("more than 1 different gerrit project names not **yet** allowed (given: %q)", names)
 	}
+}
 
-	// TODO(tandrii): it appears non-trivial if it all possible to ensure that
-	// regexp across config_groups don't overlap. But, we can catch typical
-	// copy-pasta mistakes early on by checking for equality of regexps, just like
-	// Gerrit URL and project names.
+// bestEffortDisjointGroups errors out on easy to spot overlaps between
+// configGroups.
+//
+// It is non-trivial if it all possible to ensure that regexp across
+// config_groups don't overlap. But, we can catch typical copy-pasta mistakes
+// early on by checking for equality of regexps.
+func bestEffortDisjointGroups(ctx *validation.Context, cfg *v2.Config) {
+	defaultRefRegexps := []string{"refs/heads/master"}
+	key := func(g, p, r string) string { return strings.Join([]string{g, p, r}, "\x00") }
+	seen := map[string]int{}
+	for grIdx, gr := range cfg.ConfigGroups {
+		for gIdx, g := range gr.Gerrit {
+			for pIdx, p := range g.Projects {
+				refRegexps := p.RefRegexp
+				if len(p.RefRegexp) == 0 {
+					refRegexps = defaultRefRegexps
+				}
+				for rIdx, refRegexp := range refRegexps {
+					k := key(g.Url, p.Name, refRegexp)
+					if seenIdx, aliasing := seen[k]; !aliasing {
+						seen[k] = grIdx
+					} else if seenIdx != grIdx {
+						// NOTE: we have already emitted error on duplicate gerrit URL,
+						// project name, or ref_regexp within their own respective
+						// container, so only error here is cases when these span multiple
+						// config_groups.
+						ctx.Enter("config_group #%d", grIdx+1)
+						ctx.Enter("gerrit #%d", gIdx+1)
+						ctx.Enter("project #%d", pIdx+1)
+						ctx.Enter("ref_regexp #%d", rIdx+1)
+						ctx.Errorf("aliases config_group #%d", seenIdx+1)
+						ctx.Exit()
+						ctx.Exit()
+						ctx.Exit()
+						ctx.Exit()
+					}
+				}
+			}
+		}
+	}
 }
 
 func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup) {
 	if len(group.Gerrit) == 0 {
 		ctx.Errorf("at least 1 gerrit is required")
 	}
+	gerritURLs := stringset.Set{}
 	for i, g := range group.Gerrit {
 		ctx.Enter("gerrit #%d", i+1)
 		validateGerrit(ctx, g)
+		if g.Url != "" && !gerritURLs.Add(g.Url) {
+			ctx.Errorf("duplicate gerrit url in the same config_group: %q", g.Url)
+		}
 		ctx.Exit()
 	}
-	// TODO(tandrii): disallow repeated gerit URLs and project names.
+
 	if group.Verifiers == nil {
 		ctx.Errorf("verifiers are required")
 	} else {
@@ -163,9 +210,13 @@ func validateGerrit(ctx *validation.Context, g *v2.ConfigGroup_Gerrit) {
 	if len(g.Projects) == 0 {
 		ctx.Errorf("at least 1 project is required")
 	}
-	for i, g := range g.Projects {
+	projectNames := stringset.Set{}
+	for i, p := range g.Projects {
 		ctx.Enter("projects #%d", i+1)
-		validateGerritProject(ctx, g)
+		validateGerritProject(ctx, p)
+		if p.Name != "" && !projectNames.Add(p.Name) {
+			ctx.Errorf("duplicate project in the same gerrit: %q", p.Name)
+		}
 		ctx.Exit()
 	}
 }
@@ -210,10 +261,14 @@ func validateGerritProject(ctx *validation.Context, gp *v2.ConfigGroup_Gerrit_Pr
 		}
 	}
 
+	regexps := stringset.Set{}
 	for i, r := range gp.RefRegexp {
 		ctx.Enter("ref_regexp #%d", i+1)
 		if _, err := regexp.Compile(r); err != nil {
 			ctx.Error(err)
+		}
+		if !regexps.Add(r) {
+			ctx.Errorf("duplicate regexp: %q", r)
 		}
 		ctx.Exit()
 	}
