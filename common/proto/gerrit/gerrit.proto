@@ -208,6 +208,76 @@ message ChangeInfo {
   // See:
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
   string current_revision = 6;
+
+  // A map of patch set commit IDs to RevisionInfos.
+  //
+  // Only set if revision information is requested.
+  map<string, RevisionInfo> revisions = 7;
+}
+
+// Information about a patch set.
+// Source of truth: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-info
+message RevisionInfo {
+  // The kind of change for this revision.
+  enum Kind {
+    KIND_INVALID = 0;
+    REWORK = 1;
+    TRIVIAL_REBASE = 2;
+    MERGE_FIRST_PARENT_UPDATE = 3;
+    NO_CODE_CHANGE = 4;
+    NO_CHANGE = 5;
+  }
+
+  // The kind of this patch set.
+  Kind kind = 1;
+
+  // The patch set number.
+  int32 number = 2;
+
+  // The uploader of this patch set.
+  AccountInfo uploader = 3;
+
+  // The Git reference for the patch set.
+  string ref = 4;
+
+  // A map of file paths to FileInfos.
+  //
+  // Only set if file information is requested.
+  map<string, FileInfo> files = 6;
+}
+
+// Information about a file in a patch set.
+// Source of truth: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#file-info
+message FileInfo {
+  enum Status {
+    M = 0; // Modified (default; omitted)
+    A = 1; // Added
+    D = 2; // Deleted
+    R = 3; // Renamed
+    C = 4; // Copied
+    W = 5; // Rewritten
+  }
+
+  // Status of the file.
+  Status status = 1;
+
+  // Whether the file is binary.
+  bool binary = 2;
+
+  // The old file path; only set if renamed or copied.
+  string old_path = 3;
+
+  // Number of lines inserted.
+  int32 lines_inserted = 4;
+
+  // Number of lines deleted.
+  int32 lines_deleted = 5;
+
+  // Number of bytes by which the file size increased/decreased.
+  int64 size_delta = 6;
+
+  // File size in bytes.
+  int64 size = 7;
 }
 
 // Information for creating a new change.
