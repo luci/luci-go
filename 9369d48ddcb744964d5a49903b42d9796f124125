@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "f21c06c6_bcb540b2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T01:28:36Z",
+      "side": 1,
+      "message": "i\u0027m uneasy about this change (prefer VMs vs Config here), but it is logical to do so.",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 49
+      },
+      "revId": "9369d48ddcb744964d5a49903b42d9796f124125",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f43e13d_bf55d937",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 1
@@ -16,6 +39,47 @@
       "revId": "9369d48ddcb744964d5a49903b42d9796f124125",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0491677b_2298c7df",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T01:28:36Z",
+      "side": 1,
+      "message": "yep, makes sense.",
+      "parentUuid": "2f43e13d_bf55d937",
+      "revId": "9369d48ddcb744964d5a49903b42d9796f124125",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0208ed0_4629e0eb",
+        "filename": "gce/api/config/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T01:28:36Z",
+      "side": 1,
+      "message": "👍 i like this one.",
+      "range": {
+        "startLine": 33,
+        "startChar": 8,
+        "endLine": 33,
+        "endChar": 21
+      },
+      "revId": "9369d48ddcb744964d5a49903b42d9796f124125",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
