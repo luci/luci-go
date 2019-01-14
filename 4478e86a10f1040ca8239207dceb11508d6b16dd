@@ -1,0 +1,297 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "37db242e_0a450042",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "why isn\u0027t Return special (ie like Fields/Args)?\noh, i see -- you search for it with \"Returns\". Interesting.",
+      "range": {
+        "startLine": 48,
+        "startChar": 39,
+        "endLine": 49,
+        "endChar": 63
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2a72c8d_e7eee7b3",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 110,
+        "startChar": 26,
+        "endLine": 110,
+        "endChar": 27
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3a0236a_254ba822",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "string format is not recognized.",
+      "range": {
+        "startLine": 111,
+        "startChar": 12,
+        "endLine": 111,
+        "endChar": 37
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da9baddf_c8019051",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "can\u0027t prev be defined for loop and updated on line 196, saving conditional?",
+      "range": {
+        "startLine": 189,
+        "startChar": 2,
+        "endLine": 192,
+        "endChar": 3
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a0bc585_5f09f6d2",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "missing \"if\", right?",
+      "range": {
+        "startLine": 221,
+        "startChar": 44,
+        "endLine": 221,
+        "endChar": 45
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "087c4bf5_b27151c8",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 301,
+        "startChar": 5,
+        "endLine": 301,
+        "endChar": 13
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "90b841a5_1a623669",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "consider \"bytesToSkip\"",
+      "range": {
+        "startLine": 321,
+        "startChar": 1,
+        "endLine": 321,
+        "endChar": 7
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbd4a02d_1d1ad0fb",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "f",
+      "range": {
+        "startLine": 332,
+        "startChar": 61,
+        "endLine": 332,
+        "endChar": 63
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5e5322e_d3ba0aba",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "prefix",
+      "range": {
+        "startLine": 342,
+        "startChar": 57,
+        "endLine": 342,
+        "endChar": 63
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "721cb604_2daf7dee",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "runEs",
+      "range": {
+        "startLine": 342,
+        "startChar": 45,
+        "endLine": 342,
+        "endChar": 49
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0999b1f9_ba685cda",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 361,
+        "startChar": 65,
+        "endLine": 361,
+        "endChar": 66
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "499ffa3b_896aed0b",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "t",
+      "range": {
+        "startLine": 365,
+        "startChar": 28,
+        "endLine": 365,
+        "endChar": 29
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a6f9e0f_97ee81b3",
+        "filename": "lucicfg/docgen/docstring/docstring_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T02:24:45Z",
+      "side": 1,
+      "message": "how about multiline but w/o empty line after it?",
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
