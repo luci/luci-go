@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f374fbef_4529c7eb",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "\"Returns\" is special because it doesn\u0027t have deeper internal structure (unlike Fields).\n\nIt is a \"remark\" because same parsing can also be used for \"Exceptions:\" block or perhaps \"Note:\" or something.",
+      "parentUuid": "37db242e_0a450042",
+      "range": {
+        "startLine": 48,
+        "startChar": 39,
+        "endLine": 49,
+        "endChar": 63
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2a72c8d_e7eee7b3",
         "filename": "lucicfg/docgen/docstring/docstring.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9463155e_1eb27fc0",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2a72c8d_e7eee7b3",
+      "range": {
+        "startLine": 110,
+        "startChar": 26,
+        "endLine": 110,
+        "endChar": 27
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "a01768ad_cfa1adb7",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3a0236a_254ba822",
+      "range": {
+        "startLine": 111,
+        "startChar": 12,
+        "endLine": 111,
+        "endChar": 37
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9baddf_c8019051",
         "filename": "lucicfg/docgen/docstring/docstring.go",
         "patchSetId": 2
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "cb5cb30d_ef15b56f",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9baddf_c8019051",
+      "range": {
+        "startLine": 189,
+        "startChar": 2,
+        "endLine": 192,
+        "endChar": 3
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a0bc585_5f09f6d2",
         "filename": "lucicfg/docgen/docstring/docstring.go",
         "patchSetId": 2
@@ -114,6 +210,30 @@
       "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93d38734_478b712f",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "No. Reformulated.",
+      "parentUuid": "3a0bc585_5f09f6d2",
+      "range": {
+        "startLine": 221,
+        "startChar": 44,
+        "endLine": 221,
+        "endChar": 45
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "d311d685_38fb00ce",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90b841a5_1a623669",
+      "range": {
+        "startLine": 321,
+        "startChar": 1,
+        "endLine": 321,
+        "endChar": 7
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bbd4a02d_1d1ad0fb",
         "filename": "lucicfg/docgen/docstring/docstring.go",
         "patchSetId": 2
@@ -183,6 +327,30 @@
       "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ac84306_f1a22624",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bbd4a02d_1d1ad0fb",
+      "range": {
+        "startLine": 332,
+        "startChar": 61,
+        "endLine": 332,
+        "endChar": 63
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -232,6 +400,54 @@
     },
     {
       "key": {
+        "uuid": "5f4102a4_9956148a",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5e5322e_d3ba0aba",
+      "range": {
+        "startLine": 342,
+        "startChar": 57,
+        "endLine": 342,
+        "endChar": 63
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53cc6e84_df5ce564",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "721cb604_2daf7dee",
+      "range": {
+        "startLine": 342,
+        "startChar": 45,
+        "endLine": 342,
+        "endChar": 49
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0999b1f9_ba685cda",
         "filename": "lucicfg/docgen/docstring/docstring.go",
         "patchSetId": 2
@@ -252,6 +468,30 @@
       "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b8cd547_e9383b07",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0999b1f9_ba685cda",
+      "range": {
+        "startLine": 361,
+        "startChar": 65,
+        "endLine": 361,
+        "endChar": 66
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -278,6 +518,30 @@
     },
     {
       "key": {
+        "uuid": "cb22c353_c98800bf",
+        "filename": "lucicfg/docgen/docstring/docstring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "499ffa3b_896aed0b",
+      "range": {
+        "startLine": 365,
+        "startChar": 28,
+        "endLine": 365,
+        "endChar": 29
+      },
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a6f9e0f_97ee81b3",
         "filename": "lucicfg/docgen/docstring/docstring_test.go",
         "patchSetId": 2
@@ -292,6 +556,24 @@
       "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d2613a1_ed16a23c",
+        "filename": "lucicfg/docgen/docstring/docstring_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a6f9e0f_97ee81b3",
+      "revId": "4478e86a10f1040ca8239207dceb11508d6b16dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
