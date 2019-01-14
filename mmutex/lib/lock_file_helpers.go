@@ -64,7 +64,7 @@ func computeMutexPaths(env subcommands.Env) (lockFilePath string, drainFilePath 
 	}
 
 	if _, err := os.Stat(lockFileDir); os.IsNotExist(err) {
-		fmt.Printf("Lock file directory %s does not exist, mmutex acting as a passthrough.", lockFileDir)
+		fmt.Printf("Lock file directory %s does not exist, mmutex acting as a passthrough.\n", lockFileDir)
 		return "", "", nil
 	}
 
