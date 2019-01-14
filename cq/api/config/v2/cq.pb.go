@@ -23,7 +23,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // This message describes a Commit Queue configuration.
 //
-// The config file cq.cfg should be stored in the config directory of your
+// The config file commit-queue.cfg should be stored in the config directory of your
 // project, alongside cr-buildbucket.cfg.
 type Config struct {
 	// Optional. If present, the CQ will refrain from processing any CLs,
