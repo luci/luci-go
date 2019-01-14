@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c0422831_59174797",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T19:30:31Z",
+      "side": 1,
+      "message": "I hope you didn\u0027t struggle to much trying to figure out how to use this stuff. It is a bit magical...",
+      "range": {
+        "startLine": 35,
+        "startChar": 4,
+        "endLine": 35,
+        "endChar": 23
+      },
+      "revId": "99c5ddf89644ec8c363aec6ea5dc833f49d3483f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6b96356e_2d1904f9",
+        "filename": "cq/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T19:30:31Z",
+      "side": 1,
+      "message": "nit: make this last, since this line is technically the one that \"enables everything\"",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 36
+      },
+      "revId": "99c5ddf89644ec8c363aec6ea5dc833f49d3483f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
