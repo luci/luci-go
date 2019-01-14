@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16a995a6_1136036f",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T19:35:45Z",
+      "side": 1,
+      "message": "I don\u0027t understand this check. Is it ok to have copy-pasta within single config group but no OK across different groups?",
+      "range": {
+        "startLine": 164,
+        "startChar": 15,
+        "endLine": 164,
+        "endChar": 31
+      },
+      "revId": "c20b45c1e99691fb25f4a8fdfa697c329f3eab6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
