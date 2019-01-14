@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e3096b8_e08f078e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T19:52:44Z",
+      "side": 1,
+      "message": "btw, I forgot to thank you for pitching visitor idea. I think end result is a lot simpler now vs legacy, though lack of buckets also helps.",
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
