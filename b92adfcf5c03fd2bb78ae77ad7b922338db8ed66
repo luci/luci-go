@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "535b1bc7_8aeeb975",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c40d7d78_4165b166",
+      "range": {
+        "startLine": 17,
+        "startChar": 15,
+        "endLine": 17,
+        "endChar": 16
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4be886c_e5a48358",
         "filename": "lucicfg/docgen/ast/parser.go",
         "patchSetId": 3
@@ -68,6 +92,30 @@
       "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4414c7d0_bbdf2182",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4be886c_e5a48358",
+      "range": {
+        "startLine": 26,
+        "startChar": 43,
+        "endLine": 26,
+        "endChar": 45
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +165,54 @@
     },
     {
       "key": {
+        "uuid": "9f3aaafd_3d9c3b27",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "abb351c4_06f6d8e5",
+      "range": {
+        "startLine": 36,
+        "startChar": 18,
+        "endLine": 36,
+        "endChar": 23
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "170185c5_4c6b10eb",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f87ccaf_3a2ac399",
+      "range": {
+        "startLine": 36,
+        "startChar": 41,
+        "endLine": 36,
+        "endChar": 42
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d757e4ed_4ef3e1e3",
         "filename": "lucicfg/docgen/ast/parser.go",
         "patchSetId": 3
@@ -137,6 +233,30 @@
       "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c358f4c_07c36f28",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "I meant it as in \"whatever it may be\". Should it be \"the\"? Each node has only one name.",
+      "parentUuid": "d757e4ed_4ef3e1e3",
+      "range": {
+        "startLine": 38,
+        "startChar": 12,
+        "endLine": 38,
+        "endChar": 13
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "8986c727_edfd93f9",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c9a937e_177ded08",
+      "range": {
+        "startLine": 42,
+        "startChar": 67,
+        "endLine": 42,
+        "endChar": 71
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "88fd6180_3e6fc60a",
         "filename": "lucicfg/docgen/ast/parser.go",
         "patchSetId": 3
@@ -183,6 +327,30 @@
       "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04ddfa39_2e75f711",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88fd6180_3e6fc60a",
+      "range": {
+        "startLine": 65,
+        "startChar": 51,
+        "endLine": 65,
+        "endChar": 52
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "6be5e8bb_9ab505f7",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "520adb52_07221074",
+      "range": {
+        "startLine": 68,
+        "startChar": 39,
+        "endLine": 68,
+        "endChar": 40
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "09e7fe34_81ac7f35",
         "filename": "lucicfg/docgen/ast/parser.go",
         "patchSetId": 3
@@ -232,6 +424,30 @@
     },
     {
       "key": {
+        "uuid": "67881500_f5c67335",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "No, it was copy-pasted typo.",
+      "parentUuid": "09e7fe34_81ac7f35",
+      "range": {
+        "startLine": 94,
+        "startChar": 31,
+        "endLine": 94,
+        "endChar": 33
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "332fcdaa_0704db59",
         "filename": "lucicfg/docgen/ast/parser.go",
         "patchSetId": 3
@@ -246,6 +462,24 @@
       "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14e3b35e_9c9c40b8",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Forgot to change. I didn\u0027t have Doc() in initial version of this code.",
+      "parentUuid": "332fcdaa_0704db59",
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -295,6 +529,30 @@
     },
     {
       "key": {
+        "uuid": "c2f083ae_013fecad",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "264f576b_3c8fdb9d",
+      "range": {
+        "startLine": 117,
+        "startChar": 40,
+        "endLine": 117,
+        "endChar": 43
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f7c8b6f_c7167e3d",
         "filename": "lucicfg/docgen/ast/parser.go",
         "patchSetId": 3
@@ -315,6 +573,30 @@
       "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46438023_071fd192",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Yes, it matters. The generated documentation retains the original order of definitions.",
+      "parentUuid": "8f7c8b6f_c7167e3d",
+      "range": {
+        "startLine": 143,
+        "startChar": 30,
+        "endLine": 143,
+        "endChar": 31
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -341,6 +623,30 @@
     },
     {
       "key": {
+        "uuid": "33f77a01_865802ec",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc593ab6_c3652659",
+      "range": {
+        "startLine": 228,
+        "startChar": 7,
+        "endLine": 228,
+        "endChar": 8
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "08d9f20b_68b82647",
         "filename": "lucicfg/docgen/ast/parser.go",
         "patchSetId": 3
@@ -364,6 +670,30 @@
     },
     {
       "key": {
+        "uuid": "219ba194_fd966b10",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "core \u003d struct(\n  project \u003d _project,\n  bucket \u003d _bucket,\n  ...\n)\n\nThis is how namespacing is done in starlark.",
+      "parentUuid": "08d9f20b_68b82647",
+      "range": {
+        "startLine": 245,
+        "startChar": 2,
+        "endLine": 245,
+        "endChar": 66
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f570161_b494410a",
         "filename": "lucicfg/docgen/ast/parser_test.go",
         "patchSetId": 3
@@ -378,6 +708,24 @@
       "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2f27af4_023fd4d6",
+        "filename": "lucicfg/docgen/ast/parser_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "It hits different code path, namely a check that docstring expression should be a string literal (not a number literal).",
+      "parentUuid": "8f570161_b494410a",
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -401,6 +749,30 @@
       "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0349f333_35187522",
+        "filename": "lucicfg/docgen/ast/parser_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T20:35:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3709055a_8b02dc60",
+      "range": {
+        "startLine": 130,
+        "startChar": 27,
+        "endLine": 130,
+        "endChar": 29
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
