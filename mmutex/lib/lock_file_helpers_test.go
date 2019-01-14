@@ -72,7 +72,7 @@ func TestMain(t *testing.T) {
 			"MMUTEX_LOCK_DIR": subcommands.EnvVar{path, true},
 		}
 		lockFilePath, drainFilePath, err := computeMutexPaths(env)
-		So(err, ShouldErrLike, fmt.Sprintf("Lock file directory %s must be an absolute path", path))
+		So(err, ShouldErrLike, fmt.Sprintf("Lock file directory %s must be an absolute path\n", path))
 		So(lockFilePath, ShouldBeBlank)
 		So(drainFilePath, ShouldBeBlank)
 	})
