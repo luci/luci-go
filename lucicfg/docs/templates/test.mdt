@@ -1,0 +1,21 @@
+# Docs.
+
+[TOC]
+
+## Core rules
+
+{{with $core := symbol "@stdlib//builtins.star" "core"}}
+{{range $core.Symbols}}
+### core.{{.Name}}
+
+{{.Doc.Description}}
+
+#### Arguments
+
+{{with .Doc.FieldsBlock "Args"}}
+{{range .Fields}}
+**{{.Name}}**: {{.Desc}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
