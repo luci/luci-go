@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6125339c_f7541e06",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-14T19:59:31Z",
+      "side": 1,
+      "message": "Please clarify that this is NOT transactional and on failures some builder may be scheduler while others may not",
+      "range": {
+        "startLine": 145,
+        "startChar": 53,
+        "endLine": 145,
+        "endChar": 70
+      },
+      "revId": "1b935087a3ce15a09c09c0f83286e656e8728bb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
