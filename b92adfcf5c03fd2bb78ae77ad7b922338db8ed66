@@ -694,6 +694,30 @@
     },
     {
       "key": {
+        "uuid": "d129ac2a_b38168fe",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T20:46:30Z",
+      "side": 1,
+      "message": "sorry, forgot to delete this comment for myself\n(this is how i \"check-pointed\" my review of your CL, since my gbus ride was over)",
+      "parentUuid": "219ba194_fd966b10",
+      "range": {
+        "startLine": 245,
+        "startChar": 2,
+        "endLine": 245,
+        "endChar": 66
+      },
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f570161_b494410a",
         "filename": "lucicfg/docgen/ast/parser_test.go",
         "patchSetId": 3
@@ -723,6 +747,24 @@
       "side": 1,
       "message": "It hits different code path, namely a check that docstring expression should be a string literal (not a number literal).",
       "parentUuid": "8f570161_b494410a",
+      "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5fccf067_5491e460",
+        "filename": "lucicfg/docgen/ast/parser_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-14T20:46:30Z",
+      "side": 1,
+      "message": "oh, i see! maybe s/Weird doc string/Number where docstring usually is",
+      "parentUuid": "b2f27af4_023fd4d6",
       "revId": "b92adfcf5c03fd2bb78ae77ad7b922338db8ed66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
