@@ -274,6 +274,43 @@ func validateGerritProject(ctx *validation.Context, gp *v2.ConfigGroup_Gerrit_Pr
 	}
 }
 
-func validateVerifiers(ctx *validation.Context, g *v2.Verifiers) {
+func validateVerifiers(ctx *validation.Context, v *v2.Verifiers) {
+	if v.Deprecator != nil {
+		ctx.Errorf("deprecator verifier is not allowed (internal use only)")
+	}
+	if v.Fake != nil {
+		ctx.Errorf("fake verifier is not allowed (internal use only)")
+	}
+	if v.TreeStatus != nil {
+		ctx.Enter("tree_status")
+		if v.TreeStatus.Url == "" {
+			ctx.Errorf("url is required")
+		} else {
+			switch u, err := url.Parse(v.TreeStatus.Url); {
+			case err != nil:
+				ctx.Errorf("failed to parse url %q: %s", v.TreeStatus.Url, err)
+			case u.Scheme != "https":
+				ctx.Errorf("url scheme must be 'https'")
+			}
+		}
+		ctx.Exit()
+	}
+	if v.GerritCqAbility == nil {
+		ctx.Errorf("gerrit_cq_ability verifier is required")
+	} else {
+		ctx.Enter("gerrit_cq_ability")
+		if v.GerritCqAbility.CommitterList == "" {
+			ctx.Errorf("committer_list is required")
+		}
+		ctx.Exit()
+	}
+	if v.Tryjob != nil {
+		ctx.Enter("tryjob")
+		validateTryjobVerifier(ctx, v.Tryjob)
+		ctx.Exit()
+	}
+}
+
+func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 	// TODO(tandrii): implement.
 }

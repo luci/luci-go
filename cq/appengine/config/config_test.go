@@ -93,6 +93,8 @@ const validConfigTextPB = `
 			}
 		}
 		verifiers {
+			tree_status { url: "https://chromium-status.appspot.com" }
+			gerrit_cq_ability { committer_list: "project-chromium-committers" }
 			# TODO(tandrii): finish valid config.
 		}
   }
@@ -281,6 +283,45 @@ func TestValidation(t *testing.T) {
 				p.RefRegexp = []string{"refs/heads/master", "refs/heads/master"}
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "ref_regexp #2): duplicate regexp:")
+			})
+		})
+
+		Convey("Verifiers", func() {
+			v := cfg.ConfigGroups[0].Verifiers
+
+			Convey("fake not allowed", func() {
+				v.Fake = &v2.Verifiers_Fake{}
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "fake verifier is not allowed")
+			})
+			Convey("deprecator not allowed", func() {
+				v.Deprecator = &v2.Verifiers_Deprecator{}
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "deprecator verifier is not allowed")
+			})
+			Convey("tree_status", func() {
+				v.TreeStatus = &v2.Verifiers_TreeStatus{}
+				Convey("needs URL", func() {
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "url is required")
+				})
+				Convey("needs https URL", func() {
+					v.TreeStatus.Url = "http://example.com/test"
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "url scheme must be 'https'")
+				})
+			})
+			Convey("gerrit_cq_ability", func() {
+				Convey("is required", func() {
+					v.GerritCqAbility = nil
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "gerrit_cq_ability verifier is required")
+				})
+				Convey("needs committer_list", func() {
+					v.GerritCqAbility.CommitterList = ""
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "committer_list is required")
+				})
 			})
 		})
 	})
