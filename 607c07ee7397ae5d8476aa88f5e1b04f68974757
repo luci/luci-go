@@ -302,6 +302,30 @@
     },
     {
       "key": {
+        "uuid": "eae4c662_17927afa",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T18:25:36Z",
+      "side": 1,
+      "message": "less readable only because of verbosity of \"len(q)-1\".",
+      "parentUuid": "12970223_49fb4f4f",
+      "range": {
+        "startLine": 387,
+        "startChar": 2,
+        "endLine": 388,
+        "endChar": 18
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17a05aee_8509f29e",
         "filename": "cq/appengine/config/config.go",
         "patchSetId": 1
