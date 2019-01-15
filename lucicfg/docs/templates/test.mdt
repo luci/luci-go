@@ -1,0 +1,81 @@
+# Reference
+
+{{/*
+  Load all symbols we are going to document in advance to let the generator
+  know that they can be referred to through anchors.
+*/}}
+{{ $core := Symbol "@stdlib//builtins.star" "core" }}
+{{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
+{{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
+{{ $time := Symbol "@stdlib//builtins.star" "time" }}
+
+[TOC]
+
+{{/* TODO(vadimsh): Move repeated code to reusable template. */}}
+
+## Core rules
+{{range $core.Symbols}}
+### {{.FullName}} {#{{.Anchor}}}
+
+```python
+{{.InvocationSnippet}}
+```
+
+{{.Doc.Description | LinkifySymbols}}
+
+#### Arguments
+{{range .Doc.Args}}
+* **{{.Name}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
+{{end}}
+
+
+## ACLs helpers
+{{range $acl.Symbols}}
+### {{.FullName}} {#{{.Anchor}}}
+
+```python
+{{.InvocationSnippet}}
+```
+
+{{.Doc.Description | LinkifySymbols}}
+
+#### Arguments
+{{range .Doc.Args}}
+* **{{.Name}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
+{{end}}
+
+
+## Swarming helpers
+{{range $swarming.Symbols}}
+### {{.FullName}} {#{{.Anchor}}}
+
+```python
+{{.InvocationSnippet}}
+```
+
+{{.Doc.Description | LinkifySymbols}}
+
+#### Arguments
+{{range .Doc.Args}}
+* **{{.Name}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
+{{end}}
+
+
+## Specifying durations
+{{range $time.Symbols}}
+### {{.FullName}} {#{{.Anchor}}}
+
+```python
+{{.InvocationSnippet}}
+```
+
+{{.Doc.Description | LinkifySymbols}}
+
+#### Arguments
+{{range .Doc.Args}}
+* **{{.Name}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
+{{end}}
