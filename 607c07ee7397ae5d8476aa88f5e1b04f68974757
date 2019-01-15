@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "0f19c469_e850d19f",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T07:50:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ab1a8d2_a11d381f",
+      "range": {
+        "startLine": 341,
+        "startChar": 1,
+        "endLine": 341,
+        "endChar": 23
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bede62e4_5f586414",
         "filename": "cq/appengine/config/config.go",
         "patchSetId": 1
@@ -62,6 +86,30 @@
       "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27ff278f_d345e5c9",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T07:50:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bede62e4_5f586414",
+      "range": {
+        "startLine": 346,
+        "startChar": 18,
+        "endLine": 346,
+        "endChar": 33
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +136,30 @@
     },
     {
       "key": {
+        "uuid": "703df4fd_d51b4dde",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T07:50:00Z",
+      "side": 1,
+      "message": "I\u0027m sure you saw L373, so perhaps I worded it badly. Let me re-word (see new patchset).",
+      "parentUuid": "70c3aea0_72ab2cf2",
+      "range": {
+        "startLine": 371,
+        "startChar": 3,
+        "endLine": 371,
+        "endChar": 25
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3019b83b_e41a3d8c",
         "filename": "cq/appengine/config/config.go",
         "patchSetId": 1
@@ -108,6 +180,30 @@
       "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "edf89776_174300b0",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 385,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T07:50:00Z",
+      "side": 1,
+      "message": "exactly. Added comment.",
+      "parentUuid": "3019b83b_e41a3d8c",
+      "range": {
+        "startLine": 385,
+        "startChar": 1,
+        "endLine": 385,
+        "endChar": 15
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +230,30 @@
     },
     {
       "key": {
+        "uuid": "1910e4c1_7694e521",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T07:50:00Z",
+      "side": 1,
+      "message": "i think this is less readable, but whatever.",
+      "parentUuid": "7bb70167_92a122cd",
+      "range": {
+        "startLine": 387,
+        "startChar": 2,
+        "endLine": 388,
+        "endChar": 18
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17a05aee_8509f29e",
         "filename": "cq/appengine/config/config.go",
         "patchSetId": 1
@@ -154,6 +274,30 @@
       "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfe8afec_2ff796e8",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T07:50:00Z",
+      "side": 1,
+      "message": "indeed, it is not caught at this point. It\u0027s caught at L400 once all main builder names are known. I have a test for it, too.",
+      "parentUuid": "17a05aee_8509f29e",
+      "range": {
+        "startLine": 427,
+        "startChar": 34,
+        "endLine": 427,
+        "endChar": 43
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
