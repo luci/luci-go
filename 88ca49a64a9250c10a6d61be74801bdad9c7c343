@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93325c07_27c41eee",
+        "filename": "client/archiver/directory_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-01-15T00:24:59Z",
+      "side": 1,
+      "message": "document what the fields mean, and what the expected output function is given a `testCase` (e.g. what will be asserted?)",
+      "revId": "88ca49a64a9250c10a6d61be74801bdad9c7c343",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee5fc1d6_c9f76f51",
+        "filename": "client/archiver/directory_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-01-15T00:24:59Z",
+      "side": 1,
+      "message": "you probably need to run `go fmt`",
+      "revId": "88ca49a64a9250c10a6d61be74801bdad9c7c343",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
