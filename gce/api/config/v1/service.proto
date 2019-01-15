@@ -9,35 +9,35 @@ package config;
 import "google/protobuf/empty.proto";
 import "go.chromium.org/luci/gce/api/config/v1/config.proto";
 
-// A request to delete a VMs block.
-message DeleteVMsRequest {
-  // The id of the VMs block to delete.
+// A request to delete a config.
+message DeleteRequest {
+  // The id of the config to delete.
   string id = 1;
 }
 
-// A request to create or update a VMs block.
-message EnsureVMsRequest {
-  // The id of the VMs block to ensure.
+// A request to create or update a config.
+message EnsureRequest {
+  // The id of the config to ensure.
   string id = 1;
-  // The VMs block.
-  Block vms = 2;
+  // The config.
+  Config config = 2;
 }
 
-// A request to get a VMs block.
-message GetVMsRequest {
-  // The id of the VMs block to get.
+// A request to get a config.
+message GetRequest {
+  // The id of the config to get.
   string id = 1;
 }
 
-// A service for manipulating the VMs config.
-service Config {
-  // DeleteVMs deletes an existing VMs block.
+// A service for manipulating configs.
+service Configuration {
+  // Delete deletes an existing config.
   // Internal API.
-  rpc DeleteVMs(DeleteVMsRequest) returns (google.protobuf.Empty);
-  // EnsureVMs ensures a VMs block exists.
-  // Creates a new VMs block or updates an existing one as necessary.
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+  // Ensure ensures a config exists.
+  // Creates a new config or updates an existing one as necessary.
   // Internal API.
-  rpc EnsureVMs(EnsureVMsRequest) returns (Block);
-  // GetVMs returns a configured VMs block.
-  rpc GetVMs(GetVMsRequest) returns (Block);
+  rpc Ensure(EnsureRequest) returns (Config);
+  // Get returns an existing config.
+  rpc Get(GetRequest) returns (Config);
 }

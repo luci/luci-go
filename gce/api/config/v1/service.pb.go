@@ -26,132 +26,132 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// A request to delete a VMs block.
-type DeleteVMsRequest struct {
-	// The id of the VMs block to delete.
+// A request to delete a config.
+type DeleteRequest struct {
+	// The id of the config to delete.
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteVMsRequest) Reset()         { *m = DeleteVMsRequest{} }
-func (m *DeleteVMsRequest) String() string { return proto.CompactTextString(m) }
-func (*DeleteVMsRequest) ProtoMessage()    {}
-func (*DeleteVMsRequest) Descriptor() ([]byte, []int) {
+func (m *DeleteRequest) Reset()         { *m = DeleteRequest{} }
+func (m *DeleteRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteRequest) ProtoMessage()    {}
+func (*DeleteRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4344ecc87758d8d4, []int{0}
 }
 
-func (m *DeleteVMsRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteVMsRequest.Unmarshal(m, b)
+func (m *DeleteRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteRequest.Unmarshal(m, b)
 }
-func (m *DeleteVMsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteVMsRequest.Marshal(b, m, deterministic)
+func (m *DeleteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteRequest.Marshal(b, m, deterministic)
 }
-func (m *DeleteVMsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteVMsRequest.Merge(m, src)
+func (m *DeleteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteRequest.Merge(m, src)
 }
-func (m *DeleteVMsRequest) XXX_Size() int {
-	return xxx_messageInfo_DeleteVMsRequest.Size(m)
+func (m *DeleteRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteRequest.Size(m)
 }
-func (m *DeleteVMsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteVMsRequest.DiscardUnknown(m)
+func (m *DeleteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeleteVMsRequest proto.InternalMessageInfo
+var xxx_messageInfo_DeleteRequest proto.InternalMessageInfo
 
-func (m *DeleteVMsRequest) GetId() string {
+func (m *DeleteRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-// A request to create or update a VMs block.
-type EnsureVMsRequest struct {
-	// The id of the VMs block to ensure.
+// A request to create or update a config.
+type EnsureRequest struct {
+	// The id of the config to ensure.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The VMs block.
-	Vms                  *Block   `protobuf:"bytes,2,opt,name=vms,proto3" json:"vms,omitempty"`
+	// The config.
+	Config               *Config  `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *EnsureVMsRequest) Reset()         { *m = EnsureVMsRequest{} }
-func (m *EnsureVMsRequest) String() string { return proto.CompactTextString(m) }
-func (*EnsureVMsRequest) ProtoMessage()    {}
-func (*EnsureVMsRequest) Descriptor() ([]byte, []int) {
+func (m *EnsureRequest) Reset()         { *m = EnsureRequest{} }
+func (m *EnsureRequest) String() string { return proto.CompactTextString(m) }
+func (*EnsureRequest) ProtoMessage()    {}
+func (*EnsureRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4344ecc87758d8d4, []int{1}
 }
 
-func (m *EnsureVMsRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_EnsureVMsRequest.Unmarshal(m, b)
+func (m *EnsureRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EnsureRequest.Unmarshal(m, b)
 }
-func (m *EnsureVMsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_EnsureVMsRequest.Marshal(b, m, deterministic)
+func (m *EnsureRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EnsureRequest.Marshal(b, m, deterministic)
 }
-func (m *EnsureVMsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureVMsRequest.Merge(m, src)
+func (m *EnsureRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureRequest.Merge(m, src)
 }
-func (m *EnsureVMsRequest) XXX_Size() int {
-	return xxx_messageInfo_EnsureVMsRequest.Size(m)
+func (m *EnsureRequest) XXX_Size() int {
+	return xxx_messageInfo_EnsureRequest.Size(m)
 }
-func (m *EnsureVMsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_EnsureVMsRequest.DiscardUnknown(m)
+func (m *EnsureRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_EnsureRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_EnsureVMsRequest proto.InternalMessageInfo
+var xxx_messageInfo_EnsureRequest proto.InternalMessageInfo
 
-func (m *EnsureVMsRequest) GetId() string {
+func (m *EnsureRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *EnsureVMsRequest) GetVms() *Block {
+func (m *EnsureRequest) GetConfig() *Config {
 	if m != nil {
-		return m.Vms
+		return m.Config
 	}
 	return nil
 }
 
-// A request to get a VMs block.
-type GetVMsRequest struct {
-	// The id of the VMs block to get.
+// A request to get a config.
+type GetRequest struct {
+	// The id of the config to get.
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetVMsRequest) Reset()         { *m = GetVMsRequest{} }
-func (m *GetVMsRequest) String() string { return proto.CompactTextString(m) }
-func (*GetVMsRequest) ProtoMessage()    {}
-func (*GetVMsRequest) Descriptor() ([]byte, []int) {
+func (m *GetRequest) Reset()         { *m = GetRequest{} }
+func (m *GetRequest) String() string { return proto.CompactTextString(m) }
+func (*GetRequest) ProtoMessage()    {}
+func (*GetRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4344ecc87758d8d4, []int{2}
 }
 
-func (m *GetVMsRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetVMsRequest.Unmarshal(m, b)
+func (m *GetRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetRequest.Unmarshal(m, b)
 }
-func (m *GetVMsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetVMsRequest.Marshal(b, m, deterministic)
+func (m *GetRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetRequest.Marshal(b, m, deterministic)
 }
-func (m *GetVMsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetVMsRequest.Merge(m, src)
+func (m *GetRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRequest.Merge(m, src)
 }
-func (m *GetVMsRequest) XXX_Size() int {
-	return xxx_messageInfo_GetVMsRequest.Size(m)
+func (m *GetRequest) XXX_Size() int {
+	return xxx_messageInfo_GetRequest.Size(m)
 }
-func (m *GetVMsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetVMsRequest.DiscardUnknown(m)
+func (m *GetRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetVMsRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetRequest proto.InternalMessageInfo
 
-func (m *GetVMsRequest) GetId() string {
+func (m *GetRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
@@ -159,9 +159,9 @@ func (m *GetVMsRequest) GetId() string {
 }
 
 func init() {
-	proto.RegisterType((*DeleteVMsRequest)(nil), "config.DeleteVMsRequest")
-	proto.RegisterType((*EnsureVMsRequest)(nil), "config.EnsureVMsRequest")
-	proto.RegisterType((*GetVMsRequest)(nil), "config.GetVMsRequest")
+	proto.RegisterType((*DeleteRequest)(nil), "config.DeleteRequest")
+	proto.RegisterType((*EnsureRequest)(nil), "config.EnsureRequest")
+	proto.RegisterType((*GetRequest)(nil), "config.GetRequest")
 }
 
 func init() {
@@ -169,24 +169,23 @@ func init() {
 }
 
 var fileDescriptor_4344ecc87758d8d4 = []byte{
-	// 257 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0x4d, 0x4b, 0xc3, 0x40,
-	0x10, 0x86, 0x49, 0x84, 0x40, 0x46, 0x2a, 0x65, 0x41, 0x09, 0xf1, 0xd0, 0x92, 0x53, 0x4f, 0xbb,
-	0xd8, 0xf6, 0xea, 0xc5, 0x5a, 0x3c, 0x79, 0xc9, 0xc1, 0xbb, 0xdd, 0x4e, 0xd7, 0xc5, 0xa4, 0x13,
-	0xf7, 0x23, 0xe0, 0x8f, 0xf2, 0x3f, 0x4a, 0xb3, 0xa6, 0xd2, 0x80, 0xd2, 0x5b, 0xc8, 0xfb, 0x31,
-	0xcf, 0xbe, 0xb0, 0x54, 0xc4, 0xe5, 0x9b, 0xa1, 0x5a, 0xfb, 0x9a, 0x93, 0x51, 0xa2, 0xf2, 0x52,
-	0x0b, 0x25, 0x51, 0xbc, 0x36, 0x5a, 0x48, 0xda, 0xef, 0xb4, 0x12, 0xed, 0x9d, 0xb0, 0x68, 0x5a,
-	0x2d, 0x91, 0x37, 0x86, 0x1c, 0xb1, 0x24, 0x08, 0xf9, 0xad, 0x22, 0x52, 0x15, 0x8a, 0xee, 0xef,
-	0xc6, 0xef, 0x04, 0xd6, 0x8d, 0xfb, 0x0c, 0xa6, 0x7c, 0x71, 0x66, 0x75, 0xf8, 0x0a, 0xa1, 0xa2,
-	0x80, 0xf1, 0x23, 0x56, 0xe8, 0xf0, 0xe5, 0xd9, 0x96, 0xf8, 0xe1, 0xd1, 0x3a, 0x76, 0x05, 0xb1,
-	0xde, 0x66, 0xd1, 0x34, 0x9a, 0xa5, 0x65, 0xac, 0xb7, 0xc5, 0x0a, 0xc6, 0xeb, 0xbd, 0xf5, 0xe6,
-	0x1f, 0x0f, 0x9b, 0xc0, 0x45, 0x5b, 0xdb, 0x2c, 0x9e, 0x46, 0xb3, 0xcb, 0xf9, 0x88, 0xff, 0xdc,
-	0x78, 0xa8, 0x48, 0xbe, 0x97, 0x07, 0xa5, 0x98, 0xc0, 0xe8, 0x09, 0xdd, 0xdf, 0x0d, 0xf3, 0xaf,
-	0x08, 0x92, 0x55, 0x17, 0x63, 0xf7, 0x90, 0x1e, 0xa1, 0x58, 0xd6, 0x97, 0x0d, 0x39, 0xf3, 0x1b,
-	0x1e, 0xe6, 0xe0, 0xfd, 0x1c, 0x7c, 0x7d, 0x98, 0x83, 0x2d, 0x21, 0x3d, 0xf2, 0xfe, 0xc6, 0x87,
-	0x4f, 0xc8, 0x4f, 0x29, 0x19, 0x87, 0x24, 0x00, 0xb2, 0xeb, 0x5e, 0x38, 0x01, 0x1e, 0xf8, 0x37,
-	0x49, 0x77, 0x75, 0xf1, 0x1d, 0x00, 0x00, 0xff, 0xff, 0x5d, 0x2c, 0x1e, 0x47, 0xd2, 0x01, 0x00,
-	0x00,
+	// 255 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0xc1, 0x4a, 0xc3, 0x40,
+	0x10, 0x86, 0x49, 0x84, 0x80, 0x23, 0xe9, 0x61, 0x41, 0x29, 0x51, 0xb0, 0xe4, 0x20, 0xf5, 0xb2,
+	0x83, 0xad, 0xe0, 0x03, 0x68, 0xc9, 0x3d, 0x6f, 0xd0, 0x6e, 0xa7, 0xeb, 0x42, 0x92, 0x89, 0x9b,
+	0xdd, 0x82, 0xef, 0xe3, 0x83, 0x8a, 0xd9, 0x84, 0xd2, 0x42, 0xc0, 0x53, 0xc2, 0xcc, 0xff, 0xff,
+	0xf3, 0xed, 0x0f, 0xaf, 0x9a, 0xa5, 0xfa, 0xb4, 0x5c, 0x1b, 0x5f, 0x4b, 0xb6, 0x1a, 0x2b, 0xaf,
+	0x0c, 0x6a, 0x45, 0xb8, 0x6d, 0x0d, 0x2a, 0x6e, 0x0e, 0x46, 0xe3, 0xf1, 0x05, 0x3b, 0xb2, 0x47,
+	0xa3, 0x48, 0xb6, 0x96, 0x1d, 0x8b, 0x24, 0x2c, 0xb2, 0x7b, 0xcd, 0xac, 0x2b, 0xc2, 0x7e, 0xba,
+	0xf3, 0x07, 0xa4, 0xba, 0x75, 0xdf, 0x41, 0x94, 0xad, 0xff, 0x19, 0x1d, 0xfe, 0x82, 0x29, 0x7f,
+	0x84, 0xf4, 0x83, 0x2a, 0x72, 0x54, 0xd2, 0x97, 0xa7, 0xce, 0x89, 0x19, 0xc4, 0x66, 0x3f, 0x8f,
+	0x16, 0xd1, 0xf2, 0xba, 0x8c, 0xcd, 0x3e, 0x2f, 0x20, 0xdd, 0x34, 0x9d, 0xb7, 0x53, 0x02, 0xf1,
+	0x04, 0x03, 0xdd, 0x3c, 0x5e, 0x44, 0xcb, 0x9b, 0xd5, 0x4c, 0x0e, 0x07, 0xde, 0xfb, 0x4f, 0x39,
+	0x6c, 0xf3, 0x07, 0x80, 0x82, 0xdc, 0x44, 0xca, 0xea, 0x27, 0x82, 0x34, 0x18, 0xbc, 0xdd, 0x3a,
+	0xc3, 0x8d, 0x78, 0x83, 0x24, 0x90, 0x89, 0xdb, 0x31, 0xf1, 0x8c, 0x34, 0xbb, 0x93, 0xa1, 0x0d,
+	0x39, 0xb6, 0x21, 0x37, 0x7f, 0x6d, 0x08, 0x84, 0x24, 0x10, 0x9f, 0x8c, 0x67, 0x2f, 0xc8, 0x2e,
+	0x08, 0xc5, 0x33, 0x5c, 0x15, 0xe4, 0x84, 0x18, 0xc7, 0x27, 0xcc, 0x4b, 0xe9, 0x2e, 0xe9, 0x6f,
+	0xad, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x91, 0x3b, 0x96, 0xb6, 0xc7, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -197,176 +196,176 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// ConfigClient is the client API for Config service.
+// ConfigurationClient is the client API for Configuration service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type ConfigClient interface {
-	// DeleteVMs deletes an existing VMs block.
+type ConfigurationClient interface {
+	// Delete deletes an existing config.
 	// Internal API.
-	DeleteVMs(ctx context.Context, in *DeleteVMsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	// EnsureVMs ensures a VMs block exists.
-	// Creates a new VMs block or updates an existing one as necessary.
+	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Ensure ensures a config exists.
+	// Creates a new config or updates an existing one as necessary.
 	// Internal API.
-	EnsureVMs(ctx context.Context, in *EnsureVMsRequest, opts ...grpc.CallOption) (*Block, error)
-	// GetVMs returns a configured VMs block.
-	GetVMs(ctx context.Context, in *GetVMsRequest, opts ...grpc.CallOption) (*Block, error)
+	Ensure(ctx context.Context, in *EnsureRequest, opts ...grpc.CallOption) (*Config, error)
+	// Get returns an existing config.
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*Config, error)
 }
-type configPRPCClient struct {
+type configurationPRPCClient struct {
 	client *prpc.Client
 }
 
-func NewConfigPRPCClient(client *prpc.Client) ConfigClient {
-	return &configPRPCClient{client}
+func NewConfigurationPRPCClient(client *prpc.Client) ConfigurationClient {
+	return &configurationPRPCClient{client}
 }
 
-func (c *configPRPCClient) DeleteVMs(ctx context.Context, in *DeleteVMsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *configurationPRPCClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.client.Call(ctx, "config.Config", "DeleteVMs", in, out, opts...)
+	err := c.client.Call(ctx, "config.Configuration", "Delete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configPRPCClient) EnsureVMs(ctx context.Context, in *EnsureVMsRequest, opts ...grpc.CallOption) (*Block, error) {
-	out := new(Block)
-	err := c.client.Call(ctx, "config.Config", "EnsureVMs", in, out, opts...)
+func (c *configurationPRPCClient) Ensure(ctx context.Context, in *EnsureRequest, opts ...grpc.CallOption) (*Config, error) {
+	out := new(Config)
+	err := c.client.Call(ctx, "config.Configuration", "Ensure", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configPRPCClient) GetVMs(ctx context.Context, in *GetVMsRequest, opts ...grpc.CallOption) (*Block, error) {
-	out := new(Block)
-	err := c.client.Call(ctx, "config.Config", "GetVMs", in, out, opts...)
+func (c *configurationPRPCClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*Config, error) {
+	out := new(Config)
+	err := c.client.Call(ctx, "config.Configuration", "Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-type configClient struct {
+type configurationClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewConfigClient(cc *grpc.ClientConn) ConfigClient {
-	return &configClient{cc}
+func NewConfigurationClient(cc *grpc.ClientConn) ConfigurationClient {
+	return &configurationClient{cc}
 }
 
-func (c *configClient) DeleteVMs(ctx context.Context, in *DeleteVMsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *configurationClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/config.Config/DeleteVMs", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/config.Configuration/Delete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configClient) EnsureVMs(ctx context.Context, in *EnsureVMsRequest, opts ...grpc.CallOption) (*Block, error) {
-	out := new(Block)
-	err := c.cc.Invoke(ctx, "/config.Config/EnsureVMs", in, out, opts...)
+func (c *configurationClient) Ensure(ctx context.Context, in *EnsureRequest, opts ...grpc.CallOption) (*Config, error) {
+	out := new(Config)
+	err := c.cc.Invoke(ctx, "/config.Configuration/Ensure", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configClient) GetVMs(ctx context.Context, in *GetVMsRequest, opts ...grpc.CallOption) (*Block, error) {
-	out := new(Block)
-	err := c.cc.Invoke(ctx, "/config.Config/GetVMs", in, out, opts...)
+func (c *configurationClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*Config, error) {
+	out := new(Config)
+	err := c.cc.Invoke(ctx, "/config.Configuration/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ConfigServer is the server API for Config service.
-type ConfigServer interface {
-	// DeleteVMs deletes an existing VMs block.
+// ConfigurationServer is the server API for Configuration service.
+type ConfigurationServer interface {
+	// Delete deletes an existing config.
 	// Internal API.
-	DeleteVMs(context.Context, *DeleteVMsRequest) (*empty.Empty, error)
-	// EnsureVMs ensures a VMs block exists.
-	// Creates a new VMs block or updates an existing one as necessary.
+	Delete(context.Context, *DeleteRequest) (*empty.Empty, error)
+	// Ensure ensures a config exists.
+	// Creates a new config or updates an existing one as necessary.
 	// Internal API.
-	EnsureVMs(context.Context, *EnsureVMsRequest) (*Block, error)
-	// GetVMs returns a configured VMs block.
-	GetVMs(context.Context, *GetVMsRequest) (*Block, error)
+	Ensure(context.Context, *EnsureRequest) (*Config, error)
+	// Get returns an existing config.
+	Get(context.Context, *GetRequest) (*Config, error)
 }
 
-func RegisterConfigServer(s prpc.Registrar, srv ConfigServer) {
-	s.RegisterService(&_Config_serviceDesc, srv)
+func RegisterConfigurationServer(s prpc.Registrar, srv ConfigurationServer) {
+	s.RegisterService(&_Configuration_serviceDesc, srv)
 }
 
-func _Config_DeleteVMs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteVMsRequest)
+func _Configuration_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfigServer).DeleteVMs(ctx, in)
+		return srv.(ConfigurationServer).Delete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/config.Config/DeleteVMs",
+		FullMethod: "/config.Configuration/Delete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfigServer).DeleteVMs(ctx, req.(*DeleteVMsRequest))
+		return srv.(ConfigurationServer).Delete(ctx, req.(*DeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Config_EnsureVMs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EnsureVMsRequest)
+func _Configuration_Ensure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnsureRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfigServer).EnsureVMs(ctx, in)
+		return srv.(ConfigurationServer).Ensure(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/config.Config/EnsureVMs",
+		FullMethod: "/config.Configuration/Ensure",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfigServer).EnsureVMs(ctx, req.(*EnsureVMsRequest))
+		return srv.(ConfigurationServer).Ensure(ctx, req.(*EnsureRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Config_GetVMs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVMsRequest)
+func _Configuration_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfigServer).GetVMs(ctx, in)
+		return srv.(ConfigurationServer).Get(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/config.Config/GetVMs",
+		FullMethod: "/config.Configuration/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfigServer).GetVMs(ctx, req.(*GetVMsRequest))
+		return srv.(ConfigurationServer).Get(ctx, req.(*GetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Config_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "config.Config",
-	HandlerType: (*ConfigServer)(nil),
+var _Configuration_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "config.Configuration",
+	HandlerType: (*ConfigurationServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "DeleteVMs",
-			Handler:    _Config_DeleteVMs_Handler,
+			MethodName: "Delete",
+			Handler:    _Configuration_Delete_Handler,
 		},
 		{
-			MethodName: "EnsureVMs",
-			Handler:    _Config_EnsureVMs_Handler,
+			MethodName: "Ensure",
+			Handler:    _Configuration_Ensure_Handler,
 		},
 		{
-			MethodName: "GetVMs",
-			Handler:    _Config_GetVMs_Handler,
+			MethodName: "Get",
+			Handler:    _Configuration_Get_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

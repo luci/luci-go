@@ -40,10 +40,10 @@ func TestCron(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("createInstances", func() {
+		Convey("createInstancesAsync", func() {
 			Convey("none", func() {
 				Convey("zero", func() {
-					err := createInstances(c)
+					err := createInstancesAsync(c)
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
@@ -53,7 +53,7 @@ func TestCron(t *testing.T) {
 						ID:  "id",
 						URL: "url",
 					})
-					err := createInstances(c)
+					err := createInstancesAsync(c)
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
@@ -66,54 +66,16 @@ func TestCron(t *testing.T) {
 						Zone: "zone",
 					},
 				})
-				err := createInstances(c)
+				err := createInstancesAsync(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})
 		})
 
-		Convey("processVMs", func() {
-			Convey("none", func() {
-				err := processVMs(c)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
-			})
-
-			Convey("one", func() {
-				datastore.Put(c, &model.VMs{
-					ID: "id",
-					Config: config.Block{
-						Amount: 1,
-						Attributes: &config.VM{
-							Project: "project",
-						},
-						Prefix: "prefix",
-					},
-				})
-				err := processVMs(c)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-			})
-
-			Convey("many", func() {
-				for i := 0; i < 100; i++ {
-					datastore.Put(c, &model.VMs{
-						ID: fmt.Sprintf("id-%d", i),
-						Config: config.Block{
-							Amount: 1,
-						},
-					})
-				}
-				err := processVMs(c)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
-			})
-		})
-
-		Convey("manageInstances", func() {
+		Convey("manageInstancesAsync", func() {
 			Convey("none", func() {
 				Convey("zero", func() {
-					err := manageInstances(c)
+					err := manageInstancesAsync(c)
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
@@ -122,7 +84,7 @@ func TestCron(t *testing.T) {
 					datastore.Put(c, &model.VM{
 						ID: "id",
 					})
-					err := manageInstances(c)
+					err := manageInstancesAsync(c)
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
@@ -133,9 +95,47 @@ func TestCron(t *testing.T) {
 					ID:  "id",
 					URL: "url",
 				})
-				err := manageInstances(c)
+				err := manageInstancesAsync(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+		})
+
+		Convey("processConfigsAsync", func() {
+			Convey("none", func() {
+				err := processConfigsAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("one", func() {
+				datastore.Put(c, &model.Config{
+					ID: "id",
+					Config: config.Config{
+						Amount: 1,
+						Attributes: &config.VM{
+							Project: "project",
+						},
+						Prefix: "prefix",
+					},
+				})
+				err := processConfigsAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+
+			Convey("many", func() {
+				for i := 0; i < 100; i++ {
+					datastore.Put(c, &model.Config{
+						ID: fmt.Sprintf("id-%d", i),
+						Config: config.Config{
+							Amount: 1,
+						},
+					})
+				}
+				err := processConfigsAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
 			})
 		})
 	})

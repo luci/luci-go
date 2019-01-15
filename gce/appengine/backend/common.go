@@ -46,25 +46,25 @@ func getDispatcher(c context.Context) *tq.Dispatcher {
 
 // registerTasks registers task handlers with the given *tq.Dispatcher.
 func registerTasks(dsp *tq.Dispatcher) {
-	dsp.RegisterTask(&tasks.Create{}, create, createQueue, nil)
-	dsp.RegisterTask(&tasks.Destroy{}, destroy, destroyQueue, nil)
-	dsp.RegisterTask(&tasks.Drain{}, drain, drainQueue, nil)
-	dsp.RegisterTask(&tasks.Ensure{}, ensure, ensureQueue, nil)
-	dsp.RegisterTask(&tasks.Manage{}, manage, manageQueue, nil)
-	dsp.RegisterTask(&tasks.Process{}, process, processQueue, nil)
+	dsp.RegisterTask(&tasks.CreateInstance{}, createInstance, createInstanceQueue, nil)
+	dsp.RegisterTask(&tasks.DestroyInstance{}, destroyInstance, destroyInstanceQueue, nil)
+	dsp.RegisterTask(&tasks.DrainVM{}, drainVM, drainVMQueue, nil)
+	dsp.RegisterTask(&tasks.EnsureVM{}, ensureVM, ensureVMQueue, nil)
+	dsp.RegisterTask(&tasks.ManageInstance{}, manageInstance, manageInstanceQueue, nil)
+	dsp.RegisterTask(&tasks.ProcessConfig{}, processConfig, processConfigQueue, nil)
 }
 
-// cfgKey is the key to a config.ConfigServer in the context.
+// cfgKey is the key to a config.ConfigurationServer in the context.
 var cfgKey = "cfg"
 
-// withConfig returns a new context with the given config.ConfigServer installed.
-func withConfig(c context.Context, cfg config.ConfigServer) context.Context {
+// withConfig returns a new context with the given config.ConfigurationServer installed.
+func withConfig(c context.Context, cfg config.ConfigurationServer) context.Context {
 	return context.WithValue(c, &cfgKey, cfg)
 }
 
-// getConfig returns the config.ConfigServer installed in the current context.
-func getConfig(c context.Context) config.ConfigServer {
-	return c.Value(&cfgKey).(config.ConfigServer)
+// getConfig returns the config.ConfigurationServer installed in the current context.
+func getConfig(c context.Context) config.ConfigurationServer {
+	return c.Value(&cfgKey).(config.ConfigurationServer)
 }
 
 // gceKey is the key to a *compute.Service in the context.
@@ -124,7 +124,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	dsp := &tq.Dispatcher{}
 	registerTasks(dsp)
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
-		// Install the task queue dispatcher, VMs config service, and GCE service.
+		// Install the task queue dispatcher, configuration service, and GCE service.
 		c.Context = withDispatcher(c.Context, dsp)
 		c.Context = withConfig(c.Context, &rpc.Config{})
 		c.Context = withCompute(c.Context, newCompute(c.Context))
@@ -132,7 +132,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		next(c)
 	})
 	dsp.InstallRoutes(r, mw)
-	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstances))
-	r.GET("/internal/cron/manage-instances", mw, newHTTPHandler(manageInstances))
-	r.GET("/internal/cron/process-vms", mw, newHTTPHandler(processVMs))
+	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstancesAsync))
+	r.GET("/internal/cron/manage-instances", mw, newHTTPHandler(manageInstancesAsync))
+	r.GET("/internal/cron/process-configs", mw, newHTTPHandler(processConfigsAsync))
 }

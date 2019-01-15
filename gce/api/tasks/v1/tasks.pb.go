@@ -23,7 +23,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // A task to create a GCE instance from a VM entity.
-type Create struct {
+type CreateInstance struct {
 	// The ID of the VM entity to create a GCE instance from.
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -31,32 +31,32 @@ type Create struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Create) Reset()         { *m = Create{} }
-func (m *Create) String() string { return proto.CompactTextString(m) }
-func (*Create) ProtoMessage()    {}
-func (*Create) Descriptor() ([]byte, []int) {
+func (m *CreateInstance) Reset()         { *m = CreateInstance{} }
+func (m *CreateInstance) String() string { return proto.CompactTextString(m) }
+func (*CreateInstance) ProtoMessage()    {}
+func (*CreateInstance) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f63d8744087b0bbc, []int{0}
 }
 
-func (m *Create) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Create.Unmarshal(m, b)
+func (m *CreateInstance) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateInstance.Unmarshal(m, b)
 }
-func (m *Create) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Create.Marshal(b, m, deterministic)
+func (m *CreateInstance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateInstance.Marshal(b, m, deterministic)
 }
-func (m *Create) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Create.Merge(m, src)
+func (m *CreateInstance) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateInstance.Merge(m, src)
 }
-func (m *Create) XXX_Size() int {
-	return xxx_messageInfo_Create.Size(m)
+func (m *CreateInstance) XXX_Size() int {
+	return xxx_messageInfo_CreateInstance.Size(m)
 }
-func (m *Create) XXX_DiscardUnknown() {
-	xxx_messageInfo_Create.DiscardUnknown(m)
+func (m *CreateInstance) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateInstance.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Create proto.InternalMessageInfo
+var xxx_messageInfo_CreateInstance proto.InternalMessageInfo
 
-func (m *Create) GetId() string {
+func (m *CreateInstance) GetId() string {
 	if m != nil {
 		return m.Id
 	}
@@ -64,7 +64,7 @@ func (m *Create) GetId() string {
 }
 
 // A task to destroy a GCE instance created from a VM entity.
-type Destroy struct {
+type DestroyInstance struct {
 	// The ID of the VM entity to destroy a GCE instance for.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The URL of the GCE instance to destroy.
@@ -74,39 +74,39 @@ type Destroy struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Destroy) Reset()         { *m = Destroy{} }
-func (m *Destroy) String() string { return proto.CompactTextString(m) }
-func (*Destroy) ProtoMessage()    {}
-func (*Destroy) Descriptor() ([]byte, []int) {
+func (m *DestroyInstance) Reset()         { *m = DestroyInstance{} }
+func (m *DestroyInstance) String() string { return proto.CompactTextString(m) }
+func (*DestroyInstance) ProtoMessage()    {}
+func (*DestroyInstance) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f63d8744087b0bbc, []int{1}
 }
 
-func (m *Destroy) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Destroy.Unmarshal(m, b)
+func (m *DestroyInstance) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DestroyInstance.Unmarshal(m, b)
 }
-func (m *Destroy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Destroy.Marshal(b, m, deterministic)
+func (m *DestroyInstance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DestroyInstance.Marshal(b, m, deterministic)
 }
-func (m *Destroy) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Destroy.Merge(m, src)
+func (m *DestroyInstance) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DestroyInstance.Merge(m, src)
 }
-func (m *Destroy) XXX_Size() int {
-	return xxx_messageInfo_Destroy.Size(m)
+func (m *DestroyInstance) XXX_Size() int {
+	return xxx_messageInfo_DestroyInstance.Size(m)
 }
-func (m *Destroy) XXX_DiscardUnknown() {
-	xxx_messageInfo_Destroy.DiscardUnknown(m)
+func (m *DestroyInstance) XXX_DiscardUnknown() {
+	xxx_messageInfo_DestroyInstance.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Destroy proto.InternalMessageInfo
+var xxx_messageInfo_DestroyInstance proto.InternalMessageInfo
 
-func (m *Destroy) GetId() string {
+func (m *DestroyInstance) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *Destroy) GetUrl() string {
+func (m *DestroyInstance) GetUrl() string {
 	if m != nil {
 		return m.Url
 	}
@@ -114,7 +114,7 @@ func (m *Destroy) GetUrl() string {
 }
 
 // A task to drain a particular VM entity.
-type Drain struct {
+type DrainVM struct {
 	// The ID of the VM entity to drain.
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -122,32 +122,32 @@ type Drain struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Drain) Reset()         { *m = Drain{} }
-func (m *Drain) String() string { return proto.CompactTextString(m) }
-func (*Drain) ProtoMessage()    {}
-func (*Drain) Descriptor() ([]byte, []int) {
+func (m *DrainVM) Reset()         { *m = DrainVM{} }
+func (m *DrainVM) String() string { return proto.CompactTextString(m) }
+func (*DrainVM) ProtoMessage()    {}
+func (*DrainVM) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f63d8744087b0bbc, []int{2}
 }
 
-func (m *Drain) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Drain.Unmarshal(m, b)
+func (m *DrainVM) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DrainVM.Unmarshal(m, b)
 }
-func (m *Drain) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Drain.Marshal(b, m, deterministic)
+func (m *DrainVM) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DrainVM.Marshal(b, m, deterministic)
 }
-func (m *Drain) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Drain.Merge(m, src)
+func (m *DrainVM) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DrainVM.Merge(m, src)
 }
-func (m *Drain) XXX_Size() int {
-	return xxx_messageInfo_Drain.Size(m)
+func (m *DrainVM) XXX_Size() int {
+	return xxx_messageInfo_DrainVM.Size(m)
 }
-func (m *Drain) XXX_DiscardUnknown() {
-	xxx_messageInfo_Drain.DiscardUnknown(m)
+func (m *DrainVM) XXX_DiscardUnknown() {
+	xxx_messageInfo_DrainVM.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Drain proto.InternalMessageInfo
+var xxx_messageInfo_DrainVM proto.InternalMessageInfo
 
-func (m *Drain) GetId() string {
+func (m *DrainVM) GetId() string {
 	if m != nil {
 		return m.Id
 	}
@@ -155,93 +155,93 @@ func (m *Drain) GetId() string {
 }
 
 // A task to create or update a particular VM entity.
-type Ensure struct {
+type EnsureVM struct {
 	// The index of the VM entity to create or update.
 	Index int32 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
 	// The attributes of the VM.
 	Attributes *v1.VM `protobuf:"bytes,2,opt,name=attributes,proto3" json:"attributes,omitempty"`
+	// The ID of the config this VM entity belongs to.
+	Config string `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
 	// The lifetime of the VM in seconds.
-	Lifetime int64 `protobuf:"varint,3,opt,name=lifetime,proto3" json:"lifetime,omitempty"`
+	Lifetime int64 `protobuf:"varint,4,opt,name=lifetime,proto3" json:"lifetime,omitempty"`
 	// The prefix to use when naming this VM.
-	Prefix string `protobuf:"bytes,4,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	Prefix string `protobuf:"bytes,5,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	// The hostname of the Swarming server this VM connects to.
-	Swarming string `protobuf:"bytes,5,opt,name=swarming,proto3" json:"swarming,omitempty"`
-	// The ID of the VMs block this VM entity belongs to.
-	Vms                  string   `protobuf:"bytes,6,opt,name=vms,proto3" json:"vms,omitempty"`
+	Swarming             string   `protobuf:"bytes,6,opt,name=swarming,proto3" json:"swarming,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Ensure) Reset()         { *m = Ensure{} }
-func (m *Ensure) String() string { return proto.CompactTextString(m) }
-func (*Ensure) ProtoMessage()    {}
-func (*Ensure) Descriptor() ([]byte, []int) {
+func (m *EnsureVM) Reset()         { *m = EnsureVM{} }
+func (m *EnsureVM) String() string { return proto.CompactTextString(m) }
+func (*EnsureVM) ProtoMessage()    {}
+func (*EnsureVM) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f63d8744087b0bbc, []int{3}
 }
 
-func (m *Ensure) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Ensure.Unmarshal(m, b)
+func (m *EnsureVM) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EnsureVM.Unmarshal(m, b)
 }
-func (m *Ensure) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Ensure.Marshal(b, m, deterministic)
+func (m *EnsureVM) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EnsureVM.Marshal(b, m, deterministic)
 }
-func (m *Ensure) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Ensure.Merge(m, src)
+func (m *EnsureVM) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureVM.Merge(m, src)
 }
-func (m *Ensure) XXX_Size() int {
-	return xxx_messageInfo_Ensure.Size(m)
+func (m *EnsureVM) XXX_Size() int {
+	return xxx_messageInfo_EnsureVM.Size(m)
 }
-func (m *Ensure) XXX_DiscardUnknown() {
-	xxx_messageInfo_Ensure.DiscardUnknown(m)
+func (m *EnsureVM) XXX_DiscardUnknown() {
+	xxx_messageInfo_EnsureVM.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Ensure proto.InternalMessageInfo
+var xxx_messageInfo_EnsureVM proto.InternalMessageInfo
 
-func (m *Ensure) GetIndex() int32 {
+func (m *EnsureVM) GetIndex() int32 {
 	if m != nil {
 		return m.Index
 	}
 	return 0
 }
 
-func (m *Ensure) GetAttributes() *v1.VM {
+func (m *EnsureVM) GetAttributes() *v1.VM {
 	if m != nil {
 		return m.Attributes
 	}
 	return nil
 }
 
-func (m *Ensure) GetLifetime() int64 {
+func (m *EnsureVM) GetConfig() string {
+	if m != nil {
+		return m.Config
+	}
+	return ""
+}
+
+func (m *EnsureVM) GetLifetime() int64 {
 	if m != nil {
 		return m.Lifetime
 	}
 	return 0
 }
 
-func (m *Ensure) GetPrefix() string {
+func (m *EnsureVM) GetPrefix() string {
 	if m != nil {
 		return m.Prefix
 	}
 	return ""
 }
 
-func (m *Ensure) GetSwarming() string {
+func (m *EnsureVM) GetSwarming() string {
 	if m != nil {
 		return m.Swarming
 	}
 	return ""
 }
 
-func (m *Ensure) GetVms() string {
-	if m != nil {
-		return m.Vms
-	}
-	return ""
-}
-
 // A task to manage a GCE instance created from a VM entity.
-type Manage struct {
+type ManageInstance struct {
 	// The ID of the VM entity to manage a GCE instance for.
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -249,73 +249,73 @@ type Manage struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Manage) Reset()         { *m = Manage{} }
-func (m *Manage) String() string { return proto.CompactTextString(m) }
-func (*Manage) ProtoMessage()    {}
-func (*Manage) Descriptor() ([]byte, []int) {
+func (m *ManageInstance) Reset()         { *m = ManageInstance{} }
+func (m *ManageInstance) String() string { return proto.CompactTextString(m) }
+func (*ManageInstance) ProtoMessage()    {}
+func (*ManageInstance) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f63d8744087b0bbc, []int{4}
 }
 
-func (m *Manage) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Manage.Unmarshal(m, b)
+func (m *ManageInstance) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ManageInstance.Unmarshal(m, b)
 }
-func (m *Manage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Manage.Marshal(b, m, deterministic)
+func (m *ManageInstance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ManageInstance.Marshal(b, m, deterministic)
 }
-func (m *Manage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Manage.Merge(m, src)
+func (m *ManageInstance) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManageInstance.Merge(m, src)
 }
-func (m *Manage) XXX_Size() int {
-	return xxx_messageInfo_Manage.Size(m)
+func (m *ManageInstance) XXX_Size() int {
+	return xxx_messageInfo_ManageInstance.Size(m)
 }
-func (m *Manage) XXX_DiscardUnknown() {
-	xxx_messageInfo_Manage.DiscardUnknown(m)
+func (m *ManageInstance) XXX_DiscardUnknown() {
+	xxx_messageInfo_ManageInstance.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Manage proto.InternalMessageInfo
+var xxx_messageInfo_ManageInstance proto.InternalMessageInfo
 
-func (m *Manage) GetId() string {
+func (m *ManageInstance) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-// A task to process a VMs config.
-type Process struct {
-	// The ID of the VMs block to process.
+// A task to process a config.
+type ProcessConfig struct {
+	// The ID of the config to process.
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Process) Reset()         { *m = Process{} }
-func (m *Process) String() string { return proto.CompactTextString(m) }
-func (*Process) ProtoMessage()    {}
-func (*Process) Descriptor() ([]byte, []int) {
+func (m *ProcessConfig) Reset()         { *m = ProcessConfig{} }
+func (m *ProcessConfig) String() string { return proto.CompactTextString(m) }
+func (*ProcessConfig) ProtoMessage()    {}
+func (*ProcessConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f63d8744087b0bbc, []int{5}
 }
 
-func (m *Process) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Process.Unmarshal(m, b)
+func (m *ProcessConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProcessConfig.Unmarshal(m, b)
 }
-func (m *Process) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Process.Marshal(b, m, deterministic)
+func (m *ProcessConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProcessConfig.Marshal(b, m, deterministic)
 }
-func (m *Process) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Process.Merge(m, src)
+func (m *ProcessConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProcessConfig.Merge(m, src)
 }
-func (m *Process) XXX_Size() int {
-	return xxx_messageInfo_Process.Size(m)
+func (m *ProcessConfig) XXX_Size() int {
+	return xxx_messageInfo_ProcessConfig.Size(m)
 }
-func (m *Process) XXX_DiscardUnknown() {
-	xxx_messageInfo_Process.DiscardUnknown(m)
+func (m *ProcessConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProcessConfig.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Process proto.InternalMessageInfo
+var xxx_messageInfo_ProcessConfig proto.InternalMessageInfo
 
-func (m *Process) GetId() string {
+func (m *ProcessConfig) GetId() string {
 	if m != nil {
 		return m.Id
 	}
@@ -323,12 +323,12 @@ func (m *Process) GetId() string {
 }
 
 func init() {
-	proto.RegisterType((*Create)(nil), "tasks.Create")
-	proto.RegisterType((*Destroy)(nil), "tasks.Destroy")
-	proto.RegisterType((*Drain)(nil), "tasks.Drain")
-	proto.RegisterType((*Ensure)(nil), "tasks.Ensure")
-	proto.RegisterType((*Manage)(nil), "tasks.Manage")
-	proto.RegisterType((*Process)(nil), "tasks.Process")
+	proto.RegisterType((*CreateInstance)(nil), "tasks.CreateInstance")
+	proto.RegisterType((*DestroyInstance)(nil), "tasks.DestroyInstance")
+	proto.RegisterType((*DrainVM)(nil), "tasks.DrainVM")
+	proto.RegisterType((*EnsureVM)(nil), "tasks.EnsureVM")
+	proto.RegisterType((*ManageInstance)(nil), "tasks.ManageInstance")
+	proto.RegisterType((*ProcessConfig)(nil), "tasks.ProcessConfig")
 }
 
 func init() {
@@ -336,23 +336,24 @@ func init() {
 }
 
 var fileDescriptor_f63d8744087b0bbc = []byte{
-	// 280 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x90, 0x51, 0x4b, 0xfb, 0x30,
-	0x14, 0xc5, 0xe9, 0xf6, 0x6f, 0xf7, 0xf7, 0x0a, 0x22, 0x41, 0x34, 0xee, 0x69, 0xf4, 0x69, 0x28,
-	0xb4, 0xcc, 0x7d, 0x04, 0xe7, 0xe3, 0x40, 0xfa, 0xe0, 0x7b, 0xd6, 0xa6, 0xf1, 0x62, 0x93, 0x94,
-	0x9b, 0xb4, 0xce, 0xef, 0xe4, 0x87, 0x94, 0xa6, 0x63, 0xc8, 0x06, 0xbe, 0x9d, 0x93, 0x1f, 0xe7,
-	0xe6, 0xde, 0x03, 0x2b, 0x65, 0xb3, 0xf2, 0x9d, 0xac, 0xc6, 0x4e, 0x67, 0x96, 0x54, 0xde, 0x74,
-	0x25, 0xe6, 0xaa, 0x94, 0xb9, 0x68, 0x31, 0xf7, 0xc2, 0x7d, 0xb8, 0xbc, 0x5f, 0x8d, 0x22, 0x6b,
-	0xc9, 0x7a, 0xcb, 0xe2, 0x60, 0xe6, 0xeb, 0x3f, 0x93, 0xa5, 0x35, 0x35, 0xaa, 0x21, 0x3a, 0xaa,
-	0x31, 0x9b, 0x72, 0x48, 0x9e, 0x49, 0x0a, 0x2f, 0xd9, 0x15, 0x4c, 0xb0, 0xe2, 0xd1, 0x22, 0x5a,
-	0x5e, 0x14, 0x13, 0xac, 0xd2, 0x47, 0x98, 0x6d, 0xa4, 0xf3, 0x64, 0xbf, 0x4e, 0x11, 0xbb, 0x86,
-	0x69, 0x47, 0x0d, 0x9f, 0x84, 0x87, 0x41, 0xa6, 0x77, 0x10, 0x6f, 0x48, 0xa0, 0x39, 0x9b, 0xf2,
-	0x1d, 0x41, 0xf2, 0x62, 0x5c, 0x47, 0x92, 0xdd, 0x40, 0x8c, 0xa6, 0x92, 0xfb, 0x40, 0xe3, 0x62,
-	0x34, 0xec, 0x01, 0x40, 0x78, 0x4f, 0xb8, 0xeb, 0xbc, 0x74, 0x61, 0xe4, 0xe5, 0x13, 0x64, 0x87,
-	0x1d, 0xdf, 0xb6, 0xc5, 0x2f, 0xca, 0xe6, 0xf0, 0xbf, 0xc1, 0x5a, 0x7a, 0xd4, 0x92, 0x4f, 0x17,
-	0xd1, 0x72, 0x5a, 0x1c, 0x3d, 0xbb, 0x85, 0xa4, 0x25, 0x59, 0xe3, 0x9e, 0xff, 0x0b, 0x9f, 0x1f,
-	0xdc, 0x90, 0x71, 0x9f, 0x82, 0x34, 0x1a, 0xc5, 0xe3, 0x40, 0x8e, 0x7e, 0xb8, 0xa3, 0xd7, 0x8e,
-	0x27, 0xe3, 0x1d, 0xbd, 0x76, 0x43, 0x1d, 0x5b, 0x61, 0x84, 0x3a, 0xaf, 0xe3, 0x1e, 0x66, 0xaf,
-	0x64, 0x4b, 0xe9, 0xdc, 0x29, 0xda, 0x25, 0xa1, 0xca, 0xf5, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff,
-	0xb5, 0xaa, 0x85, 0xb7, 0xbb, 0x01, 0x00, 0x00,
+	// 292 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x90, 0xc1, 0x4e, 0x32, 0x31,
+	0x10, 0xc7, 0xb3, 0xf0, 0x2d, 0x1f, 0x8e, 0x11, 0x4d, 0x63, 0xcc, 0xca, 0x45, 0xc2, 0x89, 0x78,
+	0xd8, 0x0d, 0xf2, 0x08, 0xe0, 0xc1, 0xc3, 0x26, 0x66, 0x0f, 0xdc, 0x4b, 0x19, 0xea, 0x44, 0xb6,
+	0x25, 0xd3, 0xae, 0xe2, 0x7b, 0xf9, 0x80, 0x66, 0x5b, 0x42, 0x8c, 0x06, 0x6f, 0xf3, 0xeb, 0x7f,
+	0x7e, 0xd3, 0xc9, 0xc0, 0x54, 0xdb, 0x5c, 0xbd, 0xb0, 0xad, 0xa9, 0xa9, 0x73, 0xcb, 0xba, 0xd8,
+	0x36, 0x8a, 0x0a, 0xad, 0xb0, 0x90, 0x3b, 0x2a, 0xbc, 0x74, 0xaf, 0xae, 0x78, 0x9b, 0xc6, 0x22,
+	0xdf, 0xb1, 0xf5, 0x56, 0xa4, 0x01, 0x86, 0xb3, 0x3f, 0x4d, 0x65, 0xcd, 0x86, 0x74, 0xab, 0xc6,
+	0x2a, 0xba, 0xe3, 0x11, 0x0c, 0xe6, 0x8c, 0xd2, 0xe3, 0x93, 0x71, 0x5e, 0x1a, 0x85, 0x62, 0x00,
+	0x1d, 0x5a, 0x67, 0xc9, 0x28, 0x99, 0x9c, 0x55, 0x1d, 0x5a, 0x8f, 0x67, 0x70, 0xb9, 0x40, 0xe7,
+	0xd9, 0x7e, 0x9c, 0x6a, 0x11, 0x57, 0xd0, 0x6d, 0x78, 0x9b, 0x75, 0xc2, 0x43, 0x5b, 0x8e, 0x6f,
+	0xe1, 0xff, 0x82, 0x25, 0x99, 0x65, 0xf9, 0x6b, 0xde, 0x67, 0x02, 0xfd, 0x47, 0xe3, 0x1a, 0xc6,
+	0x65, 0x29, 0xae, 0x21, 0x25, 0xb3, 0xc6, 0x7d, 0xc8, 0xd3, 0x2a, 0x82, 0xb8, 0x07, 0x90, 0xde,
+	0x33, 0xad, 0x1a, 0x8f, 0x2e, 0x8c, 0x3d, 0x7f, 0x80, 0xfc, 0xb0, 0xf7, 0xb2, 0xac, 0xbe, 0xa5,
+	0xe2, 0x06, 0x7a, 0x31, 0xc8, 0xba, 0xe1, 0x8b, 0x03, 0x89, 0x21, 0xf4, 0xb7, 0xb4, 0x41, 0x4f,
+	0x35, 0x66, 0xff, 0x46, 0xc9, 0xa4, 0x5b, 0x1d, 0xb9, 0x75, 0x76, 0x8c, 0x1b, 0xda, 0x67, 0x69,
+	0x74, 0x22, 0xb5, 0x8e, 0x7b, 0x97, 0x5c, 0x93, 0xd1, 0x59, 0x2f, 0x24, 0x47, 0x6e, 0x0f, 0x55,
+	0x4a, 0x23, 0xf5, 0xe9, 0x43, 0xdd, 0xc1, 0xc5, 0x33, 0x5b, 0x85, 0xce, 0xcd, 0xe3, 0x0a, 0x3f,
+	0x1a, 0x56, 0xbd, 0x70, 0xf2, 0xd9, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0xfa, 0x75, 0xc5, 0xf3,
+	0xe3, 0x01, 0x00, 0x00,
 }

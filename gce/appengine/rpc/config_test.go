@@ -29,31 +29,31 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateBlock(t *testing.T) {
+func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeleteVMs", t, func() {
+	Convey("Delete", t, func() {
 		c := memory.Use(context.Background())
 		srv := &Config{}
 
 		Convey("invalid", func() {
 			Convey("nil", func() {
-				v, err := srv.DeleteVMs(c, nil)
+				cfg, err := srv.Delete(c, nil)
 				So(err, ShouldErrLike, "ID is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("empty", func() {
-				v, err := srv.DeleteVMs(c, &config.DeleteVMsRequest{})
+				cfg, err := srv.Delete(c, &config.DeleteRequest{})
 				So(err, ShouldErrLike, "ID is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 		})
 
 		Convey("valid", func() {
-			datastore.Put(c, &model.VMs{
+			datastore.Put(c, &model.Config{
 				ID: "id",
-				Config: config.Block{
+				Config: config.Config{
 					Amount: 1,
 					Attributes: &config.VM{
 						Project: "project",
@@ -61,64 +61,56 @@ func TestValidateBlock(t *testing.T) {
 					Prefix: "prefix",
 				},
 			})
-			v, err := srv.DeleteVMs(c, &config.DeleteVMsRequest{
+			cfg, err := srv.Delete(c, &config.DeleteRequest{
 				Id: "id",
 			})
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, &empty.Empty{})
-			err = datastore.Get(c, &model.VMs{
+			So(cfg, ShouldResemble, &empty.Empty{})
+			err = datastore.Get(c, &model.Config{
 				ID: "id",
 			})
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 	})
 
-	Convey("EnsureVMs", t, func() {
+	Convey("Ensure", t, func() {
 		c := memory.Use(context.Background())
 		srv := &Config{}
 
 		Convey("invalid", func() {
 			Convey("nil", func() {
-				v, err := srv.EnsureVMs(c, nil)
+				cfg, err := srv.Ensure(c, nil)
 				So(err, ShouldErrLike, "ID is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("empty", func() {
-				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{})
+				cfg, err := srv.Ensure(c, &config.EnsureRequest{})
 				So(err, ShouldErrLike, "ID is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("ID", func() {
-				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
-					Vms: &config.Block{},
+				cfg, err := srv.Ensure(c, &config.EnsureRequest{
+					Config: &config.Config{},
 				})
 				So(err, ShouldErrLike, "ID is required")
-				So(v, ShouldBeNil)
-			})
-
-			Convey("block", func() {
-				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
-					Id: "id",
-				})
-				So(err, ShouldErrLike, "prefix is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("prefix", func() {
-				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
-					Id:  "id",
-					Vms: &config.Block{},
+				cfg, err := srv.Ensure(c, &config.EnsureRequest{
+					Id:     "id",
+					Config: &config.Config{},
 				})
 				So(err, ShouldErrLike, "prefix is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("disk", func() {
-				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+				cfg, err := srv.Ensure(c, &config.EnsureRequest{
 					Id: "id",
-					Vms: &config.Block{
+					Config: &config.Config{
 						Attributes: &config.VM{
 							MachineType: "type",
 							NetworkInterface: []*config.NetworkInterface{
@@ -127,20 +119,20 @@ func TestValidateBlock(t *testing.T) {
 							Project: "project",
 							Zone:    "zone",
 						},
-						Lifetime: &config.Block_Seconds{
+						Lifetime: &config.Config_Seconds{
 							Seconds: 3600,
 						},
 						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "disk is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("machine type", func() {
-				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+				cfg, err := srv.Ensure(c, &config.EnsureRequest{
 					Id: "id",
-					Vms: &config.Block{
+					Config: &config.Config{
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -151,21 +143,21 @@ func TestValidateBlock(t *testing.T) {
 							Project: "project",
 							Zone:    "zone",
 						},
-						Lifetime: &config.Block_Seconds{
+						Lifetime: &config.Config_Seconds{
 							Seconds: 3600,
 						},
 						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "machine type is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("metadata", func() {
 				Convey("format", func() {
-					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					cfg, err := srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
-						Vms: &config.Block{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Disk: []*config.Disk{
 									{},
@@ -180,20 +172,20 @@ func TestValidateBlock(t *testing.T) {
 								Project: "project",
 								Zone:    "zone",
 							},
-							Lifetime: &config.Block_Seconds{
+							Lifetime: &config.Config_Seconds{
 								Seconds: 3600,
 							},
 							Prefix: "prefix",
 						},
 					})
 					So(err, ShouldErrLike, "metadata from text must be in key:value form")
-					So(v, ShouldBeNil)
+					So(cfg, ShouldBeNil)
 				})
 
 				Convey("file", func() {
-					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					cfg, err := srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
-						Vms: &config.Block{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Disk: []*config.Disk{
 									{},
@@ -212,21 +204,21 @@ func TestValidateBlock(t *testing.T) {
 								Project: "project",
 								Zone:    "zone",
 							},
-							Lifetime: &config.Block_Seconds{
+							Lifetime: &config.Config_Seconds{
 								Seconds: 3600,
 							},
 							Prefix: "prefix",
 						},
 					})
 					So(err, ShouldErrLike, "metadata from text must be in key:value form")
-					So(v, ShouldBeNil)
+					So(cfg, ShouldBeNil)
 				})
 			})
 
 			Convey("network interface", func() {
-				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+				cfg, err := srv.Ensure(c, &config.EnsureRequest{
 					Id: "id",
-					Vms: &config.Block{
+					Config: &config.Config{
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -235,20 +227,20 @@ func TestValidateBlock(t *testing.T) {
 							Project:     "project",
 							Zone:        "zone",
 						},
-						Lifetime: &config.Block_Seconds{
+						Lifetime: &config.Config_Seconds{
 							Seconds: 3600,
 						},
 						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "network interface is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("project", func() {
-				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+				cfg, err := srv.Ensure(c, &config.EnsureRequest{
 					Id: "id",
-					Vms: &config.Block{
+					Config: &config.Config{
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -259,20 +251,20 @@ func TestValidateBlock(t *testing.T) {
 							},
 							Zone: "zone",
 						},
-						Lifetime: &config.Block_Seconds{
+						Lifetime: &config.Config_Seconds{
 							Seconds: 3600,
 						},
 						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "project is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("zone", func() {
-				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+				cfg, err := srv.Ensure(c, &config.EnsureRequest{
 					Id: "id",
-					Vms: &config.Block{
+					Config: &config.Config{
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -283,21 +275,21 @@ func TestValidateBlock(t *testing.T) {
 								{},
 							},
 						},
-						Lifetime: &config.Block_Seconds{
+						Lifetime: &config.Config_Seconds{
 							Seconds: 3600,
 						},
 						Prefix: "prefix",
 					},
 				})
 				So(err, ShouldErrLike, "zone is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("lifetime", func() {
 				Convey("missing", func() {
-					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					cfg, err := srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
-						Vms: &config.Block{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Disk: []*config.Disk{
 									{},
@@ -313,13 +305,13 @@ func TestValidateBlock(t *testing.T) {
 						},
 					})
 					So(err, ShouldErrLike, "lifetime seconds must be positive")
-					So(v, ShouldBeNil)
+					So(cfg, ShouldBeNil)
 				})
 
 				Convey("negative", func() {
-					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					cfg, err := srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
-						Vms: &config.Block{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Disk: []*config.Disk{
 									{},
@@ -331,20 +323,20 @@ func TestValidateBlock(t *testing.T) {
 								},
 								Zone: "zone",
 							},
-							Lifetime: &config.Block_Seconds{
+							Lifetime: &config.Config_Seconds{
 								Seconds: -3600,
 							},
 							Prefix: "prefix",
 						},
 					})
 					So(err, ShouldErrLike, "lifetime seconds must be positive")
-					So(v, ShouldBeNil)
+					So(cfg, ShouldBeNil)
 				})
 
 				Convey("duration", func() {
-					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					cfg, err := srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
-						Vms: &config.Block{
+						Config: &config.Config{
 							Attributes: &config.VM{
 								Disk: []*config.Disk{
 									{},
@@ -356,22 +348,22 @@ func TestValidateBlock(t *testing.T) {
 								},
 								Zone: "zone",
 							},
-							Lifetime: &config.Block_Duration{
+							Lifetime: &config.Config_Duration{
 								Duration: "1h",
 							},
 							Prefix: "prefix",
 						},
 					})
 					So(err, ShouldErrLike, "lifetime seconds must be positive")
-					So(v, ShouldBeNil)
+					So(cfg, ShouldBeNil)
 				})
 			})
 		})
 
 		Convey("valid", func() {
-			v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+			cfg, err := srv.Ensure(c, &config.EnsureRequest{
 				Id: "id",
-				Vms: &config.Block{
+				Config: &config.Config{
 					Attributes: &config.VM{
 						Disk: []*config.Disk{
 							{},
@@ -383,14 +375,14 @@ func TestValidateBlock(t *testing.T) {
 						Project: "project",
 						Zone:    "zone",
 					},
-					Lifetime: &config.Block_Seconds{
+					Lifetime: &config.Config_Seconds{
 						Seconds: 3600,
 					},
 					Prefix: "prefix",
 				},
 			})
 			So(err, ShouldBeNil)
-			So(v, ShouldResemble, &config.Block{
+			So(cfg, ShouldResemble, &config.Config{
 				Attributes: &config.VM{
 					Disk: []*config.Disk{
 						{},
@@ -402,7 +394,7 @@ func TestValidateBlock(t *testing.T) {
 					},
 					Zone: "zone",
 				},
-				Lifetime: &config.Block_Seconds{
+				Lifetime: &config.Config_Seconds{
 					Seconds: 3600,
 				},
 				Prefix: "prefix",
@@ -410,37 +402,37 @@ func TestValidateBlock(t *testing.T) {
 		})
 	})
 
-	Convey("GetVMs", t, func() {
+	Convey("Get", t, func() {
 		c := memory.Use(context.Background())
 		srv := &Config{}
 
 		Convey("invalid", func() {
 			Convey("nil", func() {
-				v, err := srv.GetVMs(c, nil)
+				cfg, err := srv.Get(c, nil)
 				So(err, ShouldErrLike, "ID is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("empty", func() {
-				v, err := srv.GetVMs(c, &config.GetVMsRequest{})
+				cfg, err := srv.Get(c, &config.GetRequest{})
 				So(err, ShouldErrLike, "ID is required")
-				So(v, ShouldBeNil)
+				So(cfg, ShouldBeNil)
 			})
 		})
 
 		Convey("valid", func() {
 			Convey("not found", func() {
-				v, err := srv.GetVMs(c, &config.GetVMsRequest{
+				cfg, err := srv.Get(c, &config.GetRequest{
 					Id: "id",
 				})
-				So(err, ShouldErrLike, "no VMs block found")
-				So(v, ShouldBeNil)
+				So(err, ShouldErrLike, "no config found")
+				So(cfg, ShouldBeNil)
 			})
 
 			Convey("found", func() {
-				datastore.Put(c, &model.VMs{
+				datastore.Put(c, &model.Config{
 					ID: "id",
-					Config: config.Block{
+					Config: config.Config{
 						Amount: 1,
 						Attributes: &config.VM{
 							Project: "project",
@@ -448,11 +440,11 @@ func TestValidateBlock(t *testing.T) {
 						Prefix: "prefix",
 					},
 				})
-				v, err := srv.GetVMs(c, &config.GetVMsRequest{
+				cfg, err := srv.Get(c, &config.GetRequest{
 					Id: "id",
 				})
 				So(err, ShouldBeNil)
-				So(v, ShouldResemble, &config.Block{
+				So(cfg, ShouldResemble, &config.Config{
 					Amount: 1,
 					Attributes: &config.VM{
 						Project: "project",

@@ -25,7 +25,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateBlock(t *testing.T) {
+func TestValidateConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("validate", t, func() {
@@ -33,17 +33,17 @@ func TestValidateBlock(t *testing.T) {
 		k := stringset.New(0)
 
 		Convey("empty", func() {
-			b := &Block{}
-			b.Validate(c, k)
+			cfg := &Config{}
+			cfg.Validate(c, k)
 			So(c.Finalize(), ShouldBeNil)
 		})
 
 		Convey("unknown kind", func() {
 			k.Add("known")
-			b := &Block{
+			cfg := &Config{
 				Kind: "unknown",
 			}
-			b.Validate(c, k)
+			cfg.Validate(c, k)
 			So(c.Finalize(), ShouldErrLike, "unknown kind")
 		})
 	})

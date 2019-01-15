@@ -24,21 +24,21 @@ import (
 	"go.chromium.org/luci/gce/api/config/v1"
 )
 
-// VMsKind is a VMs entity's kind in the datastore.
-const VMsKind = "VMs"
+// ConfigKind is a config entity's kind in the datastore.
+const ConfigKind = "Config"
 
-// VMs is a root entity representing a configured block of VMs.
-// VM entities should be created for each VMs entity.
-type VMs struct {
+// Config is a root entity representing a config for one type of VMs.
+// VM entities should be created for each config entity.
+type Config struct {
 	// _extra is where unknown properties are put into memory.
 	// Extra properties are not written to the datastore.
 	_extra datastore.PropertyMap `gae:"-,extra"`
 	// _kind is the entity's kind in the datastore.
-	_kind string `gae:"$kind,VMs"`
-	// ID is the unique identifier for this VMs block.
+	_kind string `gae:"$kind,Config"`
+	// ID is the unique identifier for this config.
 	ID string `gae:"$id"`
-	// Config is the config.Block representation of this entity.
-	Config config.Block `gae:"config"`
+	// Config is the config.Config representation of this entity.
+	Config config.Config `gae:"config"`
 }
 
 // VMKind is a VM entity's kind in the datastore.
@@ -56,6 +56,8 @@ type VM struct {
 	ID string `gae:"$id"`
 	// Attributes is the config.VM describing the GCE instance to create.
 	Attributes config.VM `gae:"attributes"`
+	// Config is the ID of the config this VM was created from.
+	Config string `gae:"config"`
 	// Deadline is the Unix time when the GCE instance should be deleted.
 	// This time is in UTC and in seconds.
 	Deadline int64 `gae:"deadline"`
@@ -65,7 +67,7 @@ type VM struct {
 	Drained bool `gae:"drained"`
 	// Hostname is the short hostname of the GCE instance to create.
 	Hostname string `gae:"hostname"`
-	// Index is this VM's number with respect to its VMs entity.
+	// Index is this VM's number with respect to its config.
 	Index int32 `gae:"index"`
 	// Lifetime is the number of seconds the GCE instance should live for.
 	Lifetime int64 `gae:"lifetime"`
@@ -75,8 +77,6 @@ type VM struct {
 	Swarming string `gae:"swarming"`
 	// URL is the URL of the created GCE instance.
 	URL string `gae:"url"`
-	// VMs is the ID of the VMs entity this VM was created from.
-	VMs string `gae:"vms"`
 }
 
 // getDisks returns a []*compute.AttachedDisk representation of this VM's disks.

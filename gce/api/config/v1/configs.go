@@ -21,12 +21,12 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
-// Validate validates VMs blocks given the allowable kinds blocks may reference.
-func (vms *VMs) Validate(c *validation.Context, kinds stringset.Set) {
-	prefixes := make([]string, 0, len(vms.Vms))
-	for i, block := range vms.Vms {
-		c.Enter("vms block %d", i)
-		if block.Prefix == "" {
+// Validate validates the configs given the allowable kinds a config may reference.
+func (cfgs *Configs) Validate(c *validation.Context, kinds stringset.Set) {
+	prefixes := make([]string, 0, len(cfgs.Vms))
+	for i, cfg := range cfgs.Vms {
+		c.Enter("vms config %d", i)
+		if cfg.Prefix == "" {
 			c.Errorf("prefix is required")
 		}
 		// Ensure no prefix is a prefix of any other prefix. Building a prefix tree
@@ -34,14 +34,14 @@ func (vms *VMs) Validate(c *validation.Context, kinds stringset.Set) {
 		// isn't particularly time sensitive since configs are processed asynchronously.
 		for _, p := range prefixes {
 			switch {
-			case strings.HasPrefix(p, block.Prefix):
-				c.Errorf("prefix %q is a prefix of %q", block.Prefix, p)
-			case strings.HasPrefix(block.Prefix, p):
-				c.Errorf("prefix %q is a prefix of %q", p, block.Prefix)
+			case strings.HasPrefix(p, cfg.Prefix):
+				c.Errorf("prefix %q is a prefix of %q", cfg.Prefix, p)
+			case strings.HasPrefix(cfg.Prefix, p):
+				c.Errorf("prefix %q is a prefix of %q", p, cfg.Prefix)
 			}
 		}
-		prefixes = append(prefixes, block.Prefix)
-		block.Validate(c, kinds)
+		prefixes = append(prefixes, cfg.Prefix)
+		cfg.Validate(c, kinds)
 		c.Exit()
 	}
 }

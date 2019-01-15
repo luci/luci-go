@@ -34,77 +34,80 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
-// Config implements config.ConfigServer.
+// Config implements config.ConfigurationServer.
 type Config struct {
 }
 
-// DeleteVMs handles a request to delete a VMs block.
+// Ensure Config implements config.ConfigurationServer.
+var _ config.ConfigurationServer = &Config{}
+
+// Delete handles a request to delete a config.
 // For app-internal use only.
-func (*Config) DeleteVMs(c context.Context, req *config.DeleteVMsRequest) (*empty.Empty, error) {
+func (*Config) Delete(c context.Context, req *config.DeleteRequest) (*empty.Empty, error) {
 	if req.GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
-	if err := datastore.Delete(c, &model.VMs{ID: req.Id}); err != nil {
-		return nil, errors.Annotate(err, "failed to delete VMs block").Err()
+	if err := datastore.Delete(c, &model.Config{ID: req.Id}); err != nil {
+		return nil, errors.Annotate(err, "failed to delete config").Err()
 	}
 	return &empty.Empty{}, nil
 }
 
-// EnsureVMs handles a request to create or update a VMs block.
+// Ensure handles a request to create or update a config.
 // For app-internal use only.
-func (*Config) EnsureVMs(c context.Context, req *config.EnsureVMsRequest) (*config.Block, error) {
+func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Config, error) {
 	switch {
 	case req.GetId() == "":
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
-	case req.Vms.GetPrefix() == "":
+	case req.Config.GetPrefix() == "":
 		return nil, status.Errorf(codes.InvalidArgument, "prefix is required")
-	case len(req.Vms.Attributes.GetDisk()) == 0:
+	case len(req.Config.Attributes.GetDisk()) == 0:
 		return nil, status.Errorf(codes.InvalidArgument, "at least one disk is required")
-	case req.Vms.Attributes.MachineType == "":
+	case req.Config.Attributes.MachineType == "":
 		return nil, status.Errorf(codes.InvalidArgument, "machine type is required")
-	case len(req.Vms.Attributes.GetMetadata()) > 0:
-		for _, meta := range req.Vms.Attributes.Metadata {
+	case len(req.Config.Attributes.GetMetadata()) > 0:
+		for _, meta := range req.Config.Attributes.Metadata {
 			// Ensure FromText is in the right form.
 			// Implicitly rejects FromFile, which is only supported in configs.
 			if strings.Index(meta.GetFromText(), ":") == -1 {
 				return nil, status.Errorf(codes.InvalidArgument, "metadata from text must be in key:value form")
 			}
 		}
-	case len(req.Vms.Attributes.GetNetworkInterface()) == 0:
+	case len(req.Config.Attributes.GetNetworkInterface()) == 0:
 		return nil, status.Errorf(codes.InvalidArgument, "at least one network interface is required")
-	case req.Vms.Attributes.Project == "":
+	case req.Config.Attributes.Project == "":
 		return nil, status.Errorf(codes.InvalidArgument, "project is required")
-	case req.Vms.Attributes.Zone == "":
+	case req.Config.Attributes.Zone == "":
 		return nil, status.Errorf(codes.InvalidArgument, "zone is required")
-	case req.Vms.GetSeconds() < 1:
+	case req.Config.GetSeconds() < 1:
 		// Implicitly rejects Duration, which is only supported in configs.
 		return nil, status.Errorf(codes.InvalidArgument, "lifetime seconds must be positive")
 	}
-	vms := &model.VMs{
+	cfg := &model.Config{
 		ID:     req.Id,
-		Config: *req.Vms,
+		Config: *req.Config,
 	}
-	if err := datastore.Put(c, vms); err != nil {
-		return nil, errors.Annotate(err, "failed to store VMs block").Err()
+	if err := datastore.Put(c, cfg); err != nil {
+		return nil, errors.Annotate(err, "failed to store config").Err()
 	}
-	return &vms.Config, nil
+	return &cfg.Config, nil
 }
 
-// GetVMs handles a request to get a VMs block.
-func (*Config) GetVMs(c context.Context, req *config.GetVMsRequest) (*config.Block, error) {
+// Get handles a request to get a config.
+func (*Config) Get(c context.Context, req *config.GetRequest) (*config.Config, error) {
 	if req.GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
-	vms := &model.VMs{
+	cfg := &model.Config{
 		ID: req.Id,
 	}
-	switch err := datastore.Get(c, vms); err {
+	switch err := datastore.Get(c, cfg); err {
 	case nil:
-		return &vms.Config, nil
+		return &cfg.Config, nil
 	case datastore.ErrNoSuchEntity:
-		return nil, status.Errorf(codes.NotFound, "no VMs block found with ID %q", req.Id)
+		return nil, status.Errorf(codes.NotFound, "no config found with ID %q", req.Id)
 	default:
-		return nil, errors.Annotate(err, "failed to fetch VMs block").Err()
+		return nil, errors.Annotate(err, "failed to fetch config").Err()
 	}
 }
 
@@ -126,9 +129,9 @@ func gRPCifyAndLogErr(c context.Context, methodName string, rsp proto.Message, e
 	return grpcutil.GRPCifyAndLogErr(c, err)
 }
 
-// New returns a new config RPC server.
-func New() config.ConfigServer {
-	return &config.DecoratedConfig{
+// New returns a new configuration erver.
+func New() config.ConfigurationServer {
+	return &config.DecoratedConfiguration{
 		Prelude:  authPrelude,
 		Service:  &Config{},
 		Postlude: gRPCifyAndLogErr,
