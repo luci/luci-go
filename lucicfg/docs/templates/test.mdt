@@ -1,0 +1,27 @@
+# Reference.
+
+[TOC]
+
+## Core rules
+
+{{with $core := symbol "@stdlib//builtins.star" "core"}}
+{{range $core.Symbols}}
+
+{{$fullName := printf "core.%s" .Name}}
+
+### {{$fullName}}
+
+```python
+{{invocationSnippet $fullName .}}
+```
+
+{{.Doc.Description}}
+
+Arguments:
+
+{{range .Doc.Args}}
+* **{{.Name}}**: {{.Desc}}
+{{- end}}
+
+{{end}}
+{{end}}
