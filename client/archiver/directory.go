@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/isolated"
@@ -28,10 +29,19 @@ import (
 	"go.chromium.org/luci/common/runtime/tracer"
 )
 
+// WalkItem represents a file encountered in the (symlink-following) walk of a directory.
 type walkItem struct {
+	// Absolute path to the item.
 	fullPath string
-	relPath  string
-	info     os.FileInfo
+
+	// Relativie path to the item within the directory.
+	relPath string
+
+	// FileInfo of the item.
+	info os.FileInfo
+
+	// Whether the item is symlinked and has a source within the directory.
+	inTreeSymlink bool
 }
 
 // walk() enumerates a directory tree synchronously and sends the items to
@@ -61,33 +71,63 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 	end := tracer.Span(root, "walk:"+filepath.Base(root), nil)
 	defer func() { end(tracer.Args{"root": root, "total": total}) }()
 
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		total++
+	var walkWithLinks func(string, common.FilesystemView) filepath.WalkFunc
 
-		if err != nil {
-			return fmt.Errorf("walk(%q): %v", path, err)
+	walkWithLinks = func(dir string, view common.FilesystemView) filepath.WalkFunc {
+		return func(path string, info os.FileInfo, err error) error {
+			total++
+
+			if err != nil {
+				return fmt.Errorf("walk(%q): %v", path, err)
+			}
+			relPath, err := view.RelativePath(path)
+			if err != nil {
+				return fmt.Errorf("walk(%q): %v", path, err)
+			}
+			if relPath == "" { // empty string indicates skip.
+				return common.WalkFuncSkipFile(info)
+			}
+
+			// Follow symlinks in the tree, treating links that point outside the as if they
+			// were ordinary files or directories.
+			//
+			// The rule about symlinks outside the build tree is for the benefit of use-cases
+			// in which not all objects are available in a canonical directory (e.g., when one
+			// wishes to isolate build directory artifacts along with dynamically created files).
+			mode := info.Mode()
+			if mode&os.ModeSymlink == os.ModeSymlink {
+				l, err := filepath.EvalSymlinks(path)
+				if err != nil {
+					return fmt.Errorf("EvalSymlinks(%s): %s", path, err)
+				}
+				info, err = os.Stat(l)
+				if err != nil {
+					return fmt.Errorf("Stat(%s): %s", l, err)
+				}
+				if strings.HasPrefix(l, dir) {
+					c <- &walkItem{fullPath: l[len(dir)+1:], relPath: relPath, info: info, inTreeSymlink: true}
+				} else {
+					if info.IsDir() {
+						linkedView := view.WithNewRoot(l)
+						return filepath.Walk(l, walkWithLinks(l, linkedView))
+					} else {
+						c <- &walkItem{fullPath: l, relPath: relPath, info: info}
+					}
+				}
+				return nil
+			}
+
+			if !info.IsDir() {
+				c <- &walkItem{fullPath: path, relPath: relPath, info: info}
+			}
+			return nil
 		}
+	}
 
-		relPath, err := fsView.RelativePath(path)
-		if err != nil {
-			return fmt.Errorf("walk(%q): %v", path, err)
-		}
-
-		if relPath == "" { // empty string indicates skip.
-			return common.WalkFuncSkipFile(info)
-		}
-
-		if !info.IsDir() {
-			c <- &walkItem{fullPath: path, relPath: relPath, info: info}
-		}
-		return nil
-	})
-
-	if err != nil {
+	if err := filepath.Walk(root, walkWithLinks(root, fsView)); err != nil {
 		// No point continuing if an error occurred during walk.
 		log.Fatalf("Unable to walk %q: %v", root, err)
 	}
-
 }
 
 // PushDirectory walks a directory at root and creates a .isolated file.
@@ -136,17 +176,12 @@ func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) 
 		if relDir != "" {
 			item.relPath = filepath.Join(relDir, item.relPath)
 		}
-		mode := item.info.Mode()
-		if mode&os.ModeSymlink == os.ModeSymlink {
-			l, err := os.Readlink(item.fullPath)
-			if err != nil {
-				s.SetErr(fmt.Errorf("readlink(%s): %s", item.fullPath, err))
-				continue
-			}
-			i.Files[item.relPath] = isolated.SymLink(l)
+		if item.inTreeSymlink {
+			i.Files[item.relPath] = isolated.SymLink(item.fullPath)
 		} else {
-			i.Files[item.relPath] = isolated.BasicFile("", int(mode.Perm()), item.info.Size())
-			items = append(items, a.PushFile(item.relPath, item.fullPath, -item.info.Size()))
+			perm := int(item.info.Mode().Perm())
+			i.Files[item.relPath] = isolated.BasicFile("", perm, item.info.Size())
+			items = append(items, a.PushFile(item.relPath, item.fullPath, item.info.Size()))
 		}
 	}
 	if s.Error() != nil {

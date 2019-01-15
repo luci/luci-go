@@ -75,6 +75,11 @@ func (ff FilesystemView) skipRelPath(relPath string) bool {
 	return false
 }
 
+// WithNewRoot returns a FilesystemView with an identical blacklist and new root.
+func (ff FilesystemView) WithNewRoot(root string) FilesystemView {
+	return FilesystemView{root: root, blacklist: ff.blacklist}
+}
+
 // match is equivalent to filepath.Match, but assumes that pattern is valid.
 func match(pattern, name string) bool {
 	matched, _ := filepath.Match(pattern, name)
