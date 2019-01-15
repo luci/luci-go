@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "81b354b4_cef682e5",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T23:40:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be8688b4_02e5f848",
+      "range": {
+        "startLine": 25,
+        "startChar": 17,
+        "endLine": 25,
+        "endChar": 19
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92781c8d_719f2401",
         "filename": "lucicfg/docgen/symbols/loader.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61d25a1a_d47c5e63",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T23:40:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92781c8d_719f2401",
+      "range": {
+        "startLine": 51,
+        "startChar": 25,
+        "endLine": 51,
+        "endChar": 29
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "6f4c0f84_3673c0b0",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T23:40:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "717d114a_60d1165b",
+      "range": {
+        "startLine": 106,
+        "startChar": 16,
+        "endLine": 106,
+        "endChar": 18
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7cf18ca4_a5b79f68",
         "filename": "lucicfg/docgen/symbols/loader.go",
         "patchSetId": 7
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "872ac506_0ab2d576",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T23:40:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7cf18ca4_a5b79f68",
+      "range": {
+        "startLine": 120,
+        "startChar": 3,
+        "endLine": 120,
+        "endChar": 5
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "89c11282_f916f866",
         "filename": "lucicfg/docgen/symbols/loader.go",
         "patchSetId": 7
@@ -114,6 +210,30 @@
       "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd257857_98018b67",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T23:40:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89c11282_f916f866",
+      "range": {
+        "startLine": 123,
+        "startChar": 30,
+        "endLine": 123,
+        "endChar": 40
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -154,6 +274,30 @@
       "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2beac98_e0157365",
+        "filename": "lucicfg/docgen/symbols/symbols.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T23:40:30Z",
+      "side": 1,
+      "message": "Made private all stuff that could be made private.",
+      "parentUuid": "74bc82f1_c4d5e0fe",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 89,
+        "endChar": 0
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
