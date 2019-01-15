@@ -79,14 +79,14 @@ func TestValidationLegacy(t *testing.T) {
 }
 
 const validConfigTextPB = `
-  draining_start_time: "2017-12-23T15:47:58Z"
-  cq_status_host: "example.com"
-  submit_options {
-    max_burst: 2
-  	burst_delay { seconds: 120 }
-  }
-  config_groups {
-	  gerrit {
+	draining_start_time: "2017-12-23T15:47:58Z"
+	cq_status_host: "example.com"
+	submit_options {
+		max_burst: 2
+		burst_delay { seconds: 120 }
+	}
+	config_groups {
+		gerrit {
 			url: "https://chromium-review.googlesource.com"
 			projects {
 				name: "chromium/src"
@@ -97,7 +97,7 @@ const validConfigTextPB = `
 			gerrit_cq_ability { committer_list: "project-chromium-committers" }
 			tryjob {
 				retry_config {
-				  single_quota: 1
+					single_quota: 1
 					global_quota: 2
 					failure_weight: 1
 					transient_failure_weight: 1
@@ -106,7 +106,7 @@ const validConfigTextPB = `
 				builders { name: "chromium/try/linux" }
 			}
 		}
-  }
+	}
 `
 
 func TestValidation(t *testing.T) {
@@ -150,7 +150,7 @@ func TestValidation(t *testing.T) {
 			Convey("Bad draining time", func() {
 				cfg.DrainingStartTime = "meh"
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "failed to parse draining_start_time \"meh\" as RFC3339 format")
+				So(vctx.Finalize(), ShouldErrLike, `failed to parse draining_start_time "meh" as RFC3339 format`)
 			})
 			Convey("Bad cq_status_host", func() {
 				cfg.CqStatusHost = "h://@test:123//not//://@adsfhost."
@@ -346,6 +346,154 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike,
 					"negative single_quota not allowed (-1 given) (and 4 other errors)")
+			})
+		})
+	})
+}
+
+func TestTryjobValidation(t *testing.T) {
+	t.Parallel()
+
+	Convey("Validate Tryjob Verifier Config", t, func() {
+		c := gaetesting.TestingContext()
+		validate := func(textPB string) error {
+			vctx := &validation.Context{Context: c}
+			cfg := v2.Verifiers_Tryjob{}
+			if err := proto.UnmarshalText(textPB, &cfg); err != nil {
+				panic(err)
+			}
+			validateTryjobVerifier(vctx, &cfg)
+			return vctx.Finalize()
+		}
+
+		So(validate(``), ShouldErrLike, "at least 1 builder required")
+
+		Convey("builder name", func() {
+			So(validate(`builders {}`), ShouldErrLike, "name is required")
+			So(validate(`builders {name: ""}`), ShouldErrLike, "name is required")
+			So(validate(`builders {name: "a"}`), ShouldErrLike,
+				`name "a" doesn't match required format`)
+			So(validate(`builders {name: "a/b/c" equivalent_to {name: "z"}}`), ShouldErrLike,
+				`name "z" doesn't match required format`)
+
+			So(validate(`
+			  builders {name: "a/b/c"}
+			  builders {name: "a/b/c"}
+			`), ShouldErrLike, "duplicate")
+
+			So(validate(`
+				builders {name: "*/buildbot/b"}
+			  builders {name: "a/b/c" equivalent_to {name: "x/y/z"}}
+			`), ShouldBeNil)
+		})
+
+		Convey("experiment", func() {
+			So(validate(`builders {name: "a/b/c" experiment_percentage: 1}`), ShouldBeNil)
+			So(validate(`builders {name: "a/b/c" experiment_percentage: -1}`), ShouldNotBeNil)
+			So(validate(`builders {name: "a/b/c" experiment_percentage: 101}`), ShouldNotBeNil)
+		})
+
+		Convey("location_regexps", func() {
+			So(validate(`builders {name: "a/b/c" location_regexp: ""}`),
+				ShouldErrLike, "must not be empty")
+			So(validate(`builders {name: "a/b/c" location_regexp_exclude: "*"}`),
+				ShouldErrLike, "error parsing regexp: missing argument")
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_regexp: ".+"
+					location_regexp: ".+"
+				}`), ShouldErrLike, "duplicate")
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_regexp: "a/.+"
+					location_regexp: "b"
+					location_regexp_exclude: "redundant/but/not/caught"
+				}`), ShouldBeNil)
+		})
+
+		Convey("equivalent_to", func() {
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					equivalent_to {name: "x/y/z" percentage: 10 owner_whitelist_group: "group"}
+				}`),
+				ShouldBeNil)
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					equivalent_to {name: "x/y/z" percentage: -1 owner_whitelist_group: "group"}
+				}`),
+				ShouldErrLike, "percentage must be between 0 and 100")
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					equivalent_to {name: "a/b/c"}
+				}`),
+				ShouldErrLike,
+				`equivalent_to.name must not refer to already defined "a/b/c" builder`)
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					equivalent_to {name: "c/d/e"}
+				}
+				builders {
+					name: "x/y/z"
+					equivalent_to {name: "c/d/e"}
+				}`),
+				ShouldErrLike,
+				`duplicate name "c/d/e"`)
+		})
+
+		Convey("no combinations", func() {
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					experiment_percentage: 1
+					equivalent_to {name: "c/d/e"}}`),
+				ShouldErrLike,
+				"combining [equivalent_to experiment_percentage] features not allowed")
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_regexp: ".+"
+					triggered_by: "c/d/e"
+				}
+				builders { name: "c/d/e" } `),
+				ShouldErrLike,
+				"combining [triggered_by location_regexp[_exclude]] features not allowed")
+		})
+
+		Convey("triggered_by", func() {
+			So(validate(`
+				builders {name: "a/b/0" }
+				builders {name: "a/b/1" triggered_by: "a/b/0"}
+				builders {name: "a/b/21" triggered_by: "a/b/1"}
+				builders {name: "a/b/22" triggered_by: "a/b/1"}
+			`), ShouldBeNil)
+
+			So(validate(`builders {name: "a/b/1" triggered_by: "a/b/0"}`),
+				ShouldErrLike, `triggered_by must refer to an existing builder, but "a/b/0" given`)
+
+			So(validate(`
+				builders {name: "a/b/0" experiment_percentage: 10}
+				builders {name: "a/b/1" triggered_by: "a/b/0"}
+			`), ShouldErrLike,
+				`builder a/b/1): triggered_by must refer to an existing builder without`)
+
+			Convey("doesn't form loops", func() {
+				So(validate(`
+					builders {name: "l/oo/p" triggered_by: "l/oo/p"}
+				`), ShouldErrLike, `triggered_by must refer to an existing builder without`)
+
+				So(validate(`
+					builders {name: "tri/gger/able"}
+					builders {name: "l/oo/p1" triggered_by: "l/oo/p2"}
+					builders {name: "l/oo/p2" triggered_by: "l/oo/p1"}
+				`), ShouldErrLike, `triggered_by must refer to an existing builder without`)
 			})
 		})
 	})
