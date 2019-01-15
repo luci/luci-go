@@ -1,0 +1,84 @@
+# LUCI configuration definition language
+
+{{/* TODO(vadimsh): Move repeated code to a reusable template. */}}
+
+{{/*
+  Load all symbols we are going to document in advance to let LinkifySymbols
+  know that they can be referred to through anchors.
+*/}}
+{{ $core := Symbol "@stdlib//builtins.star" "core" }}
+{{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
+{{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
+
+[TOC]
+
+## General
+
+*** note
+TODO: write me.
+***
+
+
+### Defining durations {#durations_doc}
+
+*** note
+TODO: write me.
+***
+
+
+### Defining cron schedules {#schedules_doc}
+
+*** note
+TODO: write me.
+***
+
+
+## Core rules
+{{range $core.Symbols}}
+### {{.FullName}} {#{{.Anchor}}}
+
+```python
+{{.InvocationSnippet}}
+```
+
+{{.Doc.Description | LinkifySymbols}}
+
+#### Arguments
+{{range .Doc.Args}}
+* **{{.Name}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
+{{end}}
+
+
+## ACLs
+{{range $acl.Symbols}}
+### {{.FullName}} {#{{.Anchor}}}
+
+```python
+{{.InvocationSnippet}}
+```
+
+{{.Doc.Description | LinkifySymbols}}
+
+#### Arguments
+{{range .Doc.Args}}
+* **{{.Name}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
+{{end}}
+
+
+## Swarming
+{{range $swarming.Symbols}}
+### {{.FullName}} {#{{.Anchor}}}
+
+```python
+{{.InvocationSnippet}}
+```
+
+{{.Doc.Description | LinkifySymbols}}
+
+#### Arguments
+{{range .Doc.Args}}
+* **{{.Name}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
+{{end}}
