@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "be8688b4_02e5f848",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T19:28:06Z",
+      "side": 1,
+      "message": "it",
+      "range": {
+        "startLine": 25,
+        "startChar": 17,
+        "endLine": 25,
+        "endChar": 19
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92781c8d_719f2401",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T19:28:06Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 51,
+        "startChar": 25,
+        "endLine": 51,
+        "endChar": 29
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "717d114a_60d1165b",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T19:28:06Z",
+      "side": 1,
+      "message": "nit: other modules OR another module",
+      "range": {
+        "startLine": 106,
+        "startChar": 16,
+        "endLine": 106,
+        "endChar": 18
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7cf18ca4_a5b79f68",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T19:28:06Z",
+      "side": 1,
+      "message": "It \u003d\u003d aka resolveRefs?\n\nIf so, use \"resolveRefs\" since \"it\" is ambiguous in this sentence.",
+      "range": {
+        "startLine": 120,
+        "startChar": 3,
+        "endLine": 120,
+        "endChar": 5
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89c11282_f916f866",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T19:28:06Z",
+      "side": 1,
+      "message": "Pass nil\n\n(since this doc is foremost for callers)",
+      "range": {
+        "startLine": 123,
+        "startChar": 30,
+        "endLine": 123,
+        "endChar": 40
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a43a0030_e61ec874",
+        "filename": "lucicfg/docgen/symbols/loader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T19:28:06Z",
+      "side": 1,
+      "message": "👍 really helped.",
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "74bc82f1_c4d5e0fe",
+        "filename": "lucicfg/docgen/symbols/symbols.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-15T19:28:06Z",
+      "side": 1,
+      "message": "qq: do you actually need publicly exposed? ditto for newTerm, etc. AFAIU, creation of symbols will be in the same package (by loader.go and friends) and outside package it\u0027ll only be used as Symbol interface. Am I wrong?",
+      "range": {
+        "startLine": 81,
+        "startChar": 0,
+        "endLine": 89,
+        "endChar": 0
+      },
+      "revId": "84b88d027dcc14763fa8d68938492ef59f6789be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
