@@ -160,6 +160,30 @@
     },
     {
       "key": {
+        "uuid": "9bdbad06_a5245913",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T18:02:19Z",
+      "side": 1,
+      "message": "It explained what \"break\" does, but not why. The new comment is better.",
+      "parentUuid": "703df4fd_d51b4dde",
+      "range": {
+        "startLine": 371,
+        "startChar": 3,
+        "endLine": 371,
+        "endChar": 25
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3019b83b_e41a3d8c",
         "filename": "cq/appengine/config/config.go",
         "patchSetId": 1
@@ -254,6 +278,30 @@
     },
     {
       "key": {
+        "uuid": "12970223_49fb4f4f",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T18:02:19Z",
+      "side": 1,
+      "message": "It is like \"rest:tail\" pattern matching in functional languages... *shrug*",
+      "parentUuid": "1910e4c1_7694e521",
+      "range": {
+        "startLine": 387,
+        "startChar": 2,
+        "endLine": 388,
+        "endChar": 18
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17a05aee_8509f29e",
         "filename": "cq/appengine/config/config.go",
         "patchSetId": 1
@@ -289,6 +337,30 @@
       "side": 1,
       "message": "indeed, it is not caught at this point. It\u0027s caught at L400 once all main builder names are known. I have a test for it, too.",
       "parentUuid": "17a05aee_8509f29e",
+      "range": {
+        "startLine": 427,
+        "startChar": 34,
+        "endLine": 427,
+        "endChar": 43
+      },
+      "revId": "607c07ee7397ae5d8476aa88f5e1b04f68974757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9dbdea6e_0fbfca45",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T18:02:19Z",
+      "side": 1,
+      "message": "Right. Missed that.",
+      "parentUuid": "bfe8afec_2ff796e8",
       "range": {
         "startLine": 427,
         "startChar": 34,
