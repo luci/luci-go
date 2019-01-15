@@ -8,6 +8,7 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/rpc/status.proto";
@@ -277,7 +278,7 @@ message ScheduleBuildRequest {
   // will fail with InvalidArgument error code.
   //
   // After merging, dimensions with empty value will be excluded.
-  repeated StringPair dimensions = 10;
+  repeated RequestedDimension dimensions = 10;
 
   // If not zero, overrides swarming task priority.
   // See also Build.infra.swarming.priority.
@@ -357,4 +358,13 @@ message BuildRange {
   int64 start_build_id = 1;
   // Exclusive upper boundary. Optional.
   int64 end_build_id = 2;
+}
+
+// A dimension requested in ScheduleBuildRequest.
+message RequestedDimension {
+  string key = 1;
+  string value = 2;
+  // If set, ignore this dimension after this duraiton.
+  // Must be a multiple of 1min.
+  google.protobuf.Duration expiration = 3;
 }
