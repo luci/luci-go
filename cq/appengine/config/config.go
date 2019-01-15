@@ -31,12 +31,16 @@ import (
 
 	v1 "go.chromium.org/luci/cq/api/config/v1"
 	v2 "go.chromium.org/luci/cq/api/config/v2"
+
+	// Register "${appid}" placeholder for config validation rules.
+	_ "go.chromium.org/luci/config/appengine/gaeconfig"
 )
 
 // Config validation rules go here.
 
 func init() {
-	validation.Rules.Add("regex:projects/[^/]+", "cq.cfg", validateProject)
+	validation.Rules.Add("regex:projects/[^/]+", "${appid}.cfg", validateProject)
+	// Legacy. Will be validated by both -dev and prod instances until deleted.
 	validation.Rules.Add("regex:projects/[^/]+/refs/.+", "cq.cfg", validateRef)
 }
 
