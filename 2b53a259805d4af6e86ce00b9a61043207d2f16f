@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "20f1ea1b_0319f497",
+        "filename": "milo/common/time.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-15T00:00:29Z",
+      "side": 1,
+      "message": "github imports go after core imports, separated by a newline",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b2af002_60d096e6",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-15T00:00:29Z",
+      "side": 1,
+      "message": "Do we need this? We don\u0027t actually save any LOCs this way.",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bc2e171_6151c964",
+        "filename": "milo/frontend/middleware_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-15T00:00:29Z",
+      "side": 1,
+      "message": "nit: this doesn\u0027t look right, did this pass gofmt?\n\nthis should be\n\n\"bytes\"\n\"net/http/httptest\"\n\"testing\"\n(newline here)\n\"github.....\"",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e41f6972_523cf0b2",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-15T00:00:29Z",
+      "side": 1,
+      "message": "Stepping back, why do we need to show logs in the timeline view?  What is the CUJ for this?",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4c00b19_158d2f23",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-15T00:00:29Z",
+      "side": 1,
+      "message": "Not used",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
