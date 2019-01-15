@@ -137,17 +137,23 @@ message BatchRequest {
   // One request in a batch.
   message Request {
     oneof request {
-      // GetBuild RPC.
+      // GetBuild request.
       GetBuildRequest get_build = 1;
-      // SearchBuilds RPC.
+      // SearchBuilds request.
       SearchBuildsRequest search_builds = 2;
+      // ScheduleBuild request.
+      //
+      // All ScheduleBuild requests in the batch are executed before other
+      // requests.
+      ScheduleBuildRequest schedule_build = 3;
     }
   }
 
   // Requests to execute in a single batch.
   //
-  // Requests related to same build are coupled.
-  // Mutation requests are executed transactionally, before read-only requests.
+  // All requests are executed in their own individual transactions.
+  // BatchRequest as a whole is not transactional.
+  // Mutations are executed before read-only requests.
   repeated Request requests = 1;
 }
 
@@ -157,10 +163,12 @@ message BatchResponse {
   // Response a BatchRequest.Response.
   message Response {
     oneof response {
-      // GetBuild RPC response.
+      // GetBuild response.
       Build get_build = 1;
-      // SearchBuilds RPC response.
+      // SearchBuilds response.
       SearchBuildsResponse search_builds = 2;
+      // ScheduleBuild response.
+      Build schedule_build = 3;
 
       // Error code and details of the unsuccessful RPC.
       google.rpc.Status error = 100;
