@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "559b84ba_99830427",
+        "filename": "milo/common/time.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-15T21:05:59Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "20f1ea1b_0319f497",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b2af002_60d096e6",
         "filename": "milo/frontend/appengine/templates/includes/base.html",
         "patchSetId": 7
@@ -33,6 +51,24 @@
       "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "572200de_33babc42",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-15T21:05:59Z",
+      "side": 1,
+      "message": "I included this for this line added to the Javascript:\n\n$(\u0027.timeline-logs\u0027).toggle(Cookies.get(\u0027timelineDisplayPref\u0027) \u003d\u003d\u003d \u0027show\u0027);\n\nthis allows the retrieval of the cookie value without writing our own cookie parsing.\nSince this script was already in third party I thought it to be an acceptable approach.\nAfter including it I changed the other cookie setting invocations in build.js to\nleverage the library.\n\nI can write a cookie parsing function if you prefer.",
+      "parentUuid": "4b2af002_60d096e6",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "a4dadb5b_d2f675df",
+        "filename": "milo/frontend/middleware_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-15T21:05:59Z",
+      "side": 1,
+      "message": "Done thanks. Using:\n\ngoimports -w frontend/middleware_test.go\n\nbrought it to the new state.",
+      "parentUuid": "2bc2e171_6151c964",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e41f6972_523cf0b2",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 7
@@ -70,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "24b920e1_8a73a89e",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-15T21:05:59Z",
+      "side": 1,
+      "message": "I believe people may prefer this page to the results view and will not want to see a failure here, and then have to jump to the other tab to navigate to the logs.",
+      "parentUuid": "e41f6972_523cf0b2",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4c00b19_158d2f23",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 7
@@ -84,6 +156,24 @@
       "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22a22b7b_d9de79a4",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-15T21:05:59Z",
+      "side": 1,
+      "message": "Removed here, removed from stepData, and removed from build.js.\n\nNote that I believe this would be a good thing to optionally display on the page to the user. It would require being able to render the markdown given the current BuildPage data model.",
+      "parentUuid": "d4c00b19_158d2f23",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
