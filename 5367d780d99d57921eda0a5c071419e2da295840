@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d6b57b26_61cbcb71",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T00:16:00Z",
+      "side": 1,
+      "message": "what does this mean?",
+      "range": {
+        "startLine": 154,
+        "startChar": 40,
+        "endLine": 154,
+        "endChar": 47
+      },
+      "revId": "5367d780d99d57921eda0a5c071419e2da295840",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6519e93f_502bec2f",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-15T00:16:00Z",
+      "side": 1,
+      "message": "what does it mean for two mutation requests related to same build to be coupled? What if they are conflicting? Considering the only possible mutation is Schedule, it doubly makes no sense (there\u0027s no even a build to couple them too).\n\nI expect something like:\n\n\"All requests are executed in their own individual transactions. BatchRequest as a whole is not transactional. Mutations are executed before read-only requests.\"",
+      "revId": "5367d780d99d57921eda0a5c071419e2da295840",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
