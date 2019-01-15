@@ -312,5 +312,28 @@ func validateVerifiers(ctx *validation.Context, v *v2.Verifiers) {
 }
 
 func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
+	if v.RetryConfig != nil {
+		ctx.Enter("retry_config")
+		validateTryjobRetry(ctx, v.RetryConfig)
+		ctx.Exit()
+	}
 	// TODO(tandrii): implement.
+}
+
+func validateTryjobRetry(ctx *validation.Context, r *v2.Verifiers_Tryjob_RetryConfig) {
+	if r.SingleQuota < 0 {
+		ctx.Errorf("negative single_quota not allowed (%d given)", r.SingleQuota)
+	}
+	if r.GlobalQuota < 0 {
+		ctx.Errorf("negative global_quota not allowed (%d given)", r.GlobalQuota)
+	}
+	if r.FailureWeight < 0 {
+		ctx.Errorf("negative failure_weight not allowed (%d given)", r.FailureWeight)
+	}
+	if r.TransientFailureWeight < 0 {
+		ctx.Errorf("negative transitive_failure_weight not allowed (%d given)", r.TransientFailureWeight)
+	}
+	if r.TimeoutWeight < 0 {
+		ctx.Errorf("negative timeout_weight not allowed (%d given)", r.TimeoutWeight)
+	}
 }
