@@ -95,7 +95,16 @@ const validConfigTextPB = `
 		verifiers {
 			tree_status { url: "https://chromium-status.appspot.com" }
 			gerrit_cq_ability { committer_list: "project-chromium-committers" }
-			# TODO(tandrii): finish valid config.
+			tryjob {
+				retry_config {
+				  single_quota: 1
+					global_quota: 2
+					failure_weight: 1
+					transient_failure_weight: 1
+					timeout_weight: 1
+				}
+				builders { name: "chromium/try/linux" }
+			}
 		}
   }
 `
@@ -322,6 +331,21 @@ func TestValidation(t *testing.T) {
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "committer_list is required")
 				})
+			})
+		})
+
+		Convey("Tryjob", func() {
+			v := cfg.ConfigGroups[0].Verifiers.Tryjob
+
+			Convey("really bad retry config", func() {
+				v.RetryConfig.SingleQuota = -1
+				v.RetryConfig.GlobalQuota = -1
+				v.RetryConfig.FailureWeight = -1
+				v.RetryConfig.TransientFailureWeight = -1
+				v.RetryConfig.TimeoutWeight = -1
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike,
+					"negative single_quota not allowed (-1 given) (and 4 other errors)")
 			})
 		})
 	})
