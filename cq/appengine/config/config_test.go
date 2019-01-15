@@ -15,7 +15,6 @@
 package config
 
 import (
-	"context"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -32,13 +31,14 @@ func TestValidationRules(t *testing.T) {
 	t.Parallel()
 
 	Convey("Validation Rules", t, func() {
-		patterns, err := validation.Rules.ConfigPatterns(context.Background())
+		c := gaetesting.TestingContextWithAppID("commit-queue")
+		patterns, err := validation.Rules.ConfigPatterns(c)
 		So(err, ShouldBeNil)
 		So(len(patterns), ShouldEqual, 2)
 		Convey("project-scope cq.cfg", func() {
 			So(patterns[0].ConfigSet.Match("projects/xyz"), ShouldBeTrue)
 			So(patterns[0].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
-			So(patterns[0].Path.Match("cq.cfg"), ShouldBeTrue)
+			So(patterns[0].Path.Match("commit-queue.cfg"), ShouldBeTrue)
 		})
 		Convey("legacy ref-scope cq.cfg", func() {
 			So(patterns[1].ConfigSet.Match("projects/xyz"), ShouldBeFalse)
@@ -52,7 +52,7 @@ func TestValidationLegacy(t *testing.T) {
 	t.Parallel()
 
 	Convey("Validate Legacy Config", t, func() {
-		c := gaetesting.TestingContext()
+		c := gaetesting.TestingContextWithAppID("commit-queue")
 		vctx := &validation.Context{Context: c}
 		configSet := "projects/foo/refs/heads/master"
 		path := "cq.cfg"
