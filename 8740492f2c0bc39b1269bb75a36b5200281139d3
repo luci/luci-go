@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5a9b092e_45b510dc",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-01-15T03:33:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14d6c8e3_3401470c",
+      "revId": "8740492f2c0bc39b1269bb75a36b5200281139d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ebd2c523_d91ad599",
         "filename": "client/archiver/directory.go",
         "patchSetId": 10
@@ -30,6 +48,24 @@
       "writtenOn": "2019-01-15T00:36:13Z",
       "side": 1,
       "message": "what about symlinks to directories with symlinks, etc.? Is this accounted for?",
+      "revId": "8740492f2c0bc39b1269bb75a36b5200281139d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95233cdd_604aaa51",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-01-15T03:33:57Z",
+      "side": 1,
+      "message": "Leaving unresolved. This can be readdressed once it is clear what the python client does and what sort of feature-parity we should have here.",
+      "parentUuid": "ebd2c523_d91ad599",
       "revId": "8740492f2c0bc39b1269bb75a36b5200281139d3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
