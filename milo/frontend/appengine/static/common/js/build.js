@@ -16,33 +16,41 @@ $(document).ready(function() {
     });
   });
 
-  function updateCookieSetting(value) {
-    const farFuture = new Date(2100, 0).toUTCString();
-    document.cookie = `stepDisplayPref=${value}; expires=${farFuture}; path=/`;
+  function updateStepCookieSetting(value) {
+    updateCookieSetting('stepDisplayPref', value);
+  }
+
+  function updateTimelineCookieSetting(value) {
+    updateCookieSetting('timelineDisplayPref', value);
+  }
+
+  function updateCookieSetting(key, value) {
+    const farFuture = new Date(2100, 0);
+    Cookies.set(key, value, {expires: farFuture});
   }
 
   $('#showExpanded').click(function(e) {
     $('li.substeps').removeClass('collapsed');
     $('#steps').removeClass('non-green');
-    updateCookieSetting('expanded');
+    updateStepCookieSetting('expanded');
   });
 
   $('#showDefault').click(function(e) {
     $('li.substeps').removeClass('collapsed');
     $('li.substeps.green').addClass('collapsed');
     $('#steps').removeClass('non-green');
-    updateCookieSetting('default');
+    updateStepCookieSetting('default');
   });
 
   $('#showNonGreen').click(function(e) {
     $('li.substeps').removeClass('collapsed');
     $('#steps').addClass('non-green');
-    updateCookieSetting('non-green');
+    updateStepCookieSetting('non-green');
   });
 
   function createTimeline() {
     function linkHtml(link) {
-      return `<a href="${link.URL}" target="_blank">${link.Label}</a>`;
+      return `<a href="${link.view_url}" target="_blank">${link.name}</a>`;
     }
 
     function groupTemplater(group, element, data) {
@@ -51,21 +59,10 @@ $(document).ready(function() {
           ${group.data.label}
           <span class="duration">( ${group.data.duration} )</span>
         </div>`;
-      if (group.data.text && group.data.text.length > 0) {
-        content += group.data.text.join('<br>');
-      }
-      const links = [];
-      // MainLink is an array of Links, SubLink is an array of array of Links.
-      if (group.data.mainLink) {
-        links.push(...group.data.mainLink);
-      }
-      if (group.data.subLink) {
-        group.data.subLink.forEach(linkSet => links.push(...linkSet));
-      }
-      if (links.length > 0) {
-        content += `<ul><li>${links.map(linkHtml).join('</li><li>')}</li></ul>`;
+      if (group.data.logs && group.data.logs.length > 0) {
+        content += `<ul class="timeline-logs"><li>${group.data.logs.map(linkHtml).join('</li><li>')}</li></ul>`;
       } else {
-        content += '<ul><li>- no logs -</li></ul>';
+        content += '<ul class="timeline-logs"><li>- no logs -</li></ul>';
       }
 
       return content;
@@ -75,7 +72,10 @@ $(document).ready(function() {
       clickToUse: false,
       groupTemplate: groupTemplater,
       multiselect: false,
-      onInitialDrawComplete: () => $('#timeline-rendering').remove(),
+      onInitialDrawComplete: () => {
+        $('#timeline-rendering').remove();
+        $('#timeline-controls').show();
+      },
       orientation: {
         axis: 'both',
         item: 'top',
@@ -94,9 +94,17 @@ $(document).ready(function() {
       if (!item) {
         return;
       }
-      if (item.data && item.data.mainLink && item.data.mainLink.length > 0) {
-        window.open(item.data.mainLink[0].URL, '_blank');
+      if (item.data && item.data.logs && item.data.logs.length > 0) {
+        window.open(item.data.logs[0].view_url, '_blank');
       }
+    });
+
+    $('.timeline-logs').toggle(Cookies.get('timelineDisplayPref') === 'show');
+
+    $('#showTimelineLogs').click(function(e) {
+      $('.timeline-logs').toggle(this.checked);
+      updateTimelineCookieSetting(this.checked ? 'show' : 'hide');
+      timeline.redraw();
     });
 
     return timeline;
