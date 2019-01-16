@@ -207,10 +207,13 @@ func (c *commonFlags) createSwarmingClient() (swarmingService, error) {
 }
 
 func tagTransientGoogleAPIError(err error) error {
-	if gerr, _ := err.(*googleapi.Error); gerr != nil && gerr.Code >= 500 {
-		return transient.Tag.Apply(err)
+	// Responses with HTTP codes < 500, if we got them, indicate fatal errors.
+	if gerr, _ := err.(*googleapi.Error); gerr != nil && gerr.Code < 500 {
+		return err
 	}
-	return err
+	// Everything else (HTTP code >= 500, timeouts, DNS issues, etc) is considered
+	// a transient error.
+	return transient.Tag.Apply(err)
 }
 
 func printError(a subcommands.Application, err error) {
