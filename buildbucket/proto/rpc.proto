@@ -278,6 +278,8 @@ message ScheduleBuildRequest {
   // will fail with InvalidArgument error code.
   //
   // After merging, dimensions with empty value will be excluded.
+  //
+  // A dimension expiration must be a multiple of 1min.
   repeated RequestedDimension dimensions = 10;
 
   // If not zero, overrides swarming task priority.
@@ -360,11 +362,3 @@ message BuildRange {
   int64 end_build_id = 2;
 }
 
-// A dimension requested in ScheduleBuildRequest.
-message RequestedDimension {
-  string key = 1;
-  string value = 2;
-  // If set, ignore this dimension after this duraiton.
-  // Must be a multiple of 1min.
-  google.protobuf.Duration expiration = 3;
-}
