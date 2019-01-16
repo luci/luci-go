@@ -24,7 +24,7 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/strpair"
@@ -220,7 +220,10 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) error {
 
 		case "swarming_dimension":
 			if d := toStringPair(t.Value); d != nil {
-				dest.Infra.Swarming.TaskDimensions = append(dest.Infra.Swarming.TaskDimensions, d)
+				dest.Infra.Swarming.TaskDimensions = append(dest.Infra.Swarming.TaskDimensions, &buildbucketpb.RequestedDimension{
+					Key:   d.Key,
+					Value: d.Value,
+				})
 			}
 
 		case "swarming_tag":

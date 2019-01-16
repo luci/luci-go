@@ -225,6 +225,10 @@ message BuildInfra {
     // someone else is appropriate for CQ, e.g. it was created with the same
     // properties that CQ would use.
     google.protobuf.Struct requested_properties = 5;
+
+    // Dimensions that were specified in ScheduleBuildRequest to create this
+    // build.
+    repeated RequestedDimension requested_dimensions = 6;
   }
 
   // Swarming-specific information.
@@ -247,7 +251,7 @@ message BuildInfra {
     int32 priority = 4;
 
     // Swarming dimensions for the task.
-    repeated StringPair task_dimensions = 5;
+    repeated RequestedDimension task_dimensions = 5;
 
     // Swarming dimensions of the bot used for the task.
     repeated StringPair bot_dimensions = 6;
