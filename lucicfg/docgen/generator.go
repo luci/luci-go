@@ -65,9 +65,15 @@ func (g *Generator) Render(templ string) ([]byte, error) {
 // funcMap are functions available to templates.
 func (g *Generator) funcMap() template.FuncMap {
 	return template.FuncMap{
+		"EscapeMD":       escapeMD,
 		"Symbol":         g.symbol,
 		"LinkifySymbols": g.linkifySymbols,
 	}
+}
+
+// escapeMD makes sure 's' gets rendered as is in markdown.
+func escapeMD(s string) string {
+	return strings.Replace(s, "*", "\\*", -1)
 }
 
 // symbol returns a symbol from the given module.
