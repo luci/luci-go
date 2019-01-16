@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1e2c740_c50a5d31",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-16T23:48:12Z",
+      "side": 1,
+      "message": "oh, right, you are using async here.",
+      "range": {
+        "startLine": 77,
+        "startChar": 9,
+        "endLine": 77,
+        "endChar": 29
+      },
+      "revId": "91a12a63fa9403bcb5c909ab98d7891f037c3a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
