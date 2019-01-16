@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -406,126 +405,6 @@ func TestDestroyInstance(t *testing.T) {
 					So(v.Deadline, ShouldEqual, 0)
 					So(v.Hostname, ShouldBeEmpty)
 					So(v.URL, ShouldBeEmpty)
-				})
-			})
-		})
-	})
-}
-
-func TestManageInstance(t *testing.T) {
-	t.Parallel()
-
-	Convey("manageInstance", t, func() {
-		dsp := &tq.Dispatcher{}
-		registerTasks(dsp)
-		srv := &rpc.Config{}
-		rt := &roundtripper.JSONRoundTripper{}
-		swr, err := swarming.New(&http.Client{Transport: rt})
-		So(err, ShouldBeNil)
-		c := withSwarming(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), swr)
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
-
-		Convey("invalid", func() {
-			Convey("nil", func() {
-				err := manageInstance(c, nil)
-				So(err, ShouldErrLike, "unexpected payload")
-			})
-
-			Convey("empty", func() {
-				err := manageInstance(c, &tasks.ManageInstance{})
-				So(err, ShouldErrLike, "ID is required")
-			})
-
-			Convey("missing", func() {
-				err := manageInstance(c, &tasks.ManageInstance{
-					Id: "id",
-				})
-				So(err, ShouldErrLike, "failed to fetch VM")
-			})
-		})
-
-		Convey("valid", func() {
-			Convey("error", func() {
-				rt.Handler = func(_ interface{}) (int, interface{}) {
-					return http.StatusConflict, nil
-				}
-				datastore.Put(c, &model.VM{
-					ID:  "id",
-					URL: "url",
-				})
-				err := manageInstance(c, &tasks.ManageInstance{
-					Id: "id",
-				})
-				So(err, ShouldErrLike, "failed to fetch bot")
-			})
-
-			Convey("missing", func() {
-				rt.Handler = func(_ interface{}) (int, interface{}) {
-					return http.StatusNotFound, nil
-				}
-				datastore.Put(c, &model.VM{
-					ID:  "id",
-					URL: "url",
-				})
-				err := manageInstance(c, &tasks.ManageInstance{
-					Id: "id",
-				})
-				So(err, ShouldBeNil)
-			})
-
-			Convey("found", func() {
-				Convey("dead", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:  "id",
-							IsDead: true,
-						}
-					}
-					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
-					})
-					err := manageInstance(c, &tasks.ManageInstance{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-				})
-
-				Convey("deleted", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:   "id",
-							Deleted: true,
-						}
-					}
-					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
-					})
-					err := manageInstance(c, &tasks.ManageInstance{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-				})
-
-				Convey("alive", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId: "id",
-						}
-					}
-					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
-					})
-					err := manageInstance(c, &tasks.ManageInstance{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 			})
 		})

@@ -72,10 +72,10 @@ func TestCron(t *testing.T) {
 			})
 		})
 
-		Convey("manageInstancesAsync", func() {
+		Convey("manageBotsAsync", func() {
 			Convey("none", func() {
 				Convey("zero", func() {
-					err := manageInstancesAsync(c)
+					err := manageBotsAsync(c)
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
@@ -84,7 +84,7 @@ func TestCron(t *testing.T) {
 					datastore.Put(c, &model.VM{
 						ID: "id",
 					})
-					err := manageInstancesAsync(c)
+					err := manageBotsAsync(c)
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
@@ -95,7 +95,7 @@ func TestCron(t *testing.T) {
 					ID:  "id",
 					URL: "url",
 				})
-				err := manageInstancesAsync(c)
+				err := manageBotsAsync(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})

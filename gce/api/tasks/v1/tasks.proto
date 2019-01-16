@@ -44,9 +44,9 @@ message EnsureVM {
   string swarming = 6;
 }
 
-// A task to manage a GCE instance created from a VM entity.
-message ManageInstance {
-  // The ID of the VM entity to manage a GCE instance for.
+// A task to manage a Swarming bot associated with a VM entity.
+message ManageBot {
+  // The ID of the VM entity to manage a Swarming bot for.
   string id = 1;
 }
 
@@ -54,4 +54,12 @@ message ManageInstance {
 message ProcessConfig {
   // The ID of the config to process.
   string id = 1;
+}
+
+// A task to terminate a Swarming bot associated with a VM entity.
+message TerminateBot {
+  // The ID of the VM entity to terminate a Swarming bot for.
+  string id = 1;
+  // The hostname of the Swarming bot to terminate.
+  string hostname = 2;
 }

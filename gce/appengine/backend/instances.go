@@ -238,6 +238,20 @@ func createInstance(c context.Context, payload proto.Message) error {
 	return nil
 }
 
+// destroyInstanceAsync schedules a task queue task to destroy a GCE instance.
+func destroyInstanceAsync(c context.Context, id, url string) error {
+	t := &tq.Task{
+		Payload: &tasks.DestroyInstance{
+			Id:  id,
+			Url: url,
+		},
+	}
+	if err := getDispatcher(c).AddTask(c, t); err != nil {
+		return errors.Annotate(err, "failed to schedule destroy task").Err()
+	}
+	return nil
+}
+
 // destroyInstanceQueue is the name of the destroy instance task handler queue.
 const destroyInstanceQueue = "destroy-instance"
 
@@ -288,67 +302,5 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 		return setDestroyed(c, task.Id, op.TargetLink)
 	}
 	// Instance destruction is pending.
-	return nil
-}
-
-// manageInstanceQueue is the name of the manage instance task handler queue.
-const manageInstanceQueue = "manage-instance"
-
-// manageInstance manages a created GCE instance.
-func manageInstance(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.ManageInstance)
-	switch {
-	case !ok:
-		return errors.Reason("unexpected payload %q", payload).Err()
-	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
-	}
-	vm, err := getVM(c, task.Id)
-	if err != nil {
-		return err
-	}
-	if vm.URL == "" {
-		return errors.Reason("instance does not exist: %s", vm.URL).Err()
-	}
-	del := false
-	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
-	srv := getSwarming(c)
-	srv.BasePath = vm.Swarming + "/_ah/api/swarming/v1/"
-	rsp, err := srv.Bot.Get(vm.Hostname).Context(c).Do()
-	if err != nil {
-		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, gerr)
-			if gerr.Code == http.StatusNotFound {
-				// Bot hasn't connected to Swarming yet.
-				// TODO(smut): Delete the GCE instance if it's been too long.
-				logging.Debugf(c, "bot not found")
-				return nil
-			}
-		}
-		return errors.Annotate(err, "failed to fetch bot").Err()
-	}
-	logging.Debugf(c, "found bot")
-	switch {
-	case rsp.Deleted:
-		// TODO(smut): Delete the Swarming bot.
-		logging.Debugf(c, "bot deleted")
-		del = true
-	case rsp.IsDead:
-		// TODO(smut): Delete the Swarming bot.
-		logging.Debugf(c, "bot dead")
-		del = true
-	}
-	// TODO(smut): Check the deadline.
-	if del {
-		t := &tq.Task{
-			Payload: &tasks.DestroyInstance{
-				Id:  task.Id,
-				Url: vm.URL,
-			},
-		}
-		if err := getDispatcher(c).AddTask(c, t); err != nil {
-			return errors.Annotate(err, "failed to schedule destroy tasks").Err()
-		}
-	}
 	return nil
 }
