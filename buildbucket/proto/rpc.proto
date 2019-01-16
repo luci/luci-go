@@ -360,11 +360,3 @@ message BuildRange {
   int64 end_build_id = 2;
 }
 
-// A dimension requested in ScheduleBuildRequest.
-message RequestedDimension {
-  string key = 1;
-  string value = 2;
-  // If set, ignore this dimension after this duraiton.
-  // Must be a multiple of 1min.
-  google.protobuf.Duration expiration = 3;
-}
