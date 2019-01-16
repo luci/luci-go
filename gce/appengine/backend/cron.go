@@ -66,8 +66,8 @@ func createInstancesAsync(c context.Context) error {
 	return nil
 }
 
-// manageInstancesAsync schedules task queue tasks to manage each GCE instance.
-func manageInstancesAsync(c context.Context) error {
+// manageBotsAsync schedules task queue tasks to manage each Swarming bot.
+func manageBotsAsync(c context.Context) error {
 	var keys []*datastore.Key
 	// TODO(smut): Fetch in batches.
 	q := datastore.NewQuery(model.VMKind).Gt("url", "")
@@ -78,7 +78,7 @@ func manageInstancesAsync(c context.Context) error {
 	for i, k := range keys {
 		id := k.StringID()
 		t[i] = &tq.Task{
-			Payload: &tasks.ManageInstance{
+			Payload: &tasks.ManageBot{
 				Id: id,
 			},
 		}

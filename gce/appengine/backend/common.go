@@ -50,8 +50,9 @@ func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.DestroyInstance{}, destroyInstance, destroyInstanceQueue, nil)
 	dsp.RegisterTask(&tasks.DrainVM{}, drainVM, drainVMQueue, nil)
 	dsp.RegisterTask(&tasks.EnsureVM{}, ensureVM, ensureVMQueue, nil)
-	dsp.RegisterTask(&tasks.ManageInstance{}, manageInstance, manageInstanceQueue, nil)
+	dsp.RegisterTask(&tasks.ManageBot{}, manageBot, manageBotQueue, nil)
 	dsp.RegisterTask(&tasks.ProcessConfig{}, processConfig, processConfigQueue, nil)
+	dsp.RegisterTask(&tasks.TerminateBot{}, terminateBot, terminateBotQueue, nil)
 }
 
 // cfgKey is the key to a config.ConfigurationServer in the context.
@@ -102,8 +103,10 @@ func withSwarming(c context.Context, swr *swarming.Service) context.Context {
 }
 
 // getSwarming returns the *swarming.Service installed in the current context.
-func getSwarming(c context.Context) *swarming.Service {
-	return c.Value(&swrKey).(*swarming.Service)
+func getSwarming(c context.Context, url string) *swarming.Service {
+	swr := c.Value(&swrKey).(*swarming.Service)
+	swr.BasePath = url + "/_ah/api/swarming/v1/"
+	return swr
 }
 
 // newSwarming returns a new *swarming.Service. Panics on error.
@@ -133,6 +136,6 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	})
 	dsp.InstallRoutes(r, mw)
 	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstancesAsync))
-	r.GET("/internal/cron/manage-instances", mw, newHTTPHandler(manageInstancesAsync))
+	r.GET("/internal/cron/manage-bots", mw, newHTTPHandler(manageBotsAsync))
 	r.GET("/internal/cron/process-configs", mw, newHTTPHandler(processConfigsAsync))
 }

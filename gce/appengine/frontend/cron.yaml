@@ -1,7 +1,7 @@
 cron:
 - url: /internal/cron/create-instances
   schedule: every 1 minutes
-- url: /internal/cron/manage-instances
+- url: /internal/cron/manage-bots
   schedule: every 1 minutes
 - url: /internal/cron/process-configs
   schedule: every 1 minutes
