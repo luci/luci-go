@@ -1,0 +1,70 @@
+# LUCI configuration definition language
+
+{{/* Renders documentation for all symbols in the given struct. */}}
+{{define "gen-struct-doc"}}
+{{range .Symbols}}
+### {{.FullName}} {#{{.Anchor}}}
+
+```python
+{{.InvocationSnippet}}
+```
+
+{{.Doc.Description | LinkifySymbols}}
+
+#### Arguments
+{{range .Doc.Args}}
+* **{{.Name}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
+{{end}}
+{{end}}
+
+
+{{/* Renders TODO note. */}}
+{{define "todo"}}
+*** note
+TODO: To be written.
+***
+{{end}}
+
+
+{{/*
+  Load all symbols we are going to document in advance to let LinkifySymbols
+  know that they can be referred to through anchors.
+*/}}
+{{ $core := Symbol "@stdlib//builtins.star" "core" }}
+{{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
+{{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
+
+[TOC]
+
+## Overview
+
+### Working with `lucicfg`
+{{template "todo"}}
+
+### Concepts
+{{template "todo"}}
+
+### Resolving naming ambiguities
+{{template "todo"}}
+
+### Defining durations {#durations_doc}
+{{template "todo"}}
+
+### Defining cron schedules {#schedules_doc}
+{{template "todo"}}
+
+## Core rules
+{{template "gen-struct-doc" $core}}
+
+## ACLs
+{{template "gen-struct-doc" $acl}}
+
+## Swarming
+{{template "gen-struct-doc" $swarming}}
+
+## Other builtin functions
+{{template "todo"}}
+
+## Advanced and experimental features
+{{template "todo"}}
