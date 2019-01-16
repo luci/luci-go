@@ -35,14 +35,15 @@ _register()
 
 # Public API.
 core = struct(
-    generator = _generator,
-
+    project = _project,
+    logdog =  _logdog,
     bucket = _bucket,
+    recipe = _recipe,
     builder = _builder,
     gitiles_poller = _gitiles_poller,
-    logdog =  _logdog,
-    project = _project,
-    recipe = _recipe,
+
+    # Advanced stuff.
+    generator = _generator,
 )
 acl = _acl
 swarming = _swarming
