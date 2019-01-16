@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/common/retry/transient"
 )
 
 type taskOutputOption int64
@@ -254,13 +253,15 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 	var result *swarming.SwarmingRpcsTaskResult
 	var output string
 	var outputs []string
-	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
+
+	// TODO(tikuta): re-consider the condition of retry.
+	err := retry.Retry(ctx, retry.Default, func() error {
 		var err error
 
 		// Fetch the result details.
 		result, err = service.GetTaskResult(ctx, taskID, c.perf)
 		if err != nil {
-			return tagTransientGoogleAPIError(err)
+			return err
 		}
 
 		// TODO(mknyszek): Fetch output and outputs in parallel.
@@ -270,7 +271,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		if c.taskOutput != taskOutputNone {
 			taskOutput, err := service.GetTaskOutput(ctx, taskID)
 			if err != nil {
-				return tagTransientGoogleAPIError(err)
+				return err
 			}
 			output = taskOutput.Output
 		}
@@ -279,12 +280,12 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		if c.outputDir != "" && result.OutputsRef != nil {
 			outputs, err = service.GetTaskOutputs(ctx, taskID, c.outputDir, result.OutputsRef)
 			if err != nil {
-				return tagTransientGoogleAPIError(err)
+				return err
 			}
 		}
 		return nil
 	}, func(err error, d time.Duration) {
-		logging.WithError(err).Warningf(ctx, "Transient error while making request, retrying in %s...", d)
+		logging.WithError(err).Warningf(ctx, "error while making request, retrying in %s...", d)
 	})
 	if err != nil {
 		return taskResult{taskID: taskID, err: err}
