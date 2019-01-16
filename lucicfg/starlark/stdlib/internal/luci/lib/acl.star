@@ -35,7 +35,7 @@ _USER_RE = r'^[0-9a-zA-Z_\-\.\+\%]+@[0-9a-zA-Z_\-\.]+$'
 #   name: name of the role.
 #   project_level_only: True if the role can be set only in project(...) rule.
 #   groups_only: True if the role should be assigned only to groups, not users.
-_role_ctor = genstruct('acl.role')
+_role_ctor = __native__.genstruct('acl.role')
 
 
 # A constructor for acl.entry structs.
@@ -55,7 +55,7 @@ _role_ctor = genstruct('acl.role')
 #   roles: a list of acl.role in the entry, at least one.
 #   users: a list of user emails to apply roles to, may be empty.
 #   groups: a list of group names to apply roles to, may be empty.
-_entry_ctor = genstruct('acl.entry')
+_entry_ctor = __native__.genstruct('acl.entry')
 
 
 # A constructor for acl.elementary structs.
@@ -67,7 +67,7 @@ _entry_ctor = genstruct('acl.entry')
 #   role: an acl.role, always set.
 #   user: an user email.
 #   group: a group name.
-_elementary_ctor = genstruct('acl.elementary')
+_elementary_ctor = __native__.genstruct('acl.elementary')
 
 
 def _role(name, project_level_only=False, groups_only=False):
@@ -113,7 +113,7 @@ def _entry(roles, groups=None, users=None):
   Returns:
     acl.entry struct, consider it opaque.
   """
-  if ctor(roles) == _role_ctor:
+  if __native__.ctor(roles) == _role_ctor:
     roles = [roles]
   elif roles != None and type(roles) != 'list':
     validate.struct('roles', roles, _role_ctor)

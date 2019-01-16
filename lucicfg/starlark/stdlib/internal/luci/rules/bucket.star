@@ -23,7 +23,7 @@ def bucket(name=None, acls=None):
 
   Args:
     name: name of the bucket, e.g. 'ci' or 'try'. Required.
-    acls: list of acl.entry objects.
+    acls: list of acl.entry(...) objects.
   """
   name = validate.string('name', name)
   graph.add_node(keys.bucket(name), props = {
