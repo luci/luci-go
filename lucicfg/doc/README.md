@@ -14,6 +14,8 @@
 
 
 
+
+
 [TOC]
 
 ## Overview
@@ -56,30 +58,53 @@ TODO: To be written.
 ## Core rules
 
 
-### core.generator {#core.generator}
+### core.project {#core.project}
 
 ```python
-core.generator(
+core.project(
+    # Required arguments.
+    name,
+
     # Optional arguments.
-    impl = None,
+    buildbucket = None,
+    logdog = None,
+    scheduler = None,
+    swarming = None,
+    acls = None,
 )
 ```
 
 
 
-Registers a callback that is called at the end of the config generation
-stage to modify/append/delete generated configs in an arbitrary way.
+Defines a LUCI project.
 
-The callback accepts single argument 'ctx' which is a struct with the
-following fields:
-  'config_set': a dict {config file name -> (str | proto)}.
+There should be exactly one such definition in a single top-level config file.
 
-The callback is free to modify ctx.config_set in whatever way it wants, e.g.
-by adding new values there or mutating/deleting existing ones.
+#### Arguments {#core.project-args}
 
-#### Arguments {#core.generator-args}
+* **name**: full name of the project. Required.
+* **buildbucket**: hostname of a Buildbucket service to use (if any).
+* **logdog**: hostname of a LogDog service to use (if any).
+* **scheduler**: hostname of a LUCI Scheduler service to use (if any).
+* **swarming**: hostname of a Swarming service to use (if any).
+* **acls**: list of acl.entry objects, will be inherited by all buckets.
 
-* **impl**: a callback func(ctx) -> None.
+
+
+
+### core.logdog {#core.logdog}
+
+```python
+core.logdog(gs_bucket = None)
+```
+
+
+
+Configuration for the LogDog service.
+
+#### Arguments {#core.logdog-args}
+
+* **gs_bucket**: base Google Storage archival path, archive logs will be written to this bucket/path.
 
 
 
@@ -87,13 +112,7 @@ by adding new values there or mutating/deleting existing ones.
 ### core.bucket {#core.bucket}
 
 ```python
-core.bucket(
-    # Required arguments.
-    name,
-
-    # Optional arguments.
-    acls = None,
-)
+core.bucket(name, acls = None)
 ```
 
 
@@ -104,6 +123,44 @@ Defines a bucket: a container for LUCI resources that share the same ACL.
 
 * **name**: name of the bucket, e.g. 'ci' or 'try'. Required.
 * **acls**: list of acl.entry objects.
+
+
+
+
+### core.recipe {#core.recipe}
+
+```python
+core.recipe(name, cipd_package, cipd_version = None, recipe = None)
+```
+
+
+
+Defines where to locate a particular recipe.
+
+Builders refer to recipes in their 'recipe' field. Multiple builders can
+execute the same recipe (perhaps passing different properties to it).
+
+Recipes are located inside cipd packages called "recipe bundles". Typically
+the cipd package name with the recipe bundle will look like:
+
+    infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build
+
+Recipes bundled from internal repositories are typically under
+
+    infra_internal/recipe_bundles/...
+
+But if you're building your own recipe bundles, they could be located
+elsewhere.
+
+The cipd version to fetch is usually a lower-cased git ref (like
+'refs/heads/master'), or it can be a cipd tag (like 'git_revision:abc...').
+
+#### Arguments {#core.recipe-args}
+
+* **name**: name of this recipe entity, to refer to it from builders. If 'recipe' is None, also specifies the recipe name within the bundle. Required.
+* **cipd_package**: a cipd package name with the recipe bundle. Required.
+* **cipd_version**: a version of the recipe bundle package to fetch, default is 'refs/heads/master'.
+* **recipe**: name of a recipe inside the recipe bundle if it differs from 'name'. Useful if recipe names clash between different recipe bundles. When this happens, 'name' can be used as a non-ambiguous alias, and 'recipe' can provide the actual recipe name. Defaults to 'name'.
 
 
 
@@ -249,102 +306,27 @@ watching "refs/heads/master".
 
 
 
-### core.logdog {#core.logdog}
+### core.generator {#core.generator}
 
 ```python
-core.logdog(
-    # Optional arguments.
-    gs_bucket = None,
-)
+core.generator(impl = None)
 ```
 
 
 
-Configuration for the LogDog service.
+Registers a callback that is called at the end of the config generation
+stage to modify/append/delete generated configs in an arbitrary way.
 
-#### Arguments {#core.logdog-args}
+The callback accepts single argument 'ctx' which is a struct with the
+following fields:
+  'config_set': a dict {config file name -> (str | proto)}.
 
-* **gs_bucket**: base Google Storage archival path, archive logs will be written to this bucket/path.
+The callback is free to modify ctx.config_set in whatever way it wants, e.g.
+by adding new values there or mutating/deleting existing ones.
 
+#### Arguments {#core.generator-args}
 
-
-
-### core.project {#core.project}
-
-```python
-core.project(
-    # Required arguments.
-    name,
-
-    # Optional arguments.
-    buildbucket = None,
-    logdog = None,
-    scheduler = None,
-    swarming = None,
-    acls = None,
-)
-```
-
-
-
-Defines a LUCI project.
-
-There should be exactly one such definition in a single top-level config file.
-
-#### Arguments {#core.project-args}
-
-* **name**: full name of the project. Required.
-* **buildbucket**: hostname of a Buildbucket service to use (if any).
-* **logdog**: hostname of a LogDog service to use (if any).
-* **scheduler**: hostname of a LUCI Scheduler service to use (if any).
-* **swarming**: hostname of a Swarming service to use (if any).
-* **acls**: list of acl.entry objects, will be inherited by all buckets.
-
-
-
-
-### core.recipe {#core.recipe}
-
-```python
-core.recipe(
-    # Required arguments.
-    name,
-    cipd_package,
-
-    # Optional arguments.
-    cipd_version = None,
-    recipe = None,
-)
-```
-
-
-
-Defines where to locate a particular recipe.
-
-Builders refer to recipes in their 'recipe' field. Multiple builders can
-execute the same recipe (perhaps passing different properties to it).
-
-Recipes are located inside cipd packages called "recipe bundles". Typically
-the cipd package name with the recipe bundle will look like:
-
-    infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build
-
-Recipes bundled from internal repositories are typically under
-
-    infra_internal/recipe_bundles/...
-
-But if you're building your own recipe bundles, they could be located
-elsewhere.
-
-The cipd version to fetch is usually a lower-cased git ref (like
-'refs/heads/master'), or it can be a cipd tag (like 'git_revision:abc...').
-
-#### Arguments {#core.recipe-args}
-
-* **name**: name of this recipe entity, to refer to it from builders. If 'recipe' is None, also specifies the recipe name within the bundle. Required.
-* **cipd_package**: a cipd package name with the recipe bundle. Required.
-* **cipd_version**: a version of the recipe bundle package to fetch, default is 'refs/heads/master'.
-* **recipe**: name of a recipe inside the recipe bundle if it differs from 'name'. Useful if recipe names clash between different recipe bundles. When this happens, 'name' can be used as a non-ambiguous alias, and 'recipe' can provide the actual recipe name. Defaults to 'name'.
+* **impl**: a callback func(ctx) -> None.
 
 
 
@@ -361,12 +343,7 @@ TODO: Display roles as a table.
 ### acl.entry {#acl.entry}
 
 ```python
-acl.entry(
-    # Optional arguments.
-    roles = None,
-    groups = None,
-    users = None,
-)
+acl.entry(roles = None, groups = None, users = None)
 ```
 
 
@@ -405,12 +382,7 @@ acl.entry struct, consider it opaque.
 ### swarming.cache {#swarming.cache}
 
 ```python
-swarming.cache(
-    # Optional arguments.
-    path = None,
-    name = None,
-    wait_for_warm_cache = None,
-)
+swarming.cache(path = None, name = None, wait_for_warm_cache = None)
 ```
 
 
@@ -477,11 +449,7 @@ swarming.cache struct.
 ### swarming.dimension {#swarming.dimension}
 
 ```python
-swarming.dimension(
-    # Optional arguments.
-    value = None,
-    expiration = None,
-)
+swarming.dimension(value = None, expiration = None)
 ```
 
 
@@ -512,11 +480,7 @@ swarming.dimension struct.
 ### swarming.validate_caches {#swarming.validate_caches}
 
 ```python
-swarming.validate_caches(
-    # Optional arguments.
-    attr = None,
-    caches = None,
-)
+swarming.validate_caches(attr = None, caches = None)
 ```
 
 
@@ -541,11 +505,7 @@ Validate list of caches (may be an empty list, never None).
 ### swarming.validate_dimensions {#swarming.validate_dimensions}
 
 ```python
-swarming.validate_dimensions(
-    # Optional arguments.
-    attr = None,
-    dimensions = None,
-)
+swarming.validate_dimensions(attr = None, dimensions = None)
 ```
 
 
@@ -570,11 +530,7 @@ Validated and normalized dict in form {string: [swarming.dimension]}.
 ### swarming.validate_tags {#swarming.validate_tags}
 
 ```python
-swarming.validate_tags(
-    # Optional arguments.
-    attr = None,
-    tags = None,
-)
+swarming.validate_tags(attr = None, tags = None)
 ```
 
 
@@ -595,13 +551,144 @@ Validated list of tags in same order, with duplicates removed.
 
 
 
-## Other builtin functions
+## Built-in constants and functions
 
-These functions are available in the global namespace.
+Refer to the list of [built-in constants and functions][starlark-builtins]
+exposed in the global namespace by Starlark itself.
+
+[starlark-builtins]: https://github.com/google/starlark-go/blob/master/doc/spec.md#built-in-constants-and-functions
+
+In addition, `lucicfg` exposes the following functions.
 
 
-*** note
-TODO: To be written.
-***
+
+### fail {#fail}
+
+```python
+fail(msg, trace = None)
+```
+
+
+
+Aborts the execution with an error message.
+
+#### Arguments {#fail-args}
+
+* **msg**: the error message string. Required.
+* **trace**: a custom trace, as returned by [stacktrace(...)](#stacktrace) to attach to the error. This may be useful if the root cause of the error is far from where `fail` is called.
+
+
+
+
+### stacktrace {#stacktrace}
+
+```python
+stacktrace(skip = None)
+```
+
+
+
+Captures and returns a stack trace of the caller.
+
+A captured stacktrace is an opaque object that can be stringified to get a
+nice looking trace (e.g. for error messages).
+
+#### Arguments {#stacktrace-args}
+
+* **skip**: how many innermost call frames to skip. Default is 0.
+
+
+
+
+### struct {#struct}
+
+```python
+struct(**kwargs)
+```
+
+
+
+Returns an immutable struct object with fields populated from the specified
+keyword arguments.
+
+Can be used to define namespaces, for example:
+
+```python
+def _func1():
+  ...
+
+def _func2():
+  ...
+
+exported = struct(
+    func1 = _func1,
+    func2 = _func2,
+)
+```
+
+Then `_func1` can be called as `exported.func1()`.
+
+#### Arguments {#struct-args}
+
+* **\*\*kwargs**: fields to put into the returned struct object.
+
+
+
+
+### to_json {#to_json}
+
+```python
+to_json(value)
+```
+
+
+
+Serializes a value to compact JSON string.
+
+Doesn't support integers that do not fit int64. Fails if the value has cycles.
+
+#### Arguments {#to_json-args}
+
+* **value**: a primitive Starlark value: a scalar, or a list/tuple/dict containing only primitive Starlark values. Required.
+
+
+
+
+
+
+
+### proto.to_pbtext {#proto.to_pbtext}
+
+```python
+proto.to_pbtext(msg)
+```
+
+
+
+Serializes a protobuf message to a string using ASCII proto serialization.
+
+#### Arguments {#proto.to_pbtext-args}
+
+* **msg**: a proto message to serialize. Required.
+
+
+
+
+### proto.to_jsonpb {#proto.to_jsonpb}
+
+```python
+proto.to_jsonpb(msg)
+```
+
+
+
+Serializes a protobuf message to a string using JSONPB serialization.
+
+#### Arguments {#proto.to_jsonpb-args}
+
+* **msg**: a proto message to serialize. Required.
+
+
+
 
 

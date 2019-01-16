@@ -39,7 +39,7 @@ _CACHE_NAME_RE = r'^[a-z0-9_]+$'
 #   path: string, where to mount the cache.
 #   name: string, name of the cache to mount.
 #   wait_for_warm_cache: duration or None, how long to wait for a warm cache.
-_cache_ctor = genstruct('swarming.cache')
+_cache_ctor = __native__.genstruct('swarming.cache')
 
 
 # A struct returned by swarming.dimension(...).
@@ -49,7 +49,7 @@ _cache_ctor = genstruct('swarming.cache')
 # Fields:
 #   value: string, value of the dimension.
 #   expiration: duration or None, when the dimension expires.
-_dimension_ctor = genstruct('swarming.dimension')
+_dimension_ctor = __native__.genstruct('swarming.dimension')
 
 
 def _cache(path, name=None, wait_for_warm_cache=None):

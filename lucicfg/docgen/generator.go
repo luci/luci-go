@@ -65,9 +65,15 @@ func (g *Generator) Render(templ string) ([]byte, error) {
 // funcMap are functions available to templates.
 func (g *Generator) funcMap() template.FuncMap {
 	return template.FuncMap{
+		"EscapeMD":       escapeMD,
 		"Symbol":         g.symbol,
 		"LinkifySymbols": g.linkifySymbols,
 	}
+}
+
+// escapeMD makes sure 's' gets rendered as is in markdown.
+func escapeMD(s string) string {
+	return strings.Replace(s, "*", "\\*", -1)
 }
 
 // symbol returns a symbol from the given module.
@@ -105,7 +111,7 @@ func (g *Generator) symbol(module, lookup string) (*symbol, error) {
 
 // This matches a.b.c(...). '(...)' part is important, otherwise there are ton
 // of undesired matches in various code snippets.
-var symRefRe = regexp.MustCompile(`\w+(\.\w+)+(\(\.\.\.\))`)
+var symRefRe = regexp.MustCompile(`\w+(\.\w+)*(\(\.\.\.\))`)
 
 // linkifySymbols replaces recognized symbol names with markdown links to
 // symbols.
@@ -191,34 +197,48 @@ func (s *symbol) Anchor(sub ...string) string {
 //         # Optional arguments.
 //         cipd_version = None,
 //         recipe = None,
+//
+//         **kwargs,
 //     )
 //
 // This is apparently very non-trivial to generate using text/template while
 // keeping all spaces and newlines strict.
 func (s *symbol) InvocationSnippet() string {
-	var req, opt []string
+	var req, opt, variadric []string
 	for _, f := range s.Doc().Args() {
-		if isRequiredField(f) {
+		switch {
+		case strings.HasPrefix(f.Name, "*"):
+			variadric = append(variadric, f.Name)
+		case isRequiredField(f):
 			req = append(req, f.Name)
-		} else {
-			opt = append(opt, f.Name)
+		default:
+			opt = append(opt, fmt.Sprintf("%s = None", f.Name))
 		}
 	}
+	all := append(append(req, opt...), variadric...)
+
 	b := &strings.Builder{}
-	fmt.Fprintf(b, "%s(", s.FullName)
-	if len(req) != 0 {
-		fmt.Fprintf(b, "\n    # Required arguments.\n")
-		for _, n := range req {
-			fmt.Fprintf(b, "    %s,\n", n)
+
+	writeSection := func(section string, args []string) {
+		if len(args) != 0 {
+			b.WriteString(section)
+			for _, a := range args {
+				fmt.Fprintf(b, "    %s,\n", a)
+			}
 		}
 	}
-	if len(opt) != 0 {
-		fmt.Fprintf(b, "\n    # Optional arguments.\n")
-		for _, n := range opt {
-			fmt.Fprintf(b, "    %s = None,\n", n)
-		}
+
+	// Use a compact form when we have only few arguments.
+	fmt.Fprintf(b, "%s(", s.FullName)
+	if len(all) < 5 {
+		b.WriteString(strings.Join(all, ", "))
+	} else {
+		writeSection("\n    # Required arguments.\n", req)
+		writeSection("\n    # Optional arguments.\n", opt)
+		writeSection("\n", variadric)
 	}
 	fmt.Fprintf(b, ")")
+
 	return b.String()
 }
 
