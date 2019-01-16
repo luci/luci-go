@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6169c039_64d2e305",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-16T23:20:21Z",
+      "side": 1,
+      "message": "happy new year!",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "d52f25ec50f348bbfa6112e085b1e59c6bbf0ffc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87917c74_68db0368",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-16T23:20:21Z",
+      "side": 1,
+      "message": "used inside 1 func; just inline and you won\u0027t need godoc.",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 1
+      },
+      "revId": "d52f25ec50f348bbfa6112e085b1e59c6bbf0ffc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ec4ff49_46599202",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-16T23:20:21Z",
+      "side": 1,
+      "message": "create helper func, so you can just return here:\n  return enqueDestroyInstance(c, task.Id, vm.Hostname)\nsimilarly below.\nand you won\u0027t need giant switch statement below nor none|dest|term constants.",
+      "range": {
+        "startLine": 90,
+        "startChar": 2,
+        "endLine": 90,
+        "endChar": 12
+      },
+      "revId": "d52f25ec50f348bbfa6112e085b1e59c6bbf0ffc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3f6f804_c68321c4",
+        "filename": "gce/appengine/backend/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-16T23:20:21Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "d52f25ec50f348bbfa6112e085b1e59c6bbf0ffc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
