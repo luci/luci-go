@@ -19,12 +19,17 @@ queue:
   retry_parameters:
     task_retry_limit: 0
 
-- name: manage-instance
+- name: manage-bot
   rate: 100/s
   retry_parameters:
     task_retry_limit: 0
 
 - name: process-config
+  rate: 100/s
+  retry_parameters:
+    task_retry_limit: 0
+
+- name: terminate-bot
   rate: 100/s
   retry_parameters:
     task_retry_limit: 0
