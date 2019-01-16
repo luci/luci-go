@@ -220,7 +220,10 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) error {
 
 		case "swarming_dimension":
 			if d := toStringPair(t.Value); d != nil {
-				dest.Infra.Swarming.TaskDimensions = append(dest.Infra.Swarming.TaskDimensions, d)
+				dest.Infra.Swarming.TaskDimensions = append(dest.Infra.Swarming.TaskDimensions, &buildbucketpb.RequestedDimension{
+					Key:   d.Key,
+					Value: d.Value,
+				})
 			}
 
 		case "swarming_tag":
