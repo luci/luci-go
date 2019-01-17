@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "63e6136d_a304e756",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 11
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T23:13:57Z",
+      "side": 1,
+      "message": "Also remove this?",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46ef4a8d_e7f3d4ca",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 11
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T23:13:57Z",
+      "side": 1,
+      "message": "and this",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89a74581_2c8710e7",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T23:13:57Z",
+      "side": 1,
+      "message": "and this",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f75d112e_fe04eb1c",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T23:13:57Z",
+      "side": 1,
+      "message": "and this",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15a80cd5_666f2ed1",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T23:13:57Z",
+      "side": 1,
+      "message": "and this",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f349bdb_958a26e0",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T23:13:57Z",
+      "side": 1,
+      "message": "and this",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
