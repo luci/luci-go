@@ -214,6 +214,24 @@
     },
     {
       "key": {
+        "uuid": "b2924d92_c2bd383f",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T23:11:03Z",
+      "side": 1,
+      "message": "We can keep that, since it doesn\u0027t take up extra screen real estate, but change this to reflect it (so it should be singular instead of a slice)",
+      "parentUuid": "eb7721aa_d2a018a9",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4c00b19_158d2f23",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 7
