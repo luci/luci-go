@@ -79,6 +79,40 @@ def _int(attr, val, min=None, max=None, default=None, required=True):
   return val
 
 
+def _float(attr, val, min=None, max=None, default=None, required=True):
+  """Validates that the value is a float or integer and returns it as float.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    min: minimal allowed value (inclusive) or None for unbounded.
+    max: maximal allowed value (inclusive) or None for unbounded.
+    default: a value to use if 'val' is None, ignored if required is True.
+    required: if False, allow 'val' to be None, return 'default' in this case.
+
+  Returns:
+    The validated float or None if required is False and default is None.
+  """
+  if val == None:
+    if required:
+      fail('missing required field %r' % attr)
+    if default == None:
+      return None
+    val = default
+
+  if type(val) == 'int':
+    val = float(val)
+  elif type(val) != 'float':
+    fail('bad %r: got %s, want float or int' % (attr, type(val)))
+
+  if min != None and val < min:
+    fail('bad %r: %s should be >= %s' % (attr, val, min))
+  if max != None and val > max:
+    fail('bad %r: %s should be <= %s' % (attr, val, max))
+
+  return val
+
+
 def _bool(attr, val, default=None, required=True):
   """Validates that the value can be converted to a boolean.
 
@@ -231,12 +265,43 @@ def _struct(attr, val, sym, default=None, required=True):
   return val
 
 
+def _type(attr, val, prototype, default=None, required=True):
+  """Validates that the value is either None or has the same type as `prototype`
+  value.
+
+  Useful when checking types of protobuf messages.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    prototype: a prototype value to compare val's type against.
+    default: a value to use if `val` is None, ignored if required is True.
+    required: if False, allow `val` to be None, return `default` in this case.
+
+  Returns:
+    `val` on success or None if required is False and default is None.
+  """
+  if val == None:
+    if required:
+      fail('missing required field %r' % attr)
+    if default == None:
+      return None
+    val = default
+
+  if type(val) != type(prototype):
+    fail('bad %r: got %s, want %s' % (attr, type(val), type(prototype)))
+
+  return val
+
+
 validate = struct(
     string = _string,
     int = _int,
+    float = _float,
     bool = _bool,
     duration = _duration,
     list = _list,
     str_dict = _str_dict,
     struct = _struct,
+    type = _type,
 )
