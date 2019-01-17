@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "933af2b8_4999bc13",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 14
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T23:58:26Z",
+      "side": 1,
+      "message": "No longer needed",
+      "revId": "2c74b0ba7f868ebfb4c78fe68eb8c496a3f98bf8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2a85df8_d95b5be5",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T23:58:26Z",
+      "side": 1,
+      "message": "label\u0027s not used, so this could just be\nlogURL :\u003d \"\"\nif len(steps.Logs) \u003e 0 {\n   logURL \u003d html.EscapeString(steps.Logs[0].ViewURL)\n}\n...\nLogURL: logURL\n\nAnd then we don\u0027t need sanitizeFirstLog",
+      "revId": "2c74b0ba7f868ebfb4c78fe68eb8c496a3f98bf8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
