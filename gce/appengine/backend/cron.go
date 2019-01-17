@@ -111,3 +111,25 @@ func processConfigsAsync(c context.Context) error {
 	}
 	return nil
 }
+
+// reportQuotasAsync schedules task queue tasks to report quota in each project.
+func reportQuotasAsync(c context.Context) error {
+	var keys []*datastore.Key
+	if err := datastore.GetAll(c, datastore.NewQuery(model.ProjectKind), &keys); err != nil {
+		return errors.Annotate(err, "failed to fetch project").Err()
+	}
+	t := make([]*tq.Task, len(keys))
+	for i, k := range keys {
+		id := k.StringID()
+		t[i] = &tq.Task{
+			Payload: &tasks.ReportQuota{
+				Id: id,
+			},
+		}
+		logging.Debugf(c, "found project %q", id)
+	}
+	if err := getDispatcher(c).AddTask(c, t...); err != nil {
+		return errors.Annotate(err, "failed to schedule tasks").Err()
+	}
+	return nil
+}

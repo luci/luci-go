@@ -16,7 +16,10 @@ package backend
 
 import (
 	"context"
+	"net/http"
 	"testing"
+
+	"google.golang.org/api/compute/v1"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
@@ -27,6 +30,7 @@ import (
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
+	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -39,13 +43,16 @@ func TestQueues(t *testing.T) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		srv := &rpc.Config{}
-		c := withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv)
+		rt := &roundtripper.JSONRoundTripper{}
+		gce, err := compute.New(&http.Client{Transport: rt})
+		So(err, ShouldBeNil)
+		c := withCompute(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), gce)
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("drain", func() {
+		Convey("drainVM", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {
 					err := drainVM(c, nil)
@@ -213,7 +220,7 @@ func TestQueues(t *testing.T) {
 					err := processConfig(c, &tasks.ProcessConfig{
 						Id: "id",
 					})
-					So(err, ShouldErrLike, "failed to get config")
+					So(err, ShouldErrLike, "failed to fetch config")
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 			})
@@ -270,6 +277,67 @@ func TestQueues(t *testing.T) {
 					So(ok, ShouldBeTrue)
 					So(task.Id, ShouldEqual, "id-2")
 				})
+			})
+		})
+
+		Convey("reportQuota", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					err := reportQuota(c, nil)
+					So(err, ShouldErrLike, "unexpected payload")
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
+
+				Convey("empty", func() {
+					err := reportQuota(c, &tasks.ReportQuota{})
+					So(err, ShouldErrLike, "ID is required")
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
+
+				Convey("missing", func() {
+					err := reportQuota(c, &tasks.ReportQuota{
+						Id: "id",
+					})
+					So(err, ShouldErrLike, "failed to fetch project")
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("valid", func() {
+				rt.Handler = func(req interface{}) (int, interface{}) {
+					return http.StatusOK, &compute.RegionList{
+						Items: []*compute.Region{
+							{
+								Name: "ignore",
+							},
+							{
+								Name: "region",
+								Quotas: []*compute.Quota{
+									{
+										Limit:  100.0,
+										Metric: "ignore",
+										Usage:  0.0,
+									},
+									{
+										Limit:  100.0,
+										Metric: "metric",
+										Usage:  50.0,
+									},
+								},
+							},
+						},
+					}
+				}
+				datastore.Put(c, &model.Project{
+					ID:      "id",
+					Metrics: []string{"metric"},
+					Project: "project",
+					Regions: []string{"region"},
+				})
+				err := reportQuota(c, &tasks.ReportQuota{
+					Id: "id",
+				})
+				So(err, ShouldBeNil)
 			})
 		})
 	})

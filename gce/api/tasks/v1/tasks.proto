@@ -56,6 +56,12 @@ message ProcessConfig {
   string id = 1;
 }
 
+// A task to report GCE quota utilization.
+message ReportQuota {
+  // The ID of the project entity to report quota utilization for.
+  string id = 1;
+}
+
 // A task to terminate a Swarming bot associated with a VM entity.
 message TerminateBot {
   // The ID of the VM entity to terminate a Swarming bot for.

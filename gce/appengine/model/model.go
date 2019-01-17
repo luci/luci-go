@@ -41,6 +41,27 @@ type Config struct {
 	Config config.Config `gae:"config"`
 }
 
+// ProjectKind is a project entity's kind in the datastore.
+const ProjectKind = "Project"
+
+// Project is a root entity representing a GCP project.
+// GCE quota utilization is reported for each metric in each region.
+type Project struct {
+	// _extra is where unknown properties are put into memory.
+	// Extra properties are not written to the datastore.
+	_extra datastore.PropertyMap `gae:"-,extra"`
+	// _kind is the entity's kind in the datastore.
+	_kind string `gae:"$kind,Project"`
+	// ID is the unique identifier for this project.
+	ID string `gae:"$id"`
+	// Metrics is a slice of names of GCE quota metrics to report.
+	Metrics []string `gae:"metrics"`
+	// Project is the name of the GCP project to report quota for.
+	Project string `gae:"project"`
+	// Regions is a slice of names of GCE regions to report quota for.
+	Regions []string `gae:"regions"`
+}
+
 // VMKind is a VM entity's kind in the datastore.
 const VMKind = "VM"
 
