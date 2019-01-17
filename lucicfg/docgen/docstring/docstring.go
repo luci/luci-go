@@ -76,6 +76,20 @@ func (p *Parsed) RemarkBlock(title string) RemarkBlock {
 	return RemarkBlock{}
 }
 
+// Args is an alias for FieldsBlock("Args").Fields.
+//
+// Returns arguments accepted by a function.
+func (p *Parsed) Args() []Field {
+	return p.FieldsBlock("Args").Fields
+}
+
+// Returns is an alias for RemarkBlock("Returns").Body.
+//
+// Returns a description of a function's return value.
+func (p *Parsed) Returns() string {
+	return p.RemarkBlock("Returns").Body
+}
+
 // FieldsBlock is a section like "Args: ..." with a bunch of field definitions.
 type FieldsBlock struct {
 	Title  string  // how this block is titled, e.g. "Args" or "Fields"
