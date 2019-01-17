@@ -33,6 +33,75 @@
       "revId": "0b456e4e38662be30ca8e68a3d90c02a297112d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88c6dc23_3f588067",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-01-17T21:50:09Z",
+      "side": 1,
+      "message": "Buildbucket",
+      "range": {
+        "startLine": 117,
+        "startChar": 55,
+        "endLine": 117,
+        "endChar": 66
+      },
+      "revId": "0b456e4e38662be30ca8e68a3d90c02a297112d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1ea156b_2418e477",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-01-17T21:50:09Z",
+      "side": 1,
+      "message": "matching bot (based on `dimensions`)",
+      "range": {
+        "startLine": 122,
+        "startChar": 7,
+        "endLine": 122,
+        "endChar": 44
+      },
+      "revId": "0b456e4e38662be30ca8e68a3d90c02a297112d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e82aae77_5d435eec",
+        "filename": "lucicfg/starlark/stdlib/native_doc.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-01-17T21:50:09Z",
+      "side": 1,
+      "message": "to a",
+      "range": {
+        "startLine": 69,
+        "startChar": 24,
+        "endLine": 69,
+        "endChar": 27
+      },
+      "revId": "0b456e4e38662be30ca8e68a3d90c02a297112d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
