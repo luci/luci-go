@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -56,32 +55,8 @@ func (*Config) Delete(c context.Context, req *config.DeleteRequest) (*empty.Empt
 // Ensure handles a request to create or update a config.
 // For app-internal use only.
 func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Config, error) {
-	switch {
-	case req.GetId() == "":
+	if req.GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
-	case req.Config.GetPrefix() == "":
-		return nil, status.Errorf(codes.InvalidArgument, "prefix is required")
-	case len(req.Config.Attributes.GetDisk()) == 0:
-		return nil, status.Errorf(codes.InvalidArgument, "at least one disk is required")
-	case req.Config.Attributes.MachineType == "":
-		return nil, status.Errorf(codes.InvalidArgument, "machine type is required")
-	case len(req.Config.Attributes.GetMetadata()) > 0:
-		for _, meta := range req.Config.Attributes.Metadata {
-			// Ensure FromText is in the right form.
-			// Implicitly rejects FromFile, which is only supported in configs.
-			if strings.Index(meta.GetFromText(), ":") == -1 {
-				return nil, status.Errorf(codes.InvalidArgument, "metadata from text must be in key:value form")
-			}
-		}
-	case len(req.Config.Attributes.GetNetworkInterface()) == 0:
-		return nil, status.Errorf(codes.InvalidArgument, "at least one network interface is required")
-	case req.Config.Attributes.Project == "":
-		return nil, status.Errorf(codes.InvalidArgument, "project is required")
-	case req.Config.Attributes.Zone == "":
-		return nil, status.Errorf(codes.InvalidArgument, "zone is required")
-	case req.Config.GetSeconds() < 1:
-		// Implicitly rejects Duration, which is only supported in configs.
-		return nil, status.Errorf(codes.InvalidArgument, "lifetime seconds must be positive")
 	}
 	cfg := &model.Config{
 		ID:     req.Id,

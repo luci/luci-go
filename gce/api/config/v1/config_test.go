@@ -32,19 +32,70 @@ func TestValidateConfig(t *testing.T) {
 		c := &validation.Context{Context: context.Background()}
 		k := stringset.New(0)
 
-		Convey("empty", func() {
-			cfg := &Config{}
-			cfg.Validate(c, k)
-			So(c.Finalize(), ShouldBeNil)
+		Convey("invalid", func() {
+			Convey("empty", func() {
+				cfg := &Config{}
+				cfg.Validate(c, k)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "at least one disk is required")
+				So(errs, ShouldContainErr, "prefix is required")
+				So(errs, ShouldContainErr, "lifetime seconds must be positive")
+			})
+
+			Convey("unknown kind", func() {
+				k.Add("known")
+				cfg := &Config{
+					Kind:   "unknown",
+					Prefix: "prefix",
+				}
+				cfg.Validate(c, k)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "unknown kind")
+			})
+
+			Convey("lifetime", func() {
+				Convey("duration", func() {
+					cfg := &Config{
+						Lifetime: &Config_Duration{},
+					}
+					cfg.Validate(c, k)
+					errs := c.Finalize().(*validation.Error).Errors
+					So(errs, ShouldContainErr, "lifetime seconds must be positive")
+				})
+
+				Convey("seconds", func() {
+					cfg := &Config{
+						Lifetime: &Config_Seconds{
+							Seconds: -3600,
+						},
+					}
+					cfg.Validate(c, k)
+					errs := c.Finalize().(*validation.Error).Errors
+					So(errs, ShouldContainErr, "lifetime seconds must be positive")
+				})
+			})
 		})
 
-		Convey("unknown kind", func() {
-			k.Add("known")
+		Convey("valid", func() {
 			cfg := &Config{
-				Kind: "unknown",
+				Attributes: &VM{
+					Disk: []*Disk{
+						{},
+					},
+					MachineType: "type",
+					NetworkInterface: []*NetworkInterface{
+						{},
+					},
+					Project: "project",
+					Zone:    "zone",
+				},
+				Lifetime: &Config_Seconds{
+					Seconds: 3600,
+				},
+				Prefix: "prefix",
 			}
 			cfg.Validate(c, k)
-			So(c.Finalize(), ShouldErrLike, "unknown kind")
+			So(c.Finalize(), ShouldBeNil)
 		})
 	})
 }
