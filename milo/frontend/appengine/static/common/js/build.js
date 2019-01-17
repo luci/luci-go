@@ -42,40 +42,25 @@ $(document).ready(function() {
 
   function createTimeline() {
     function linkHtml(link) {
-      return `<a href="${link.URL}" target="_blank">${link.Label}</a>`;
+      return `<a href="${link.view_url}" target="_blank">${link.name}</a>`;
     }
 
     function groupTemplater(group, element, data) {
-      let content = `
+      return `
         <div class="group-title ${group.data.statusClassName}">
           ${group.data.label}
           <span class="duration">( ${group.data.duration} )</span>
         </div>`;
-      if (group.data.text && group.data.text.length > 0) {
-        content += group.data.text.join('<br>');
-      }
-      const links = [];
-      // MainLink is an array of Links, SubLink is an array of array of Links.
-      if (group.data.mainLink) {
-        links.push(...group.data.mainLink);
-      }
-      if (group.data.subLink) {
-        group.data.subLink.forEach(linkSet => links.push(...linkSet));
-      }
-      if (links.length > 0) {
-        content += `<ul><li>${links.map(linkHtml).join('</li><li>')}</li></ul>`;
-      } else {
-        content += '<ul><li>- no logs -</li></ul>';
-      }
-
-      return content;
     }
 
     const options = {
       clickToUse: false,
       groupTemplate: groupTemplater,
       multiselect: false,
-      onInitialDrawComplete: () => $('#timeline-rendering').remove(),
+      onInitialDrawComplete: () => {
+        $('#timeline-rendering').remove();
+        $('#timeline-controls').show();
+      },
       orientation: {
         axis: 'both',
         item: 'top',
@@ -94,8 +79,8 @@ $(document).ready(function() {
       if (!item) {
         return;
       }
-      if (item.data && item.data.mainLink && item.data.mainLink.length > 0) {
-        window.open(item.data.mainLink[0].URL, '_blank');
+      if (item.data && item.data.logs && item.data.logs.length > 0) {
+        window.open(item.data.logs[0].view_url, '_blank');
       }
     });
 

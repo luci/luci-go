@@ -86,6 +86,7 @@ func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
 	}
 
 	bp.StepDisplayPref = getStepDisplayPrefCookie(c)
+	bp.TimelineDisplayPref = getTimelineDisplayPrefCookie(c)
 
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"BuildPage": bp,
@@ -142,5 +143,17 @@ func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
 	default:
 		logging.WithError(err).Errorf(c.Context, "failed to read stepDisplayPref cookie")
 		return ui.StepDisplayDefault
+	}
+}
+
+func getTimelineDisplayPrefCookie(c *router.Context) ui.TimelineDisplayPref {
+	switch cookie, err := c.Request.Cookie("timelineDisplayPref"); err {
+	case nil:
+		return ui.TimelineDisplayPref(cookie.Value)
+	case http.ErrNoCookie:
+		return ui.TimelineDisplayDefault
+	default:
+		logging.WithError(err).Errorf(c.Context, "failed to read timelineDisplayPref cookie")
+		return ui.TimelineDisplayDefault
 	}
 }
