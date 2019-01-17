@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "df685dc6_db948280",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 11
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-17T23:28:28Z",
+      "side": 1,
+      "message": "Ah good catch, I forgot about the timeline-controls!",
+      "parentUuid": "63e6136d_a304e756",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "46ef4a8d_e7f3d4ca",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 11
@@ -33,6 +51,24 @@
       "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6699f357_f83bc7aa",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 11
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-17T23:28:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46ef4a8d_e7f3d4ca",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "b9a50b99_30f03ed6",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-17T23:28:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89a74581_2c8710e7",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f75d112e_fe04eb1c",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 11
@@ -67,6 +121,24 @@
       "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62e43a65_e6a869c6",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-17T23:28:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f75d112e_fe04eb1c",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "24e03503_15546d63",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-17T23:28:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "15a80cd5_666f2ed1",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f349bdb_958a26e0",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 11
@@ -101,6 +191,24 @@
       "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94aacd88_cd28f213",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-17T23:28:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1f349bdb_958a26e0",
+      "revId": "dc9e363cf927f07e85e168e60b26406606da7caa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
