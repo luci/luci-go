@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "016c6637_9b4238e3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/validate.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-17T03:46:04Z",
+      "side": 1,
+      "message": "this is largely copy-pasta of _int, with only change is automatic typecast from int to float.",
+      "range": {
+        "startLine": 82,
+        "startChar": 4,
+        "endLine": 82,
+        "endChar": 10
+      },
+      "revId": "89b0107da08853bd11336849343f90d91a18b788",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
