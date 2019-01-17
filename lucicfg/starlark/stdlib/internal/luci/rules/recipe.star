@@ -25,8 +25,9 @@ def recipe(
   ):
   """Defines where to locate a particular recipe.
 
-  Builders refer to recipes in their 'recipe' field. Multiple builders can
-  execute the same recipe (perhaps passing different properties to it).
+  Builders refer to recipes in their `recipe` field, see core.builder(...).
+  Multiple builders can execute the same recipe (perhaps passing different
+  properties to it).
 
   Recipes are located inside cipd packages called "recipe bundles". Typically
   the cipd package name with the recipe bundle will look like:
@@ -41,18 +42,18 @@ def recipe(
   elsewhere.
 
   The cipd version to fetch is usually a lower-cased git ref (like
-  'refs/heads/master'), or it can be a cipd tag (like 'git_revision:abc...').
+  `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
 
   Args:
-    name: name of this recipe entity, to refer to it from builders. If 'recipe'
+    name: name of this recipe entity, to refer to it from builders. If `recipe`
         is None, also specifies the recipe name within the bundle. Required.
     cipd_package: a cipd package name with the recipe bundle. Required.
     cipd_version: a version of the recipe bundle package to fetch, default
-        is 'refs/heads/master'.
+        is `refs/heads/master`.
     recipe: name of a recipe inside the recipe bundle if it differs from
-        'name'. Useful if recipe names clash between different recipe bundles.
-        When this happens, 'name' can be used as a non-ambiguous alias, and
-        'recipe' can provide the actual recipe name. Defaults to 'name'.
+        `name`. Useful if recipe names clash between different recipe bundles.
+        When this happens, `name` can be used as a non-ambiguous alias, and
+        `recipe` can provide the actual recipe name. Defaults to `name`.
   """
   name = validate.string('name', name)
   graph.add_node(keys.recipe(name), props = {

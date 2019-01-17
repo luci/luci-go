@@ -22,8 +22,8 @@ def bucket(name=None, acls=None):
   """Defines a bucket: a container for LUCI resources that share the same ACL.
 
   Args:
-    name: name of the bucket, e.g. 'ci' or 'try'. Required.
-    acls: list of acl.entry objects.
+    name: name of the bucket, e.g. `ci` or `try`. Required.
+    acls: list of acl.entry(...) objects.
   """
   name = validate.string('name', name)
   graph.add_node(keys.bucket(name), props = {
