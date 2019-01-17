@@ -56,11 +56,11 @@ import (
 var funcMap = template.FuncMap{
 	"botLink":          botLink,
 	"recipeLink":       recipeLink,
-	"duration":         duration,
+	"duration":         common.Duration,
 	"faviconMIMEType":  faviconMIMEType,
 	"formatCommitDesc": formatCommitDesc,
 	"formatTime":       formatTime,
-	"humanDuration":    humanDuration,
+	"humanDuration":    common.HumanDuration,
 	"localTime":        localTime,
 	"localTimeTooltip": localTimeTooltip,
 	"obfuscateEmail":   obfuscateEmail,
@@ -73,7 +73,7 @@ var funcMap = template.FuncMap{
 	"shortenEmail":     shortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
-	"toInterval":       toInterval,
+	"toInterval":       common.ToInterval,
 	"toLower":          strings.ToLower,
 	"toTime":           toTime,
 }
@@ -268,91 +268,6 @@ func toTime(ts *timestamp.Timestamp) (result time.Time) {
 		result = t
 	}
 	return
-}
-
-type interval struct {
-	Start time.Time
-	End   time.Time
-}
-
-func (in interval) Started() bool {
-	return !in.Start.IsZero()
-}
-
-func (in interval) Ended() bool {
-	return !in.End.IsZero()
-}
-
-func (in interval) Duration() time.Duration {
-	// Only return something if the interval is complete.
-	if !(in.Ended() && in.Started()) {
-		return 0
-	}
-	// Don't return non-sensical values.
-	if d := in.End.Sub(in.Start); d > 0 {
-		return d
-	}
-	return 0
-}
-
-func toInterval(start, end *timestamp.Timestamp) (result interval) {
-	if t, err := ptypes.Timestamp(start); err == nil {
-		result.Start = t
-	}
-	if t, err := ptypes.Timestamp(end); err == nil {
-		result.End = t
-	}
-	return
-}
-
-func duration(start, end *timestamp.Timestamp) string {
-	in := toInterval(start, end)
-	if in.Started() && in.Ended() {
-		return humanDuration(in.Duration())
-	}
-	return "N/A"
-}
-
-// humanDuration translates d into a human readable string of x units y units,
-// where x and y could be in days, hours, minutes, or seconds, whichever is the
-// largest.
-func humanDuration(d time.Duration) string {
-	t := int64(d.Seconds())
-	day := t / 86400
-	hr := (t % 86400) / 3600
-
-	if day > 0 {
-		if hr != 0 {
-			return fmt.Sprintf("%d days %d hrs", day, hr)
-		}
-		return fmt.Sprintf("%d days", day)
-	}
-
-	min := (t % 3600) / 60
-	if hr > 0 {
-		if min != 0 {
-			return fmt.Sprintf("%d hrs %d mins", hr, min)
-		}
-		return fmt.Sprintf("%d hrs", hr)
-	}
-
-	sec := t % 60
-	if min > 0 {
-		if sec != 0 {
-			return fmt.Sprintf("%d mins %d secs", min, sec)
-		}
-		return fmt.Sprintf("%d mins", min)
-	}
-
-	if sec != 0 {
-		return fmt.Sprintf("%d secs", sec)
-	}
-
-	if d > time.Millisecond {
-		return fmt.Sprintf("%d ms", d/time.Millisecond)
-	}
-
-	return "0"
 }
 
 // obfuscateEmail converts a string containing email adddress email@address.com
