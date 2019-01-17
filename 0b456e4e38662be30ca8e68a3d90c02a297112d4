@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5fd31f9e_e26c8212",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-01-17T21:11:08Z",
+      "side": 1,
+      "message": "Is it worth mentioning that the template can override this? Probably not but still wondering.",
+      "revId": "0b456e4e38662be30ca8e68a3d90c02a297112d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8be0d8c_438a26cb",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/swarming.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-01-17T21:11:08Z",
+      "side": 1,
+      "message": "Why have validation here, vs relying on the service itself to do the validation? I fear the eventual discrepancy, which adds a new failure mode: passes internal verification but fails when doing the RPC.\n\nIn particular, Swarming\u0027s API has a way to validate that a task request is good or not.",
+      "revId": "0b456e4e38662be30ca8e68a3d90c02a297112d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
