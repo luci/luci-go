@@ -34,6 +34,123 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestDeleteBot(t *testing.T) {
+	t.Parallel()
+
+	Convey("deleteBot", t, func() {
+		dsp := &tq.Dispatcher{}
+		registerTasks(dsp)
+		srv := &rpc.Config{}
+		rt := &roundtripper.JSONRoundTripper{}
+		swr, err := swarming.New(&http.Client{Transport: rt})
+		So(err, ShouldBeNil)
+		c := withSwarming(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), swr)
+		tqt := tqtesting.GetTestable(c, dsp)
+		tqt.CreateQueues()
+
+		Convey("invalid", func() {
+			Convey("nil", func() {
+				err := deleteBot(c, nil)
+				So(err, ShouldErrLike, "unexpected payload")
+			})
+
+			Convey("empty", func() {
+				err := deleteBot(c, &tasks.DeleteBot{})
+				So(err, ShouldErrLike, "ID is required")
+			})
+
+			Convey("hostname", func() {
+				err := deleteBot(c, &tasks.DeleteBot{
+					Id: "id",
+				})
+				So(err, ShouldErrLike, "hostname is required")
+			})
+
+			Convey("missing", func() {
+				err := deleteBot(c, &tasks.DeleteBot{
+					Id:       "id",
+					Hostname: "name",
+				})
+				So(err, ShouldErrLike, "failed to fetch VM")
+			})
+		})
+
+		Convey("valid", func() {
+			Convey("error", func() {
+				rt.Handler = func(req interface{}) (int, interface{}) {
+					return http.StatusInternalServerError, nil
+				}
+				datastore.Put(c, &model.VM{
+					ID:       "id",
+					Deadline: 1,
+					Hostname: "name",
+					URL:      "url",
+				})
+				err := deleteBot(c, &tasks.DeleteBot{
+					Id:       "id",
+					Hostname: "name",
+				})
+				So(err, ShouldErrLike, "failed to delete bot")
+				v := &model.VM{
+					ID: "id",
+				}
+				datastore.Get(c, v)
+				So(v.Deadline, ShouldEqual, 1)
+				So(v.Hostname, ShouldEqual, "name")
+				So(v.URL, ShouldEqual, "url")
+			})
+
+			Convey("deleted", func() {
+				rt.Handler = func(req interface{}) (int, interface{}) {
+					return http.StatusNotFound, nil
+				}
+				datastore.Put(c, &model.VM{
+					ID:       "id",
+					Deadline: 1,
+					Hostname: "name",
+					URL:      "url",
+				})
+				err := deleteBot(c, &tasks.DeleteBot{
+					Id:       "id",
+					Hostname: "name",
+				})
+				So(err, ShouldBeNil)
+				v := &model.VM{
+					ID: "id",
+				}
+				datastore.Get(c, v)
+				So(v.Deadline, ShouldEqual, 0)
+				So(v.Hostname, ShouldBeEmpty)
+				So(v.URL, ShouldBeEmpty)
+			})
+
+			Convey("deletes", func() {
+				rt.Handler = func(req interface{}) (int, interface{}) {
+					return http.StatusOK, &swarming.SwarmingRpcsDeletedResponse{}
+				}
+				datastore.Put(c, &model.VM{
+					ID:       "id",
+					Deadline: 1,
+					Hostname: "name",
+					URL:      "url",
+				})
+				err := deleteBot(c, &tasks.DeleteBot{
+					Id:       "id",
+					Hostname: "name",
+				})
+				So(err, ShouldBeNil)
+				v := &model.VM{
+					ID: "id",
+				}
+				datastore.Get(c, v)
+				So(v.Deadline, ShouldEqual, 0)
+				So(v.Hostname, ShouldBeEmpty)
+				So(v.URL, ShouldBeEmpty)
+			})
+		})
+	})
+}
+
 func TestManageBot(t *testing.T) {
 	t.Parallel()
 
