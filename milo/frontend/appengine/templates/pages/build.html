@@ -207,14 +207,32 @@
 
 {{define "properties_tab"}}
   <div id="properties">
-    {{ with .Build.Input.Properties }}
+    {{ with .BuildPage.InputProperties }}
+      <table class="info BuildProperties" width="100%">
+      <tr><th>Name</th><th>Value</th><th>Kind</th></tr>
       <h2>Input Properties</h2>
-      {{ . | renderProperties }}
+      {{ range . }}
+        <tr>
+          <td class="left">{{.Key}}</td>
+          <td class="middle"><abbr title="{{.Value}}">{{.Value}}</abbr></td>
+          <td>{{.Kind}}</td>
+        </tr>
+      {{ end }}
+      </table>
     {{ end }}
 
-    {{ with .Build.Output.Properties }}
+    {{ with .BuildPage.OutputProperties }}
+      <table class="info BuildProperties" width="100%">
+      <tr><th>Name</th><th>Value</th><th>Kind</th></tr>
       <h2>Output Properties</h2>
-      {{ . | renderProperties }}
+      {{ range . }}
+        <tr>
+          <td class="left">{{.Key}}</td>
+          <td class="middle"><abbr title="{{.Value}}">{{.Value}}</abbr></td>
+          <td>{{.Kind}}</td>
+        </tr>
+      {{ end }}
+      </table>
     {{ end }}
 
   </div>
@@ -223,9 +241,9 @@
 {{define "changes_tab"}}
   <div id="changes">
     <h2>All Changes</h2>
-    {{ if .Build.Blame }}
+    {{ if .BuildPage.Blame }}
     <ol>
-    {{ range .Build.Blame }}
+    {{ range .BuildPage.Blame }}
     <li>
       <h3>{{.Title}}</h3>
       <table class="info">

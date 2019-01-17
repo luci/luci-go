@@ -20,11 +20,14 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/milo/common/model"
@@ -128,6 +131,67 @@ func (bp *BuildPage) HumanStatus() string {
 	default:
 		return "Unknown status"
 	}
+}
+
+type property struct {
+	Key   string
+	Value string
+	Kind  string
+}
+
+func properties(fields map[string]*structpb.Value) []property {
+	keys := make([]string, 0, len(fields))
+	results := make([]property, len(fields))
+	for k := range fields {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for i, k := range keys {
+		v := fields[k]
+		s := fmt.Sprintf("%s", v)
+		kind := "unknown"
+		switch t := v.Kind.(type) {
+		case *structpb.Value_BoolValue:
+			kind = "bool"
+			if t.BoolValue {
+				s = "True"
+			} else {
+				s = "False"
+			}
+		case *structpb.Value_StringValue:
+			kind = "string"
+			s = t.StringValue
+		case *structpb.Value_NumberValue:
+			kind = "number"
+			s = strconv.FormatFloat(t.NumberValue, 'g', -1, 64)
+		case *structpb.Value_ListValue:
+			kind = "list"
+			m := jsonpb.Marshaler{}
+			if b, err := m.MarshalToString(t.ListValue); err == nil {
+				s = b
+			}
+		case *structpb.Value_StructValue:
+			kind = "object"
+			m := jsonpb.Marshaler{Indent: "  "}
+			if b, err := m.MarshalToString(t.StructValue); err == nil {
+				s = b
+			}
+		}
+		results[i] = property{
+			Key:   k,
+			Value: s,
+			Kind:  kind,
+		}
+	}
+	return results
+}
+
+func (bp *BuildPage) InputProperties() []property {
+	return properties(bp.Input.Properties.Fields)
+}
+
+func (bp *BuildPage) OutputProperties() []property {
+	return properties(bp.Output.Properties.Fields)
 }
 
 func (bp *BuildPage) Builder() *Link {
