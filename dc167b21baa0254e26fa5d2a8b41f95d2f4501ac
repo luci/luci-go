@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "78aaa80f_ebb36427",
+        "filename": "lucicfg/cmd/docgen/main.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-17T19:55:00Z",
+      "side": 1,
+      "message": "That\u0027s the plan, but this tool is not polished enough yet to become public.",
+      "parentUuid": "694ebdb3_0184c08a",
+      "range": {
+        "startLine": 17,
+        "startChar": 48,
+        "endLine": 18,
+        "endChar": 19
+      },
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4769cd14_a37dcf7b",
         "filename": "lucicfg/cmd/docgen/main.go",
         "patchSetId": 18
@@ -45,6 +69,30 @@
       "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aae85f0d_2a07d19e",
+        "filename": "lucicfg/cmd/docgen/main.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-17T19:55:00Z",
+      "side": 1,
+      "message": "oh, I didn\u0027t notice the aliasing",
+      "parentUuid": "4769cd14_a37dcf7b",
+      "range": {
+        "startLine": 69,
+        "startChar": 2,
+        "endLine": 69,
+        "endChar": 5
+      },
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +136,30 @@
     },
     {
       "key": {
+        "uuid": "90cf67e9_808ac22c",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-17T19:55:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6815ae78_4ca2699e",
+      "range": {
+        "startLine": 112,
+        "startChar": 74,
+        "endLine": 112,
+        "endChar": 75
+      },
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d586b0bd_f8afc676",
         "filename": "lucicfg/docgen/generator.go",
         "patchSetId": 18
@@ -111,6 +183,30 @@
     },
     {
       "key": {
+        "uuid": "119e82ab_881c977f",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-17T19:55:00Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d586b0bd_f8afc676",
+      "range": {
+        "startLine": 204,
+        "startChar": 0,
+        "endLine": 205,
+        "endChar": 42
+      },
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4b0fffc_a4509bb6",
         "filename": "lucicfg/docgen/generator.go",
         "patchSetId": 18
@@ -128,6 +224,24 @@
     },
     {
       "key": {
+        "uuid": "0b154ad6_e267ca28",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-17T19:55:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d4b0fffc_a4509bb6",
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7bc9e1b0_dd448256",
         "filename": "lucicfg/docgen/generator.go",
         "patchSetId": 18
@@ -142,6 +256,24 @@
       "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f008da2_fa532ad6",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-17T19:55:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7bc9e1b0_dd448256",
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
