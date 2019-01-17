@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "694ebdb3_0184c08a",
+        "filename": "lucicfg/cmd/docgen/main.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-17T18:43:56Z",
+      "side": 1,
+      "message": "fwiw: customers\u0027 skylark files in their own repos may also benefit from this.",
+      "range": {
+        "startLine": 17,
+        "startChar": 48,
+        "endLine": 18,
+        "endChar": 19
+      },
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4769cd14_a37dcf7b",
+        "filename": "lucicfg/cmd/docgen/main.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-17T18:43:56Z",
+      "side": 1,
+      "message": "meh, plz use diff var here or rename func argument to say out_dir.",
+      "range": {
+        "startLine": 69,
+        "startChar": 2,
+        "endLine": 69,
+        "endChar": 5
+      },
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6815ae78_4ca2699e",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-17T18:43:56Z",
+      "side": 1,
+      "message": "is a ton",
+      "range": {
+        "startLine": 112,
+        "startChar": 74,
+        "endLine": 112,
+        "endChar": 75
+      },
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8777c55a_7a95faa9",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-17T18:43:56Z",
+      "side": 1,
+      "message": "👍 thanks for comment.",
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d586b0bd_f8afc676",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-17T18:43:56Z",
+      "side": 1,
+      "message": "yeah :( it\u0027s actually hard with almost all web-oriented templates (i recall having similar problem in ~2012 with python)",
+      "range": {
+        "startLine": 204,
+        "startChar": 0,
+        "endLine": 205,
+        "endChar": 42
+      },
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4b0fffc_a4509bb6",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-17T18:43:56Z",
+      "side": 1,
+      "message": "i\u0027d move to right before L233.",
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bc9e1b0_dd448256",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-17T18:43:56Z",
+      "side": 1,
+      "message": "swap with above comment.",
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00439659_7836fd6e",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-17T18:43:56Z",
+      "side": 1,
+      "message": ":)",
+      "range": {
+        "startLine": 248,
+        "startChar": 50,
+        "endLine": 248,
+        "endChar": 62
+      },
+      "revId": "dc167b21baa0254e26fa5d2a8b41f95d2f4501ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
