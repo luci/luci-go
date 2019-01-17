@@ -142,6 +142,24 @@
     },
     {
       "key": {
+        "uuid": "ccf7fecd_7302de10",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-17T22:29:50Z",
+      "side": 1,
+      "message": "Is this part of a CUJ though? The CUJ for getting to logs and step text is already served by the results tab, so I feel like I have a hard time justifying this extra complexity.\n\nIt\u0027s easier to add a feature than to remove it, so I\u0027m more inclined to leave this out until someone actually asks for it.",
+      "parentUuid": "24b920e1_8a73a89e",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d4c00b19_158d2f23",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 7
