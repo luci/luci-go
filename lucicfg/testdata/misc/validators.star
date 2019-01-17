@@ -30,6 +30,21 @@ def test_validate_int():
   assert.fails(lambda: call('a', 123, max=122), 'bad "a": 123 should be <= 122')
 
 
+def test_validate_float():
+  call = validate.float
+  assert.eq(call('a', 123.4, min=123, max=123.5), 123.4)
+  assert.eq(call('a', 123, min=123, max=123), 123.0)
+  assert.eq(call('a', 0, default=123, required=False), 0.0)
+  assert.eq(call('a', None, default=123, required=False), 123.0)
+  assert.eq(call('a', None, required=False), None)
+  assert.fails(lambda: call('a', None), 'missing required field "a"')
+  assert.fails(lambda: call('a', '1'), 'bad "a": got string, want float or int')
+  assert.fails(lambda: call('a', []), 'bad "a": got list, want float or int')
+  assert.fails(lambda: call('a', None, default='1', required=False), 'bad "a": got string, want float or int')
+  assert.fails(lambda: call('a', 123, min=124.5), 'bad "a": 123 should be >= 124.5')
+  assert.fails(lambda: call('a', 123, max=122.5), 'bad "a": 123 should be <= 122.5')
+
+
 def test_validate_bool():
   call = validate.bool
   assert.eq(call('a', True), True)
@@ -95,10 +110,22 @@ def test_validate_struct():
   assert.fails(lambda: call('a', None, 'struct', default=1, required=False), 'bad "a": got int, want struct')
 
 
+def test_validate_type():
+  call = validate.type
+  assert.eq(call('a', 1, 0), 1)
+  assert.eq(call('a', None, 0, default=123, required=False), 123)
+  assert.eq(call('a', None, 0, required=False), None)
+  assert.fails(lambda: call('a', None, 0), 'missing required field "a"')
+  assert.fails(lambda: call('a', 'sss', 0), 'bad "a": got string, want int')
+  assert.fails(lambda: call('a', [], 0), 'bad "a": got list, want int')
+
+
 test_validate_string()
 test_validate_int()
+test_validate_float()
 test_validate_bool()
 test_validate_duration()
 test_validate_list()
 test_validate_str_dict()
 test_validate_struct()
+test_validate_type()
