@@ -173,6 +173,9 @@ type Definition struct {
 	// TriggeredJobIDs is a list of jobIDs which this job triggers.
 	// It's set only for triggering jobs.
 	TriggeredJobIDs []string
+
+	// SecurityOptions define the job's security feature configuration
+	SecurityOptions *messages.SecurityOptions
 }
 
 // New returns implementation of Catalog.
@@ -336,6 +339,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			Schedule:         schedule,
 			Task:             packed,
 			TriggeringPolicy: marshalTriggeringPolicy(job.TriggeringPolicy),
+			SecurityOptions:  cfg.SecurityOptions,
 		})
 	}
 
