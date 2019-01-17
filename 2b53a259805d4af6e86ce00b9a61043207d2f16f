@@ -160,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "1cf1b070_176a6cc6",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-17T23:04:10Z",
+      "side": 1,
+      "message": "OK, I really think the steps and the logs should be in here but yes we can wait for further feedback.\n\nI have removed the log links, switched the cookies back to raw approach, removed the extra cookies script, etc..\n\nDone.",
+      "parentUuid": "ccf7fecd_7302de10",
+      "revId": "2b53a259805d4af6e86ce00b9a61043207d2f16f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4c00b19_158d2f23",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 7
