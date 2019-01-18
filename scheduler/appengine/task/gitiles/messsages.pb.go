@@ -20,7 +20,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Child is last part and its sha1 tip.
+// Child is the last part and its sha1 tip.
 type Child struct {
 	Suffix               string   `protobuf:"bytes,1,opt,name=suffix,proto3" json:"suffix,omitempty"`
 	Sha1                 []byte   `protobuf:"bytes,2,opt,name=sha1,proto3" json:"sha1,omitempty"`
