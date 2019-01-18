@@ -63,12 +63,13 @@ type Parameters struct {
 type Subcommand struct {
 	subcommands.CommandRunBase
 
-	makesRPCs bool // set in init(...)
+	Meta lucicfg.Meta // mutable through flags and through core.meta(...)
 
-	jsonOutput  string
-	logConfig   logging.Config
-	authFlags   authcli.Flags // only for commands that do RPCs
-	serviceHost string        // only for commands that do RPCs
+	hadInit bool // true after Init() was called
+
+	logConfig  logging.Config // for -log-level, used by ModifyContext
+	authFlags  authcli.Flags  // for -service-account-json, used by ConfigService
+	jsonOutput string         // for -json-output, used by Done
 }
 
 // ModifyContext implements cli.ContextModificator.
@@ -78,18 +79,35 @@ func (c *Subcommand) ModifyContext(ctx context.Context) context.Context {
 
 // Init registers common flags.
 //
-// If makesRPCs is true, will register flags related to authentication and RPCs.
-func (c *Subcommand) Init(params Parameters, makesRPCs bool) {
-	c.makesRPCs = makesRPCs
-	c.logConfig.Level = logging.Info // default to Info level
+// Callers are also expected to register a subset of Meta flags they need
+// by calling c.Add*Flags after Init().
+func (c *Subcommand) Init(params Parameters) {
+	// Hardcoded defaults to present.
+	c.Meta.ConfigServiceHost = params.ConfigServiceHost
+	c.logConfig.Level = logging.Info
 
-	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to.")
+	// Register base flags.
 	c.logConfig.AddFlags(&c.Flags)
+	c.authFlags.Register(&c.Flags, params.AuthOptions)
+	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to.")
 
-	if makesRPCs {
-		c.authFlags.Register(&c.Flags, params.AuthOptions)
-		c.Flags.StringVar(&c.serviceHost, "config-service-host", params.ConfigServiceHost, "Hostname of a LUCI config service to send RPCs to.")
+	c.hadInit = true
+}
+
+// AddValidationFlags registers command line flags related to config validation.
+func (c *Subcommand) AddValidationFlags() {
+	if !c.hadInit {
+		panic("call Init() first")
 	}
+	c.Meta.AddValidationFlags(&c.Flags)
+}
+
+// AddOutputFlags registers command line flags related to generated files.
+func (c *Subcommand) AddOutputFlags() {
+	if !c.hadInit {
+		panic("call Init() first")
+	}
+	c.Meta.AddOutputFlags(&c.Flags)
 }
 
 // CheckArgs checks command line args.
@@ -142,12 +160,22 @@ func (c *Subcommand) CheckArgs(args []string, minPosCount, maxPosCount int) bool
 	return true
 }
 
-// configService returns a wrapper around LUCI Config API.
+// ReportMissingFlag prints an error about the missing flag.
 //
-// It is ready for making authenticated RPCs.
+// It is safe to exit the process with after this without any additional
+// logging.
+func (c *Subcommand) ReportMissingFlag(flag string) {
+	c.printError(NewCLIError("%s is required to use this command", flag))
+}
+
+// ConfigService returns a wrapper around LUCI Config API.
+//
+// It is ready for making authenticated RPCs. Panics if c.Meta.ConfigServiceHost
+// is unset. The caller is supposed to check this itself before calling
+// ConfigService.
 func (c *Subcommand) ConfigService(ctx context.Context) (*config.Service, error) {
-	if !c.makesRPCs {
-		panic("the subcommand wasn't declared as one making RPCs")
+	if c.Meta.ConfigServiceHost == "" {
+		panic("-config-service-host is unset")
 	}
 
 	authOpts, err := c.authFlags.Options()
@@ -163,7 +191,7 @@ func (c *Subcommand) ConfigService(ctx context.Context) (*config.Service, error)
 	if err != nil {
 		return nil, err
 	}
-	svc.BasePath = fmt.Sprintf("https://%s/_ah/api/config/v1/", c.serviceHost)
+	svc.BasePath = fmt.Sprintf("https://%s/_ah/api/config/v1/", c.Meta.ConfigServiceHost)
 	svc.UserAgent = lucicfg.UserAgent
 	return svc, nil
 }
