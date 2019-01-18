@@ -69,6 +69,46 @@ func TestConfig(t *testing.T) {
 	})
 }
 
+func TestProject(t *testing.T) {
+	t.Parallel()
+
+	Convey("Project", t, func() {
+		c := memory.Use(context.Background())
+		p := &Project{ID: "id"}
+		err := datastore.Get(c, p)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		err = datastore.Put(c, &Project{
+			ID: "id",
+			Metrics: []string{
+				"metric-1",
+				"metric-2",
+			},
+			Project: "project",
+			Regions: []string{
+				"region-1",
+				"region-2",
+			},
+		})
+		So(err, ShouldBeNil)
+
+		err = datastore.Get(c, p)
+		So(err, ShouldBeNil)
+		So(p, ShouldResemble, &Project{
+			ID: "id",
+			Metrics: []string{
+				"metric-1",
+				"metric-2",
+			},
+			Project: "project",
+			Regions: []string{
+				"region-1",
+				"region-2",
+			},
+		})
+	})
+}
+
 func TestVM(t *testing.T) {
 	t.Parallel()
 

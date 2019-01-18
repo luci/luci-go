@@ -138,5 +138,22 @@ func TestCron(t *testing.T) {
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
 			})
 		})
+
+		Convey("reportQuotasAsync", func() {
+			Convey("none", func() {
+				err := reportQuotasAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("one", func() {
+				datastore.Put(c, &model.Project{
+					ID: "id",
+				})
+				err := reportQuotasAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+		})
 	})
 }

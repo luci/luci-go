@@ -5,3 +5,5 @@ cron:
   schedule: every 1 minutes
 - url: /internal/cron/process-configs
   schedule: every 1 minutes
+- url: /internal/cron/report-quota
+  schedule: every 1 minutes

@@ -20,8 +20,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"google.golang.org/api/googleapi"
+
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -110,7 +113,7 @@ func processConfig(c context.Context, payload proto.Message) error {
 	}
 	cfg, err := getConfig(c).Get(c, &config.GetRequest{Id: task.Id})
 	if err != nil {
-		return errors.Annotate(err, "failed to get config").Err()
+		return errors.Annotate(err, "failed to fetch config").Err()
 	}
 	logging.Debugf(c, "found %d VMs", cfg.Amount)
 	// Trigger tasks to create VMs.
@@ -150,6 +153,46 @@ func processConfig(c context.Context, payload proto.Message) error {
 	logging.Debugf(c, "draining %d VMs", len(t))
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
 		return errors.Annotate(err, "failed to schedule drain tasks").Err()
+	}
+	return nil
+}
+
+// reportQuotaQueue is the name of the report quota task handler queue.
+const reportQuotaQueue = "report-quota"
+
+// reportQuota reports GCE quota utilization.
+func reportQuota(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.ReportQuota)
+	switch {
+	case !ok:
+		return errors.Reason("unexpected payload type %T", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("ID is required").Err()
+	}
+	p := &model.Project{
+		ID: task.Id,
+	}
+	if err := datastore.Get(c, p); err != nil {
+		return errors.Annotate(err, "failed to fetch project").Err()
+	}
+	metrics := stringset.NewFromSlice(p.Metrics...)
+	regions := stringset.NewFromSlice(p.Regions...)
+	rsp, err := getCompute(c).Regions.List(p.Project).Context(c).Do()
+	if err != nil {
+		gerr := err.(*googleapi.Error)
+		logErrors(c, gerr)
+		return errors.Reason("failed to fetch quota").Err()
+	}
+	for _, reg := range rsp.Items {
+		if regions.Has(reg.Name) {
+			logging.Infof(c, "found region %q", reg.Name)
+			for _, q := range reg.Quotas {
+				if metrics.Has(q.Metric) {
+					logging.Infof(c, "metric %q: %f/%f", q.Metric, q.Usage, q.Limit)
+					// TODO(smut): Export metrics.
+				}
+			}
+		}
 	}
 	return nil
 }
