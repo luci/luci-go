@@ -23,6 +23,8 @@ import (
 	"text/template"
 
 	"go.chromium.org/luci/common/data/stringset"
+
+	"go.chromium.org/luci/lucicfg/docgen/ast"
 	"go.chromium.org/luci/lucicfg/docgen/docstring"
 	"go.chromium.org/luci/lucicfg/docgen/symbols"
 )
@@ -140,6 +142,25 @@ type symbol struct {
 	tags stringset.Set // lazily extracted from "DocTags" remarks section
 }
 
+// Flavor returns one of "func", "var", "struct", "unknown".
+func (s *symbol) Flavor() string {
+	switch s.Symbol.(type) {
+	case *symbols.Term:
+		switch s.Symbol.Def().(type) {
+		case *ast.Function:
+			return "func"
+		case *ast.Var:
+			return "var"
+		default:
+			return "unknown"
+		}
+	case *symbols.Struct:
+		return "struct"
+	default:
+		return "unknown"
+	}
+}
+
 // HasDocTag returns true if the docstring has a section "DocTags" and the
 // given tag is listed there.
 //
@@ -155,27 +176,37 @@ func (s *symbol) HasDocTag(tag string) bool {
 }
 
 // Symbols returns nested symbols.
-func (s *symbol) Symbols() ([]*symbol, error) {
+//
+// If `flavors` is not empty, it specifies what kinds of symbols to keep.
+// Possible variants: "func", "var", "struct".
+func (s *symbol) Symbols(flavors ...string) (out []*symbol, err error) {
 	strct, _ := s.Symbol.(*symbols.Struct)
 	if strct == nil {
 		return nil, fmt.Errorf("%q is not a struct", s.FullName)
 	}
-	syms := strct.Symbols()
-	out := make([]*symbol, len(syms))
-	for i, sym := range syms {
+
+	keepFlavors := stringset.NewFromSlice(flavors...)
+
+	for _, sym := range strct.Symbols() {
 		fullName := ""
 		if s.FullName != "" {
 			fullName = s.FullName + "." + sym.Name()
 		} else {
 			fullName = sym.Name()
 		}
-		out[i] = &symbol{
+
+		sym := &symbol{
 			Symbol:   sym,
 			Module:   s.Module,
 			FullName: fullName,
 		}
+
+		if keepFlavors.Len() == 0 || keepFlavors.Has(sym.Flavor()) {
+			out = append(out, sym)
+		}
 	}
-	return out, nil
+
+	return
 }
 
 // Anchor returns a markdown anchor name that can be used to link to some part

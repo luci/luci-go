@@ -204,39 +204,44 @@ def _sort_key(e):
 ################################################################################
 
 
-# Helper to avoid retyping role names.
-def _roles_dict(l):
-  return {r.name: r for r in l}
-
-
 # Public API exposed to end-users and to other LUCI modules.
 acl = struct(
     entry = _entry,
 
-    # All predefined roles.
-    **_roles_dict([
-        # Reading contents of project configs through LUCI Config API/UI.
-        _role('PROJECT_CONFIGS_READER', project_level_only=True),
+    # Note: the information in the comments is extracted by the documentation
+    # generator. That's the reason there's a bit of repetition here.
 
-        # Reading logs under project's logdog prefix.
-        _role('LOGDOG_READER', project_level_only=True, groups_only=True),
-        # Writing logs under project's logdog prefix.
-        _role('LOGDOG_WRITER', project_level_only=True, groups_only=True),
+    # Reading contents of project configs through LUCI Config API/UI.
+    #
+    # DocTags:
+    #   project_level_only.
+    PROJECT_CONFIGS_READER = _role('PROJECT_CONFIGS_READER', project_level_only=True),
 
-        # Fetching info about a build, searching for builds in a bucket.
-        _role('BUILDBUCKET_READER'),
-        # Same as BUILDBUCKET_READER + scheduling and canceling builds.
-        _role('BUILDBUCKET_TRIGGERER'),
-        # Have full access to the bucket (should be used rarely).
-        _role('BUILDBUCKET_OWNER'),
+    # Reading logs under project's logdog prefix.
+    #
+    # DocTags:
+    #   project_level_only, groups_only.
+    LOGDOG_READER = _role('LOGDOG_READER', project_level_only=True, groups_only=True),
 
-        # Viewing Scheduler jobs, invocations and their debug logs.
-        _role('SCHEDULER_READER'),
-        # Same as SCHEDULER_READER + ability to trigger jobs.
-        _role('SCHEDULER_TRIGGERER'),
-        # Have full access to jobs, including ability to abort them.
-        _role('SCHEDULER_OWNER'),
-    ])
+    # Writing logs under project's logdog prefix.
+    #
+    # DocTags:
+    #   project_level_only, groups_only
+    LOGDOG_WRITER = _role('LOGDOG_WRITER', project_level_only=True, groups_only=True),
+
+    # Fetching info about a build, searching for builds in a bucket.
+    BUILDBUCKET_READER = _role('BUILDBUCKET_READER'),
+    # Same as `BUILDBUCKET_READER` + scheduling and canceling builds.
+    BUILDBUCKET_TRIGGERER = _role('BUILDBUCKET_TRIGGERER'),
+    # Full access to the bucket (should be used rarely).
+    BUILDBUCKET_OWNER = _role('BUILDBUCKET_OWNER'),
+
+    # Viewing Scheduler jobs, invocations and their debug logs.
+    SCHEDULER_READER = _role('SCHEDULER_READER'),
+    # Same as `SCHEDULER_READER` + ability to trigger jobs.
+    SCHEDULER_TRIGGERER = _role('SCHEDULER_TRIGGERER'),
+    # Full access to Scheduler jobs, including ability to abort them.
+    SCHEDULER_OWNER = _role('SCHEDULER_OWNER'),
 )
 
 
