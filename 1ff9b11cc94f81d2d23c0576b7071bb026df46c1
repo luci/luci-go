@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c8b5fbd_f907556a",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 621,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T00:01:37Z",
+      "side": 1,
+      "message": "I\u0027ll fix this separately... doc generator currently doesn\u0027t understand constants, only functions",
+      "range": {
+        "startLine": 614,
+        "startChar": 0,
+        "endLine": 621,
+        "endChar": 0
+      },
+      "revId": "1ff9b11cc94f81d2d23c0576b7071bb026df46c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
