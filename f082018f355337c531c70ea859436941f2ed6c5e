@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c1029970_a853597d",
+        "filename": "lucicfg/meta.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T22:36:03Z",
+      "side": 1,
+      "message": "See meta.star for full explanation what this is.\n\nThis is needed since we have a habit of mixing configs from essentially two different projects (prod and dev ones) in the same config set. This feature is totally optional, I won\u0027t force anyone to use it, but I myself will feel safer when it is used for projects managed directly by us.",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 38,
+        "endChar": 13
+      },
+      "revId": "f082018f355337c531c70ea859436941f2ed6c5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d2a8ffab_e278e5c3",
+        "filename": "lucicfg/meta.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T22:36:03Z",
+      "side": 1,
+      "message": "This complexity is needed to handle following cases:\n\nImagine in Starlark I have meta.config(fail_on_warnings \u003d True), but I want to temporary override this via command line flag to be False: `lucicfg validate ... -fail-on-warnings\u003dfalse`. But false is default value of this command line flag. So I need to know that a flag was explicitly passed.\n\nAlso I didn\u0027t want to have a ton of \u0027switch\u0027 statements that duplicate field names everywhere. Instead there\u0027s one filedsMap() and a sprinkle of reflection.",
+      "range": {
+        "startLine": 78,
+        "startChar": 15,
+        "endLine": 78,
+        "endChar": 36
+      },
+      "revId": "f082018f355337c531c70ea859436941f2ed6c5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
