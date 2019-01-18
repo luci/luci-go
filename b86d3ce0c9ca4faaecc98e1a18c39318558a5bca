@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e06cc13e_b93eb6d4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T00:23:19Z",
+      "side": 1,
+      "message": "Used a list",
+      "parentUuid": "9640ec97_301f00e7",
+      "range": {
+        "startLine": 263,
+        "startChar": 24,
+        "endLine": 263,
+        "endChar": 84
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3107a705_477fb521",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21db8a5c_c6b601f4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T00:23:19Z",
+      "side": 1,
+      "message": "I added some tests.\n\nAll of those should work, i\u0027m not sure why anyone would ever do ../***/ tho",
+      "parentUuid": "3107a705_477fb521",
+      "range": {
+        "startLine": 268,
+        "startChar": 1,
+        "endLine": 275,
+        "endChar": 2
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "581e9c61_e96b2fb6",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T00:23:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dec7598b_f04bb879",
+      "range": {
+        "startLine": 293,
+        "startChar": 3,
+        "endLine": 293,
+        "endChar": 15
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4d3d920c_7626dbf4",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -85,6 +157,24 @@
       "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a00a95b1_62e7f20d",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T00:23:19Z",
+      "side": 1,
+      "message": "Oh that works too, i guess i just really liked using fallthrough for no apparent reason.",
+      "parentUuid": "4d3d920c_7626dbf4",
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "5524145b_5693f093",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T00:23:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8cc5a762_50799399",
+      "range": {
+        "startLine": 331,
+        "startChar": 5,
+        "endLine": 331,
+        "endChar": 18
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f07b2a2c_87465911",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "44d02447_beb58640",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T00:23:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f07b2a2c_87465911",
+      "range": {
+        "startLine": 333,
+        "startChar": 1,
+        "endLine": 333,
+        "endChar": 44
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9e0057c_1a70986a",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -154,6 +292,30 @@
       "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dede920_783006f6",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T00:23:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9e0057c_1a70986a",
+      "range": {
+        "startLine": 345,
+        "startChar": 40,
+        "endLine": 345,
+        "endChar": 44
+      },
+      "revId": "b86d3ce0c9ca4faaecc98e1a18c39318558a5bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
