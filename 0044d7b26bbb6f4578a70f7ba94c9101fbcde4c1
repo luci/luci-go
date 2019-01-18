@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "63095bcb_d04d0492",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:58:22Z",
+      "side": 1,
+      "message": "Paths",
+      "range": {
+        "startLine": 292,
+        "startChar": 5,
+        "endLine": 292,
+        "endChar": 9
+      },
+      "revId": "0044d7b26bbb6f4578a70f7ba94c9101fbcde4c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "391b50cd_a5f4de53",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:58:22Z",
+      "side": 1,
+      "message": "\"any of the specified\" ?\n\n(because I can imagine someone may want \u0026\u0026 support too)",
+      "range": {
+        "startLine": 293,
+        "startChar": 48,
+        "endLine": 293,
+        "endChar": 62
+      },
+      "revId": "0044d7b26bbb6f4578a70f7ba94c9101fbcde4c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3b16e82_10b9d1ce",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:58:22Z",
+      "side": 1,
+      "message": "\"a/b/c\"",
+      "range": {
+        "startLine": 303,
+        "startChar": 21,
+        "endLine": 303,
+        "endChar": 28
+      },
+      "revId": "0044d7b26bbb6f4578a70f7ba94c9101fbcde4c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "265fc832_422d91fb",
         "filename": "scheduler/appengine/messages/config.proto",
         "patchSetId": 1
@@ -17,6 +86,75 @@
         "startLine": 306,
         "startChar": 35,
         "endLine": 306,
+        "endChar": 51
+      },
+      "revId": "0044d7b26bbb6f4578a70f7ba94c9101fbcde4c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d349f296_ecb908eb",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:58:22Z",
+      "side": 1,
+      "message": "is $ implicit or no? \u0027refs\u0027 doc clarifies this, this one should probably too",
+      "range": {
+        "startLine": 308,
+        "startChar": 9,
+        "endLine": 308,
+        "endChar": 15
+      },
+      "revId": "0044d7b26bbb6f4578a70f7ba94c9101fbcde4c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1794be60_cf676369",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:58:22Z",
+      "side": 1,
+      "message": "similar rule for PRESUBMIT.py often caused PITA",
+      "range": {
+        "startLine": 314,
+        "startChar": 33,
+        "endLine": 314,
+        "endChar": 40
+      },
+      "revId": "0044d7b26bbb6f4578a70f7ba94c9101fbcde4c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4ee8c4fb_d5767e12",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:58:22Z",
+      "side": 1,
+      "message": "Maybe do it only if \u0027paths\u0027 is empty? Creating a ref is just moving git pointers, this operation conceptually doesn\u0027t touch any files.\n\nAh, I see it for consistency with following rule. Please swap rules (4) and (3).",
+      "range": {
+        "startLine": 315,
+        "startChar": 9,
+        "endLine": 316,
         "endChar": 51
       },
       "revId": "0044d7b26bbb6f4578a70f7ba94c9101fbcde4c1",
