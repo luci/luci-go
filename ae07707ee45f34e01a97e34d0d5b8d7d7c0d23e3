@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "cb1fb803_03d88aa8",
+        "filename": "tumble/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T22:51:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5634764e_350dee86",
+      "revId": "ae07707ee45f34e01a97e34d0d5b8d7d7c0d23e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "27d418d8_162a3cc6",
         "filename": "tumble/service.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "ae07707ee45f34e01a97e34d0d5b8d7d7c0d23e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a13dda7e_f5b2c656",
+        "filename": "tumble/service.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T22:51:38Z",
+      "side": 1,
+      "message": "derp.",
+      "parentUuid": "27d418d8_162a3cc6",
+      "range": {
+        "startLine": 105,
+        "startChar": 35,
+        "endLine": 105,
+        "endChar": 37
+      },
+      "revId": "ae07707ee45f34e01a97e34d0d5b8d7d7c0d23e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
