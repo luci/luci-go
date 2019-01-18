@@ -258,7 +258,7 @@ def _struct(attr, val, sym, default=None, required=True):
       return None
     val = default
 
-  tp = ctor(val) or type(val)  # ctor(...) return None for non-structs
+  tp = __native__.ctor(val) or type(val)  # ctor(...) return None for non-structs
   if tp != sym:
     fail('bad %r: got %s, want %s' % (attr, tp, sym))
 

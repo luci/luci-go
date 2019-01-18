@@ -12,22 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-def generator(impl):
-  """Registers a callback that is called at the end of the config generation
-  stage to modify/append/delete generated configs in an arbitrary way.
+# This module is not imported by anything. It exists only to document public
+# native symbols exposed by `lucicfg` go code in the global namespace of all
+# modules.
 
-  The callback accepts single argument `ctx` which is a struct with the
-  following fields:
 
-    * **config_set**: a dict `{config file name -> (str | proto)}`.
-
-  The callback is free to modify `ctx.config_set` in whatever way it wants, e.g.
-  by adding new values there or mutating/deleting existing ones.
-
-  DocTags:
-    Advanced.
+def _to_pbtext(msg):
+  """Serializes a protobuf message to a string using ASCII proto serialization.
 
   Args:
-    impl: a callback `func(ctx) -> None`.
+    msg: a proto message to serialize. Required.
   """
-  __native__.add_generator(impl)
+
+
+def _to_jsonpb(msg):
+  """Serializes a protobuf message to a string using JSONPB serialization.
+
+  Args:
+    msg: a proto message to serialize. Required.
+  """
+
+
+proto = struct(
+    to_pbtext = _to_pbtext,
+    to_jsonpb = _to_jsonpb,
+)

@@ -31,7 +31,7 @@ def project(
   ):
   """Defines a LUCI project.
 
-  There should be exactly one such definition in a single top-level config file.
+  There should be exactly one such definition in the top-level config file.
 
   Args:
     name: full name of the project. Required.
@@ -39,7 +39,7 @@ def project(
     logdog: hostname of a LogDog service to use (if any).
     scheduler: hostname of a LUCI Scheduler service to use (if any).
     swarming: hostname of a Swarming service to use (if any).
-    acls: list of acl.entry objects, will be inherited by all buckets.
+    acls: list of acl.entry(...) objects, will be inherited by all buckets.
   """
   graph.add_node(keys.project(), props = {
       'name': validate.string('name', name),

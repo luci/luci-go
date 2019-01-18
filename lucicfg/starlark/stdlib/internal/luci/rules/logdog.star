@@ -18,7 +18,9 @@ load('@stdlib//internal/luci/lib/validate.star', 'validate')
 
 
 def logdog(gs_bucket=None):
-  """Configuration for the LogDog service.
+  """Defines configuration of the LogDog service for this project.
+
+  Usually required for any non-trivial project.
 
   Args:
     gs_bucket: base Google Storage archival path, archive logs will be written
