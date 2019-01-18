@@ -341,9 +341,29 @@ The cipd version to fetch is usually a lower-cased git ref (like
 
 ## ACLs
 
-*** note
-TODO: Display roles as a table.
-***
+### Roles {#roles_doc}
+
+Below is the table with role constants that can be passed as `roles` in
+[acl.entry(...)](#acl.entry).
+
+Due to some inconsistencies in how LUCI service are currently implemented, some
+roles can be assigned only in [core.project(...)](#core.project) rule, but
+some also in individual [core.bucket(...)](#core.bucket) rules.
+
+Similarly some roles can be assigned to individual users, other only to groups.
+
+| Role  | Scope | Principals | Allows |
+|-------|-------|------------|--------|
+| acl.PROJECT_CONFIGS_READER |project only |groups, users |Reading contents of project configs through LUCI Config API/UI. |
+| acl.LOGDOG_READER |project only |groups |Reading logs under project's logdog prefix. |
+| acl.LOGDOG_WRITER |project only |groups |Writing logs under project's logdog prefix. |
+| acl.BUILDBUCKET_READER |project, bucket |groups, users |Fetching info about a build, searching for builds in a bucket. |
+| acl.BUILDBUCKET_TRIGGERER |project, bucket |groups, users |Same as `BUILDBUCKET_READER` + scheduling and canceling builds. |
+| acl.BUILDBUCKET_OWNER |project, bucket |groups, users |Full access to the bucket (should be used rarely). |
+| acl.SCHEDULER_READER |project, bucket |groups, users |Viewing Scheduler jobs, invocations and their debug logs. |
+| acl.SCHEDULER_TRIGGERER |project, bucket |groups, users |Same as `SCHEDULER_READER` + ability to trigger jobs. |
+| acl.SCHEDULER_OWNER |project, bucket |groups, users |Full access to Scheduler jobs, including ability to abort them. |
+
 
 
 ### acl.entry {#acl.entry}

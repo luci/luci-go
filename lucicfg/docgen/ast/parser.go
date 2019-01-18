@@ -20,6 +20,8 @@
 package ast
 
 import (
+	"strings"
+
 	"go.starlark.net/syntax"
 )
 
@@ -47,10 +49,8 @@ type Node interface {
 	// Span is where this node was defined in the original starlark code.
 	Span() (start syntax.Position, end syntax.Position)
 
-	// Comments are full comment lines preceding the definition.
-	//
-	// Have '#' in them. Empty lines between comment blocks are skipped.
-	Comments() []string
+	// Comments is a comment block immediately preceding the definition.
+	Comments() string
 
 	// Doc is a documentation string for this symbol extracted either from a
 	// docstring or from comments.
@@ -71,19 +71,42 @@ type base struct {
 func (b *base) Name() string                             { return b.name }
 func (b *base) Span() (syntax.Position, syntax.Position) { return b.ast.Span() }
 
-func (b *base) Comments() (out []string) {
-	if all := b.ast.Comments(); all != nil && len(all.Before) != 0 {
-		out = make([]string, len(all.Before))
-		for i, cm := range all.Before {
-			out[i] = cm.Text
-		}
+func (b *base) Comments() string {
+	// Get all comments before `ast`. In particular if there are multiple comment
+	// blocks separated by new lines, `before` contains all of them.
+	var before []syntax.Comment
+	if all := b.ast.Comments(); all != nil {
+		before = all.Before
 	}
-	return
+	if len(before) == 0 {
+		return ""
+	}
+
+	// Grab a line number where 'ast' itself is defined.
+	start, _ := b.ast.Span()
+
+	// Pick only comments immediately preceding this line.
+	var comments []string
+	for idx := len(before) - 1; idx >= 0; idx-- {
+		if before[idx].Start.Line != start.Line-int32(len(comments))-1 {
+			break // detected a skipped line, which indicates it's a different block
+		}
+		// Strip '#\s?' (but only one space, spaces may be significant for the doc
+		// syntax in the comment).
+		line := strings.TrimPrefix(strings.TrimPrefix(before[idx].Text, "#"), " ")
+		comments = append(comments, line)
+	}
+
+	// Reverse 'comments', since we recorded them in reverse order.
+	for l, r := 0, len(comments)-1; l < r; l, r = l+1, r-1 {
+		comments[l], comments[r] = comments[r], comments[l]
+	}
+	return strings.Join(comments, "\n")
 }
 
 // Doc extracts the documentation for the symbol from its comments.
 func (b *base) Doc() string {
-	return "" // TODO: implement
+	return b.Comments()
 }
 
 func (b *base) populateFromAST(name string, ast syntax.Node) {

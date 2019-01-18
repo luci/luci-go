@@ -36,9 +36,11 @@ Multiline.
 # Load comment.
 load('@stdlib//another.star', 'ext1', ext2='ext_name')
 
-# Also function comment.
+# Skipped comment.
 
 # Function comment.
+#
+#   With indent.
 #
 # More.
 def func1(a, b, c=None, *arg, **kwargs):
@@ -139,29 +141,28 @@ func TestParseModule(t *testing.T) {
 		})
 
 		Convey("Comments extraction", func() {
-			So(mod.NodeByName("func1").Comments(), ShouldResemble, []string{
-				"# Also function comment.",
-				"# Function comment.",
-				"#",
-				"# More.",
-			})
+			So(mod.NodeByName("func1").Comments(), ShouldEqual, `Function comment.
+
+  With indent.
+
+More.`)
 
 			strct := mod.NodeByName("struct_stuff").(*Namespace)
-			So(strct.Comments(), ShouldResemble, []string{"# Struct comment."})
+			So(strct.Comments(), ShouldEqual, "Struct comment.")
 
 			// Individual struct entries are annotated with comments too.
-			So(strct.NodeByName("key1").Comments(), ShouldResemble, []string{"# Key comment 1."})
+			So(strct.NodeByName("key1").Comments(), ShouldEqual, "Key comment 1.")
 
 			// Nested structs are also annotated.
 			nested := strct.NodeByName("nested").(*Namespace)
-			So(nested.Comments(), ShouldResemble, []string{"# Nested namespace."})
+			So(nested.Comments(), ShouldEqual, "Nested namespace.")
 
 			// Keys do not pick up comments not intended for them.
-			So(nested.NodeByName("key1").Comments(), ShouldHaveLength, 0)
+			So(nested.NodeByName("key1").Comments(), ShouldEqual, "")
 
 			// Top module comment is not extracted currently, it is relatively hard
 			// to do. We have a docstring though, so it's not a big deal.
-			So(mod.Comments(), ShouldHaveLength, 0)
+			So(mod.Comments(), ShouldEqual, "")
 		})
 	})
 }
