@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "0ef6844e_b96afa6a",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T21:46:46Z",
+      "side": 1,
+      "message": "\u003e There may be valid reasons why a project in the future is not able to use project scoped accounts.\n\nThere may be, indeed. But there will definitely be a cost of maintaining both possibilities for us.\nThat\u0027s why I think the end goal is 100% conversion to project scoped service accounts.\n\n\n\u003e I think the migration strategy is to go from OPT_IN to OPT_OUT, which will be represented through a change in code behavior if the SecurityOptions is absent\n\nAh, I see why you wrapped it in a message now.\n\n\u003e we haven\u0027t explored the actual deployment yet.\n\nWell, I was are exploring it in my comment. To me, the token server + scheduler work look so close to completion, that I thought it\u0027s good time to do so :)\n\n\u003e Remember that this commit is supposed to unlock dev testing. If it wasn\u0027t a technical necessity, this CL would not be in review yet.\n\n1. Do you mean you\u0027d change this proto later when you get closer to deployment?\n2. Why is landing this CL a technical necessity before deploying it to -dev? I think you can just deploy to -dev right now from your own checkout, have I missed something?",
+      "parentUuid": "5f94e7d1_9470c6ee",
+      "range": {
+        "startLine": 76,
+        "startChar": 2,
+        "endLine": 76,
+        "endChar": 43
+      },
+      "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cefdf3ec_ec6f21e2",
         "filename": "scheduler/appengine/messages/config.proto",
         "patchSetId": 4
@@ -167,6 +191,24 @@
       "writtenOn": "2019-01-18T21:43:13Z",
       "side": 1,
       "message": "This file has two \\n\\n at the end.\n\nThe rule is: files should end with single \u0027\\n\u0027. This is how gofmt (and most editors) format code.",
+      "parentUuid": "118d026f_a27b9d2e",
+      "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b3453971_3c0a734a",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T21:46:46Z",
+      "side": 1,
+      "message": "i\u0027m sensitive !\u003d I really care.\nFor me, if whitespace isn\u0027t lint-enforced, anything goes, unless it hampers readability. So, ignore me.",
       "parentUuid": "118d026f_a27b9d2e",
       "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
