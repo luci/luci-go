@@ -38,6 +38,7 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 
 // Log mocks base method
 func (m *MockClient) Log(c context.Context, host, project, commitish string, inputOptions *git0.LogOptions) ([]*git.Commit, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Log", c, host, project, commitish, inputOptions)
 	ret0, _ := ret[0].([]*git.Commit)
 	ret1, _ := ret[1].(error)
@@ -46,11 +47,13 @@ func (m *MockClient) Log(c context.Context, host, project, commitish string, inp
 
 // Log indicates an expected call of Log
 func (mr *MockClientMockRecorder) Log(c, host, project, commitish, inputOptions interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockClient)(nil).Log), c, host, project, commitish, inputOptions)
 }
 
 // CombinedLogs mocks base method
 func (m *MockClient) CombinedLogs(c context.Context, host, project, excludeRef string, refs []string, limit int) ([]*git.Commit, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CombinedLogs", c, host, project, excludeRef, refs, limit)
 	ret0, _ := ret[0].([]*git.Commit)
 	ret1, _ := ret[1].(error)
@@ -59,11 +62,13 @@ func (m *MockClient) CombinedLogs(c context.Context, host, project, excludeRef s
 
 // CombinedLogs indicates an expected call of CombinedLogs
 func (mr *MockClientMockRecorder) CombinedLogs(c, host, project, excludeRef, refs, limit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CombinedLogs", reflect.TypeOf((*MockClient)(nil).CombinedLogs), c, host, project, excludeRef, refs, limit)
 }
 
 // CLEmail mocks base method
 func (m *MockClient) CLEmail(c context.Context, host string, changeNumber int64) (string, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CLEmail", c, host, changeNumber)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
@@ -72,5 +77,6 @@ func (m *MockClient) CLEmail(c context.Context, host string, changeNumber int64)
 
 // CLEmail indicates an expected call of CLEmail
 func (mr *MockClientMockRecorder) CLEmail(c, host, changeNumber interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CLEmail", reflect.TypeOf((*MockClient)(nil).CLEmail), c, host, changeNumber)
 }
