@@ -1,0 +1,27 @@
+// Copyright 2019 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package projects;
+
+// A config for a GCP project to report GCE quota utilization for.
+message Config {
+  // The names of GCE quota metrics to report.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/regions/list.
+  repeated string metric = 1;
+
+  // The name of a GCP project to report GCE quota utilization for.
+  string project = 2;
+
+  // The names of GCE regions to report.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/regions/list.
+  repeated string region = 3;
+}
+
+// A config for several projects to report GCE quota utilization for.
+message Configs {
+  // The projects to report GCE quota utilization for.
+  repeated Config project = 1;
+}
