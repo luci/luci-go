@@ -97,6 +97,11 @@ core.builder(
     swarming_tags = ['tag1:val1', 'tag2:val2'],
     expiration_timeout = time.hour,
     build_numbers = True,
+
+    triggering_policy = scheduler.greedy_batching(
+        max_concurrent_invocations=5,
+        max_batch_size=10,
+    )
 )
 
 core.builder(
@@ -105,6 +110,13 @@ core.builder(
     recipe = 'main/recipe',
 
     triggered_by = ['master-poller'],
+)
+
+core.builder(
+    name = 'cron builder',
+    bucket = 'ci',
+    recipe = 'main/recipe',
+    schedule = '0 6 * * *',
 )
 
 
@@ -140,6 +152,15 @@ core.builder(
 #   name: "ci"
 #   acl_sets: "ci"
 #   swarming: <
+#     builders: <
+#       name: "cron builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
 #     builders: <
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
@@ -243,6 +264,16 @@ core.builder(
 #
 # === luci-scheduler.cfg
 # job: <
+#   id: "cron builder"
+#   schedule: "0 6 * * *"
+#   acl_sets: "ci"
+#   buildbucket: <
+#     server: "cr-buildbucket.appspot.com"
+#     bucket: "ci"
+#     builder: "cron builder"
+#   >
+# >
+# job: <
 #   id: "generically named builder"
 #   acls: <
 #     role: TRIGGERER
@@ -258,6 +289,11 @@ core.builder(
 # job: <
 #   id: "linux ci builder"
 #   acl_sets: "ci"
+#   triggering_policy: <
+#     kind: GREEDY_BATCHING
+#     max_concurrent_invocations: 5
+#     max_batch_size: 10
+#   >
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "ci"

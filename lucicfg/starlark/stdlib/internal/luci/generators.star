@@ -303,11 +303,14 @@ def gen_scheduler_cfg(ctx):
   # and 'triggered_by' relations (triggerer.targets reports them as errors).
 
   pollers = {}   # GITILES_POLLER node -> list of BUILDER nodes it triggers.
-  builders = {}  # BUILDER node -> list GITILES_POLLER|BUILDER that trigger it.
+  builders = {}  # BUILDER node -> list GITILES_POLLER|BUILDER that trigger it (if any).
 
-  def add_triggered_by(builder, triggered_by):
+  def want_scheduler_job_for(builder):
     if builder not in builders:
       builders[builder] = []
+
+  def add_triggered_by(builder, triggered_by):
+    want_scheduler_job_for(builder)
     builders[builder].append(triggered_by)
 
   for bucket in buckets:
@@ -330,6 +333,10 @@ def gen_scheduler_cfg(ctx):
       else:
         for target in targets:
           add_triggered_by(target, triggered_by=builder)
+      # If using a cron schedule or a custom triggering policy, need to setup a
+      # Job entity for this builder.
+      if builder.props.schedule or builder.props.triggering_policy:
+        want_scheduler_job_for(builder)
 
   # List of BUILDER and GITILES_POLLER nodes we need an entity in the scheduler
   # config for.
@@ -379,10 +386,9 @@ def gen_scheduler_cfg(ctx):
     ))
   cfg.trigger = sorted(cfg.trigger, key=lambda x: x.id)
 
-  # Add Job entry for each triggered builder. Grant all triggering builders
-  # TRIGGERER role. Sort according to final IDs.
+  # Add Job entry for each triggered or cron builder. Grant all triggering
+  # builders (if any) TRIGGERER role. Sort according to final IDs.
   for builder, triggered_by in builders.items():
-    # TODO(vadimsh): Add the rest of the fields.
     cfg.job.append(scheduler_pb.Job(
         id = node_to_id[builder],
         acl_sets = [builder.props.bucket],
@@ -390,6 +396,8 @@ def gen_scheduler_cfg(ctx):
             acl.entry(acl.SCHEDULER_TRIGGERER, users=t.props.service_account)
             for t in triggered_by if t.key.kind == kinds.BUILDER
         ])),
+        schedule = builder.props.schedule,
+        triggering_policy = builder.props.triggering_policy,
         buildbucket = scheduler_pb.BuildbucketTask(
             server = buildbucket.host,
             bucket = builder.props.bucket,

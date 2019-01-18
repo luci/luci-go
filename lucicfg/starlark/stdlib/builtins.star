@@ -26,6 +26,7 @@ load('@stdlib//internal/luci/rules/recipe.star', _recipe='recipe')
 
 # LUCI helper modules.
 load('@stdlib//internal/luci/lib/acl.star', _acl='acl')
+load('@stdlib//internal/luci/lib/scheduler.star', _scheduler='scheduler')
 load('@stdlib//internal/luci/lib/swarming.star', _swarming='swarming')
 
 # Register all LUCI config generator callbacks.
@@ -46,5 +47,6 @@ core = struct(
     generator = _generator,
 )
 acl = _acl
+scheduler = _scheduler
 swarming = _swarming
 time = _time

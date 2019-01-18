@@ -16,6 +16,7 @@ load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'triggerer')
 load('@stdlib//internal/luci/lib/validate.star', 'validate')
 load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
+load('@stdlib//internal/luci/lib/scheduler.star', 'schedulerimpl')
 
 
 def builder(
@@ -34,6 +35,10 @@ def builder(
       priority=None,
       swarming_tags=None,
       expiration_timeout=None,
+
+      # LUCI Scheduler parameters.
+      schedule=None,
+      triggering_policy=None,
 
       # Tweaks.
       build_numbers=None,
@@ -123,6 +128,20 @@ def builder(
         marking it as expired. If None, defer the decision to Buildbucket
         service.
 
+    schedule: string with a cron schedule that describes when to run this
+        builder. See [Defining cron schedules](#schedules_doc) for the expected
+        format of this field. If None, the builder will not be running
+        periodically.
+    triggering_policy: scheduler.policy(...) struct with a configuration that
+        defines when and how LUCI Scheduler should launch new builds in response
+        to triggering requests from core.gitiles_poller(...) or from
+        EmitTriggers API. Does not apply to builds started directly through
+        Buildbucket. By default, only one concurrent build is allowed and while
+        it runs, triggering requests accumulate in a queue. Once the build
+        finishes, if the queue is not empty, a new build starts right away,
+        "consuming" all pending requests. See scheduler.policy(...) doc for more
+        details.
+
     build_numbers: if True, generate monotonically increasing contiguous numbers
         for each build, unique within the builder. If None, defer the decision
         to Buildbucket service.
@@ -158,6 +177,8 @@ def builder(
       'priority': validate.int('priority', priority, min=1, max=255, required=False),
       'swarming_tags': swarming.validate_tags('swarming_tags', swarming_tags),
       'expiration_timeout': validate.duration('expiration_timeout', expiration_timeout, required=False),
+      'schedule': validate.string('schedule', schedule, required=False),
+      'triggering_policy': schedulerimpl.validate_policy('triggering_policy', triggering_policy, required=False),
       'build_numbers': validate.bool('build_numbers', build_numbers, required=False),
       'experimental': validate.bool('experimental', experimental, required=False),
       'task_template_canary_percentage': validate.int('task_template_canary_percentage', task_template_canary_percentage, min=0, max=100, required=False),
