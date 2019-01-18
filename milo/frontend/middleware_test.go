@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"go.chromium.org/luci/appengine/gaetesting"
@@ -37,18 +36,6 @@ func TestFuncs(t *testing.T) {
 	//t.Parallel()
 
 	Convey("Middleware Tests", t, func() {
-		Convey("humanDuration", func() {
-			Convey("3 hrs", func() {
-				h := humanDuration(3 * time.Hour)
-				So(h, ShouldEqual, "3 hrs")
-			})
-
-			Convey("2 hrs 59 mins", func() {
-				h := humanDuration(2*time.Hour + 59*time.Minute)
-				So(h, ShouldEqual, "2 hrs 59 mins")
-			})
-		})
-
 		Convey("Format Commit Description", func() {
 			Convey("linkify https://", func() {
 				So(formatCommitDesc("https://foo.com"),

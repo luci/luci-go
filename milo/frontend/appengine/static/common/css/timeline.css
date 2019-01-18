@@ -18,6 +18,67 @@
 }
 
 /*
+  TODO(dburger): these status styles could come from default.css but are
+  apparently overridden by styles from .vis-item. This could likely be
+  fixed by tweaking the style in default.css to get higher specificity.
+
+  In the following the second selector with the "a" tag
+  takes care of a specificity problem where jquery's
+  .ui-widget-content a {color: #333;} ends up winning for a tags nested in
+  a div with one of the following classes as is done on the "Results"
+  time list that gets the .ui-widget-content from being inside jquery
+  tabs on the timeline page.
+*/
+.status-EXPIRED, .status-EXPIRED a {
+  color: #FFFFFF;
+  background-color: #ac39ac;
+  border-color: #ACA0B3;
+}
+
+.status-EXCEPTION, .status-EXCEPTION a {
+  color: #FFFFFF;
+  background-color: #c6c;
+  border-color: #ACA0B3;
+}
+
+.status-INFRA_FAILURE, .status-INFRA_FAILURE a {
+  color: #FFFFFF;
+  background-color: #c6c;
+  border-color: #ACA0B3;
+}
+
+.status-WARNING, .status-WARNING a {
+  color: #FFFFFF;
+  background-color: #fa3;
+  border-color: #C29D46;
+}
+
+.status-NOT_RUN, .status-NOT_RUN a {
+  color: #000;
+  background-color: #ccc;
+  border-color: #ccc;
+}
+
+.status-RUNNING, .status-RUNNING a {
+  color: #000;
+  background-color: #fd3;
+  border-color: #C5C56D;
+}
+
+.status-FAILURE, .status-CANCELLED, .status-FAILURE a, .status-CANCELLED a {
+  color: #000;
+  background-color: #e88;
+  border-color: #A77272;
+  border-style: solid;
+}
+
+.status-SUCCESS, .status-SUCCESS a {
+  color: #000;
+  background-color: #8d4;
+  border-color: #4F8530;
+}
+
+/*
   Positioned absolutely so that the timeline renders directly over it
   and does not jump when we remove this from the page.
 */
