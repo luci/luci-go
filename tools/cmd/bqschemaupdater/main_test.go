@@ -124,6 +124,10 @@ func TestBQSchemaUpdater(t *testing.T) {
 				Name: "struct",
 				Type: bigquery.StringFieldType,
 			},
+			{
+				Name: "duration",
+				Type: bigquery.FloatFieldType,
+			},
 		})
 	})
 }

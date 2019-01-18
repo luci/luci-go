@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package testdata;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
@@ -30,6 +31,7 @@ message TestMessage {
 
     google.protobuf.Empty empty = 8;
     repeated google.protobuf.Empty empties = 9;
+    google.protobuf.Duration duration = 10;
 }
 
 message NestedTestMessage {
