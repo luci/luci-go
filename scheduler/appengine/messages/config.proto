@@ -28,6 +28,9 @@ message ProjectConfig {
   repeated Trigger trigger = 2;
   // A list of ACL sets. Names must be unique.
   repeated AclSet acl_sets = 3;
+
+  // A set of security options to be enabled individually for the project.
+  SecurityOptions security_options = 4;
 }
 
 
@@ -62,6 +65,13 @@ message AclSet {
   // List of access control rules.
   // The order does not matter.
   repeated Acl acls = 2;
+}
+
+
+// SecurityOptions enable project specific security features.
+message SecurityOptions {
+  // Enables the use of project scoped service accounts.
+  bool project_scoped_service_accounts = 1;
 }
 
 
