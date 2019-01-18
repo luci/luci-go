@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	tq "go.chromium.org/gae/service/taskqueue"
 
@@ -53,7 +54,7 @@ func TestShardCalculation(t *testing.T) {
 			}
 
 			for _, tc := range tcs {
-				So((&realMutation{ExpandedShard: tc.es}).shard(cfg).shard, ShouldEqual, tc.s)
+				So((&realMutation{ExpandedShard: tc.es, TargetRoot: &datastore.Key{}}).shard(cfg).shard, ShouldEqual, tc.s)
 				low, high := expandedShardBounds(ctx, cfg, tc.s)
 				So(tc.es, ShouldBeGreaterThanOrEqualTo, low)
 				So(tc.es, ShouldBeLessThanOrEqualTo, high)

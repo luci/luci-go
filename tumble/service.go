@@ -41,6 +41,9 @@ const (
 	processShardPattern = baseURL + "/process_shard/:shard_id/at/:timestamp"
 
 	transientHTTPHeader = "X-LUCI-Tumble-Transient"
+	// HACK(hinoka): The luci.chromium namespace uses a lot more shards.
+	luciChromiumNS         = "luci.chromium"
+	luciChromiumShardCount = 64
 )
 
 // Service is an instance of a Tumble service. It installs its handlers into an
@@ -89,12 +92,6 @@ func (s *Service) FireAllTasksHandler(c *router.Context) {
 func (s *Service) FireAllTasks(c context.Context) error {
 	cfg := getConfig(c)
 
-	// Generate a list of all shards.
-	allShards := make([]taskShard, 0, cfg.NumShards)
-	for i := uint64(0); i < cfg.NumShards; i++ {
-		allShards = append(allShards, taskShard{i, minTS})
-	}
-
 	namespaces, err := s.getNamespaces(c, cfg)
 	if err != nil {
 		return err
@@ -107,6 +104,11 @@ func (s *Service) FireAllTasks(c context.Context) error {
 		for _, ns := range namespaces {
 			ns := ns
 			ch <- func() error {
+				// Generate a list of all shards.
+				allShards := make([]taskShard, 0)
+				for i := uint64(0); i < cfg.TotalShardCount(ns); i++ {
+					allShards = append(allShards, taskShard{i, minTS})
+				}
 				s.fireAllTasksForNamespace(c, cfg, ns, allShards, &errCount, &taskCount)
 				return nil
 			}
