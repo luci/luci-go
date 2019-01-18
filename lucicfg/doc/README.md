@@ -341,9 +341,25 @@ The cipd version to fetch is usually a lower-cased git ref (like
 
 ## ACLs
 
-*** note
-TODO: Display roles as a table.
-***
+### Roles
+
+Role constants that can be passed to acl.entry(...). Some roles can be assigned
+only in core.project(...) rule, some also in individual core.bucket(...) rules.
+
+Similarly some roles can be assigned to individual users, other only to groups.
+
+| Role  | Scope | Principals | Description |
+|-------|-------|------------|-------------|
+| PROJECT_CONFIGS_READER |project |groups, users |Reading contents of project configs through LUCI Config API/UI. |
+| LOGDOG_READER |project |groups |Reading logs under project's logdog prefix. |
+| LOGDOG_WRITER |project |groups |Writing logs under project's logdog prefix. |
+| BUILDBUCKET_READER |project, bucket |groups, users |Fetching info about a build, searching for builds in a bucket. |
+| BUILDBUCKET_TRIGGERER |project, bucket |groups, users |Same as `BUILDBUCKET_READER` + scheduling and canceling builds. |
+| BUILDBUCKET_OWNER |project, bucket |groups, users |Have full access to the bucket (should be used rarely). |
+| SCHEDULER_READER |project, bucket |groups, users |Viewing Scheduler jobs, invocations and their debug logs. |
+| SCHEDULER_TRIGGERER |project, bucket |groups, users |Same as `SCHEDULER_READER` + ability to trigger jobs. |
+| SCHEDULER_OWNER |project, bucket |groups, users |Have full access to jobs, including ability to abort them. |
+
 
 
 ### acl.entry {#acl.entry}
