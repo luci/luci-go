@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "99a642f4_5d3c1cdc",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-18T01:11:33Z",
+      "side": 1,
+      "message": "Yeah.",
+      "parentUuid": "355f0179_52dd45f2",
+      "revId": "bb5ea91d1137fcf706333b52f57b8e6cdefb199c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "93ac5d6d_65e61d8c",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "bb5ea91d1137fcf706333b52f57b8e6cdefb199c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "710976a9_9aaa572a",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-18T01:11:33Z",
+      "side": 1,
+      "message": "Yes, I may even change format to be more like Config (where it just puts the text proto into one field).",
+      "parentUuid": "93ac5d6d_65e61d8c",
+      "revId": "bb5ea91d1137fcf706333b52f57b8e6cdefb199c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
