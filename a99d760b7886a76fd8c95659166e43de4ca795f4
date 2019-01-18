@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "b8577869_8766eaee",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T21:43:13Z",
+      "side": 1,
+      "message": "The problem is when using \u0027bool\u0027 there\u0027s no way to say \"I do NOT want to use project_scoped_service_accounts\" because \u0027false\u0027 in proto3 is indistinguishable from unset field. So there\u0027ll be no way to opt out.",
+      "parentUuid": "5f94e7d1_9470c6ee",
+      "range": {
+        "startLine": 76,
+        "startChar": 2,
+        "endLine": 76,
+        "endChar": 43
+      },
+      "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cefdf3ec_ec6f21e2",
         "filename": "scheduler/appengine/messages/config.proto",
         "patchSetId": 4
@@ -126,6 +150,24 @@
       "side": 1,
       "message": "We need to be consistent here though. Vadim suggested +\\n in the other proto file so please decide about a team wide rule...",
       "parentUuid": "cefdf3ec_ec6f21e2",
+      "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0ea77dcc_cfda5c13",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T21:43:13Z",
+      "side": 1,
+      "message": "This file has two \\n\\n at the end.\n\nThe rule is: files should end with single \u0027\\n\u0027. This is how gofmt (and most editors) format code.",
+      "parentUuid": "118d026f_a27b9d2e",
       "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
