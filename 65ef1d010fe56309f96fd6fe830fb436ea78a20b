@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5488cb44_b8474209",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T01:41:09Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 76,
+        "startChar": 9,
+        "endLine": 76,
+        "endChar": 10
+      },
+      "revId": "65ef1d010fe56309f96fd6fe830fb436ea78a20b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dc4782a_e8a9ff76",
+        "filename": "lucicfg/docgen/ast/parser.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T01:41:09Z",
+      "side": 1,
+      "message": "didn\u0027t you mean \\s ?",
+      "range": {
+        "startLine": 94,
+        "startChar": 13,
+        "endLine": 94,
+        "endChar": 14
+      },
+      "revId": "65ef1d010fe56309f96fd6fe830fb436ea78a20b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32bf0aa8_4b433d37",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T01:41:09Z",
+      "side": 1,
+      "message": "ies",
+      "range": {
+        "startLine": 180,
+        "startChar": 39,
+        "endLine": 180,
+        "endChar": 43
+      },
+      "revId": "65ef1d010fe56309f96fd6fe830fb436ea78a20b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "deb8c70e_da02aa07",
+        "filename": "lucicfg/docgen/generator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T01:41:09Z",
+      "side": 1,
+      "message": "IMO, this is a lot more readable, though admittedly a tad slower.\nkeepFlavorsSet :\u003d stringset...\n.....\nif keepFlavorsSet.Len() \u003e 0 \u0026\u0026 keepFlavorsSet.Has(sym.Flavor()){\n  out \u003d append(out, sym)\n}",
+      "range": {
+        "startLine": 202,
+        "startChar": 2,
+        "endLine": 212,
+        "endChar": 3
+      },
+      "revId": "65ef1d010fe56309f96fd6fe830fb436ea78a20b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
