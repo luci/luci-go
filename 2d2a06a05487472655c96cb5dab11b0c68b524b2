@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "869b0d14_831c8eed",
+        "filename": "gce/api/config/v1/vm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-18T15:01:39Z",
+      "side": 1,
+      "message": "nit: Contains",
+      "range": {
+        "startLine": 53,
+        "startChar": 13,
+        "endLine": 53,
+        "endChar": 18
+      },
+      "revId": "2d2a06a05487472655c96cb5dab11b0c68b524b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
