@@ -253,8 +253,25 @@ message NoopTask {
 // commits.
 //
 // GitilesTask will trigger other jobs if either:
-//  * ref's tip has changed (e.g. new commit landed on a ref),
-//  * a ref has just been created.
+//   * ref's tip has changed (e.g. new commit landed on a ref),
+//   * a ref has just been created.
+//
+// LIMITATIONS:
+//
+//  1. Per each fast-forward ref's tip change as observed by scheduler,
+//     no more than 50 latest (according to gitiles default ordering) commits
+//     will result in emitted triggers.
+//     This is a safeguard against mistaken or deliberate but unusual git push
+//     actions, which typically don't have intent of triggering a build for each
+//     such commit.
+//     If you absolutely need to act on every new commit even in such cases,
+//     you will need to roll your own implementation, though you may still find
+//     Scheduler GitilesTask useful to trigger your code on new changes.
+//
+//  2. No hard latency guarantee. A single invocation of GitilesTask may not be
+//     able to process all the backlog. This is particularly true after a config
+//     change changes the set of watched ref. However, GitilesTask is designed
+//     to make continuous progress with each invocation.
 message GitilesTask {
   // Repo is the URL of the Gitiles repository.
   string repo = 1;
@@ -262,14 +279,14 @@ message GitilesTask {
   // Refs is a list of Git references to track.
   //
   // Each ref can be either:
-  //  * a fully qualified ref like "refs/heads/master" or "refs/tags/v1.2.3"
-  //  * a regular expression with "regexp:" prefix to match multiple refs, e.g.
-  //    "regexp:refs/heads/[^/]+" or "regexp:refs/branch-heads/\d+\.\d+", but
-  //    the regular expression should have a literal prefix with at least two
-  //    slashes present, e.g. "refs/release-\d+/foobar" is not allowed, because
-  //    the literal prefix "refs/release-" contains only one slash. The regexp
-  //    should not start with ^ or end with $ as they will be added
-  //    automatically.
+  //   * a fully qualified ref like "refs/heads/master" or "refs/tags/v1.2.3"
+  //   * a regular expression with "regexp:" prefix to match multiple refs, e.g.
+  //     "regexp:refs/heads/[^/]+" or "regexp:refs/branch-heads/\d+\.\d+", but
+  //     the regular expression should have a literal prefix with at least two
+  //     slashes present, e.g. "refs/release-\d+/foobar" is not allowed, because
+  //     the literal prefix "refs/release-" contains only one slash. The regexp
+  //     should not start with ^ or end with $ as they will be added
+  //     automatically.
   repeated string refs = 2;
 }
 

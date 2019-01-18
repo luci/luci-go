@@ -18,7 +18,7 @@ package gitiles.messages;
 
 option go_package = "gitiles";
 
-// Child is last part and its sha1 tip.
+// Child is the last part and its sha1 tip.
 message Child {
   string suffix = 1;
   bytes sha1 = 2;
