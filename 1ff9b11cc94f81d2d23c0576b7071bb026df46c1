@@ -22,6 +22,30 @@
       "revId": "1ff9b11cc94f81d2d23c0576b7071bb026df46c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "62140554_c5b2cb87",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 621,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:18:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c8b5fbd_f907556a",
+      "range": {
+        "startLine": 614,
+        "startChar": 0,
+        "endLine": 621,
+        "endChar": 0
+      },
+      "revId": "1ff9b11cc94f81d2d23c0576b7071bb026df46c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
