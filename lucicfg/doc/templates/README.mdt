@@ -47,6 +47,7 @@ TODO: To be written.
 {{ $core := Symbol "@stdlib//builtins.star" "core" }}
 {{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
 {{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
+{{ $scheduler := Symbol "@stdlib//builtins.star" "scheduler" }}
 {{ $native := Symbol "@stdlib//native_doc.star" "" }}
 {{ $proto := Symbol "@stdlib//proto_doc.star" "proto" }}
 
@@ -82,6 +83,9 @@ TODO: Display roles as a table.
 
 ## Swarming
 {{template "gen-struct-doc" $swarming}}
+
+## Scheduler
+{{template "gen-struct-doc" $scheduler}}
 
 ## Built-in constants and functions
 
