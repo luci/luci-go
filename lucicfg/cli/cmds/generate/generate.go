@@ -38,7 +38,9 @@ func Cmd(params base.Parameters) *subcommands.Command {
 		ShortDesc: "interprets a high-level config, generating *.cfg files",
 		CommandRun: func() subcommands.CommandRun {
 			c := &generateRun{}
-			c.Init(params, false)
+			c.Init(params)
+			c.AddValidationFlags()
+			c.AddOutputFlags()
 			return c
 		},
 	}

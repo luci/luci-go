@@ -14,6 +14,7 @@
 
 # Non-LUCI features.
 load('@stdlib//internal/generator.star', _generator='generator')
+load('@stdlib//internal/meta.star', _meta='meta')
 load('@stdlib//internal/time.star', _time='time')
 
 # Individual LUCI rules.
@@ -36,6 +37,7 @@ _register()
 # Public API.
 core = struct(
     generator = _generator,
+    meta = _meta,
 
     bucket = _bucket,
     builder = _builder,
