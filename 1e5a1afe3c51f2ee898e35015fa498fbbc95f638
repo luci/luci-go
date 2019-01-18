@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "589eb4a6_b1070b33",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 16
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-18T01:08:03Z",
+      "side": 1,
+      "message": "Pretty sure this is redundant.",
+      "range": {
+        "startLine": 77,
+        "startChar": 43,
+        "endLine": 77,
+        "endChar": 66
+      },
+      "revId": "1e5a1afe3c51f2ee898e35015fa498fbbc95f638",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
