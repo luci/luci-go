@@ -27,6 +27,9 @@ service Admin {
   // ImportServiceAccountsConfigs makes the server read 'service_accounts.cfg'.
   rpc ImportServiceAccountsConfigs(google.protobuf.Empty) returns (ImportedConfigs);
 
+  // ImportProjectScopedServiceAccountsConfigs makes the server read 'project_scoped_service_accounts.cfg'.
+  rpc ImportProjectScopedServiceAccountsConfigs(google.protobuf.Empty) returns (ImportedConfigs);
+
   // InspectMachineToken decodes a machine token and verifies it is valid.
   //
   // It verifies the token was signed by a private key of the token server and
@@ -77,6 +80,23 @@ service Admin {
   //   grpc.InvalidArgument error for unsupported token kind.
   //   grpc.Internal error for transient errors.
   rpc InspectOAuthTokenGrant(InspectOAuthTokenGrantRequest) returns (InspectOAuthTokenGrantResponse);
+
+  // CreateProjectScopedServiceAccount creates a project scoped service account.
+  //
+  // Project scoped service accounts are used to limit a LUCI service's
+  // authority to a particular LUCI project so it can not accidentally perform
+  // and operation cross-project.
+  //
+  // This RPC is mostly used for administrative purpose, e.g. to setup an
+  // environment before rolling out a new configuration.
+  rpc CreateProjectScopedServiceAccount(CreateProjectScopedServiceAccountRequest) returns (CreateProjectScopedServiceAccountResponse);
+
+  // LookupProjectScopedServiceAccount allows reverse lookup from accountId to (service, project).
+  //
+  // Project scoped service account ids are hard to read and it's not obvious from looking at
+  // them to which pair of (service, LUCI project) they belong to. This function explicitly
+  // allows for a reverse lookup.
+  rpc LookupProjectScopedServiceAccount(LookupProjectScopedServiceAccountRequest) returns (LookupProjectScopedServiceAccountResponse);
 }
 
 
@@ -274,3 +294,43 @@ message InspectOAuthTokenGrantResponse {
   // True if current service_accounts.cfg rules allow this token.
   bool allowed_by_rules = 8;
 }
+
+
+// CreateProjectScopedServiceAccountRequest is body of
+// CreateProjectScopedServiceAccount call.
+message CreateProjectScopedServiceAccountRequest {
+  // Service is the LUCI service caller id name whose authority is being limited to a project.
+  // E.g. user:luci-scheduler@appspot.gserviceaccount.com
+  string service = 1;
+
+  // Project is the LUCI project to which the service account is scoped to.
+  string project = 2;
+}
+
+
+// CreateProjectScopedServiceAccountResponse is the return value of
+// CreateProjectScopedServiceAccount call.
+message CreateProjectScopedServiceAccountResponse {
+  // AccountEmail is the email of the newly created service account.
+  string account_email = 1;
+}
+
+
+// LookupProjectScopedServiceAccountRequest is the body of
+// LookupProjectScopedServiceAccount call.
+message LookupProjectScopedServiceAccountRequest {
+  // AccountEmail is the email of the scoped service account to look up.
+  string account_email = 1;
+}
+
+
+// LookupProjectScopedServiceAccountResponse is the return value of
+// LookupProjectScopedServiceAccount call.
+message LookupProjectScopedServiceAccountResponse {
+  // Service is the LUCI service whose authority is being limited to a project.
+  string service = 1;
+
+  // Project is the LUCI project to which the service account is scoped to.
+  string project = 2;
+}
+
