@@ -134,6 +134,24 @@
       "revId": "6ed79e3ac2eb1136ea8abb08989b355e518b842c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "771dc768_e550e0a7",
+        "filename": "gce/appengine/backend/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T01:44:21Z",
+      "side": 1,
+      "message": "yes, i guessed so, but new version is better as it makes it clear that \"attempt\" isn\u0027t just about retrying network flakes.",
+      "parentUuid": "1bdb6b27_fb3908e4",
+      "revId": "6ed79e3ac2eb1136ea8abb08989b355e518b842c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
