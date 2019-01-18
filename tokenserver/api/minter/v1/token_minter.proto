@@ -462,3 +462,4 @@ message MintServiceOAuthTokenResponse {
   // monitoring.
   string service_version = 4;
 }
+
