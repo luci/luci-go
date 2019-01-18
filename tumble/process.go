@@ -71,15 +71,16 @@ var metricDeleted = metric.NewCounter(
 // (the currently configured number of shards), this will return a low > high.
 // Otherwise low < high.
 func expandedShardBounds(c context.Context, cfg *Config, shard uint64) (low, high int64) {
-	if shard < 0 || uint64(shard) >= cfg.NumShards {
+	totalShards := cfg.TotalShardCount(info.GetNamespace(c))
+	if shard < 0 || uint64(shard) >= totalShards {
 		logging.Warningf(c, "Invalid shard: %d", shard)
 		// return inverted bounds
 		return 0, -1
 	}
 
-	expandedShardsPerShard := int64(math.MaxUint64 / cfg.NumShards)
+	expandedShardsPerShard := int64(math.MaxUint64 / totalShards)
 	low = math.MinInt64 + (int64(shard) * expandedShardsPerShard)
-	if uint64(shard) == cfg.NumShards-1 {
+	if uint64(shard) == totalShards-1 {
 		high = math.MaxInt64
 	} else {
 		high = low + expandedShardsPerShard
