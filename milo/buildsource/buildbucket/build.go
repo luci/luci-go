@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 
 	"github.com/golang/protobuf/ptypes"
@@ -32,11 +33,12 @@ import (
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
-
+	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 )
 
 var ErrNotFound = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
@@ -202,24 +204,52 @@ var fullBuildMask = &field_mask.FieldMask{
 	},
 }
 
+// getFeedbackLink attempts to formulate and return the build page feedback link
+// for the given build.
+func getFeedbackLink(c *router.Context, b *buildbucketpb.Build) (string, error) {
+	project, err := common.GetProject(c.Context, b.Builder.GetProject())
+	if err != nil || reflect.DeepEqual(project.BuildBugTemplate, config.BugTemplate{}) {
+		return "", err
+	}
+
+	builderPath := fmt.Sprintf("/p/%s/builders/%s/%s", b.Builder.GetProject(), b.Builder.GetBucket(), b.Builder.GetBuilder())
+	buildURL, err := c.Request.URL.Parse(builderPath + "/" + c.Params.ByName("numberOrId"))
+	builderURL, err := c.Request.URL.Parse(builderPath)
+
+	link, err := MakeFeedbackLink(&project.BuildBugTemplate, map[string]interface{}{
+		"Build":          b,
+		"MiloBuildUrl":   buildURL,
+		"MiloBuilderUrl": builderURL,
+	})
+
+	if err != nil {
+		logging.WithError(err).Errorf(c.Context, "Unable to make custom feedback link")
+		return "", err
+	}
+
+	return link, nil
+}
+
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
-func GetBuildPage(c context.Context, br buildbucketpb.GetBuildRequest) (*ui.BuildPage, error) {
+func GetBuildPage(c *router.Context, br buildbucketpb.GetBuildRequest) (*ui.BuildPage, error) {
 	br.Fields = fullBuildMask
-	host, err := getHost(c)
+	host, err := getHost(c.Context)
 	if err != nil {
 		return nil, err
 	}
-	b, err := GetBuild(c, host, br)
+	b, err := GetBuild(c.Context, host, br)
 	if err != nil {
 		return nil, err
 	}
-	blame, err := getBlame(c, host, b)
+	blame, err := getBlame(c.Context, host, b)
 	if err != nil {
 		return nil, err
 	}
+	link, err := getFeedbackLink(c, b)
 	return &ui.BuildPage{
 		Build: *b,
 		Blame: blame,
+		BuildFeedbackLink: link,
 	}, nil
 }

@@ -62,6 +62,11 @@ type BuildPage struct {
 	// build on the same builder, and this run.
 	Blame []*Commit
 
+	// BuildFeedbackLink is a URL to be used a feedback link for the build. If the
+	// link could not be generated an empty string will be returned. There will be
+	// no link, for example, if the project has not set up their build bug template.
+	BuildFeedbackLink string
+
 	// Errors contains any non-critical errors encountered while rendering the page.
 	Errors []error
 
