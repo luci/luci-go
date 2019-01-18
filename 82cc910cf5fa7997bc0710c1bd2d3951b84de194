@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0ae95faf_71df0cf7",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe36371e_c866834f",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3468b348_fc29cdb9",
         "filename": "tokenserver/api/admin/v1/admin.proto",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52f751cb_82b16f90",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3468b348_fc29cdb9",
+      "range": {
+        "startLine": 98,
+        "startChar": 37,
+        "endLine": 98,
+        "endChar": 41
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "65367e14_11e9e57a",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b0429b9_56f799dc",
+      "range": {
+        "startLine": 302,
+        "startChar": 16,
+        "endLine": 302,
+        "endChar": 32
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "39bde274_b8219ba6",
         "filename": "tokenserver/api/admin/v1/admin.proto",
         "patchSetId": 3
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "998e4cbd_017c8ef3",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39bde274_b8219ba6",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b113df10_034abe1a",
         "filename": "tokenserver/api/admin/v1/admin.proto",
         "patchSetId": 3
@@ -96,6 +180,24 @@
       "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5a45d20_08c73980",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b113df10_034abe1a",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -156,6 +258,24 @@
     },
     {
       "key": {
+        "uuid": "c59ddbd0_ea831942",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8aa0218_de53b452",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b8970035_2ea5026d",
         "filename": "tokenserver/api/admin/v1/config.proto",
         "patchSetId": 3
@@ -170,6 +290,24 @@
       "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6116b2d_f34d189b",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8970035_2ea5026d",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -196,6 +334,30 @@
     },
     {
       "key": {
+        "uuid": "87864905_c9d74f08",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e238f2d4_c55a9baa",
+      "range": {
+        "startLine": 205,
+        "startChar": 5,
+        "endLine": 205,
+        "endChar": 29
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1efa77ce_f6b06f66",
         "filename": "tokenserver/api/admin/v1/config.proto",
         "patchSetId": 3
@@ -216,6 +378,30 @@
       "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6569f3f2_8469b627",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Actually this means \"ID\" as it pops up as the ID column in the project search. Project id is a string consisting of $name-$int and uniquely identifies the project for as long as it exists.\n\n\"The project ID is generated from the project name you enter when you create the project in the Google Cloud Platform Console.\" https://cloud.google.com/resource-manager/docs/creating-managing-projects",
+      "parentUuid": "1efa77ce_f6b06f66",
+      "range": {
+        "startLine": 209,
+        "startChar": 9,
+        "endLine": 209,
+        "endChar": 25
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -259,6 +445,48 @@
     },
     {
       "key": {
+        "uuid": "c72d7090_63e31ff4",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0798ca3f_8cd10928",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6d1492d6_6fca7e43",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3c5035a_e3c7ae59",
+      "range": {
+        "startLine": 131,
+        "startChar": 49,
+        "endLine": 131,
+        "endChar": 56
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "55533ead_04f18057",
         "filename": "tokenserver/api/minter/v1/token_minter.proto",
         "patchSetId": 3
@@ -276,6 +504,24 @@
     },
     {
       "key": {
+        "uuid": "c246b0ba_e0d1a918",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "55533ead_04f18057",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "57c58ac4_55eb0e96",
         "filename": "tokenserver/api/minter/v1/token_minter.proto",
         "patchSetId": 3
@@ -290,6 +536,24 @@
       "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19e91494_55748005",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-18T20:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57c58ac4_55eb0e96",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
