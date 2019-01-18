@@ -27,6 +27,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -270,24 +271,21 @@ func (c *Commit) DescLines() []string {
 }
 
 // Timeline returns a JSON parsable string that can be fed into a viz timeline component.
-// TODO(hinoka): Reimplement me.
 func (bp *BuildPage) Timeline() string {
 	// Return the cached version, if it exists already.
 	if bp.timelineData != "" {
 		return bp.timelineData
 	}
-	// TODO(hinoka): This doesn't currently return correct data.
-	return "\"timeline goes here\""
 
 	// stepData is extra data to deliver with the groups and items (see below) for the
-	// Javascript vis Timeline component.
+	// Javascript vis Timeline component. Note that the step data is encoded in markdown
+	// in the step.SummaryMarkdown field. We do not show this data on the timeline at this
+	// time.
 	type stepData struct {
-		Label           string    `json:"label"`
-		Text            string    `json:"text"`
-		Duration        string    `json:"duration"`
-		MainLink        LinkSet   `json:"mainLink"`
-		SubLink         []LinkSet `json:"subLink"`
-		StatusClassName string    `json:"statusClassName"`
+		Label           string `json:"label"`
+		Duration        string `json:"duration"`
+		LogURL          string `json:"logUrl"`
+		StatusClassName string `json:"statusClassName"`
 	}
 
 	// group corresponds to, and matches the shape of, a Group for the Javascript
@@ -321,12 +319,15 @@ func (bp *BuildPage) Timeline() string {
 	items := make([]item, len(bp.Build.Steps))
 	for i, step := range bp.Build.Steps {
 		groupID := strconv.Itoa(i)
+		logURL := ""
+		if len(step.Logs) > 0 {
+			logURL = html.EscapeString(step.Logs[0].ViewUrl)
+		}
 		statusClassName := fmt.Sprintf("status-%s", step.Status)
 		data := stepData{
-			Label: html.EscapeString(step.Name),
-			Text:  html.EscapeString(step.SummaryMarkdown),
-			// TODO(hinoka): HumanDuration
-			Duration:        "duration goes here",
+			Label:           html.EscapeString(step.Name),
+			Duration:        common.Duration(step.StartTime, step.EndTime),
+			LogURL:          logURL,
 			StatusClassName: statusClassName,
 		}
 		groups[i] = group{groupID, data}
@@ -352,38 +353,6 @@ func (bp *BuildPage) Timeline() string {
 		return "error"
 	}
 	return string(timeline)
-}
-
-func sanitize(values []string) []string {
-	result := make([]string, len(values))
-	for i, value := range values {
-		result[i] = html.EscapeString(value)
-	}
-	return result
-}
-
-func sanitizeLinkSet(linkSet LinkSet) LinkSet {
-	result := make(LinkSet, len(linkSet))
-	for i, link := range linkSet {
-		result[i] = &Link{
-			Link: model.Link{
-				Label: html.EscapeString(link.Label),
-				URL:   html.EscapeString(link.URL),
-			},
-			AriaLabel: html.EscapeString(link.AriaLabel),
-			Img:       html.EscapeString(link.Img),
-			Alt:       html.EscapeString(link.Alt),
-		}
-	}
-	return result
-}
-
-func sanitizeLinkSets(linkSets []LinkSet) []LinkSet {
-	result := make([]LinkSet, len(linkSets))
-	for i, linkSet := range linkSets {
-		result[i] = sanitizeLinkSet(linkSet)
-	}
-	return result
 }
 
 // milliseconds returns the given time in number of milliseconds elapsed since epoch.
