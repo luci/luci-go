@@ -28,10 +28,30 @@ def gitiles_poller(
   ):
   """Defines a gitiles poller which can trigger builders on git commits.
 
-  It watches a set of git refs and triggers builders if either:
+  It periodically examines the state of watched refs in the git repository. On
+  each iteration it triggers builders if either:
 
-    * A watched ref's tip has changed (e.g. a new commit landed on a ref).
-    * A ref belonging to the watched set has just been created.
+    * A watched ref's tip has changed since the last iteration (e.g. a new
+      commit landed on a ref). Each new detected commit results in a separate
+      triggering request, so if for example 10 new commits landed on a ref since
+      the last poll, 10 new triggering requests will be submitted to the
+      builders triggered by this poller. How they are converted to actual builds
+      depends on `triggering_policy` of a builder. For example, some builders
+      may want to have one build per commit, others don't care and just want to
+      test the latest commit. See core.builder(...) and scheduler.policy(...)
+      for more details.
+
+      *** note
+      **Caveat**: When a large number of commits are pushed on the ref between
+      iterations of the poller, only the most recent 50 commits will result in
+      triggering requests. Everything older is silently ignored. This is a
+      safeguard against mistaken or deliberate but unusual git push actions,
+      which typically don't have intent of triggering a build for each such
+      commit.
+      ***
+
+    * A ref belonging to the watched set has just been created. This produces
+      a single triggering request.
 
   The watched ref set is defined via `refs` and `refs_regexps` fields. One is
   just a simple enumeration of refs, and another allows to use regular
