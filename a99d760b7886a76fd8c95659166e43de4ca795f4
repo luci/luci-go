@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cde18564_a77a62ff",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:35:03Z",
+      "side": 1,
+      "message": "Actually +1 to what Andrii said in some other CL. This options should be ternary: UNSET, OPT_IN, OPT_OUT.\n\nIn initial state global server default is OPT_OUT and some projects may OPT_IN. Once most are, OPT_IN becomes default and projects that haven\u0027t switched yet can OPT_OUT.\n\nThis is important to let project owners autonomy in fixing their stuff. If using just bool, once we make usage of project scoped service accounts default, there\u0027ll be NO way to turn it off for a project (e.g. if project owners discover something is broken). I\u0027m mostly concerned about projects owned by people in different timezones. We don\u0027t want them to feel helpless.",
+      "range": {
+        "startLine": 76,
+        "startChar": 2,
+        "endLine": 76,
+        "endChar": 43
+      },
+      "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e2932df_2676d406",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:35:03Z",
+      "side": 1,
+      "message": "nit: please clarify this too (e.g. copy-paste comment from above)",
+      "range": {
+        "startLine": 330,
+        "startChar": 2,
+        "endLine": 330,
+        "endChar": 79
+      },
+      "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -405,6 +405,30 @@
     },
     {
       "key": {
+        "uuid": "4568ff1c_e2f77060",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:35:03Z",
+      "side": 1,
+      "message": "Thanks for clarifying :)",
+      "parentUuid": "6569f3f2_8469b627",
+      "range": {
+        "startLine": 209,
+        "startChar": 9,
+        "endLine": 209,
+        "endChar": 25
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0798ca3f_8cd10928",
         "filename": "tokenserver/api/minter/v1/token_minter.proto",
         "patchSetId": 3
