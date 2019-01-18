@@ -103,7 +103,7 @@ func resetVM(c context.Context, id string) error {
 	}, nil)
 }
 
-// setCreated sets the VM as created in the datastore if it isn't already.
+// setCreated sets the GCE instance as created in the datastore if it isn't already.
 func setCreated(c context.Context, id, url string, at time.Time) error {
 	vm := &model.VM{
 		ID: id,
@@ -118,29 +118,6 @@ func setCreated(c context.Context, id, url string, at time.Time) error {
 		}
 		vm.Deadline = at.Unix() + vm.Lifetime
 		vm.URL = url
-		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM").Err()
-		}
-		return nil
-	}, nil)
-}
-
-// setDestroyed sets the VM as destroyed in the datastore if it isn't already.
-func setDestroyed(c context.Context, id, url string) error {
-	vm := &model.VM{
-		ID: id,
-	}
-	return datastore.RunInTransaction(c, func(c context.Context) error {
-		if err := datastore.Get(c, vm); err != nil {
-			return errors.Annotate(err, "failed to fetch VM").Err()
-		}
-		if vm.URL != url {
-			// Already destroyed. A new one may even be created.
-			return nil
-		}
-		vm.Deadline = 0
-		vm.Hostname = ""
-		vm.URL = ""
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
@@ -287,7 +264,7 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 		if gerr.Code == http.StatusNotFound {
 			// Instance is already destroyed.
 			logging.Debugf(c, "instance does not exist: %s", vm.URL)
-			return setDestroyed(c, task.Id, vm.URL)
+			return deleteBotAsync(c, task.Id, vm.Hostname)
 		}
 		return errors.Reason("failed to destroy instance").Err()
 	}
@@ -299,7 +276,7 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	}
 	if op.Status == "DONE" {
 		logging.Debugf(c, "destroyed instance: %s", op.TargetLink)
-		return setDestroyed(c, task.Id, op.TargetLink)
+		return deleteBotAsync(c, task.Id, vm.Hostname)
 	}
 	// Instance destruction is pending.
 	return nil

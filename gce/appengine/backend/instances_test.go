@@ -283,11 +283,13 @@ func TestDestroyInstance(t *testing.T) {
 			Convey("nil", func() {
 				err := destroyInstance(c, nil)
 				So(err, ShouldErrLike, "unexpected payload")
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
 
 			Convey("empty", func() {
 				err := destroyInstance(c, &tasks.DestroyInstance{})
 				So(err, ShouldErrLike, "ID is required")
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
 
 			Convey("url", func() {
@@ -295,6 +297,7 @@ func TestDestroyInstance(t *testing.T) {
 					Id: "id",
 				})
 				So(err, ShouldErrLike, "URL is required")
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
 		})
 
@@ -305,6 +308,7 @@ func TestDestroyInstance(t *testing.T) {
 					Url: "url",
 				})
 				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
 
 			Convey("error", func() {
@@ -326,6 +330,7 @@ func TestDestroyInstance(t *testing.T) {
 					}
 					datastore.Get(c, v)
 					So(v.URL, ShouldEqual, "url")
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
 				Convey("operation", func() {
@@ -352,6 +357,7 @@ func TestDestroyInstance(t *testing.T) {
 					}
 					datastore.Get(c, v)
 					So(v.URL, ShouldEqual, "url")
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 			})
 
@@ -378,6 +384,7 @@ func TestDestroyInstance(t *testing.T) {
 					So(v.Deadline, ShouldEqual, 1)
 					So(v.Hostname, ShouldEqual, "name")
 					So(v.URL, ShouldEqual, "url")
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
 				Convey("done", func() {
@@ -402,9 +409,10 @@ func TestDestroyInstance(t *testing.T) {
 						ID: "id",
 					}
 					datastore.Get(c, v)
-					So(v.Deadline, ShouldEqual, 0)
-					So(v.Hostname, ShouldBeEmpty)
-					So(v.URL, ShouldBeEmpty)
+					So(v.Deadline, ShouldEqual, 1)
+					So(v.Hostname, ShouldEqual, "name")
+					So(v.URL, ShouldEqual, "url")
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 				})
 			})
 		})

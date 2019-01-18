@@ -14,6 +14,14 @@ message CreateInstance {
   string id = 1;
 }
 
+// A task to delete a Swarming bot associated with a VM entity.
+message DeleteBot {
+  // The ID of the VM entity to delete a Swarming bot for.
+  string id = 1;
+  // The hostname of the Swarming bot to delete.
+  string hostname = 2;
+}
+
 // A task to destroy a GCE instance created from a VM entity.
 message DestroyInstance {
   // The ID of the VM entity to destroy a GCE instance for.
