@@ -288,6 +288,42 @@ message GitilesTask {
   //     should not start with ^ or end with $ as they will be added
   //     automatically.
   repeated string refs = 2;
+
+  // path is a list of filepaths or regular expressions limiting emitted
+  // triggers only to commits whose diff touches the specified filepaths
+  // **subject to caveats below** for exceptional cases.
+  //
+  // If none specified, defaults to matching any commit, even those w/o any
+  // changes to files (see git commit --allow-empty).
+  //
+  // Each path can be either:
+  //
+  //   * a full filepath, e.g., "a/b/c".
+  //     A commit will be matched if one of files in its diff is "a/b/c".
+  //     However, if 'a/b/c' is a directory in a repo and only "a/b/c/d" file is
+  //     modified, then "a/b/c" won't match it.
+  //
+  //   * a regular expression with "regexp:" prefix, e.g., "regexp:a/b/c/.+".
+  //     A commit will be matched if one of files in its diff matches this
+  //     regexp.
+  //
+  // CAVEATS:
+  //  1. "regexp:.+" will NOT match commits which modify no files (aka empty
+  //     commits) and as such differs from not specifying any `path`
+  //  2. All files referenced in Git commit diff are used for matching `path`,
+  //     whether file was added, deleted, moved, or its metadata modified.
+  //  3. If a ref tip has just been created, a trigger would be emitted
+  //     regardless of corresponding commit's diff.
+  //  4. Per GitilesTask doc, if a ref fast-forwards >50 commits, only last 50
+  //     commits are checked. If none of them matches any path specified here, a
+  //     single trigger is emitted for the ref's new tip.
+  //     Rational: it's better to emit redundant triggers than silently not emit
+  //     triggers for commits beyond latest 50.
+  //     TODO(tandrii): it's possible to improve this by examinining diff
+  //     between ref's last and new tips, but one has to worry about gitiles
+  //     taking potentially very long time to compute it.
+  repeated string paths = 3;
+  // TODO(tandrii): add exclude_paths.
 }
 
 
