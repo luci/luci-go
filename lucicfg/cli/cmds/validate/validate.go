@@ -44,9 +44,8 @@ func Cmd(params base.Parameters) *subcommands.Command {
 		ShortDesc: "sends files under CONFIG_DIR (or CWD if not set) to LUCI Config service for validation",
 		CommandRun: func() subcommands.CommandRun {
 			vr := &validateRun{}
-			vr.Init(params, true)
-			vr.Flags.StringVar(&vr.configSet, "config-set", "<name>", "Name of the config set to validate against.")
-			vr.Flags.BoolVar(&vr.failOnWarnings, "fail-on-warnings", false, "Treat validation warnings as errors.")
+			vr.Init(params)
+			vr.AddValidationFlags()
 			return vr
 		},
 	}
@@ -54,40 +53,60 @@ func Cmd(params base.Parameters) *subcommands.Command {
 
 type validateRun struct {
 	base.Subcommand
-
-	configSet      string
-	configDir      string
-	failOnWarnings bool
 }
 
 type validateResult struct {
 	Messages []*config.ComponentsConfigEndpointValidationMessage `json:"messages"`
 }
 
+func (vr *validateRun) checkArgs(args []string) bool {
+	switch {
+	case !vr.CheckArgs(args, 0, 1):
+		return false
+	case vr.Meta.ConfigServiceHost == "":
+		vr.ReportMissingFlag("-config-service-host")
+	case vr.Meta.ConfigSet == "":
+		// -config-set flag is required for now. Later, when `validate` learns to
+		// generate configs first, it may be set on Starlark side.
+		vr.ReportMissingFlag("-config-set")
+	default:
+		return true // all good
+	}
+	return false // something is not good
+}
+
 func (vr *validateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if !vr.CheckArgs(args, 0, 1) {
+	if !vr.checkArgs(args) {
 		return 1
 	}
+
+	// Grab ConfigDir from first arg, defaulting to cwd.
 	if len(args) == 1 {
-		vr.configDir = args[0]
+		vr.Meta.ConfigDir = args[0]
 	} else {
 		configDir, err := os.Getwd()
 		if err != nil {
 			return vr.Done(nil, err)
 		}
-		vr.configDir = configDir
+		vr.Meta.ConfigDir = configDir
 	}
+
 	ctx := cli.GetContext(a, vr, env)
+
 	// Construct the service outside run to improve testability.
 	svc, err := vr.ConfigService(ctx)
 	if err != nil {
 		return vr.Done(nil, err)
 	}
+
 	return vr.Done(vr.run(ctx, svc))
 }
 
-// run recursively searches vr.configDir for config files, calls svc.ValidateConfig() on them
-// and aggregates the results.
+// TODO(vadimsh): Move this into configset.go, so it can be reused from commands
+// that generate configs.
+
+// run recursively searches vr.Meta.ConfigDir for config files, calls
+// svc.ValidateConfig() on them and aggregates the results.
 func (vr *validateRun) run(ctx context.Context, svc *config.Service) (*validateResult, error) {
 	validateRequest, err := vr.constructRequest()
 	if err != nil {
@@ -97,7 +116,7 @@ func (vr *validateRun) run(ctx context.Context, svc *config.Service) (*validateR
 	if err != nil {
 		return &validateResult{}, fmt.Errorf("error validating configs: %v", err)
 	}
-	return processResponse(ctx, resp, vr.failOnWarnings)
+	return processResponse(ctx, resp, vr.Meta.FailOnWarnings)
 }
 
 // processResponses produces a validateResult that contains all the messages
@@ -125,11 +144,11 @@ func processResponse(ctx context.Context, resp *config.LuciConfigValidateConfigR
 	return &validateResult{resp.Messages}, nil
 }
 
-// constructRequest searches the vr.configDir for config files and constructs a
-// LuciConfigValidateConfigRequestMessage.
+// constructRequest searches the vr.Meta.ConfigDir for config files and
+// constructs a LuciConfigValidateConfigRequestMessage.
 func (vr *validateRun) constructRequest() (*config.LuciConfigValidateConfigRequestMessage, error) {
 	var configFiles []*config.LuciConfigValidateConfigRequestMessageFile
-	err := filepath.Walk(vr.configDir,
+	err := filepath.Walk(vr.Meta.ConfigDir,
 		func(p string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -141,7 +160,7 @@ func (vr *validateRun) constructRequest() (*config.LuciConfigValidateConfigReque
 			if err != nil {
 				return err
 			}
-			relPath, err := filepath.Rel(vr.configDir, p)
+			relPath, err := filepath.Rel(vr.Meta.ConfigDir, p)
 			if err != nil {
 				return err
 			}
@@ -156,7 +175,7 @@ func (vr *validateRun) constructRequest() (*config.LuciConfigValidateConfigReque
 	}
 
 	return &config.LuciConfigValidateConfigRequestMessage{
-		ConfigSet: vr.configSet,
+		ConfigSet: vr.Meta.ConfigSet,
 		Files:     configFiles,
 	}, nil
 }
