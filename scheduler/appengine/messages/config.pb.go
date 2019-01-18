@@ -92,7 +92,7 @@ func (x TriggeringPolicy_Kind) String() string {
 }
 
 func (TriggeringPolicy_Kind) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{4, 0}
+	return fileDescriptor_3b38e5823bccf1c5, []int{3, 0}
 }
 
 // ProjectConfig defines a schema for a config file that describe jobs belonging
@@ -153,13 +153,6 @@ func (m *ProjectConfig) GetTrigger() []*Trigger {
 func (m *ProjectConfig) GetAclSets() []*AclSet {
 	if m != nil {
 		return m.AclSets
-	}
-	return nil
-}
-
-func (m *ProjectConfig) GetSecurityOptions() *SecurityOptions {
-	if m != nil {
-		return m.SecurityOptions
 	}
 	return nil
 }
@@ -266,47 +259,6 @@ func (m *AclSet) GetAcls() []*Acl {
 	return nil
 }
 
-// SecurityOptions enable project specific security features.
-type SecurityOptions struct {
-	// Enables the use of project scoped service accounts.
-	ProjectScopedServiceAccounts bool     `protobuf:"varint,1,opt,name=project_scoped_service_accounts,json=projectScopedServiceAccounts,proto3" json:"project_scoped_service_accounts,omitempty"`
-	XXX_NoUnkeyedLiteral         struct{} `json:"-"`
-	XXX_unrecognized             []byte   `json:"-"`
-	XXX_sizecache                int32    `json:"-"`
-}
-
-func (m *SecurityOptions) Reset()         { *m = SecurityOptions{} }
-func (m *SecurityOptions) String() string { return proto.CompactTextString(m) }
-func (*SecurityOptions) ProtoMessage()    {}
-func (*SecurityOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{3}
-}
-
-func (m *SecurityOptions) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SecurityOptions.Unmarshal(m, b)
-}
-func (m *SecurityOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SecurityOptions.Marshal(b, m, deterministic)
-}
-func (m *SecurityOptions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SecurityOptions.Merge(m, src)
-}
-func (m *SecurityOptions) XXX_Size() int {
-	return xxx_messageInfo_SecurityOptions.Size(m)
-}
-func (m *SecurityOptions) XXX_DiscardUnknown() {
-	xxx_messageInfo_SecurityOptions.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SecurityOptions proto.InternalMessageInfo
-
-func (m *SecurityOptions) GetProjectScopedServiceAccounts() bool {
-	if m != nil {
-		return m.ProjectScopedServiceAccounts
-	}
-	return false
-}
-
 // TriggeringPolicy defines a function that decides when and how to launch a
 // job invocation, given the job's current state and a set of pending triggers.
 type TriggeringPolicy struct {
@@ -349,7 +301,7 @@ func (m *TriggeringPolicy) Reset()         { *m = TriggeringPolicy{} }
 func (m *TriggeringPolicy) String() string { return proto.CompactTextString(m) }
 func (*TriggeringPolicy) ProtoMessage()    {}
 func (*TriggeringPolicy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{4}
+	return fileDescriptor_3b38e5823bccf1c5, []int{3}
 }
 
 func (m *TriggeringPolicy) XXX_Unmarshal(b []byte) error {
@@ -469,7 +421,7 @@ func (m *Job) Reset()         { *m = Job{} }
 func (m *Job) String() string { return proto.CompactTextString(m) }
 func (*Job) ProtoMessage()    {}
 func (*Job) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{5}
+	return fileDescriptor_3b38e5823bccf1c5, []int{4}
 }
 
 func (m *Job) XXX_Unmarshal(b []byte) error {
@@ -594,7 +546,7 @@ func (m *Trigger) Reset()         { *m = Trigger{} }
 func (m *Trigger) String() string { return proto.CompactTextString(m) }
 func (*Trigger) ProtoMessage()    {}
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{6}
+	return fileDescriptor_3b38e5823bccf1c5, []int{5}
 }
 
 func (m *Trigger) XXX_Unmarshal(b []byte) error {
@@ -692,7 +644,7 @@ func (m *NoopTask) Reset()         { *m = NoopTask{} }
 func (m *NoopTask) String() string { return proto.CompactTextString(m) }
 func (*NoopTask) ProtoMessage()    {}
 func (*NoopTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{7}
+	return fileDescriptor_3b38e5823bccf1c5, []int{6}
 }
 
 func (m *NoopTask) XXX_Unmarshal(b []byte) error {
@@ -774,7 +726,7 @@ func (m *GitilesTask) Reset()         { *m = GitilesTask{} }
 func (m *GitilesTask) String() string { return proto.CompactTextString(m) }
 func (*GitilesTask) ProtoMessage()    {}
 func (*GitilesTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{8}
+	return fileDescriptor_3b38e5823bccf1c5, []int{7}
 }
 
 func (m *GitilesTask) XXX_Unmarshal(b []byte) error {
@@ -826,7 +778,7 @@ func (m *UrlFetchTask) Reset()         { *m = UrlFetchTask{} }
 func (m *UrlFetchTask) String() string { return proto.CompactTextString(m) }
 func (*UrlFetchTask) ProtoMessage()    {}
 func (*UrlFetchTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{9}
+	return fileDescriptor_3b38e5823bccf1c5, []int{8}
 }
 
 func (m *UrlFetchTask) XXX_Unmarshal(b []byte) error {
@@ -891,7 +843,7 @@ func (m *BuildbucketTask) Reset()         { *m = BuildbucketTask{} }
 func (m *BuildbucketTask) String() string { return proto.CompactTextString(m) }
 func (*BuildbucketTask) ProtoMessage()    {}
 func (*BuildbucketTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{10}
+	return fileDescriptor_3b38e5823bccf1c5, []int{9}
 }
 
 func (m *BuildbucketTask) XXX_Unmarshal(b []byte) error {
@@ -964,7 +916,7 @@ func (m *TaskDefWrapper) Reset()         { *m = TaskDefWrapper{} }
 func (m *TaskDefWrapper) String() string { return proto.CompactTextString(m) }
 func (*TaskDefWrapper) ProtoMessage()    {}
 func (*TaskDefWrapper) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{11}
+	return fileDescriptor_3b38e5823bccf1c5, []int{10}
 }
 
 func (m *TaskDefWrapper) XXX_Unmarshal(b []byte) error {
@@ -1019,7 +971,6 @@ func init() {
 	proto.RegisterType((*ProjectConfig)(nil), "scheduler.config.ProjectConfig")
 	proto.RegisterType((*Acl)(nil), "scheduler.config.Acl")
 	proto.RegisterType((*AclSet)(nil), "scheduler.config.AclSet")
-	proto.RegisterType((*SecurityOptions)(nil), "scheduler.config.SecurityOptions")
 	proto.RegisterType((*TriggeringPolicy)(nil), "scheduler.config.TriggeringPolicy")
 	proto.RegisterType((*Job)(nil), "scheduler.config.Job")
 	proto.RegisterType((*Trigger)(nil), "scheduler.config.Trigger")
