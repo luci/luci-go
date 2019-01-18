@@ -89,12 +89,6 @@ func (s *Service) FireAllTasksHandler(c *router.Context) {
 func (s *Service) FireAllTasks(c context.Context) error {
 	cfg := getConfig(c)
 
-	// Generate a list of all shards.
-	allShards := make([]taskShard, 0, cfg.NumShards)
-	for i := uint64(0); i < cfg.NumShards; i++ {
-		allShards = append(allShards, taskShard{i, minTS})
-	}
-
 	namespaces, err := s.getNamespaces(c, cfg)
 	if err != nil {
 		return err
@@ -107,6 +101,11 @@ func (s *Service) FireAllTasks(c context.Context) error {
 		for _, ns := range namespaces {
 			ns := ns
 			ch <- func() error {
+				// Generate a list of all shards.
+				allShards := make([]taskShard, 0, cfg.TotalShardCount(ns))
+				for i := uint64(0); i < cfg.TotalShardCount(ns); i++ {
+					allShards = append(allShards, taskShard{i, minTS})
+				}
 				s.fireAllTasksForNamespace(c, cfg, ns, allShards, &errCount, &taskCount)
 				return nil
 			}

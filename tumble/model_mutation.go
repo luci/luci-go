@@ -141,11 +141,12 @@ type realMutation struct {
 }
 
 func (r *realMutation) shard(cfg *Config) taskShard {
-	expandedShardsPerShard := math.MaxUint64 / cfg.NumShards
+	shardCount := cfg.TotalShardCount(r.TargetRoot.Namespace())
+	expandedShardsPerShard := math.MaxUint64 / shardCount
 	ret := uint64(r.ExpandedShard-math.MinInt64) / expandedShardsPerShard
 	// account for rounding errors on the last shard.
-	if ret >= cfg.NumShards {
-		ret = cfg.NumShards - 1
+	if ret >= shardCount {
+		ret = shardCount - 1
 	}
 	return taskShard{ret, mkTimestamp(cfg, r.ProcessAfter)}
 }

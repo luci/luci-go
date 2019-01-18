@@ -105,6 +105,15 @@ type Config struct {
 	DelayedMutations bool `json:"delayedMutations,omitempty"`
 }
 
+func (c *Config) TotalShardCount(namespace string) uint64 {
+	// HACK(hinoka): This namespace requires a lot more shards than your average
+	// namespace.  crbug.com/920852
+	if namespace == "luci.chromium" {
+		return 64
+	}
+	return c.NumShards
+}
+
 // defaultConfig returns the default configuration settings.
 var defaultConfig = Config{
 	NumShards:           32,
