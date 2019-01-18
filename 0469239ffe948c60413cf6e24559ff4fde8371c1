@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "a415a20a_a7e88d96",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/scheduler.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T06:47:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d209765e_7a3e687d",
+      "range": {
+        "startLine": 47,
+        "startChar": 63,
+        "endLine": 47,
+        "endChar": 64
+      },
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7d0931a0_34b9266f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/scheduler.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T06:47:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "961535cc_b8057608",
+      "range": {
+        "startLine": 47,
+        "startChar": 31,
+        "endLine": 47,
+        "endChar": 55
+      },
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "05c10e76_d7cabd99",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 7
@@ -59,6 +107,30 @@
       "writtenOn": "2019-01-18T05:56:53Z",
       "side": 1,
       "message": "well, you do mention this after all, then i guess also mention it again in scheduler.policy(...) doc.",
+      "range": {
+        "startLine": 138,
+        "startChar": 25,
+        "endLine": 139,
+        "endChar": 21
+      },
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f8ea7f4b_3f88c9b9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T06:47:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05c10e76_d7cabd99",
       "range": {
         "startLine": 138,
         "startChar": 25,
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "332eb13d_37d5347d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T06:47:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "61abf4a5_cabd94ee",
+      "range": {
+        "startLine": 141,
+        "startChar": 57,
+        "endLine": 141,
+        "endChar": 62
+      },
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04c015b3_d1309287",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
         "patchSetId": 7
@@ -105,6 +201,24 @@
       "writtenOn": "2019-01-18T05:56:53Z",
       "side": 1,
       "message": "since you\u0027ve mentioned effective limit on max batch size, perhaps mention limit of new commits per single ref?\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/scheduler/appengine/task/gitiles/gitiles.go?q\u003dscheduler+gitiles.go\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d58",
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd4cf423_fee916d6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T06:47:40Z",
+      "side": 1,
+      "message": "I don\u0027t think this setting is user-visible. max_batch_size influences what goes into a build and can be deduced just by looking at builds. maxCommitsPerRefUpdate influences internal batching in gitiles poller. IIUC, in the end all commits are fetched from ref and put into pending triggers set. maxCommitsPerRefUpdate just tells size of a single update quantum.\n\nUnless I misunderstood what it means.",
+      "parentUuid": "04c015b3_d1309287",
       "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
