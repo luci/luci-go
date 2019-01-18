@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8885f12a_4d69ef42",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "Please configure your editor not strip the final \\n. Will be generating useless diffs like this all the time, since I believe everyone else\u0027s editors put \u0027\\n\u0027 as last line by default.",
+      "range": {
+        "startLine": 331,
+        "startChar": 0,
+        "endLine": 331,
+        "endChar": 1
+      },
+      "revId": "829b98e52fb70fe52284b2df93cdf5e600961f3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

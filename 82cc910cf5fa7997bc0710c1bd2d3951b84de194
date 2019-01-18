@@ -1,0 +1,295 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fe36371e_c866834f",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "nit: minus \\n",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3468b348_fc29cdb9",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "nit: LUCI",
+      "range": {
+        "startLine": 98,
+        "startChar": 37,
+        "endLine": 98,
+        "endChar": 41
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b0429b9_56f799dc",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "what does this mean? Is it \"luci-scheduler\" or \"luci-scheduler@appspot.gserviceaccount.com\" or something else. Please clarify in the comment and optionally rename the field.",
+      "range": {
+        "startLine": 302,
+        "startChar": 16,
+        "endLine": 302,
+        "endChar": 32
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39bde274_b8219ba6",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "nit: minus \\n",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b113df10_034abe1a",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "email?\n\nBecause service accounts do have int64 IDs called \"account ID\".",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "153baafa_37290450",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "nit: minus \\n",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04d943e5_0abf9115",
+        "filename": "tokenserver/api/admin/v1/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "looks like copy-pasta mistake",
+      "range": {
+        "startLine": 322,
+        "startChar": 15,
+        "endLine": 322,
+        "endChar": 61
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8aa0218_de53b452",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "nit: minus \\n",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8970035_2ea5026d",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "nit: plus \\n",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e238f2d4_c55a9baa",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "same comment as above",
+      "range": {
+        "startLine": 205,
+        "startChar": 5,
+        "endLine": 205,
+        "endChar": 29
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1efa77ce_f6b06f66",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "cloud_project_name\n\nBecause Cloud Project ID is a int64 number.",
+      "range": {
+        "startLine": 209,
+        "startChar": 9,
+        "endLine": 209,
+        "endChar": 25
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0798ca3f_8cd10928",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "\"project-scoped\"?\n\nWe use \"scoped\" everywhere.",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3c5035a_e3c7ae59",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "access",
+      "range": {
+        "startLine": 131,
+        "startChar": 49,
+        "endLine": 131,
+        "endChar": 56
+      },
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55533ead_04f18057",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "nit: plus \\n",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57c58ac4_55eb0e96",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T01:29:46Z",
+      "side": 1,
+      "message": "nit: plus \\n",
+      "revId": "82cc910cf5fa7997bc0710c1bd2d3951b84de194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
