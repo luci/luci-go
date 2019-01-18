@@ -39,7 +39,7 @@ _CACHE_NAME_RE = r'^[a-z0-9_]+$'
 #   path: string, where to mount the cache.
 #   name: string, name of the cache to mount.
 #   wait_for_warm_cache: duration or None, how long to wait for a warm cache.
-_cache_ctor = genstruct('swarming.cache')
+_cache_ctor = __native__.genstruct('swarming.cache')
 
 
 # A struct returned by swarming.dimension(...).
@@ -49,18 +49,18 @@ _cache_ctor = genstruct('swarming.cache')
 # Fields:
 #   value: string, value of the dimension.
 #   expiration: duration or None, when the dimension expires.
-_dimension_ctor = genstruct('swarming.dimension')
+_dimension_ctor = __native__.genstruct('swarming.dimension')
 
 
 def _cache(path, name=None, wait_for_warm_cache=None):
-  """A request for the bot to mount a named cache to a path.
+  """Represents a request for the bot to mount a named cache to a path.
 
   Each bot has a LRU of named caches: think of them as local named directories
   in some protected place that survive between builds.
 
   A build can request one or more such caches to be mounted (in read/write mode)
   at the requested path relative to some known root. In recipes-based builds,
-  the path is relative to api.paths['cache'] dir.
+  the path is relative to `api.paths['cache']` dir.
 
   If it's the first time a cache is mounted on this particular bot, it will
   appear as an empty directory. Otherwise it will contain whatever was left
@@ -83,30 +83,30 @@ def _cache(path, name=None, wait_for_warm_cache=None):
 
   This means that any LUCI builder has a "personal disk space" on the bot.
   Builder cache is often a good start before customizing caching. In recipes, it
-  is available at api.path['cache'].join('builder').
+  is available at `api.path['cache'].join('builder')`.
 
   In order to share the builder cache directory among multiple builders, some
-  explicitly named cache can be mounted to 'builder' path on these builders.
+  explicitly named cache can be mounted to `builder` path on these builders.
   Buildbucket will not try to override it with its auto-generated builder cache.
 
-  For example, if builders 'a' and 'b' both declare they use named cache
-  swarming.cache('builder', name='my_shared_cache'), and an 'a' build ran on
-  a bot and left some files in the builder cache, then when a 'b' build runs on
-  the same bot, the same files will be available in its builder cache.
+  For example, if builders **A** and **B** both declare they use named cache
+  `swarming.cache('builder', name='my_shared_cache')`, and an **A** build ran on
+  a bot and left some files in the builder cache, then when a **B** build runs
+  on the same bot, the same files will be available in its builder cache.
 
   If the pool of swarming bots is shared among multiple LUCI projects and
   projects mount same named cache, the cache will be shared across projects.
   To avoid affecting and being affected by other projects, prefix the cache
-  name with something project-specific, e.g. "v8-".
+  name with something project-specific, e.g. `v8-`.
 
   Args:
     path: path where the cache should be mounted to, relative to some known
-        root (in recipes this root is api.path['cache']). Must use POSIX
+        root (in recipes this root is `api.path['cache']`). Must use POSIX
         format (forward slashes). In most cases, it does not need slashes at
         all. Must be unique in the given builder definition (cannot mount
-        multiple caches to the same path).
+        multiple caches to the same path). Required.
     name: identifier of the cache to mount to the path. Default is same
-        value as 'path' itself. Must be unique in the given builder definition
+        value as `path` itself. Must be unique in the given builder definition
         (cannot mount the same cache to multiple paths).
     wait_for_warm_cache: how long to wait (with minutes precision) for a bot
         that has this named cache already to become available and pick up the
@@ -119,7 +119,7 @@ def _cache(path, name=None, wait_for_warm_cache=None):
         another.
 
   Returns:
-    swarming.cache struct.
+    swarming.cache struct with fields `path`, `name` and `wait_for_warm_cache`.
   """
   path = validate.string('path', path)
   name = validate.string('name', name, default=path, regexp=_CACHE_NAME_RE, required=False)
@@ -150,23 +150,29 @@ def _cache(path, name=None, wait_for_warm_cache=None):
 def _dimension(value, expiration=None):
   """A value of some Swarming dimension, annotated with its expiration time.
 
-  Intended to be used as a value in 'dimensions' dict when using dimensions
-  that expire:
+  Intended to be used as a value in `dimensions` dict of core.builder(...) when
+  using dimensions that expire:
 
+  ```python
+  core.builder(
+      ...
       dimensions = {
           ...
           'device': swarming.dimension('preferred', expiration=5*time.minute),
           ...
-      }
+      },
+      ...
+  )
+  ```
 
   Args:
-    value: string value of the dimension.
+    value: string value of the dimension. Required.
     expiration: how long to wait (with minutes precision) for a bot with this
         dimension to become available and pick up the build, or None to wait
         until the overall build expiration timeout.
 
   Returns:
-    swarming.dimension struct.
+    swarming.dimension struct with fields `value` and `expiration`.
   """
   # See also 'validate_dimension_value' in appengine/swarming/server/config.py.
   val = validate.string('value', value)
@@ -194,12 +200,15 @@ def _validate_caches(attr, caches):
   Ensures each entry is swarming.cache struct, and no two entries use same
   name or path.
 
+  DocTags:
+    Advanced.
+
   Args:
-    attr: field name with caches, for error messages.
-    caches: a list of swarming.cache(...) entries to validate.
+    attr: field name with caches, for error messages. Required.
+    caches: a list of swarming.cache(...) entries to validate. Required.
 
   Returns:
-    Validate list of caches (may be an empty list, never None).
+    Validates list of caches (may be an empty list, never None).
   """
   per_path = {}
   per_name = {}
@@ -221,12 +230,15 @@ def _validate_dimensions(attr, dimensions):
   The dict should have string keys and values are swarming.dimension, a string
   or a list of thereof (for repeated dimensions).
 
+  DocTags:
+    Advanced.
+
   Args:
-    attr: field name with dimensions, for error messages.
-    dimensions: a dict {string: string|swarming.dimension}.
+    attr: field name with dimensions, for error messages. Required.
+    dimensions: a dict `{string: string|swarming.dimension}`. Required.
 
   Returns:
-    Validated and normalized dict in form {string: [swarming.dimension]}.
+    Validated and normalized dict in form `{string: [swarming.dimension]}`.
   """
   out = {}
   for k, v in validate.str_dict(attr, dimensions).items():
@@ -247,11 +259,14 @@ def _as_dim(key, val):
 
 
 def _validate_tags(attr, tags):
-  """Validates a list of "k:v" pairs with Swarming tags.
+  """Validates a list of `k:v` pairs with Swarming tags.
+
+  DocTags:
+    Advanced.
 
   Args:
-    attr: field name with tags, for error messages.
-    tags: a list of tags to validate.
+    attr: field name with tags, for error messages. Required.
+    tags: a list of tags to validate. Required.
 
   Returns:
     Validated list of tags in same order, with duplicates removed.

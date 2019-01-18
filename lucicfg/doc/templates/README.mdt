@@ -47,6 +47,8 @@ TODO: To be written.
 {{ $core := Symbol "@stdlib//builtins.star" "core" }}
 {{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
 {{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
+{{ $native := Symbol "@stdlib//native_doc.star" "" }}
+{{ $proto := Symbol "@stdlib//proto_doc.star" "proto" }}
 
 
 [TOC]
@@ -98,9 +100,14 @@ Similarly some roles can be assigned to individual users, other only to groups.
 ## Swarming
 {{template "gen-funcs-doc" $swarming}}
 
-## Other builtin functions
+## Built-in constants and functions
 
-These functions are available in the global namespace.
+Refer to the list of [built-in constants and functions][starlark-builtins]
+exposed in the global namespace by Starlark itself.
 
-{{template "todo"}}
+[starlark-builtins]: https://github.com/google/starlark-go/blob/master/doc/spec.md#built-in-constants-and-functions
 
+In addition, `lucicfg` exposes the following functions.
+
+{{template "gen-funcs-doc" $native}}
+{{template "gen-funcs-doc" $proto}}
