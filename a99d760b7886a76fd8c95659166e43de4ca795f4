@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6709477a_ea01936d",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-18T20:42:03Z",
+      "side": 1,
+      "message": "Though one can argue we can flip the default only after all projects set \"project_scoped_service_accounts: true\" and had it like this for a long time. So up to you.",
+      "parentUuid": "cde18564_a77a62ff",
+      "range": {
+        "startLine": 76,
+        "startChar": 2,
+        "endLine": 76,
+        "endChar": 43
+      },
+      "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7e2932df_2676d406",
         "filename": "tokenserver/api/admin/v1/admin.proto",
         "patchSetId": 4
