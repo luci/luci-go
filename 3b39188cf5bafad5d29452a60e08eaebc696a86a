@@ -22,6 +22,30 @@
       "revId": "3b39188cf5bafad5d29452a60e08eaebc696a86a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6c3581b3_a8a5bfa2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 9
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T17:22:49Z",
+      "side": 1,
+      "message": "on linux, i have no idea what this means :(",
+      "parentUuid": "eb60f70f_e09e3f6d",
+      "range": {
+        "startLine": 132,
+        "startChar": 21,
+        "endLine": 132,
+        "endChar": 62
+      },
+      "revId": "3b39188cf5bafad5d29452a60e08eaebc696a86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

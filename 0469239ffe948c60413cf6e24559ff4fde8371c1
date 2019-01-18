@@ -222,6 +222,24 @@
       "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37e828b9_caffbb76",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T17:22:49Z",
+      "side": 1,
+      "message": "you did, which means comment there is insufficient :(\n\nWhen a single ref goes from R_m to R_n, scheduler will only query gitiles for at most defaultMaxCommitsPerRefUpdate, ignoring everything else (ie from R_m to R_(n-50)\n\nsee https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/scheduler/appengine/task/gitiles/gitiles.go?q\u003dscheduler+gitiles.go\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d229",
+      "parentUuid": "fd4cf423_fee916d6",
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
