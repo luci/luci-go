@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "265fc832_422d91fb",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-01-18T20:14:40Z",
+      "side": 1,
+      "message": "That seems a bit magical. Would it be reasonable to break \"paths\" out into a oneof with either \"string path\" or \"string regex_path\"?",
+      "range": {
+        "startLine": 306,
+        "startChar": 35,
+        "endLine": 306,
+        "endChar": 51
+      },
+      "revId": "0044d7b26bbb6f4578a70f7ba94c9101fbcde4c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
