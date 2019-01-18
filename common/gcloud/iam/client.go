@@ -95,7 +95,7 @@ func (cl *Client) SignBlob(c context.Context, serviceAccount string, blob []byte
 		KeyID     string `json:"keyId"`
 		Signature []byte `json:"signature"`
 	}
-	if err = cl.iamAPIRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signBlob", &request, &response); err != nil {
+	if err = cl.iamAPIRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signBlob", "", &request, &response); err != nil {
 		return "", nil, err
 	}
 	return response.KeyID, response.Signature, nil
@@ -131,7 +131,7 @@ func (cl *Client) SignJWT(c context.Context, serviceAccount string, cs *ClaimSet
 		KeyID     string `json:"keyId"`
 		SignedJwt string `json:"signedJwt"`
 	}
-	if err = cl.iamAPIRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signJwt", &request, &response); err != nil {
+	if err = cl.iamAPIRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signJwt", "", &request, &response); err != nil {
 		return "", "", err
 	}
 	return response.KeyID, response.SignedJwt, nil
@@ -142,7 +142,7 @@ func (cl *Client) SignJWT(c context.Context, serviceAccount string, cs *ClaimSet
 // On non-success HTTP status codes returns googleapi.Error.
 func (cl *Client) GetIAMPolicy(c context.Context, resource string) (*Policy, error) {
 	response := &Policy{}
-	if err := cl.iamAPIRequest(c, resource, "getIamPolicy", nil, response); err != nil {
+	if err := cl.iamAPIRequest(c, resource, "getIamPolicy", "", nil, response); err != nil {
 		return nil, err
 	}
 	return response, nil
@@ -157,7 +157,7 @@ func (cl *Client) SetIAMPolicy(c context.Context, resource string, p Policy) (*P
 	}
 	request.Policy = &p
 	response := &Policy{}
-	if err := cl.iamAPIRequest(c, resource, "setIamPolicy", &request, response); err != nil {
+	if err := cl.iamAPIRequest(c, resource, "setIamPolicy", "", &request, response); err != nil {
 		return nil, err
 	}
 	return response, nil
@@ -212,7 +212,7 @@ func (cl *Client) GenerateAccessToken(c context.Context, serviceAccount string, 
 		AccessToken string `json:"accessToken"`
 		ExpireTime  string `json:"expireTime"`
 	}
-	if err := cl.credentialsAPIRequest(c, fmt.Sprintf("projects/-/serviceAccounts/%s", url.QueryEscape(serviceAccount)), "generateAccessToken", &body, &resp); err != nil {
+	if err := cl.credentialsAPIRequest(c, fmt.Sprintf("projects/-/serviceAccounts/%s", url.QueryEscape(serviceAccount)), "generateAccessToken", "", &body, &resp); err != nil {
 		return nil, err
 	}
 
@@ -232,34 +232,40 @@ func (cl *Client) GenerateAccessToken(c context.Context, serviceAccount string, 
 }
 
 // iamAPIRequest performs HTTP POST to the core IAM API endpoint.
-func (cl *Client) iamAPIRequest(c context.Context, resource, action string, body, resp interface{}) error {
+func (cl *Client) iamAPIRequest(c context.Context, resource, action, method string, body, resp interface{}) error {
 	if cl.BasePath != "" {
 		// We are in "testing"
 		base, err := url.Parse(cl.BasePath)
 		if err != nil {
 			return err
 		}
-		return cl.genericAPIRequest(c, base, resource, action, body, resp)
+		return cl.genericAPIRequest(c, base, resource, action, "", body, resp)
 	}
-	return cl.genericAPIRequest(c, DefaultIamBaseURL, resource, action, body, resp)
+	return cl.genericAPIRequest(c, DefaultIamBaseURL, resource, action, "", body, resp)
 }
 
 // credentialsAPIRequest performs HTTP POST to the IAM credentials API endpoint.
-func (cl *Client) credentialsAPIRequest(c context.Context, resource, action string, body, resp interface{}) error {
+func (cl *Client) credentialsAPIRequest(c context.Context, resource, action, method string, body, resp interface{}) error {
 	if cl.BasePath != "" {
 		// We are in "testing"
 		base, err := url.Parse(cl.BasePath)
 		if err != nil {
 			return err
 		}
-		return cl.genericAPIRequest(c, base, resource, action, body, resp)
+		return cl.genericAPIRequest(c, base, resource, action, method, body, resp)
 	}
-	return cl.genericAPIRequest(c, DefaultAccountCredentialsBaseURL, resource, action, body, resp)
+	return cl.genericAPIRequest(c, DefaultAccountCredentialsBaseURL, resource, action, method, body, resp)
 }
 
 // genericAPIRequest performs HTTP POST to an IAM API endpoint.
-func (cl *Client) genericAPIRequest(c context.Context, base *url.URL, resource, action string, body, resp interface{}) error {
-	query, err := url.Parse(fmt.Sprintf("v1/%s:%s?alt=json", resource, action))
+func (cl *Client) genericAPIRequest(c context.Context, base *url.URL, resource, action, method string, body, resp interface{}) error {
+	if method == "" {
+		method = "POST"
+	}
+	if action != "" {
+		action = fmt.Sprintf(":%s?alt=json", action)
+	}
+	query, err := url.Parse(fmt.Sprintf("v1/%s%s", resource, action))
 	if err != nil {
 		return err
 	}
@@ -276,7 +282,7 @@ func (cl *Client) genericAPIRequest(c context.Context, base *url.URL, resource, 
 	}
 
 	// Issue the request
-	req, err := http.NewRequest("POST", endpoint.String(), reader)
+	req, err := http.NewRequest(method, endpoint.String(), reader)
 	if err != nil {
 		return err
 	}
@@ -286,7 +292,7 @@ func (cl *Client) genericAPIRequest(c context.Context, base *url.URL, resource, 
 
 	// Send and handle errors. This is roughly how google-api-go-client calls
 	// methods. CheckResponse returns *googleapi.Error.
-	logging.Debugf(c, "POST %s", endpoint)
+	logging.Debugf(c, "%s %s", method, endpoint)
 	res, err := ctxhttp.Do(c, cl.Client, req)
 	if err != nil {
 		return err
