@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "41692376_e9dc5419",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 14
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-18T00:46:10Z",
+      "side": 1,
+      "message": "good catch, Done.",
+      "parentUuid": "933af2b8_4999bc13",
+      "revId": "2c74b0ba7f868ebfb4c78fe68eb8c496a3f98bf8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2a85df8_d95b5be5",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 14
@@ -33,6 +51,24 @@
       "revId": "2c74b0ba7f868ebfb4c78fe68eb8c496a3f98bf8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48fb90ed_4e56fabd",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-18T00:46:10Z",
+      "side": 1,
+      "message": "Good point, done.",
+      "parentUuid": "c2a85df8_d95b5be5",
+      "revId": "2c74b0ba7f868ebfb4c78fe68eb8c496a3f98bf8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
