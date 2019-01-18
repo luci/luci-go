@@ -49,6 +49,47 @@
     },
     {
       "key": {
+        "uuid": "b601e815_cec99f0f",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T20:47:04Z",
+      "side": 1,
+      "message": "well, we can\u0027t flip default of \"false\" in proto3. But, we can change config validator to start rejecting configs with this field set to false (either explicitly, or by omission). THat\u0027s why I wasn\u0027t insisting on the ternary.",
+      "parentUuid": "6709477a_ea01936d",
+      "range": {
+        "startLine": 76,
+        "startChar": 2,
+        "endLine": 76,
+        "endChar": 43
+      },
+      "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cefdf3ec_ec6f21e2",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T20:47:04Z",
+      "side": 1,
+      "message": "Vadim is more sensitive about whitespace between structs, while I\u0027m at the end of file :)\n\nSo, linter for proto would be great, i think just Tricium analyzer might be good enough to start.",
+      "revId": "a99d760b7886a76fd8c95659166e43de4ca795f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7e2932df_2676d406",
         "filename": "tokenserver/api/admin/v1/admin.proto",
         "patchSetId": 4
