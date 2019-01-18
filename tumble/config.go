@@ -105,6 +105,13 @@ type Config struct {
 	DelayedMutations bool `json:"delayedMutations,omitempty"`
 }
 
+func (c *Config) TotalShardCount(namespace string) uint64 {
+	if namespace == "luci.chromium" {
+		return 64
+	}
+	return c.NumShards
+}
+
 // defaultConfig returns the default configuration settings.
 var defaultConfig = Config{
 	NumShards:           32,
