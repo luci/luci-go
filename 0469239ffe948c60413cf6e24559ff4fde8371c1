@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "961535cc_b8057608",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/scheduler.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T05:56:53Z",
+      "side": 1,
+      "message": "strictly speaking, it only counts scheduler-triggered builds. Not sure how important it is to mots clients...",
+      "range": {
+        "startLine": 47,
+        "startChar": 31,
+        "endLine": 47,
+        "endChar": 55
+      },
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d209765e_7a3e687d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/scheduler.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T05:56:53Z",
+      "side": 1,
+      "message": "than",
+      "range": {
+        "startLine": 47,
+        "startChar": 63,
+        "endLine": 47,
+        "endChar": 64
+      },
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05c10e76_d7cabd99",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T05:56:53Z",
+      "side": 1,
+      "message": "well, you do mention this after all, then i guess also mention it again in scheduler.policy(...) doc.",
+      "range": {
+        "startLine": 138,
+        "startChar": 25,
+        "endLine": 139,
+        "endChar": 21
+      },
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "61abf4a5_cabd94ee",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T05:56:53Z",
+      "side": 1,
+      "message": "will start OR starts",
+      "range": {
+        "startLine": 141,
+        "startChar": 57,
+        "endLine": 141,
+        "endChar": 62
+      },
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04c015b3_d1309287",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-18T05:56:53Z",
+      "side": 1,
+      "message": "since you\u0027ve mentioned effective limit on max batch size, perhaps mention limit of new commits per single ref?\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/scheduler/appengine/task/gitiles/gitiles.go?q\u003dscheduler+gitiles.go\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d58",
+      "revId": "0469239ffe948c60413cf6e24559ff4fde8371c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
