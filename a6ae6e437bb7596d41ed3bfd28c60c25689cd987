@@ -222,6 +222,30 @@
       "revId": "a6ae6e437bb7596d41ed3bfd28c60c25689cd987",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f1cfcca0_da0528ec",
+        "filename": "lucicfg/starlark/stdlib/internal/meta.star",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-19T03:17:30Z",
+      "side": 1,
+      "message": "ah, right.",
+      "parentUuid": "f204d542_728d5640",
+      "range": {
+        "startLine": 64,
+        "startChar": 21,
+        "endLine": 64,
+        "endChar": 22
+      },
+      "revId": "a6ae6e437bb7596d41ed3bfd28c60c25689cd987",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
