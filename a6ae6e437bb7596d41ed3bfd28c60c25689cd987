@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d6137dbc_5e13cca1",
+        "filename": "lucicfg/meta.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-19T02:18:30Z",
+      "side": 1,
+      "message": "--yay-someone-else-likes-these-arguments",
+      "revId": "a6ae6e437bb7596d41ed3bfd28c60c25689cd987",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b66bb4a6_0bdf7660",
+        "filename": "lucicfg/meta.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-19T02:18:30Z",
+      "side": 1,
+      "message": "is",
+      "range": {
+        "startLine": 112,
+        "startChar": 7,
+        "endLine": 112,
+        "endChar": 8
+      },
+      "revId": "a6ae6e437bb7596d41ed3bfd28c60c25689cd987",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28e0907a_b7bc8511",
+        "filename": "lucicfg/meta_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-19T02:18:30Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 49,
+        "startChar": 39,
+        "endLine": 49,
+        "endChar": 40
+      },
+      "revId": "a6ae6e437bb7596d41ed3bfd28c60c25689cd987",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a63d53b_a36cba04",
+        "filename": "lucicfg/starlark/stdlib/internal/meta.star",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-19T02:18:30Z",
+      "side": 1,
+      "message": "is",
+      "range": {
+        "startLine": 39,
+        "startChar": 40,
+        "endLine": 39,
+        "endChar": 41
+      },
+      "revId": "a6ae6e437bb7596d41ed3bfd28c60c25689cd987",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55c4f580_29cbdacc",
+        "filename": "lucicfg/starlark/stdlib/internal/meta.star",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-19T02:18:30Z",
+      "side": 1,
+      "message": "defaults to",
+      "range": {
+        "startLine": 64,
+        "startChar": 21,
+        "endLine": 64,
+        "endChar": 22
+      },
+      "revId": "a6ae6e437bb7596d41ed3bfd28c60c25689cd987",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
