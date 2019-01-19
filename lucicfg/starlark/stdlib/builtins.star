@@ -14,6 +14,7 @@
 
 # Non-LUCI features.
 load('@stdlib//internal/generator.star', _generator='generator')
+load('@stdlib//internal/meta.star', _meta='meta')
 load('@stdlib//internal/time.star', _time='time')
 
 # Individual LUCI rules.
@@ -47,6 +48,7 @@ core = struct(
     generator = _generator,
 )
 acl = _acl
+meta = _meta
 scheduler = _scheduler
 swarming = _swarming
 time = _time
