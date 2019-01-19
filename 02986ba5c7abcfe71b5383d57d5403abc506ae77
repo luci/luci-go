@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ce21bd0d_1b4b891a",
+        "filename": "lucicfg/configset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-19T02:51:54Z",
+      "side": 1,
+      "message": "goddamnitshutup",
+      "parentUuid": "cc390e20_dd6bedc0",
+      "range": {
+        "startLine": 85,
+        "startChar": 0,
+        "endLine": 85,
+        "endChar": 1
+      },
+      "revId": "02986ba5c7abcfe71b5383d57d5403abc506ae77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
