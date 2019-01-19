@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,10 +44,9 @@ func TestHTTP(t *testing.T) {
 		fakeData := func(data []logResp) logData {
 			ch := make(chan logResp)
 			result := logData{
-				ch:             ch,
-				options:        options,
-				logStream:      *tls.Stream,
-				logStreamState: *tls.State,
+				ch:         ch,
+				options:    options,
+				logStreams: []*coordinator.LogStream{tls.Stream},
 			}
 			go func() {
 				defer close(ch)
@@ -57,6 +57,54 @@ func TestHTTP(t *testing.T) {
 			return result
 		}
 
+		Convey(`Match Streams`, func() {
+			streams := []*coordinator.LogStream{
+				{Name: "foo/bar/baz"},
+				{Name: "foo/bar/stdout"},
+				{Name: "foo/baz"},
+				{Name: "stdout"},
+				{Name: "stderr"},
+			}
+			Convey(`Single wildcard`, func() {
+				streams = matchStreams(streams, "*")
+				So(streams, ShouldResemble, []*coordinator.LogStream{
+					{Name: "stdout"},
+					{Name: "stderr"},
+				})
+			})
+			Convey(`tail`, func() {
+				streams = matchStreams(streams, "**/baz")
+				So(streams, ShouldResemble, []*coordinator.LogStream{
+					{Name: "foo/bar/baz"},
+					{Name: "foo/baz"},
+				})
+			})
+			Convey(`foo/baz`, func() {
+				streams = matchStreams(streams, "foo/*")
+				So(streams, ShouldResemble, []*coordinator.LogStream{
+					{Name: "foo/baz"},
+				})
+			})
+			Convey(`double wildcard`, func() {
+				streams = matchStreams(streams, "foo/**")
+				So(streams, ShouldResemble, []*coordinator.LogStream{
+					{Name: "foo/bar/baz"},
+					{Name: "foo/bar/stdout"},
+					{Name: "foo/baz"},
+				})
+			})
+			Convey(`everything`, func() {
+				streams = matchStreams(streams, "**")
+				So(streams, ShouldResemble, []*coordinator.LogStream{
+					{Name: "foo/bar/baz"},
+					{Name: "foo/bar/stdout"},
+					{Name: "foo/baz"},
+					{Name: "stdout"},
+					{Name: "stderr"},
+				})
+			})
+		})
+
 		Convey(`Do nothing`, func() {
 			data := fakeData([]logResp{})
 			So(serve(c, data, resp), ShouldBeNil)
@@ -65,7 +113,7 @@ func TestHTTP(t *testing.T) {
 		Convey(`Single Log raw`, func() {
 			options.format = "raw"
 			data := fakeData([]logResp{
-				{log: tls.LogEntry(c, 0)},
+				{stream: tls.Stream, log: tls.LogEntry(c, 0)},
 			})
 			So(serve(c, data, resp), ShouldBeNil)
 			So(resp.Body.String(), ShouldResemble, "log entry #0\n")
@@ -77,8 +125,8 @@ func TestHTTP(t *testing.T) {
 			tc.Add(time.Minute)
 			l2 := tls.LogEntry(c, 1)
 			data := fakeData([]logResp{
-				{log: l1},
-				{log: l2},
+				{stream: tls.Stream, log: l1},
+				{stream: tls.Stream, log: l2},
 			})
 			So(serve(c, data, resp), ShouldBeNil)
 			body := resp.Body.String()
