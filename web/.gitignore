@@ -13,3 +13,6 @@ inc/apps/*/*.js.map
 # Tag files for installed Bower/NPM.
 .npm.installed
 .bower.installed
+
+# Lock files.
+package-lock.json
