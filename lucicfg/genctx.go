@@ -24,12 +24,12 @@ import (
 type genCtx struct {
 	starlarkstruct.Struct
 
-	configSet *configSet
+	configSet *configSetValue
 }
 
 func newGenCtx() *genCtx {
 	ctx := &genCtx{
-		configSet: newConfigSet(),
+		configSet: newConfigSetValue(),
 	}
 	ctx.Struct = *starlarkstruct.FromStringDict(starlark.String("gen_ctx"), starlark.StringDict{
 		"config_set": ctx.configSet,

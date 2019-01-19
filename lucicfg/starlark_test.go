@@ -147,7 +147,7 @@ func TestAllStarlark(t *testing.T) {
 				got := bytes.Buffer{}
 				for _, f := range files {
 					fmt.Fprintf(&got, "=== %s\n", f)
-					fmt.Fprintf(&got, state.Configs[f])
+					fmt.Fprintf(&got, string(state.Configs[f]))
 					fmt.Fprintf(&got, "===\n\n")
 				}
 				errorOnDiff(t, got.String(), expectCfg)

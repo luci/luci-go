@@ -17,17 +17,12 @@ package validate
 
 import (
 	"context"
-	"encoding/base64"
-	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/maruel/subcommands"
 
-	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucicfg"
 
 	"go.chromium.org/luci/lucicfg/cli/base"
 )
@@ -60,14 +55,11 @@ type validateRun struct {
 	failOnWarnings bool
 }
 
-type validateResult struct {
-	Messages []*config.ComponentsConfigEndpointValidationMessage `json:"messages"`
-}
-
 func (vr *validateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !vr.CheckArgs(args, 0, 1) {
 		return 1
 	}
+
 	if len(args) == 1 {
 		vr.configDir = args[0]
 	} else {
@@ -77,86 +69,23 @@ func (vr *validateRun) Run(a subcommands.Application, args []string, env subcomm
 		}
 		vr.configDir = configDir
 	}
-	ctx := cli.GetContext(a, vr, env)
-	// Construct the service outside run to improve testability.
+
+	return vr.Done(vr.run(cli.GetContext(a, vr, env)))
+}
+
+func (vr *validateRun) run(ctx context.Context) (*lucicfg.ValidationResult, error) {
 	svc, err := vr.ConfigService(ctx)
 	if err != nil {
-		return vr.Done(nil, err)
+		return nil, err
 	}
-	return vr.Done(vr.run(ctx, svc))
-}
-
-// run recursively searches vr.configDir for config files, calls svc.ValidateConfig() on them
-// and aggregates the results.
-func (vr *validateRun) run(ctx context.Context, svc *config.Service) (*validateResult, error) {
-	validateRequest, err := vr.constructRequest()
+	configSet, err := lucicfg.ReadConfigSet(vr.configDir)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := svc.ValidateConfig(validateRequest).Context(ctx).Do()
-	if err != nil {
-		return &validateResult{}, fmt.Errorf("error validating configs: %v", err)
-	}
-	return processResponse(ctx, resp, vr.failOnWarnings)
-}
-
-// processResponses produces a validateResult that contains all the messages
-// from resp.
-//
-// Returns an error if any files were invalid or failed to be checked.
-func processResponse(ctx context.Context, resp *config.LuciConfigValidateConfigResponseMessage, failOnWarnings bool) (*validateResult, error) {
-	fail := false
-	for _, message := range resp.Messages {
-		lvl := logging.Info
-		if message.Severity == "WARNING" {
-			lvl = logging.Warning
-			if failOnWarnings {
-				fail = true
-			}
-		} else if message.Severity == "ERROR" || message.Severity == "CRITICAL" {
-			lvl = logging.Error
-			fail = true
-		}
-		logging.Logf(ctx, lvl, "%s: %s", message.Path, message.Text)
-	}
-	if fail {
-		return &validateResult{resp.Messages}, fmt.Errorf("some files were invalid")
-	}
-	return &validateResult{resp.Messages}, nil
-}
-
-// constructRequest searches the vr.configDir for config files and constructs a
-// LuciConfigValidateConfigRequestMessage.
-func (vr *validateRun) constructRequest() (*config.LuciConfigValidateConfigRequestMessage, error) {
-	var configFiles []*config.LuciConfigValidateConfigRequestMessageFile
-	err := filepath.Walk(vr.configDir,
-		func(p string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if info.IsDir() { // Walk will handle recursion
-				return nil
-			}
-			content, err := ioutil.ReadFile(p)
-			if err != nil {
-				return err
-			}
-			relPath, err := filepath.Rel(vr.configDir, p)
-			if err != nil {
-				return err
-			}
-			configFiles = append(configFiles, &config.LuciConfigValidateConfigRequestMessageFile{
-				Content: base64.StdEncoding.EncodeToString(content),
-				Path:    filepath.ToSlash(relPath),
-			})
-			return nil
-		})
+	result, err := configSet.Validate(ctx, vr.configSet, lucicfg.RemoteValidator(svc))
 	if err != nil {
 		return nil, err
 	}
-
-	return &config.LuciConfigValidateConfigRequestMessage{
-		ConfigSet: vr.configSet,
-		Files:     configFiles,
-	}, nil
+	result.Log(ctx)
+	return result, result.OverallError(vr.failOnWarnings)
 }
