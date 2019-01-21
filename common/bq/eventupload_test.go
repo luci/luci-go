@@ -16,11 +16,12 @@ package bq
 
 import (
 	"testing"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/golang/protobuf/ptypes/struct"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	"go.chromium.org/luci/common/bq/testdata"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -69,8 +70,9 @@ func TestSave(t *testing.T) {
 					},
 				},
 
-				Empty:   &empty.Empty{},
-				Empties: []*empty.Empty{{}, {}},
+				Empty:    &empty.Empty{},
+				Empties:  []*empty.Empty{{}, {}},
+				Duration: ptypes.DurationProto(2*time.Second + 3*time.Millisecond),
 			},
 			InsertID: "testid",
 		}
@@ -88,6 +90,7 @@ func TestSave(t *testing.T) {
 			"foo":          "Y",
 			"foo_repeated": []interface{}{"Y", "X"},
 			"struct":       `{"num":1,"str":"a"}`,
+			"duration":     2.003,
 		})
 	})
 }

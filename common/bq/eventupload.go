@@ -29,6 +29,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/duration"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
@@ -220,6 +221,13 @@ func getValue(value interface{}, path []string, fi fieldInfo) (interface{}, erro
 			return nil, fmt.Errorf("could not convert enum value to string")
 		}
 		return stringer.String(), nil
+	} else if dpb, ok := value.(*duration.Duration); ok {
+		value, err := ptypes.Duration(dpb)
+		if err != nil {
+			return nil, fmt.Errorf("tried to write an invalid duration for [%+v] for field %s", dpb, strings.Join(path, "."))
+		}
+		// Convert to FLOAT64.
+		return value.Seconds(), nil
 	} else if tspb, ok := value.(*timestamp.Timestamp); ok {
 		value, err := ptypes.Timestamp(tspb)
 		if err != nil {

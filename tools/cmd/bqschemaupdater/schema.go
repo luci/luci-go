@@ -109,6 +109,8 @@ func (c *schemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 
 	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
 		switch typeName {
+		case "google.protobuf.Duration":
+			schema.Type = bigquery.FloatFieldType
 		case "google.protobuf.Timestamp":
 			schema.Type = bigquery.TimestampFieldType
 		case "google.protobuf.Struct":
