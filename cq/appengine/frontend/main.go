@@ -24,6 +24,9 @@ import (
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
+
+	// Ensure registration of validation rules.
+	_ "go.chromium.org/luci/cq/appengine/config"
 )
 
 func init() {
