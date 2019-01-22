@@ -46,7 +46,8 @@ func TestValidateConfigs(t *testing.T) {
 					},
 				}
 				cfgs.Validate(c, k)
-				So(c.Finalize(), ShouldErrLike, "prefix is required")
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "prefix is required")
 			})
 
 			Convey("duplicate", func() {
@@ -64,7 +65,8 @@ func TestValidateConfigs(t *testing.T) {
 					},
 				}
 				cfgs.Validate(c, k)
-				So(c.Finalize(), ShouldErrLike, "is a prefix of")
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "is a prefix of")
 			})
 		})
 	})
