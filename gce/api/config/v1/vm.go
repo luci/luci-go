@@ -15,9 +15,12 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/config/validation"
 )
 
 // Ensure VM implements datastore.PropertyConverter.
@@ -33,4 +36,32 @@ func (v *VM) FromProperty(p datastore.Property) error {
 func (v *VM) ToProperty() (datastore.Property, error) {
 	p := datastore.Property{}
 	return p, p.SetValue(proto.MarshalTextString(v), false)
+}
+
+// Validate validates this VM description.
+func (v *VM) Validate(c *validation.Context) {
+	if len(v.GetDisk()) == 0 {
+		c.Errorf("at least one disk is required")
+	}
+	if v.GetMachineType() == "" {
+		c.Errorf("machine type is required")
+	}
+	for i, meta := range v.GetMetadata() {
+		c.Enter("metadata %d", i)
+		// Implicitly rejects FromFile.
+		// TODO(smut): Support FromFile.
+		if !strings.Contains(meta.GetFromText(), ":") {
+			c.Errorf("metadata from text must be in key:value form")
+		}
+		c.Exit()
+	}
+	if len(v.GetNetworkInterface()) == 0 {
+		c.Errorf("at least one network interface is required")
+	}
+	if v.GetProject() == "" {
+		c.Errorf("project is required")
+	}
+	if v.GetZone() == "" {
+		c.Errorf("zone is required")
+	}
 }

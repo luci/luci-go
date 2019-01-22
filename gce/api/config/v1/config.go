@@ -39,7 +39,18 @@ func (cfg *Config) ToProperty() (datastore.Property, error) {
 
 // Validate validates this config given the allowable kinds it may reference.
 func (cfg *Config) Validate(c *validation.Context, kinds stringset.Set) {
-	if cfg.Kind != "" && !kinds.Has(cfg.Kind) {
+	c.Enter("attributes")
+	cfg.GetAttributes().Validate(c)
+	c.Exit()
+	if cfg.GetKind() != "" && !kinds.Has(cfg.Kind) {
 		c.Errorf("unknown kind %q", cfg.Kind)
+	}
+	if cfg.GetPrefix() == "" {
+		c.Errorf("prefix is required")
+	}
+	if cfg.GetSeconds() < 1 {
+		// Implicitly rejects Duration.
+		// TODO(smut): Support Duration.
+		c.Errorf("lifetime seconds must be positive")
 	}
 }

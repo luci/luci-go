@@ -69,7 +69,8 @@ func TestKinds(t *testing.T) {
 					},
 				}
 				k.Validate(c)
-				So(c.Finalize(), ShouldErrLike, "name is required")
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "name is required")
 			})
 
 			Convey("duplicate", func() {
@@ -87,7 +88,8 @@ func TestKinds(t *testing.T) {
 					},
 				}
 				k.Validate(c)
-				So(c.Finalize(), ShouldErrLike, "duplicate name")
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "duplicate name")
 			})
 		})
 	})
