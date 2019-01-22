@@ -122,7 +122,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	if errs := state.generators.call(intr.Thread(ctx), genCtx); len(errs) != 0 {
 		return nil, state.err(errs...)
 	}
-	cfgs, err := genCtx.configSet.asTextProto(in.TextPBHeader)
+	cfgs, err := genCtx.configSet.renderWithTextProto(in.TextPBHeader)
 	if err != nil {
 		return nil, state.err(err)
 	}
