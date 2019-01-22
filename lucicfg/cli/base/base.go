@@ -188,22 +188,33 @@ func (c *Subcommand) printError(err error) {
 	if _, ok := err.(CommandLineError); ok {
 		fmt.Fprintf(os.Stderr, "Bad command line: %s.\n\n", err)
 		c.Flags.Usage()
+	} else {
+		dumpErrs(err)
+	}
+}
+
+// dumpErrs recursively prints errors to stderr, recognizing some known error
+// types like MultiError.
+func dumpErrs(err error) {
+	if err == nil {
 		return
 	}
 
 	if err == auth.ErrLoginRequired {
-		fmt.Fprintf(os.Stderr, "You need to login first by running:\nlucicfg auth-login\n")
+		fmt.Fprintf(os.Stderr, "Need to login first by running:\nlucicfg auth-login\n")
 		return
 	}
 
-	errors.WalkLeaves(err, func(err error) bool {
-		if bt, ok := err.(lucicfg.BacktracableError); ok {
-			fmt.Fprintf(os.Stderr, "%s\n\n", bt.Backtrace())
-		} else {
-			fmt.Fprintf(os.Stderr, "%s\n\n", err)
+	switch e := err.(type) {
+	case lucicfg.BacktracableError:
+		fmt.Fprintf(os.Stderr, "\n%s\n", e.Backtrace())
+	case errors.MultiError:
+		for _, inner := range e {
+			dumpErrs(inner)
 		}
-		return true
-	})
+	default:
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+	}
 }
 
 // WriteJSONOutput writes result to JSON output file (if -json-output was set).

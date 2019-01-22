@@ -14,36 +14,188 @@
 
 package lucicfg
 
-// Functions for working with config sets and generator callbacks that modify
-// them.
-
 import (
+	"context"
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"sort"
 
 	"github.com/golang/protobuf/proto"
 	"go.starlark.net/starlark"
 
+	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/starlarkproto"
 )
 
-// configSet is a map-like value that has file names as keys and strings or
-// protobuf messages as values.
+// Alias some ridiculously long type names that we round-trip in the public API.
+type (
+	ValidationRequest = config.LuciConfigValidateConfigRequestMessage
+	ValidationMessage = config.ComponentsConfigEndpointValidationMessage
+)
+
+// ConfigSet is an in-memory representation of a config set.
+//
+// Keys are slash-separated filenames, values are corresponding file bodies.
+type ConfigSet map[string][]byte
+
+// ValidationResult is what we get after validating a config set.
+type ValidationResult struct {
+	Messages []*ValidationMessage `json:"messages"` // errors, warning, infos, etc.
+}
+
+// ConfigSetValidator is primarily implemented through config.Service, but can
+// also be mocked in tests.
+type ConfigSetValidator interface {
+	// Validate sends the validation request to the service.
+	Validate(ctx context.Context, req *ValidationRequest) (*ValidationResult, error)
+}
+
+type remoteValidator struct {
+	svc *config.Service
+}
+
+func (r remoteValidator) Validate(ctx context.Context, req *ValidationRequest) (*ValidationResult, error) {
+	resp, err := r.svc.ValidateConfig(req).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return &ValidationResult{Messages: resp.Messages}, nil
+}
+
+// RemoteValidator returns ConfigSetValidator that makes RPCs to LUCI Config.
+func RemoteValidator(svc *config.Service) ConfigSetValidator {
+	return remoteValidator{svc}
+}
+
+// ReadConfigSet reads all regular files in the given directory (recursively)
+// and returns them as a ConfigSet.
+func ReadConfigSet(dir string) (ConfigSet, error) {
+	configs := ConfigSet{}
+	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		if err != nil || !info.Mode().IsRegular() {
+			return err
+		}
+		content, err := ioutil.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		relPath, err := filepath.Rel(dir, p)
+		if err != nil {
+			return err
+		}
+		configs[filepath.ToSlash(relPath)] = content
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read config files").Err()
+	}
+	return configs, nil
+}
+
+// Files returns a sorted list of file names in the config set.
+func (cs ConfigSet) Files() []string {
+	f := make([]string, 0, len(cs))
+	for k := range cs {
+		f = append(f, k)
+	}
+	sort.Strings(f)
+	return f
+}
+
+// Validate sends the config set for validation to LUCI Config service.
+//
+// 'name' is a name of this config set from LUCI Config point of view, e.g.
+// "projects/<something>" or "services/<something>". It tells LUCI Config how
+// to validate files in the set.
+//
+// Returns an error only if the validation call itself failed (e.g. LUCI Config
+// was unreachable). Otherwise returns ValidationResult with a list of
+// validation message (errors, warnings, etc). The list of messages may be empty
+// if the config set is 100% valid.
+func (cs ConfigSet) Validate(ctx context.Context, name string, val ConfigSetValidator) (*ValidationResult, error) {
+	req := &ValidationRequest{
+		ConfigSet: name,
+		Files:     make([]*config.LuciConfigValidateConfigRequestMessageFile, len(cs)),
+	}
+
+	logging.Debugf(ctx, "Sending for validation to LUCI Config:")
+	for idx, f := range cs.Files() {
+		logging.Debugf(ctx, "  %s (%d bytes)", f, len(cs[f]))
+		req.Files[idx] = &config.LuciConfigValidateConfigRequestMessageFile{
+			Path:    f,
+			Content: base64.StdEncoding.EncodeToString(cs[f]),
+		}
+	}
+
+	res, err := val.Validate(ctx, req)
+	if err != nil {
+		return nil, errors.Annotate(err, "error validating configs").Err()
+	}
+	return res, nil
+}
+
+// Log all messages in the result to the logger at an appropriate logging level.
+func (vr *ValidationResult) Log(ctx context.Context) {
+	for _, msg := range vr.Messages {
+		lvl := logging.Info
+		switch msg.Severity {
+		case "WARNING":
+			lvl = logging.Warning
+		case "ERROR", "CRITICAL":
+			lvl = logging.Error
+		}
+		logging.Logf(ctx, lvl, "%s: %s", msg.Path, msg.Text)
+	}
+}
+
+// OverallError is nil if the validation succeeded or non-nil if failed.
+func (vr *ValidationResult) OverallError(failOnWarnings bool) error {
+	errs, warns := 0, 0
+	for _, msg := range vr.Messages {
+		switch msg.Severity {
+		case "WARNING":
+			warns++
+		case "ERROR", "CRITICAL":
+			errs++
+		}
+	}
+
+	if errs > 0 {
+		return errors.Reason("some files were invalid").Err()
+	}
+	if warns > 0 && failOnWarnings {
+		return errors.Reason("some files had validation warnings and -fail-on-warnings is set").Err()
+	}
+
+	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Constructing config sets from Starlark (tested through starlark_test.go).
+
+// configSetValue is a map-like starlark.Value that has file names as keys and
+// strings or protobuf messages as values.
 //
 // At the end of the execution all protos are serialized to strings too, using
 // textpb encoding.
-type configSet struct {
+type configSetValue struct {
 	starlark.Dict
 }
 
-func newConfigSet() *configSet {
-	return &configSet{}
+func newConfigSetValue() *configSetValue {
+	return &configSetValue{}
 }
 
-func (cs *configSet) Type() string { return "config_set" }
+func (cs *configSetValue) Type() string { return "config_set" }
 
-func (cs *configSet) SetKey(k, v starlark.Value) error {
+func (cs *configSetValue) SetKey(k, v starlark.Value) error {
 	if _, ok := k.(starlark.String); !ok {
 		return fmt.Errorf("config set key should be a string, not %s", k.Type())
 	}
@@ -57,12 +209,12 @@ func (cs *configSet) SetKey(k, v starlark.Value) error {
 	return cs.Dict.SetKey(k, v)
 }
 
-// asTextProto returns a config set with all protos serialized to text proto
-// format (with added header).
+// renderWithTextProto returns a config set with all protos serialized to text
+// proto format (with added header).
 //
-// Non-proto configs are returned as is.
-func (cs *configSet) asTextProto(header string) (map[string]string, error) {
-	out := make(map[string]string, cs.Len())
+// Configs supplied as strings are serialized using UTF-8 encoding.
+func (cs *configSetValue) renderWithTextProto(header string) (ConfigSet, error) {
+	out := make(ConfigSet, cs.Len())
 
 	for _, kv := range cs.Items() {
 		k, v := kv[0].(starlark.String), kv[1]
@@ -78,7 +230,7 @@ func (cs *configSet) asTextProto(header string) (map[string]string, error) {
 			text = header + proto.MarshalTextString(msg)
 		}
 
-		out[k.GoString()] = text
+		out[k.GoString()] = []byte(text)
 	}
 
 	return out, nil
@@ -136,7 +288,7 @@ func init() {
 		if err := call.unpack(0); err != nil {
 			return nil, err
 		}
-		return newConfigSet(), nil
+		return newConfigSetValue(), nil
 	})
 
 	// add_generator(cb) registers a callback that is called at the end of the

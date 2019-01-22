@@ -31,9 +31,9 @@ import (
 // Starlark side. Starlark code operates with the state exclusively through
 // these functions.
 type State struct {
-	Inputs  Inputs            // all inputs, exactly as passed to Generate.
-	Configs map[string]string // all generated config files, populated at the end
-	Meta    Meta              // lucicfg parameters, settable through Starlark
+	Inputs  Inputs    // all inputs, exactly as passed to Generate.
+	Configs ConfigSet // all generated config files, populated at the end
+	Meta    Meta      // lucicfg parameters, settable through Starlark
 
 	errors     errors.MultiError // all errors emitted during the generation (if any)
 	seenErrs   stringset.Set     // set of all string backtraces in 'errors', for deduping
