@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e4b9e652_11484e14",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-22T17:56:20Z",
+      "side": 1,
+      "message": "clearly there is some duplication here. Can we extract common parts to a template?",
+      "revId": "626ebc3c16c0b9a1d36186e3760937a7ccac8f19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c95463e4_b93232a4",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-22T17:56:20Z",
+      "side": 1,
+      "message": "the string representation of the value should be JSON, as currently. From this perspective, L163 is incorrect because it is missing quotes, and \"True\" and \"False\" are incorrect strictly speaking because JSON uses \"true\" and \"false\".",
+      "revId": "626ebc3c16c0b9a1d36186e3760937a7ccac8f19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9a5dfbe_0fa3102b",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-22T17:56:20Z",
+      "side": 1,
+      "message": "why not just render the struct to JSON, and then parse it back to map[string]json.RawMessage? Note that most of the parsing back does nothing (lightweight) because we parse it to json.RawMessage. Then make it a slice and sort by key",
+      "revId": "626ebc3c16c0b9a1d36186e3760937a7ccac8f19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
