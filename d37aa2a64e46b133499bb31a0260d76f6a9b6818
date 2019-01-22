@@ -1,0 +1,653 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e9b3293_406a609b",
+        "filename": "common/gcloud/iam/serviceaccounts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "nit: project, accountID string",
+      "range": {
+        "startLine": 42,
+        "startChar": 55,
+        "endLine": 42,
+        "endChar": 87
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01fd861f_56813d0d",
+        "filename": "common/gcloud/iam/serviceaccounts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 52,
+        "startChar": 58,
+        "endLine": 52,
+        "endChar": 110
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "906dc96f_8dbc41bd",
+        "filename": "common/gcloud/iam/serviceaccounts_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "nit: no need to divide stdlib imports between blocks",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecf2bbc7_bbce38c4",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "nit: just in general this is not correct when working with UTF8, since it can cut mid-rune. Here it is fine, since JSON blob is ASCII already.",
+      "range": {
+        "startLine": 52,
+        "startChar": 16,
+        "endLine": 52,
+        "endChar": 58
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7affff6b_4e007921",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "what is the meaning of this bool and how is it different from \"err \u003d\u003d nil\"?",
+      "range": {
+        "startLine": 76,
+        "startChar": 143,
+        "endLine": 76,
+        "endChar": 147
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9fcde39_c18b8f19",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "this is not passed (I\u0027m surprised golint didn\u0027t complan)",
+      "range": {
+        "startLine": 77,
+        "startChar": 43,
+        "endLine": 77,
+        "endChar": 56
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c849829_b09c1096",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "nit: make this call first, so we effectively validate \u0027identity\u0027 before doing any heavier calls, like constructing RPC client",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 2
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c1c3491_c590fb7c",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "usually this is just\n\nvar (\n  ErrAlreadyExists \u003d errors.New(\"entry already exists\")\n  ErrNotFound \u003d errors.New(\"entry not found\")\n)\n\n(and anything else is considered a storage error)",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 1
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "426ed1c8_a7df351e",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "just \u0026persistentIdentityManager{}",
+      "range": {
+        "startLine": 47,
+        "startChar": 23,
+        "endLine": 47,
+        "endChar": 42
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35dbf917_127a8cf3",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "Let\u0027s add a creation date here too.",
+      "range": {
+        "startLine": 72,
+        "startChar": 5,
+        "endLine": 72,
+        "endChar": 19
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1aa1fee2_40e6feb2",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "switch {\n  case err \u003d\u003d ds.ErrNoSuchEntity:\n    return ErrNotFound\n  case err !\u003d nil:\n    return transient.Tag.Apply(err)\n}\n\n(and below too)\n\nMarking errors as transient is extremely useful when implementing good retry strategies.",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 2
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f90dde31_6f301550",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "I think this should be refactored to maintain the invariant: \"if the entity exists, then the account also exists\". I.e. if the entity is missing, we should attempt to create the account (expecting it may exist already). Then \u0027Created\u0027 field is not needed (and I believe it doesn\u0027t work currently anyway, since it is impossible to end up with ScopedIdentity entity with Created false in the datastore).",
+      "range": {
+        "startLine": 117,
+        "startChar": 36,
+        "endLine": 117,
+        "endChar": 47
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "378b6747_cd41744d",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "note: transaction is not a critical section. Multiple callers can end up here at the same time, and later collide trying to commit the change (only one will succeed).",
+      "range": {
+        "startLine": 122,
+        "startChar": 11,
+        "endLine": 122,
+        "endChar": 27
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a041bf98_6a3734f6",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "This is not correct, err can be \"Deadline error\" or some other random crap. Compare to ds.ErrNoSuchEntity instead. If it is not nil and not ds.ErrNoSuchEntity, return err right away, it will trigger transaction retry.",
+      "range": {
+        "startLine": 126,
+        "startChar": 3,
+        "endLine": 126,
+        "endChar": 27
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ba4a884_3cced18e",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "Holding transaction while calling an external service is an antipattern. Under non-trivial QPS this will cause many requests entering the transaction body, all issuing CreateAccount RPC call, and then colliding trying to save the entity.\n\nNon trivial QPS is quite possible here, e.g. when someone makes a config change that enables a ton of LUCI Scheduler jobs in a new project.\n\nAlso, entering a transaction just to check that the entry exists is slow.\n\nA better approach would be:\n\n1. Do s.Get() outside the transaction.\n2. If missing, do CreateAccount outside the transaction. Expect that the account may already exists.\n3. On success OR on \"already exists\", transactionally create the entity (or just overwrite it, it is static).\n\nAt very least, check with Get() outside the transaction first.",
+      "range": {
+        "startLine": 131,
+        "startChar": 4,
+        "endLine": 131,
+        "endChar": 74
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3509b7b_56d5b27d",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "Per implementation of CreateServiceAccount, \u0027created\u0027 is always true here.",
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2be7d77d_b35294a3",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "in overwhelming majority of cases this is just nil (\u003d\u003d default, which is 3 retries IIRC).",
+      "range": {
+        "startLine": 147,
+        "startChar": 2,
+        "endLine": 147,
+        "endChar": 65
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfa0a483_671cdbc8",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "nit: minus \\n",
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a68e3a39_970f703c",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "In luci-go repo, comments are generally limited by 80 chars per line for readability.\n\n(And there\u0027s no linter).",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 29,
+        "endChar": 98
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8de40ccb_0e65200b",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "I don\u0027t think this constant is helpful, considering that is it pretty universal to use @ for this.",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2a60265_d97a8590",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "it is very rare in golang to use arrays directly, usually slices are used",
+      "range": {
+        "startLine": 40,
+        "startChar": 37,
+        "endLine": 40,
+        "endChar": 44
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47b0fc07_00cfa9c9",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "base64.RawStdEncoding.EncodeToString",
+      "range": {
+        "startLine": 42,
+        "startChar": 19,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f340443c_725cffca",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "strictly speaking this is an array, not a slice :)",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 6
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51e984db_157675ca",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "1. Make digest returns []byte.\n2. return slice[:8]",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 14
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae4e8d4d_56d74dee",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "Again, it would be simpler if this is a slice. The body can be the same, just \"return res[:]\" in the end.",
+      "range": {
+        "startLine": 54,
+        "startChar": 29,
+        "endLine": 54,
+        "endChar": 49
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f25ffa53_28c8c53f",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "huh?",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 69,
+        "endChar": 127
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "145f0c18_360137b0",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "Please precompile this first using regexp.MustCompile. Otherwise each call to IsValid constructs regexp from scratch.\n\nAlso MatchString.",
+      "range": {
+        "startLine": 86,
+        "startChar": 17,
+        "endLine": 86,
+        "endChar": 59
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68c7236f_0c452f87",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "I\u0027m still not happy about huge random suffixes like that :(\n\nMaybe let\u0027s switch to base36 encoding to reduce its encoded size. It will give more space for more meaningful part of the email.",
+      "range": {
+        "startLine": 27,
+        "startChar": 47,
+        "endLine": 27,
+        "endChar": 63
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09e7ee9d_84a77b32",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-22T19:24:55Z",
+      "side": 1,
+      "message": "This looks very weird. Why can\u0027t we use single \u0027-\u0027? Maximizing length of the email for no good reason will only make it more cumbersome to work with when adding it various external ACLs.",
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
