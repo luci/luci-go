@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f8cb065_9d3719bb",
+        "filename": "lucicfg/configset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-22T18:16:14Z",
+      "side": 1,
+      "message": "nit: move one line down, but in general, it looks like this comment was written when sorting was in this func, so now it is perfectly clear unless you read Files\u0027s comment",
+      "revId": "87727854c96c83d750557a0d894a92f59dd63e16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76b57002_7b2990b3",
+        "filename": "lucicfg/configset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-22T18:16:14Z",
+      "side": 1,
+      "message": "just return this?",
+      "revId": "87727854c96c83d750557a0d894a92f59dd63e16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
