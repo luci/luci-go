@@ -12,8 +12,6 @@ def test_dimension_ctor():
   # 'value' validation.
   assert.fails(lambda: swarming.dimension(123), 'got int, want string')
   assert.fails(lambda: swarming.dimension(''), 'must not be empty')
-  assert.fails(lambda: swarming.dimension('a'*257), 'must be at most 256 chars')
-  assert.fails(lambda: swarming.dimension(' a'), 'must not have leading or trailing whitespace')
 
   # 'expiration' validation.
   assert.fails(lambda: swarming.dimension('a', 300), 'got int, want duration')
@@ -32,7 +30,6 @@ def test_validate_dimensions():
   assert.eq(call({'a': ['v1', v2]}), {'a': [v1, v2]})
 
   assert.fails(lambda: call({123: 'v1'}), 'got int key, want string')
-  assert.fails(lambda: call({'111': 'v1'}), '"111" should match')
   assert.fails(lambda: call({'a': 123}), 'got int, want swarming.dimension')
 
 

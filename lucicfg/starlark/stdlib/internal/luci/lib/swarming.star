@@ -18,19 +18,6 @@ load('@stdlib//internal/luci/lib/validate.star', 'validate')
 load('@stdlib//internal/time.star', 'time')
 
 
-# See https://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/swarming/server/config.py
-_DIMENSION_VALUE_LENGTH = 256
-_DIMENSION_KEY_RE = r'^[a-zA-Z\-\_\.]{1,64}$'
-
-
-# See https://chromium.googlesource.com/infra/infra/+/master/appengine/cr-buildbucket/swarming/swarmingcfg.py
-#
-# Except we drop {1,4096} because Go regexp engine refuses to use such high
-# repetition numbers (and 4K for a name is effectively unbounded anyway). Let
-# the server deal with such crazy values itself.
-_CACHE_NAME_RE = r'^[a-z0-9_]+$'
-
-
 # A struct returned by swarming.cache(...).
 #
 # See swarming.cache(...) function for all details.
@@ -122,18 +109,7 @@ def _cache(path, name=None, wait_for_warm_cache=None):
     swarming.cache struct with fields `path`, `name` and `wait_for_warm_cache`.
   """
   path = validate.string('path', path)
-  name = validate.string('name', name, default=path, regexp=_CACHE_NAME_RE, required=False)
-
-  # See also _validate_relative_path in appengine/cr-buildbucket/swarming/swarmingcfg.py.
-  if not path:
-    fail('bad cache path: must not be empty')
-  if '\\' in path:
-    fail('bad cache path %r: must not contain "\\", for Windows sake' % path)
-  if '..' in path.split('/'):
-    fail('bad cache path %r: must not contain ".."' % path)
-  if path.startswith('/'):
-    fail('bad cache path %r: must not start with "/"' % path)
-
+  name = validate.string('name', name, default=path, required=False)
   return _cache_ctor(
       path = path,
       name = name,
@@ -174,16 +150,8 @@ def _dimension(value, expiration=None):
   Returns:
     swarming.dimension struct with fields `value` and `expiration`.
   """
-  # See also 'validate_dimension_value' in appengine/swarming/server/config.py.
-  val = validate.string('value', value)
-  if not val:
-    fail('bad dimension value: must not be empty')
-  if len(val) > _DIMENSION_VALUE_LENGTH:
-    fail('bad dimension value %r: must be at most %d chars' % (val, _DIMENSION_VALUE_LENGTH))
-  if val != val.strip():
-    fail('bad dimension value %r: must not have leading or trailing whitespace' % (val,))
   return _dimension_ctor(
-      value = val,
+      value = validate.string('value', value),
       expiration = validate.duration(
           'expiration',
           expiration,
@@ -242,8 +210,7 @@ def _validate_dimensions(attr, dimensions):
   """
   out = {}
   for k, v in validate.str_dict(attr, dimensions).items():
-    # See also 'validate_dimension_key' in appengine/swarming/server/config.py.
-    validate.string(attr, k, regexp=_DIMENSION_KEY_RE)
+    validate.string(attr, k)
     if type(v) == 'list':
       out[k] = [_as_dim(k, x) for x in v]
     else:
