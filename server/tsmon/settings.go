@@ -129,7 +129,7 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 				`Name of a properly configured service account inside a ProdX-enabled `+
 					`Cloud Project to use for sending metrics. "Google Identity and Access `+
 					`Management (IAM) API" must be enabled for the GAE app, and app's `+
-					`account (<b>%s</b>) must have <i>Service Account Actor</i> role `+
+					`account (<b>%s</b>) must have <i>Service Account Token Creator</i> role `+
 					`for the specified ProdX account. This works only for Google projects.`,
 				html.EscapeString(serviceAcc))),
 		},
