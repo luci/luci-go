@@ -20,11 +20,14 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/milo/common/model"
@@ -128,6 +131,56 @@ func (bp *BuildPage) HumanStatus() string {
 	default:
 		return "Unknown status"
 	}
+}
+
+type property struct {
+	Key   string
+	Value string
+}
+
+// properties returns the values in the proto struct fields as
+// a json rendered slice of pairs, sorted by key.
+func properties(fields *structpb.Struct) []property {
+	// Sort the keys first.
+	keys := make([]string, 0, len(fields.Fields))
+	for k := range fields.Fields {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// Render the fields to JSON.
+	m := jsonpb.Marshaler{}
+	b := bytes.NewBuffer(nil)
+	if err := m.Marshal(b, fields); err != nil {
+		return []property{
+			{Key: "<Internal Error>", Value: err.Error()},
+		}
+	}
+	d := json.NewDecoder(b)
+	f := map[string]json.RawMessage{}
+	if err := d.Decode(&f); err != nil {
+		return []property{
+			{Key: "<Internal Error>", Value: err.Error()},
+		}
+	}
+
+	// Rearrange the fields into a slice.
+	results := make([]property, len(fields.Fields))
+	for i, k := range keys {
+		results[i] = property{
+			Key:   k,
+			Value: string(f[k]),
+		}
+	}
+	return results
+}
+
+func (bp *BuildPage) InputProperties() []property {
+	return properties(bp.Input.Properties)
+}
+
+func (bp *BuildPage) OutputProperties() []property {
+	return properties(bp.Output.Properties)
 }
 
 func (bp *BuildPage) Builder() *Link {
