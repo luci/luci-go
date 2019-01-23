@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ae8b8b52_eeceedd4",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-23T22:54:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4b9e652_11484e14",
+      "revId": "626ebc3c16c0b9a1d36186e3760937a7ccac8f19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c95463e4_b93232a4",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "a8d4d3f9_db195732",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-23T22:54:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c95463e4_b93232a4",
+      "revId": "626ebc3c16c0b9a1d36186e3760937a7ccac8f19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9a5dfbe_0fa3102b",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 3
@@ -47,6 +83,24 @@
       "writtenOn": "2019-01-22T17:56:20Z",
       "side": 1,
       "message": "why not just render the struct to JSON, and then parse it back to map[string]json.RawMessage? Note that most of the parsing back does nothing (lightweight) because we parse it to json.RawMessage. Then make it a slice and sort by key",
+      "revId": "626ebc3c16c0b9a1d36186e3760937a7ccac8f19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61867181_92eebf06",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-23T22:54:32Z",
+      "side": 1,
+      "message": "So I reworked this as per the suggestion, and the difference is:\n* Removed the type switch, and hence the \"kind\" column, since it seems redundant.\n* json.RawMessage doesn\u0027t allow for indents, so the marshall\u0027ed json is no longer indented.\n\nThe previous output was not indented, so it\u0027s not a regression.  I have a slight preference of making JSON indented, but that means we have to use a heavier weight JSON renderer.  Or we can also use a javascript based JSON renderer.  What are your thoughts?",
+      "parentUuid": "e9a5dfbe_0fa3102b",
       "revId": "626ebc3c16c0b9a1d36186e3760937a7ccac8f19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
