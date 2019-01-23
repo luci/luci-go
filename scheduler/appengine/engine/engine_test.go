@@ -64,6 +64,10 @@ var (
 		Identity:       "user:one@example.com",
 		IdentityGroups: []string{"all"},
 	}
+
+	securityOptions = messages.SecurityOptions{
+		ProjectScopedServiceAccounts: true,
+	}
 )
 
 func TestGetAllProjects(t *testing.T) {
@@ -109,6 +113,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 			Acls:             acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
 			Task:             []uint8{1, 2, 3}, // note: this is actually gibberish, but we don't care here
 			TriggeringPolicy: []uint8{4, 5, 6}, // same
+			SecurityOptions:  securityOptions,
 		}
 
 		Convey("noop", func() {
@@ -138,8 +143,9 @@ func TestUpdateProjectJobs(t *testing.T) {
 							TickNonce: 6278013164014963328,
 						},
 					},
-					Task:                jobDef.Task,
-					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
+					Task:                           jobDef.Task,
+					TriggeringPolicyRaw:            jobDef.TriggeringPolicy,
+					UseProjectScopedServiceAccount: true,
 				},
 			})
 
@@ -203,8 +209,9 @@ func TestUpdateProjectJobs(t *testing.T) {
 							TickNonce: 2673062197574995716,
 						},
 					},
-					Task:                jobDef.Task,
-					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
+					Task:                           jobDef.Task,
+					TriggeringPolicyRaw:            jobDef.TriggeringPolicy,
+					UseProjectScopedServiceAccount: true,
 				},
 			})
 
@@ -246,8 +253,9 @@ func TestUpdateProjectJobs(t *testing.T) {
 							TickNonce: 6278013164014963328,
 						},
 					},
-					Task:                jobDef.Task,
-					TriggeringPolicyRaw: job.TriggeringPolicy,
+					Task:                           jobDef.Task,
+					TriggeringPolicyRaw:            job.TriggeringPolicy,
+					UseProjectScopedServiceAccount: true,
 				},
 			})
 
@@ -278,8 +286,9 @@ func TestUpdateProjectJobs(t *testing.T) {
 						Enabled:    false,
 						Generation: 3,
 					},
-					Task:                jobDef.Task,
-					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
+					Task:                           jobDef.Task,
+					TriggeringPolicyRaw:            jobDef.TriggeringPolicy,
+					UseProjectScopedServiceAccount: true,
 				},
 			})
 		})
@@ -800,11 +809,12 @@ func TestLaunchInvocationTask(t *testing.T) {
 		// Add the job.
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
-				JobID:    "project/job",
-				Revision: "rev1",
-				Schedule: "triggered",
-				Task:     noopTaskBytes(),
-				Acls:     aclOne,
+				JobID:           "project/job",
+				Revision:        "rev1",
+				Schedule:        "triggered",
+				Task:            noopTaskBytes(),
+				Acls:            aclOne,
+				SecurityOptions: securityOptions,
 			},
 		}), ShouldBeNil)
 
@@ -861,6 +871,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 					"[22:42:00.000] Starting the invocation (attempt 1)\n" +
 					"[22:42:00.000] Succeeded!\n" +
 					"[22:42:00.000] Invocation finished in 0s with status SUCCEEDED\n",
+				UseProjectScopedServiceAccount: true,
 			})
 		})
 
@@ -920,11 +931,12 @@ func TestAbortJob(t *testing.T) {
 
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
-				JobID:    jobID,
-				Revision: "rev1",
-				Schedule: "triggered",
-				Task:     noopTaskBytes(),
-				Acls:     aclOne,
+				JobID:           jobID,
+				Revision:        "rev1",
+				Schedule:        "triggered",
+				Task:            noopTaskBytes(),
+				Acls:            aclOne,
+				SecurityOptions: securityOptions,
 			},
 		}), ShouldBeNil)
 
@@ -955,6 +967,7 @@ func TestAbortJob(t *testing.T) {
 				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Invocation is manually aborted by user:one@example.com\n" +
 					"[22:42:00.000] Invocation finished in 0s with status ABORTED\n",
+				UseProjectScopedServiceAccount: true,
 			})
 
 			// Unpause the task queue to confirm the new invocation doesn't actually
@@ -1090,11 +1103,12 @@ func TestEmitTriggers(t *testing.T) {
 
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
-				JobID:    testingJob,
-				Revision: "rev1",
-				Schedule: "triggered",
-				Task:     noopTaskBytes(),
-				Acls:     aclOne, // owned by one@example.com
+				JobID:           testingJob,
+				Revision:        "rev1",
+				Schedule:        "triggered",
+				Task:            noopTaskBytes(),
+				Acls:            aclOne, // owned by one@example.com
+				SecurityOptions: securityOptions,
 			},
 		}), ShouldBeNil)
 
@@ -1212,13 +1226,15 @@ func TestOneJobTriggersAnother(t *testing.T) {
 				Schedule:        "triggered",
 				Task:            noopTaskBytes(),
 				Acls:            aclOne,
+				SecurityOptions: securityOptions,
 			},
 			{
-				JobID:    triggeredJob,
-				Revision: "rev1",
-				Schedule: "triggered",
-				Task:     noopTaskBytes(),
-				Acls:     aclOne,
+				JobID:           triggeredJob,
+				Revision:        "rev1",
+				Schedule:        "triggered",
+				Task:            noopTaskBytes(),
+				Acls:            aclOne,
+				SecurityOptions: securityOptions,
 			},
 		}), ShouldBeNil)
 
@@ -1375,11 +1391,12 @@ func TestInvocationTimers(t *testing.T) {
 		const testJobID = "project/job"
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
-				JobID:    testJobID,
-				Revision: "rev1",
-				Schedule: "triggered",
-				Task:     noopTaskBytes(),
-				Acls:     aclOne,
+				JobID:           testJobID,
+				Revision:        "rev1",
+				Schedule:        "triggered",
+				Task:            noopTaskBytes(),
+				Acls:            aclOne,
+				SecurityOptions: securityOptions,
 			},
 		}), ShouldBeNil)
 
@@ -1497,11 +1514,12 @@ func TestCron(t *testing.T) {
 		updateJob := func(schedule string) {
 			So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 				{
-					JobID:    testJobID,
-					Revision: "rev1",
-					Schedule: schedule,
-					Task:     noopTaskBytes(),
-					Acls:     aclOne,
+					JobID:           testJobID,
+					Revision:        "rev1",
+					Schedule:        schedule,
+					Task:            noopTaskBytes(),
+					Acls:            aclOne,
+					SecurityOptions: securityOptions,
 				},
 			}), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
