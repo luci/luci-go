@@ -33,10 +33,45 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
+// deleteVMQueue is the name of the delete VM task handler queue.
+const deleteVMQueue = "delete-vm"
+
+// deleteVM deletes a given VM.
+func deleteVM(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.DeleteVM)
+	switch {
+	case !ok:
+		return errors.Reason("unexpected payload type %T", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("ID is required").Err()
+	}
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		vm := &model.VM{
+			ID: task.Id,
+		}
+		switch err := datastore.Get(c, vm); {
+		case err == datastore.ErrNoSuchEntity:
+			return nil
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch VM").Err()
+		case vm.URL != "":
+			return errors.Reason("instance exists: %s", vm.URL).Err()
+		case vm.Hostname != "":
+			return errors.Reason("creating instance %q", vm.Hostname).Err()
+		case !vm.Drained:
+			return errors.Reason("VM not drained").Err()
+		}
+		if err := datastore.Delete(c, vm); err != nil {
+			return errors.Annotate(err, "failed to delete VM").Err()
+		}
+		return nil
+	}, nil)
+}
+
 // drainVMQueue is the name of the drain VM task handler queue.
 const drainVMQueue = "drain-vm"
 
-// drainVM drains a given VM entity.
+// drainVM drains a given VM.
 func drainVM(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.DrainVM)
 	switch {
@@ -66,7 +101,7 @@ func drainVM(c context.Context, payload proto.Message) error {
 // ensureVMQueue is the name of the ensure VM task handler queue.
 const ensureVMQueue = "ensure-vm"
 
-// ensureVM creates or updates a given VM entity.
+// ensureVM creates or updates a given VM.
 func ensureVM(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.EnsureVM)
 	switch {

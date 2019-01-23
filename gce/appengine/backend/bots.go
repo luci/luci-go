@@ -45,10 +45,10 @@ func manageBot(c context.Context, payload proto.Message) error {
 		return errors.Reason("ID is required").Err()
 	}
 	vm, err := getVM(c, task.Id)
-	if err != nil {
+	switch {
+	case err != nil:
 		return err
-	}
-	if vm.URL == "" {
+	case vm.URL == "":
 		return errors.Reason("instance does not exist: %s", vm.URL).Err()
 	}
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
@@ -94,8 +94,12 @@ func manageBot(c context.Context, payload proto.Message) error {
 			return destroyInstanceAsync(c, task.Id, vm.URL)
 		}
 	}
-	if vm.Deadline > 0 && vm.Deadline < time.Now().Unix() {
+	switch {
+	case vm.Deadline > 0 && vm.Deadline < time.Now().Unix():
 		logging.Debugf(c, "deadline %d exceeded", vm.Deadline)
+		return terminateBotAsync(c, task.Id, vm.Hostname)
+	case vm.Drained:
+		logging.Debugf(c, "VM drained")
 		return terminateBotAsync(c, task.Id, vm.Hostname)
 	}
 	return nil

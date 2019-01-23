@@ -45,7 +45,7 @@ func getSuffix(c context.Context) string {
 	return string(suf)
 }
 
-// getVM returns a VM entity from the datastore. Hostname is guaranteed to be set.
+// getVM returns a VM from the datastore. Hostname is guaranteed to be set.
 func getVM(c context.Context, id string) (*model.VM, error) {
 	vm := &model.VM{
 		ID: id,
@@ -53,8 +53,12 @@ func getVM(c context.Context, id string) (*model.VM, error) {
 	if err := datastore.Get(c, vm); err != nil {
 		return nil, errors.Annotate(err, "failed to fetch VM").Err()
 	}
-	if vm.Hostname != "" {
+	switch {
+	case vm.Hostname != "":
 		return vm, nil
+	case vm.Drained:
+		// If the VM is drained, don't generate a new name.
+		return nil, errors.Reason("VM drained").Err()
 	}
 	// Generate a new hostname and record it so future calls are idempotent.
 	hostname := fmt.Sprintf("%s-%s", vm.ID, getSuffix(c))
@@ -62,9 +66,13 @@ func getVM(c context.Context, id string) (*model.VM, error) {
 		if err := datastore.Get(c, vm); err != nil {
 			return errors.Annotate(err, "failed to fetch VM").Err()
 		}
-		// Double-check inside transaction. Hostname may already be generated.
-		if vm.Hostname != "" {
+		// Double-check inside transaction.
+		// Hostname may already be generated or the VM may be drained.
+		switch {
+		case vm.Hostname != "":
 			return nil
+		case vm.Drained:
+			return errors.Reason("VM drained").Err()
 		}
 		vm.Hostname = hostname
 		if err := datastore.Put(c, vm); err != nil {
@@ -145,10 +153,10 @@ func createInstance(c context.Context, payload proto.Message) error {
 		return errors.Reason("ID is required").Err()
 	}
 	vm, err := getVM(c, task.Id)
-	if err != nil {
+	switch {
+	case err != nil:
 		return err
-	}
-	if vm.URL != "" {
+	case vm.URL != "":
 		logging.Debugf(c, "instance exists: %s", vm.URL)
 		return nil
 	}

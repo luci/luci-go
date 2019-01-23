@@ -72,6 +72,36 @@ func TestCron(t *testing.T) {
 			})
 		})
 
+		Convey("deleteVMsAsync", func() {
+			Convey("none", func() {
+				Convey("zero", func() {
+					err := deleteVMsAsync(c)
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
+
+				Convey("creating", func() {
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Hostname: "name",
+					})
+					err := deleteVMsAsync(c)
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("one", func() {
+				datastore.Put(c, &model.VM{
+					ID:      "id",
+					Drained: true,
+				})
+				err := deleteVMsAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+		})
+
 		Convey("manageBotsAsync", func() {
 			Convey("none", func() {
 				Convey("zero", func() {

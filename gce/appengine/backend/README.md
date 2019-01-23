@@ -79,6 +79,11 @@ and triggers [createInstance](#createInstance) for each.
 manageBotsAsync iterates over all VMs which do have a corresponding instance and
 triggers [manageBot](#manageBot) for each.
 
+### deleteVMsAsync
+
+deleteVMsAsync iterates over all VMs which are [drained](#drained) and triggers
+[deleteVM](#deleteVM) for each.
+
 ## Task Queues
 
 All task queues are triggered with a particular entity to process. All task
@@ -95,29 +100,30 @@ many VMs currently exist above the configured amount and triggers
 
 ensureVM receives a single VM to create or update. It ensures the VM exists and
 has its attributes updated to match the Config. It also ensures the VM is not
-drained. It runs regardless of whether the VM currently has an instance created
-for it. Therefore it makes the VM immediately reflect changes made to the
-Config, which will be reflected in the next created instance.
+[drained](#drained). It runs regardless of whether the VM currently has an
+instance created for it. Therefore it makes the VM immediately reflect changes
+made to the Config, which will be reflected in the next created instance.
 
 ### drainVM
 
-drainVM receives a single VM to drain. It attempts to record the VM as drained,
-but doesn't fail if the VM has already been deleted.
+drainVM receives a single VM to [drain](#drain). It attempts to record the VM as
+drained, but doesn't fail if the VM has already been deleted.
 
 ### createInstance
 
 createInstance receives a single VM to create an instance for and attempts to
 idempotently create it. Instance creation in GCE is asynchronous, so the backend
 package calls createInstance repeatedly until it's detected as created and then
-records it.
+records it. Creation is completed if already started for a [drained](#drained)
+VM, but new creation tasks in GCE are not started for drained VMs.
 
 ### manageBot
 
 manageBot receives a single VM to manage a bot for. Management entails watching
 the Swarming server for changes in the bot's state and reacting accordingly. If
 Swarming reports that the bot has died or been deleted or terminated, triggers
-[destroyInstance](#destroyInstance). If the VM's deadline has been exceeded,
-instead triggers [terminateBot](#terminateBot).
+[destroyInstance](#destroyInstance). If the VM's deadline has been exceeded or
+the VM is [drained](#drained), triggers [terminateBot](#terminateBot).
 
 ### destroyInstance
 
@@ -131,10 +137,16 @@ destroyed and then triggers [deleteBot](#deleteBot).
 deleteBot receives a single VM entity to delete the bot for. Bot deletion in
 Swarming is synchronous, so this action is recorded immediately, which allows
 [createInstancesAsync](#createInstancesAsync) to detect the VM as having no
-corresponding instance.
+corresponding instance and [deleteVM](#deleteVM) to succeed if the VM is
+[drained](#drained).
 
 ### terminateBot
 
 terminateBot receives a single VM to terminate the bot for and attempts to
 terminate it. Termination in Swarming is asynchronous, so the backend package
 calls [manageBot](#manageBot) repeatedly until it's detected as terminated.
+
+### deleteVM
+
+deleteVM receives a single VM to delete. Deletion only succeeds if the VM is
+[drained](#drained) and no corresponding instance exists.

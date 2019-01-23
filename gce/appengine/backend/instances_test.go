@@ -82,6 +82,43 @@ func TestCreate(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 
+			Convey("drained", func() {
+				Convey("aborts", func() {
+					datastore.Put(c, &model.VM{
+						ID:      "id",
+						Drained: true,
+					})
+					err := createInstance(c, &tasks.CreateInstance{
+						Id: "id",
+					})
+					So(err, ShouldErrLike, "VM drained")
+					v := &model.VM{
+						ID: "id",
+					}
+					datastore.Get(c, v)
+					So(v.Hostname, ShouldBeEmpty)
+				})
+
+				Convey("completes", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						inst, ok := req.(*compute.Instance)
+						So(ok, ShouldBeTrue)
+						So(inst.Name, ShouldEqual, "name")
+						return http.StatusOK, &compute.Operation{}
+					}
+					rt.Type = reflect.TypeOf(compute.Instance{})
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Drained:  true,
+						Hostname: "name",
+					})
+					err := createInstance(c, &tasks.CreateInstance{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+				})
+			})
+
 			Convey("error", func() {
 				Convey("http", func() {
 					rt.Handler = func(req interface{}) (int, interface{}) {

@@ -52,6 +52,82 @@ func TestQueues(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
+		Convey("deleteVM", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					err := deleteVM(c, nil)
+					So(err, ShouldErrLike, "unexpected payload")
+				})
+
+				Convey("empty", func() {
+					err := deleteVM(c, &tasks.DeleteVM{})
+					So(err, ShouldErrLike, "ID is required")
+				})
+			})
+
+			Convey("valid", func() {
+				Convey("non-existent", func() {
+					err := deleteVM(c, &tasks.DeleteVM{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					err = datastore.Get(c, &model.VM{
+						ID: "id",
+					})
+					So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+				})
+
+				Convey("error", func() {
+					Convey("not drained", func() {
+						datastore.Put(c, &model.VM{
+							ID: "id",
+						})
+						err := deleteVM(c, &tasks.DeleteVM{
+							Id: "id",
+						})
+						So(err, ShouldErrLike, "VM not drained")
+						err = datastore.Get(c, &model.VM{
+							ID: "id",
+						})
+						So(err, ShouldBeNil)
+					})
+
+					Convey("active", func() {
+						datastore.Put(c, &model.VM{
+							ID:       "id",
+							Drained:  true,
+							Hostname: "name",
+						})
+						err := deleteVM(c, &tasks.DeleteVM{
+							Id: "id",
+						})
+						So(err, ShouldErrLike, "creating instance")
+						v := &model.VM{
+							ID: "id",
+						}
+						err = datastore.Get(c, v)
+						So(err, ShouldBeNil)
+						So(v.Hostname, ShouldEqual, "name")
+					})
+				})
+
+				Convey("deletes", func() {
+					datastore.Put(c, &model.VM{
+						ID:      "id",
+						Drained: true,
+					})
+					err := deleteVM(c, &tasks.DeleteVM{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					err = datastore.Get(c, &model.VM{
+						ID: "id",
+					})
+					So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+				})
+			})
+		})
+
 		Convey("drainVM", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {

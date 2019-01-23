@@ -48,6 +48,7 @@ func getDispatcher(c context.Context) *tq.Dispatcher {
 func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.CreateInstance{}, createInstance, createInstanceQueue, nil)
 	dsp.RegisterTask(&tasks.DeleteBot{}, deleteBot, deleteBotQueue, nil)
+	dsp.RegisterTask(&tasks.DeleteVM{}, deleteVM, deleteVMQueue, nil)
 	dsp.RegisterTask(&tasks.DestroyInstance{}, destroyInstance, destroyInstanceQueue, nil)
 	dsp.RegisterTask(&tasks.DrainVM{}, drainVM, drainVMQueue, nil)
 	dsp.RegisterTask(&tasks.EnsureVM{}, ensureVM, ensureVMQueue, nil)
@@ -138,6 +139,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	})
 	dsp.InstallRoutes(r, mw)
 	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstancesAsync))
+	r.GET("/internal/cron/delete-vms", mw, newHTTPHandler(deleteVMsAsync))
 	r.GET("/internal/cron/manage-bots", mw, newHTTPHandler(manageBotsAsync))
 	r.GET("/internal/cron/process-configs", mw, newHTTPHandler(processConfigsAsync))
 	r.GET("/internal/cron/report-quota", mw, newHTTPHandler(reportQuotasAsync))

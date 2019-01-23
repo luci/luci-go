@@ -8,41 +8,47 @@ package tasks;
 
 import "go.chromium.org/luci/gce/api/config/v1/config.proto";
 
-// A task to create a GCE instance from a VM entity.
+// A task to create a GCE instance from a VM.
 message CreateInstance {
-  // The ID of the VM entity to create a GCE instance from.
+  // The ID of the VM to create a GCE instance from.
   string id = 1;
 }
 
-// A task to delete a Swarming bot associated with a VM entity.
+// A task to delete a Swarming bot associated with a VM.
 message DeleteBot {
-  // The ID of the VM entity to delete a Swarming bot for.
+  // The ID of the VM to delete a Swarming bot for.
   string id = 1;
   // The hostname of the Swarming bot to delete.
   string hostname = 2;
 }
 
-// A task to destroy a GCE instance created from a VM entity.
+// A task to delete a VM.
+message DeleteVM {
+  // The ID of the VM to delete.
+  string id = 1;
+}
+
+// A task to destroy a GCE instance created from a VM.
 message DestroyInstance {
-  // The ID of the VM entity to destroy a GCE instance for.
+  // The ID of the VM to destroy a GCE instance for.
   string id = 1;
   // The URL of the GCE instance to destroy.
   string url = 2;
 }
 
-// A task to drain a particular VM entity.
+// A task to drain a particular VM.
 message DrainVM {
-  // The ID of the VM entity to drain.
+  // The ID of the VM to drain.
   string id = 1;
 }
 
-// A task to create or update a particular VM entity.
+// A task to create or update a particular VM.
 message EnsureVM {
-  // The index of the VM entity to create or update.
+  // The index of the VM to create or update.
   int32 index = 1;
   // The attributes of the VM.
   config.VM attributes = 2;
-  // The ID of the config this VM entity belongs to.
+  // The ID of the config this VM belongs to.
   string config = 3;
   // The lifetime of the VM in seconds.
   int64 lifetime = 4;
@@ -52,9 +58,9 @@ message EnsureVM {
   string swarming = 6;
 }
 
-// A task to manage a Swarming bot associated with a VM entity.
+// A task to manage a Swarming bot associated with a VM.
 message ManageBot {
-  // The ID of the VM entity to manage a Swarming bot for.
+  // The ID of the VM to manage a Swarming bot for.
   string id = 1;
 }
 
@@ -66,13 +72,13 @@ message ProcessConfig {
 
 // A task to report GCE quota utilization.
 message ReportQuota {
-  // The ID of the project entity to report quota utilization for.
+  // The ID of the project to report quota utilization for.
   string id = 1;
 }
 
-// A task to terminate a Swarming bot associated with a VM entity.
+// A task to terminate a Swarming bot associated with a VM.
 message TerminateBot {
-  // The ID of the VM entity to terminate a Swarming bot for.
+  // The ID of the VM to terminate a Swarming bot for.
   string id = 1;
   // The hostname of the Swarming bot to terminate.
   string hostname = 2;
