@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa5b9b53_56276996",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-23T23:09:07Z",
+      "side": 1,
+      "message": "maybe add a comment that this is in JSON format, or rename accordingly",
+      "revId": "a856d5677624194f9cff1d8513f7fe9f37a4d98b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c2fc502_999dd1f1",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-23T23:09:07Z",
+      "side": 1,
+      "message": "nit: curious why it is called fields. We usually use term \"properties\" for properties",
+      "range": {
+        "startLine": 143,
+        "startChar": 16,
+        "endLine": 143,
+        "endChar": 22
+      },
+      "revId": "a856d5677624194f9cff1d8513f7fe9f37a4d98b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95087863_003023fe",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-23T23:09:07Z",
+      "side": 1,
+      "message": "nit: now it would be cleaner to derive keys f below, because in L172 we expect each key in `keys` to be a key in `f`",
+      "revId": "a856d5677624194f9cff1d8513f7fe9f37a4d98b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a071de4_9cff27d5",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-23T23:09:07Z",
+      "side": 1,
+      "message": "users will see this internal error and we will never see it. No logs or metrics+alerts.\n\nI think this highly improbable, so I think it would reasonable to panic in this case.",
+      "range": {
+        "startLine": 155,
+        "startChar": 0,
+        "endLine": 157,
+        "endChar": 3
+      },
+      "revId": "a856d5677624194f9cff1d8513f7fe9f37a4d98b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ce186f5_89662df7",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-23T23:09:07Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 162,
+        "startChar": 2,
+        "endLine": 164,
+        "endChar": 3
+      },
+      "revId": "a856d5677624194f9cff1d8513f7fe9f37a4d98b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
