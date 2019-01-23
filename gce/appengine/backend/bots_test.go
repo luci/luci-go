@@ -271,6 +271,26 @@ func TestManageBot(t *testing.T) {
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.TerminateBot{})
 				})
 
+				Convey("drained", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
+							BotId: "id",
+						}
+					}
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Drained:  true,
+						Hostname: "name",
+						URL:      "url",
+					})
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.TerminateBot{})
+				})
+
 				Convey("alive", func() {
 					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{

@@ -1,6 +1,8 @@
 cron:
 - url: /internal/cron/create-instances
   schedule: every 1 minutes
+- url: /internal/cron/delete-vms
+  schedule: every 1 minutes
 - url: /internal/cron/manage-bots
   schedule: every 1 minutes
 - url: /internal/cron/process-configs

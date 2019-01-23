@@ -9,6 +9,11 @@ queue:
   retry_parameters:
     task_retry_limit: 0
 
+- name: delete-vm
+  rate: 100/s
+  retry_parameters:
+    task_retry_limit: 0
+
 - name: destroy-instance
   rate: 100/s
   retry_parameters:
