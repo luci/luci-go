@@ -18,11 +18,6 @@ load('@stdlib//internal/luci/lib/validate.star', 'validate')
 # TODO(vadimsh): Add support for 'anonymous' when/if needed.
 
 
-# See https://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/components/components/auth/model.py
-_GROUP_RE = r'^([a-z\-]+/)?[0-9a-zA-Z_][0-9a-zA-Z_\-\.\ @]{1,80}[0-9a-zA-Z_\-\.]$'
-_USER_RE = r'^[0-9a-zA-Z_\-\.\+\%]+@[0-9a-zA-Z_\-\.]+$'
-
-
 # A constructor for acl.role structs.
 #
 # Such structs are seen through public API as predefined symbols, e.g.
@@ -127,12 +122,12 @@ def _entry(roles, groups=None, users=None):
   if type(groups) == 'string':
     groups = [groups]
   elif groups != None and type(groups) != 'list':
-    validate.string('groups', groups, regexp=_GROUP_RE)
+    validate.string('groups', groups)
 
   if type(users) == 'string':
     users = [users]
   elif users != None and type(users) != 'list':
-    validate.string('users', users, regexp=_USER_RE)
+    validate.string('users', users)
 
   roles = validate.list('roles', roles, required=True)
   groups = validate.list('groups', groups)
@@ -141,9 +136,9 @@ def _entry(roles, groups=None, users=None):
   for r in roles:
     validate.struct('roles', r, _role_ctor)
   for g in groups:
-    validate.string('groups', g, regexp=_GROUP_RE)
+    validate.string('groups', g)
   for u in users:
-    validate.string('users', u, regexp=_USER_RE)
+    validate.string('users', u)
 
   # Some ACLs (e.g. LogDog) can be formulated only in terms of groups,
   # check this.

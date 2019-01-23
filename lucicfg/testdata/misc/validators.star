@@ -6,14 +6,15 @@ def test_validate_string():
   call = validate.string
   assert.eq(call('a', 'zzz'), 'zzz')
   assert.eq(call('a', 'abc', regexp='a.c$'), 'abc')
-  assert.eq(call('a', '', default='zzz', required=False), '')
-  assert.eq(call('a', None, default='zzz', required=False), 'zzz')
+  assert.eq(call('a', '', default='zzz', allow_empty=True, required=False), '')
+  assert.eq(call('a', None, default='zzz', allow_empty=True, required=False), 'zzz')
   assert.eq(call('a', None, required=False), None)
   assert.fails(lambda: call('a', None), 'missing required field "a"')
   assert.fails(lambda: call('a', 1), 'bad "a": got int, want string')
   assert.fails(lambda: call('a', []), 'bad "a": got list, want string')
   assert.fails(lambda: call('a', None, default=1, required=False), 'bad "a": got int, want string')
   assert.fails(lambda: call('a', 'abcd', regexp='a.c$'), 'bad "a": "abcd" should match "a\.c\$"')
+  assert.fails(lambda: call('a', '', default='zzz', required=False), 'bad "a": must not be empty')
 
 
 def test_validate_int():

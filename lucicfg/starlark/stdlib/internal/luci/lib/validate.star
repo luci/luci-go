@@ -18,13 +18,14 @@ load('@stdlib//internal/re.star', 're')
 load('@stdlib//internal/time.star', 'time')
 
 
-def _string(attr, val, regexp=None, default=None, required=True):
+def _string(attr, val, regexp=None, allow_empty=False, default=None, required=True):
   """Validates that the value is a string and returns it.
 
   Args:
     attr: field name with this value, for error messages.
     val: a value to validate.
     regexp: a regular expression to check 'val' against.
+    allow_empty: if True, accept empty string as valid.
     default: a value to use if 'val' is None, ignored if required is True.
     required: if False, allow 'val' to be None, return 'default' in this case.
 
@@ -40,7 +41,8 @@ def _string(attr, val, regexp=None, default=None, required=True):
 
   if type(val) != 'string':
     fail('bad %r: got %s, want string' % (attr, type(val)))
-
+  if not allow_empty and not val:
+    fail('bad %r: must not be empty' % (attr,))
   if regexp and not re.submatches(regexp, val):
     fail('bad %r: %r should match %r' % (attr, val, regexp))
 

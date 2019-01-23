@@ -54,10 +54,10 @@ def test_groups_validation():
   assert.fails(
       lambda: acl.entry(acl.BUILDBUCKET_READER, groups=123),
       'bad "groups": got int, want string')
-  # A group name not passing the regexp is not OK.
+  # Empty group name is not OK.
   assert.fails(
-      lambda: acl.entry(acl.BUILDBUCKET_READER, groups='---'),
-      'bad "groups": "---" should match .*')
+      lambda: acl.entry(acl.BUILDBUCKET_READER, groups=''),
+      'bad "groups": must not be empty')
 
 
 def test_users_validation():
@@ -85,10 +85,10 @@ def test_users_validation():
   assert.fails(
       lambda: acl.entry(acl.BUILDBUCKET_READER, users=123),
       'bad "users": got int, want string')
-  # A user name not passing the regexp is not OK.
+  # Empty user name is not OK.
   assert.fails(
-      lambda: acl.entry(acl.BUILDBUCKET_READER, users='@example.com'),
-      'bad "users": "@example.com" should match .*')
+      lambda: acl.entry(acl.BUILDBUCKET_READER, users=''),
+      'bad "users": must not be empty')
 
 
 def test_group_only_roles():

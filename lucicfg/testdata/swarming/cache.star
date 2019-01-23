@@ -10,15 +10,8 @@ def test_cache_ctor():
   eq(swarming.cache('path'), 'path', 'path', None)
   eq(swarming.cache('path', 'name', 5*time.minute), 'path', 'name', 5*time.minute)
 
-  # Path validation.
   assert.fails(lambda: swarming.cache('', 'n'), 'must not be empty')
-  assert.fails(lambda: swarming.cache('a\\b', 'n'), r'must not contain "\\"')
-  assert.fails(lambda: swarming.cache('a/../b', 'n'), 'must not contain ".."')
-  assert.fails(lambda: swarming.cache('/a', 'n'), 'must not start with "/"')
-
-  # Name validation.
-  assert.fails(lambda: swarming.cache('p', ''), 'should match')
-  assert.fails(lambda: swarming.cache('p', 'ABC'), 'should match')
+  assert.fails(lambda: swarming.cache('p', ''), 'must not be empty')
 
   # Duration validation.
   assert.fails(lambda: swarming.cache('p', 'n', 300), 'got int, want duration')
