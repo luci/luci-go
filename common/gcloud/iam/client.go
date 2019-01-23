@@ -78,8 +78,9 @@ type Client struct {
 
 // SignBlob signs a blob using a service account's system-managed key.
 //
-// The caller must have "roles/iam.serviceAccountActor" role in the service
-// account's IAM policy and caller's OAuth token must have one of the scopes:
+// The caller must have "roles/iam.serviceAccountTokenCreator" role in the
+// service account's IAM policy and caller's OAuth token must have one of the
+// scopes:
 //  * https://www.googleapis.com/auth/iam
 //  * https://www.googleapis.com/auth/cloud-platform
 //
@@ -110,8 +111,9 @@ func (cl *Client) SignBlob(c context.Context, serviceAccount string, blob []byte
 // It also checks the expiration time and refuses to sign claim sets with
 // 'exp' set to more than 1h from now. Otherwise it is similar to SignBlob.
 //
-// The caller must have "roles/iam.serviceAccountActor" role in the service
-// account's IAM policy and caller's OAuth token must have one of the scopes:
+// The caller must have "roles/iam.serviceAccountTokenCreator" role in the
+// service account's IAM policy and caller's OAuth token must have one of the
+// scopes:
 //  * https://www.googleapis.com/auth/iam
 //  * https://www.googleapis.com/auth/cloud-platform
 //

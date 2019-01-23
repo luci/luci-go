@@ -65,8 +65,8 @@ func (fl *Flags) Register(f *flag.FlagSet) {
 			"--ts-mon-config-file")
 	f.StringVar(&fl.ActAs, "ts-mon-act-as", fl.ActAs,
 		"(advanced) a service account email to impersonate when authenticating to "+
-			"tsmon backends. Uses 'iam' scope and serviceAccountActor role. If set, "+
-			"overrides the value in --ts-mon-config-file")
+			"tsmon backends. Uses 'iam' scope and serviceAccountTokenCreator role. "+
+			"If set, overrides the value in --ts-mon-config-file")
 	f.Var(&fl.Flush, "ts-mon-flush",
 		"metric push behavior: manual (only send when Flush() is called), or auto "+
 			"(send automatically every --ts-mon-flush-interval)")
