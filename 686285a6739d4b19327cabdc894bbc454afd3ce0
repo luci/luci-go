@@ -22,6 +22,30 @@
       "revId": "686285a6739d4b19327cabdc894bbc454afd3ce0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e701c4a2_9a1a9c4a",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-24T20:48:54Z",
+      "side": 1,
+      "message": "done. Strictly speaking, the referenced config file is internal, while the proto is public, but in practice externals are not that interested.",
+      "parentUuid": "e63187fb_b674e64a",
+      "range": {
+        "startLine": 351,
+        "startChar": 36,
+        "endLine": 351,
+        "endChar": 45
+      },
+      "revId": "686285a6739d4b19327cabdc894bbc454afd3ce0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
