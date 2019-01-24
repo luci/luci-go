@@ -74,6 +74,11 @@ func TestPools(t *testing.T) {
 		md2 := model.NewPoolDescriptor("swarming.example.com", dim2)
 		c = caching.WithRequestCache(c)
 		Convey(`Unit Tests`, func() {
+			Convey(`Strip empty dimensions`, func() {
+				dims := []string{"foo", "foo:", "bar:baz"}
+				newDims := stripEmptyDimensions(dims)
+				So(newDims, ShouldResemble, []string{"bar:baz"})
+			})
 			Convey(`Parsing Builders`, func() {
 				descriptors, err := processBuilders(c, getBuilderMsg)
 				So(err, ShouldBeNil)
