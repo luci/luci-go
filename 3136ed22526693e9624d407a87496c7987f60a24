@@ -16,6 +16,24 @@
       "revId": "3136ed22526693e9624d407a87496c7987f60a24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "787427a1_ee5ed187",
+        "filename": "lucicfg/meta.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-24T19:06:40Z",
+      "side": 1,
+      "message": "I haven\u0027t sent the CL where it is used yet, since I\u0027m still splitting it up.",
+      "parentUuid": "127ed597_6f081a20",
+      "revId": "3136ed22526693e9624d407a87496c7987f60a24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
