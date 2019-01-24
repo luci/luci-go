@@ -345,6 +345,13 @@ message Builder {
   Recipe recipe = 4;
 
   // Swarming task priority.
+  // A value between 20 and 255, inclusive.
+  // Lower means more important.
+  //
+  // The default value is configured in
+  // https://chrome-internal.googlesource.com/infradata/config/+/master/configs/cr-buildbucket/swarming_task_template.json
+  //
+  // See also https://chromium.googlesource.com/infra/luci/luci-py.git/+/master/appengine/swarming/doc/User-Guide.md#request
   uint32 priority = 5;
 
   // Maximum build execution time. Not to be confused with pending time.
