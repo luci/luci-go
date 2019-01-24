@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/golang/protobuf/proto"
 
@@ -24,14 +25,15 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/impl/remote"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 
 	gce "go.chromium.org/luci/gce/api/config/v1"
 )
-
-// cfgKey is the key to a *config.Interface in the context.
-var cfgKey = "cfg"
 
 // kindsFile is the name of the kinds config file.
 const kindsFile = "kinds.cfg"
@@ -39,14 +41,32 @@ const kindsFile = "kinds.cfg"
 // vmsFile is the name of the VMs config file.
 const vmsFile = "vms.cfg"
 
-// WithInterface returns a new context with the given config.Interface installed.
-func WithInterface(c context.Context, i config.Interface) context.Context {
-	return context.WithValue(c, &cfgKey, i)
+// cfgKey is the key to a config.Interface in the context.
+var cfgKey = "cfg"
+
+// withInterface returns a new context with the given config.Interface installed.
+func withInterface(c context.Context, cfg config.Interface) context.Context {
+	return context.WithValue(c, &cfgKey, cfg)
 }
 
 // getInterface returns the config.Interface installed in the current context.
 func getInterface(c context.Context) config.Interface {
 	return c.Value(&cfgKey).(config.Interface)
+}
+
+// newInterface returns a new config.Interface. Panics on error.
+func newInterface(c context.Context) config.Interface {
+	s, err := gaeconfig.FetchCachedSettings(c)
+	if err != nil {
+		panic(err)
+	}
+	t, err := auth.GetRPCTransport(c, auth.AsSelf)
+	if err != nil {
+		panic(err)
+	}
+	return remote.New(s.ConfigServiceHost, false, func(c context.Context) (*http.Client, error) {
+		return &http.Client{Transport: t}, nil
+	})
 }
 
 // fetch fetches configs from the config service.
@@ -59,24 +79,24 @@ func fetch(c context.Context) (*gce.Kinds, *gce.Configs, error) {
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "failed to fetch %s", kindsFile).Err()
 	}
-	logging.Infof(c, "Found %s revision %q", kindsFile, cfg.Revision)
+	logging.Infof(c, "found %q revision %s", kindsFile, cfg.Revision)
 	rev := cfg.Revision
 	if err := proto.UnmarshalText(cfg.Content, &kinds); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to load %s", kindsFile).Err()
+		return nil, nil, errors.Annotate(err, "failed to load %q", kindsFile).Err()
 	}
 
 	cfgs := gce.Configs{}
 	cfg, err = cli.GetConfig(c, set, vmsFile, false)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to fetch %s", vmsFile).Err()
+		return nil, nil, errors.Annotate(err, "failed to fetch %q", vmsFile).Err()
 	}
-	logging.Infof(c, "Found %s revision %q", vmsFile, cfg.Revision)
+	logging.Infof(c, "found %q revision %s", vmsFile, cfg.Revision)
 	if cfg.Revision != rev {
 		// Could happen if configs are being updated.
 		return nil, nil, errors.Reason("config revision mismatch").Tag(transient.Tag).Err()
 	}
 	if err := proto.UnmarshalText(cfg.Content, &cfgs); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to load %s", vmsFile).Err()
+		return nil, nil, errors.Annotate(err, "failed to load %q", vmsFile).Err()
 	}
 	return &kinds, &cfgs, nil
 }
@@ -124,4 +144,27 @@ func Import(c context.Context) error {
 
 	merge(c, kinds, cfgs)
 	return nil
+}
+
+// importHandler imports the config from the config service.
+func importHandler(c *router.Context) {
+	c.Writer.Header().Set("Content-Type", "text/plain")
+
+	if err := Import(c.Context); err != nil {
+		errors.Log(c.Context, err)
+		c.Writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	c.Writer.WriteHeader(http.StatusOK)
+}
+
+// InstallHandlers installs HTTP request handlers into the given router.
+func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
+	mw = mw.Extend(func(c *router.Context, next router.Handler) {
+		// Install the config interface and the configuration service.
+		c.Context = withInterface(c.Context, newInterface(c.Context))
+		next(c)
+	})
+	r.GET("/internal/cron/import-config", mw, importHandler)
 }

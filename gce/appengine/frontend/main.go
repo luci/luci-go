@@ -25,8 +25,9 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/gce/api/config/v1"
+	server "go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/appengine/backend"
+	"go.chromium.org/luci/gce/appengine/config"
 	"go.chromium.org/luci/gce/appengine/rpc"
 )
 
@@ -34,13 +35,14 @@ func init() {
 	mathrand.SeedRandomly()
 	api := prpc.Server{UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil)}
 	srv := rpc.New()
-	config.RegisterConfigurationServer(&api, srv)
+	server.RegisterConfigurationServer(&api, srv)
 	discovery.Enable(&api)
 
 	r := router.New()
 	mw := standard.Base()
 	api.InstallHandlers(r, mw)
 	backend.InstallHandlers(r, mw)
+	config.InstallHandlers(r, mw)
 	http.DefaultServeMux.Handle("/", r)
 	standard.InstallHandlers(r)
 }

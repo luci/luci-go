@@ -33,7 +33,7 @@ func TestFetch(t *testing.T) {
 
 	Convey("fetch", t, func() {
 		Convey("missing", func() {
-			c := WithInterface(gae.Use(context.Background()), memory.New(nil))
+			c := withInterface(gae.Use(context.Background()), memory.New(nil))
 			k, v, err := fetch(c)
 			So(err, ShouldErrLike, "failed to fetch")
 			So(k, ShouldBeNil)
@@ -42,7 +42,7 @@ func TestFetch(t *testing.T) {
 
 		Convey("invalid", func() {
 			Convey("kinds", func() {
-				c := WithInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
+				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
 					"services/gce": map[string]string{
 						kindsFile: "invalid",
 						vmsFile:   "",
@@ -55,7 +55,7 @@ func TestFetch(t *testing.T) {
 			})
 
 			Convey("vms", func() {
-				c := WithInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
+				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
 					"services/gce": map[string]string{
 						kindsFile: "",
 						vmsFile:   "invalid",
@@ -69,7 +69,7 @@ func TestFetch(t *testing.T) {
 		})
 
 		Convey("empty", func() {
-			c := WithInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
+			c := withInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
 				"services/gce": {
 					kindsFile: "",
 					vmsFile:   "",
