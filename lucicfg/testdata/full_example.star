@@ -1,5 +1,5 @@
 core.project(
-    name = 'infra.git',
+    name = 'infra',
 
     buildbucket = 'cr-buildbucket.appspot.com',
     logdog = 'luci-logdog.appspot.com',
@@ -330,6 +330,6 @@ core.builder(
 # ===
 #
 # === project.cfg
-# name: "infra.git"
+# name: "infra"
 # access: "group:all"
 # ===
