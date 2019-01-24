@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"go.chromium.org/gae/service/datastore"
@@ -59,6 +60,21 @@ func getPool(c context.Context, bid BuilderID) (*ui.MachinePool, error) {
 	return ui.NewMachinePool(c, botPool.Bots), nil
 }
 
+// stripEmptyDimensions removes dimensions that are empty, such as "cores:".
+func stripEmptyDimensions(dims []string) []string {
+	result := make([]string, 0, len(dims))
+	for _, dim := range dims {
+		parts := strings.SplitN(dim, ":", 2)
+		switch {
+		case len(parts) != 2, parts[1] == "":
+			continue
+		default:
+			result = append(result, dim)
+		}
+	}
+	return result
+}
+
 // processBuilders parses out all of the builder pools from the Swarmbucket get_builders response,
 // and saves the BuilderPool information into the datastore.
 // It returns a list of PoolDescriptors that needs to be fetched and saved.
@@ -76,7 +92,8 @@ func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApi
 				continue
 			}
 			id := bid.String()
-			descriptor := model.NewPoolDescriptor(bucket.SwarmingHostname, builder.SwarmingDimensions)
+			dimensions := stripEmptyDimensions(builder.SwarmingDimensions)
+			descriptor := model.NewPoolDescriptor(bucket.SwarmingHostname, dimensions)
 			dID := descriptor.PoolID()
 			builderPools = append(builderPools, model.BuilderPool{
 				BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, id),
