@@ -118,6 +118,10 @@ def gen_project_cfg(ctx):
   if not proj:
     return
 
+  # Use "projects/<name>" as default value for meta.config(config_set=...).
+  # This is noop if config_set was already explicitly provided.
+  __native__.set_meta_default('config_set', 'projects/%s' % proj.props.name)
+
   # Find all PROJECT_CONFIGS_READER role entries.
   access = []
   for a in filter_acls(get_project_acls(), [acl.PROJECT_CONFIGS_READER]):
