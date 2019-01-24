@@ -15,11 +15,14 @@
 package lucicfg
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	luciflag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/logging"
 
 	"go.starlark.net/starlark"
 )
@@ -32,11 +35,11 @@ import (
 //
 // See @stdlib//internal/meta.star for full meaning of fields.
 type Meta struct {
-	ConfigServiceHost string   // LUCI config host name
-	ConfigSet         string   // e.g. "project/<name>"
-	ConfigDir         string   // output directory to place generated files
-	TrackedFiles      []string // e.g. ["*.cfg", "!*-dev.cfg"]
-	FailOnWarnings    bool     // true to treat validation warnings as errors
+	ConfigServiceHost string   `json:"config_service_host"` // LUCI config host name
+	ConfigSet         string   `json:"config_set"`          // e.g. "project/<name>"
+	ConfigDir         string   `json:"config_dir"`          // output directory to place generated files or '-' for stdout
+	TrackedFiles      []string `json:"tracked_files"`       // e.g. ["*.cfg", "!*-dev.cfg"]
+	FailOnWarnings    bool     `json:"fail_on_warnings"`    // true to treat validation warnings as errors
 
 	// FlagSet passed to AddFlags and AddOutputFlags.
 	fs *flag.FlagSet
@@ -46,12 +49,35 @@ type Meta struct {
 	detectedTouchedFlags bool
 }
 
+// Log logs the values of the meta parameters to Debug logger.
+func (m *Meta) Log(ctx context.Context) {
+	logging.Debugf(ctx, "Meta config:")
+	logging.Debugf(ctx, "  config_service_host = %q", m.ConfigServiceHost)
+	logging.Debugf(ctx, "  config_set = %q", m.ConfigSet)
+	logging.Debugf(ctx, "  config_dir = %q", m.ConfigDir)
+	logging.Debugf(ctx, "  tracked_files = %v", m.TrackedFiles)
+	logging.Debugf(ctx, "  fail_on_warnings = %v", m.FailOnWarnings)
+}
+
+// RebaseConfigDir changes ConfigDir, if it is set, to be absolute by appending
+// it to the given root.
+//
+// Doesn't touch "-", which indicates "stdout".
+func (m *Meta) RebaseConfigDir(root string) {
+	if m.ConfigDir != "" && m.ConfigDir != "-" {
+		m.ConfigDir = filepath.Join(root, filepath.FromSlash(m.ConfigDir))
+	}
+}
+
 // AddFlags registers command line flags that correspond to Meta fields.
 func (m *Meta) AddFlags(fs *flag.FlagSet) {
 	m.fs = fs
 	fs.StringVar(&m.ConfigServiceHost, "config-service-host", m.ConfigServiceHost, "Hostname of a LUCI config service to use for validation.")
 	fs.StringVar(&m.ConfigSet, "config-set", m.ConfigSet, "Name of the config set to validate against.")
-	fs.StringVar(&m.ConfigDir, "config-dir", m.ConfigDir, "A directory to place generated configs into.")
+	fs.StringVar(&m.ConfigDir, "config-dir", m.ConfigDir,
+		`A directory to place generated configs into (relative to cwd if given as a
+flag otherwise relative to the main script). If '-', generated configs are just
+printed to stdout in a format useful for debugging.`)
 	fs.Var(luciflag.CommaList(&m.TrackedFiles), "tracked-files", "Globs for files considered generated, see meta.config(...) doc for more info.")
 	fs.BoolVar(&m.FailOnWarnings, "fail-on-warnings", m.FailOnWarnings, "Treat validation warnings as errors.")
 }
@@ -143,11 +169,18 @@ func (m *Meta) fieldsMap() map[string]interface{} {
 	}
 }
 
-// setter returns a field setter given its Starlark name.
-func (m *Meta) setField(k string, v starlark.Value) (err error) {
+// setField sets the field k to v.
+//
+// If untouched is true, will do it only if k wasn't modified before. Silently
+// does nothing if it was.
+func (m *Meta) setField(k string, v starlark.Value, untouched bool) (err error) {
 	ptr := m.fieldsMap()[k]
 	if ptr == nil {
 		return fmt.Errorf("set_meta: no such meta key %q", k)
+	}
+
+	if untouched && m.WasTouched(k) {
+		return nil
 	}
 
 	// On success, mark the field as modified.
@@ -204,6 +237,22 @@ func init() {
 		if err := call.unpack(2, &k, &v); err != nil {
 			return nil, err
 		}
-		return starlark.None, call.State.Meta.setField(k.GoString(), v)
+		return starlark.None, call.State.Meta.setField(k.GoString(), v, false)
+	})
+
+	// set_meta_default(k, v) sets the value of the corresponding field in Meta,
+	// but only if it wasn't set before.
+	//
+	// Unlike set_meta (which almost directly exposed throughmeta.config(...)),
+	// set_meta_default is currently private API, used only to set the default
+	// config set name based on core.project(name=...). It is expected that no
+	// one will really need set_meta_default.
+	declNative("set_meta_default", func(call nativeCall) (starlark.Value, error) {
+		var k starlark.String
+		var v starlark.Value
+		if err := call.unpack(2, &k, &v); err != nil {
+			return nil, err
+		}
+		return starlark.None, call.State.Meta.setField(k.GoString(), v, true)
 	})
 }
