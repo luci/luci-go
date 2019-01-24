@@ -25,6 +25,7 @@ import (
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -59,6 +60,20 @@ func getPool(c context.Context, bid BuilderID) (*ui.MachinePool, error) {
 	return ui.NewMachinePool(c, botPool.Bots), nil
 }
 
+// stripEmptyDimensions removes dimensions that are empty, such as "cores:".
+func stripEmptyDimensions(dims []string) []string {
+	source := strpair.ParseMap(dims)
+	result := strpair.Map{}
+	for k, ds := range source {
+		for _, dim := range ds {
+			if dim != "" {
+				result.Add(k, dim)
+			}
+		}
+	}
+	return result.Format()
+}
+
 // processBuilders parses out all of the builder pools from the Swarmbucket get_builders response,
 // and saves the BuilderPool information into the datastore.
 // It returns a list of PoolDescriptors that needs to be fetched and saved.
@@ -76,7 +91,8 @@ func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApi
 				continue
 			}
 			id := bid.String()
-			descriptor := model.NewPoolDescriptor(bucket.SwarmingHostname, builder.SwarmingDimensions)
+			dimensions := stripEmptyDimensions(builder.SwarmingDimensions)
+			descriptor := model.NewPoolDescriptor(bucket.SwarmingHostname, dimensions)
 			dID := descriptor.PoolID()
 			builderPools = append(builderPools, model.BuilderPool{
 				BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, id),
