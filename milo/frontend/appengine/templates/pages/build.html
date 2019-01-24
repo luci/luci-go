@@ -94,7 +94,12 @@
         <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
       <div id="overview-tab">{{ template "overview_tab" . }}</div>
-      <div id="properties-tab">{{ template "properties_tab" . }}</div>
+      <div id="properties-tab">
+        <div id="properties">
+          <h2>Input Properties</h2>{{ template "properties_table" .BuildPage.InputProperties }}
+          <h2>Output Properties</h2>{{ template "properties_table" .BuildPage.OutputProperties }}
+        </div>
+      </div>
       <div id="changes-tab">{{ template "changes_tab" . }}</div>
       <div id="timeline-tab">{{ template "timeline_tab" . }}</div>
     </div>
@@ -205,27 +210,27 @@
   </div>
 {{end}}
 
-{{define "properties_tab"}}
-  <div id="properties">
-    {{ with .Build.Input.Properties }}
-      <h2>Input Properties</h2>
-      {{ . | renderProperties }}
-    {{ end }}
 
-    {{ with .Build.Output.Properties }}
-      <h2>Output Properties</h2>
-      {{ . | renderProperties }}
+{{define "properties_table"}}
+  {{ with . }}
+    <table class="info BuildProperties" width="100%">
+    <tr><th>Name</th><th>Value</th></tr>
+    {{ range . }}
+      <tr>
+        <td class="left">{{.Key}}</td>
+        <td class="middle"><abbr title="{{.Value}}">{{.Value}}</abbr></td>
+      </tr>
     {{ end }}
-
-  </div>
+    </table>
+  {{ end }}
 {{end}}
 
 {{define "changes_tab"}}
   <div id="changes">
     <h2>All Changes</h2>
-    {{ if .Build.Blame }}
+    {{ if .BuildPage.Blame }}
     <ol>
-    {{ range .Build.Blame }}
+    {{ range .BuildPage.Blame }}
     <li>
       <h3>{{.Title}}</h3>
       <table class="info">
