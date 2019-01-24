@@ -113,9 +113,9 @@ func ReadConfigSet(dir string) (ConfigSet, error) {
 func (cs ConfigSet) Write(dir string) (changed, unchanged []string, err error) {
 	// First pass: populate 'changed' and 'unchanged', so we have a valid result
 	// even when failing midway through writes.
-	for name, body := range cs {
+	for _, name := range cs.Files() {
 		path := filepath.Join(dir, filepath.FromSlash(name))
-		if bytes.Equal(fileDigest(path), blobDigest(body)) {
+		if bytes.Equal(fileDigest(path), blobDigest(cs[name])) {
 			unchanged = append(unchanged, name)
 		} else {
 			changed = append(changed, name)
