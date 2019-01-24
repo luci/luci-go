@@ -78,6 +78,7 @@ func TestConfigSet(t *testing.T) {
 				"dir/a": []byte("222"),
 			}
 			changed, unchanged, err := cs.Write(tmp)
+			changed = sort.Strings(changed)
 			So(changed, ShouldResemble, []string{"a", "dir/a"})
 			So(unchanged, ShouldHaveLength, 0)
 			So(err, ShouldBeNil)
