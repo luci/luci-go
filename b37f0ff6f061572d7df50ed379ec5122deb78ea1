@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9c576803_5eb111b0",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-24T18:57:17Z",
+      "side": 1,
+      "message": "please reuse https://godoc.org/github.com/luci/luci-go/common/data/strpair#ParseMap",
+      "revId": "b37f0ff6f061572d7df50ed379ec5122deb78ea1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
