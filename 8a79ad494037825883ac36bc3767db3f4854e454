@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7a0c664_973d21d7",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-24T00:37:23Z",
+      "side": 1,
+      "message": "let\u0027s reuse the buffer for all property values\ncurrently we reallocate the buffer for each value",
+      "revId": "8a79ad494037825883ac36bc3767db3f4854e454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
