@@ -46,8 +46,9 @@ def _config(
     config_dir: a directory to place generated configs into, relative to the
         directory that contains the entry point \*.star file. `..` is allowed.
         If set via `-config-dir` command line flag, it is relative to the
-        current working directory. Will be created if absent. Default is
-        "generated".
+        current working directory. Will be created if absent. If `-`, the
+        configs are just printed to stdout in a format useful for debugging.
+        Default is "generated".
     tracked_files: a list of glob patterns that define a subset of files under
         `config_dir` that are considered generated. This is important if some
         generated file disappears from `lucicfg` output: it must be deleted from
