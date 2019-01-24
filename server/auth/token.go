@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/auth/identity"
@@ -72,10 +74,14 @@ const (
 	// MaxDelegationTokenTTL is maximum allowed token lifetime that can be
 	// requested via MintDelegationToken.
 	MaxDelegationTokenTTL = 3 * time.Hour
+
+	// MaxScopedTokenTTL is maximum allowed token lifetime that cann be
+	// requested via MintScopedToken.
+	MaxScopedTokenTTL = 1 * time.Hour
 )
 
-// DelegationTokenParams is passed to MintDelegationToken.
-type DelegationTokenParams struct {
+// TokenParams defines the base struct to issue identity tokens.
+type TokenParams struct {
 	// TargetHost, if given, is hostname (with, possibly, ":port") of a service
 	// that the token will be sent to.
 	//
@@ -126,9 +132,26 @@ type DelegationTokenParams struct {
 	rpcClient tokenMinterClient
 }
 
+// ScopedTokenParams defines the parameters to create project scoped service account tokens.
+type ScopedTokenParams struct {
+	TokenParams
+
+	// LuciProject is the name of the LUCI project to which the token will be scoped.
+	LuciProject string
+
+	// OAuthScopes resemble the requested OAuth scopes for the token.
+	OAuthScopes []string
+}
+
+// DelegationTokenParams is passed to MintDelegationToken.
+type DelegationTokenParams struct {
+	TokenParams
+}
+
 // tokenMinterClient is subset of minter.TokenMinterClient we use.
 type tokenMinterClient interface {
 	MintDelegationToken(context.Context, *minter.MintDelegationTokenRequest, ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error)
+	MintServiceOAuthToken(context.Context, *minter.MintServiceOAuthTokenRequest, ...grpc.CallOption) (*minter.MintServiceOAuthTokenResponse, error)
 }
 
 // delegationTokenCache is used to store delegation tokens in the cache.
@@ -140,6 +163,194 @@ var delegationTokenCache = newTokenCache(tokenCacheConfig{
 	ProcessLRUCache:              caching.RegisterLRUCache(8192),
 	ExpiryRandomizationThreshold: MaxDelegationTokenTTL / 10, // 10%
 })
+
+var scopedTokenCach = newTokenCache(tokenCacheConfig{
+	Kind:                         "scoped",
+	Version:                      6,
+	ProcessLRUCache:              caching.RegisterLRUCache(8192),
+	ExpiryRandomizationThreshold: MaxScopedTokenTTL / 10, // 10%
+})
+
+// MintScopedToken returns a LUCI project-scoped token that can be used by the
+// current service to reduce access to a single LUCI project in order to prevent
+// accidental cross-project resource access.
+//
+// A token is targeted to some single specific LUCI project.
+//
+// The token is cached internally. Same token may be returned by multiple calls,
+// if its lifetime allows.
+func MintScopedToken(ctx context.Context, p ScopedTokenParams) (*oauth2.Token, error) {
+	report := durationReporter(ctx, mintScopedTokenDuration)
+
+	// Validate TargetHost.
+	target := ""
+	if p.Untargeted {
+		target = "*"
+	} else {
+		p.TargetHost = strings.ToLower(p.TargetHost)
+		if strings.IndexRune(p.TargetHost, '/') != -1 {
+			report(ErrBadTargetHost, "ERROR_BAD_HOST")
+			return nil, ErrBadTargetHost
+		}
+		target = "https://" + p.TargetHost
+	}
+
+	// Validate TTL is sane.
+	if p.MinTTL == 0 {
+		p.MinTTL = 10 * time.Minute
+	}
+	if p.MinTTL < 30*time.Second || p.MinTTL > MaxScopedTokenTTL {
+		report(ErrBadDelegationTokenTTL, "ERROR_BAD_TTL")
+		return nil, ErrBadDelegationTokenTTL
+	}
+
+	// Validate tags are sane, sort them. Don't be very pedantic with validation,
+	// the server will apply its more precise validation rules anyway.
+	tags := append([]string(nil), p.Tags...)
+	for _, t := range tags {
+		parts := strings.SplitN(t, ":", 2)
+		if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+			report(ErrBadDelegationTag, "ERROR_BAD_TAG")
+			return nil, ErrBadDelegationTag
+		}
+	}
+	sort.Strings(tags)
+
+	// Config contains the cache implementation.
+	cfg := getConfig(ctx)
+	if cfg == nil {
+		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
+		return nil, ErrNotConfigured
+	}
+
+	// The state carries ID of the current user and URL of the token service.
+	state := GetState(ctx)
+	if state == nil {
+		report(ErrNoAuthState, "ERROR_NO_AUTH_STATE")
+		return nil, ErrNoAuthState
+	}
+
+	// Identity we want to impersonate.
+	userID := state.User().Identity
+	if userID == identity.AnonymousIdentity {
+		report(ErrAnonymousDelegation, "ERROR_NO_IDENTITY")
+		return nil, ErrAnonymousDelegation
+	}
+
+	// Grab hostname of the token service we received from the auth service. It
+	// will sign the token, and thus its identity is indirectly defines the
+	// identity of the generated token. For that reason we use it as part of the
+	// cache key.
+	tokenServiceURL, err := state.DB().GetTokenServiceURL(ctx)
+	switch {
+	case err != nil:
+		report(err, "ERROR_AUTH_DB")
+		return nil, err
+	case tokenServiceURL == "":
+		report(ErrTokenServiceNotConfigured, "ERROR_NO_TOKEN_SERVICE")
+		return nil, ErrTokenServiceNotConfigured
+	case !strings.HasPrefix(tokenServiceURL, "https://"):
+		// Note: this never actually happens.
+		logging.Errorf(ctx, "Bad token service URL: %s", tokenServiceURL)
+		report(ErrTokenServiceNotConfigured, "ERROR_NOT_HTTPS_TOKEN_SERVICE")
+		return nil, ErrTokenServiceNotConfigured
+	}
+	tokenServiceHost := tokenServiceURL[len("https://"):]
+
+	ctx = logging.SetFields(ctx, logging.Fields{
+		"token":  "delegation",
+		"target": target,
+		"userID": userID,
+	})
+
+	cacheKey := fmt.Sprintf("%s\n%s\n%s\n%d\n%s",
+		userID, tokenServiceHost, target, len(tags), strings.Join(tags, "\n"))
+
+	cached, err, label := delegationTokenCache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
+		CacheKey:    cacheKey,
+		MinTTL:      p.MinTTL,
+		MintTimeout: cfg.adjustedTimeout(10 * time.Second),
+
+		// Mint is called on cache miss, under the lock.
+		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {
+			// Grab a token server client (or its mock).
+			rpcClient := p.rpcClient
+			if rpcClient == nil {
+				transport, err := GetRPCTransport(ctx, AsSelf)
+				if err != nil {
+					return nil, err, "ERROR_NO_TRANSPORT"
+				}
+				rpcClient = minter.NewTokenMinterPRPCClient(&prpc.Client{
+					C:    &http.Client{Transport: transport},
+					Host: tokenServiceHost,
+					Options: &prpc.Options{
+						Retry: func() retry.Iterator {
+							return &retry.ExponentialBackoff{
+								Limited: retry.Limited{
+									Delay:   50 * time.Millisecond,
+									Retries: 5,
+								},
+							}
+						},
+					},
+				})
+			}
+
+			// The actual RPC call.
+			resp, err := rpcClient.MintServiceOAuthToken(ctx, &minter.MintServiceOAuthTokenRequest{
+				LuciProject:         p.LuciProject,
+				OauthScope:          p.OAuthScopes,
+				MinValidityDuration: int64(MaxScopedTokenTTL.Seconds()),
+				AuditTags:           tags,
+			})
+			if err != nil {
+				err = grpcutil.WrapIfTransient(err)
+				if transient.Tag.In(err) {
+					return nil, err, "ERROR_TRANSIENT_IN_MINTING"
+				}
+				return nil, err, "ERROR_MINTING"
+			}
+
+			// Sanity checks. A correctly working token server should not trigger them.
+			good := false
+			switch {
+			case resp.AccessToken == "":
+				logging.Errorf(ctx, "No access token in the response")
+			case resp.ServiceAccount == "":
+				logging.Errorf(ctx, "No service account name in the response")
+			default:
+				good = true
+			}
+			if !good {
+				return nil, ErrBrokenTokenService, "ERROR_BROKEN_TOKEN_SERVICE"
+			}
+
+			// Log details about the new token.
+			logging.Fields{
+				"service_account": resp.ServiceAccount,
+				"expiry":          int64(resp.Expiry.Seconds),
+			}.Debugf(ctx, "Minted new delegation token")
+
+			now := clock.Now(ctx).UTC()
+			exp := time.Unix(resp.Expiry.Seconds, 0)
+			return &cachedToken{
+				OAuth2Token: &cachedOAuth2Token{
+					AccessToken: resp.AccessToken,
+					TokenType:   "Bearer",
+					Expiry:      jsontime.Time{exp},
+				},
+				Created: jsontime.Time{now},
+				Expiry:  jsontime.Time{exp},
+			}, nil, "SUCCESS_CACHE_MISS"
+		},
+	})
+
+	report(err, label)
+	if err != nil {
+		return nil, err
+	}
+	return cached.OAuth2Token.toToken(), nil
+}
 
 // MintDelegationToken returns a delegation token that can be used by the
 // current service to "pretend" to be the current caller (as returned by
@@ -156,7 +367,7 @@ var delegationTokenCache = newTokenCache(tokenCacheConfig{
 // The token is cached internally. Same token may be returned by multiple calls,
 // if its lifetime allows.
 func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegation.Token, error) {
-	report := durationReporter(ctx, mintDelegationTokenDuration)
+	report := durationReporter(ctx, mintScopedTokenDuration)
 
 	// Validate TargetHost.
 	target := ""
