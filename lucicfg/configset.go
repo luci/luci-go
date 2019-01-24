@@ -15,9 +15,13 @@
 package lucicfg
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -47,6 +51,7 @@ type ConfigSet map[string][]byte
 
 // ValidationResult is what we get after validating a config set.
 type ValidationResult struct {
+	Failed   bool                 `json:"failed"`   // true if the config is bad
 	Messages []*ValidationMessage `json:"messages"` // errors, warning, infos, etc.
 }
 
@@ -99,20 +104,45 @@ func ReadConfigSet(dir string) (ConfigSet, error) {
 	return configs, nil
 }
 
-// Write stores files in the config set to disk.
+// Write updates files on disk to match the config set.
+//
+// Returns a list of updated files and a list of files that are already
+// up-to-date.
 //
 // Creates missing directories. Not atomic. All files have mode 0666.
-func (cs ConfigSet) Write(dir string) error {
+func (cs ConfigSet) Write(dir string) (changed, unchanged []string, err error) {
+	// First pass: populate 'changed' and 'unchanged', so we have a valid result
+	// even when failing midway through writes.
 	for name, body := range cs {
 		path := filepath.Join(dir, filepath.FromSlash(name))
-		if err := os.MkdirAll(filepath.Dir(path), 0777); err != nil {
-			return err
-		}
-		if err := ioutil.WriteFile(path, body, 0666); err != nil {
-			return err
+		if bytes.Equal(fileDigest(path), blobDigest(body)) {
+			unchanged = append(unchanged, name)
+		} else {
+			changed = append(changed, name)
 		}
 	}
-	return nil
+
+	// Second pass: update changed files.
+	for _, name := range changed {
+		path := filepath.Join(dir, filepath.FromSlash(name))
+		if err = os.MkdirAll(filepath.Dir(path), 0777); err != nil {
+			return
+		}
+		if err = ioutil.WriteFile(path, cs[name], 0666); err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+// Digests returns a map "config name -> hex SHA256 of its body".
+func (cs ConfigSet) Digests() map[string]string {
+	out := make(map[string]string, len(cs))
+	for file, body := range cs {
+		out[file] = hex.EncodeToString(blobDigest(body))
+	}
+	return out
 }
 
 // Files returns a sorted list of file names in the config set.
@@ -123,6 +153,17 @@ func (cs ConfigSet) Files() []string {
 	}
 	sort.Strings(f)
 	return f
+}
+
+// DebugDump writes the config files to stdout in a format useful for debugging.
+func (cs ConfigSet) DebugDump() {
+	for _, f := range cs.Files() {
+		fmt.Println("--------------------------------------------------")
+		fmt.Println(f)
+		fmt.Println("--------------------------------------------------")
+		fmt.Print(string(cs[f]))
+		fmt.Println("--------------------------------------------------")
+	}
 }
 
 // Validate sends the config set for validation to LUCI Config service.
@@ -172,6 +213,8 @@ func (vr *ValidationResult) Log(ctx context.Context) {
 }
 
 // OverallError is nil if the validation succeeded or non-nil if failed.
+//
+// Beware: mutates Failed field accordingly.
 func (vr *ValidationResult) OverallError(failOnWarnings bool) error {
 	errs, warns := 0, 0
 	for _, msg := range vr.Messages {
@@ -184,13 +227,40 @@ func (vr *ValidationResult) OverallError(failOnWarnings bool) error {
 	}
 
 	if errs > 0 {
+		vr.Failed = true
 		return errors.Reason("some files were invalid").Err()
 	}
 	if warns > 0 && failOnWarnings {
+		vr.Failed = true
 		return errors.Reason("some files had validation warnings and -fail-on-warnings is set").Err()
 	}
 
+	vr.Failed = false
 	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Misc helpers used above.
+
+// fileDigest returns SHA256 digest of a file on disk or nil if it's not there
+// or can't be read.
+func fileDigest(path string) []byte {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return nil
+	}
+	return h.Sum(nil)
+}
+
+// blobDigest returns SHA256 digest of a byte buffer.
+func blobDigest(blob []byte) []byte {
+	d := sha256.Sum256(blob)
+	return d[:]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
