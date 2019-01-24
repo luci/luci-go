@@ -17,6 +17,7 @@ package validate
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/maruel/subcommands"
@@ -35,13 +36,33 @@ import (
 // Cmd is 'validate' subcommand.
 func Cmd(params base.Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "validate -config-set CONFIG_SET [CONFIG_DIR]",
-		ShortDesc: "sends files under CONFIG_DIR (or CWD if not set) to LUCI Config service for validation",
+		UsageLine: "validate [CONFIG_DIR|SCRIPT]",
+		ShortDesc: "sends configuration files to LUCI Config service for validation",
+		LongDesc: `Sends configuration files to LUCI Config service for validation.
+
+If the first positional argument is a directory, takes all files there and
+sends them to LUCI Config service, to be validated as a single config set. The
+name of the config set (e.g. "projects/foo") should be provided via -config-set
+flag, it is required in this mode.
+
+If the first positional argument is a Starlark file, it is interpreted (same as
+with 'generate' subcommand) and the resulting generated configs are compared
+to what's already on disk in -config-dir directory. If they are different, the
+subcommand exits with non-zero exit code (indicating files on disk are stale).
+Otherwise the configs are sent to LUCI Config service for validation, as above.
+
+Passing no positional arguments at all is equivalent to passing the current
+working directory, i.e. all files there will be send to LUCI Config for
+validation.
+
+When interpreting Starlark script, flags like -config-dir and -config-set work
+as overrides for values declared in the script itself via meta.config(...)
+statement. See its doc for more details.
+		`,
 		CommandRun: func() subcommands.CommandRun {
 			vr := &validateRun{}
-			vr.Init(params, true)
-			vr.Flags.StringVar(&vr.configSet, "config-set", "<name>", "Name of the config set to validate against.")
-			vr.Flags.BoolVar(&vr.failOnWarnings, "fail-on-warnings", false, "Treat validation warnings as errors.")
+			vr.Init(params)
+			vr.AddMetaFlags()
 			return vr
 		},
 	}
@@ -49,10 +70,6 @@ func Cmd(params base.Parameters) *subcommands.Command {
 
 type validateRun struct {
 	base.Subcommand
-
-	configSet      string
-	configDir      string
-	failOnWarnings bool
 }
 
 func (vr *validateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -60,32 +77,62 @@ func (vr *validateRun) Run(a subcommands.Application, args []string, env subcomm
 		return 1
 	}
 
+	// The first argument is either a directory with a config set to validate,
+	// or a entry point *.star file. Default is to validate the config set in
+	// the cwd.
+	target := ""
 	if len(args) == 1 {
-		vr.configDir = args[0]
+		target = args[0]
 	} else {
-		configDir, err := os.Getwd()
-		if err != nil {
+		var err error
+		if target, err = os.Getwd(); err != nil {
 			return vr.Done(nil, err)
 		}
-		vr.configDir = configDir
 	}
 
-	return vr.Done(vr.run(cli.GetContext(a, vr, env)))
+	// If 'target' is a directory, it is a directory with generated files we
+	// need to validate. If it is a file, it is *.star file to use to generate
+	// configs in memory and compare them to whatever is on disk.
+	ctx := cli.GetContext(a, vr, env)
+	switch fi, err := os.Stat(target); {
+	case os.IsNotExist(err):
+		return vr.Done(nil, fmt.Errorf("no such file: %s", target))
+	case err != nil:
+		return vr.Done(nil, err)
+	case fi.Mode().IsDir():
+		return vr.Done(vr.validateExisting(ctx, target))
+	default:
+		return vr.Done(vr.validateGenerated(ctx, target))
+	}
 }
 
-func (vr *validateRun) run(ctx context.Context) (*lucicfg.ValidationResult, error) {
-	svc, err := vr.ConfigService(ctx)
+// validateExisting validates an existing config set on disk, whatever it may
+// be.
+//
+// Verifies -config-set flag was used, since it is the only way to provide the
+// name of the config set to verify against in this case.
+//
+// Also verifies -config-dir is NOT used, since it is redundant: the directory
+// is passed through the positional arguments.
+func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*lucicfg.ValidationResult, error) {
+	switch {
+	case vr.Meta.ConfigServiceHost == "":
+		return nil, base.MissingFlagError("-config-service-host")
+	case vr.Meta.ConfigSet == "":
+		return nil, base.MissingFlagError("-config-set")
+	case vr.Meta.WasTouched("config_dir"):
+		return nil, base.NewCLIError("-config-dir shouldn't be used, the directory was already given as positional argument")
+	}
+	configSet, err := lucicfg.ReadConfigSet(dir)
 	if err != nil {
 		return nil, err
 	}
-	configSet, err := lucicfg.ReadConfigSet(vr.configDir)
-	if err != nil {
-		return nil, err
-	}
-	result, err := configSet.Validate(ctx, vr.configSet, lucicfg.RemoteValidator(svc))
-	if err != nil {
-		return nil, err
-	}
-	result.Log(ctx)
-	return result, result.OverallError(vr.failOnWarnings)
+	return base.ValidateConfigs(ctx, configSet, &vr.Meta, vr.ConfigService)
+}
+
+// validateGenerated executes Starlark script, compares the result to whatever
+// is on disk (failing the validation if there's a difference), and then sends
+// the config set
+func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*lucicfg.ValidationResult, error) {
+	return nil, fmt.Errorf("not implemented yet")
 }

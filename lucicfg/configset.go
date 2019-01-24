@@ -182,7 +182,7 @@ func (cs ConfigSet) Validate(ctx context.Context, name string, val ConfigSetVali
 		Files:     make([]*config.LuciConfigValidateConfigRequestMessageFile, len(cs)),
 	}
 
-	logging.Debugf(ctx, "Sending for validation to LUCI Config:")
+	logging.Infof(ctx, "Sending for validation to LUCI Config...")
 	for idx, f := range cs.Files() {
 		logging.Debugf(ctx, "  %s (%d bytes)", f, len(cs[f]))
 		req.Files[idx] = &config.LuciConfigValidateConfigRequestMessageFile{
