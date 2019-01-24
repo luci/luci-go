@@ -42,6 +42,8 @@ type Meta struct {
 	fs *flag.FlagSet
 	// Pointers to fields that were touched. Used when merging two Metas together.
 	touched map[interface{}]struct{}
+	// True if detectTouchedFlags() was already called.
+	detectedTouchedFlags bool
 }
 
 // AddFlags registers command line flags that correspond to Meta fields.
@@ -54,15 +56,21 @@ func (m *Meta) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&m.FailOnWarnings, "fail-on-warnings", m.FailOnWarnings, "Treat validation warnings as errors.")
 }
 
-// DetectTouchedFlags is called after flags are parsed to figure out what flags
+// detectTouchedFlags is called after flags are parsed to figure out what flags
 // were explicitly set and what were left at their defaults.
 //
 // It updates Meta with information about touched flags which is later used
-// by PopulateFromTouchedIn function.
-func (m *Meta) DetectTouchedFlags() {
-	if m.fs == nil || !m.fs.Parsed() {
-		panic("DetectTouchedFlags should be called after flags are parsed")
+// by PopulateFromTouchedIn and WasTouched functions.
+func (m *Meta) detectTouchedFlags() {
+	switch {
+	case m.fs == nil:
+		return // not using CLI flags at all
+	case m.detectedTouchedFlags:
+		return // already did this
+	case !m.fs.Parsed():
+		panic("detectTouchedFlags should be called after flags are parsed")
 	}
+	m.detectedTouchedFlags = true
 
 	fields := m.fieldsMap()
 
@@ -76,6 +84,7 @@ func (m *Meta) DetectTouchedFlags() {
 // PopulateFromTouchedIn takes all touched values in `t` and copies them to
 // `m`, overriding what's in `m`.
 func (m *Meta) PopulateFromTouchedIn(t *Meta) {
+	t.detectTouchedFlags()
 	left := m.fieldsMap()
 	right := t.fieldsMap()
 	for k, l := range left {
@@ -94,6 +103,20 @@ func (m *Meta) PopulateFromTouchedIn(t *Meta) {
 			}
 		}
 	}
+}
+
+// WasTouched returns true if the field (given by its Starlark snake_case name)
+// was explicitly set via CLI flags or via meta.config(...) in Starlark.
+//
+// Panics if the field is unrecognized.
+func (m *Meta) WasTouched(field string) bool {
+	m.detectTouchedFlags()
+	ptr, ok := m.fieldsMap()[field]
+	if !ok {
+		panic(fmt.Sprintf("no such meta field %s", field))
+	}
+	_, yes := m.touched[ptr]
+	return yes
 }
 
 ////////////////////////////////////////////////////////////////////////////////
