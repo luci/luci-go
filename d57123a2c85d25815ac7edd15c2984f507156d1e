@@ -42,6 +42,48 @@
     },
     {
       "key": {
+        "uuid": "59624ac7_35908555",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-24T22:43:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a7f25ff_53a27bb2",
+      "range": {
+        "startLine": 100,
+        "startChar": 26,
+        "endLine": 100,
+        "endChar": 30
+      },
+      "revId": "d57123a2c85d25815ac7edd15c2984f507156d1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "10ac4bd1_9c434c6b",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-24T22:43:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "347d0527_dbd1edd7",
+      "revId": "d57123a2c85d25815ac7edd15c2984f507156d1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0d60ddc_dd925400",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 4
@@ -62,6 +104,30 @@
       "revId": "d57123a2c85d25815ac7edd15c2984f507156d1e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ccc40319_4b9bcd39",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-24T22:43:09Z",
+      "side": 1,
+      "message": "This happens to work because the jquery tabs library unhides this.\n\nSee: https://3877-891846f-tainted-hinoka-removetabs-dot-luci-milo-dev.appspot.com/p/chromium/builders/ci/Android%20N5%20Swarm/3456",
+      "parentUuid": "b0d60ddc_dd925400",
+      "range": {
+        "startLine": 102,
+        "startChar": 28,
+        "endLine": 102,
+        "endChar": 51
+      },
+      "revId": "d57123a2c85d25815ac7edd15c2984f507156d1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
