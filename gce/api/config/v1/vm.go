@@ -39,6 +39,7 @@ func (v *VM) ToProperty() (datastore.Property, error) {
 }
 
 // Validate validates this VM description.
+// Metadata FromFile must already be converted to FromText.
 func (v *VM) Validate(c *validation.Context) {
 	if len(v.GetDisk()) == 0 {
 		c.Errorf("at least one disk is required")
@@ -49,7 +50,7 @@ func (v *VM) Validate(c *validation.Context) {
 	for i, meta := range v.GetMetadata() {
 		c.Enter("metadata %d", i)
 		// Implicitly rejects FromFile.
-		// TODO(smut): Support FromFile.
+		// FromFile must be converted to FromText before calling.
 		if !strings.Contains(meta.GetFromText(), ":") {
 			c.Errorf("metadata from text must be in key:value form")
 		}

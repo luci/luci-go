@@ -16,11 +16,12 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -107,19 +108,23 @@ func validate(c context.Context, kinds *gce.Kinds, cfgs *gce.Configs) error {
 	v.SetFile(kindsFile)
 	kinds.Validate(v)
 	v.SetFile(vmsFile)
-	cfgs.Validate(v, stringset.NewFromSlice(kinds.Names()...))
+	cfgs.Validate(v)
 	return v.Finalize()
 }
 
 // merge merges validated configs.
 // Each config's referenced Kind is used to fill out unset values in its attributes.
-func merge(c context.Context, kinds *gce.Kinds, cfgs *gce.Configs) {
+func merge(c context.Context, kinds *gce.Kinds, cfgs *gce.Configs) error {
 	kindsMap := kinds.Map()
 	for _, cfg := range cfgs.Vms {
 		if cfg.GetKind() != "" {
+			k, ok := kindsMap[cfg.Kind]
+			if !ok {
+				return errors.Reason("unknown kind %q", cfg.Kind).Err()
+			}
 			// Merge the config's attributes into a copy of the kind's.
 			// This ensures the config's attributes overwrite the kind's.
-			attrs := proto.Clone(kindsMap[cfg.Kind].Attributes).(*gce.VM)
+			attrs := proto.Clone(k.Attributes).(*gce.VM)
 			// By default, proto.Merge concatenates repeated field values.
 			// Instead, make repeated fields in the config override the kind.
 			if len(cfg.Attributes.Disk) > 0 {
@@ -129,6 +134,42 @@ func merge(c context.Context, kinds *gce.Kinds, cfgs *gce.Configs) {
 			cfg.Attributes = attrs
 		}
 	}
+	return nil
+}
+
+// deref dereferences Metadata.FromFile by fetching the referenced file.
+func deref(c context.Context, cfgs *gce.Configs) error {
+	// Cache fetched files.
+	fileMap := make(map[string]string)
+	cli := getInterface(c)
+	set := cfgclient.CurrentServiceConfigSet(c)
+	for _, vms := range cfgs.Vms {
+		for i, m := range vms.GetAttributes().Metadata {
+			if m.GetFromFile() != "" {
+				parts := strings.SplitN(m.GetFromFile(), ":", 2)
+				if len(parts) < 2 {
+					return errors.Reason("metadata from file must be in key:value form").Err()
+				}
+				file := parts[1]
+				if _, ok := fileMap[file]; !ok {
+					cfg, err := cli.GetConfig(c, set, file, false)
+					if err != nil {
+						return errors.Annotate(err, "failed to fetch %q", file).Err()
+					}
+					logging.Infof(c, "found %q revision %s", file, cfg.Revision)
+					// TODO(smut): Ensure cfg.Revision is the same revision as everything else.
+					fileMap[file] = cfg.Content
+				}
+				// fileMap[file] definitely exists.
+				key := parts[0]
+				val := fileMap[file]
+				vms.Attributes.Metadata[i].Metadata = &gce.Metadata_FromText{
+					FromText: fmt.Sprintf("%s:%s", key, val),
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // Import fetches and validates configs from the config service.
@@ -138,11 +179,20 @@ func Import(c context.Context) error {
 		return errors.Annotate(err, "failed to fetch configs").Err()
 	}
 
+	// Merge before validating. cfgs may be invalid until referenced kinds are applied.
+	if err := merge(c, kinds, cfgs); err != nil {
+		return errors.Annotate(err, "failed to merge kinds into configs").Err()
+	}
+
+	// Deref before validating. cfgs may be invalid until metadata from file is imported.
+	if err := deref(c, cfgs); err != nil {
+		return errors.Annotate(err, "failed to dereference files").Err()
+	}
+
 	if err := validate(c, kinds, cfgs); err != nil {
 		return errors.Annotate(err, "invalid configs").Err()
 	}
 
-	merge(c, kinds, cfgs)
 	return nil
 }
 

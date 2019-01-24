@@ -17,12 +17,11 @@ package config
 import (
 	"strings"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 )
 
-// Validate validates the configs given the allowable kinds a config may reference.
-func (cfgs *Configs) Validate(c *validation.Context, kinds stringset.Set) {
+// Validate validates these configs. Kinds must already be applied.
+func (cfgs *Configs) Validate(c *validation.Context) {
 	prefixes := make([]string, 0, len(cfgs.Vms))
 	for i, cfg := range cfgs.Vms {
 		c.Enter("vms config %d", i)
@@ -41,7 +40,7 @@ func (cfgs *Configs) Validate(c *validation.Context, kinds stringset.Set) {
 			}
 		}
 		prefixes = append(prefixes, cfg.Prefix)
-		cfg.Validate(c, kinds)
+		cfg.Validate(c)
 		c.Exit()
 	}
 }

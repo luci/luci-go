@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,11 +29,10 @@ func TestValidateConfigs(t *testing.T) {
 
 	Convey("validate", t, func() {
 		c := &validation.Context{Context: context.Background()}
-		k := stringset.New(0)
 
 		Convey("empty", func() {
 			cfgs := &Configs{}
-			cfgs.Validate(c, k)
+			cfgs.Validate(c)
 			So(c.Finalize(), ShouldBeNil)
 		})
 
@@ -45,7 +43,7 @@ func TestValidateConfigs(t *testing.T) {
 						{},
 					},
 				}
-				cfgs.Validate(c, k)
+				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "prefix is required")
 			})
@@ -64,7 +62,7 @@ func TestValidateConfigs(t *testing.T) {
 						},
 					},
 				}
-				cfgs.Validate(c, k)
+				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "is a prefix of")
 			})

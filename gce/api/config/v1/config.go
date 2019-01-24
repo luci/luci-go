@@ -18,7 +18,6 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 )
 
@@ -37,14 +36,11 @@ func (cfg *Config) ToProperty() (datastore.Property, error) {
 	return p, p.SetValue(proto.MarshalTextString(cfg), false)
 }
 
-// Validate validates this config given the allowable kinds it may reference.
-func (cfg *Config) Validate(c *validation.Context, kinds stringset.Set) {
+// Validate validates this config. Kind must already be applied.
+func (cfg *Config) Validate(c *validation.Context) {
 	c.Enter("attributes")
 	cfg.GetAttributes().Validate(c)
 	c.Exit()
-	if cfg.GetKind() != "" && !kinds.Has(cfg.Kind) {
-		c.Errorf("unknown kind %q", cfg.Kind)
-	}
 	if cfg.GetPrefix() == "" {
 		c.Errorf("prefix is required")
 	}
