@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "423491da_736334b0",
+        "filename": "lucicfg/cli/base/generate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-24T23:32:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1fd22ca_1dfff77f",
+      "range": {
+        "startLine": 29,
+        "startChar": 3,
+        "endLine": 29,
+        "endChar": 11
+      },
+      "revId": "2916139644749bce339cbeb9df4c7a3e3c3e2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "57c43126_601d9380",
         "filename": "lucicfg/cli/base/generate.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "2916139644749bce339cbeb9df4c7a3e3c3e2e1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60b361e6_6661e934",
+        "filename": "lucicfg/cli/base/generate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-24T23:32:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57c43126_601d9380",
+      "range": {
+        "startLine": 32,
+        "startChar": 9,
+        "endLine": 32,
+        "endChar": 15
+      },
+      "revId": "2916139644749bce339cbeb9df4c7a3e3c3e2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "160a35d2_8bd2b434",
+        "filename": "lucicfg/cli/base/generate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-24T23:32:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3757c1b_2c219287",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 76,
+        "endChar": 6
+      },
+      "revId": "2916139644749bce339cbeb9df4c7a3e3c3e2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "119b2f38_dcf9ca82",
         "filename": "lucicfg/cli/cmds/generate/generate.go",
         "patchSetId": 3
@@ -82,6 +154,30 @@
       "writtenOn": "2019-01-24T22:53:23Z",
       "side": 1,
       "message": "how slow is it in your experience?",
+      "range": {
+        "startLine": 130,
+        "startChar": 33,
+        "endLine": 130,
+        "endChar": 46
+      },
+      "revId": "2916139644749bce339cbeb9df4c7a3e3c3e2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba0e6dd6_31c02325",
+        "filename": "lucicfg/cli/cmds/generate/generate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-24T23:32:06Z",
+      "side": 1,
+      "message": "It is very varied. At least couple of seconds, up to ~7. Slow enough to be annoying when iterating on a script.",
+      "parentUuid": "119b2f38_dcf9ca82",
       "range": {
         "startLine": 130,
         "startChar": 33,
@@ -114,6 +210,30 @@
       "revId": "2916139644749bce339cbeb9df4c7a3e3c3e2e1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d3ee400_842eb8aa",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-24T23:32:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "246ca96e_c3d62d14",
+      "range": {
+        "startLine": 109,
+        "startChar": 20,
+        "endLine": 109,
+        "endChar": 28
+      },
+      "revId": "2916139644749bce339cbeb9df4c7a3e3c3e2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
