@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "127ed597_6f081a20",
+        "filename": "lucicfg/meta.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-24T07:37:23Z",
+      "side": 1,
+      "message": "where is this used? i checked all 3 CLs",
+      "revId": "3136ed22526693e9624d407a87496c7987f60a24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
