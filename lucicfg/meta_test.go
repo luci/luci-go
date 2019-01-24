@@ -79,7 +79,6 @@ func TestMeta(t *testing.T) {
 		So(m.TrackedFiles, ShouldResemble, []string{"a", "b", "c"})
 		So(m.FailOnWarnings, ShouldBeTrue)
 
-		m.DetectTouchedFlags()
 		So(touched(&m), ShouldResemble, []string{
 			"config_service_host",
 			"fail_on_warnings",
@@ -117,8 +116,8 @@ func TestMeta(t *testing.T) {
 }
 
 func touched(m *Meta) (touched []string) {
-	for k, v := range m.fieldsMap() {
-		if _, yes := m.touched[v]; yes {
+	for k := range m.fieldsMap() {
+		if m.WasTouched(k) {
 			touched = append(touched, k)
 		}
 	}
