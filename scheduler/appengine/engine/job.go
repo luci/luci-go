@@ -131,6 +131,10 @@ type Job struct {
 
 	// LastTriage is a time when the last triage transaction was committed.
 	LastTriage time.Time `gae:",noindex"`
+
+	// UseProjectScopedServiceAccount will indicate that this job will operate
+	// under a reduced authority account.
+	UseProjectScopedServiceAccount bool `gae:",noindex"`
 }
 
 // JobTriageLog contains information about the most recent triage.
@@ -220,7 +224,8 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.Cron.Equal(&other.Cron) &&
 		bytes.Equal(e.TriggeringPolicyRaw, other.TriggeringPolicyRaw) &&
 		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations) &&
-		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw))
+		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw) &&
+		e.UseProjectScopedServiceAccount == other.UseProjectScopedServiceAccount)
 }
 
 // MatchesDefinition returns true if job definition in the entity matches the
