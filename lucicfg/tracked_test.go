@@ -71,7 +71,13 @@ func TestFindTrackedFiles(t *testing.T) {
 			So(files, ShouldHaveLength, 0)
 		})
 
-		Convey("Empty", func() {
+		Convey("Missing directory", func() {
+			files, err := FindTrackedFiles(filepath.Join(tmp, "missing"), []string{"*.cfg"})
+			So(err, ShouldBeNil)
+			So(files, ShouldHaveLength, 0)
+		})
+
+		Convey("Empty patterns", func() {
 			files, err := FindTrackedFiles(tmp, nil)
 			So(err, ShouldBeNil)
 			So(files, ShouldHaveLength, 0)
