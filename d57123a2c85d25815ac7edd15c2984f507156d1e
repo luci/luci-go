@@ -152,6 +152,30 @@
       "revId": "d57123a2c85d25815ac7edd15c2984f507156d1e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5c814eb_5c20cb5a",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-24T23:03:47Z",
+      "side": 1,
+      "message": "Ah - I didn\u0027t see this before. Before there was a  \"display: none\" on the entire tabs div kept from showing any of this content (including the overview) until the jquery javascript got a chance to tabify it. If you look closely now you\u0027ll see this content render without the tabs briefly before getting tabified. On a fast computer this will be hard to see but it flashes briefly. I think you should still have a \"display: none\" on the containing div to avoid this flash.",
+      "parentUuid": "dfe08f03_6ee50bd8",
+      "range": {
+        "startLine": 102,
+        "startChar": 28,
+        "endLine": 102,
+        "endChar": 51
+      },
+      "revId": "d57123a2c85d25815ac7edd15c2984f507156d1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
