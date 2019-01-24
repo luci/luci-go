@@ -99,6 +99,22 @@ func ReadConfigSet(dir string) (ConfigSet, error) {
 	return configs, nil
 }
 
+// Write stores files in the config set to disk.
+//
+// Creates missing directories. Not atomic. All files have mode 0666.
+func (cs ConfigSet) Write(dir string) error {
+	for name, body := range cs {
+		path := filepath.Join(dir, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0777); err != nil {
+			return err
+		}
+		if err := ioutil.WriteFile(path, body, 0666); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Files returns a sorted list of file names in the config set.
 func (cs ConfigSet) Files() []string {
 	f := make([]string, 0, len(cs))
