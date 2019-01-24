@@ -32,7 +32,7 @@ func TestConfigSet(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Reading", t, func() {
+	Convey("With temp dir", t, func() {
 		tmp, err := ioutil.TempDir("", "lucicfg")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tmp)
@@ -41,27 +41,45 @@ func TestConfigSet(t *testing.T) {
 			return filepath.Join(append([]string{tmp}, p...)...)
 		}
 
-		So(os.Mkdir(path("subdir"), 0700), ShouldBeNil)
-		So(ioutil.WriteFile(path("a.cfg"), []byte("a\n"), 0600), ShouldBeNil)
-		So(ioutil.WriteFile(path("subdir", "b.cfg"), []byte("b\n"), 0600), ShouldBeNil)
-
-		Convey("Success", func() {
-			cfg, err := ReadConfigSet(tmp)
+		read := func(p ...string) []byte {
+			body, err := ioutil.ReadFile(path(p...))
 			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, ConfigSet{
-				"a.cfg":        []byte("a\n"),
-				"subdir/b.cfg": []byte("b\n"),
+			return body
+		}
+
+		Convey("Reading", func() {
+			So(os.Mkdir(path("subdir"), 0700), ShouldBeNil)
+			So(ioutil.WriteFile(path("a.cfg"), []byte("a\n"), 0600), ShouldBeNil)
+			So(ioutil.WriteFile(path("subdir", "b.cfg"), []byte("b\n"), 0600), ShouldBeNil)
+
+			Convey("Success", func() {
+				cfg, err := ReadConfigSet(tmp)
+				So(err, ShouldBeNil)
+				So(cfg, ShouldResemble, ConfigSet{
+					"a.cfg":        []byte("a\n"),
+					"subdir/b.cfg": []byte("b\n"),
+				})
+
+				So(cfg.Files(), ShouldResemble, []string{
+					"a.cfg",
+					"subdir/b.cfg",
+				})
 			})
 
-			So(cfg.Files(), ShouldResemble, []string{
-				"a.cfg",
-				"subdir/b.cfg",
+			Convey("Missing dir", func() {
+				_, err := ReadConfigSet(path("unknown"))
+				So(err, ShouldNotBeNil)
 			})
 		})
 
-		Convey("Missing dir", func() {
-			_, err := ReadConfigSet(path("unknown"))
-			So(err, ShouldNotBeNil)
+		Convey("Writing", func() {
+			cs := ConfigSet{
+				"a":     []byte("111"),
+				"dir/a": []byte("222"),
+			}
+			So(cs.Write(tmp), ShouldBeNil)
+			So(read("a"), ShouldResemble, []byte("111"))
+			So(read("dir/a"), ShouldResemble, []byte("222"))
 		})
 	})
 
