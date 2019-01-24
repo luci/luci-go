@@ -16,6 +16,24 @@
       "revId": "b37f0ff6f061572d7df50ed379ec5122deb78ea1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92a3f24e_b1811501",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-24T19:25:28Z",
+      "side": 1,
+      "message": "Done.\n\nLess lines but more nesting (because strpair is map[string][]string), idk if it\u0027s a net win.",
+      "parentUuid": "9c576803_5eb111b0",
+      "revId": "b37f0ff6f061572d7df50ed379ec5122deb78ea1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
