@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"go.chromium.org/luci/common/api/luci_config/config/v1"
@@ -78,6 +79,7 @@ func TestConfigSet(t *testing.T) {
 				"dir/a": []byte("222"),
 			}
 			changed, unchanged, err := cs.Write(tmp)
+			sort.Strings(changed)
 			So(changed, ShouldResemble, []string{"a", "dir/a"})
 			So(unchanged, ShouldHaveLength, 0)
 			So(err, ShouldBeNil)
