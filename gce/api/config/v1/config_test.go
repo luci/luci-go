@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,27 +29,15 @@ func TestValidateConfig(t *testing.T) {
 
 	Convey("validate", t, func() {
 		c := &validation.Context{Context: context.Background()}
-		k := stringset.New(0)
 
 		Convey("invalid", func() {
 			Convey("empty", func() {
 				cfg := &Config{}
-				cfg.Validate(c, k)
+				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "at least one disk is required")
 				So(errs, ShouldContainErr, "prefix is required")
 				So(errs, ShouldContainErr, "lifetime seconds must be positive")
-			})
-
-			Convey("unknown kind", func() {
-				k.Add("known")
-				cfg := &Config{
-					Kind:   "unknown",
-					Prefix: "prefix",
-				}
-				cfg.Validate(c, k)
-				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "unknown kind")
 			})
 
 			Convey("lifetime", func() {
@@ -58,7 +45,7 @@ func TestValidateConfig(t *testing.T) {
 					cfg := &Config{
 						Lifetime: &Config_Duration{},
 					}
-					cfg.Validate(c, k)
+					cfg.Validate(c)
 					errs := c.Finalize().(*validation.Error).Errors
 					So(errs, ShouldContainErr, "lifetime seconds must be positive")
 				})
@@ -69,7 +56,7 @@ func TestValidateConfig(t *testing.T) {
 							Seconds: -3600,
 						},
 					}
-					cfg.Validate(c, k)
+					cfg.Validate(c)
 					errs := c.Finalize().(*validation.Error).Errors
 					So(errs, ShouldContainErr, "lifetime seconds must be positive")
 				})
@@ -94,7 +81,7 @@ func TestValidateConfig(t *testing.T) {
 				},
 				Prefix: "prefix",
 			}
-			cfg.Validate(c, k)
+			cfg.Validate(c)
 			So(c.Finalize(), ShouldBeNil)
 		})
 	})

@@ -28,6 +28,73 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestDeref(t *testing.T) {
+	t.Parallel()
+
+	Convey("deref", t, func() {
+		Convey("empty", func() {
+			c := withInterface(gae.Use(context.Background()), memory.New(nil))
+			cfgs := &gce.Configs{}
+			So(deref(c, cfgs), ShouldBeNil)
+		})
+
+		Convey("missing", func() {
+			c := withInterface(gae.Use(context.Background()), memory.New(nil))
+			cfgs := &gce.Configs{
+				Vms: []*gce.Config{
+					{
+						Attributes: &gce.VM{
+							Metadata: []*gce.Metadata{
+								{
+									Metadata: &gce.Metadata_FromFile{
+										FromFile: "key:file",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			So(deref(c, cfgs), ShouldErrLike, "failed to fetch")
+		})
+
+		Convey("dereferences", func() {
+			c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
+				"services/gce": map[string]string{
+					"metadata/file": "val2",
+				},
+			}))
+			cfgs := &gce.Configs{
+				Vms: []*gce.Config{
+					{
+						Attributes: &gce.VM{
+							Metadata: []*gce.Metadata{
+								{
+									Metadata: &gce.Metadata_FromText{
+										FromText: "key:val1",
+									},
+								},
+								{
+									Metadata: &gce.Metadata_FromFile{
+										FromFile: "key:metadata/file",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			So(deref(c, cfgs), ShouldBeNil)
+			So(cfgs.Vms, ShouldHaveLength, 1)
+			So(cfgs.Vms[0].GetAttributes().Metadata, ShouldHaveLength, 2)
+			So(cfgs.Vms[0].Attributes.Metadata[0].Metadata, ShouldHaveSameTypeAs, &gce.Metadata_FromText{})
+			So(cfgs.Vms[0].Attributes.Metadata[0].Metadata.(*gce.Metadata_FromText).FromText, ShouldEqual, "key:val1")
+			So(cfgs.Vms[0].Attributes.Metadata[1].Metadata, ShouldHaveSameTypeAs, &gce.Metadata_FromText{})
+			So(cfgs.Vms[0].Attributes.Metadata[1].Metadata.(*gce.Metadata_FromText).FromText, ShouldEqual, "key:val2")
+		})
+	})
+}
+
 func TestFetch(t *testing.T) {
 	t.Parallel()
 
@@ -102,8 +169,20 @@ func TestMerge(t *testing.T) {
 				},
 			}
 			cfgs := &gce.Configs{}
-			merge(c, kinds, cfgs)
+			So(merge(c, kinds, cfgs), ShouldBeNil)
 			So(cfgs.GetVms(), ShouldHaveLength, 0)
+		})
+
+		Convey("unknown kind", func() {
+			kinds := &gce.Kinds{}
+			cfgs := &gce.Configs{
+				Vms: []*gce.Config{
+					{
+						Kind: "kind",
+					},
+				},
+			}
+			So(merge(c, kinds, cfgs), ShouldErrLike, "unknown kind")
 		})
 
 		Convey("merged", func() {
@@ -143,7 +222,7 @@ func TestMerge(t *testing.T) {
 					},
 				},
 			}
-			merge(c, kinds, cfgs)
+			So(merge(c, kinds, cfgs), ShouldBeNil)
 			So(cfgs.GetVms(), ShouldResemble, []*gce.Config{
 				{
 					Attributes: &gce.VM{
