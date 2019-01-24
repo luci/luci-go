@@ -16,6 +16,7 @@
 package base
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -29,7 +30,6 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/lucicfg"
@@ -37,7 +37,7 @@ import (
 
 // CommandLineError is used to tag errors related to command line arguments.
 //
-// Subcommand.PrintError() will print the usage string if it finds such error.
+// Subcommand.Done(..., err) will print the usage string if it finds such error.
 type CommandLineError struct {
 	error
 }
@@ -142,7 +142,7 @@ func (c *Subcommand) CheckArgs(args []string, minPosCount, maxPosCount int) bool
 	return true
 }
 
-// configService returns a wrapper around LUCI Config API.
+// ConfigService returns a wrapper around LUCI Config API.
 //
 // It is ready for making authenticated RPCs.
 func (c *Subcommand) ConfigService(ctx context.Context) (*config.Service, error) {
@@ -189,31 +189,8 @@ func (c *Subcommand) printError(err error) {
 		fmt.Fprintf(os.Stderr, "Bad command line: %s.\n\n", err)
 		c.Flags.Usage()
 	} else {
-		dumpErrs(err)
-	}
-}
-
-// dumpErrs recursively prints errors to stderr, recognizing some known error
-// types like MultiError.
-func dumpErrs(err error) {
-	if err == nil {
-		return
-	}
-
-	if err == auth.ErrLoginRequired {
-		fmt.Fprintf(os.Stderr, "Need to login first by running:\nlucicfg auth-login\n")
-		return
-	}
-
-	switch e := err.(type) {
-	case lucicfg.BacktracableError:
-		fmt.Fprintf(os.Stderr, "\n%s\n", e.Backtrace())
-	case errors.MultiError:
-		for _, inner := range e {
-			dumpErrs(inner)
-		}
-	default:
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Stderr.WriteString(strings.Join(CollectErrorMessages(err, nil), "\n"))
+		os.Stderr.WriteString("\n")
 	}
 }
 
@@ -227,17 +204,33 @@ func (c *Subcommand) writeJSONOutput(result interface{}, err error) error {
 		return err
 	}
 
-	// We don't want to create the file if we can't serialize. So serialize first.
-	var body struct {
-		Error  string      `json:"error,omitempty"`
-		Result interface{} `json:"result,omitempty"`
+	// Note: this may eventually grow to include position in the *.star source
+	// code.
+	type detailedError struct {
+		Message string `json:"message"`
 	}
+	var output struct {
+		Generator string          `json:"generator"`        // lucicfg version
+		Error     string          `json:"error,omitempty"`  // overall error
+		Errors    []detailedError `json:"errors,omitempty"` // detailed errors
+		Result    interface{}     `json:"result,omitempty"` // command-specific result
+	}
+	output.Generator = lucicfg.UserAgent
+	output.Result = result
 	if err != nil {
-		body.Error = err.Error()
+		output.Error = err.Error()
+		for _, msg := range CollectErrorMessages(err, nil) {
+			output.Errors = append(output.Errors, detailedError{Message: msg})
+		}
 	}
-	body.Result = result
-	out, e := json.MarshalIndent(&body, "", "  ")
-	if e != nil {
+
+	// We don't want to create the file if we can't serialize. So serialize first.
+	// Also don't escape '<', it looks extremely ugly.
+	buf := bytes.Buffer{}
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
+	if e := enc.Encode(&output); e != nil {
 		if err == nil {
 			err = e
 		} else {
@@ -246,7 +239,7 @@ func (c *Subcommand) writeJSONOutput(result interface{}, err error) error {
 		return err
 	}
 
-	if e = ioutil.WriteFile(c.jsonOutput, out, 0666); e != nil {
+	if e := ioutil.WriteFile(c.jsonOutput, buf.Bytes(), 0666); e != nil {
 		if err == nil {
 			err = e
 		} else {
