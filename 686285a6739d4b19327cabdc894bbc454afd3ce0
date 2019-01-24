@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e63187fb_b674e64a",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2019-01-24T20:46:18Z",
+      "side": 1,
+      "message": "I\u0027d remove these words, just link to the source of truth, in case it changes.",
+      "range": {
+        "startLine": 351,
+        "startChar": 36,
+        "endLine": 351,
+        "endChar": 45
+      },
+      "revId": "686285a6739d4b19327cabdc894bbc454afd3ce0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
