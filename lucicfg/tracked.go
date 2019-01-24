@@ -31,9 +31,16 @@ import (
 // tracked if it matches any of the positive globs and none of the negative
 // globs. If `patterns` is empty, no files are considered tracked.
 //
+// If the directory doesn't exist, returns empty slice.
+//
 // Returned file names are sorted, slash-separated and relative to `dir`.
 func FindTrackedFiles(dir string, patterns []string) ([]string, error) {
 	if len(patterns) == 0 {
+		return nil, nil
+	}
+
+	// Missing directory is considered empty.
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return nil, nil
 	}
 
