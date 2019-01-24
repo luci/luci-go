@@ -344,6 +344,9 @@ type Builder struct {
 	// Specifies that a recipe to run.
 	Recipe *Builder_Recipe `protobuf:"bytes,4,opt,name=recipe,proto3" json:"recipe,omitempty"`
 	// Swarming task priority.
+	// A numerical priority between 20 and 255.
+	// Lower means most important.
+	// See also https://chromium.googlesource.com/infra/luci/luci-py.git/+/master/appengine/swarming/doc/User-Guide.md#request
 	Priority uint32 `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty"`
 	// Maximum build execution time. Not to be confused with pending time.
 	ExecutionTimeoutSecs uint32 `protobuf:"varint,7,opt,name=execution_timeout_secs,json=executionTimeoutSecs,proto3" json:"execution_timeout_secs,omitempty"`
