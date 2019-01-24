@@ -77,9 +77,29 @@ func TestConfigSet(t *testing.T) {
 				"a":     []byte("111"),
 				"dir/a": []byte("222"),
 			}
-			So(cs.Write(tmp), ShouldBeNil)
+			changed, unchanged, err := cs.Write(tmp)
+			So(changed, ShouldResemble, []string{"a", "dir/a"})
+			So(unchanged, ShouldHaveLength, 0)
+			So(err, ShouldBeNil)
+
 			So(read("a"), ShouldResemble, []byte("111"))
 			So(read("dir/a"), ShouldResemble, []byte("222"))
+
+			cs["a"] = []byte("333")
+			changed, unchanged, err = cs.Write(tmp)
+			So(changed, ShouldResemble, []string{"a"})
+			So(unchanged, ShouldResemble, []string{"dir/a"})
+			So(err, ShouldBeNil)
+
+			So(read("a"), ShouldResemble, []byte("333"))
+		})
+	})
+
+	Convey("Digests", t, func() {
+		cs := ConfigSet{"a": nil, "b": []byte("123")}
+		So(cs.Digests(), ShouldResemble, map[string]string{
+			"a": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"b": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
 		})
 	})
 
