@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d0a2925c_a27904a3",
+        "filename": "common/gcloud/iam/serviceaccounts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e9b3293_406a609b",
+      "range": {
+        "startLine": 42,
+        "startChar": 55,
+        "endLine": 42,
+        "endChar": 87
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01fd861f_56813d0d",
         "filename": "common/gcloud/iam/serviceaccounts.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84508bc2_22e58256",
+        "filename": "common/gcloud/iam/serviceaccounts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01fd861f_56813d0d",
+      "range": {
+        "startLine": 52,
+        "startChar": 58,
+        "endLine": 52,
+        "endChar": 110
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b80e7c01_4836d58f",
+        "filename": "common/gcloud/iam/serviceaccounts_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "906dc96f_8dbc41bd",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ecf2bbc7_bbce38c4",
         "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
         "patchSetId": 5
@@ -82,6 +154,30 @@
       "writtenOn": "2019-01-22T19:24:55Z",
       "side": 1,
       "message": "nit: just in general this is not correct when working with UTF8, since it can cut mid-rune. Here it is fine, since JSON blob is ASCII already.",
+      "range": {
+        "startLine": 52,
+        "startChar": 16,
+        "endLine": 52,
+        "endChar": 58
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "77ac4a0b_2454a76b",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ecf2bbc7_bbce38c4",
       "range": {
         "startLine": 52,
         "startChar": 16,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "5251d9b7_fc2aeaf4",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Used to make sense before refactoring, removing it.",
+      "parentUuid": "7affff6b_4e007921",
+      "range": {
+        "startLine": 76,
+        "startChar": 143,
+        "endLine": 76,
+        "endChar": 147
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c9fcde39_c18b8f19",
         "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
         "patchSetId": 5
@@ -137,6 +257,30 @@
       "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23f07559_94e1d1af",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9fcde39_c18b8f19",
+      "range": {
+        "startLine": 77,
+        "startChar": 43,
+        "endLine": 77,
+        "endChar": 56
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "8640981d_05728055",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/create.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1c849829_b09c1096",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 2
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c1c3491_c590fb7c",
         "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
         "patchSetId": 5
@@ -183,6 +351,30 @@
       "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9bf43f8_16ebd2cb",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c1c3491_c590fb7c",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 1
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "c021a1fd_bfe435b4",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "426ed1c8_a7df351e",
+      "range": {
+        "startLine": 47,
+        "startChar": 23,
+        "endLine": 47,
+        "endChar": 42
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35dbf917_127a8cf3",
         "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
         "patchSetId": 5
@@ -229,6 +445,30 @@
       "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6193f3c8_4bcb7368",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Added CreationTimestamp",
+      "parentUuid": "35dbf917_127a8cf3",
+      "range": {
+        "startLine": 72,
+        "startChar": 5,
+        "endLine": 72,
+        "endChar": 19
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -255,6 +495,30 @@
     },
     {
       "key": {
+        "uuid": "d2927844_157a0c9b",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1aa1fee2_40e6feb2",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 2
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f90dde31_6f301550",
         "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
         "patchSetId": 5
@@ -275,6 +539,30 @@
       "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2204faae_460acbd0",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Update the code.\n\nIt is not intending to create the service account if \"CreationTimestamp\" is 0\nIf the service account already exists, it is \"imported\"\nBroke up the transaction towards a more optimistic solution.",
+      "parentUuid": "f90dde31_6f301550",
+      "range": {
+        "startLine": 117,
+        "startChar": 36,
+        "endLine": 117,
+        "endChar": 47
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -324,6 +612,30 @@
     },
     {
       "key": {
+        "uuid": "83e98c36_297d7ed8",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Refactored the whole function. PTAL.",
+      "parentUuid": "a041bf98_6a3734f6",
+      "range": {
+        "startLine": 126,
+        "startChar": 3,
+        "endLine": 126,
+        "endChar": 27
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5ba4a884_3cced18e",
         "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
         "patchSetId": 5
@@ -335,6 +647,30 @@
       "writtenOn": "2019-01-22T19:24:55Z",
       "side": 1,
       "message": "Holding transaction while calling an external service is an antipattern. Under non-trivial QPS this will cause many requests entering the transaction body, all issuing CreateAccount RPC call, and then colliding trying to save the entity.\n\nNon trivial QPS is quite possible here, e.g. when someone makes a config change that enables a ton of LUCI Scheduler jobs in a new project.\n\nAlso, entering a transaction just to check that the entry exists is slow.\n\nA better approach would be:\n\n1. Do s.Get() outside the transaction.\n2. If missing, do CreateAccount outside the transaction. Expect that the account may already exists.\n3. On success OR on \"already exists\", transactionally create the entity (or just overwrite it, it is static).\n\nAt very least, check with Get() outside the transaction first.",
+      "range": {
+        "startLine": 131,
+        "startChar": 4,
+        "endLine": 131,
+        "endChar": 74
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e55aa148_cbf34e08",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Refactored the whole function, PTAL",
+      "parentUuid": "5ba4a884_3cced18e",
       "range": {
         "startLine": 131,
         "startChar": 4,
@@ -364,6 +700,24 @@
     },
     {
       "key": {
+        "uuid": "7d925f8d_d951af2a",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3509b7b_56d5b27d",
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2be7d77d_b35294a3",
         "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
         "patchSetId": 5
@@ -387,6 +741,30 @@
     },
     {
       "key": {
+        "uuid": "ddf076c2_41056455",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2be7d77d_b35294a3",
+      "range": {
+        "startLine": 147,
+        "startChar": 2,
+        "endLine": 147,
+        "endChar": 65
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bfa0a483_671cdbc8",
         "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
         "patchSetId": 5
@@ -401,6 +779,24 @@
       "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a068e6d0_02f05148",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bfa0a483_671cdbc8",
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -427,6 +823,30 @@
     },
     {
       "key": {
+        "uuid": "b695c126_d7106467",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a68e3a39_970f703c",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 29,
+        "endChar": 98
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8de40ccb_0e65200b",
         "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
         "patchSetId": 5
@@ -438,6 +858,30 @@
       "writtenOn": "2019-01-22T19:24:55Z",
       "side": 1,
       "message": "I don\u0027t think this constant is helpful, considering that is it pretty universal to use @ for this.",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fd91038_8dd783ab",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Do you think there is a downside to having it though?",
+      "parentUuid": "8de40ccb_0e65200b",
       "range": {
         "startLine": 33,
         "startChar": 1,
@@ -473,6 +917,30 @@
     },
     {
       "key": {
+        "uuid": "4bdab5fd_0ecf2e27",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "It is intentionally an array to \"self-document\" the face that digest has a constant size and that size is 8 bytes.",
+      "parentUuid": "f2a60265_d97a8590",
+      "range": {
+        "startLine": 40,
+        "startChar": 37,
+        "endLine": 40,
+        "endChar": 44
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "47b0fc07_00cfa9c9",
         "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
         "patchSetId": 5
@@ -484,6 +952,30 @@
       "writtenOn": "2019-01-22T19:24:55Z",
       "side": 1,
       "message": "base64.RawStdEncoding.EncodeToString",
+      "range": {
+        "startLine": 42,
+        "startChar": 19,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb6faaaf_e51ef2f2",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Part of self-documentation, such that padding is explicitly defined.",
+      "parentUuid": "47b0fc07_00cfa9c9",
       "range": {
         "startLine": 42,
         "startChar": 19,
@@ -588,6 +1080,30 @@
     },
     {
       "key": {
+        "uuid": "833258ce_33a75896",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f25ffa53_28c8c53f",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 69,
+        "endChar": 127
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "145f0c18_360137b0",
         "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
         "patchSetId": 5
@@ -608,6 +1124,30 @@
       "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b989eaa_ffeeeaa2",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "145f0c18_360137b0",
+      "range": {
+        "startLine": 86,
+        "startChar": 17,
+        "endLine": 86,
+        "endChar": 59
+      },
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -645,6 +1185,48 @@
       "writtenOn": "2019-01-22T19:24:55Z",
       "side": 1,
       "message": "This looks very weird. Why can\u0027t we use single \u0027-\u0027? Maximizing length of the email for no good reason will only make it more cumbersome to work with when adding it various external ACLs.",
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbad30c0_725cb228",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09e7ee9d_84a77b32",
+      "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc922ea7_06683ba7",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/utils_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-24T02:31:48Z",
+      "side": 1,
+      "message": "Base32 / Base36 is going to include UPPERCASE which is invalid according to the API regex.\n\nIs the issue the length of the random suffix or the fact that it takes away space for the project part?",
+      "parentUuid": "68c7236f_0c452f87",
+      "range": {
+        "startLine": 27,
+        "startChar": 47,
+        "endLine": 27,
+        "endChar": 63
+      },
       "revId": "d37aa2a64e46b133499bb31a0260d76f6a9b6818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
