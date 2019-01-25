@@ -61,8 +61,11 @@ func (p *implementation) clEmailAndProjectNoACLs(c context.Context, host string,
 		return nil, err
 	}
 	changeInfo, err := client.GetChange(c, &gerritpb.GetChangeRequest{
-		Number:  changeNumber,
-		Options: []gerritpb.QueryOption{gerritpb.QueryOption_DETAILED_ACCOUNTS},
+		Number: changeNumber,
+		Options: []gerritpb.QueryOption{
+			gerritpb.QueryOption_DETAILED_ACCOUNTS,
+			gerritpb.QueryOption_SKIP_MERGEABLE,
+		},
 	})
 	// We can't cache outcome of not found CL because
 	//  * Milo may not at first have access to a CL, say while CL was hidden or
