@@ -42,6 +42,48 @@
     },
     {
       "key": {
+        "uuid": "7cc8ced2_dfd56e04",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-25T16:54:47Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "64165a5e_2170335d",
+      "range": {
+        "startLine": 211,
+        "startChar": 44,
+        "endLine": 211,
+        "endChar": 60
+      },
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a1757fd_e8aa586d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-25T16:54:47Z",
+      "side": 1,
+      "message": "This is a good idea and Nodir previously suggested the same thing here:\n\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1355340/8/milo/frontend/view_build.go#303\n\nUnfortunately I came to the conclusion that the datastore library used to materialize these project objects doesn\u0027t support materializing to a pointer to a struct. I hacked around to see if it would work, and came to the conclusion it wasn\u0027t supported per the blurb here:\n\nhttps://chromium.googlesource.com/infra/luci/gae/+/master/service/datastore/pls.go#36",
+      "parentUuid": "1e52ac41_5701e580",
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e49f59d1_faf3168b",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "20ba7f28_da0d4d63",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-25T16:54:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e49f59d1_faf3168b",
+      "range": {
+        "startLine": 216,
+        "startChar": 11,
+        "endLine": 216,
+        "endChar": 14
+      },
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "89140af6_961551de",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -79,6 +145,24 @@
       "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd9bb04b_791fafbd",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-25T16:54:47Z",
+      "side": 1,
+      "message": "Good idea - done.",
+      "parentUuid": "89140af6_961551de",
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +183,24 @@
     },
     {
       "key": {
+        "uuid": "04078f34_b47c0d36",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-25T16:54:47Z",
+      "side": 1,
+      "message": "Removed due to suggestion around returning earlier straight from MakeFeedbackLink.\n\nDid add some annotation of errors inside newly named MakeBuildBugLink.\n\nDone.",
+      "parentUuid": "5113d875_f11bbb44",
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9182778_e8363c12",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 2
@@ -110,6 +212,47 @@
       "writtenOn": "2019-01-25T00:31:39Z",
       "side": 1,
       "message": "nit:  I like using\n{{ with .BuildPage.BuildFeedbackLink }}\n  .....{{ . }}....\n{{ end }}",
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ded1ac79_ba015023",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-25T16:54:47Z",
+      "side": 1,
+      "message": "I like it - Done.",
+      "parentUuid": "e9182778_e8363c12",
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b379fc0e_fcacb3bc",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-25T16:54:47Z",
+      "side": 1,
+      "message": "Would you prefer this to target\u003d\"_blank\" to open in a new tab?",
+      "range": {
+        "startLine": 85,
+        "startChar": 8,
+        "endLine": 85,
+        "endChar": 53
+      },
       "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
