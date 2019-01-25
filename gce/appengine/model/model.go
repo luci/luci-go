@@ -38,7 +38,11 @@ type Config struct {
 	// ID is the unique identifier for this config.
 	ID string `gae:"$id"`
 	// Config is the config.Config representation of this entity.
-	Config config.Config `gae:"config"`
+	// Indexing is not useful here since this field contains textproto.
+	// Additionally, indexed string fields are limited to 1500 bytes.
+	// https://cloud.google.com/datastore/docs/concepts/limits.
+	// noindex is not respected here. See config.Config.ToProperty.
+	Config config.Config `gae:"config,noindex"`
 }
 
 // ProjectKind is a project entity's kind in the datastore.
@@ -76,7 +80,9 @@ type VM struct {
 	// ID is the unique identifier for this VM.
 	ID string `gae:"$id"`
 	// Attributes is the config.VM describing the GCE instance to create.
-	Attributes config.VM `gae:"attributes"`
+	// Indexing is not useful here since this field contains textproto.
+	// noindex is not respected here. See config.VM.ToProperty.
+	Attributes config.VM `gae:"attributes,noindex"`
 	// Config is the ID of the config this VM was created from.
 	Config string `gae:"config"`
 	// Deadline is the Unix time when the GCE instance should be deleted.
@@ -197,6 +203,7 @@ func (vm *VM) GetInstance() *compute.Instance {
 		Disks:             vm.getDisks(),
 		MachineType:       vm.Attributes.GetMachineType(),
 		Metadata:          vm.getMetadata(),
+		MinCpuPlatform:    vm.Attributes.GetMinCpuPlatform(),
 		NetworkInterfaces: vm.getNetworkInterfaces(),
 		ServiceAccounts:   vm.getServiceAccounts(),
 	}

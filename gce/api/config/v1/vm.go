@@ -35,7 +35,8 @@ func (v *VM) FromProperty(p datastore.Property) error {
 // ToProperty implements datastore.PropertyConverter.
 func (v *VM) ToProperty() (datastore.Property, error) {
 	p := datastore.Property{}
-	return p, p.SetValue(proto.MarshalTextString(v), false)
+	// noindex is not respected in the tags in the model.
+	return p, p.SetValue(proto.MarshalTextString(v), datastore.NoIndex)
 }
 
 // Validate validates this VM description.
