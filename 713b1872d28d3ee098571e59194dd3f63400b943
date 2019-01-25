@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf32c34e_f1b68b8a",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-25T20:37:52Z",
+      "side": 1,
+      "message": "I think we will need a way to convey \"wasn\u0027t specified\" state as well, otherwise when we will be flipping default from opt-in to opt-out, we\u0027ll have to force reload all configs (there\u0027s no mechanism to do this).\n\nInstead I think we should keep \u0027nil\u0027 as indicator that the config didn\u0027t specify security options. And deeper in the stack (when actually interpreting the setting) pick the correct default.\n\nAgain, I think it all would have been simpler if we had ternary \"YES, NO, DEFAULT\" right in the proto instead of a bool.",
+      "range": {
+        "startLine": 335,
+        "startChar": 3,
+        "endLine": 335,
+        "endChar": 41
+      },
+      "revId": "713b1872d28d3ee098571e59194dd3f63400b943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d64cd910_1330daf0",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 910,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-25T20:37:52Z",
+      "side": 1,
+      "message": "Need update job.UseProjectScopedServiceAccount here too. The code path above is only for _new_ jobs. Code block here is for when there\u0027s a config change for an existing job. I think that\u0027s the reason why the stuff doesn\u0027t work end-to-end.",
+      "range": {
+        "startLine": 902,
+        "startChar": 1,
+        "endLine": 910,
+        "endChar": 43
+      },
+      "revId": "713b1872d28d3ee098571e59194dd3f63400b943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95918140_18c29ce4",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-25T20:37:52Z",
+      "side": 1,
+      "message": "This need a change to compare UseProjectScopedServiceAccount too, otherwise changes to it won\u0027t trigger entity update. (That\u0027s another reason why the stuff doesn\u0027t work end-to-end).",
+      "range": {
+        "startLine": 233,
+        "startChar": 14,
+        "endLine": 233,
+        "endChar": 31
+      },
+      "revId": "713b1872d28d3ee098571e59194dd3f63400b943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
