@@ -79,18 +79,22 @@ message VM {
   // The metadata to attach to this VM.
   repeated Metadata metadata = 3;
 
+  // The minimum CPU platform to use for this VM.
+  // https://cloud.google.com/compute/docs/instances/specify-min-cpu-platform.
+  string min_cpu_platform = 4;
+
   // The network interfaces to configure for this VM.
-  repeated NetworkInterface network_interface = 4;
+  repeated NetworkInterface network_interface = 5;
 
   // The name of a GCP project to create this VM in.
-  string project = 5;
+  string project = 6;
 
   // The service accounts to make available to this VM.
-  repeated ServiceAccount service_account = 6;
+  repeated ServiceAccount service_account = 7;
 
   // The name of a zone to create this VM in.
   // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
-  string zone = 7;
+  string zone = 8;
 }
 
 // A kind of VM.

@@ -33,7 +33,8 @@ func (cfg *Config) FromProperty(p datastore.Property) error {
 // ToProperty implements datastore.PropertyConverter.
 func (cfg *Config) ToProperty() (datastore.Property, error) {
 	p := datastore.Property{}
-	return p, p.SetValue(proto.MarshalTextString(cfg), false)
+	// noindex is not respected in the tags in the model.
+	return p, p.SetValue(proto.MarshalTextString(cfg), datastore.NoIndex)
 }
 
 // Validate validates this config. Kind must already be applied.
