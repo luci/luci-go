@@ -64,6 +64,7 @@ core.builder(
 #   name: "b1"
 #   acl_sets: "b1"
 #   swarming: <
+#     hostname: "chromium-swarm.appspot.com"
 #     builders: <
 #       name: "builder-builder"
 #       swarming_host: "chromium-swarm.appspot.com"
@@ -79,6 +80,7 @@ core.builder(
 #   name: "b2"
 #   acl_sets: "b2"
 #   swarming: <
+#     hostname: "chromium-swarm.appspot.com"
 #     builders: <
 #       name: "builder-builder"
 #       swarming_host: "chromium-swarm.appspot.com"

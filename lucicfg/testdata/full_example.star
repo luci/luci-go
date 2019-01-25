@@ -156,6 +156,7 @@ core.builder(
 #   name: "ci"
 #   acl_sets: "ci"
 #   swarming: <
+#     hostname: "chromium-swarm.appspot.com"
 #     builders: <
 #       name: "cron builder"
 #       swarming_host: "chromium-swarm.appspot.com"
@@ -215,6 +216,7 @@ core.builder(
 #   name: "try"
 #   acl_sets: "try"
 #   swarming: <
+#     hostname: "chromium-swarm.appspot.com"
 #     builders: <
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"

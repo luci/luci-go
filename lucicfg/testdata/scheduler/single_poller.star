@@ -21,6 +21,7 @@ core.gitiles_poller(
 #   name: "ci"
 #   acl_sets: "ci"
 #   swarming: <
+#     hostname: "chromium-swarm.appspot.com"
 #   >
 # >
 # acl_sets: <

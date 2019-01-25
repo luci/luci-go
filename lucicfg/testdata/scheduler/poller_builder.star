@@ -32,6 +32,7 @@ core.builder(
 #   name: "ci"
 #   acl_sets: "ci"
 #   swarming: <
+#     hostname: "chromium-swarm.appspot.com"
 #     builders: <
 #       name: "builder"
 #       swarming_host: "chromium-swarm.appspot.com"

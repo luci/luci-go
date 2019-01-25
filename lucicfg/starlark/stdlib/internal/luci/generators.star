@@ -197,6 +197,7 @@ def gen_buildbucket_cfg(ctx):
         name = bucket.props.name,
         acl_sets = [bucket.props.name],
         swarming = buildbucket_pb.Swarming(
+            hostname = swarming.host,
             builders = _buildbucket_builders(bucket, swarming.host),
         ),
     ))
