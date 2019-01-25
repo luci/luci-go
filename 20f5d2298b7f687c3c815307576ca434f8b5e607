@@ -1,0 +1,118 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e52ac41_5701e580",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-25T00:31:39Z",
+      "side": 1,
+      "message": "BuildBugTemplate should probably be a pointer, so that this could be done as merely \"project.BuildBugTemplate \u003d\u003d nil\"",
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64165a5e_2170335d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-25T00:31:39Z",
+      "side": 1,
+      "message": "Some places use \"Bug\" and some places use \"Feedback\".  I think changing all of the instances to say \"bug\" instead of \"feedback\" makes more sense.\n\n\"Feedback\" is already used for the other feedback link, as in feedback for the Milo app.",
+      "range": {
+        "startLine": 211,
+        "startChar": 44,
+        "endLine": 211,
+        "endChar": 60
+      },
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e49f59d1_faf3168b",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-25T00:31:39Z",
+      "side": 1,
+      "message": "Not used, probably should return errors.",
+      "range": {
+        "startLine": 216,
+        "startChar": 11,
+        "endLine": 216,
+        "endChar": 14
+      },
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89140af6_961551de",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-25T00:31:39Z",
+      "side": 1,
+      "message": "nit: I\u0027d probably just return MakeFeedbackLink(...) here",
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5113d875_f11bbb44",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-25T00:31:39Z",
+      "side": 1,
+      "message": "The logging isn\u0027t required since it gets logged at the top level if you return the error.\n\nInstead you can annotate it\n\nreturn errors.Annotate(err, \"Unable to....\").Err()",
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9182778_e8363c12",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-25T00:31:39Z",
+      "side": 1,
+      "message": "nit:  I like using\n{{ with .BuildPage.BuildFeedbackLink }}\n  .....{{ . }}....\n{{ end }}",
+      "revId": "20f5d2298b7f687c3c815307576ca434f8b5e607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
