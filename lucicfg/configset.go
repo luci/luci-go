@@ -104,15 +104,13 @@ func ReadConfigSet(dir string) (ConfigSet, error) {
 	return configs, nil
 }
 
-// Write updates files on disk to match the config set.
+// Compare compares files on disk to what's in the config set.
 //
-// Returns a list of updated files and a list of files that are already
-// up-to-date.
+// Returns names of files that are different ('changed') and same ('unchanged').
 //
-// Creates missing directories. Not atomic. All files have mode 0666.
-func (cs ConfigSet) Write(dir string) (changed, unchanged []string, err error) {
-	// First pass: populate 'changed' and 'unchanged', so we have a valid result
-	// even when failing midway through writes.
+// Files on disk that are not in the config set are totally ignored. Files that
+// cannot be read are considered outdated.
+func (cs ConfigSet) Compare(dir string) (changed, unchanged []string) {
 	for _, name := range cs.Files() {
 		path := filepath.Join(dir, filepath.FromSlash(name))
 		if bytes.Equal(fileDigest(path), blobDigest(cs[name])) {
@@ -121,6 +119,19 @@ func (cs ConfigSet) Write(dir string) (changed, unchanged []string, err error) {
 			changed = append(changed, name)
 		}
 	}
+	return
+}
+
+// Write updates files on disk to match the config set.
+//
+// Returns a list of updated files and a list of files that are already
+// up-to-date, same as Compare.
+//
+// Creates missing directories. Not atomic. All files have mode 0666.
+func (cs ConfigSet) Write(dir string) (changed, unchanged []string, err error) {
+	// First pass: populate 'changed' and 'unchanged', so we have a valid result
+	// even when failing midway through writes.
+	changed, unchanged = cs.Compare(dir)
 
 	// Second pass: update changed files.
 	for _, name := range changed {
