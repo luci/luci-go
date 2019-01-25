@@ -173,6 +173,9 @@ type Definition struct {
 	// TriggeredJobIDs is a list of jobIDs which this job triggers.
 	// It's set only for triggering jobs.
 	TriggeredJobIDs []string
+
+	// SecurityOptions define the job's security feature configuration
+	SecurityOptions messages.SecurityOptions
 }
 
 // New returns implementation of Catalog.
@@ -327,6 +330,10 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
 		}
+		securityOptions := messages.SecurityOptions{}
+		if cfg.SecurityOptions != nil {
+			securityOptions = *cfg.SecurityOptions
+		}
 		out = append(out, Definition{
 			JobID:            fmt.Sprintf("%s/%s", projectID, job.Id),
 			Acls:             *acls,
@@ -336,7 +343,11 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			Schedule:         schedule,
 			Task:             packed,
 			TriggeringPolicy: marshalTriggeringPolicy(job.TriggeringPolicy),
+			SecurityOptions:  securityOptions,
 		})
+
+		definition := out[len(out)-1]
+		logging.Infof(c, "Constructed new job definition: %s, security_option: %b", definition.JobID, definition.SecurityOptions.ProjectScopedServiceAccounts)
 	}
 
 	// Triggering jobs.
