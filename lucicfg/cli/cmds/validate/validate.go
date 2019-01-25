@@ -19,10 +19,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucicfg"
 
 	"go.chromium.org/luci/lucicfg/cli/base"
@@ -72,6 +74,17 @@ type validateRun struct {
 	base.Subcommand
 }
 
+type validateResult struct {
+	*lucicfg.ValidationResult
+
+	// Stale is a list of config files on disk that are out-of-date compared to
+	// what is produced by the starlark script.
+	//
+	// When non-empty, means invocation of "lucicfg generate ..." will either
+	// update or delete all these files.
+	Stale []string `json:"stale,omitempty"`
+}
+
 func (vr *validateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !vr.CheckArgs(args, 0, 1) {
 		return 1
@@ -114,7 +127,7 @@ func (vr *validateRun) Run(a subcommands.Application, args []string, env subcomm
 //
 // Also verifies -config-dir is NOT used, since it is redundant: the directory
 // is passed through the positional arguments.
-func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*lucicfg.ValidationResult, error) {
+func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*validateResult, error) {
 	switch {
 	case vr.Meta.ConfigServiceHost == "":
 		return nil, base.MissingFlagError("-config-service-host")
@@ -127,12 +140,54 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*lucic
 	if err != nil {
 		return nil, err
 	}
-	return base.ValidateConfigs(ctx, configSet, &vr.Meta, vr.ConfigService)
+	res, err := base.ValidateConfigs(ctx, configSet, &vr.Meta, vr.ConfigService)
+	return &validateResult{ValidationResult: res}, err
 }
 
 // validateGenerated executes Starlark script, compares the result to whatever
 // is on disk (failing the validation if there's a difference), and then sends
-// the config set
-func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*lucicfg.ValidationResult, error) {
-	return nil, fmt.Errorf("not implemented yet")
+// the config set to LUCI Config service for validation.
+func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*validateResult, error) {
+	meta := vr.DefaultMeta()
+	configSet, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &validateResult{}
+
+	if meta.ConfigDir != "-" {
+		// Find files that are present on disk, but no longer in the config set.
+		tracked, err := lucicfg.FindTrackedFiles(meta.ConfigDir, meta.TrackedFiles)
+		if err != nil {
+			return result, err
+		}
+		for _, f := range tracked {
+			if _, present := configSet[f]; !present {
+				result.Stale = append(result.Stale, f)
+			}
+		}
+		// Find files that are newer in the config set or do not exist on disk.
+		changed, _ := configSet.Compare(meta.ConfigDir)
+		result.Stale = append(result.Stale, changed...)
+	}
+
+	if len(result.Stale) != 0 {
+		return result, fmt.Errorf(
+			"following files on disk are out-of-date: %s.\n"+
+				"  Run `lucicfg generate %q` to update them",
+			strings.Join(result.Stale, ", "), path)
+	}
+
+	// If config set is not set, warn, but carry on. It is OK to use 'validate'
+	// to check for diff in configs that do not belong to any config set.
+	switch {
+	case meta.ConfigServiceHost == "":
+		logging.Warningf(ctx, "Config service host is not set, skipping validation against LUCI Config service")
+	case meta.ConfigSet == "":
+		logging.Warningf(ctx, "Config set name is not set, skipping validation against LUCI Config service")
+	default:
+		result.ValidationResult, err = base.ValidateConfigs(ctx, configSet, &meta, vr.ConfigService)
+	}
+	return result, err
 }
