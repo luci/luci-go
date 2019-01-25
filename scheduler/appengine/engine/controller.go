@@ -201,9 +201,14 @@ func (ctl *taskController) PrepareTopic(ctx context.Context, publisher string) (
 
 // GetClient is part of task.Controller interface
 func (ctl *taskController) GetClient(ctx context.Context, opts ...auth.RPCOption) (*http.Client, error) {
-	// TODO(vadimsh): Use per-project service accounts, not a global service
-	// account.
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, opts...)
+	authType := auth.AsSelf
+	if ctl.saved.UseProjectScopedServiceAccount {
+		opts = append(opts, auth.WithProject(ctl.saved.GetProjectID()))
+		authType = auth.AsProjectScoped
+	}
+	logging.Infof(ctx, "GetClient, opts: %v, authType: %d", opts, authType)
+
+	t, err := auth.GetRPCTransport(ctx, authType, opts...)
 	if err != nil {
 		return nil, err
 	}
