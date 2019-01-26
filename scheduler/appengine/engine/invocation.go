@@ -240,6 +240,9 @@ type Invocation struct {
 	//
 	// It is incremented on each change to the entity.
 	MutationsCount int64 `gae:",noindex"`
+
+	// ScopedServiceAccounts is used to indicate the configuration of project scoped service accounts.
+	ScopedServiceAccounts int `gae:",noindex"`
 }
 
 // isEqual returns true iff 'e' is equal to 'other'
@@ -264,7 +267,14 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.RetryCount == other.RetryCount &&
 		e.Status == other.Status &&
 		e.ViewURL == other.ViewURL &&
-		bytes.Equal(e.TaskData, other.TaskData))
+		bytes.Equal(e.TaskData, other.TaskData) &&
+		e.ScopedServiceAccounts == other.ScopedServiceAccounts)
+}
+
+// GetProjectID parses the ProjectID from the JobID and returns it.
+func (e *Invocation) GetProjectID() string {
+	parts := strings.Split(e.JobID, "/")
+	return parts[0]
 }
 
 // debugLog appends a line to DebugLog field.
@@ -394,7 +404,7 @@ func (e *Invocation) reportOverrunMetrics(c context.Context) {
 // Should be called after transaction to save this invocation is completed.
 func (e *Invocation) reportCompletionMetrics(c context.Context) {
 	if !e.Status.Final() || e.Finished.IsZero() {
-		panic(fmt.Errorf("reportCompletionMetrics on incomplete invocation: %q", e))
+		panic(fmt.Errorf("reportCompletionMetrics on incomplete invocation: %v", e))
 	}
 	duration := e.Finished.Sub(e.Started)
 	metricInvocationsDurations.Add(c, duration.Seconds(), e.JobID, string(e.Status))
