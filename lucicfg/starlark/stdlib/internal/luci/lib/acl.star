@@ -205,7 +205,6 @@ def _sort_key(e):
 ################################################################################
 
 
-# Public API exposed to end-users and to other LUCI modules.
 acl = struct(
     entry = _entry,
 
@@ -246,7 +245,6 @@ acl = struct(
 )
 
 
-# Additional internal API used by other LUCI modules.
 aclimpl = struct(
     validate_acls = _validate_acls,
     normalize_acls = _normalize_acls,
