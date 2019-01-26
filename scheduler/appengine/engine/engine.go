@@ -882,15 +882,17 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 			if len(chunks) != 2 {
 				return fmt.Errorf("unexpected jobID format: %s", def.JobID)
 			}
+
 			*job = Job{
-				JobID:               def.JobID,
-				ProjectID:           chunks[0],
-				Flavor:              def.Flavor,
-				Enabled:             false, // to trigger 'if wasDisabled' below
-				Schedule:            def.Schedule,
-				Task:                def.Task,
-				TriggeringPolicyRaw: def.TriggeringPolicy,
-				TriggeredJobIDs:     def.TriggeredJobIDs,
+				JobID:                 def.JobID,
+				ProjectID:             chunks[0],
+				Flavor:                def.Flavor,
+				Enabled:               false, // to trigger 'if wasDisabled' below
+				Schedule:              def.Schedule,
+				Task:                  def.Task,
+				TriggeringPolicyRaw:   def.TriggeringPolicy,
+				TriggeredJobIDs:       def.TriggeredJobIDs,
+				ScopedServiceAccounts: def.ScopedServiceAccounts,
 			}
 		}
 		wasDisabled := !job.Enabled
@@ -907,6 +909,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		job.Task = def.Task
 		job.TriggeringPolicyRaw = def.TriggeringPolicy
 		job.TriggeredJobIDs = def.TriggeredJobIDs
+		job.ScopedServiceAccounts = def.ScopedServiceAccounts
 
 		// If job triggering policy has changed, schedule a triage to potentially
 		// act based on the new policy.
@@ -1043,12 +1046,13 @@ func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req task.Re
 	var inv *Invocation
 	err := runIsolatedTxn(c, func(c context.Context) (err error) {
 		inv, err = e.initInvocation(c, job.JobID, &Invocation{
-			Started:         clock.Now(c).UTC(),
-			Revision:        job.Revision,
-			RevisionURL:     job.RevisionURL,
-			Task:            job.Task,
-			TriggeredJobIDs: job.TriggeredJobIDs,
-			Status:          task.StatusStarting,
+			Started:               clock.Now(c).UTC(),
+			Revision:              job.Revision,
+			RevisionURL:           job.RevisionURL,
+			Task:                  job.Task,
+			TriggeredJobIDs:       job.TriggeredJobIDs,
+			Status:                task.StatusStarting,
+			ScopedServiceAccounts: job.ScopedServiceAccounts,
 		}, &req)
 		if err != nil {
 			return
