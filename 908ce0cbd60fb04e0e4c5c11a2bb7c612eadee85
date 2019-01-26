@@ -116,6 +116,30 @@
       "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcb1d453_2ed3cb70",
+        "filename": "lucicfg/starlark/stdlib/internal/time.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-26T06:17:19Z",
+      "side": 1,
+      "message": "no, i prefer no week_start parameter. it is just complexity. my point was to make semantics week-start-agnostic, not make week-start configurable.\n\nwhat this CL has now is better than with the param, and is extensible to my proposal if someone complains",
+      "parentUuid": "c9df7ac1_be77f2c8",
+      "range": {
+        "startLine": 84,
+        "startChar": 9,
+        "endLine": 84,
+        "endChar": 17
+      },
+      "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
