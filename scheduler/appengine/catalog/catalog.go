@@ -76,6 +76,17 @@ const (
 	defaultTriggerSchedule = "with 30s interval"
 )
 
+const (
+	// ScopedServiceAccountsEnabled indicates that project scoped service accounts is enabled.
+	ScopedServiceAccountsEnabled = iota
+
+	// ScopedServiceAccountsDisabled indicates that project scoped service accounts is disabled.
+	ScopedServiceAccountsDisabled = iota
+
+	// ScopedServiceAccountsDefault indicates that project scoped service accounts is not set.
+	ScopedServiceAccountsDefault = iota
+)
+
 // Catalog knows how to enumerate all scheduler configs across all projects.
 // Methods return errors.Transient on non-fatal errors. Any other error means
 // that retry won't help.
@@ -173,6 +184,9 @@ type Definition struct {
 	// TriggeredJobIDs is a list of jobIDs which this job triggers.
 	// It's set only for triggering jobs.
 	TriggeredJobIDs []string
+
+	// ScopedServiceAccounts indicates the configuration state of project scoped service accounts.
+	ScopedServiceAccounts int
 }
 
 // New returns implementation of Catalog.
@@ -327,16 +341,31 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
 		}
+
+		scopedServiceAccounts := ScopedServiceAccountsDefault
+		switch {
+		case cfg.SecurityOptions == nil:
+			scopedServiceAccounts = ScopedServiceAccountsDefault
+		case cfg.SecurityOptions.ProjectScopedServiceAccounts == true:
+			scopedServiceAccounts = ScopedServiceAccountsEnabled
+		case cfg.SecurityOptions.ProjectScopedServiceAccounts == false:
+			scopedServiceAccounts = ScopedServiceAccountsDisabled
+		}
+
 		out = append(out, Definition{
-			JobID:            fmt.Sprintf("%s/%s", projectID, job.Id),
-			Acls:             *acls,
-			Flavor:           flavor,
-			Revision:         meta.Revision,
-			RevisionURL:      revisionURL,
-			Schedule:         schedule,
-			Task:             packed,
-			TriggeringPolicy: marshalTriggeringPolicy(job.TriggeringPolicy),
+			JobID:                 fmt.Sprintf("%s/%s", projectID, job.Id),
+			Acls:                  *acls,
+			Flavor:                flavor,
+			Revision:              meta.Revision,
+			RevisionURL:           revisionURL,
+			Schedule:              schedule,
+			Task:                  packed,
+			TriggeringPolicy:      marshalTriggeringPolicy(job.TriggeringPolicy),
+			ScopedServiceAccounts: scopedServiceAccounts,
 		})
+
+		definition := out[len(out)-1]
+		logging.Infof(c, "Constructed new job definition: %s, security_options: %v", definition.JobID, definition.ScopedServiceAccounts)
 	}
 
 	// Triggering jobs.
