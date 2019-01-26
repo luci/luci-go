@@ -2,6 +2,8 @@
 
 {{/* Renders documentation for all functions in the given struct. */}}
 {{define "gen-funcs-doc"}}
+{{.Doc.Description | LinkifySymbols }}
+
 {{range $sym := .Symbols "func"}}
 ### {{.FullName}} {#{{$sym.Anchor}}}
 
@@ -45,6 +47,7 @@ TODO: To be written.
   know that they can be referred to through anchors.
 */}}
 {{ $meta := Symbol "@stdlib//builtins.star" "meta" }}
+{{ $time := Symbol "@stdlib//builtins.star" "time" }}
 {{ $core := Symbol "@stdlib//builtins.star" "core" }}
 {{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
 {{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
@@ -64,9 +67,6 @@ TODO: To be written.
 {{template "todo"}}
 
 ### Resolving naming ambiguities
-{{template "todo"}}
-
-### Defining durations {#durations_doc}
 {{template "todo"}}
 
 ### Defining cron schedules {#schedules_doc}
@@ -101,6 +101,9 @@ Similarly some roles can be assigned to individual users, other only to groups.
 {{- end}}
 
 {{template "gen-funcs-doc" $acl}}
+
+## Defining durations and working with time
+{{template "gen-funcs-doc" $time}}
 
 ## Swarming
 {{template "gen-funcs-doc" $swarming}}

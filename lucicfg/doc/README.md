@@ -18,6 +18,7 @@
 
 
 
+
 [TOC]
 
 ## Overview
@@ -43,13 +44,6 @@ TODO: To be written.
 ***
 
 
-### Defining durations {#durations_doc}
-
-*** note
-TODO: To be written.
-***
-
-
 ### Defining cron schedules {#schedules_doc}
 
 *** note
@@ -58,6 +52,8 @@ TODO: To be written.
 
 
 ## Configuring lucicfg itself
+
+
 
 
 ### meta.config {#meta.config}
@@ -103,6 +99,8 @@ to a variable.
 
 
 ## Core rules
+
+
 
 
 ### core.project {#core.project}
@@ -447,6 +445,8 @@ Similarly some roles can be assigned to individual users, other only to groups.
 
 
 
+
+
 ### acl.entry {#acl.entry}
 
 ```python
@@ -489,7 +489,98 @@ acl.entry object, should be treated as opaque.
 
 
 
+## Defining durations and working with time
+
+Time module provides a simple API for defining durations in a readable way,
+resembling golang's time.Duration.
+
+Durations are represented by integer-like values of [time.duration(...)](#time.duration) type,
+which internally hold a number of milliseconds.
+
+Durations can be added and subtracted from each other and multiplied by
+integers to get durations. They are also comparable to each other (but not
+to integers). Durations can also be divided by each other to get an integer,
+e.g. `time.hour / time.second` produces 3600.
+
+The best way to define a duration is to multiply an integer by a corresponding
+"unit" constant, for example `10 * time.second`.
+
+
+### time.duration {#time.duration}
+
+```python
+time.duration(milliseconds)
+```
+
+
+
+Returns a duration that represents the integer number of milliseconds.
+
+#### Arguments {#time.duration-args}
+
+* **milliseconds**: integer with the requested number of milliseconds. Required.
+
+
+#### Returns  {#time.duration-returns}
+
+time.duration value.
+
+
+
+### time.truncate {#time.truncate}
+
+```python
+time.truncate(duration, precision)
+```
+
+
+
+Truncates the precision of the duration to the given value.
+
+For example `time.truncate(time.hour+10*time.minute, time.hour)` is
+`time.hour`.
+
+#### Arguments {#time.truncate-args}
+
+* **duration**: a time.duration to truncate. Required.
+* **precision**: a time.duration with precision to truncate to. Required.
+
+
+#### Returns  {#time.truncate-returns}
+
+Truncated time.duration value.
+
+
+
+### time.days_of_week {#time.days_of_week}
+
+```python
+time.days_of_week(spec)
+```
+
+
+
+Parses e.g. `Tue,Fri-Sun` into a list of day indexes, e.g. `[1, 4, 5, 6]`.
+
+Monday is 0, Sunday is 6. The returned list is sorted and has no duplicates.
+An empty string results in the empty list.
+
+#### Arguments {#time.days_of_week-args}
+
+* **spec**: a case-insensitive string with 3-char abbreviated days of the week. Multiple terms are separated by a comma and optional spaces. Each term is either a day (e.g. `Tue`), or a range (e.g. `Wed-Sun`). Required.
+
+
+#### Returns  {#time.days_of_week-returns}
+
+A list of 0-based day indexes. Monday is 0.
+
+
+
+
+
 ## Swarming
+
+
 
 
 ### swarming.cache {#swarming.cache}
@@ -685,6 +776,8 @@ Validated list of tags in same order, with duplicates removed.
 ## Scheduler
 
 
+
+
 ### scheduler.policy {#scheduler.policy}
 
 ```python
@@ -786,6 +879,8 @@ In addition, `lucicfg` exposes the following functions.
 
 
 
+
+
 ### fail {#fail}
 
 ```python
@@ -874,6 +969,8 @@ Doesn't support integers that do not fit int64. Fails if the value has cycles.
 #### Arguments {#to_json-args}
 
 * **value**: a primitive Starlark value: a scalar, or a list/tuple/dict containing only primitive Starlark values. Required.
+
+
 
 
 
