@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "240429f9_606c9e5d",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-26T00:49:15Z",
+      "side": 1,
+      "message": "Changed this to non-pointer. However I do have an opinion that it should be SecurityOptions instead of boolean flag because:\n1) Makes future plumbing easier for new features like attestation since they go into the SecurityOptions container.\n2) There is no need for this particular part of scheduler to look one level down into the options container while at the other place where I explicitly use a \"UseProjectScopedServiceAccount\" is intentionally exposes semantics information because the engine logic deals with it explicitly.\n\nWDYT?",
+      "parentUuid": "235024aa_c7ba8811",
+      "range": {
+        "startLine": 178,
+        "startChar": 17,
+        "endLine": 178,
+        "endChar": 18
+      },
+      "revId": "6208bd1bb7d58014f3c365ec98e4ee8333bbf0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "602b0e5f_d398414c",
         "filename": "scheduler/appengine/messages/config.proto",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "6208bd1bb7d58014f3c365ec98e4ee8333bbf0cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f07eaae_2926c077",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-26T00:49:15Z",
+      "side": 1,
+      "message": "SecurityOptions is not repeated and I wanted it to stay at the end of the config. No strong feelings though so I\u0027m going to change it :)\n\nI agree with your discussion but I think we don\u0027t have a concrete answer on the points you touched right now. FYI we don\u0027t have to necessarily sign off this CL right now, just the proto one. So I\u0027d like to defer the discussion on whether and when to deprecate the flag and/or change the behavior.\n\nWDYT?",
+      "parentUuid": "602b0e5f_d398414c",
+      "revId": "6208bd1bb7d58014f3c365ec98e4ee8333bbf0cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

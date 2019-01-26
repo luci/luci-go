@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a514da8d_962e22ae",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-26T00:49:15Z",
+      "side": 1,
+      "message": "Changed to internal ternary structure.",
+      "parentUuid": "bf32c34e_f1b68b8a",
+      "range": {
+        "startLine": 335,
+        "startChar": 3,
+        "endLine": 335,
+        "endChar": 41
+      },
+      "revId": "713b1872d28d3ee098571e59194dd3f63400b943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d64cd910_1330daf0",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "ab940850_3816bb14",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 910,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-26T00:49:15Z",
+      "side": 1,
+      "message": "Ah thanks that make sense!",
+      "parentUuid": "d64cd910_1330daf0",
+      "range": {
+        "startLine": 902,
+        "startChar": 1,
+        "endLine": 910,
+        "endChar": 43
+      },
+      "revId": "713b1872d28d3ee098571e59194dd3f63400b943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95918140_18c29ce4",
         "filename": "scheduler/appengine/engine/job.go",
         "patchSetId": 7
@@ -68,6 +116,30 @@
       "revId": "713b1872d28d3ee098571e59194dd3f63400b943",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8679ec5_1e8cc701",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-01-26T00:49:15Z",
+      "side": 1,
+      "message": "thanks!",
+      "parentUuid": "95918140_18c29ce4",
+      "range": {
+        "startLine": 233,
+        "startChar": 14,
+        "endLine": 233,
+        "endChar": 31
+      },
+      "revId": "713b1872d28d3ee098571e59194dd3f63400b943",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
