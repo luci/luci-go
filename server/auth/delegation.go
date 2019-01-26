@@ -38,6 +38,11 @@ import (
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 )
 
+// delegationTokenMinterClient is subset of minter.TokenMinterClient we use.
+type delegationTokenMinterClient interface {
+	MintDelegationToken(context.Context, *minter.MintDelegationTokenRequest, ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error)
+}
+
 var (
 	// ErrTokenServiceNotConfigured is returned by MintDelegationToken if the
 	// token service URL is not configured. This usually means the corresponding
@@ -74,7 +79,7 @@ const (
 	MaxDelegationTokenTTL = 3 * time.Hour
 )
 
-// DelegationTokenParams is passed to MintDelegationToken.
+// DelegationTokenParams defines the base struct to issue identity tokens.
 type DelegationTokenParams struct {
 	// TargetHost, if given, is hostname (with, possibly, ":port") of a service
 	// that the token will be sent to.
@@ -123,12 +128,7 @@ type DelegationTokenParams struct {
 	// rpcClient is token server RPC client to use.
 	//
 	// Mocked in tests.
-	rpcClient tokenMinterClient
-}
-
-// tokenMinterClient is subset of minter.TokenMinterClient we use.
-type tokenMinterClient interface {
-	MintDelegationToken(context.Context, *minter.MintDelegationTokenRequest, ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error)
+	rpcClient delegationTokenMinterClient
 }
 
 // delegationTokenCache is used to store delegation tokens in the cache.
@@ -156,7 +156,7 @@ var delegationTokenCache = newTokenCache(tokenCacheConfig{
 // The token is cached internally. Same token may be returned by multiple calls,
 // if its lifetime allows.
 func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegation.Token, error) {
-	report := durationReporter(ctx, mintDelegationTokenDuration)
+	report := durationReporter(ctx, mintScopedTokenDuration)
 
 	// Validate TargetHost.
 	target := ""
