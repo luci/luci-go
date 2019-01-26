@@ -40,5 +40,4 @@ def _from_host(attr, host):
   )
 
 
-# API of this module.
 service = struct(from_host = _from_host)
