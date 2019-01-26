@@ -164,6 +164,30 @@
       "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07d1dcdc_67f1c619",
+        "filename": "lucicfg/starlark/stdlib/internal/time.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-26T20:01:59Z",
+      "side": 1,
+      "message": "Well, this proto still defined them as numbers. Just 1-index based, which is probably wiser than 0-based. I\u0027ve changed the implementation here to be 1-based too. It now returns numbers compatible with DayOfWeek proto.\n\nThis function is useful because in *.cfg files I noticed people almost always comment days_of_week field with comments like \"Tue-Fri\". Might just as well use this as the definition in *.star to remove redundancy.",
+      "parentUuid": "f429ebde_7e57f2f6",
+      "range": {
+        "startLine": 84,
+        "startChar": 9,
+        "endLine": 84,
+        "endChar": 17
+      },
+      "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
