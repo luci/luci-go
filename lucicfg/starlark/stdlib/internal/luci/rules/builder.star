@@ -13,10 +13,11 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/validate.star', 'validate')
+
 load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'triggerer')
-load('@stdlib//internal/luci/lib/validate.star', 'validate')
-load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
 load('@stdlib//internal/luci/lib/scheduler.star', 'schedulerimpl')
+load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
 
 
 def builder(

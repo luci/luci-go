@@ -13,9 +13,10 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/validate.star', 'validate')
+
 load('@stdlib//internal/luci/common.star', 'keys')
 load('@stdlib//internal/luci/lib/acl.star', 'aclimpl')
-load('@stdlib//internal/luci/lib/validate.star', 'validate')
 
 
 def bucket(name=None, acls=None):

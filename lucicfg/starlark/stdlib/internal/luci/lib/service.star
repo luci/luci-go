@@ -14,7 +14,7 @@
 
 """Helpers for parsing and validating service names."""
 
-load('@stdlib//internal/luci/lib/validate.star', 'validate')
+load('@stdlib//internal/validate.star', 'validate')
 
 
 def _from_host(attr, host):

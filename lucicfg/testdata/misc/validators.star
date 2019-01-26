@@ -1,5 +1,5 @@
-load('@stdlib//internal/luci/lib/validate.star', 'validate')
 load('@stdlib//internal/time.star', 'time')
+load('@stdlib//internal/validate.star', 'validate')
 
 
 def test_validate_string():
