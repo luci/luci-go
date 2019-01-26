@@ -17,12 +17,11 @@ package auth
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
-
-	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
