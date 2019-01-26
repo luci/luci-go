@@ -245,7 +245,6 @@ def _validate_tags(attr, tags):
   return list(out)
 
 
-# Public API exposed to end-users and to other LUCI modules.
 swarming = struct(
     cache = _cache,
     dimension = _dimension,

@@ -2,6 +2,8 @@
 
 {{/* Renders documentation for all functions in the given struct. */}}
 {{define "gen-funcs-doc"}}
+{{.Doc.Description | LinkifySymbols }}
+
 {{range $sym := .Symbols "func"}}
 ### {{.FullName}} {#{{$sym.Anchor}}}
 
@@ -45,6 +47,7 @@ TODO: To be written.
   know that they can be referred to through anchors.
 */}}
 {{ $meta := Symbol "@stdlib//builtins.star" "meta" }}
+{{ $time := Symbol "@stdlib//builtins.star" "time" }}
 {{ $core := Symbol "@stdlib//builtins.star" "core" }}
 {{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
 {{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
@@ -66,14 +69,14 @@ TODO: To be written.
 ### Resolving naming ambiguities
 {{template "todo"}}
 
-### Defining durations {#durations_doc}
-{{template "todo"}}
-
 ### Defining cron schedules {#schedules_doc}
 {{template "todo"}}
 
 ## Configuring lucicfg itself
 {{template "gen-funcs-doc" $meta}}
+
+## Working with time
+{{template "gen-funcs-doc" $time}}
 
 ## Core rules
 {{template "gen-funcs-doc" $core}}

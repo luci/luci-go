@@ -139,7 +139,6 @@ def _validate_policy(attr, policy, default=None, required=True):
   return validate.type(attr, policy, scheduler_pb.TriggeringPolicy(), default, required)
 
 
-# Public API.
 scheduler = struct(
     GREEDY_BATCHING_KIND = scheduler_pb.TriggeringPolicy.GREEDY_BATCHING,
     LOGARITHMIC_BATCHING_KIND = scheduler_pb.TriggeringPolicy.LOGARITHMIC_BATCHING,
@@ -150,7 +149,6 @@ scheduler = struct(
 )
 
 
-# Internal API.
 schedulerimpl = struct(
     validate_policy = _validate_policy,
 )
