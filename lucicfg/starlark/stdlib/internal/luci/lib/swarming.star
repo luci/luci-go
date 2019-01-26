@@ -14,7 +14,7 @@
 
 """Swarming related supporting structs and functions."""
 
-load('@stdlib//internal/luci/lib/validate.star', 'validate')
+load('@stdlib//internal/validate.star', 'validate')
 load('@stdlib//internal/time.star', 'time')
 
 

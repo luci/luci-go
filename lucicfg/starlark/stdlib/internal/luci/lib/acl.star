@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load('@stdlib//internal/luci/lib/validate.star', 'validate')
+load('@stdlib//internal/validate.star', 'validate')
 
 
 # TODO(vadimsh): Add support for 'anonymous' when/if needed.
