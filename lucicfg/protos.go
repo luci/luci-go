@@ -34,6 +34,7 @@ import (
 	_ "go.chromium.org/luci/luci_notify/api/config"
 	_ "go.chromium.org/luci/milo/api/config"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
+	_ "go.chromium.org/luci/swarming/proto/config"
 )
 
 // Mapping from a proto module path on the Starlark side to its proto package
@@ -96,6 +97,15 @@ var publicProtos = map[string]struct {
 		"scheduler.config",
 		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
 	},
+
+	// Swarming service configs.
+	//
+	// load("@proto//luci/swarming/bots.proto", bots_pb="swarming")
+	// load("@proto//luci/swarming/config.proto", config_pb="swarming")
+	// load("@proto//luci/swarming/pools.proto", pools_pb="swarming")
+	"luci/swarming/bots.proto":   {"swarming", "go.chromium.org/luci/swarming/proto/config/bots.proto"},
+	"luci/swarming/config.proto": {"swarming", "go.chromium.org/luci/swarming/proto/config/config.proto"},
+	"luci/swarming/pools.proto":  {"swarming", "go.chromium.org/luci/swarming/proto/config/pools.proto"},
 
 	// Various well-known proto types.
 	//
