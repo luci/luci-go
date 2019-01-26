@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c8b37025_e1da3c7f",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-26T05:45:16Z",
+      "side": 1,
+      "message": "You mean after executing the template? It is not trivial, since \\n are significant inside code snippets.\n\nI failed to understand how to force text/template to emit correct spaces. I tried {- and -} and various combinations of thereof. This shit is insane. I gave up.",
+      "parentUuid": "e4c04982_be752527",
+      "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9799c29_d7defa91",
         "filename": "lucicfg/starlark/stdlib/internal/time.star",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "ccb8d838_2b6f4343",
+        "filename": "lucicfg/starlark/stdlib/internal/time.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-26T05:45:16Z",
+      "side": 1,
+      "message": "Modified to \"3-char abbreviated day of the week\".",
+      "parentUuid": "c9799c29_d7defa91",
+      "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a15f04c0_94d1a993",
         "filename": "lucicfg/starlark/stdlib/internal/time.star",
         "patchSetId": 3
@@ -47,6 +83,30 @@
       "writtenOn": "2019-01-26T05:33:09Z",
       "side": 1,
       "message": "this exposes the arbitrary choice that the first day of the week is monday.\nan american person may expect string \"Sun-Tue\" to be equivalent to \"Sun, Mon, Tue\"\nWDYT?",
+      "range": {
+        "startLine": 84,
+        "startChar": 9,
+        "endLine": 84,
+        "endChar": 17
+      },
+      "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9df7ac1_be77f2c8",
+        "filename": "lucicfg/starlark/stdlib/internal/time.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-26T05:45:16Z",
+      "side": 1,
+      "message": "*shrug*\n\nI think it doesn\u0027t really matter as long as the call doesn\u0027t silently produce unexpected result. Loud failure is good enough.\n\nIf you insist, I can make this configurable, e.g. days_of_week(..., week_start\u003d\u0027Sun\u0027). \n\nBut I need it for Swarming, and there it is already hardcoded that 0 is monday: https://cs.chromium.org/chromium/infra/luci/appengine/swarming/proto/config/bots.proto?q\u003ddays_of_the_\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d74",
+      "parentUuid": "a15f04c0_94d1a993",
       "range": {
         "startLine": 84,
         "startChar": 9,
