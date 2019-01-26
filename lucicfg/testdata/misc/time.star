@@ -54,6 +54,35 @@ def test_helpers():
   assert.eq(time.truncate(2 * time.hour + time.minute, time.hour), 2 * time.hour)
 
 
+def test_days_of_week():
+  good_cases = {
+      '': [],
+      '   ': [],
+      ',,,': [],
+      'Mon': [1],
+      'moN': [1],
+      ' Mon, ': [1],
+      'Sun': [7],
+      'Tue-Wed': [2, 3],
+      ' ,Tue - Wed ,': [2, 3],
+      'Sun,Tue-Wed': [2, 3, 7],
+      'Mon,Tue,Wed,Thu,Fri,Sat,Sun': [1, 2, 3, 4, 5, 6, 7],
+      'Fri,Mon,Tue,Wed,Thu,Sat,Sun': [1, 2, 3, 4, 5, 6, 7],
+      'Tue,Tue, Mon-Wed': [1, 2, 3],
+  }
+  for spec, out in good_cases.items():
+    assert.eq(time.days_of_week(spec), out)
+
+  bad_cases = {
+      'huh': '"huh" is not a valid 3-char abbreviated day of the week',
+      'mon-huh': '"huh" is not a valid 3-char abbreviated day of the week',
+      'Sun-Mon': 'bad range "Sun-Mon" - "Sun" is later than "Mon"',
+  }
+  for spec, err in bad_cases.items():
+    assert.fails(lambda: time.days_of_week(spec), err)
+
+
 test_duration_type()
 test_type_mismatches()
 test_helpers()
+test_days_of_week()
