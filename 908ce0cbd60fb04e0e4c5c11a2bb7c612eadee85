@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e4c04982_be752527",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-26T05:33:09Z",
+      "side": 1,
+      "message": ":)\n\nmaybe s/\\n{3,}/\\n\\n/",
+      "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c9799c29_d7defa91",
+        "filename": "lucicfg/starlark/stdlib/internal/time.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-26T05:33:09Z",
+      "side": 1,
+      "message": "message \"Tuesday is not a valid day of the week\" would be funny",
+      "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a15f04c0_94d1a993",
+        "filename": "lucicfg/starlark/stdlib/internal/time.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-26T05:33:09Z",
+      "side": 1,
+      "message": "this exposes the arbitrary choice that the first day of the week is monday.\nan american person may expect string \"Sun-Tue\" to be equivalent to \"Sun, Mon, Tue\"\nWDYT?",
+      "range": {
+        "startLine": 84,
+        "startChar": 9,
+        "endLine": 84,
+        "endChar": 17
+      },
+      "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
