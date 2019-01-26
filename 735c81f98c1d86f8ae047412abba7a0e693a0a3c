@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8830ebbe_70aaf341",
+        "filename": "swarming/proto/config/pools.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-26T00:01:13Z",
+      "side": 1,
+      "message": "Too bad, this is a copy.",
+      "parentUuid": "001869f4_1c47bb70",
+      "range": {
+        "startLine": 377,
+        "startChar": 16,
+        "endLine": 377,
+        "endChar": 26
+      },
+      "revId": "735c81f98c1d86f8ae047412abba7a0e693a0a3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
