@@ -36,6 +36,7 @@ _register()
 
 
 # Public API.
+
 core = struct(
     project = _project,
     logdog =  _logdog,
