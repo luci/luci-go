@@ -111,7 +111,8 @@ type intrParams struct {
 	predeclared starlark.StringDict
 }
 
-// runIntr initializes and runs the interpreter over given scripts.
+// runIntr initializes and runs the interpreter over given scripts, by loading
+// main.star using LoadModule.
 //
 // Returns keys of the dict of the main.star script (if any), and a list of
 // messages logged via print(...).

@@ -31,31 +31,42 @@ func TestMakeModuleKey(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		k, err := makeModuleKey("//some/mod")
+		k, err := makeModuleKey("//some/mod", nil)
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, moduleKey{"", "some/mod"})
 
-		k, err = makeModuleKey("//some/mod/../blah")
+		k, err = makeModuleKey("//some/mod/../blah", nil)
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, moduleKey{"", "some/blah"})
 
-		k, err = makeModuleKey("//../../")
+		k, err = makeModuleKey("//../../", nil)
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, moduleKey{"", "../.."})
 
-		k, err = makeModuleKey("@pkg//some/mod")
+		k, err = makeModuleKey("@pkg//some/mod", nil)
+		So(err, ShouldBeNil)
+		So(k, ShouldResemble, moduleKey{"pkg", "some/mod"})
+
+		// Picks up default package name from the thread, if given.
+		th := starlark.Thread{}
+		th.SetLocal(threadPkgKey, "pkg")
+		k, err = makeModuleKey("//some/mod", &th)
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, moduleKey{"pkg", "some/mod"})
 	})
 
 	Convey("Fails", t, func() {
-		_, err := makeModuleKey("some/mod")
+		_, err := makeModuleKey("some/mod", nil)
 		So(err, ShouldNotBeNil)
 
-		_, err = makeModuleKey("some//mod")
+		_, err = makeModuleKey("some//mod", nil)
 		So(err, ShouldNotBeNil)
 
-		_, err = makeModuleKey("@//mod")
+		_, err = makeModuleKey("@//mod", nil)
+		So(err, ShouldNotBeNil)
+
+		// If the thread is given, it must have the package name.
+		_, err = makeModuleKey("//some/mod", &starlark.Thread{})
 		So(err, ShouldNotBeNil)
 	})
 }
@@ -199,5 +210,79 @@ func TestInterpreter(t *testing.T) {
 			},
 		})
 		So(err, ShouldErrLike, "cannot load //mod.star: cannot load //main.star: cycle in the module dependency graph")
+	})
+
+	Convey("Exec works", t, func() {
+		_, logs, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `
+					res = exec("//execed.star")
+					print(res['a'])
+				`,
+
+				"execed.star": `
+					print('hi')
+					a = 123
+				`,
+			},
+		})
+		So(err, ShouldBeNil)
+		So(logs, ShouldResemble, []string{
+			"[//execed.star:2] hi",
+			"[//main.star:3] 123",
+		})
+	})
+
+	Convey("Exec into another package", t, func() {
+		_, logs, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `exec("@stdlib//exec1.star")`,
+			},
+			stdlib: map[string]string{
+				"exec1.star": `exec("//exec2.star")`,
+				"exec2.star": `print("hi")`,
+			},
+		})
+		So(err, ShouldBeNil)
+		So(logs, ShouldResemble, []string{
+			"[@stdlib//exec2.star:1] hi",
+		})
+	})
+
+	Convey("Exec cycle", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star":  `exec("//exec1.star")`,
+				"exec1.star": `exec("//exec2.star")`,
+				"exec2.star": `exec("//exec1.star")`,
+			},
+		})
+		So(err, ShouldErrLike, "cannot exec //exec1.star: cannot exec //exec2.star: cannot exec //exec1.star: the module has already been executed, 'exec'-ing same code twice is forbidden")
+	})
+
+	Convey("Trying to exec loaded module", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `
+					load("//mod.star", "z")
+					exec("//mod.star")
+				`,
+				"mod.star": `z = 123`,
+			},
+		})
+		So(err, ShouldErrLike, "cannot exec //mod.star: the module has been loaded before and therefore is not executable")
+	})
+
+	Convey("Trying load execed module", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `
+					exec("//mod.star")
+					load("//mod.star", "z")
+				`,
+				"mod.star": `z = 123`,
+			},
+		})
+		So(err, ShouldErrLike, "cannot load //mod.star: the module has been exec'ed before and therefore is not loadable")
 	})
 }
