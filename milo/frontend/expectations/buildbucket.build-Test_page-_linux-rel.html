@@ -58,15 +58,14 @@
     
     </h1>
 
-    <div id="tabs" style="display: none;">
+    <div id="tabs">
       <ul>
         <li><a href="#overview-tab">Overview</a></li>
-        <li><a href="#properties-tab">Properties</a></li>
-        <li><a href="#changes-tab">Changes</a></li>
         <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
       <div id="overview-tab">
-  <div id="overview">
+        
+  <div id="overview" class="column">
     
     
     <h2>Overview</h2>
@@ -956,10 +955,10 @@
       </tr>
     </table>
   </div>
-</div>
-      <div id="properties-tab">
-        <div id="properties">
-          <h2>Input Properties</h2>
+
+        
+<div id="properties" class="column">
+  <h2>Input Properties</h2>
   
     <table class="info BuildProperties" width="100%">
     <tr><th>Name</th><th>Value</th></tr>
@@ -1060,7 +1059,7 @@
     </table>
   
 
-          <h2>Output Properties</h2>
+  <h2>Output Properties</h2>
   
     <table class="info BuildProperties" width="100%">
     <tr><th>Name</th><th>Value</th></tr>
@@ -1231,17 +1230,18 @@
     </table>
   
 
-        </div>
-      </div>
-      <div id="changes-tab">
-  <div id="changes">
+</div>
+
+        
+  <div id="changes" class="column">
     <h2>All Changes</h2>
     
       No Blamelist
      
   </div>
-</div>
-      <div id="timeline-tab">
+
+      </div>
+      <div id="timeline-tab" style="display: none;">
   <div id="timeline">
     <div id="timeline-rendering">Rendering...</div>
   </div>
