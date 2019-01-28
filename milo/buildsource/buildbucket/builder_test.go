@@ -47,9 +47,7 @@ var RecentTimeUTC = time.Date(2016, time.June, 30, 23, 30, 0, 0, time.UTC)
 func TestBuilder(t *testing.T) {
 	t.Parallel()
 
-	testCases := []struct{ bucket, builder string }{
-		{"luci.infra.try", "InfraPresubmit.Swarming"},
-	}
+	testCases := []struct{ bucket, builder string }{}
 
 	Convey("Builder", t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")

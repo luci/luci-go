@@ -528,7 +528,7 @@ func ConsoleHandler(c *router.Context) error {
 	const maxLimit = 1000
 	limit := defaultLimit
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
-		limit = tLimit
+		limit = int(tLimit)
 	}
 	if limit > maxLimit {
 		limit = maxLimit

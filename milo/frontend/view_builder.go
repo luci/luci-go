@@ -16,7 +16,7 @@ import (
 // We don't need to do an ACL check because this endpoint delegates all ACL checks
 // authentication to Buildbucket with the RPC calls.
 func BuilderHandler(c *router.Context, builderID buildsource.BuilderID) error {
-	limit := 25
+	limit := int32(25)
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
 		limit = tLimit
 	}

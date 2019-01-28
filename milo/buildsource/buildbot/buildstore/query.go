@@ -60,7 +60,7 @@ func (t Ternary) filter(q *datastore.Query, fieldName string) *datastore.Query {
 type Query struct {
 	Master   string
 	Builder  string
-	Limit    int
+	Limit    int32
 	Finished Ternary
 	Cursor   string
 
@@ -139,7 +139,7 @@ func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
 	}
 
 	mergedBuilds := mergeBuilds(emulatedBuilds, buildbotBuilds)
-	if q.Limit > 0 && len(mergedBuilds) > q.Limit {
+	if q.Limit > 0 && len(mergedBuilds) > int(q.Limit) {
 		mergedBuilds = mergedBuilds[:q.Limit]
 	}
 	return &QueryResult{Builds: mergedBuilds}, nil
@@ -201,7 +201,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 	}
 
 	start := clock.Now(c)
-	msgs, _, err := search.Fetch(q.Limit, nil)
+	msgs, _, err := search.Fetch(int(q.Limit), nil)
 	switch apiErr, _ := err.(*googleapi.Error); {
 	case apiErr != nil && apiErr.Code == http.StatusForbidden:
 		logging.Warningf(c, "%q does not have access to bucket %q. Returning 0 builds.",

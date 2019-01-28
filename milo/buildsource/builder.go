@@ -60,7 +60,7 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 
 // Get allows you to obtain the resp.Builder that corresponds with this
 // BuilderID.
-func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder, error) {
+func (b BuilderID) Get(c context.Context, limit int32, cursor string) (*ui.Builder, error) {
 	// TODO(iannucci): replace these implementations with a BuildSummary query.
 	source, group, builderName, err := b.Split()
 	if err != nil {
@@ -101,13 +101,6 @@ func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder
 	sort.Slice(builder.Groups, func(i, j int) bool {
 		return builder.Groups[i].Label < builder.Groups[j].Label
 	})
-
-	for _, b := range builder.FinishedBuilds {
-		if len(b.Blame) > 0 {
-			builder.HasBlamelist = true
-			break
-		}
-	}
 
 	return builder, nil
 }

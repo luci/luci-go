@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -53,19 +54,15 @@ type Builder struct {
 	// Name of the builder
 	Name string
 
-	// Indicates that this Builder should render a blamelist for each build.
-	// This is only supported for Buildbot (crbug.com/807846)
-	HasBlamelist bool
-
 	// Warning text, if any.
 	Warning string
 
-	CurrentBuilds []*BuildSummary
-	PendingBuilds []*BuildSummary
+	CurrentBuilds []*buildbucketpb.Build
+	PendingBuilds []*buildbucketpb.Build
 	// PendingBuildNum is the number of pending builds, since the slice above
 	// may be a snapshot instead of the full set.
 	PendingBuildNum int
-	FinishedBuilds  []*BuildSummary
+	FinishedBuilds  []*buildbucketpb.Build
 
 	// MachinePool is primarily used by buildbot builders to list the set of
 	// machines that can run in a builder.  It has no meaning in buildbucket or dm

@@ -18,10 +18,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	"google.golang.org/api/googleapi"
@@ -29,15 +26,12 @@ import (
 	"go.chromium.org/gae/service/memcache"
 	bb "go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
@@ -71,29 +65,28 @@ func (b BuilderID) String() string {
 // fetchBuilds fetches builds given a criteria.
 // The returned builds are sorted by build creation descending.
 // count defines maximum number of builds to fetch; if <0, defaults to 100.
-func fetchBuilds(c context.Context, client *bbv1.Service, bid BuilderID,
-	status string, limit int, cursor string) ([]*bbv1.ApiCommonBuildMessage, string, error) {
+func fetchBuilds(c context.Context, client buildbucketpb.BuildsClient, bid BuilderID,
+	status buildbucketpb.Status, limit int32, cursor string) ([]*buildbucketpb.Build, string, error) {
 
 	c, _ = context.WithTimeout(c, bbRPCTimeout)
-	search := client.Search()
-	search.Context(c)
-	search.Bucket(bid.V1Bucket())
-	search.Status(status)
-	search.Tag(strpair.Format(bbv1.TagBuilder, bid.Builder))
-	search.IncludeExperimental(true)
-	search.StartCursor(cursor)
-
 	if limit < 0 {
 		limit = 100
 	}
+	r := &buildbucketpb.SearchBuildsRequest{
+		Predicate: &buildbucketpb.BuildPredicate{
+			Builder:             &bid.BuilderID,
+			Status:              status,
+			IncludeExperimental: true,
+		},
+		PageSize:  limit,
+		PageToken: cursor,
+	}
 
 	start := clock.Now(c)
-	msgs, cursor, err := search.Fetch(limit, nil)
-	if err != nil {
-		return nil, "", err
-	}
-	logging.Infof(c, "Fetched %d %s builds in %s", len(msgs), status, clock.Since(c, start))
-	return msgs, cursor, nil
+	resp, err := client.SearchBuilds(c, r)
+	builds := resp.GetBuilds()
+	logging.Infof(c, "Fetched %d %s builds in %s", len(builds), status, clock.Since(c, start))
+	return builds, resp.GetNextPageToken(), err
 }
 
 // ensureDefined returns common.CodeNotFound tagged error if a builder is not
@@ -124,47 +117,6 @@ func ensureDefined(c context.Context, host string, bid BuilderID) error {
 	return errors.Reason("builder %q not found", bid.Builder).Tag(common.CodeNotFound).Err()
 }
 
-func getDebugBuilds(c context.Context, bid BuilderID, maxCompletedBuilds int, target *ui.Builder) error {
-	// ../buildbucket below assumes that
-	// - this code is not executed by tests outside of this dir
-	// - this dir is a sibling of frontend dir
-	resFile, err := os.Open(filepath.Join(
-		"..", "buildbucket", "testdata", bid.V1Bucket(), bid.Builder+".json"))
-	if err != nil {
-		return err
-	}
-	defer resFile.Close()
-
-	res := &bbv1.ApiSearchResponseMessage{}
-	if err := json.NewDecoder(resFile).Decode(res); err != nil {
-		return err
-	}
-
-	for _, bb := range res.Builds {
-		mb, err := ToMiloBuild(c, bb, false)
-		if err != nil {
-			return err
-		}
-		bs := mb.BuildSummary()
-		switch mb.Summary.Status {
-		case model.NotRun:
-			target.PendingBuilds = append(target.PendingBuilds, bs)
-
-		case model.Running:
-			target.CurrentBuilds = append(target.CurrentBuilds, bs)
-
-		case model.Success, model.Failure, model.InfraFailure, model.Warning:
-			if len(target.FinishedBuilds) < maxCompletedBuilds {
-				target.FinishedBuilds = append(target.FinishedBuilds, bs)
-			}
-
-		default:
-			panic("impossible")
-		}
-	}
-	return nil
-}
-
 func getHost(c context.Context) (string, error) {
 	settings := common.GetSettings(c)
 	if settings.Buildbucket == nil || settings.Buildbucket.Host == "" {
@@ -177,7 +129,7 @@ func getHost(c context.Context) (string, error) {
 // cursors by storing a map for cursor -> prevCursor in memcache.
 // backCursor returns a previous cursor given thisCursor, and caches thisCursor
 // to be the previous cursor of nextCursor.
-func backCursor(c context.Context, bid BuilderID, limit int, thisCursor, nextCursor string) string {
+func backCursor(c context.Context, bid BuilderID, limit int32, thisCursor, nextCursor string) string {
 	memcacheKey := func(cursor string) string {
 		key := fmt.Sprintf("%s:%d:%s", bid.String(), limit, cursor)
 		blob := sha1.Sum([]byte(key))
@@ -204,32 +156,8 @@ func backCursor(c context.Context, bid BuilderID, limit int, thisCursor, nextCur
 	return prevCursor
 }
 
-// toMiloBuildsSummaries computes summary for each build in parallel.
-func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.ApiCommonBuildMessage) ([]*ui.BuildSummary, error) {
-	result := make([]*ui.BuildSummary, len(msgs))
-	// For each build, toMiloBuild may query Gerrit to fetch associated CL's
-	// author email. Unfortunately, as of June 2018 Gerrit is often taking >5s to
-	// report back. From UX PoV, author's email isn't the most important of
-	// builder's page, so limit waiting time.
-	c, _ = context.WithTimeout(c, 5*time.Second)
-	return result, parallel.WorkPool(50, func(work chan<- func() error) {
-		for i, m := range msgs {
-			i := i
-			m := m
-			work <- func() error {
-				mb, err := ToMiloBuild(c, m, false)
-				if err != nil {
-					return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
-				}
-				result[i] = mb.BuildSummary()
-				return nil
-			}
-		}
-	})
-}
-
 // GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
-func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui.Builder, error) {
+func GetBuilder(c context.Context, bid BuilderID, limit int32, cursor string) (*ui.Builder, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
@@ -242,21 +170,16 @@ func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui
 	result := &ui.Builder{
 		Name: bid.Builder,
 	}
-	if host == "debug" {
-		return result, getDebugBuilds(c, bid, limit, result)
-	}
-	client, err := newBuildbucketClient(c, host)
+	client, err := buildbucketClient(c, host)
 	if err != nil {
 		return nil, err
 	}
 
-	fetch := func(statusFilter string, limit int, cursor string) (result []*ui.BuildSummary, nextCursor string, err error) {
-		msgs, nextCursor, err := fetchBuilds(c, client, bid, statusFilter, limit, cursor)
+	fetch := func(statusFilter buildbucketpb.Status, limit int32, cursor string) (result []*buildbucketpb.Build, nextCursor string, err error) {
+		result, nextCursor, err = fetchBuilds(c, client, bid, statusFilter, limit, cursor)
 		if err != nil {
 			logging.WithError(err).Errorf(c, "Could not fetch %s builds", statusFilter)
-			return
 		}
-		result, err = toMiloBuildsSummaries(c, msgs)
 		return
 	}
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
@@ -268,15 +191,15 @@ func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui
 			return
 		}
 		work <- func() (err error) {
-			result.PendingBuilds, _, err = fetch(bbv1.StatusScheduled, -1, "")
+			result.PendingBuilds, _, err = fetch(buildbucketpb.Status_SCHEDULED, -1, "")
 			return
 		}
 		work <- func() (err error) {
-			result.CurrentBuilds, _, err = fetch(bbv1.StatusStarted, -1, "")
+			result.CurrentBuilds, _, err = fetch(buildbucketpb.Status_STARTED, -1, "")
 			return
 		}
 		work <- func() (err error) {
-			result.FinishedBuilds, result.NextCursor, err = fetch(bbv1.StatusCompleted, limit, cursor)
+			result.FinishedBuilds, result.NextCursor, err = fetch(buildbucketpb.Status_ENDED_MASK, limit, cursor)
 			result.PrevCursor = backCursor(c, bid, limit, cursor, result.NextCursor) // Safe to do even with error.
 			return
 		}

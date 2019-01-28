@@ -319,7 +319,7 @@ func prefix(prefixLen int, s string) string {
 
 // GetLimit extracts the "limit", "numbuilds", or "num_builds" http param from
 // the request, or returns def implying no limit was specified.
-func GetLimit(r *http.Request, def int) int {
+func GetLimit(r *http.Request, def int32) int32 {
 	sLimit := r.FormValue("limit")
 	if sLimit == "" {
 		sLimit = r.FormValue("numbuilds")
@@ -330,11 +330,11 @@ func GetLimit(r *http.Request, def int) int {
 			}
 		}
 	}
-	limit, err := strconv.Atoi(sLimit)
+	limit, err := strconv.ParseInt(sLimit, 10, 32)
 	if err != nil || limit < 0 {
 		return def
 	}
-	return limit
+	return int32(limit)
 }
 
 // GetReload extracts the "reload" http param from the request,
@@ -377,7 +377,7 @@ func renderProperties(p *structpb.Struct) (results template.HTML) {
 // pagedURL returns a self URL with the given cursor and limit paging options.
 // if limit is set to 0, then inherit whatever limit is set in request.  If
 // both are unspecified, then limit is omitted.
-func pagedURL(r *http.Request, limit int, cursor string) string {
+func pagedURL(r *http.Request, limit int32, cursor string) string {
 	if limit == 0 {
 		limit = GetLimit(r, -1)
 		if limit < 0 {

@@ -41,7 +41,7 @@ import (
 // The builders list page by relative time is defined in
 // ./appengine/templates/pages/builders_relative_time.html.
 func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
-	limit := 30
+	limit := int32(30)
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
 		limit = tLimit
 	}
@@ -124,7 +124,7 @@ type builderHistory struct {
 }
 
 // getBuilderHistories gets the recent histories for the builders in the given project.
-func getBuilderHistories(c context.Context, builders []string, project string, limit int) ([]*builderHistory, error) {
+func getBuilderHistories(c context.Context, builders []string, project string, limit int32) ([]*builderHistory, error) {
 	// Populate the recent histories.
 	hists := make([]*builderHistory, len(builders))
 	err := parallel.WorkPool(16, func(ch chan<- func() error) {
@@ -213,7 +213,7 @@ func getBuildersForProject(c context.Context, project, console string) ([]string
 // getHistory gets the recent history of the given builder.
 // Depends on status.go for filtering finished builds.
 // If the builder starts with "buildbot/", does not load pending builds.
-func getHistory(c context.Context, builderID buildsource.BuilderID, project string, limit int) (*builderHistory, error) {
+func getHistory(c context.Context, builderID buildsource.BuilderID, project string, limit int32) (*builderHistory, error) {
 	hist := builderHistory{
 		BuilderID:    builderID,
 		BuilderLink:  builderID.SelfLink(project),
@@ -255,7 +255,7 @@ func getHistory(c context.Context, builderID buildsource.BuilderID, project stri
 				}
 
 				hist.RecentBuilds = append(hist.RecentBuilds, b)
-				if len(hist.RecentBuilds) >= limit {
+				if len(hist.RecentBuilds) >= int(limit) {
 					return datastore.Stop
 				}
 				return nil

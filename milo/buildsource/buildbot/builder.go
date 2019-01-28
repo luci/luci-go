@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -77,6 +79,25 @@ func mergeText(text []string) []string {
 	return result
 }
 
+// simulatedBuildSummary takes a buildbot build and returns a buidlbucketpb.Build
+// that includes just enough information to render on the builder page.
+// Some fields are simulated, such as:
+// * Buildbucket Id, Number - Buildbot build number
+// * Buildbucket Project - "buildbot"
+// * Buildbucket Bucket - Buildbot Master name
+func simulatedBuildSummary(b *buildbot.Build) *buildbucketpb.Build {
+	result := &buildbucketpb.Build{
+		Id: int64(b.Number),
+		Builder: &buildbucketpb.BuilderID{
+			Project: "buildbot",
+			Bucket:  b.Master,
+			Builder: b.Buildername,
+		},
+		Number: int32(b.Number),
+	}
+	return result
+}
+
 func summarizeSlavePool(
 	c context.Context, baseURL string, slaves []string, slaveMap map[string]*buildbot.Slave) *ui.MachinePool {
 
@@ -107,7 +128,7 @@ func summarizeSlavePool(
 
 // GetBuilder is the implementation for getting a milo builder page from
 // buildbot.
-func GetBuilder(c context.Context, masterName, builderName string, limit int, cursor string) (*ui.Builder, error) {
+func GetBuilder(c context.Context, masterName, builderName string, limit int32, cursor string) (*ui.Builder, error) {
 	if err := buildstore.CanAccessMaster(c, masterName); err != nil {
 		return nil, err
 	}
@@ -144,20 +165,19 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	}
 
 	// Extract pending builds out of the master.
-	result.PendingBuilds = make([]*ui.BuildSummary, len(builder.PendingBuildStates))
+	result.PendingBuilds = make([]*buildbucketpb.Build, len(builder.PendingBuildStates))
 	result.PendingBuildNum = builder.PendingBuilds
 	logging.Debugf(c, "Number of pending builds: %d", len(builder.PendingBuildStates))
 	for i, pb := range builder.PendingBuildStates {
-		start := time.Unix(int64(pb.SubmittedAt), 0).UTC()
-		result.PendingBuilds[i] = &ui.BuildSummary{
-			PendingTime: ui.NewInterval(c, start, time.Time{}),
-			Blame:       make([]*ui.Commit, len(pb.Source.Changes)),
+		start := &timestamp.Timestamp{Seconds: int64(pb.SubmittedAt)}
+		creators := make([]string, len(pb.Source.Changes))
+		for i, change := range pb.Source.Changes {
+			creators[i] = change.Who
 		}
-		for j, cm := range pb.Source.Changes {
-			result.PendingBuilds[i].Blame[j] = &ui.Commit{
-				AuthorEmail: cm.Who,
-				CommitURL:   cm.Revlink,
-			}
+		result.PendingBuilds[i] = &buildbucketpb.Build{
+			Status:     buildbucketpb.Status_SCHEDULED,
+			CreateTime: start,
+			CreatedBy:  strings.Join(creators, ", "),
 		}
 	}
 
@@ -185,9 +205,9 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			}
 			result.NextCursor = res.NextCursor
 			result.PrevCursor = res.PrevCursor
-			result.FinishedBuilds = make([]*ui.BuildSummary, len(res.Builds))
+			result.FinishedBuilds = make([]*buildbucketpb.Build, len(res.Builds))
 			for i, b := range res.Builds {
-				result.FinishedBuilds[i] = renderBuild(c, b, false).BuildSummary()
+				result.FinishedBuilds[i] = simulatedBuildSummary(b)
 			}
 			return err
 		}
@@ -198,10 +218,10 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			if err != nil {
 				return err
 			}
-			result.CurrentBuilds = make([]*ui.BuildSummary, len(res.Builds))
+			result.CurrentBuilds = make([]*buildbucketpb.Build, len(res.Builds))
 			for i, b := range res.Builds {
 				// currentBuilds is presented in reversed order, so flip it
-				result.CurrentBuilds[len(res.Builds)-i-1] = renderBuild(c, b, false).BuildSummary()
+				result.CurrentBuilds[len(res.Builds)-i-1] = simulatedBuildSummary(b)
 			}
 			return err
 		}

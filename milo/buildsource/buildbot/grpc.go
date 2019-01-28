@@ -111,7 +111,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		return nil, status.Errorf(codes.InvalidArgument, "No builder specified")
 	}
 
-	limit := int(req.Limit)
+	limit := req.Limit
 	if limit == 0 {
 		limit = 20
 	}
