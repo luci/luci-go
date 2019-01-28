@@ -188,6 +188,30 @@
       "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "37d8fb51_d52ca01a",
+        "filename": "lucicfg/starlark/stdlib/internal/time.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-28T19:32:15Z",
+      "side": 1,
+      "message": "my point about usefulness was: if an enum is used instead of numbers, then it already uses names and more readable.\n\non other hand \n  \n  days: [myProtoPackage.MONDAY, myProtoPackage.TUESDAY, myProtoPackage.WEDNESDAY)\n\nis much more verbose than \n\n  days: time.days_of_the_week(\"Mon-Wed\")",
+      "parentUuid": "07d1dcdc_67f1c619",
+      "range": {
+        "startLine": 84,
+        "startChar": 9,
+        "endLine": 84,
+        "endChar": 17
+      },
+      "revId": "908ce0cbd60fb04e0e4c5c11a2bb7c612eadee85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
