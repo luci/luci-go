@@ -22,6 +22,30 @@
       "revId": "766efde42d01aa3e020aa55114f37e15750abe0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5270f7e5_9bf76aa4",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-28T23:40:08Z",
+      "side": 1,
+      "message": "see the line above. I\u0027ve added more comments elsewhere.",
+      "parentUuid": "cc4c1a1f_b3d1b1c4",
+      "range": {
+        "startLine": 308,
+        "startChar": 9,
+        "endLine": 308,
+        "endChar": 25
+      },
+      "revId": "766efde42d01aa3e020aa55114f37e15750abe0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
