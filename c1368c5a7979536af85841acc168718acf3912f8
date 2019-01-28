@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "6bb81cfc_c120f0aa",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-28T20:38:21Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ebf65fd5_8150d4cc",
+      "range": {
+        "startLine": 76,
+        "startChar": 24,
+        "endLine": 77,
+        "endChar": 9
+      },
+      "revId": "c1368c5a7979536af85841acc168718acf3912f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40ee0e71_4e8eda46",
         "filename": "starlark/interpreter/interpreter.go",
         "patchSetId": 1
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "Not quite. Mixing load(...) and exec(...) with same file makes no sense. This is enforcement.",
       "parentUuid": "40ee0e71_4e8eda46",
+      "range": {
+        "startLine": 79,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 67
+      },
+      "revId": "c1368c5a7979536af85841acc168718acf3912f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1b2e61b9_c64ae782",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-28T20:38:21Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "33c13375_9f634ca2",
       "range": {
         "startLine": 79,
         "startChar": 0,
