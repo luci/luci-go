@@ -251,6 +251,9 @@ message ScheduleBuildRequest {
 
   // Value for Build.input.gitiles_commit.
   //
+  // Setting this field will cause the created build to have a "buildset"
+  // tag with value "commit/gitiles/{hostname}/{project}/+/{id}".
+  //
   // V1 equivalent: supersedes "revision" property and "buildset"
   // tag that starts with "commit/gitiles/".
   GitilesCommit gitiles_commit = 7;
@@ -258,6 +261,10 @@ message ScheduleBuildRequest {
   // Value for Build.input.gerrit_changes.
   // Usually present in tryjobs, set by CQ, Gerrit, git-cl-try.
   // Applied on top of gitiles_commit if specified, otherwise tip of the tree.
+  //
+  // Setting this field will cause the created build to have a "buildset"
+  // tag with value "patch/gerrit/{hostname}/{change}/{patchset}"
+  // for each change.
   //
   // V1 equivalent: supersedes patch_* properties and "buildset"
   // tag that starts with "patch/gerrit/".
