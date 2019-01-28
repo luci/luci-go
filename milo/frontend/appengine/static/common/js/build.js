@@ -82,27 +82,6 @@ $(document).ready(function() {
     return timeline;
   }
 
-  // Switches the view to a mode where overview, properties, and changes go on
-  // one tab and the timeline goes on a second tab. This is intended to be
-  // easier to read on a wide screen and waste less horizontal space.
-  function goWideMode() {
-    // Add the colummn class back to the overview, properties, and changes
-    // divs and move the properties and changes divs to the "overview" tab.
-    $('#overview').addClass('column');
-    $('#overview-tab')
-        .append($('#properties').addClass('column'))
-        .append($('#changes').addClass('column'));
-    // Remove the "Properties" and "Changes" tabs. Note that the corresponding
-    // divs are left in the dom but will now be inaccessible.
-    $('#tabs > ul > li > a[href="#properties-tab"]').parent().remove();
-    $('#tabs > ul > li > a[href="#changes-tab"]').parent().remove();
-  }
-
-  // Narrow mode is the default, switch if necessary.
-  if ($(window).width() > 1440 && useTabs) {
-    goWideMode();
-  }
-
   let timeline = null;
 
   // By hiding the tab div until the tabs are constructed a flicker

@@ -86,28 +86,23 @@
     {{ end }}
     </h1>
 
-    <div id="tabs" style="display: none;">
+    <div id="tabs">
       <ul>
         <li><a href="#overview-tab">Overview</a></li>
-        <li><a href="#properties-tab">Properties</a></li>
-        <li><a href="#changes-tab">Changes</a></li>
         <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
-      <div id="overview-tab">{{ template "overview_tab" . }}</div>
-      <div id="properties-tab">
-        <div id="properties">
-          <h2>Input Properties</h2>{{ template "properties_table" .BuildPage.InputProperties }}
-          <h2>Output Properties</h2>{{ template "properties_table" .BuildPage.OutputProperties }}
-        </div>
+      <div id="overview-tab">
+        {{ template "overview" . }}
+        {{ template "properties" . }}
+        {{ template "changes" . }}
       </div>
-      <div id="changes-tab">{{ template "changes_tab" . }}</div>
-      <div id="timeline-tab">{{ template "timeline_tab" . }}</div>
+      <div id="timeline-tab" style="display: none;">{{ template "timeline_tab" . }}</div>
     </div>
   </div>
 {{end}}
 
-{{define "overview_tab"}}
-  <div id="overview">
+{{define "overview"}}
+  <div id="overview" class="column">
     <!--- TODO(hinoka): Stylize this -->
     {{ range .BuildPage.Errors }}
       <p class="status FAILURE">Error while rendering page: {{.}}</p>
@@ -211,6 +206,14 @@
 {{end}}
 
 
+{{define "properties"}}
+<div id="properties" class="column">
+  <h2>Input Properties</h2>{{ template "properties_table" .BuildPage.InputProperties }}
+  <h2>Output Properties</h2>{{ template "properties_table" .BuildPage.OutputProperties }}
+</div>
+{{end}}
+
+
 {{define "properties_table"}}
   {{ with . }}
     <table class="info BuildProperties" width="100%">
@@ -225,8 +228,8 @@
   {{ end }}
 {{end}}
 
-{{define "changes_tab"}}
-  <div id="changes">
+{{define "changes"}}
+  <div id="changes" class="column">
     <h2>All Changes</h2>
     {{ if .BuildPage.Blame }}
     <ol>
