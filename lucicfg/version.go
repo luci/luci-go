@@ -14,12 +14,37 @@
 
 package lucicfg
 
+import (
+	"fmt"
+
+	"go.starlark.net/starlark"
+)
+
 const (
 	// Version is the version of lucicfg tool.
 	//
-	// It ends up in CLI output, in generated files and in User-Agent headers.
-	Version = "0.1.0"
+	// It ends up in CLI output and in User-Agent headers.
+	Version = "1.0.0"
 
 	// UserAgent is used for User-Agent header in HTTP requests from lucicfg.
 	UserAgent = "lucicfg v" + Version
 )
+
+func init() {
+	// See //internal/meta.star.
+	declNative("version", func(call nativeCall) (starlark.Value, error) {
+		if err := call.unpack(0); err != nil {
+			return nil, err
+		}
+		var major, minor, rev int
+		_, err := fmt.Sscanf(Version, "%d.%d.%d", &major, &minor, &rev)
+		if err != nil {
+			panic(err)
+		}
+		return starlark.Tuple{
+			starlark.MakeInt(major),
+			starlark.MakeInt(minor),
+			starlark.MakeInt(rev),
+		}, nil
+	})
+}

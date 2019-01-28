@@ -18,10 +18,11 @@
 {{end}}
 
 {{$sym.Doc.Description | LinkifySymbols}}
-
+{{if $sym.Doc.Args}}
 #### Arguments {#{{$sym.Anchor "args"}}}
 {{range $sym.Doc.Args}}
 * **{{.Name | EscapeMD}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
 {{- end}}
 
 {{if $sym.Doc.Returns}}
@@ -72,7 +73,7 @@ TODO: To be written.
 ### Defining cron schedules {#schedules_doc}
 {{template "todo"}}
 
-## Configuring lucicfg itself
+## Configuring and inspecting lucicfg itself
 {{template "gen-funcs-doc" $meta}}
 
 ## Working with time

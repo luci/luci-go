@@ -79,8 +79,14 @@ def _config(
     __native__.set_meta('fail_on_warnings', fail_on_warnings)
 
 
+def _version():
+  """Returns a triple with lucicfg version: `(major, minor, revision)`."""
+  return __native__.version()
+
+
 # Public API.
 
 meta = struct(
     config = _config,
+    version = _version,
 )
