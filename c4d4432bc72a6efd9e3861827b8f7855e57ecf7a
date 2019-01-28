@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "aadf143d_34d95680",
+        "filename": "lucicfg/strutil.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-28T20:27:15Z",
+      "side": 1,
+      "message": "ah, i see! tbh, i partially regret asking for it...",
+      "parentUuid": "1e2b5d08_c846597a",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 12
+      },
+      "revId": "c4d4432bc72a6efd9e3861827b8f7855e57ecf7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "12bfbcec_af18f01e",
         "filename": "lucicfg/strutil.go",
         "patchSetId": 2

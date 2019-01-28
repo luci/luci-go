@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e463865_08f4611a",
+        "filename": "lucicfg/strutil.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-28T20:27:15Z",
+      "side": 1,
+      "message": "👍 cool trick!",
+      "range": {
+        "startLine": 57,
+        "startChar": 10,
+        "endLine": 57,
+        "endChar": 60
+      },
+      "revId": "ccc2e3a0eca6b2b8d47ce9059667a664305599aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
