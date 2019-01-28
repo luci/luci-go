@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc4c1a1f_b3d1b1c4",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-28T23:29:52Z",
+      "side": 1,
+      "message": "so where is this surfaced then? I expected a new field in CancelReason...",
+      "range": {
+        "startLine": 308,
+        "startChar": 9,
+        "endLine": 308,
+        "endChar": 25
+      },
+      "revId": "766efde42d01aa3e020aa55114f37e15750abe0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
