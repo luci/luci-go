@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ebf65fd5_8150d4cc",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-28T20:32:50Z",
+      "side": 1,
+      "message": "I have some vague ideas where such reentrability will be useful. But it is easy to add it later (rather then add it now and then try to remove it). So removed for now.",
+      "parentUuid": "83bea73e_15868e7a",
+      "range": {
+        "startLine": 76,
+        "startChar": 24,
+        "endLine": 77,
+        "endChar": 9
+      },
+      "revId": "c1368c5a7979536af85841acc168718acf3912f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40ee0e71_4e8eda46",
         "filename": "starlark/interpreter/interpreter.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "33c13375_9f634ca2",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-28T20:32:50Z",
+      "side": 1,
+      "message": "Not quite. Mixing load(...) and exec(...) with same file makes no sense. This is enforcement.",
+      "parentUuid": "40ee0e71_4e8eda46",
+      "range": {
+        "startLine": 79,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 67
+      },
+      "revId": "c1368c5a7979536af85841acc168718acf3912f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c767fc0c_d2f612ce",
         "filename": "starlark/interpreter/interpreter.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "c1368c5a7979536af85841acc168718acf3912f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a74663a8_3bd250b0",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-28T20:32:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c767fc0c_d2f612ce",
+      "range": {
+        "startLine": 188,
+        "startChar": 10,
+        "endLine": 188,
+        "endChar": 25
+      },
+      "revId": "c1368c5a7979536af85841acc168718acf3912f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,54 @@
     },
     {
       "key": {
+        "uuid": "0d26c4cc_cc28f008",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-28T20:32:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f6fa34a_b189f528",
+      "range": {
+        "startLine": 272,
+        "startChar": 4,
+        "endLine": 272,
+        "endChar": 24
+      },
+      "revId": "c1368c5a7979536af85841acc168718acf3912f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ef530773_bf1d32ef",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-28T20:32:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "431e8fb6_cf821400",
+      "range": {
+        "startLine": 272,
+        "startChar": 35,
+        "endLine": 272,
+        "endChar": 43
+      },
+      "revId": "c1368c5a7979536af85841acc168718acf3912f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "44b3f604_f2084076",
         "filename": "starlark/interpreter/interpreter.go",
         "patchSetId": 1
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "8ad94c9c_c0cf3436",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-28T20:32:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "44b3f604_f2084076",
+      "range": {
+        "startLine": 314,
+        "startChar": 4,
+        "endLine": 314,
+        "endChar": 44
+      },
+      "revId": "c1368c5a7979536af85841acc168718acf3912f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "397ad1f9_ce28e51f",
         "filename": "starlark/interpreter/interpreter.go",
         "patchSetId": 1
@@ -160,6 +304,30 @@
       "revId": "c1368c5a7979536af85841acc168718acf3912f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21042624_c069cd30",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-28T20:32:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "397ad1f9_ce28e51f",
+      "range": {
+        "startLine": 370,
+        "startChar": 5,
+        "endLine": 370,
+        "endChar": 57
+      },
+      "revId": "c1368c5a7979536af85841acc168718acf3912f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
