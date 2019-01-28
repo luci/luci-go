@@ -32,6 +32,7 @@ import (
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
+	_ "go.chromium.org/luci/lucicfg/external/crostesting/proto/config"
 	_ "go.chromium.org/luci/milo/api/config"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
 	_ "go.chromium.org/luci/swarming/proto/config"
@@ -64,6 +65,16 @@ var publicProtos = map[string]struct {
 	"luci/config/project_config.proto": {
 		"config",
 		"go.chromium.org/luci/common/proto/config/project_config.proto",
+	},
+
+	// CrOS testing project config.
+	//
+	// load(
+	//     "@proto//external/crostesting/source_tree_test_config.proto",
+	//     source_tree_test_config_pb="crostesting")
+	"external/crostesting/source_tree_test_config.proto": {
+		"crostesting",
+		"go.chromium.org/luci/lucicfg/external/crostesting/proto/config/source_tree_test_config.proto",
 	},
 
 	// LogDog project config.
