@@ -72,7 +72,7 @@ TODO: To be written.
 ### Defining cron schedules {#schedules_doc}
 {{template "todo"}}
 
-## Configuring lucicfg itself
+## Configuring and inspecting lucicfg itself
 {{template "gen-funcs-doc" $meta}}
 
 ## Working with time
