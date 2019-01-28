@@ -64,7 +64,7 @@ type Step struct {
 	// Logs produced by the step.
 	// Log order is up to the step.
 	Logs []*Step_Log `protobuf:"bytes,5,rep,name=logs,proto3" json:"logs,omitempty"`
-	// Human-oriented summary of the step provided by the step itself,
+	// Human-readable summary of the step provided by the step itself,
 	// in Markdown format (https://spec.commonmark.org/0.28/).
 	//
 	// V1 equivalent: combines and supersedes Buildbot's step_text and step links and also supports
@@ -147,7 +147,7 @@ type Step_Log struct {
 	// Log name, standard ("stdout", "stderr") or custom ("json.output").
 	// Unique within the step.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// URL of a human-oriented page that displays log contents.
+	// URL of a Human-readable page that displays log contents.
 	ViewUrl string `protobuf:"bytes,2,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`
 	// URL of the log content.
 	// As of 2018-09-06, the only supported scheme is "logdog".

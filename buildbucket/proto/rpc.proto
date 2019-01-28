@@ -304,8 +304,8 @@ message CancelBuildRequest {
   // ID of the build to cancel.
   int64 id = 1;
 
-  // Required. Why the build is being cancelled.
-  CancelReason reason = 2;
+  // Required. Value for Build.summary_markdown.
+  string summary_markdown = 2;
 
   // Fields to include in the response. See also GetBuildRequest.fields.
   google.protobuf.FieldMask fields = 100;
