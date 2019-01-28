@@ -189,8 +189,7 @@ message Build {
 
 // Explains why status is CANCELED.
 message CancelReason {
-  // Human-oriented reasoning.
-  string message = 1;
+  reserved 1; // was "message", removed in favor of Build.summary_markdown.
 
   // Verified identity who canceled this build.
   string canceled_by = 2;
@@ -198,8 +197,7 @@ message CancelReason {
 
 // Explains why status is INFRA_FAILURE.
 message InfraFailureReason {
-  // Human-oriented explanation of the infrastructure failure.
-  string message = 1;
+  reserved 1; // was "message", removed in favor of Build.summary_markdown.
 
   // Indicates that the failure was due to a resource exhaustion / quota denial.
   bool resource_exhaustion = 2;
