@@ -176,6 +176,30 @@
       "revId": "d57123a2c85d25815ac7edd15c2984f507156d1e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "307eae10_65ca4ac8",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-28T19:49:16Z",
+      "side": 1,
+      "message": "I think given the implementation of using jquery tabs, there are two evils that we must choose between\n\n1. Rendering overview first, and then insert the tab (jank).  (We might be able to minimize this jank by adding in a \"fake\" div with the same height).\n2. Hide all content until the jquery tab code loads, and then render all of the overview.\n\n(2) is the pre-CL choice, but as of this CL I change it to (1).  There is jank in both cases, but my observations are that with (2), the jank can get up to 100-200ms with large builds, while (1) the jank generally stays below 100ms, and the flicker is limited to a smaller portion of the screen.\n\nThat said, none of this is ideal, and we should move to a pure HTML/CSS implementation to avoid all of this.",
+      "parentUuid": "b5c814eb_5c20cb5a",
+      "range": {
+        "startLine": 102,
+        "startChar": 28,
+        "endLine": 102,
+        "endChar": 51
+      },
+      "revId": "d57123a2c85d25815ac7edd15c2984f507156d1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
