@@ -79,7 +79,7 @@ message Build {
     // In V1 output properties are not populated until build ends.
     google.protobuf.Struct properties = 1;
 
-    // Human-oriented summary of the build provided by the build itself,
+    // Human-readable summary of the build provided by the build itself,
     // in Markdown format (https://spec.commonmark.org/0.28/).
     //
     // BigQuery: excluded from rows.
@@ -107,7 +107,7 @@ message Build {
   // which may change after build has ended.
   BuilderID builder = 2;
 
-  // Human-oriented identifier of the build with the following properties:
+  // Human-readable identifier of the build with the following properties:
   // - unique within the builder
   // - a monotonically increasing number
   // - mostly contiguous
@@ -151,7 +151,8 @@ message Build {
   // BigQuery: Final status of the build. Cannot be SCHEDULED or STARTED.
   Status status = 12;
 
-  // Explanation of the current status.
+  // Machine-readable explanation of the current status.
+  // Human-readable reason is available in summary_markdown.
   oneof status_reason {
     // Why status is INFRA_FAILURE.
     InfraFailureReason infra_failure_reason = 13;
@@ -189,8 +190,7 @@ message Build {
 
 // Explains why status is CANCELED.
 message CancelReason {
-  // Human-oriented reasoning.
-  string message = 1;
+  reserved 1; // was "message", removed in favor of Build.summary_markdown.
 
   // Verified identity who canceled this build.
   string canceled_by = 2;
@@ -198,8 +198,7 @@ message CancelReason {
 
 // Explains why status is INFRA_FAILURE.
 message InfraFailureReason {
-  // Human-oriented explanation of the infrastructure failure.
-  string message = 1;
+  reserved 1; // was "message", removed in favor of Build.summary_markdown.
 
   // Indicates that the failure was due to a resource exhaustion / quota denial.
   bool resource_exhaustion = 2;
