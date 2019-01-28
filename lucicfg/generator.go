@@ -99,7 +99,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// Load builtins.star, and then execute the user-supplied script.
 	var err error
 	if err = intr.Init(ctx); err == nil {
-		_, err = intr.LoadModule(ctx, interpreter.MainPkg, in.Entry)
+		_, err = intr.ExecModule(ctx, interpreter.MainPkg, in.Entry)
 	}
 	if err != nil {
 		if f := failures.LatestFailure(); f != nil {

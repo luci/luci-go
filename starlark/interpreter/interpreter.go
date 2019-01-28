@@ -66,6 +66,17 @@
 //
 // Embedders of the interpreter can also supply arbitrary "predeclared" symbols
 // they want to be available in the global scope of all loaded modules.
+// The interpreter itself adds 'exec' symbol.
+//
+// Exec'ing modules
+//
+// The built-in 'exec(...)' can be used to execute a module for its side
+// effects and get its global dict as a return value. It works similarly to
+// 'load', except it doesn't import any symbols into the caller's namespace, and
+// it is not idempotent: calling 'exec' on already executed module is an error.
+//
+// Modules can either be loaded or exec'ed, but not both. Attempting to load
+// a module that was previous exec'ed (and vice versa) is an error.
 package interpreter
 
 import (
@@ -97,8 +108,12 @@ const (
 	StdlibPkg = "stdlib"
 )
 
-// Key of context.Context inside starlark.Thread's local store.
-const threadCtxKey = "interpreter.Context"
+const (
+	// Key of context.Context inside starlark.Thread's local store.
+	threadCtxKey = "interpreter.Context"
+	// Key with the current package name inside starlark.Thread's local store.
+	threadPkgKey = "interpreter.Package"
+)
 
 // Context returns a context of the thread created through Interpreter.
 //
@@ -152,6 +167,7 @@ type Interpreter struct {
 	ThreadModifier func(th *starlark.Thread)
 
 	modules map[moduleKey]*loadedModule // cache of the loaded modules
+	execed  map[moduleKey]struct{}      // a set of modules that were ever exec'ed
 	globals starlark.StringDict         // global symbols exposed to all modules
 }
 
@@ -165,7 +181,10 @@ type moduleKey struct {
 //
 // Does some light validation. Module loaders are expected to validate module
 // paths more rigorously, since they interpret them anyway.
-func makeModuleKey(ref string) (key moduleKey, err error) {
+//
+// If 'th' is not nil, it is used to get the name of the currently executing
+// package if '@pkg' part in 'ref' is omitted.
+func makeModuleKey(ref string, th *starlark.Thread) (key moduleKey, err error) {
 	hasPkg := strings.HasPrefix(ref, "@")
 
 	idx := strings.Index(ref, "//")
@@ -182,6 +201,14 @@ func makeModuleKey(ref string) (key moduleKey, err error) {
 	}
 	key.path = path.Clean(ref[idx+2:])
 
+	// Grab the package name from thread locals, if given.
+	if !hasPkg && th != nil {
+		if key.pkg, _ = th.Local(threadPkgKey).(string); key.pkg == "" {
+			err = errors.New("no current package name in thread locals")
+			return
+		}
+	}
+
 	return
 }
 
@@ -193,21 +220,22 @@ type loadedModule struct {
 
 // Init initializes the interpreter and loads '@stdlib//builtins.star'.
 //
-// Registers most basic built-in symbols first (like 'struct' and 'fail'), then
-// whatever was passed via Predeclared. Then loads '@stdlib//builtins.star',
-// which may define more symbols or override already defined ones. Whatever
-// symbols not starting with '_' end up in the global dict of
-// '@stdlib//builtins.star' module will become available as global symbols in
-// all modules.
+// Registers whatever was passed via Predeclared plus 'exec'. Then loads
+// '@stdlib//builtins.star', which may define more symbols or override already
+// defined ones. Whatever symbols not starting with '_' end up in the global
+// dict of '@stdlib//builtins.star' module will become available as global
+// symbols in all modules.
 //
 // The context ends up available to builtins through Context(...).
 func (intr *Interpreter) Init(ctx context.Context) error {
 	intr.modules = map[moduleKey]*loadedModule{}
+	intr.execed = map[moduleKey]struct{}{}
 
-	intr.globals = make(starlark.StringDict, len(intr.Predeclared))
+	intr.globals = make(starlark.StringDict, len(intr.Predeclared)+1)
 	for k, v := range intr.Predeclared {
 		intr.globals[k] = v
 	}
+	intr.globals["exec"] = intr.execBuiltin()
 
 	// Load the stdlib, if any.
 	top, err := intr.LoadModule(ctx, StdlibPkg, "builtins.star")
@@ -222,19 +250,26 @@ func (intr *Interpreter) Init(ctx context.Context) error {
 	return nil
 }
 
-// LoadModule finds and executes a starlark module, returning its dict.
+// LoadModule finds and loads a starlark module, returning its dict.
+//
+// This is similar to load(...) statement: caches the result of the execution.
+// Modules are always loaded only once.
 //
 // 'pkg' is a package alias, it will be used to lookup the package loader in
 // intr.Packages. 'path' is a module path (without leading '//') within
 // the package.
 //
 // The context ends up available to builtins through Context(...).
-//
-// Caches the result of the execution. Modules are always loaded only once.
 func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
-	key, err := makeModuleKey(fmt.Sprintf("@%s//%s", pkg, path))
+	key, err := makeModuleKey(fmt.Sprintf("@%s//%s", pkg, path), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	// If the module has been 'exec'-ed previously it is not allowed to be loaded.
+	// Modules are either 'library-like' or 'script-like', not both.
+	if _, yes := intr.execed[key]; yes {
+		return nil, errors.New("the module has been exec'ed before and therefore is not loadable")
 	}
 
 	switch m, ok := intr.modules[key]; {
@@ -254,8 +289,39 @@ func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (star
 	}
 	defer func() { intr.modules[key] = m }()
 
-	m.dict, m.err = intr.execModule(ctx, pkg, path)
+	m.dict, m.err = intr.runModule(ctx, pkg, path)
 	return m.dict, m.err
+}
+
+// ExecModule finds and executes a starlark module, returning its dict.
+//
+// This is similar to exec(...) statement: always executes the module.
+//
+// 'pkg' is a package alias, it will be used to lookup the package loader in
+// intr.Packages. 'path' is a module path (without leading '//') within
+// the package.
+//
+// The context ends up available to builtins through Context(...).
+func (intr *Interpreter) ExecModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
+	key, err := makeModuleKey(fmt.Sprintf("@%s//%s", pkg, path), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the module has been loaded previously it is not allowed to be 'exec'-ed.
+	// Modules are either 'library-like' or 'script-like', not both.
+	if _, yes := intr.modules[key]; yes {
+		return nil, errors.New("the module has been loaded before and therefore is not executable")
+	}
+
+	// Reexecing a module is forbidden.
+	if _, yes := intr.execed[key]; yes {
+		return nil, errors.New("the module has already been executed, 'exec'-ing same code twice is forbidden")
+	}
+	intr.execed[key] = struct{}{}
+
+	// Actually execute the code.
+	return intr.runModule(ctx, pkg, path)
 }
 
 // Thread creates a new Starlark thread associated with the given context.
@@ -265,9 +331,9 @@ func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (star
 //
 // The context ends up available to builtins through Context(...).
 //
-// The returned thread has no implementation of load(...). Use LoadModule to
-// load top-level Starlark code instead. Note that load(...) statements are
-// forbidden inside Starlark functions anyway.
+// The returned thread has no implementation of load(...) or exec(...). Use
+// LoadModule or ExecModule to load top-level Starlark code instead. Note that
+// load(...) statements are forbidden inside Starlark functions anyway.
 func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
 	th := &starlark.Thread{
 		Print: func(th *starlark.Thread, msg string) {
@@ -286,8 +352,43 @@ func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
 	return th
 }
 
-// execModule really loads and execute the module.
-func (intr *Interpreter) execModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
+// execBuiltin returns exec(...) builtin symbol.
+func (intr *Interpreter) execBuiltin() *starlark.Builtin {
+	return starlark.NewBuiltin("exec", func(th *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		var module starlark.String
+		if err := starlark.UnpackArgs("exec", args, kwargs, "module", &module); err != nil {
+			return nil, err
+		}
+
+		// Check the thread was produced by LoadModule or ExecModule. Custom threads
+		// (e.g. as used for running Starlark callbacks from native code) do not
+		// have enough context to perform 'exec' safely.
+		if _, yes := th.Local(threadPkgKey).(string); !yes {
+			return nil, fmt.Errorf("exec: forbidden in this thread")
+		}
+
+		// See also th.Load in runModule.
+		key, err := makeModuleKey(module.GoString(), th)
+		if err != nil {
+			return nil, err
+		}
+		dict, err := intr.ExecModule(Context(th), key.pkg, key.path)
+		if err != nil {
+			return nil, fmt.Errorf("cannot exec %s: %s", module.GoString(), err)
+		}
+
+		// StringDict -> regular Dict.
+		val := starlark.Dict{}
+		for k, v := range dict {
+			val.SetKey(starlark.String(k), v)
+		}
+		return &val, nil
+	})
+}
+
+// runModule really loads and executes the module, used by both LoadModule and
+// ExecModule.
+func (intr *Interpreter) runModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
 	loader, ok := intr.Packages[pkg]
 	if !ok {
 		return nil, ErrNoPackage
@@ -306,18 +407,17 @@ func (intr *Interpreter) execModule(ctx context.Context, pkg, path string) (star
 	// between modules. All global state is passed through intr.globals,
 	// intr.modules and ctx.
 	th := intr.Thread(ctx)
-	th.Load = func(th *starlark.Thread, loadPath string) (starlark.StringDict, error) {
-		key, err := makeModuleKey(loadPath)
+	th.Load = func(th *starlark.Thread, module string) (starlark.StringDict, error) {
+		key, err := makeModuleKey(module, th)
 		if err != nil {
 			return nil, err
 		}
-		// By default (when not specifying @<pkg>) modules within a package refer
-		// to sibling files in the same package.
-		if key.pkg == "" {
-			key.pkg = pkg
-		}
 		return intr.LoadModule(ctx, key.pkg, key.path)
 	}
+
+	// Let builtins (and in particular makeModuleKey) know the package the module
+	// belongs too. This is also a marker for exec(...) that it is allowed.
+	th.SetLocal(threadPkgKey, pkg)
 
 	// Construct a full module name for error messages and stack traces. Omit the
 	// name of the top-level package with user-supplied code ("__main__") to avoid
