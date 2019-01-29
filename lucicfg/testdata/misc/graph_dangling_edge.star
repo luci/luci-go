@@ -6,7 +6,7 @@ graph.add_edge(graph.key('node', 'name'), graph.key('node', 'missing'), 'rel')
 
 def gen(ctx):
   fail('must not be called')
-core.generator(impl = gen)
+lucicfg.generator(impl = gen)
 
 
 # Expect errors:

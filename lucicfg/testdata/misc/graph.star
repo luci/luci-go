@@ -25,7 +25,7 @@ def gen1(ctx):
   for c in graph.children(root, 'child'):
     msg.append('%s: %s' % (c.props.msg, graph.parents(c.key, 'root')))
   ctx.config_set['children_parents.txt'] = '\n'.join(msg) + '\n'
-core.generator(impl = gen1)
+lucicfg.generator(impl = gen1)
 
 
 def gen2(ctx):
@@ -33,7 +33,7 @@ def gen2(ctx):
       n.props.msg for n in graph.sorted_nodes(
           graph.descendants(root), graph.DEFINITION_ORDER)
   ]) + '\n'
-core.generator(impl = gen2)
+lucicfg.generator(impl = gen2)
 
 
 # Expect configs:
