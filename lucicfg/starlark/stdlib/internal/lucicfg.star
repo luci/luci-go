@@ -84,9 +84,31 @@ def _version():
   return __native__.version()
 
 
+def _generator(impl):
+  """Registers a callback that is called at the end of the config generation
+  stage to modify/append/delete generated configs in an arbitrary way.
+
+  The callback accepts single argument `ctx` which is a struct with the
+  following fields:
+
+    * **config_set**: a dict `{config file name -> (str | proto)}`.
+
+  The callback is free to modify `ctx.config_set` in whatever way it wants, e.g.
+  by adding new values there or mutating/deleting existing ones.
+
+  DocTags:
+    Advanced.
+
+  Args:
+    impl: a callback `func(ctx) -> None`.
+  """
+  __native__.add_generator(impl)
+
+
 # Public API.
 
 lucicfg = struct(
     config = _config,
     version = _version,
+    generator = _generator,
 )

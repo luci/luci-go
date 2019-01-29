@@ -15,9 +15,10 @@
 """Implementation of various LUCI *.cfg file generators."""
 
 load('@stdlib//internal/error.star', 'error')
-load('@stdlib//internal/generator.star', 'generator')
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/time.star', 'time')
+
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'triggerer')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
@@ -31,10 +32,10 @@ load('@proto//luci/scheduler/project_config.proto', scheduler_pb='scheduler.conf
 
 def register():
   """Registers all LUCI config generator callbacks."""
-  generator(impl = gen_project_cfg)
-  generator(impl = gen_logdog_cfg)
-  generator(impl = gen_buildbucket_cfg)
-  generator(impl = gen_scheduler_cfg)
+  lucicfg.generator(impl = gen_project_cfg)
+  lucicfg.generator(impl = gen_logdog_cfg)
+  lucicfg.generator(impl = gen_buildbucket_cfg)
+  lucicfg.generator(impl = gen_scheduler_cfg)
 
 
 ################################################################################

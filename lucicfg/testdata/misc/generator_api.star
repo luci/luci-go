@@ -7,7 +7,7 @@ def gen(ctx):
       name = 'test',
       access = ['group:all'],
   )
-core.generator(impl = gen)
+lucicfg.generator(impl = gen)
 
 # Expect configs:
 #

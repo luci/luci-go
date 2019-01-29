@@ -25,12 +25,12 @@ def test_config_set():
 def test_config_generators():
   def gen1(ctx):
     ctx.config_set['hello'] = 'world'
-  core.generator(impl = gen1)
+  lucicfg.generator(impl = gen1)
 
   def gen2(ctx):
     assert.eq(ctx.config_set['hello'], 'world')
     ctx.config_set['hello'] = 'nope'
-  core.generator(impl = gen2)
+  lucicfg.generator(impl = gen2)
 
   ctx = __native__.new_gen_ctx()
   __native__.call_generators(ctx)

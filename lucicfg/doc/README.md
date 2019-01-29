@@ -110,6 +110,36 @@ Returns a triple with lucicfg version: `(major, minor, revision)`.
 
 
 
+### lucicfg.generator {#lucicfg.generator}
+
+```python
+lucicfg.generator(impl = None)
+```
+
+
+*** note
+**Advanced function.** It is not used for common use cases.
+***
+
+
+Registers a callback that is called at the end of the config generation
+stage to modify/append/delete generated configs in an arbitrary way.
+
+The callback accepts single argument `ctx` which is a struct with the
+following fields:
+
+  * **config_set**: a dict `{config file name -> (str | proto)}`.
+
+The callback is free to modify `ctx.config_set` in whatever way it wants, e.g.
+by adding new values there or mutating/deleting existing ones.
+
+#### Arguments {#lucicfg.generator-args}
+
+* **impl**: a callback `func(ctx) -> None`.
+
+
+
+
 
 
 ## Working with time
@@ -497,36 +527,6 @@ watching `refs/heads/master`.
 * **refs_regexps**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
 * **schedule**: string with a schedule that describes when to run one iteration of the poller. See [Defining cron schedules](#schedules_doc) for the expected format of this field. Note that it is rare to use custom schedules for pollers. By default, the poller will run each 30 sec.
 * **triggers**: names of builders to trigger whenever the poller detects a new git commit on any ref in the watched ref set.
-
-
-
-
-### core.generator {#core.generator}
-
-```python
-core.generator(impl = None)
-```
-
-
-*** note
-**Advanced function.** It is not used for common use cases.
-***
-
-
-Registers a callback that is called at the end of the config generation
-stage to modify/append/delete generated configs in an arbitrary way.
-
-The callback accepts single argument `ctx` which is a struct with the
-following fields:
-
-  * **config_set**: a dict `{config file name -> (str | proto)}`.
-
-The callback is free to modify `ctx.config_set` in whatever way it wants, e.g.
-by adding new values there or mutating/deleting existing ones.
-
-#### Arguments {#core.generator-args}
-
-* **impl**: a callback `func(ctx) -> None`.
 
 
 

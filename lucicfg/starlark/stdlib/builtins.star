@@ -13,7 +13,6 @@
 # limitations under the License.
 
 # Non-LUCI features.
-load('@stdlib//internal/generator.star', _generator='generator')
 load('@stdlib//internal/lucicfg.star', _lucicfg='lucicfg')
 load('@stdlib//internal/time.star', _time='time')
 
@@ -35,7 +34,12 @@ load('@stdlib//internal/luci/generators.star', _register='register')
 _register()
 
 
-# Public API.
+# Non-LUCI-specific public API.
+
+lucicfg = _lucicfg
+time = _time
+
+# LUCI-specific public API.
 
 core = struct(
     project = _project,
@@ -44,12 +48,7 @@ core = struct(
     recipe = _recipe,
     builder = _builder,
     gitiles_poller = _gitiles_poller,
-
-    # Advanced stuff.
-    generator = _generator,
 )
 acl = _acl
-lucicfg = _lucicfg
 scheduler = _scheduler
 swarming = _swarming
-time = _time
