@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db524f9d_46037d53",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-29T20:30:15Z",
+      "side": 1,
+      "message": "nit: this is not closed",
+      "range": {
+        "startLine": 332,
+        "startChar": 39,
+        "endLine": 332,
+        "endChar": 41
+      },
+      "revId": "22d64fb7c047190b2f72762c1403e89d49ad5f39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "546248a6_25526916",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-29T20:30:15Z",
+      "side": 1,
+      "message": "what if exclude_path_regexps is specified, but path_regexps is not?",
+      "range": {
+        "startLine": 335,
+        "startChar": 4,
+        "endLine": 335,
+        "endChar": 38
+      },
+      "revId": "22d64fb7c047190b2f72762c1403e89d49ad5f39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
