@@ -22,6 +22,30 @@
       "revId": "65f3a3b5a5ab20acaf3037a5334bfe6f67d806dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88816df7_139c17d5",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-29T18:09:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83e1d0cf_4ac3b6f9",
+      "range": {
+        "startLine": 129,
+        "startChar": 5,
+        "endLine": 129,
+        "endChar": 9
+      },
+      "revId": "65f3a3b5a5ab20acaf3037a5334bfe6f67d806dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
