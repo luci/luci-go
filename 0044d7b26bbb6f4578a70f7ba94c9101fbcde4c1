@@ -194,6 +194,30 @@
     },
     {
       "key": {
+        "uuid": "e604d265_db3da243",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-01-29T16:21:06Z",
+      "side": 1,
+      "message": "(2) sgtm as long as the regex supports ^ and $ if it\u0027s not a full match",
+      "parentUuid": "1965142a_69c8bf0a",
+      "range": {
+        "startLine": 306,
+        "startChar": 35,
+        "endLine": 306,
+        "endChar": 51
+      },
+      "revId": "0044d7b26bbb6f4578a70f7ba94c9101fbcde4c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d349f296_ecb908eb",
         "filename": "scheduler/appengine/messages/config.proto",
         "patchSetId": 1
