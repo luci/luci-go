@@ -58,7 +58,7 @@ working directory, i.e. all files there will be send to LUCI Config for
 validation.
 
 When interpreting Starlark script, flags like -config-dir and -config-set work
-as overrides for values declared in the script itself via meta.config(...)
+as overrides for values declared in the script itself via lucicfg.config(...)
 statement. See its doc for more details.
 		`,
 		CommandRun: func() subcommands.CommandRun {

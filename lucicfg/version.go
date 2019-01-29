@@ -31,7 +31,7 @@ const (
 )
 
 func init() {
-	// See //internal/meta.star.
+	// See //internal/lucicfg.star.
 	declNative("version", func(call nativeCall) (starlark.Value, error) {
 		if err := call.unpack(0); err != nil {
 			return nil, err

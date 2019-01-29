@@ -47,7 +47,7 @@ TODO: To be written.
   Load all symbols we are going to document in advance to let LinkifySymbols
   know that they can be referred to through anchors.
 */}}
-{{ $meta := Symbol "@stdlib//builtins.star" "meta" }}
+{{ $lucicfg := Symbol "@stdlib//builtins.star" "lucicfg" }}
 {{ $time := Symbol "@stdlib//builtins.star" "time" }}
 {{ $core := Symbol "@stdlib//builtins.star" "core" }}
 {{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
@@ -74,7 +74,7 @@ TODO: To be written.
 {{template "todo"}}
 
 ## Configuring and inspecting lucicfg itself
-{{template "gen-funcs-doc" $meta}}
+{{template "gen-funcs-doc" $lucicfg}}
 
 ## Working with time
 {{template "gen-funcs-doc" $time}}

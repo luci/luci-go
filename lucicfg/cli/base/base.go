@@ -93,7 +93,7 @@ func (c *Subcommand) Init(params Parameters) {
 }
 
 // DefaultMeta returns Meta values to use by default if not overridden via flags
-// or via meta.config(...).
+// or via lucicfg.config(...).
 func (c *Subcommand) DefaultMeta() lucicfg.Meta {
 	if c.params == nil {
 		panic("call Init first")

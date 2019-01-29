@@ -26,13 +26,13 @@ def _config(
   influence how they are generated and validated.
 
   Each parameter has a corresponding command line flag. If the flag is present,
-  it overrides the value set via `meta.config` (if any). For example, the flag
-  `-config-service-host <value>` overrides whatever was set via
-  `meta.config(config_service_host=...)`.
+  it overrides the value set via `lucicfg.config` (if any). For example, the
+  flag `-config-service-host <value>` overrides whatever was set via
+  `lucicfg.config(config_service_host=...)`.
 
-  `meta.config` is allowed to be called multiple times. The most recently set
-  value is used in the end, so think of `meta.config(var=...)` just as assigning
-  to a variable.
+  `lucicfg.config` is allowed to be called multiple times. The most recently set
+  value is used in the end, so think of `lucicfg.config(var=...)` just as
+  assigning to a variable.
 
   Args:
     config_service_host: a hostname of a LUCI Config Service to send validation
@@ -64,8 +64,8 @@ def _config(
         caller to make sure no stale output remains.
     fail_on_warnings: if set to True treat validation warnings as errors.
         Default is False (i.e. warnings do to cause the validation to fail). If
-        set to True via `meta.config` and you want to override it to False via
-        command line flags use `-fail-on-warnings=false`.
+        set to True via `lucicfg.config` and you want to override it to False
+        via command line flags use `-fail-on-warnings=false`.
   """
   if config_service_host != None:
     __native__.set_meta('config_service_host', config_service_host)
@@ -86,7 +86,7 @@ def _version():
 
 # Public API.
 
-meta = struct(
+lucicfg = struct(
     config = _config,
     version = _version,
 )

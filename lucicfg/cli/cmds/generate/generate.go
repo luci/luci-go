@@ -38,8 +38,8 @@ func Cmd(params base.Parameters) *subcommands.Command {
 		LongDesc: `Interprets a high-level config, generating *.cfg files.
 
 Writes generated configs to the directory given via -config-dir or via
-meta.config(config_dir=...) statement in the script. If it is '-', just prints
-them to stdout.
+lucicfg.config(config_dir=...) statement in the script. If it is '-', just
+prints them to stdout.
 
 If -validate is given, sends the generated config to LUCI Config service for
 validation. This can also be done separately via 'validate' subcommand.
@@ -131,9 +131,9 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 	if gr.validate {
 		switch {
 		case meta.ConfigServiceHost == "":
-			return result, fmt.Errorf("can't validate the config, meta.config(config_service_host=...) is not set")
+			return result, fmt.Errorf("can't validate the config, lucicfg.config(config_service_host=...) is not set")
 		case meta.ConfigSet == "":
-			return result, fmt.Errorf("can't validate the config, meta.config(config_set=...) is not set")
+			return result, fmt.Errorf("can't validate the config, lucicfg.config(config_set=...) is not set")
 		}
 		result.Validation, err = base.ValidateConfigs(ctx, configSet, &meta, gr.ConfigService)
 		if err != nil {

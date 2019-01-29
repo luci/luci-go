@@ -32,9 +32,9 @@ import (
 // It is a common part of subcommands that generate configs.
 //
 // 'meta' is initial Meta config with default parameters, it will be mutated
-// in-place to contain the final parameters (based on meta.config(...) calls in
-// Starlark and the config populated via CLI flags, passed as 'flags'). 'flags'
-// are also mutated in-place to rebase ConfigDir onto cwd.
+// in-place to contain the final parameters (based on lucicfg.config(...) calls
+// in Starlark and the config populated via CLI flags, passed as 'flags').
+// 'flags' are also mutated in-place to rebase ConfigDir onto cwd.
 func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta) (lucicfg.ConfigSet, error) {
 	abs, err := filepath.Abs(inputFile)
 	if err != nil {
