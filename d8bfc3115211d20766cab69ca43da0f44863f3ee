@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "61a2975d_a8df1f2e",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-29T00:07:30Z",
+      "side": 1,
+      "message": "This can be arbitrary and doesn\u0027t have to map to the source code location. \n\nI think \"external/crostesting/source_tree_test_config.proto\" will be better, being shorter.",
+      "range": {
+        "startLine": 75,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 65
+      },
+      "revId": "d8bfc3115211d20766cab69ca43da0f44863f3ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
