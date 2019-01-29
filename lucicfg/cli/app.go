@@ -62,17 +62,18 @@ func GetApplication(params base.Parameters) *cli.Application {
 		},
 
 		Commands: []*subcommands.Command{
-			subcommands.CmdHelp,
-			versioncmd.Version,
+			subcommands.Section("Config generation\n"),
+			generate.Cmd(params),
+			validate.Cmd(params),
 
-			{}, // These are spacers so that the commands appear in groups.
+			subcommands.Section("Authentication for LUCI Config\n"),
 			authcli.SubcommandInfo(params.AuthOptions, "auth-info", true),
 			authcli.SubcommandLogin(params.AuthOptions, "auth-login", false),
 			authcli.SubcommandLogout(params.AuthOptions, "auth-logout", false),
 
-			{},
-			generate.Cmd(params),
-			validate.Cmd(params),
+			subcommands.Section("Misc\n"),
+			subcommands.CmdHelp,
+			versioncmd.Version,
 		},
 	}
 }
