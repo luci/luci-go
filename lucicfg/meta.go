@@ -30,10 +30,10 @@ import (
 // Meta contains configuration for the configuration generator itself.
 //
 // It influences how generator produces output configs. It is settable through
-// meta.config(...) statements on the Starlark side or through command line
-// flags. Command line flags override what was set via meta.config(...).
+// lucicfg.config(...) statements on the Starlark side or through command line
+// flags. Command line flags override what was set via lucicfg.config(...).
 //
-// See @stdlib//internal/meta.star for full meaning of fields.
+// See @stdlib//internal/lucicfg.star for full meaning of fields.
 type Meta struct {
 	ConfigServiceHost string   `json:"config_service_host"` // LUCI config host name
 	ConfigSet         string   `json:"config_set"`          // e.g. "project/<name>"
@@ -78,7 +78,7 @@ func (m *Meta) AddFlags(fs *flag.FlagSet) {
 		`A directory to place generated configs into (relative to cwd if given as a
 flag otherwise relative to the main script). If '-', generated configs are just
 printed to stdout in a format useful for debugging.`)
-	fs.Var(luciflag.CommaList(&m.TrackedFiles), "tracked-files", "Globs for files considered generated, see meta.config(...) doc for more info.")
+	fs.Var(luciflag.CommaList(&m.TrackedFiles), "tracked-files", "Globs for files considered generated, see lucicfg.config(...) doc for more info.")
 	fs.BoolVar(&m.FailOnWarnings, "fail-on-warnings", m.FailOnWarnings, "Treat validation warnings as errors.")
 }
 
@@ -132,7 +132,7 @@ func (m *Meta) PopulateFromTouchedIn(t *Meta) {
 }
 
 // WasTouched returns true if the field (given by its Starlark snake_case name)
-// was explicitly set via CLI flags or via meta.config(...) in Starlark.
+// was explicitly set via CLI flags or via lucicfg.config(...) in Starlark.
 //
 // Panics if the field is unrecognized.
 func (m *Meta) WasTouched(field string) bool {
@@ -243,11 +243,11 @@ func init() {
 	// set_meta_default(k, v) sets the value of the corresponding field in Meta,
 	// but only if it wasn't set before.
 	//
-	// Unlike set_meta, which is almost directly exposed through meta.config(...),
-	// set_meta_default is currently a private API, used only to set the default
-	// config set name based on core.project(name=...). It is expected that no
-	// one will really need to use set_meta_default, so it's not worth exporting
-	// and documenting it.
+	// Unlike set_meta, which is almost directly exposed through
+	// lucicfg.config(...), set_meta_default is currently a private API, used only
+	// to set the default config set name based on core.project(name=...). It is
+	// expected that no one will really need to use set_meta_default, so it's not
+	// worth exporting and documenting it.
 	declNative("set_meta_default", func(call nativeCall) (starlark.Value, error) {
 		var k starlark.String
 		var v starlark.Value

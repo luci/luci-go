@@ -1,6 +1,6 @@
-meta.config(config_dir = '.output')
-meta.config(tracked_files = ['*.cfg'])
-meta.config(fail_on_warnings = True)
+lucicfg.config(config_dir = '.output')
+lucicfg.config(tracked_files = ['*.cfg'])
+lucicfg.config(fail_on_warnings = True)
 
 core.project(
     name = 'infra',
