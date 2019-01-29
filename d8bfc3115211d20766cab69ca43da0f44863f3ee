@@ -22,6 +22,30 @@
       "revId": "d8bfc3115211d20766cab69ca43da0f44863f3ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2982ba3b_30c33b42",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-01-29T00:15:50Z",
+      "side": 1,
+      "message": "SGTM. Done",
+      "parentUuid": "61a2975d_a8df1f2e",
+      "range": {
+        "startLine": 75,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 65
+      },
+      "revId": "d8bfc3115211d20766cab69ca43da0f44863f3ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
