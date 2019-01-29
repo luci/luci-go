@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "007cb9ad_ca7c5f5c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-29T23:35:32Z",
+      "side": 1,
+      "message": "is this going to affect CIPD and LED?",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 40
+      },
+      "revId": "6c3a2523e41e90924b7b28034a1fd56766ac5432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
