@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3eecdfe_9ae0b6e3",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-29T02:45:46Z",
+      "side": 1,
+      "message": "this function used to create a valid builder id. Now it works correctly only in v1 mode. In v2 mode, it returns a builder id without a project (an invalid BuilderID) and the caller is expected to fill project.\nIf v2 is expected to have project id, bucket in v2 format and builder, what value does this function provide to such caller? They can just create a valid buildbucketpb.BuilderID.\n\nreally, the added behavior is specific to the builder handler. Let\u0027s place it there.",
+      "revId": "8b25f16bd3ecad34163b65c0dbd5e02383270c52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
