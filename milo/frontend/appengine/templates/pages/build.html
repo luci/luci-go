@@ -78,7 +78,7 @@
   <div class="content">
     <h1>
     {{ with .BuildPage.Builder }}
-      Builder {{ . }}
+      Builder {{ .HTML }}
     {{ end }}
     Build {{ .BuildPage.BuildID.HTML }}
     {{ range .BuildPage.Banners }}

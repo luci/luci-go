@@ -51,8 +51,11 @@ type BuilderID struct {
 }
 
 // NewBuilderID does what it says.
-func NewBuilderID(v1Bucket, builder string) (bid BuilderID) {
-	bid.Project, bid.Bucket = bb.BucketNameToV2(v1Bucket)
+func NewBuilderID(bucket, builder string) (bid BuilderID) {
+	bid.Project, bid.Bucket = bb.BucketNameToV2(bucket)
+	if bid.Bucket == "" {
+		bid.Bucket = bucket
+	}
 	bid.Builder = builder
 	return
 }

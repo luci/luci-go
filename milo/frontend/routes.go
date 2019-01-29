@@ -131,6 +131,9 @@ func Run(templatePath string) {
 		// simply passes project=chromium.
 
 		bid := buildbucket.NewBuilderID(c.Params.ByName("bucket"), c.Params.ByName("builder"))
+		if bid.Project == "" {
+			bid.Project = c.Params.ByName("project")
+		}
 		return BuilderHandler(c, buildsource.BuilderID(bid.String()))
 	}))
 	// TODO(nodir): delete this redirect and the chromium project assumption with it

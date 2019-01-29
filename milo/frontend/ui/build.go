@@ -191,7 +191,8 @@ func (bp *BuildPage) Builder() *Link {
 	b := bp.Build.Builder
 	return NewLink(
 		b.Builder,
-		fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, b.Bucket, b.Builder),
+		// TODO(crbug.com/848960): Remove the luci.<project> prefix in the URL once builder page is on v2.
+		fmt.Sprintf("/p/%s/builders/luci.%s.%s/%s", b.Project, b.Project, b.Bucket, b.Builder),
 		fmt.Sprintf("Builder %s in bucket %s", b.Builder, b.Bucket))
 }
 
