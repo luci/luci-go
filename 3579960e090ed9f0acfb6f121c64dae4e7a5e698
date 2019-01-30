@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b4ff4843_34349749",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T22:48:31Z",
+      "side": 1,
+      "message": "this and the below obnoxiousness is #1 reason why I hate coding (and reviewing) Go code.\n ie what in Py/C++ would be concise code where I can focusing on coding/reading actual logic, \n   is a ton of spelled out gibberish obscuring what\u0027s really important.\n\nI considered implementing defaultmap (kinda collections.defaultdict) but to/from interface{} is still obnoxious.\nWriting non-generic map[string]map[string]map... seems like a waste.\nGenerating code using smth like https://flaviocopes.com/golang-data-structure-dictionary/ is also not exciting :(\nSo, I used advanced Vim options to \"generate\" this copy-pastish vomit.\nSuggestions are very welcome.\n\nBtw, one can reduce map nesting by 1 level by combining (url, repo) into struct, but I didn\u0027t find it any better (line-wise, it was about the same)",
+      "revId": "3579960e090ed9f0acfb6f121c64dae4e7a5e698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
