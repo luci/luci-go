@@ -159,7 +159,7 @@ func processConfig(c context.Context, payload proto.Message) error {
 				Attributes: cfg.Attributes,
 				Config:     task.Id,
 				Index:      i,
-				Lifetime:   cfg.GetSeconds(),
+				Lifetime:   cfg.GetLifetime().GetSeconds(),
 				Prefix:     cfg.Prefix,
 				Swarming:   cfg.Swarming,
 			},

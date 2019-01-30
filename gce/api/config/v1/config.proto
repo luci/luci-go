@@ -112,6 +112,21 @@ message Kinds {
   repeated Kind kind = 1;
 }
 
+// A length of time.
+message TimePeriod {
+  oneof time {
+    // The length of time in <int><unit> form.
+    // Valid units are "s", "m", "h", "d", and "mo", meaning
+    // "seconds", "minutes", "hours", "days", "months" respectively.
+    // A "day" is shorthand for 24 hours.
+    // A "month" is shorthand for 30 days.
+    string duration = 1;
+
+    // The length of time in seconds.
+    int64 seconds = 2;
+  }
+}
+
 // A config for one type of VM.
 message Config {
   // The amount of these VMs.
@@ -126,14 +141,7 @@ message Config {
 
   // The lifetime of these VMs.
   // At the end of their lifetime, each VM is deleted and replaced.
-  oneof lifetime {
-    // The lifetime of these VMs as a duration string.
-    // https://golang.org/pkg/time/#ParseDuration.
-    string duration = 4;
-
-    // The lifetime of these VMs in seconds.
-    int64 seconds = 5;
-  }
+  TimePeriod lifetime = 4;
 
   // The prefix to use when naming these VMs.
   string prefix = 6;
