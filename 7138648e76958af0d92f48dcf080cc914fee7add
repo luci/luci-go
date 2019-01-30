@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6f20ad31_0ec2a7ba",
+        "filename": "gce/api/config/v1/duration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T23:37:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d74fcf51_2bd66532",
+      "revId": "7138648e76958af0d92f48dcf080cc914fee7add",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e2f9b1e1_63d40dcc",
         "filename": "gce/api/config/v1/timeperiod.go",
         "patchSetId": 3
