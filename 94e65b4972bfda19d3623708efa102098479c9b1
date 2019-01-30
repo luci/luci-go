@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7b09bf9a_b7054bb1",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T23:59:47Z",
+      "side": 1,
+      "message": "Why though? It\u0027s irrelevant. You can do an RPC here if you want. If we were synchronizing state to some other app we would do a drop-in replacement with something that uses the network. Seems like an implementation detail irrelevant from this package\u0027s perspective to me.\n\nThe opposite is also true. I don\u0027t care if getInterface(c) produces a config.Interface which does network calls to get me the configs or if it\u0027s leveraging some local cache and the configs have already been fetched out of band, or whatever. It\u0027s all implementation detail. The only thing I care about is configs are retrieved by getInterface(c) and configs are stored by getServer(c).",
+      "parentUuid": "88370e53_a5c20f3d",
+      "revId": "94e65b4972bfda19d3623708efa102098479c9b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b237785e_cae0bcaa",
         "filename": "gce/appengine/config/config.go",
         "patchSetId": 1
@@ -95,6 +113,30 @@
       "side": 1,
       "message": "\u003e I\u0027ve used this style elsewhere\n\nI don\u0027t recall multilined ones, so I\u0027m currently not buying \"style elsewhere\" argument.\nIf I lgtm-ed that code, well, my bad then :(\nStill my preference as well as how most other LUCI-go code I looked/wrote is just moving \"if err !\u003d nil\" to next line instead of creating a named function.",
       "parentUuid": "4563fa27_5c37e27d",
+      "range": {
+        "startLine": 96,
+        "startChar": 3,
+        "endLine": 96,
+        "endChar": 4
+      },
+      "revId": "94e65b4972bfda19d3623708efa102098479c9b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e843c61_08e24195",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T23:59:47Z",
+      "side": 1,
+      "message": "https://chromium.googlesource.com/infra/luci/luci-go/+/09bc9d9b2d8bb6120e8593a69d5ad0f13874bac8/gce/appengine/backend/queues.go#137\n\nI dunno, I\u0027m not convinced that:\nerr :\u003d datastore.Run(c, q, func(...) {\n...\n...\n...\n})\nif err !\u003d nil {\n}\n\nIs particularly less egregious than what I\u0027ve got here.",
+      "parentUuid": "e01a8d3e_33fbb6d6",
       "range": {
         "startLine": 96,
         "startChar": 3,
