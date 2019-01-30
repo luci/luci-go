@@ -30,37 +30,13 @@ func TestValidateConfig(t *testing.T) {
 	Convey("validate", t, func() {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("invalid", func() {
-			Convey("empty", func() {
-				cfg := &Config{}
-				cfg.Validate(c)
-				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "at least one disk is required")
-				So(errs, ShouldContainErr, "prefix is required")
-				So(errs, ShouldContainErr, "lifetime seconds must be positive")
-			})
-
-			Convey("lifetime", func() {
-				Convey("duration", func() {
-					cfg := &Config{
-						Lifetime: &Config_Duration{},
-					}
-					cfg.Validate(c)
-					errs := c.Finalize().(*validation.Error).Errors
-					So(errs, ShouldContainErr, "lifetime seconds must be positive")
-				})
-
-				Convey("seconds", func() {
-					cfg := &Config{
-						Lifetime: &Config_Seconds{
-							Seconds: -3600,
-						},
-					}
-					cfg.Validate(c)
-					errs := c.Finalize().(*validation.Error).Errors
-					So(errs, ShouldContainErr, "lifetime seconds must be positive")
-				})
-			})
+		Convey("empty", func() {
+			cfg := &Config{}
+			cfg.Validate(c)
+			errs := c.Finalize().(*validation.Error).Errors
+			So(errs, ShouldContainErr, "at least one disk is required")
+			So(errs, ShouldContainErr, "prefix is required")
+			So(errs, ShouldContainErr, "duration or seconds is required")
 		})
 
 		Convey("valid", func() {
@@ -76,8 +52,10 @@ func TestValidateConfig(t *testing.T) {
 					Project: "project",
 					Zone:    "zone",
 				},
-				Lifetime: &Config_Seconds{
-					Seconds: 3600,
+				Lifetime: &TimePeriod{
+					Time: &TimePeriod_Seconds{
+						Seconds: 3600,
+					},
 				},
 				Prefix: "prefix",
 			}
