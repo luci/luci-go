@@ -108,10 +108,16 @@
       <p class="status FAILURE">Error while rendering page: {{.}}</p>
     {{ end }}
     <h2>Overview</h2>
-    <p class="result status {{.BuildPage.Status}}">
-      {{ .BuildPage.HumanStatus }}<br>
-      {{ .BuildPage.Output.SummaryMarkdown | renderMarkdown }}
-    </p>
+    <div class="result status {{.BuildPage.Status}}">
+      <div class="main-status">{{ .BuildPage.HumanStatus }}</div>
+      {{ if .BuildPage.Output.SummaryMarkdown }}
+        {{ .BuildPage.Output.SummaryMarkdown | renderMarkdown }}
+      {{ else }}
+        {{ range .BuildPage.Summary }}
+          {{ . }}<br>
+        {{ end }}
+      {{ end }}
+    </div>
 
     {{ with .BuildPage.Input }}
       <h2>Input</h2>

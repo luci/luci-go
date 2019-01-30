@@ -27,8 +27,7 @@ import (
 
 // TestCases are the list of known mock data.
 // We put this here instead of _test.go to allow for debug data in dev instances.
-// TODO(hinoka): Implement debug view for localhost development.
-var TestCases = []string{"linux-rel"}
+var TestCases = []string{"linux-rel", "MacTests"}
 
 // GetTestBuild returns a debug build from testdata.
 func GetTestBuild(c context.Context, relDir, name string) (*buildbucketpb.Build, error) {
