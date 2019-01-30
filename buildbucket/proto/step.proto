@@ -32,7 +32,7 @@ message Step {
     // Unique within the step.
     string name = 1;
 
-    // URL of a human-oriented page that displays log contents.
+    // URL of a Human-readable page that displays log contents.
     string view_url = 2;
 
     // URL of the log content.
@@ -88,7 +88,7 @@ message Step {
   // Log order is up to the step.
   repeated Log logs = 5;
 
-  // Human-oriented summary of the step provided by the step itself,
+  // Human-readable summary of the step provided by the step itself,
   // in Markdown format (https://spec.commonmark.org/0.28/).
   //
   // V1 equivalent: combines and supersedes Buildbot's step_text and step links and also supports
