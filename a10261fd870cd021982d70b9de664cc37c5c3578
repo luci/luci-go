@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3834471f_8a3a11ab",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-30T18:47:49Z",
+      "side": 1,
+      "message": "since this is a user-controlled part and its own entity, i think it would be appropriate to put it in a div.\ni imagine we will want to style it differently one day\n\nthen you don\u0027t need br",
+      "range": {
+        "startLine": 113,
+        "startChar": 6,
+        "endLine": 120,
+        "endChar": 8
+      },
+      "revId": "a10261fd870cd021982d70b9de664cc37c5c3578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37e0237e_85db4e09",
+        "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_linux-rel.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-30T18:47:49Z",
+      "side": 1,
+      "message": "do you have test for summary markdown?",
+      "revId": "a10261fd870cd021982d70b9de664cc37c5c3578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
