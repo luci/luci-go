@@ -75,3 +75,20 @@ func (s *DecoratedConfiguration) Get(c context.Context, req *GetRequest) (rsp *C
 	}
 	return
 }
+
+func (s *DecoratedConfiguration) List(c context.Context, req *ListRequest) (rsp *ListResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(c, "List", req)
+		if err == nil {
+			c = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.List(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "List", rsp, err)
+	}
+	return
+}

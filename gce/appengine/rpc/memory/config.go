@@ -56,3 +56,13 @@ func (srv *Config) Get(c context.Context, req *config.GetRequest) (*config.Confi
 	}
 	return cfg.(*config.Config), nil
 }
+
+// List handles a request to list all configs.
+func (srv *Config) List(c context.Context, req *config.ListRequest) (*config.ListResponse, error) {
+	rsp := &config.ListResponse{}
+	srv.cfg.Range(func(_, val interface{}) bool {
+		rsp.Configs = append(rsp.Configs, val.(*config.Config))
+		return true
+	})
+	return rsp, nil
+}
