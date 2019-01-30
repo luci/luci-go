@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6c874c78_6f1b833d",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T01:58:51Z",
+      "side": 1,
+      "message": "2019",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa6cd4c4_36fecfc4",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T01:58:51Z",
+      "side": 1,
+      "message": "given that you know these are all digits, i\u0027d instead complain that int is too large + add extra check based on L59 comment can be inlined into here.",
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b9c2d23_83724c5f",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T01:58:51Z",
+      "side": 1,
+      "message": "Pretty sure not true, at the very least because  you allow \"-\" in front of the number in regexp.\nBut even it was, UX will be bad. So, instead add a check on L45 that n as parsed is no more than say 10 years worth of seconds (3e8) and greater than 0, then it\u0027s trivial to bound true multiplication result by 3e8 * 2592000 \u003c\u003c 10^18 \u003c\u003c 2^63",
+      "range": {
+        "startLine": 59,
+        "startChar": 35,
+        "endLine": 59,
+        "endChar": 56
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f0e23ee_03420304",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T01:58:51Z",
+      "side": 1,
+      "message": "mutation of the underlying object is highly unexpected from a validation call.",
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5c81756_5674a0a6",
+        "filename": "gce/api/config/v1/timeperiod_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T01:58:51Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09706bcb_ab62eaa4",
+        "filename": "gce/api/config/v1/timeperiod_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T01:58:51Z",
+      "side": 1,
+      "message": "food for thought: tests are only useful if they actually fail during later development, directing developer to a productive action.\n\nIf I were in your shoes, I\u0027d not spend time writing this test, since I estimate chance of the above to be almost 0.",
+      "range": {
+        "startLine": 102,
+        "startChar": 3,
+        "endLine": 105,
+        "endChar": 5
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
