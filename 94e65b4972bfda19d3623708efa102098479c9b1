@@ -2,6 +2,40 @@
   "comments": [
     {
       "key": {
+        "uuid": "88370e53_a5c20f3d",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T23:46:18Z",
+      "side": 1,
+      "message": "forgot: as discussed in comments, please a comment to this line that \"srv\" isn\u0027t actually a remote server, but implementation.",
+      "revId": "94e65b4972bfda19d3623708efa102098479c9b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b237785e_cae0bcaa",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T23:46:18Z",
+      "side": 1,
+      "message": "and also here that it\u0027s not an RPC.",
+      "revId": "94e65b4972bfda19d3623708efa102098479c9b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "61c2341e_3e96ac28",
         "filename": "gce/appengine/rpc/config.go",
         "patchSetId": 1
