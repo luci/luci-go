@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ed6121bd_6261b149",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-30T20:09:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3834471f_8a3a11ab",
+      "range": {
+        "startLine": 113,
+        "startChar": 6,
+        "endLine": 120,
+        "endChar": 8
+      },
+      "revId": "a10261fd870cd021982d70b9de664cc37c5c3578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "37e0237e_85db4e09",
         "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_linux-rel.html",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "a10261fd870cd021982d70b9de664cc37c5c3578",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a5229c8_c9336d9c",
+        "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_linux-rel.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-01-30T20:09:45Z",
+      "side": 1,
+      "message": "Not here (no real world sample yet) but the summary markdown codepath is executed for the step level (eg L201)\n\nI\u0027ll add a sample for the self generated summary",
+      "parentUuid": "37e0237e_85db4e09",
+      "revId": "a10261fd870cd021982d70b9de664cc37c5c3578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
