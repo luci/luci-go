@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e664b280_6c20ddb7",
+        "filename": "starlark/interpreter/interpreter_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-01-30T03:37:00Z",
+      "side": 1,
+      "message": "eh... beta than nothing. I also suspect \u0027exec\u0027 doesn\u0027t mesh well with FailureCollect thingy. The collected traces will be relative to the inner-most exec\u0027ed file. The context of what execed it will be lost (until we teach FailureCollector thingy about exec\u0027s somehow).",
+      "range": {
+        "startLine": 267,
+        "startChar": 58,
+        "endLine": 273,
+        "endChar": 46
+      },
+      "revId": "5bfbfb8031a404b09960324d0e0a447b305dbd01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
