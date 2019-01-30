@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45e23c32_06d56df6",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-30T00:13:06Z",
+      "side": 1,
+      "message": "summary markdown does not override status. i think both status and summary markdown must be displayed",
+      "range": {
+        "startLine": 117,
+        "startChar": 8,
+        "endLine": 117,
+        "endChar": 36
+      },
+      "revId": "795c0c1ad479fb0bbec0d6089a1beea994866a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e41b9b19_701ec85a",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-01-30T00:13:06Z",
+      "side": 1,
+      "message": "nit: it would be simpler to have append \"Infra Failure\" and step.Name\nthe intention would be much clearer from the code",
+      "range": {
+        "startLine": 91,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 14
+      },
+      "revId": "795c0c1ad479fb0bbec0d6089a1beea994866a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
