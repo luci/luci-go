@@ -78,6 +78,25 @@ type BuildPage struct {
 	steps []*Step
 }
 
+// Summary returns a summary of failures in the build.
+// TODO(hinoka): Remove after recipe engine emits SummaryMarkdown natively.
+func (bp *BuildPage) Summary() (result []string) {
+	for _, step := range bp.Build.Steps {
+		parts := strings.Split(step.Name, "|")
+		name := parts[len(parts)-1]
+		if name == "Failure reason" {
+			continue
+		}
+		switch step.Status {
+		case buildbucketpb.Status_INFRA_FAILURE:
+			result = append(result, "Infra Failure "+name)
+		case buildbucketpb.Status_FAILURE:
+			result = append(result, "Failure "+name)
+		}
+	}
+	return
+}
+
 // Steps converts the flat Steps from the underlying Build into a tree.
 // The tree is only calculated on the first call, all subsequent calls return cached information.
 // TODO(hinoka): Print nicer error messages instead of panicking for invalid build protos.
