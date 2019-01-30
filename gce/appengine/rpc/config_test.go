@@ -114,8 +114,10 @@ func TestConfig(t *testing.T) {
 						Project: "project",
 						Zone:    "zone",
 					},
-					Lifetime: &config.Config_Seconds{
-						Seconds: 3600,
+					Lifetime: &config.TimePeriod{
+						Time: &config.TimePeriod_Seconds{
+							Seconds: 3600,
+						},
 					},
 					Prefix: "prefix",
 				},
@@ -133,8 +135,10 @@ func TestConfig(t *testing.T) {
 					},
 					Zone: "zone",
 				},
-				Lifetime: &config.Config_Seconds{
-					Seconds: 3600,
+				Lifetime: &config.TimePeriod{
+					Time: &config.TimePeriod_Seconds{
+						Seconds: 3600,
+					},
 				},
 				Prefix: "prefix",
 			})

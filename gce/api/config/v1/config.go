@@ -45,9 +45,7 @@ func (cfg *Config) Validate(c *validation.Context) {
 	if cfg.GetPrefix() == "" {
 		c.Errorf("prefix is required")
 	}
-	if cfg.GetSeconds() < 1 {
-		// Implicitly rejects Duration.
-		// TODO(smut): Support Duration.
-		c.Errorf("lifetime seconds must be positive")
-	}
+	c.Enter("lifetime")
+	cfg.GetLifetime().Validate(c)
+	c.Exit()
 }
