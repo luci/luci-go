@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/config/impl/memory"
 
 	gce "go.chromium.org/luci/gce/api/config/v1"
+	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -241,6 +242,96 @@ func TestMerge(t *testing.T) {
 						Zone:    "zone",
 					},
 				},
+			})
+		})
+	})
+}
+
+func TestSync(t *testing.T) {
+	t.Parallel()
+
+	Convey("sync", t, func() {
+		srv := &rpc.Config{}
+		c := withServer(context.Background(), srv)
+
+		Convey("none", func() {
+			cfgs := &gce.Configs{}
+			So(sync(c, cfgs), ShouldBeNil)
+			rsp, err := srv.List(c, &gce.ListRequest{})
+			So(err, ShouldBeNil)
+			So(rsp.Configs, ShouldBeEmpty)
+		})
+
+		Convey("creates", func() {
+			Convey("first", func() {
+				cfgs := &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Prefix: "prefix",
+						},
+					},
+				}
+				So(sync(c, cfgs), ShouldBeNil)
+				rsp, err := srv.List(c, &gce.ListRequest{})
+				So(err, ShouldBeNil)
+				So(rsp.Configs, ShouldHaveLength, 1)
+				So(rsp.Configs[0].Prefix, ShouldEqual, "prefix")
+			})
+
+			Convey("second", func() {
+				srv.Ensure(c, &gce.EnsureRequest{
+					Id: "prefix1",
+					Config: &gce.Config{
+						Amount: 1,
+						Prefix: "prefix1",
+					},
+				})
+				cfgs := &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Amount: 2,
+							Prefix: "prefix2",
+						},
+					},
+				}
+				So(sync(c, cfgs), ShouldBeNil)
+				rsp, err := srv.List(c, &gce.ListRequest{})
+				So(err, ShouldBeNil)
+				So(rsp.Configs, ShouldHaveLength, 2)
+				So(rsp.Configs, ShouldContain, &gce.Config{
+					Amount: 1,
+					Prefix: "prefix1",
+				})
+				So(rsp.Configs, ShouldContain, &gce.Config{
+					Amount: 2,
+					Prefix: "prefix2",
+				})
+			})
+		})
+
+		Convey("updates", func() {
+			srv.Ensure(c, &gce.EnsureRequest{
+				Id: "prefix",
+				Config: &gce.Config{
+					Amount: 1,
+					Prefix: "prefix",
+				},
+			})
+			cfgs := &gce.Configs{
+				Vms: []*gce.Config{
+					{
+						Amount: 2,
+						Prefix: "prefix",
+					},
+				},
+			}
+			So(sync(c, cfgs), ShouldBeNil)
+			rsp, err := srv.List(c, &gce.ListRequest{})
+			So(err, ShouldBeNil)
+			So(rsp.Configs, ShouldHaveLength, 1)
+			So(rsp.Configs, ShouldContain, &gce.Config{
+				Amount: 2,
+				Prefix: "prefix",
 			})
 		})
 	})

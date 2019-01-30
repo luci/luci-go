@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	gce "go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/appengine/rpc"
 )
 
 // kindsFile is the name of the kinds config file.
@@ -53,6 +55,19 @@ func withInterface(c context.Context, cfg config.Interface) context.Context {
 // getInterface returns the config.Interface installed in the current context.
 func getInterface(c context.Context) config.Interface {
 	return c.Value(&cfgKey).(config.Interface)
+}
+
+// srvKey is the key to a gce.ConfigurationServer in the context.
+var srvKey = "srv"
+
+// withServer returns a new context with the given gce.ConfigurationServer installed.
+func withServer(c context.Context, srv gce.ConfigurationServer) context.Context {
+	return context.WithValue(c, &srvKey, srv)
+}
+
+// getServer returns the gce.ConfigurationServer installed in the current context.
+func getServer(c context.Context) gce.ConfigurationServer {
+	return c.Value(&srvKey).(gce.ConfigurationServer)
 }
 
 // newInterface returns a new config.Interface. Panics on error.
@@ -80,7 +95,7 @@ func fetch(c context.Context) (*gce.Kinds, *gce.Configs, error) {
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "failed to fetch %s", kindsFile).Err()
 	}
-	logging.Infof(c, "found %q revision %s", kindsFile, cfg.Revision)
+	logging.Debugf(c, "found %q revision %s", kindsFile, cfg.Revision)
 	rev := cfg.Revision
 	if err := proto.UnmarshalText(cfg.Content, &kinds); err != nil {
 		return nil, nil, errors.Annotate(err, "failed to load %q", kindsFile).Err()
@@ -91,7 +106,7 @@ func fetch(c context.Context) (*gce.Kinds, *gce.Configs, error) {
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "failed to fetch %q", vmsFile).Err()
 	}
-	logging.Infof(c, "found %q revision %s", vmsFile, cfg.Revision)
+	logging.Debugf(c, "found %q revision %s", vmsFile, cfg.Revision)
 	if cfg.Revision != rev {
 		// Could happen if configs are being updated.
 		return nil, nil, errors.Reason("config revision mismatch").Tag(transient.Tag).Err()
@@ -156,7 +171,7 @@ func deref(c context.Context, cfgs *gce.Configs) error {
 					if err != nil {
 						return errors.Annotate(err, "failed to fetch %q", file).Err()
 					}
-					logging.Infof(c, "found %q revision %s", file, cfg.Revision)
+					logging.Debugf(c, "found %q revision %s", file, cfg.Revision)
 					// TODO(smut): Ensure cfg.Revision is the same revision as everything else.
 					fileMap[file] = cfg.Content
 				}
@@ -179,6 +194,37 @@ func normalize(c context.Context, cfgs *gce.Configs) error {
 			return errors.Annotate(err, "failed to normalize %q", vms.Prefix).Err()
 		}
 	}
+	return nil
+}
+
+// sync synchronizes the given validated configs.
+func sync(c context.Context, cfgs *gce.Configs) error {
+	srv := getServer(c)
+	ids := stringset.New(0)
+	rsp, err := srv.List(c, &gce.ListRequest{})
+	if err != nil {
+		return errors.Annotate(err, "failed to fetch configs").Err()
+	}
+	for _, cfg := range rsp.Configs {
+		logging.Debugf(c, "fetched config %q", cfg.Prefix)
+		ids.Add(cfg.Prefix)
+	}
+	req := &gce.EnsureRequest{}
+	for _, vms := range cfgs.Vms {
+		// Validation enforces prefix uniqueness, so use it as the ID.
+		req.Id = vms.Prefix
+		req.Config = vms
+		if _, err := srv.Ensure(c, req); err != nil {
+			return errors.Annotate(err, "failed to ensure config %q", req.Id).Err()
+		}
+		logging.Debugf(c, "stored config %q", req.Id)
+		ids.Del(vms.Prefix)
+	}
+	ids.Iter(func(id string) bool {
+		// TODO(smut): Delete unreferenced configs.
+		logging.Debugf(c, "unreferenced config %q", id)
+		return true
+	})
 	return nil
 }
 
@@ -207,6 +253,9 @@ func Import(c context.Context) error {
 		return errors.Annotate(err, "failed to normalize configs").Err()
 	}
 
+	if err := sync(c, cfgs); err != nil {
+		return errors.Annotate(err, "failed to synchronize configs").Err()
+	}
 	return nil
 }
 
@@ -228,6 +277,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
 		// Install the config interface and the configuration service.
 		c.Context = withInterface(c.Context, newInterface(c.Context))
+		c.Context = withServer(c.Context, &rpc.Config{})
 		next(c)
 	})
 	r.GET("/internal/cron/import-config", mw, importHandler)
