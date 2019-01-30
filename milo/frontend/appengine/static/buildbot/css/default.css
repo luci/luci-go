@@ -444,6 +444,10 @@ div.BuildWaterfall {
   border-style: solid;
 }
 
+.main-status {
+  font-weight: bold;
+}
+
 /* LastBuild, BuildStep states */
 .success, .status-Success, .status-Idle, .tree-status-open, .status.SUCCESS {
   color: #000;
