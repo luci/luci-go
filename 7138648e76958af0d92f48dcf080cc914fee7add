@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d74fcf51_2bd66532",
+        "filename": "gce/api/config/v1/duration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T03:34:56Z",
+      "side": 1,
+      "message": "nitty: combine with next line",
+      "revId": "7138648e76958af0d92f48dcf080cc914fee7add",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2f9b1e1_63d40dcc",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T03:34:56Z",
+      "side": 1,
+      "message": "made me learn how Go oneof is implemented.",
+      "range": {
+        "startLine": 28,
+        "startChar": 18,
+        "endLine": 28,
+        "endChar": 40
+      },
+      "revId": "7138648e76958af0d92f48dcf080cc914fee7add",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

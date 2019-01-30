@@ -131,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "84f81f5a_2a4363dd",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T03:34:56Z",
+      "side": 1,
+      "message": "\u003e It\u0027s true in the overflow case\n\nok, underflow aside, what makes you so certain? I\u0027m just curious.\n\nAnd, i\u0027m sorry, I didn\u0027t realize that since this is used outside validation, you really don\u0027t want to validate. Now it makes more sense.",
+      "parentUuid": "d4dae863_eeb1cd2e",
+      "range": {
+        "startLine": 59,
+        "startChar": 35,
+        "endLine": 59,
+        "endChar": 56
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5f0e23ee_03420304",
         "filename": "gce/api/config/v1/timeperiod.go",
         "patchSetId": 1
