@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b9753507_f42ad4e6",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T03:19:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c874c78_6f1b833d",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa6cd4c4_36fecfc4",
         "filename": "gce/api/config/v1/timeperiod.go",
         "patchSetId": 1
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "d79899c1_00746e3d",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T03:19:50Z",
+      "side": 1,
+      "message": "Could be too small. Regardless, the error being annotated says exactly what the problem is. You get something like:\ninvalid int64: strconv.ParseInt: parsing \"9223372036854775808\": value out of range",
+      "parentUuid": "aa6cd4c4_36fecfc4",
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b9c2d23_83724c5f",
         "filename": "gce/api/config/v1/timeperiod.go",
         "patchSetId": 1
@@ -53,6 +95,30 @@
       "writtenOn": "2019-01-30T01:58:51Z",
       "side": 1,
       "message": "Pretty sure not true, at the very least because  you allow \"-\" in front of the number in regexp.\nBut even it was, UX will be bad. So, instead add a check on L45 that n as parsed is no more than say 10 years worth of seconds (3e8) and greater than 0, then it\u0027s trivial to bound true multiplication result by 3e8 * 2592000 \u003c\u003c 10^18 \u003c\u003c 2^63",
+      "range": {
+        "startLine": 59,
+        "startChar": 35,
+        "endLine": 59,
+        "endChar": 56
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4dae863_eeb1cd2e",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T03:19:50Z",
+      "side": 1,
+      "message": "It\u0027s true in the overflow case. In the underflow case it\u0027s the opposite, it turns n positive.\n\nI don\u0027t like the idea of doing validation work in a function called parseDuration when we explicitly have another called Validate.\n\nHow about this: get rid of negative (useless, so catch negative duration at the regex parsing level), and clamp at math.MaxInt64? I think clamping is reasonable UX for overflow cases. Ultimately validation should reject values several orders of magnitude smaller than math.MaxInt64 anyways, since too large is on the order of months, not billions of years.",
+      "parentUuid": "3b9c2d23_83724c5f",
       "range": {
         "startLine": 59,
         "startChar": 35,
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "7cb1efd9_d7ee7532",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T03:19:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f0e23ee_03420304",
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5c81756_5674a0a6",
         "filename": "gce/api/config/v1/timeperiod_test.go",
         "patchSetId": 1
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "57e31a2e_22890e99",
+        "filename": "gce/api/config/v1/timeperiod_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T03:19:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5c81756_5674a0a6",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "09706bcb_ab62eaa4",
         "filename": "gce/api/config/v1/timeperiod_test.go",
         "patchSetId": 1
@@ -116,6 +224,30 @@
       "writtenOn": "2019-01-30T01:58:51Z",
       "side": 1,
       "message": "food for thought: tests are only useful if they actually fail during later development, directing developer to a productive action.\n\nIf I were in your shoes, I\u0027d not spend time writing this test, since I estimate chance of the above to be almost 0.",
+      "range": {
+        "startLine": 102,
+        "startChar": 3,
+        "endLine": 105,
+        "endChar": 5
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a9369d5e_c8a1e8b5",
+        "filename": "gce/api/config/v1/timeperiod_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T03:19:50Z",
+      "side": 1,
+      "message": "Future developer could change the regex. Previous test ensures the regex matches, this test ensures it matches something useful (int64-parsable).",
+      "parentUuid": "09706bcb_ab62eaa4",
       "range": {
         "startLine": 102,
         "startChar": 3,
