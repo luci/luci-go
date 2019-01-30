@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "90fdca47_d8337568",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1206284
+      },
+      "writtenOn": "2019-01-30T22:47:58Z",
+      "side": 1,
+      "message": "this isn\u0027t a build target (it just happens to be because of convention)\n\njust call it a reference design\n\nit\u0027s better to call out where these values come from\n\n\u0027mosys platform family\u0027",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "109da154_b4e2e571",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1206284
+      },
+      "writtenOn": "2019-01-30T22:47:58Z",
+      "side": 1,
+      "message": "reference portage overlays as the concept of build target",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dd11145_0a1c829c",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1206284
+      },
+      "writtenOn": "2019-01-30T22:47:58Z",
+      "side": 1,
+      "message": "build shouldn\u0027t be in this name\n\nTestRequirement?",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dc802a6_f81703e6",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1206284
+      },
+      "writtenOn": "2019-01-30T22:47:58Z",
+      "side": 1,
+      "message": "what makes this cq specific?",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
