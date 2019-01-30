@@ -172,6 +172,16 @@ func deref(c context.Context, cfgs *gce.Configs) error {
 	return nil
 }
 
+// normalize normalizes Lifetime.Duration by converting to seconds.
+func normalize(c context.Context, cfgs *gce.Configs) error {
+	for _, vms := range cfgs.Vms {
+		if err := vms.Lifetime.Normalize(); err != nil {
+			return errors.Annotate(err, "failed to normalize %q", vms.Prefix).Err()
+		}
+	}
+	return nil
+}
+
 // Import fetches and validates configs from the config service.
 func Import(c context.Context) error {
 	kinds, cfgs, err := fetch(c)
@@ -191,6 +201,10 @@ func Import(c context.Context) error {
 
 	if err := validate(c, kinds, cfgs); err != nil {
 		return errors.Annotate(err, "invalid configs").Err()
+	}
+
+	if err := normalize(c, cfgs); err != nil {
+		return errors.Annotate(err, "failed to normalize configs").Err()
 	}
 
 	return nil
