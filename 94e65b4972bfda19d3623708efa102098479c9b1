@@ -22,6 +22,30 @@
       "revId": "94e65b4972bfda19d3623708efa102098479c9b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4563fa27_5c37e27d",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-01-30T22:42:49Z",
+      "side": 1,
+      "message": "Yeah kind of. I\u0027ve used this style elsewhere so I\u0027d prefer consistency for now, but I can reconsider it app-wide. But in my opinion it\u0027s the inline function that makes it hard to read. I\u0027d consider something like:\nf :\u003d func(...) {\n}\nif err :\u003d datastore.Run(c, q, f); err !\u003d nil {\n}",
+      "parentUuid": "61c2341e_3e96ac28",
+      "range": {
+        "startLine": 96,
+        "startChar": 3,
+        "endLine": 96,
+        "endChar": 4
+      },
+      "revId": "94e65b4972bfda19d3623708efa102098479c9b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
