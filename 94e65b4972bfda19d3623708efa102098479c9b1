@@ -46,6 +46,30 @@
       "revId": "94e65b4972bfda19d3623708efa102098479c9b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e01a8d3e_33fbb6d6",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-30T23:44:34Z",
+      "side": 1,
+      "message": "\u003e I\u0027ve used this style elsewhere\n\nI don\u0027t recall multilined ones, so I\u0027m currently not buying \"style elsewhere\" argument.\nIf I lgtm-ed that code, well, my bad then :(\nStill my preference as well as how most other LUCI-go code I looked/wrote is just moving \"if err !\u003d nil\" to next line instead of creating a named function.",
+      "parentUuid": "4563fa27_5c37e27d",
+      "range": {
+        "startLine": 96,
+        "startChar": 3,
+        "endLine": 96,
+        "endChar": 4
+      },
+      "revId": "94e65b4972bfda19d3623708efa102098479c9b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
