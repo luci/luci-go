@@ -72,9 +72,16 @@ var publicProtos = map[string]struct {
 	// load(
 	//     "@proto//external/crostesting/source_tree_test_config.proto",
 	//     source_tree_test_config_pb="crostesting")
+	// load(
+	//     "@proto//external/crostesting/cq_test_plan_config.proto",
+	//     cq_test_plan_config_pb="crostesting")
 	"external/crostesting/source_tree_test_config.proto": {
 		"crostesting",
 		"go.chromium.org/luci/lucicfg/external/crostesting/proto/config/source_tree_test_config.proto",
+	},
+	"external/crostesting/cq_test_plan_config.proto": {
+		"crostesting",
+		"go.chromium.org/luci/lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
 	},
 
 	// LogDog project config.
