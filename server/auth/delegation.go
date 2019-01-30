@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"time"
@@ -203,6 +204,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 	state := GetState(ctx)
 	if state == nil {
 		report(ErrNoAuthState, "ERROR_NO_AUTH_STATE")
+		logging.Debugf(c, "Stack trace: %s\n", debug.Stack())
 		return nil, ErrNoAuthState
 	}
 
