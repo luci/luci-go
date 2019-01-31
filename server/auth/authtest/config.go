@@ -27,7 +27,7 @@ import (
 
 // MockAuthConfig configures auth library for unit tests environment.
 //
-// If modifies the configure stored in the context. See auth.SetConfig for more
+// If modifies the configure stored in the context. See auth.Initialize for more
 // info.
 func MockAuthConfig(c context.Context) context.Context {
 	return auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {

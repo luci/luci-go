@@ -87,7 +87,9 @@ var classicEnv = gaemiddleware.Environment{
 	MemcacheAvailable:  true,
 	WithInitialRequest: prod.Use,
 	WithConfig:         gaeconfig.Use,
-	WithAuth:           func(c context.Context) context.Context { return auth.SetConfig(c, &globalAuthConfig) },
+	WithAuth: func(c context.Context) context.Context {
+		return auth.Initialize(c, &globalAuthConfig)
+	},
 
 	ExtraMiddleware: func() router.MiddlewareChain {
 		mw := make([]router.Middleware, 0, 2)
