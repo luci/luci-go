@@ -33,7 +33,7 @@ func TestState(t *testing.T) {
 
 		res, err := IsMember(ctx, "group")
 		So(res, ShouldBeFalse)
-		So(err, ShouldEqual, ErrNoAuthState)
+		So(err, ShouldEqual, ErrNotConfigured)
 	})
 
 	Convey("Check non-empty ctx", t, func() {
@@ -53,5 +53,14 @@ func TestState(t *testing.T) {
 		res, err := IsMember(ctx, "group")
 		So(err, ShouldBeNil)
 		So(res, ShouldBeTrue) // fakeDB always returns true
+	})
+
+	Convey("Check background ctx", t, func() {
+		ctx := injectTestDB(context.Background(), &fakeDB{
+			authServiceURL: "https://example.com/auth_service",
+		})
+		url, err := GetState(ctx).DB().GetAuthServiceURL(ctx)
+		So(err, ShouldBeNil)
+		So(url, ShouldEqual, "https://example.com/auth_service")
 	})
 }

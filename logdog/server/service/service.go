@@ -51,7 +51,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/logdog/common/types"
@@ -615,7 +615,7 @@ func (s *Service) getUserAgent() string { return s.Name + " / " + s.serviceID }
 // withAuthService configures service-wide authentication and installs it into
 // the supplied Context.
 func (s *Service) withAuthService(c context.Context) context.Context {
-	return serverAuth.SetConfig(c, &serverAuth.Config{
+	return serverAuth.Initialize(c, &serverAuth.Config{
 		DBProvider: nil, // We don't need to store an auth DB.
 		Signer:     nil, // We don't need to sign anything.
 		AccessTokenProvider: func(ic context.Context, scopes []string) (*oauth2.Token, error) {

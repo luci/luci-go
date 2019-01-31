@@ -134,7 +134,7 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 	},
 	WithConfig: gaeconfig.UseFlex,
 	WithAuth: func(c context.Context) context.Context {
-		return auth.SetConfig(c, &globalAuthConfig)
+		return auth.Initialize(c, &globalAuthConfig)
 	},
 	ExtraMiddleware: router.NewMiddlewareChain(
 		flexFoundationMiddleware,
