@@ -182,6 +182,42 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "aliases config_group #1")
 			})
+			Convey("2nd heuristic against overlaping config_groups", func() {
+				// Store original valid first and only ConfigGroup.
+				orig := cfg.ConfigGroups[0]
+				cfg.ConfigGroups = nil
+				add := func(refRegexps ...string) {
+					// Add new regexps sequence with constant valid gerrit url and project and
+					// the same valid verifers.
+					cfg.ConfigGroups = append(cfg.ConfigGroups, &v2.ConfigGroup{
+						Gerrit: []*v2.ConfigGroup_Gerrit{
+							{
+								Url: orig.Gerrit[0].Url,
+								Projects: []*v2.ConfigGroup_Gerrit_Project{
+									{
+										Name:      orig.Gerrit[0].Projects[0].Name,
+										RefRegexp: refRegexps,
+									},
+								},
+							},
+						},
+						Verifiers: orig.Verifiers,
+					})
+				}
+				Convey("infra/config", func() {
+					add("refs/heads/infra/config")
+					add("refs/.+")
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, `ref "refs/heads/infra/config" matches config_groups [0 1]`)
+				})
+				Convey("master", func() {
+					add() // default, meaning refs/heads/master.
+					add("refs/branch-heads/.+")
+					add("refs/heads/.+")
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, `ref "refs/heads/master" matches config_groups [0 2]`)
+				})
+			})
 		})
 
 		Convey("Temporary limitations", func() {
