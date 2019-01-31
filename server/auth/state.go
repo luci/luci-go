@@ -73,7 +73,7 @@ type stateContextKey int
 // WithState injects State into the context.
 //
 // Mostly useful from tests. Must not be normally used from production code,
-// Authenticate sets the state itself.
+// Initialize and Authenticate set the state themselves.
 func WithState(c context.Context, s State) context.Context {
 	return context.WithValue(c, stateContextKey(0), s)
 }

@@ -16,11 +16,13 @@ package auth
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"time"
 
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
 )
@@ -82,22 +84,32 @@ type Config struct {
 	IsDevMode bool
 }
 
-// SetConfig completely replaces the configuration in the context.
-func SetConfig(c context.Context, cfg *Config) context.Context {
-	return context.WithValue(c, &cfgContextKey, cfg)
+// Initialize inserts authentication configuration and state into the context.
+//
+// An initialized context is required by any other function in the package. They
+// will return ErrNotConfigured otherwise.
+//
+// Calling Initialize twice causes a panic.
+func Initialize(c context.Context, cfg *Config) context.Context {
+	if getConfig(c) != nil {
+		panic("auth.Initialize is called twice on same context")
+	}
+	return setConfig(c, cfg)
 }
 
 // ModifyConfig makes a context with a derived configuration.
 //
 // It grabs current configuration from the context (if any), passes it to the
 // callback, and puts whatever callback returns into a derived context.
+//
+// This is an advanced function intended primarily for tests.
 func ModifyConfig(c context.Context, cb func(Config) Config) context.Context {
 	var cfg Config
 	if cur := getConfig(c); cur != nil {
 		cfg = *cur
 	}
 	cfg = cb(cfg)
-	return SetConfig(c, &cfg)
+	return setConfig(c, &cfg)
 }
 
 func (cfg *Config) anonymousClient(ctx context.Context) *http.Client {
@@ -115,17 +127,63 @@ func (cfg *Config) adjustedTimeout(t time.Duration) time.Duration {
 	return time.Minute
 }
 
+// setConfig completely replaces the configuration in the context.
+func setConfig(c context.Context, cfg *Config) context.Context {
+	derived := context.WithValue(c, &cfgContextKey, cfg)
+
+	// If the context had no state at all or held a background state, adjust the
+	// derived context to have it as well, but now based on the new config (as
+	// stored in 'derived' context). Do not touch non-background states, we don't
+	// know in general how to adjust them.
+	s := GetState(c)
+	if _, yes := s.(backgroundState); s == nil || yes {
+		derived = WithState(derived, backgroundState{derived})
+	}
+
+	return derived
+}
+
 // getConfig returns the config stored in the context (or nil if not there).
 func getConfig(c context.Context) *Config {
 	val, _ := c.Value(&cfgContextKey).(*Config)
 	return val
 }
 
+// backgroundState corresponds to the state of auth library before any
+// authentication is performed.
+//
+// In particular, various background non user-facing handlers (crons, task
+// queues) see this state by default. Its most important role is to provide
+// access to authdb.DB to background handlers.
+//
+// Note: backgroundState stores context and uses GetDB lazily since for the wast
+// majority of requests  the background state is not really used (it is replaced
+// with some concrete request state in Authenticate). Thus constructing DB
+// eagerly in setConfig() is generally a waste of time.
+type backgroundState struct {
+	ctx context.Context // context with the config to get DB from
+}
+
+func (s backgroundState) DB() authdb.DB {
+	db, err := GetDB(s.ctx)
+	if err != nil {
+		db = authdb.ErroringDB{Error: err}
+	}
+	return db
+}
+
+func (s backgroundState) Authenticator() *Authenticator           { return nil }
+func (s backgroundState) Method() Method                          { return nil }
+func (s backgroundState) User() *User                             { return &User{Identity: identity.AnonymousIdentity} }
+func (s backgroundState) PeerIdentity() identity.Identity         { return identity.AnonymousIdentity }
+func (s backgroundState) PeerIP() net.IP                          { return nil }
+func (s backgroundState) UserCredentials() (*oauth2.Token, error) { return nil, ErrNoForwardableCreds }
+
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers that extract stuff from the config.
 
 // GetDB returns most recent snapshot of authorization database using DBProvider
-// installed in the context via 'ModifyConfig'.
+// installed in the context via 'Initialize' or 'ModifyConfig'.
 //
 // If no factory is installed, returns DB that forbids everything and logs
 // errors. It is often good enough for unit tests that do not care about
