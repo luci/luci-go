@@ -374,6 +374,18 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 		}
 		dict, err := intr.ExecModule(Context(th), key.pkg, key.path)
 		if err != nil {
+			// Starlark stringifies errors using Error(). For EvalError, Error()
+			// string is just a root cause, it does not include the backtrace where
+			// the execution failed. Preserve it explicitly by sticking the backtrace
+			// into the error message.
+			//
+			// Note that returning 'err' as is will preserve the backtrace inside
+			// the execed module, but we'll lose the backtrace of the 'exec' call
+			// itself, since EvalError object will just bubble to the top of the Go
+			// call stack unmodified.
+			if evalErr, ok := err.(*starlark.EvalError); ok {
+				return nil, fmt.Errorf("exec %s failed: %s", module.GoString(), evalErr.Backtrace())
+			}
 			return nil, fmt.Errorf("cannot exec %s: %s", module.GoString(), err)
 		}
 

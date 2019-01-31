@@ -249,6 +249,30 @@ func TestInterpreter(t *testing.T) {
 		})
 	})
 
+	Convey("Error in execed module", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `
+					def f():
+						exec("//exec.star")
+					f()
+				`,
+				"exec.star": `
+					def f():
+						boom = None()
+					f()
+				`,
+			},
+		})
+		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `Traceback (most recent call last):
+  //main.star:4: in <toplevel>
+  //main.star:3: in f
+Error: exec //exec.star failed: Traceback (most recent call last):
+  //exec.star:4: in <toplevel>
+  //exec.star:3: in f
+Error: invalid call of non-function (NoneType)`)
+	})
+
 	Convey("Exec cycle", t, func() {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
@@ -257,7 +281,7 @@ func TestInterpreter(t *testing.T) {
 				"exec2.star": `exec("//exec1.star")`,
 			},
 		})
-		So(err, ShouldErrLike, "cannot exec //exec1.star: cannot exec //exec2.star: cannot exec //exec1.star: the module has already been executed, 'exec'-ing same code twice is forbidden")
+		So(err, ShouldErrLike, `the module has already been executed, 'exec'-ing same code twice is forbidden`)
 	})
 
 	Convey("Trying to exec loaded module", t, func() {
