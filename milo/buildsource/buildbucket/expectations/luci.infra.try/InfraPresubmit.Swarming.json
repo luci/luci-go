@@ -6,7 +6,7 @@
     {
       "Link": {
         "Label": "100",
-        "URL": "/p//builders/luci.infra.try/Infra Presubmit (Swarming)/100",
+        "URL": "/p//builders/try/Infra Presubmit (Swarming)/100",
         "AriaLabel": "build #100"
       },
       "Status": "Running",
