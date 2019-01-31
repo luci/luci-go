@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2133847b_1cd852fc",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-01-31T15:53:35Z",
+      "side": 1,
+      "message": "I downloaded this patch and applied it locally so that I could load /admin/debug/build/LinuxTestsManySteps. I commented out the hack and loaded many times (around 30 times or so) and was unable to replicate the timeline renders but stays hidden. I was hoping to investigate a bit, learn something, maybe look for an error in the console when this happens, etc.. With the hack in place there is a noticeable double draw of the timeline when rendering /admin/debug/build/LinuxTestsManySteps.\n\nHow frequently do you see this failure to render timeline problem? I couldn\u0027t replicate it.",
+      "range": {
+        "startLine": 99,
+        "startChar": 0,
+        "endLine": 107,
+        "endChar": 9
+      },
+      "revId": "a4b90e107b59de0c0f0f8e5d59c28c6e38f85f13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
