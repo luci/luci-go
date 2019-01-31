@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
-	v1 "go.chromium.org/luci/cq/api/config/v1"
 	v2 "go.chromium.org/luci/cq/api/config/v2"
 
 	// Register "${appid}" placeholder for config validation rules.
@@ -49,12 +48,8 @@ func init() {
 // while error returned directly implies only a bug in this code.
 func validateRef(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
-	cfg := v1.Config{}
-	if err := proto.UnmarshalText(string(content), &cfg); err != nil {
-		ctx.Error(err)
-		return nil
-	}
-	validateV1(ctx, &cfg)
+	ctx.Errorf("cq.cfg is no longer used and has no effect. Please, delete cq.cfg in your repo.")
+	ctx.Errorf("cq.cfg is replaced by commit-queue.cfg")
 	return nil
 }
 

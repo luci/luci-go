@@ -56,25 +56,11 @@ func TestValidationLegacy(t *testing.T) {
 		vctx := &validation.Context{Context: c}
 		configSet := "projects/foo/refs/heads/master"
 		path := "cq.cfg"
-		Convey("Loading bad proto", func() {
-			content := []byte(` bad: "config" `)
-			So(validateRef(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
-		})
-		Convey("Loading OK config", func() {
-			content := []byte(`
-				version: 1
-				gerrit {}
-				git_repo_url: "https://x.googlesource.com/re/po.git"
-				verifiers {
-					gerrit_cq_ability { committer_list: "blah" }
-				}
-			`)
-			So(validateRef(vctx, configSet, path, content), ShouldBeNil)
+		Convey("Loading any config", func() {
+			So(validateRef(vctx, configSet, path, []byte(`any!`)), ShouldBeNil)
 			err := vctx.Finalize()
-			So(err, ShouldBeNil)
+			So(err, ShouldErrLike, "delete cq.cfg")
 		})
-		// The rest of legacy config validation tests are in legacy_test.go.
 	})
 }
 
