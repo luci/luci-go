@@ -192,18 +192,11 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 	}
 	sort.Strings(tags)
 
-	// Config contains the cache implementation.
-	cfg := getConfig(ctx)
-	if cfg == nil {
-		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
-		return nil, ErrNotConfigured
-	}
-
 	// The state carries ID of the current user and URL of the token service.
 	state := GetState(ctx)
 	if state == nil {
-		report(ErrNoAuthState, "ERROR_NO_AUTH_STATE")
-		return nil, ErrNoAuthState
+		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
+		return nil, ErrNotConfigured
 	}
 
 	// Identity we want to impersonate.
@@ -245,7 +238,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 	cached, err, label := delegationTokenCache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
 		CacheKey:    cacheKey,
 		MinTTL:      p.MinTTL,
-		MintTimeout: cfg.adjustedTimeout(10 * time.Second),
+		MintTimeout: getConfig(ctx).adjustedTimeout(10 * time.Second),
 
 		// Mint is called on cache miss, under the lock.
 		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {

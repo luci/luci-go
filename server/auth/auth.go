@@ -32,8 +32,8 @@ import (
 )
 
 var (
-	// ErrNotConfigured is returned by Authenticate if auth library wasn't
-	// properly initialized (see SetConfig).
+	// ErrNotConfigured is returned by Authenticate and other functions if the
+	// context wasn't previously initialized via 'Initialize'.
 	ErrNotConfigured = errors.New("auth: the library is not properly configured")
 
 	// ErrNoUsersAPI is returned by LoginURL and LogoutURL if none of
