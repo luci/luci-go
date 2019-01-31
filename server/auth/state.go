@@ -73,15 +73,26 @@ type stateContextKey int
 // WithState injects State into the context.
 //
 // Mostly useful from tests. Must not be normally used from production code,
-// Authenticate sets the state itself.
+// 'Authenticate' sets the state itself.
 func WithState(c context.Context, s State) context.Context {
 	return context.WithValue(c, stateContextKey(0), s)
 }
 
-// GetState return State stored in the context or nil if it is not available.
+// GetState return State stored in the context by 'Authenticate' call, the
+// background state if 'Authenticate' wasn't used or nil if the auth library
+// wasn't configured.
+//
+// The background state roughly is similar to the state of anonymous call.
+// Various background non user-facing handlers (crons, task queues) that do not
+// use 'Authenticate' see this state by default. Its most important role is to
+// provide access to authdb.DB (and all functionality that depends on it) to
+// background handlers.
 func GetState(c context.Context) State {
 	if s, ok := c.Value(stateContextKey(0)).(State); ok && s != nil {
 		return s
+	}
+	if getConfig(c) != nil {
+		return backgroundState{c}
 	}
 	return nil
 }
@@ -169,3 +180,26 @@ func (s *state) User() *User                             { return s.user }
 func (s *state) PeerIdentity() identity.Identity         { return s.peerIdent }
 func (s *state) PeerIP() net.IP                          { return s.peerIP }
 func (s *state) UserCredentials() (*oauth2.Token, error) { return s.endUserTok, s.endUserErr }
+
+///
+
+// backgroundState corresponds to the state of auth library before any
+// authentication is performed.
+type backgroundState struct {
+	ctx context.Context
+}
+
+func (s backgroundState) DB() authdb.DB {
+	db, err := GetDB(s.ctx)
+	if err != nil {
+		db = authdb.ErroringDB{Error: err}
+	}
+	return db
+}
+
+func (s backgroundState) Authenticator() *Authenticator           { return nil }
+func (s backgroundState) Method() Method                          { return nil }
+func (s backgroundState) User() *User                             { return &User{Identity: identity.AnonymousIdentity} }
+func (s backgroundState) PeerIdentity() identity.Identity         { return identity.AnonymousIdentity }
+func (s backgroundState) PeerIP() net.IP                          { return nil }
+func (s backgroundState) UserCredentials() (*oauth2.Token, error) { return nil, ErrNoForwardableCreds }

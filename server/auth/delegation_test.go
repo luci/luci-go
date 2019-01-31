@@ -56,7 +56,7 @@ func TestMintDelegationToken(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 		ctx = caching.WithEmptyProcessCache(ctx)
-		ctx = SetConfig(ctx, &Config{})
+		ctx = Initialize(ctx, &Config{})
 
 		mockedClient := &tokenMinterMock{
 			response: minter.MintDelegationTokenResponse{
