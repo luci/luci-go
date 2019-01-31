@@ -96,6 +96,17 @@ $(document).ready(function() {
       // activate event hack).
       if (ui.newPanel.attr('id') === 'timeline-tab' && timeline === null) {
         timeline = createTimeline();
+        // HACK(hinoka): Sometimes the timeline renders but stays hidden.
+        // This appears to be a vis bug.
+        // We detect this condition because initialRangeChangeDone wouldn't
+        // have been set (Even if the range it set).
+        // Manually flip the flag and force a re-render if this happens.
+        setTimeout(() => {
+          if (!timeline.initialRangeChangeDone) {
+            timeline.initialRangeChangeDone = true;
+            timeline.redraw();
+          }
+        }, 0);
       }
     },
   }).show();
