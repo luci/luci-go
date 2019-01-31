@@ -86,6 +86,19 @@ func (*Config) Get(c context.Context, req *config.GetRequest) (*config.Config, e
 	}
 }
 
+// List handles a request to list all configs.
+func (*Config) List(c context.Context, req *config.ListRequest) (*config.ListResponse, error) {
+	rsp := &config.ListResponse{}
+	q := datastore.NewQuery(model.ConfigKind)
+	if err := datastore.Run(c, q, func(cfg *model.Config, f datastore.CursorCB) error {
+		rsp.Configs = append(rsp.Configs, &cfg.Config)
+		return nil
+	}); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch configs").Err()
+	}
+	return rsp, nil
+}
+
 // authPrelude ensures the user is authorized to use the config API.
 func authPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
 	groups := []string{"administrators"}

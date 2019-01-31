@@ -29,6 +29,17 @@ message GetRequest {
   string id = 1;
 }
 
+// A request to list all configs.
+message ListRequest {
+  // TODO(smut): Support page size and token if necessary.
+}
+
+// A response containing configs.
+message ListResponse {
+  // The configs.
+  repeated Config configs = 1;
+}
+
 // A service for manipulating configs.
 service Configuration {
   // Delete deletes an existing config.
@@ -40,4 +51,6 @@ service Configuration {
   rpc Ensure(EnsureRequest) returns (Config);
   // Get returns an existing config.
   rpc Get(GetRequest) returns (Config);
+  // List returns all existing configs.
+  rpc List(ListRequest) returns (ListResponse);
 }
