@@ -144,6 +144,12 @@ func ensureAtMost1Project(ctx *validation.Context, cfg *v2.Config) {
 	}
 }
 
+type refKey struct {
+	url     string
+	project string
+	refStr  string
+}
+
 // bestEffortDisjointGroups errors out on easy to spot overlaps between
 // configGroups.
 //
@@ -152,8 +158,9 @@ func ensureAtMost1Project(ctx *validation.Context, cfg *v2.Config) {
 // early on by checking for equality of regexps.
 func bestEffortDisjointGroups(ctx *validation.Context, cfg *v2.Config) {
 	defaultRefRegexps := []string{"refs/heads/master"}
-	key := func(g, p, r string) string { return strings.Join([]string{g, p, r}, "\x00") }
-	seen := map[string]int{}
+	// Multimap gerrit URL => project => refRegexp => config group index.
+	seen := map[refKey]int{}
+
 	for grIdx, gr := range cfg.ConfigGroups {
 		for gIdx, g := range gr.Gerrit {
 			for pIdx, p := range g.Projects {
@@ -162,9 +169,8 @@ func bestEffortDisjointGroups(ctx *validation.Context, cfg *v2.Config) {
 					refRegexps = defaultRefRegexps
 				}
 				for rIdx, refRegexp := range refRegexps {
-					k := key(g.Url, p.Name, refRegexp)
-					if seenIdx, aliasing := seen[k]; !aliasing {
-						seen[k] = grIdx
+					if seenIdx, aliasing := seen[refKey{g.Url, p.Name, refRegexp}]; !aliasing {
+						seen[refKey{g.Url, p.Name, refRegexp}] = grIdx
 					} else if seenIdx != grIdx {
 						// NOTE: we have already emitted error on duplicate gerrit URL,
 						// project name, or ref_regexp within their own respective
@@ -182,6 +188,36 @@ func bestEffortDisjointGroups(ctx *validation.Context, cfg *v2.Config) {
 					}
 				}
 			}
+		}
+	}
+
+	// Second type of heuristics: match individual refs which are typically in
+	// use, and check if they match against >1 configs.
+	plainRefs := []string{
+		"refs/heads/master",
+		"refs/heads/branch",
+		"refs/heads/infra/config",
+		"refs/branch-heads/1234",
+	}
+	// Multimap gerrit url => project => plainRef => list of config_group indexes
+	// matching this plainRef.
+	matchedBy := map[refKey][]int{}
+	for ref, seenIdx := range seen {
+		// Only check valid regexps here.
+		if re, err := regexp.Compile("^" + ref.refStr + "$"); err == nil {
+			for _, plainRef := range plainRefs {
+				if re.MatchString(plainRef) {
+					plainRefKey := refKey{ref.url, ref.project, plainRef}
+					matchedBy[plainRefKey] = append(matchedBy[plainRefKey], seenIdx)
+				}
+			}
+		}
+	}
+	for ref, matchedIdxs := range matchedBy {
+		if len(matchedIdxs) > 1 {
+			sort.Slice(matchedIdxs, func(i, j int) bool { return matchedIdxs[i] < matchedIdxs[j] })
+			ctx.Errorf("Overlapping config_groups not allowed. Gerrit %q project %q ref %q matches config_groups %v",
+				ref.url, ref.project, ref.refStr, matchedIdxs)
 		}
 	}
 }
