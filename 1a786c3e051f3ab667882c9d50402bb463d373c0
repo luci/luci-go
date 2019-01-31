@@ -179,6 +179,30 @@
     },
     {
       "key": {
+        "uuid": "0567e1dd_624b735f",
+        "filename": "gce/api/config/v1/timeperiod.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-01-31T23:59:36Z",
+      "side": 1,
+      "message": "\u003e n :\u003d int64(9223372036854775807)\n\u003e So(n * 3600, ShouldEqual, -3600)\n\u003e n \u003d int64(-9223372036854775807)\n\u003e So(n * 3600, ShouldEqual, 3600)\n\u003e n \u003d int64(-9223372036854775808)\n\u003e So(n * 3600, ShouldEqual, 0)\n\u003e \n\u003e Something about 2\u0027s complement multiplication maybe.\n\nSo, I\u0027ve spent 10 minutes testing Go to see if it does something fancy for overflows. It doesn\u0027t. It\u0027s the same multiply than truncate to 64 bits, with MSB affecting sign in signed int64. And here are two examples for both \u003e0 and \u003c0:\n\n\u003e\u003e\u003e def f(v): return struct.unpack(\u0027\u003cQq\u0027, struct.pack(\u0027\u003cQQ\u0027, v / (1\u003c\u003c64), v % (1\u003c\u003c64)))\n\u003e\u003e\u003e f(((1\u003c\u003c62) - 8) * 3600)\n(899, -28800)\n\u003e\u003e\u003e f(((1\u003c\u003c62) +124) * 3600)\n(900, 446400)\n\nSame thing in Go https://play.golang.com/p/dOIPfHkEdqG",
+      "parentUuid": "f0e64be3_406aed3f",
+      "range": {
+        "startLine": 59,
+        "startChar": 35,
+        "endLine": 59,
+        "endChar": 56
+      },
+      "revId": "1a786c3e051f3ab667882c9d50402bb463d373c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5f0e23ee_03420304",
         "filename": "gce/api/config/v1/timeperiod.go",
         "patchSetId": 1
