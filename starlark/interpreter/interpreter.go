@@ -457,7 +457,13 @@ func (intr *Interpreter) runModule(ctx context.Context, pkg, path string, kind T
 		if err != nil {
 			return nil, err
 		}
-		return intr.LoadModule(ctx, key.pkg, key.path)
+		dict, err := intr.LoadModule(ctx, key.pkg, key.path)
+		// See comment in execBuiltin about why we extract EvalError backtrace into
+		// new error.
+		if evalErr, ok := err.(*starlark.EvalError); ok {
+			err = fmt.Errorf("%s", evalErr.Backtrace())
+		}
+		return dict, err
 	}
 
 	// Let builtins know what this thread is doing. Some calls (most notably Exec
