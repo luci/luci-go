@@ -17,10 +17,11 @@ package frontend
 import (
 	"fmt"
 	"net/http"
-	"reflect"
+	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -126,13 +127,24 @@ func renderBuildLegacy(c *router.Context, build *ui.MiloBuildLegacy, renderTimel
 // cannot be satisfied an empty string is returned.
 func makeFeedbackLink(c *router.Context, build *ui.MiloBuildLegacy) string {
 	project, err := common.GetProject(c.Context, c.Params.ByName("project"))
-	if err != nil || reflect.DeepEqual(project.BuildBugTemplate, config.BugTemplate{}) {
+	if err != nil || proto.Equal(&project.BuildBugTemplate, &config.BugTemplate{}) {
 		return ""
 	}
 
-	link, err := MakeFeedbackLink(&project.BuildBugTemplate, map[string]interface{}{
-		"Build":        makeBuild(c.Params, build),
-		"MiloBuildUrl": c.Request.URL.String(),
+	buildURL := c.Request.URL
+	var builderURL *url.URL
+	if build.Summary.ParentLabel != nil && build.Summary.ParentLabel.URL != "" {
+		builderURL, err = buildURL.Parse(build.Summary.ParentLabel.URL)
+		if err != nil {
+			logging.WithError(err).Errorf(c.Context, "Unable to parse build.Summary.ParentLabel.URL for custom feedback link")
+			return ""
+		}
+	}
+
+	link, err := buildbucket.MakeBuildBugLink(&project.BuildBugTemplate, map[string]interface{}{
+		"Build":          makeBuild(c.Params, build),
+		"MiloBuildUrl":   buildURL,
+		"MiloBuilderUrl": builderURL,
 	})
 
 	if err != nil {
