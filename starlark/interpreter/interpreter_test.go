@@ -210,7 +210,30 @@ func TestInterpreter(t *testing.T) {
 				"mod2.star": `load("//mod1.star", "a")`,
 			},
 		})
-		So(err, ShouldErrLike, "cannot load //mod1.star: cannot load //mod2.star: cannot load //mod1.star: cycle in the module dependency graph")
+		So(err, ShouldErrLike, `cannot load //mod1.star: Traceback (most recent call last):
+  //mod1.star:1: in <toplevel>
+Error: cannot load //mod2.star: Traceback (most recent call last):
+  //mod2.star:1: in <toplevel>
+Error: cannot load //mod1.star: cycle in the module dependency graph`)
+	})
+
+	Convey("Error in loaded module", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `load("//mod.star", "z")`,
+				"mod.star": `
+					def f():
+						boom = None()
+					f()
+				`,
+			},
+		})
+		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `Traceback (most recent call last):
+  //main.star:1: in <toplevel>
+Error: cannot load //mod.star: Traceback (most recent call last):
+  //mod.star:4: in <toplevel>
+  //mod.star:3: in f
+Error: invalid call of non-function (NoneType)`)
 	})
 
 	Convey("Exec works", t, func() {
@@ -318,6 +341,6 @@ Error: invalid call of non-function (NoneType)`)
 				"mod.star":  `exec("//zzz.star")`,
 			},
 		})
-		So(err, ShouldErrLike, "cannot load //mod.star: exec //zzz.star: forbidden in this context, only exec'ed scripts can exec other scripts")
+		So(err, ShouldErrLike, "exec //zzz.star: forbidden in this context, only exec'ed scripts can exec other scripts")
 	})
 }
