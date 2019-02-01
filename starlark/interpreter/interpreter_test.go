@@ -49,7 +49,7 @@ func TestMakeModuleKey(t *testing.T) {
 
 		// Picks up default package name from the thread, if given.
 		th := starlark.Thread{}
-		th.SetLocal(threadPkgKey, "pkg")
+		th.SetLocal(threadModuleKey, moduleKey{"pkg", ""})
 		k, err = makeModuleKey("//some/mod", &th)
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, moduleKey{"pkg", "some/mod"})
@@ -68,6 +68,23 @@ func TestMakeModuleKey(t *testing.T) {
 		// If the thread is given, it must have the package name.
 		_, err = makeModuleKey("//some/mod", &starlark.Thread{})
 		So(err, ShouldNotBeNil)
+	})
+}
+
+func TestZZZ(t *testing.T) {
+	Convey("Boom", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `load("//b.star", "b")`,
+				"b.star":    `load("//c.star", "c")`,
+				"c.star": `
+					def f():
+						None()
+					f()
+				`,
+			},
+		})
+		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `pppp`)
 	})
 }
 
@@ -210,11 +227,9 @@ func TestInterpreter(t *testing.T) {
 				"mod2.star": `load("//mod1.star", "a")`,
 			},
 		})
-		So(err, ShouldErrLike, `cannot load //mod1.star: Traceback (most recent call last):
-  //mod1.star:1: in <toplevel>
-Error: cannot load //mod2.star: Traceback (most recent call last):
-  //mod2.star:1: in <toplevel>
-Error: cannot load //mod1.star: cycle in the module dependency graph`)
+		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `Traceback (most recent call last):
+  //main.star:1: in <toplevel>
+Error: cannot load //mod1.star: cannot load //mod2.star: cannot load //mod1.star: cycle in the module dependency graph`)
 	})
 
 	Convey("Error in loaded module", t, func() {
@@ -230,10 +245,22 @@ Error: cannot load //mod1.star: cycle in the module dependency graph`)
 		})
 		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `Traceback (most recent call last):
   //main.star:1: in <toplevel>
-Error: cannot load //mod.star: Traceback (most recent call last):
-  //mod.star:4: in <toplevel>
-  //mod.star:3: in f
-Error: invalid call of non-function (NoneType)`)
+Error: cannot load //mod.star: invalid call of non-function (NoneType)`)
+	})
+
+	Convey("Boom", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `load("//b.star", "b")`,
+				"b.star":    `load("//c.star", "c")`,
+				"c.star": `
+					def f():
+						None()
+					f()
+				`,
+			},
+		})
+		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `pppp`)
 	})
 
 	Convey("Exec works", t, func() {
@@ -291,7 +318,7 @@ Error: invalid call of non-function (NoneType)`)
 		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `Traceback (most recent call last):
   //main.star:4: in <toplevel>
   //main.star:3: in f
-Error: exec //exec.star failed: Traceback (most recent call last):
+  <builtin>:1: in exec
   //exec.star:4: in <toplevel>
   //exec.star:3: in f
 Error: invalid call of non-function (NoneType)`)

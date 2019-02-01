@@ -128,8 +128,8 @@ const (
 const (
 	// Key of context.Context inside starlark.Thread's local store.
 	threadCtxKey = "interpreter.Context"
-	// Key with the current package name inside starlark.Thread's local store.
-	threadPkgKey = "interpreter.Package"
+	// Key with the current moduleKey inside starlark.Thread's local store.
+	threadModuleKey = "interpreter.ModuleKey"
 	// Key with TheadKind of the thread.
 	threadKindKey = "interpreter.ThreadKind"
 )
@@ -233,10 +233,12 @@ func makeModuleKey(ref string, th *starlark.Thread) (key moduleKey, err error) {
 
 	// Grab the package name from thread locals, if given.
 	if !hasPkg && th != nil {
-		if key.pkg, _ = th.Local(threadPkgKey).(string); key.pkg == "" {
+		cur, _ := th.Local(threadModuleKey).(moduleKey)
+		if cur.pkg == "" {
 			err = errors.New("no current package name in thread locals")
 			return
 		}
+		key.pkg = cur.pkg
 	}
 
 	return
@@ -291,7 +293,12 @@ func (intr *Interpreter) Init(ctx context.Context) error {
 //
 // The context ends up available to builtins through Context(...).
 func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
-	key, err := makeModuleKey(fmt.Sprintf("@%s//%s", pkg, path), nil)
+	return intr.loadModuleImpl(intr.Thread(ctx), fmt.Sprintf("@%s//%s", pkg, path))
+}
+
+// loadModuleImpl implements load(...) when called from the given thread.
+func (intr *Interpreter) loadModuleImpl(th *starlark.Thread, module string) (starlark.StringDict, error) {
+	key, err := makeModuleKey(module, th)
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +326,7 @@ func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (star
 	}
 	defer func() { intr.modules[key] = m }()
 
-	m.dict, m.err = intr.runModule(ctx, pkg, path, ThreadLoading)
+	m.dict, m.err = intr.runModule(th, key, ThreadLoading)
 	return m.dict, m.err
 }
 
@@ -333,7 +340,12 @@ func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (star
 //
 // The context ends up available to builtins through Context(...).
 func (intr *Interpreter) ExecModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
-	key, err := makeModuleKey(fmt.Sprintf("@%s//%s", pkg, path), nil)
+	return intr.execModuleImpl(intr.Thread(ctx), fmt.Sprintf("@%s//%s", pkg, path))
+}
+
+// loadModuleImpl implements exec(...) when called from the given thread.
+func (intr *Interpreter) execModuleImpl(th *starlark.Thread, module string) (starlark.StringDict, error) {
+	key, err := makeModuleKey(module, th)
 	if err != nil {
 		return nil, err
 	}
@@ -341,17 +353,17 @@ func (intr *Interpreter) ExecModule(ctx context.Context, pkg, path string) (star
 	// If the module has been loaded previously it is not allowed to be 'exec'-ed.
 	// Modules are either 'library-like' or 'script-like', not both.
 	if _, yes := intr.modules[key]; yes {
-		return nil, errors.New("the module has been loaded before and therefore is not executable")
+		return nil, fmt.Errorf("cannot exec %s: the module has been loaded before and therefore is not executable", module)
 	}
 
 	// Reexecing a module is forbidden.
 	if _, yes := intr.execed[key]; yes {
-		return nil, errors.New("the module has already been executed, 'exec'-ing same code twice is forbidden")
+		return nil, fmt.Errorf("cannot exec %s: the module has already been executed, 'exec'-ing same code twice is forbidden", module)
 	}
 	intr.execed[key] = struct{}{}
 
 	// Actually execute the code.
-	return intr.runModule(ctx, pkg, path, ThreadExecing)
+	return intr.runModule(th, key, ThreadExecing)
 }
 
 // Thread creates a new Starlark thread associated with the given context.
@@ -361,11 +373,19 @@ func (intr *Interpreter) ExecModule(ctx context.Context, pkg, path string) (star
 //
 // The context ends up available to builtins through Context(...).
 //
-// The returned thread has no implementation of load(...) or exec(...). Use
-// LoadModule or ExecModule to load top-level Starlark code instead. Note that
-// load(...) statements are forbidden inside Starlark functions anyway.
+// The returned thread will refuse to run load(...) or exec(...). Use LoadModule
+// or ExecModule to load top-level Starlark code instead.
 func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
 	th := &starlark.Thread{
+		Load: func(th *starlark.Thread, module string) (starlark.StringDict, error) {
+			// Only thread that are inside LoadModule or ExecModule are allowed to
+			// execute loads.
+			if GetThreadKind(th) == ThreadUnknown {
+				return nil, fmt.Errorf("load %s: forbidden in this context", module)
+			}
+			return intr.loadModuleImpl(th, module)
+		},
+
 		Print: func(th *starlark.Thread, msg string) {
 			position := th.Caller().Position()
 			if intr.Logger != nil {
@@ -375,8 +395,9 @@ func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
 			}
 		},
 	}
+
 	th.SetLocal(threadCtxKey, ctx)
-	th.SetLocal(threadKindKey, ThreadUnknown)
+	th.SetLocal(threadKindKey, ThreadUnknown) // overridden in runModule
 	if intr.ThreadModifier != nil {
 		intr.ThreadModifier(th)
 	}
@@ -399,27 +420,9 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 		if GetThreadKind(th) != ThreadExecing {
 			return nil, fmt.Errorf("exec %s: forbidden in this context, only exec'ed scripts can exec other scripts", mod)
 		}
-
-		// See also th.Load in runModule.
-		key, err := makeModuleKey(mod, th)
+		dict, err := intr.execModuleImpl(th, mod)
 		if err != nil {
 			return nil, err
-		}
-		dict, err := intr.ExecModule(Context(th), key.pkg, key.path)
-		if err != nil {
-			// Starlark stringifies errors using Error(). For EvalError, Error()
-			// string is just a root cause, it does not include the backtrace where
-			// the execution failed. Preserve it explicitly by sticking the backtrace
-			// into the error message.
-			//
-			// Note that returning 'err' as is will preserve the backtrace inside
-			// the execed module, but we'll lose the backtrace of the 'exec' call
-			// itself, since EvalError object will just bubble to the top of the Go
-			// call stack unmodified.
-			if evalErr, ok := err.(*starlark.EvalError); ok {
-				return nil, fmt.Errorf("exec %s failed: %s", mod, evalErr.Backtrace())
-			}
-			return nil, fmt.Errorf("cannot exec %s: %s", mod, err)
 		}
 
 		// StringDict -> regular Dict.
@@ -431,14 +434,20 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 	})
 }
 
-// runModule really loads and executes the module, used by both LoadModule and
-// ExecModule.
-func (intr *Interpreter) runModule(ctx context.Context, pkg, path string, kind ThreadKind) (starlark.StringDict, error) {
-	loader, ok := intr.Packages[pkg]
+// runModule really loads and executes the module within the context of the
+// given thread.
+//
+// The loaded module "inherits" the call stack of the thread, so if something
+// fails inside it, the error will return the whole stack, across 'load'/'exec'
+// calls.
+//
+// Used by both LoadModule and ExecModule.
+func (intr *Interpreter) runModule(th *starlark.Thread, key moduleKey, kind ThreadKind) (starlark.StringDict, error) {
+	loader, ok := intr.Packages[key.pkg]
 	if !ok {
 		return nil, ErrNoPackage
 	}
-	dict, src, err := loader(path)
+	dict, src, err := loader(key.path)
 	if err != nil {
 		return nil, err
 	}
@@ -448,41 +457,36 @@ func (intr *Interpreter) runModule(ctx context.Context, pkg, path string, kind T
 		return dict, nil
 	}
 
-	// Otherwise make a thread for executing the code. We do not reuse threads
-	// between modules. All global state is passed through intr.globals,
-	// intr.modules and ctx.
-	th := intr.Thread(ctx)
-	th.Load = func(th *starlark.Thread, module string) (starlark.StringDict, error) {
-		key, err := makeModuleKey(module, th)
-		if err != nil {
-			return nil, err
-		}
-		dict, err := intr.LoadModule(ctx, key.pkg, key.path)
-		// See comment in execBuiltin about why we extract EvalError backtrace into
-		// new error.
-		if evalErr, ok := err.(*starlark.EvalError); ok {
-			err = fmt.Errorf("%s", evalErr.Backtrace())
-		}
-		return dict, err
-	}
-
-	// Let builtins know what this thread is doing. Some calls (most notably Exec
-	// itself) are allowed only from exec'ing threads, not from load'ing ones.
-	th.SetLocal(threadKindKey, kind)
-	// Let builtins (and in particular makeModuleKey) know the package the module
-	// belongs too.
-	th.SetLocal(threadPkgKey, pkg)
-
 	// Construct a full module name for error messages and stack traces. Omit the
 	// name of the top-level package with user-supplied code ("__main__") to avoid
 	// confusing users who are oblivious of packages.
 	module := ""
-	if pkg != MainPkg {
-		module = "@" + pkg
+	if key.pkg != MainPkg {
+		module = "@" + key.pkg
 	}
-	module += "//" + path
+	module += "//" + key.path
 
-	// Execute the module. It may load other modules inside, which will call
-	// th.Load callback above.
-	return starlark.ExecFile(th, module, src, intr.globals)
+	// Preserve on stack the current state of locals we are about to replace.
+	prevKind := th.Local(threadKindKey)
+	prevMod := th.Local(threadModuleKey)
+	defer func() {
+		th.SetLocal(threadKindKey, prevKind)
+		th.SetLocal(threadModuleKey, prevMod)
+	}()
+
+	// Let builtins know what this thread is doing. Some calls (most notably
+	// 'exec' itself) are allowed only from exec'ing threads, not from load'ing
+	// ones.
+	th.SetLocal(threadKindKey, kind)
+	// Let builtins (and in particular makeModuleKey) know the package module
+	// we are about to execute.
+	th.SetLocal(threadModuleKey, key)
+
+	// Execute the module. It may load or exec other modules inside, which will
+	// eventually call runModule recursively.
+	res, err := starlark.ExecFile(th, module, src, intr.globals)
+	if er, ok := err.(*starlark.EvalError); ok {
+		fmt.Printf("%s: %s\n", module, er.Backtrace())
+	}
+	return res, err
 }
