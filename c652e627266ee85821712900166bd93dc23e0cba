@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "293f7106_d7781359",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-02-01T22:02:48Z",
+      "side": 1,
+      "message": "Keen eye. Thanks.",
+      "parentUuid": "ef081164_8b096f25",
+      "range": {
+        "startLine": 207,
+        "startChar": 62,
+        "endLine": 207,
+        "endChar": 70
+      },
+      "revId": "c652e627266ee85821712900166bd93dc23e0cba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb310b0d_f0a03991",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 4
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "f1075c3d_9621845d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-02-01T22:02:48Z",
+      "side": 1,
+      "message": "Done here and in view_build_legacy.go where same approach existed.",
+      "parentUuid": "eb310b0d_f0a03991",
+      "revId": "c652e627266ee85821712900166bd93dc23e0cba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3dc8fc00_62026664",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 4
@@ -56,6 +98,24 @@
       "revId": "c652e627266ee85821712900166bd93dc23e0cba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2885f43c_1462574a",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-02-01T22:02:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3dc8fc00_62026664",
+      "revId": "c652e627266ee85821712900166bd93dc23e0cba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -79,6 +139,30 @@
       "revId": "c652e627266ee85821712900166bd93dc23e0cba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90b400eb_355824e4",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-02-01T22:02:48Z",
+      "side": 1,
+      "message": "Fair enough. Since this CL has been out for a while and otherwise has been fixed up per request let me push this nit out for another CL.",
+      "parentUuid": "e0a8e992_492a9f5d",
+      "range": {
+        "startLine": 71,
+        "startChar": 14,
+        "endLine": 71,
+        "endChar": 20
+      },
+      "revId": "c652e627266ee85821712900166bd93dc23e0cba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
