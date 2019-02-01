@@ -67,7 +67,7 @@ func TestLoaders(t *testing.T) {
 			put("1.star", `load("//a/b/c/2.star", "sym")`)
 
 			_, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
-			So(err, ShouldErrLike, "cannot load @custom//1.star: cannot load //a/b/c/2.star: no such module")
+			So(err, ShouldErrLike, "cannot load //a/b/c/2.star: no such module")
 		})
 
 		Convey("Outside the root", func() {
@@ -96,7 +96,7 @@ func TestLoaders(t *testing.T) {
 			})
 
 			_, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
-			So(err, ShouldErrLike, "cannot load @custom//1.star: cannot load //a/b/c/2.star: no such module")
+			So(err, ShouldErrLike, "cannot load //a/b/c/2.star: no such module")
 		})
 	})
 
