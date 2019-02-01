@@ -75,7 +75,7 @@ func handleLUCIBuild(c *router.Context) error {
 		}
 	}
 
-	bp, err := buildbucket.GetBuildPage(c.Context, br)
+	bp, err := buildbucket.GetBuildPage(c, br)
 	return renderBuild(c, bp, err)
 }
 
