@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
@@ -183,43 +184,141 @@ func GetBuild(c context.Context, host string, bid buildbucketpb.GetBuildRequest)
 	return client.GetBuild(c, &bid)
 }
 
-var fullBuildMask = &field_mask.FieldMask{
-	// TODO(hinoka): Add statusReason here.
-	Paths: []string{
-		"id",
-		"builder",
-		"number",
-		"created_by",
-		"create_time",
-		"start_time",
-		"end_time",
-		"update_time",
-		"status",
-		"input",
-		"output",
-		"steps",
-		"infra",
-	},
+// getRelatedBuilds fetches build summaries of builds with the same buildset as b.
+func getRelatedBuilds(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Build, error) {
+	client, err := buildbucketClient(c, host)
+	if err != nil {
+		return nil, err
+	}
+
+	ub := ui.Build(*b)
+	bs := ub.Buildsets()
+	if len(bs) == 0 {
+		return nil, nil
+	}
+	br := &buildbucketpb.BatchRequest{}
+	for _, buildset := range bs {
+		br.Requests = append(br.Requests, &buildbucketpb.BatchRequest_Request{
+			Request: &buildbucketpb.BatchRequest_Request_SearchBuilds{
+				&buildbucketpb.SearchBuildsRequest{
+					Predicate: &buildbucketpb.BuildPredicate{
+						Tags: []*buildbucketpb.StringPair{
+							{
+								Key:   "buildset",
+								Value: buildset,
+							},
+						},
+					},
+					PageSize: 1000,
+				},
+			},
+		})
+	}
+	resps, err := client.Batch(c, br)
+	if err != nil {
+		return nil, err
+	}
+	var result []*ui.Build
+	seenIDs := map[int64]bool{b.Id: true}
+	for _, resp := range resps.GetResponses() {
+		if status := resp.GetError(); status != nil {
+			return nil, errors.New("Error while searching: " + status.String())
+		}
+		for _, rb := range resp.GetSearchBuilds().GetBuilds() {
+			if _, ok := seenIDs[rb.Id]; ok {
+				continue
+			}
+			seenIDs[rb.Id] = true
+			ub := ui.Build(*rb)
+			result = append(result, &ub)
+		}
+	}
+	return result, nil
 }
+
+var (
+	fullBuildMask = &field_mask.FieldMask{
+		// TODO(hinoka): Add statusReason here.
+		Paths: []string{
+			"id",
+			"builder",
+			"number",
+			"created_by",
+			"create_time",
+			"start_time",
+			"end_time",
+			"update_time",
+			"status",
+			"input",
+			"output",
+			"steps",
+			"infra",
+			"tags",
+		},
+	}
+	tagsAndGitilesMask = &field_mask.FieldMask{
+		Paths: []string{
+			"id",
+			"number",
+			"builder",
+			"input.gitiles_commit",
+			"tags",
+		},
+	}
+	summaryBuildMask = &field_mask.FieldMask{
+		Paths: []string{
+			"builds.id",
+			"builds.builder",
+			"builds.number",
+			"builds.status",
+		},
+	}
+)
 
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
-func GetBuildPage(c context.Context, br buildbucketpb.GetBuildRequest) (*ui.BuildPage, error) {
-	br.Fields = fullBuildMask
+func GetBuildPage(c context.Context, br buildbucketpb.GetBuildRequest, related bool) (*ui.BuildPage, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
 	}
-	b, err := GetBuild(c, host, br)
-	if err != nil {
-		return nil, err
-	}
-	blame, err := getBlame(c, host, b)
-	if err != nil {
-		return nil, err
-	}
+	var b *buildbucketpb.Build
+	var relatedBuilds []*ui.Build
+	var blame []*ui.Commit
+	err = parallel.FanOutIn(func(ch chan<- func() error) {
+		ch <- func() (err error) {
+			br := br
+			br.Fields = fullBuildMask
+			b, err = GetBuild(c, host, br)
+			return
+		}
+		ch <- func() (err error) {
+			// Fetch a small build with just a tiny bit of information.
+			br := br
+			br.Fields = tagsAndGitilesMask
+			sb, err := GetBuild(c, host, br)
+			if err != nil {
+				return
+			}
+			return parallel.FanOutIn(func(ch chan<- func() error) {
+				if related {
+					ch <- func() (err error) {
+						relatedBuilds, err = getRelatedBuilds(c, host, sb)
+						return
+					}
+				}
+				ch <- func() (err error) {
+					blame, err = getBlame(c, host, sb)
+					return
+				}
+				return
+			})
+		}
+	})
 	return &ui.BuildPage{
-		Build: *b,
-		Blame: blame,
-	}, nil
+		Build:         ui.Build(*b),
+		Blame:         blame,
+		RelatedBuilds: relatedBuilds,
+		Related:       related,
+	}, err
 }

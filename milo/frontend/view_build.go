@@ -40,7 +40,7 @@ func handleDevBuild(c *router.Context) error {
 	if err != nil {
 		return err
 	}
-	return renderBuild(c, &ui.BuildPage{Build: *b}, nil)
+	return renderBuild(c, &ui.BuildPage{Build: ui.Build(*b)}, nil)
 }
 
 // handleLUCIBuild renders a LUCI build.
@@ -48,6 +48,7 @@ func handleLUCIBuild(c *router.Context) error {
 	bucket := c.Params.ByName("bucket")
 	buildername := c.Params.ByName("builder")
 	numberOrId := c.Params.ByName("numberOrId")
+	related := c.Request.FormValue("related") != ""
 
 	if _, v2Bucket := bb.BucketNameToV2(bucket); v2Bucket != "" {
 		// Params bucket is a v1 bucket, so call the legacy endpoint.
@@ -75,7 +76,7 @@ func handleLUCIBuild(c *router.Context) error {
 		}
 	}
 
-	bp, err := buildbucket.GetBuildPage(c.Context, br)
+	bp, err := buildbucket.GetBuildPage(c.Context, br, related)
 	return renderBuild(c, bp, err)
 }
 
