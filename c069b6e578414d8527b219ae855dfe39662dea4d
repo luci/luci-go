@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6e266750_66f3c4f9",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1210164
+      },
+      "writtenOn": "2019-02-01T21:54:53Z",
+      "side": 1,
+      "message": "Sorry for the drive-by review...\n\nIs this the semantics you want for \"exclude\"? It seems like what you would really want is \"don\u0027t trigger if *only* files that match this regexp match\". e.g. \".*/README[^/]*\"",
+      "range": {
+        "startLine": 330,
+        "startChar": 0,
+        "endLine": 334,
+        "endChar": 1
+      },
+      "revId": "c069b6e578414d8527b219ae855dfe39662dea4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
