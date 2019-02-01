@@ -33,14 +33,15 @@ type Project struct {
 	LogoUrl string `protobuf:"bytes,4,opt,name=logo_url,json=logoUrl,proto3" json:"logo_url,omitempty"`
 	// BuildBugTemplate is the template for making a custom feedback link for
 	// the build page. This field is optional. Supported interpolations
-	// for the "summary" and "description" fields in this context are:
+	// for the "summary" and "description" fields in this context are the
+	// fields of the standard build proto such as:
 	//
-	// Some populated fields of the standard build proto:
 	// {{.Build.Builder.Project}}
 	// {{.Build.Builder.Bucket}}
 	// {{.Build.Builder.Builder}}
 	//
-	// Others:
+	// Others available fields include:
+	//
 	// {{.MiloBuildUrl}}
 	// {{.MiloBuilderUrl}}
 	//

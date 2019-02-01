@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package frontend
+package buildbucket
 
 import (
 	"bytes"
@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"text/template"
+
+	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/milo/api/config"
 )
@@ -37,17 +39,17 @@ func description(bt *config.BugTemplate, data interface{}) (string, error) {
 	return fillTemplate(bt.Description, data, "description")
 }
 
-// makeFeedbackLink attempts to create the feedback link for the build page. If the
-// project is not configured for a custom feedback link or an interpolation placeholder
+// makeBuildBugLink attempts to create the feedback link for the build page. If the
+// project is not configured for a custom build bug link or an interpolation placeholder
 // cannot be satisfied an empty string is returned.
-func MakeFeedbackLink(bt *config.BugTemplate, data interface{}) (string, error) {
+func MakeBuildBugLink(bt *config.BugTemplate, data interface{}) (string, error) {
 	summary, err := summary(bt, data)
 	if err != nil {
-		return "", err
+		return "", errors.Annotate(err, "Unable to make summary for build bug link.").Err()
 	}
 	description, err := description(bt, data)
 	if err != nil {
-		return "", err
+		return "", errors.Annotate(err, "Unable to make description for build bug link.").Err()
 	}
 
 	query := url.Values{
