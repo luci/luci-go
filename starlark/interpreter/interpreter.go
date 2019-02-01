@@ -101,6 +101,23 @@ var (
 	ErrNoPackage = errors.New("no such package")
 )
 
+// ThreadKind is enumeration describing possible uses of a thread.
+type ThreadKind int
+
+const (
+	// ThreadUnknown indicates a thread used in some custom way, not via
+	// LoadModule or ExecModule.
+	ThreadUnknown ThreadKind = iota
+
+	// ThreadLoading indicates a thread that is evaluating a module referred to by
+	// some load(...) statement.
+	ThreadLoading
+
+	// ThreadLoading indicates a thread that is evaluating a module referred to by
+	// some exec(...) statement.
+	ThreadExecing
+)
+
 const (
 	// MainPkg is an alias of the package with user-supplied code.
 	MainPkg = "__main__"
@@ -113,17 +130,30 @@ const (
 	threadCtxKey = "interpreter.Context"
 	// Key with the current package name inside starlark.Thread's local store.
 	threadPkgKey = "interpreter.Package"
+	// Key with TheadKind of the thread.
+	threadKindKey = "interpreter.ThreadKind"
 )
 
 // Context returns a context of the thread created through Interpreter.
 //
 // Panics if the Starlark thread wasn't created through Interpreter.Thread().
 func Context(th *starlark.Thread) context.Context {
-	ctx := th.Local(threadCtxKey)
-	if ctx == nil {
-		panic("not an Interpreter thread, no context in it")
+	if ctx := th.Local(threadCtxKey); ctx != nil {
+		return ctx.(context.Context)
 	}
-	return ctx.(context.Context)
+	panic("not an Interpreter thread, no context in it")
+}
+
+// GetThreadKind tells what sort of thread 'th' is: it is either inside some
+// load(...), some exec(...) or some custom call (probably a callback called
+// from native code).
+//
+// Panics if the Starlark thread wasn't created through Interpreter.Thread().
+func GetThreadKind(th *starlark.Thread) ThreadKind {
+	if k := th.Local(threadKindKey); k != nil {
+		return k.(ThreadKind)
+	}
+	panic("not an Interpreter thread, no ThreadKind in it")
 }
 
 // Loader knows how to load modules of some concrete package.
@@ -289,7 +319,7 @@ func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (star
 	}
 	defer func() { intr.modules[key] = m }()
 
-	m.dict, m.err = intr.runModule(ctx, pkg, path)
+	m.dict, m.err = intr.runModule(ctx, pkg, path, ThreadLoading)
 	return m.dict, m.err
 }
 
@@ -321,7 +351,7 @@ func (intr *Interpreter) ExecModule(ctx context.Context, pkg, path string) (star
 	intr.execed[key] = struct{}{}
 
 	// Actually execute the code.
-	return intr.runModule(ctx, pkg, path)
+	return intr.runModule(ctx, pkg, path, ThreadExecing)
 }
 
 // Thread creates a new Starlark thread associated with the given context.
@@ -346,6 +376,7 @@ func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
 		},
 	}
 	th.SetLocal(threadCtxKey, ctx)
+	th.SetLocal(threadKindKey, ThreadUnknown)
 	if intr.ThreadModifier != nil {
 		intr.ThreadModifier(th)
 	}
@@ -359,16 +390,18 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 		if err := starlark.UnpackArgs("exec", args, kwargs, "module", &module); err != nil {
 			return nil, err
 		}
+		mod := module.GoString()
 
-		// Check the thread was produced by LoadModule or ExecModule. Custom threads
-		// (e.g. as used for running Starlark callbacks from native code) do not
-		// have enough context to perform 'exec' safely.
-		if _, yes := th.Local(threadPkgKey).(string); !yes {
-			return nil, fmt.Errorf("exec: forbidden in this thread")
+		// Only threads started via 'exec' (or equivalently ExecModule) can exec
+		// other scripts. Modules that are loaded via load(...), or custom callbacks
+		// from native code aren't allowed to call exec, since exec's impurity may
+		// lead to unexpected results.
+		if GetThreadKind(th) != ThreadExecing {
+			return nil, fmt.Errorf("exec %s: forbidden in this context, only exec'ed scripts can exec other scripts", mod)
 		}
 
 		// See also th.Load in runModule.
-		key, err := makeModuleKey(module.GoString(), th)
+		key, err := makeModuleKey(mod, th)
 		if err != nil {
 			return nil, err
 		}
@@ -384,9 +417,9 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 			// itself, since EvalError object will just bubble to the top of the Go
 			// call stack unmodified.
 			if evalErr, ok := err.(*starlark.EvalError); ok {
-				return nil, fmt.Errorf("exec %s failed: %s", module.GoString(), evalErr.Backtrace())
+				return nil, fmt.Errorf("exec %s failed: %s", mod, evalErr.Backtrace())
 			}
-			return nil, fmt.Errorf("cannot exec %s: %s", module.GoString(), err)
+			return nil, fmt.Errorf("cannot exec %s: %s", mod, err)
 		}
 
 		// StringDict -> regular Dict.
@@ -400,7 +433,7 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 
 // runModule really loads and executes the module, used by both LoadModule and
 // ExecModule.
-func (intr *Interpreter) runModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
+func (intr *Interpreter) runModule(ctx context.Context, pkg, path string, kind ThreadKind) (starlark.StringDict, error) {
 	loader, ok := intr.Packages[pkg]
 	if !ok {
 		return nil, ErrNoPackage
@@ -427,8 +460,11 @@ func (intr *Interpreter) runModule(ctx context.Context, pkg, path string) (starl
 		return intr.LoadModule(ctx, key.pkg, key.path)
 	}
 
+	// Let builtins know what this thread is doing. Some calls (most notably Exec
+	// itself) are allowed only from exec'ing threads, not from load'ing ones.
+	th.SetLocal(threadKindKey, kind)
 	// Let builtins (and in particular makeModuleKey) know the package the module
-	// belongs too. This is also a marker for exec(...) that it is allowed.
+	// belongs too.
 	th.SetLocal(threadPkgKey, pkg)
 
 	// Construct a full module name for error messages and stack traces. Omit the
