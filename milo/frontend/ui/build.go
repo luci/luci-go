@@ -52,13 +52,22 @@ func (s *Step) ShortName() string {
 	return parts[len(parts)-1]
 }
 
+// Build wraps a buildbucketpb.Build to provide useful templating functions.
+type Build buildbucketpb.Build
+
 // BuildPage represents a build page on Milo.
 // The core of the build page is the underlying build proto, but can contain
 // extra information depending on the context, for example a blamelist,
 // and the user's display preferences.
 type BuildPage struct {
 	// Build is the underlying build proto for the build page.
-	buildbucketpb.Build
+	Build
+
+	// RelatedBuilds are build summaries with the same buildset.
+	RelatedBuilds []*Build
+
+	// Related is a flag for turning on the related builds tab.
+	Related bool
 
 	// Blame is a list of people and commits that likely caused the build result.
 	// It is usually used as the list of commits between the previous run of the
@@ -80,8 +89,8 @@ type BuildPage struct {
 
 // Summary returns a summary of failures in the build.
 // TODO(hinoka): Remove after recipe engine emits SummaryMarkdown natively.
-func (bp *BuildPage) Summary() (result []string) {
-	for _, step := range bp.Build.Steps {
+func (b *Build) Summary() (result []string) {
+	for _, step := range b.Steps {
 		parts := strings.Split(step.Name, "|")
 		name := parts[len(parts)-1]
 		if name == "Failure reason" {
@@ -95,6 +104,18 @@ func (bp *BuildPage) Summary() (result []string) {
 		}
 	}
 	return
+}
+
+// Buildsets returns all of the buildsets of the build.
+func (b *Build) Buildsets() []string {
+	result := []string{}
+	for _, tag := range b.Tags {
+		if tag.Key == "buildset" {
+			result = append(result, tag.Value)
+		}
+	}
+	sort.Strings(result)
+	return result
 }
 
 // Steps converts the flat Steps from the underlying Build into a tree.
@@ -134,8 +155,8 @@ func (bp *BuildPage) Steps() []*Step {
 }
 
 // Status returns a human friendly string for the status.
-func (bp *BuildPage) HumanStatus() string {
-	switch bp.Build.Status {
+func (b *Build) HumanStatus() string {
+	switch b.Status {
 	case buildbucketpb.Status_SCHEDULED:
 		return "Pending"
 	case buildbucketpb.Status_STARTED:
@@ -195,37 +216,38 @@ func properties(props *structpb.Struct) []property {
 	return results
 }
 
-func (bp *BuildPage) InputProperties() []property {
-	return properties(bp.Input.Properties)
+func (b *Build) InputProperties() []property {
+	return properties(b.Input.Properties)
 }
 
-func (bp *BuildPage) OutputProperties() []property {
-	return properties(bp.Output.Properties)
+func (b *Build) OutputProperties() []property {
+	return properties(b.Output.Properties)
 }
 
-func (bp *BuildPage) Builder() *Link {
-	if bp.Build.Builder == nil {
+// BuilderLink returns a link to the builder in b.
+func (b *Build) BuilderLink() *Link {
+	if b.Builder == nil {
 		panic("Invalid build")
 	}
-	b := bp.Build.Builder
+	bd := b.Builder
 	return NewLink(
-		b.Builder,
-		fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, b.Bucket, b.Builder),
-		fmt.Sprintf("Builder %s in bucket %s", b.Builder, b.Bucket))
+		bd.Builder,
+		fmt.Sprintf("/p/%s/builders/%s/%s", bd.Project, bd.Bucket, bd.Builder),
+		fmt.Sprintf("Builder %s in bucket %s", bd.Builder, bd.Bucket))
 }
 
-func (bp *BuildPage) BuildID() *Link {
-	if bp.Build.Builder == nil {
+func (b *Build) BuildID() *Link {
+	if b.Builder == nil {
 		panic("invalid build")
 	}
-	num := bp.Build.Id
-	if bp.Build.Number != 0 {
-		num = int64(bp.Build.Number)
+	num := b.Id
+	if b.Number != 0 {
+		num = int64(b.Number)
 	}
-	b := bp.Build.Builder
+	bd := b.Builder
 	return NewLink(
 		fmt.Sprintf("%d", num),
-		fmt.Sprintf("/p/%s/builder/%s/%s/%d", b.Project, b.Bucket, b.Builder, num),
+		fmt.Sprintf("/p/%s/builders/%s/%s/%d", bd.Project, bd.Bucket, bd.Builder, num),
 		fmt.Sprintf("Build %d", num))
 }
 
@@ -233,12 +255,15 @@ func (bp *BuildPage) BuildID() *Link {
 // Currently displayed:
 // * OS, as determined by swarming dimensions.
 // TODO(hinoka): For device builders, display device type, and number of devices.
-func (bp *BuildPage) Banners() (result []Logo) {
+func (b *Build) Banners() (result []Logo) {
+	if b.Infra == nil {
+		return
+	}
 	var os, ver string
 	// A swarming dimension may have multiple values.  Eg.
 	// Linux, Ubuntu, Ubuntu-14.04.  We want the most specific one.
 	// The most specific one always comes last.
-	for _, dim := range bp.GetInfra().GetSwarming().GetBotDimensions() {
+	for _, dim := range b.Infra.GetSwarming().GetBotDimensions() {
 		if dim.Key != "os" {
 			continue
 		}
