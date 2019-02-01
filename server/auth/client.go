@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -568,6 +569,7 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 func forwardedCreds(c context.Context) (*oauth2.Token, error) {
 	switch s := GetState(c); {
 	case s == nil:
+		logging.Debugf(c, "Stack trace: %s\n", debug.Stack())
 		return nil, ErrNotConfigured
 	case s.User().Identity == identity.AnonymousIdentity:
 		return nil, nil // nothing to forward if the call is anonymous

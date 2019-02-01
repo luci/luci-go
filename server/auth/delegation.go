@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"time"
@@ -195,7 +196,8 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 	// The state carries ID of the current user and URL of the token service.
 	state := GetState(ctx)
 	if state == nil {
-		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
+		report(ErrNotConfigured, "ERROR_NO_AUTH_STATE")
+		logging.Debugf(ctx, "Stack trace: %s\n", debug.Stack())
 		return nil, ErrNotConfigured
 	}
 

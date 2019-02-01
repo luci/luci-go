@@ -131,6 +131,9 @@ type Job struct {
 
 	// LastTriage is a time when the last triage transaction was committed.
 	LastTriage time.Time `gae:",noindex"`
+
+	// ScopedServiceAccounts indicates the configuration for project scoped service accounts.
+	ScopedServiceAccounts int `gae:",noindex"`
 }
 
 // JobTriageLog contains information about the most recent triage.
@@ -220,7 +223,8 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.Cron.Equal(&other.Cron) &&
 		bytes.Equal(e.TriggeringPolicyRaw, other.TriggeringPolicyRaw) &&
 		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations) &&
-		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw))
+		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw) &&
+		e.ScopedServiceAccounts == other.ScopedServiceAccounts)
 }
 
 // MatchesDefinition returns true if job definition in the entity matches the
@@ -232,7 +236,8 @@ func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 		e.Acls.Equal(&def.Acls) &&
 		bytes.Equal(e.Task, def.Task) &&
 		bytes.Equal(e.TriggeringPolicyRaw, def.TriggeringPolicy) &&
-		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
+		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs) &&
+		e.ScopedServiceAccounts == def.ScopedServiceAccounts
 }
 
 // CronTickTime returns time when the cron job is expected to start again.

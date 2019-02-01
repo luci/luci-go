@@ -17,6 +17,9 @@ package auth
 import (
 	"context"
 	"net"
+	"runtime/debug"
+
+	"go.chromium.org/luci/common/logging"
 
 	"golang.org/x/oauth2"
 
@@ -123,6 +126,7 @@ func IsMember(c context.Context, groups ...string) (bool, error) {
 	if s := GetState(c); s != nil {
 		return s.DB().IsMember(c, s.User().Identity, groups)
 	}
+	logging.Debugf(c, "Stack trace: %s\n", debug.Stack())
 	return false, ErrNotConfigured
 }
 
@@ -134,6 +138,7 @@ func LoginURL(c context.Context, dest string) (string, error) {
 	if s := GetState(c); s != nil {
 		return s.Authenticator().LoginURL(c, dest)
 	}
+	logging.Debugf(c, "Stack trace: %s\n", debug.Stack())
 	return "", ErrNotConfigured
 }
 
@@ -145,6 +150,7 @@ func LogoutURL(c context.Context, dest string) (string, error) {
 	if s := GetState(c); s != nil {
 		return s.Authenticator().LogoutURL(c, dest)
 	}
+	logging.Debugf(c, "Stack trace: %s\n", debug.Stack())
 	return "", ErrNotConfigured
 }
 

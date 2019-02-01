@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -109,6 +110,7 @@ func MintScopedToken(ctx context.Context, p ScopedTokenParams) (*oauth2.Token, e
 	// The state carries ID of the current user and URL of the token service.
 	state := GetState(ctx)
 	if state == nil {
+		logging.Debugf(ctx, "Stack trace: %s\n", debug.Stack())
 		report(ErrNotConfigured, "ERROR_NO_AUTH_STATE")
 		return nil, ErrNotConfigured
 	}
