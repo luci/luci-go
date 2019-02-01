@@ -95,11 +95,35 @@ const (
 	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
 	// Can be customized with WithScopes() options.
 	AsActor
+
+	// AsProjectScoped is used for outbound RPCs sent with the authority of the current
+	// service itself but with an identity bound to have only access to a single project.
+	//
+	// RPC requests done in this mode will have 'Authorization' header set to the
+	// OAuth2 access token of the project-service specific service account.
+	//
+	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
+	// Can be customized with WithScopes() options.
+	AsProjectScoped
 )
 
 // RPCOption is an option for GetRPCTransport or GetPerRPCCredentials functions.
 type RPCOption interface {
 	apply(opts *rpcOptions)
+}
+
+// WithProject can be used to generate an OAuth token with an identity bound
+// to that particular LUCI project.
+func WithProject(project string) RPCOption {
+	return projectOption{name: project}
+}
+
+type projectOption struct {
+	name string
+}
+
+func (o projectOption) apply(opts *rpcOptions) {
+	opts.project = o.name
 }
 
 // WithScopes can be used to customize OAuth scopes for outbound RPC requests.
@@ -291,8 +315,8 @@ func (creds perRPCCreds) RequireTransportSecurity() bool {
 // While GetPerRPCCredentials is preferred, this can be used by packages that
 // cannot or do not properly handle this gRPC option.
 func GetTokenSource(c context.Context, kind RPCAuthorityKind, opts ...RPCOption) (oauth2.TokenSource, error) {
-	if kind != AsSelf && kind != AsCredentialsForwarder && kind != AsActor {
-		return nil, fmt.Errorf("auth: GetTokenSource can only be used with AsSelf, AsCredentialsForwarder or AsActor authorization kind")
+	if kind != AsSelf && kind != AsProjectScoped && kind != AsCredentialsForwarder && kind != AsActor {
+		return nil, fmt.Errorf("auth: GetTokenSource can only be used with AsSelf, AsProjectScoped, AsCredentialsForwarder or AsActor authorization kind")
 	}
 	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
@@ -362,6 +386,7 @@ func tokenFingerprint(tok string) string {
 type rpcMocks struct {
 	MintDelegationToken              func(context.Context, DelegationTokenParams) (*delegation.Token, error)
 	MintAccessTokenForServiceAccount func(context.Context, MintAccessTokenParams) (*oauth2.Token, error)
+	MintScopedToken                  func(context.Context, ScopedTokenParams) (*oauth2.Token, error)
 }
 
 // apply implements RPCOption interface.
@@ -377,10 +402,12 @@ type headersGetter func(c context.Context, uri string, opts *rpcOptions) (*oauth
 
 type rpcOptions struct {
 	kind             RPCAuthorityKind
-	scopes           []string // for AsSelf and AsActor
+	project          string   // for AsProjectScoped
+	scopes           []string // for AsSelf, AsProjectScoped and AsActor
 	serviceAccount   string   // for AsActor
 	delegationToken  string   // for AsUser
 	delegationTags   []string // for AsUser
+	scopedTags       []string // for AsProjectScoped
 	monitoringClient string
 	checkCtx         func(c context.Context) error // optional, may be skipped
 	getRPCHeaders    headersGetter
@@ -395,13 +422,13 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	}
 
 	// Set default scopes.
-	asSelfOrActor := options.kind == AsSelf || options.kind == AsActor
-	if asSelfOrActor && len(options.scopes) == 0 {
+	asSelfOrActorOrProject := options.kind == AsSelf || options.kind == AsActor || options.kind == AsProjectScoped
+	if asSelfOrActorOrProject && len(options.scopes) == 0 {
 		options.scopes = defaultOAuthScopes
 	}
 
 	// Validate options.
-	if !asSelfOrActor && len(options.scopes) != 0 {
+	if !asSelfOrActorOrProject && len(options.scopes) != 0 {
 		return nil, fmt.Errorf("auth: WithScopes can only be used with AsSelf or AsActor authorization kind")
 	}
 	if options.serviceAccount != "" && options.kind != AsActor {
@@ -418,6 +445,9 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	}
 	if len(options.delegationTags) != 0 && options.delegationToken != "" {
 		return nil, fmt.Errorf("auth: WithDelegationTags and WithDelegationToken cannot be used together")
+	}
+	if options.project == "" && options.kind == AsProjectScoped {
+		return nil, fmt.Errorf("auth: AsProjectScoped authorization kind requires WithProject option")
 	}
 
 	// Validate 'kind' and pick correct implementation of getRPCHeaders.
@@ -439,6 +469,8 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		}
 	case AsActor:
 		options.getRPCHeaders = asActorHeaders
+	case AsProjectScoped:
+		options.getRPCHeaders = asProjectHeaders
 	default:
 		return nil, fmt.Errorf("auth: unknown RPCAuthorityKind %d", options.kind)
 	}
@@ -561,4 +593,41 @@ func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.To
 		MinTTL:         2 * time.Minute,
 	})
 	return oauthTok, nil, err
+}
+
+// asProjectHeaders returns a map of authentication headers to add to outbound
+// RPC requests done in AsProject mode.
+//
+// This will be called by the transport layer on each request.
+func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+	mintTokenCall := MintScopedToken
+	if opts.rpcMocks != nil && opts.rpcMocks.MintScopedToken != nil {
+		mintTokenCall = opts.rpcMocks.MintScopedToken
+	}
+
+	// Grab root URL of the destination service. Only https:// are allowed.
+	uri = strings.ToLower(uri)
+	if !strings.HasPrefix(uri, "https://") {
+		return nil, nil, fmt.Errorf("auth: refusing to use delegation tokens with non-https URL")
+	}
+	host := uri[len("https://"):]
+	if idx := strings.IndexRune(host, '/'); idx != -1 {
+		host = host[:idx]
+
+		mintParams := ScopedTokenParams{
+			MinTTL:      10 * time.Minute,
+			LuciProject: opts.project,
+			OAuthScopes: opts.scopes,
+		}
+		tok, err := mintTokenCall(c, mintParams)
+		return tok, nil, err
+	}
+
+	mintParams := ScopedTokenParams{
+		MinTTL:      10 * time.Minute,
+		LuciProject: opts.project,
+		OAuthScopes: opts.scopes,
+	}
+	tok, err := mintTokenCall(c, mintParams)
+	return tok, nil, err
 }

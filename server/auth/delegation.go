@@ -123,11 +123,11 @@ type DelegationTokenParams struct {
 	// rpcClient is token server RPC client to use.
 	//
 	// Mocked in tests.
-	rpcClient tokenMinterClient
+	rpcClient delegationTokenMinterClient
 }
 
-// tokenMinterClient is subset of minter.TokenMinterClient we use.
-type tokenMinterClient interface {
+// delegationTokenMinterClient is subset of minter.TokenMinterClient we use.
+type delegationTokenMinterClient interface {
 	MintDelegationToken(context.Context, *minter.MintDelegationTokenRequest, ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error)
 }
 
