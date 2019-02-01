@@ -205,11 +205,12 @@ func TestInterpreter(t *testing.T) {
 	Convey("Module cycles are caught", t, func() {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
-				"main.star": `load("//mod.star", "a")`,
-				"mod.star":  `load("//main.star", "a")`,
+				"main.star": `load("//mod1.star", "a")`,
+				"mod1.star": `load("//mod2.star", "a")`,
+				"mod2.star": `load("//mod1.star", "a")`,
 			},
 		})
-		So(err, ShouldErrLike, "cannot load //mod.star: cannot load //main.star: cycle in the module dependency graph")
+		So(err, ShouldErrLike, "cannot load //mod1.star: cannot load //mod2.star: cannot load //mod1.star: cycle in the module dependency graph")
 	})
 
 	Convey("Exec works", t, func() {
@@ -308,5 +309,15 @@ Error: invalid call of non-function (NoneType)`)
 			},
 		})
 		So(err, ShouldErrLike, "cannot load //mod.star: the module has been exec'ed before and therefore is not loadable")
+	})
+
+	Convey("Trying to exec from loading module", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `load("//mod.star", "z")`,
+				"mod.star":  `exec("//zzz.star")`,
+			},
+		})
+		So(err, ShouldErrLike, "cannot load //mod.star: exec //zzz.star: forbidden in this context, only exec'ed scripts can exec other scripts")
 	})
 }
