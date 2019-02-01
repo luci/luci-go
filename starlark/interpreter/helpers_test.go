@@ -112,7 +112,7 @@ type intrParams struct {
 }
 
 // runIntr initializes and runs the interpreter over given scripts, by loading
-// main.star using LoadModule.
+// main.star using ExecModule.
 //
 // Returns keys of the dict of the main.star script (if any), and a list of
 // messages logged via print(...).
@@ -140,7 +140,7 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 
 	if _, ok := p.scripts["main.star"]; ok {
 		var dict starlark.StringDict
-		dict, err = intr.LoadModule(ctx, MainPkg, "main.star")
+		dict, err = intr.ExecModule(ctx, MainPkg, "main.star")
 		if err == nil {
 			keys = make([]string, 0, len(dict))
 			for k := range dict {
