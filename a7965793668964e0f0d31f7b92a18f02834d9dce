@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4af5588_3ae8f7af",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-01T05:02:49Z",
+      "side": 1,
+      "message": "This is public because knowing what the thread is doing is useful for certain cases, in particular for `lucicfg.var` I\u0027m still considering.",
+      "revId": "a7965793668964e0f0d31f7b92a18f02834d9dce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
