@@ -123,7 +123,7 @@ func TestCreateProjectScopedServiceAccount(t *testing.T) {
 		resp, err := rpc.CreateProjectScopedServiceAccount(ctx, req)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.CreateProjectScopedServiceAccountResponse{
-			AccountEmail: generatedAccountID,
+			AccountEmail: fmt.Sprintf("%s@%s.iam.gserviceaccount.com", generatedAccountID, "project"),
 		})
 
 		// Create another account, but redefine req since it won't be used again
@@ -135,7 +135,7 @@ func TestCreateProjectScopedServiceAccount(t *testing.T) {
 		resp, err = rpc.CreateProjectScopedServiceAccount(ctx, req)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.CreateProjectScopedServiceAccountResponse{
-			AccountEmail: generatedAccountID,
+			AccountEmail: fmt.Sprintf("%s@%s.iam.gserviceaccount.com", generatedAccountID, "project3"),
 		})
 
 	})

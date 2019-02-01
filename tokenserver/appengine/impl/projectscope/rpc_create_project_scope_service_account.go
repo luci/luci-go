@@ -66,8 +66,13 @@ func (r *CreateProjectScopedServiceAccountRPC) CreateProjectScopedServiceAccount
 		return nil, status.Errorf(codes.AlreadyExists, "the project scoped service account already exists")
 	}
 
+	email := scopedIdentity.AccountID
+	if scopedIdentity.ServiceAccount.Email != "" {
+		email = scopedIdentity.ServiceAccount.Email
+	}
+
 	return &admin.CreateProjectScopedServiceAccountResponse{
-		AccountEmail: scopedIdentity.AccountID,
+		AccountEmail: email,
 	}, nil
 }
 

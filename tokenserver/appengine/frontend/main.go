@@ -70,7 +70,20 @@ func init() {
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
 
-	// The service has no UI, so just redirect to stock RPC explorer.
+	httpMiddleware := router.NewMiddlewareChain(
+		func(context *router.Context, next router.Handler) {
+			context.Context = standard.With(context.Context, context.Request)
+			next(context)
+		})
+
+	// Service UI
+	ui := NewUI(adminSrv)
+	r.GET("/ui/scoped/lookup", httpMiddleware, ui.ShowFormHandler)
+	r.POST("/ui/scoped/lookup", httpMiddleware, ui.ProcessFormHandler)
+	r.GET("/ui/scoped/create", httpMiddleware, ui.ShowCreateScopedAccountFormHandler)
+	r.POST("/ui/scoped/create", httpMiddleware, ui.ProcessCreateScopedAccountFormHandler)
+
+	// For all other requests, just redirect to stock RPC explorer.
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 	})
