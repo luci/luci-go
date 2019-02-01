@@ -22,25 +22,6 @@ inbound_services:
   - warmup
 
 handlers:
-- url: /app/?
-  static_files: dist/logdog-app/index.html
-  upload: dist/logdog-app/index.html
-  secure: always
-
-- url: /app
-  static_dir: dist/logdog-app
-  secure: always
-
-  # Handlers for LogDog View App.
-- url: /v/?
-  static_files: dist/logdog-view/index.html
-  upload: dist/logdog-app/index.html
-  secure: always
-
-- url: /v
-  static_dir: dist/logdog-view
-  secure: always
-
   # Handlers for misc resources, used for Plain-text log viewer.
 - url: /static
   static_dir: static
