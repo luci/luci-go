@@ -406,5 +406,29 @@ func TestValidateConfig(t *testing.T) {
 				So(validate(cfg), ShouldNotBeNil)
 			})
 		})
+
+		Convey("pathRegexs works", func() {
+			cfg := &messages.GitilesTask{
+				Repo:               "https://a.googlesource.com/b.git",
+				Refs:               []string{"refs/heads/master"},
+				PathRegexps:        []string{`.+\.cpp`},
+				ExcludePathRegexps: []string{`.+\.py`},
+			}
+			Convey("valid", func() {
+				So(validate(cfg), ShouldBeNil)
+			})
+			Convey("can't even parse", func() {
+				cfg.ExcludePathRegexps = []string{`\K`}
+				So(validate(cfg), ShouldNotBeNil)
+			})
+			Convey("redundant", func() {
+				cfg.PathRegexps = []string{``}
+				So(validate(cfg), ShouldNotBeNil)
+				cfg.PathRegexps = []string{`^file`}
+				So(validate(cfg), ShouldNotBeNil)
+				cfg.PathRegexps = []string{`file$`}
+				So(validate(cfg), ShouldNotBeNil)
+			})
+		})
 	})
 }
