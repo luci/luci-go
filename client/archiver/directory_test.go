@@ -110,7 +110,9 @@ func TestPushDirectory(t *testing.T) {
 		item.WaitForHashed()
 		So(a.Close(), ShouldBeNil)
 
-		expectedServerContents := make(map[string]string)
+		expected := map[string]map[isolated.HexDigest][]byte{
+			isolatedclient.DefaultNamespace: map[isolated.HexDigest][]byte{},
+		}
 		expectedMisses := 1
 		expectedBytesPushed := 0
 		files := make(map[string]isolated.File)
@@ -124,8 +126,9 @@ func TestPushDirectory(t *testing.T) {
 			}
 			expectedBytesPushed += int(len(node.contents))
 			expectedMisses += 1
-			digest := isolated.HashBytes([]byte(node.contents))
-			expectedServerContents[string(digest)] = node.contents
+			b := []byte(node.contents)
+			digest := isolated.HashBytes(b)
+			expected[isolatedclient.DefaultNamespace][digest] = b
 		}
 
 		isolatedData := isolated.Isolated{
@@ -136,15 +139,12 @@ func TestPushDirectory(t *testing.T) {
 		encoded, err := json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
-		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
-		expectedServerContents[string(isolatedHash)] = isolatedEncoded
+		b := []byte(isolatedEncoded)
+		isolatedHash := isolated.HashBytes(b)
+		expected[isolatedclient.DefaultNamespace][isolatedHash] = b
 		expectedBytesPushed += len(isolatedEncoded)
 
-		actualServerContents := map[string]string{}
-		for k, v := range server.Contents() {
-			actualServerContents[string(k)] = string(v)
-		}
-		So(actualServerContents, ShouldResemble, expectedServerContents)
+		So(server.Contents(), ShouldResemble, expected)
 		So(item.Digest(), ShouldResemble, isolatedHash)
 
 		stats := a.Stats()

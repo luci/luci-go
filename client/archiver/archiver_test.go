@@ -107,7 +107,7 @@ func TestArchiverFileHit(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		a := New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
-		server.Inject([]byte("foo"))
+		server.Inject(isolatedclient.DefaultNamespace, []byte("foo"))
 		item := a.Push("foo", isolatedclient.NewBytesSource([]byte("foo")), 0)
 		item.WaitForHashed()
 		So(item.Digest(), ShouldResemble, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"))
