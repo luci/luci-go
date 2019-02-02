@@ -196,6 +196,24 @@ type Interpreter struct {
 	// a thread to starlarktest's reporter in unit tests.
 	ThreadModifier func(th *starlark.Thread)
 
+	// PreExec is called before launching code through some 'exec' or ExecModule.
+	//
+	// It may modify the thread or some other global state in preparation for
+	// executing a nested script.
+	//
+	// 'load' calls do not trigger PreExec/PostExec hooks.
+	PreExec func(th *starlark.Thread, pkg, path string)
+
+	// PostExec is called after finishing running code through some 'exec' or
+	// ExecModule.
+	//
+	// It is always called, even if the 'exec' failed. May restore the state
+	// modified by PreExec. Note that PreExec/PostExec can nest (e.g. if an
+	// 'exec'-ed script calls 'exec' itself).
+	//
+	// 'load' calls do not trigger PreExec/PostExec hooks.
+	PostExec func(th *starlark.Thread, pkg, path string)
+
 	modules map[moduleKey]*loadedModule // cache of the loaded modules
 	execed  map[moduleKey]struct{}      // a set of modules that were ever exec'ed
 	globals starlark.StringDict         // global symbols exposed to all modules
@@ -481,6 +499,15 @@ func (intr *Interpreter) runModule(ctx context.Context, pkg, path string, kind T
 		module = "@" + pkg
 	}
 	module += "//" + path
+
+	if kind == ThreadExecing {
+		if intr.PreExec != nil {
+			intr.PreExec(th, pkg, path)
+		}
+		if intr.PostExec != nil {
+			defer intr.PostExec(th, pkg, path)
+		}
+	}
 
 	// Execute the module. It may load other modules inside, which will call
 	// th.Load callback above.
