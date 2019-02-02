@@ -189,20 +189,25 @@ func TestArchive(t *testing.T) {
 		isolatedEncoded := string(encoded) + "\n"
 		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
 
-		expected := map[string]string{
-			"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
-			"aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427": "foo2",
-			string(baseIsolatedHash):                   baseIsolatedEncoded,
-			string(isolatedHash):                       isolatedEncoded,
-			string(secondIsolatedHash):                 secondIsolatedEncoded,
+		expected := map[string]map[isolated.HexDigest]string{
+			isolatedclient.DefaultNamespace: {
+				"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
+				"aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427": "foo2",
+				baseIsolatedHash:   baseIsolatedEncoded,
+				isolatedHash:       isolatedEncoded,
+				secondIsolatedHash: secondIsolatedEncoded,
+			},
 		}
 		if IsWindows() {
-			expected["12339b9756c2994f85c310d560bc8c142a6b79a1"] = "no link on Windows"
+			// TODO(maruel): This needs to be fixed.
+			expected[isolatedclient.DefaultNamespace]["12339b9756c2994f85c310d560bc8c142a6b79a1"] = "no link on Windows"
 		}
-		actual := map[string]string{}
-		for k, v := range server.Contents() {
-			actual[string(k)] = string(v)
-			So(actual[string(k)], ShouldResemble, expected[string(k)])
+		actual := map[string]map[isolated.HexDigest]string{}
+		for namespace, c := range server.Contents() {
+			actual[namespace] = map[isolated.HexDigest]string{}
+			for k, v := range c {
+				actual[namespace][k] = string(v)
+			}
 		}
 		So(actual, ShouldResemble, expected)
 		So(item.Digest(), ShouldResemble, isolatedHash)

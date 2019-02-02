@@ -46,9 +46,9 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	tardata := genTar(t)
 
 	server := isolatedfake.New()
-	data1hash := server.Inject(data1)
-	data2hash := server.Inject(data2)
-	tardatahash := server.Inject(tardata)
+	data1hash := server.Inject(isolatedclient.DefaultNamespace, data1)
+	data2hash := server.Inject(isolatedclient.DefaultNamespace, data2)
+	tardatahash := server.Inject(isolatedclient.DefaultNamespace, tardata)
 	tardataname := fmt.Sprintf("%s.tar", tardatahash)
 
 	onePath := filepath.Join("foo", "one.txt")
@@ -60,7 +60,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		tardataname: isolated.TarFile(tardatahash, int64(len(tardata))),
 	}
 	isolated1bytes, _ := json.Marshal(&isolated1)
-	isolated1hash := server.Inject(isolated1bytes)
+	isolated1hash := server.Inject(isolatedclient.DefaultNamespace, isolated1bytes)
 
 	lolPath := filepath.Join("bar", "lol.txt")
 	oloPath := filepath.Join("foo", "boz", "olo.txt")
@@ -88,7 +88,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	}
 	isolated2.Includes = isolated.HexDigests{isolated1hash}
 	isolated2bytes, _ := json.Marshal(&isolated2)
-	isolated2hash := server.Inject(isolated2bytes)
+	isolated2hash := server.Inject(isolatedclient.DefaultNamespace, isolated2bytes)
 
 	ts := httptest.NewServer(server)
 	defer ts.Close()
