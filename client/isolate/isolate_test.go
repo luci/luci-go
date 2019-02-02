@@ -68,7 +68,8 @@ func TestArchive(t *testing.T) {
 	ctx := context.Background()
 
 	Convey(`Tests the creation and archival of an isolate file.`, t, func() {
-		server := isolatedfake.New()
+		namespace := "default-gzip"
+		server := isolatedfake.New(namespace)
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
@@ -155,7 +156,7 @@ func TestArchive(t *testing.T) {
 		encoded, err := json.Marshal(baseIsolatedData)
 		So(err, ShouldBeNil)
 		baseIsolatedEncoded := string(encoded) + "\n"
-		baseIsolatedHash := isolated.HashBytes([]byte(baseIsolatedEncoded))
+		baseIsolatedHash := isolated.HashBytes([]byte(baseIsolatedEncoded), namespace)
 
 		//   /second/
 		secondIsolatedData := isolated.Isolated{
@@ -168,7 +169,7 @@ func TestArchive(t *testing.T) {
 		encoded, err = json.Marshal(secondIsolatedData)
 		So(err, ShouldBeNil)
 		secondIsolatedEncoded := string(encoded) + "\n"
-		secondIsolatedHash := isolated.HashBytes([]byte(secondIsolatedEncoded))
+		secondIsolatedHash := isolated.HashBytes([]byte(secondIsolatedEncoded), namespace)
 
 		isolatedData := isolated.Isolated{
 			Algo:    "sha-1",
@@ -187,7 +188,7 @@ func TestArchive(t *testing.T) {
 		encoded, err = json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
-		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
+		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded), namespace)
 
 		expected := map[string]string{
 			"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
@@ -221,7 +222,7 @@ func TestArchive(t *testing.T) {
 		}
 
 		So(server.Error(), ShouldBeNil)
-		digest, err := isolated.HashFile(filepath.Join(tmpDir, "baz.isolated"))
+		digest, err := isolated.HashFile(filepath.Join(tmpDir, "baz.isolated"), namespace)
 		So(digest, ShouldResemble, isolateservice.HandlersEndpointsV1Digest{Digest: string(isolatedHash), IsIsolated: false, Size: int64(len(isolatedEncoded))})
 		So(err, ShouldBeNil)
 	})

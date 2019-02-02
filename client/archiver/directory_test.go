@@ -85,13 +85,13 @@ func TestPushDirectory(t *testing.T) {
 	if common.IsWindows() {
 		mode = os.FileMode(0666)
 	}
-
+	namespace := "default-gzip"
 	basicFile := func(contents string) isolated.File {
-		return isolated.BasicFile(isolated.HashBytes([]byte(contents)), int(mode), int64(len(contents)))
+		return isolated.BasicFile(isolated.HashBytes([]byte(contents), namespace), int(mode), int64(len(contents)))
 	}
 
 	expectValidPush := func(t *testing.T, root string, nodes []fileNode, blacklist []string) {
-		server := isolatedfake.New()
+		server := isolatedfake.New(namespace)
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		a := New(emptyContext, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
@@ -124,7 +124,7 @@ func TestPushDirectory(t *testing.T) {
 			}
 			expectedBytesPushed += int(len(node.contents))
 			expectedMisses += 1
-			digest := isolated.HashBytes([]byte(node.contents))
+			digest := isolated.HashBytes([]byte(node.contents), namespace)
 			expectedServerContents[string(digest)] = node.contents
 		}
 
@@ -136,7 +136,7 @@ func TestPushDirectory(t *testing.T) {
 		encoded, err := json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
-		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
+		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded), namespace)
 		expectedServerContents[string(isolatedHash)] = isolatedEncoded
 		expectedBytesPushed += len(isolatedEncoded)
 

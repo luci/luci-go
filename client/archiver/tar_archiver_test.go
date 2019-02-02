@@ -125,11 +125,11 @@ func TestItemBundle(t *testing.T) {
 				Size:    123,
 			},
 		}
-
+		namespace := "default-gzip"
 		bundles := shardItems(testItems, 0)
 		So(len(bundles), ShouldEqual, 2)
 		for _, bundle := range bundles {
-			if _, _, err := bundle.Digest(); err == nil {
+			if _, _, err := bundle.Digest(namespace); err == nil {
 				t.Errorf("Path %q, bundle.Digest gave nil error; want some error", bundle.items[0].Path)
 			}
 			rc, err := bundle.Contents()
@@ -179,9 +179,10 @@ func runShardItems(sizes []int64, threshold int64) (*shards, error) {
 		})
 	}
 	r := &shards{}
+	namespace := "default-gzip"
 	bundles := shardItems(items, threshold)
 	for i, b := range bundles {
-		digest, size, err := b.Digest()
+		digest, size, err := b.Digest(namespace)
 		if err != nil {
 			return nil, fmt.Errorf("bundle[%d] Digest failed: %s", i, err)
 		}

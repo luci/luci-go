@@ -76,19 +76,24 @@ type IsolatedFake interface {
 }
 
 type isolatedFake struct {
-	mux      *http.ServeMux
-	lock     sync.Mutex
+	mux       *http.ServeMux
+	namespace string
+
+	mu       sync.Mutex
 	err      error
 	contents map[isolated.HexDigest][]byte
 	staging  map[isolated.HexDigest][]byte // Uploaded to GCS but not yet finalized.
 }
 
 // New create a HTTP router that implements an isolated server.
-func New() IsolatedFake {
+//
+// It only works with a single namespace.
+func New(namespace string) IsolatedFake {
 	server := &isolatedFake{
-		mux:      http.NewServeMux(),
-		contents: map[isolated.HexDigest][]byte{},
-		staging:  map[isolated.HexDigest][]byte{},
+		mux:       http.NewServeMux(),
+		namespace: namespace,
+		contents:  map[isolated.HexDigest][]byte{},
+		staging:   map[isolated.HexDigest][]byte{},
 	}
 
 	server.handleJSON("/_ah/api/isolateservice/v1/server_details", server.serverDetails)
@@ -113,8 +118,8 @@ func (server *isolatedFake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *isolatedFake) Contents() map[isolated.HexDigest][]byte {
-	server.lock.Lock()
-	defer server.lock.Unlock()
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	out := map[isolated.HexDigest][]byte{}
 	for k, v := range server.contents {
 		out[k] = v
@@ -123,22 +128,22 @@ func (server *isolatedFake) Contents() map[isolated.HexDigest][]byte {
 }
 
 func (server *isolatedFake) Inject(data []byte) isolated.HexDigest {
-	h := isolated.HashBytes(data)
-	server.lock.Lock()
-	defer server.lock.Unlock()
+	h := isolated.HashBytes(data, server.namespace)
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	server.contents[h] = data
 	return h
 }
 
 func (server *isolatedFake) Fail(err error) {
-	server.lock.Lock()
-	defer server.lock.Unlock()
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	server.failLocked(err)
 }
 
 func (server *isolatedFake) Error() error {
-	server.lock.Lock()
-	defer server.lock.Unlock()
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	return server.err
 }
 
@@ -168,13 +173,13 @@ func (server *isolatedFake) preupload(r *http.Request) interface{} {
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
 		server.Fail(err)
 	}
-	if data.Namespace == nil || data.Namespace.Namespace != "default-gzip" {
+	if data.Namespace == nil || data.Namespace.Namespace != server.namespace {
 		server.Fail(fmt.Errorf("unexpected namespace %#v", data.Namespace.Namespace))
 	}
 	out := &isolateservice.HandlersEndpointsV1UrlCollection{}
 
-	server.lock.Lock()
-	defer server.lock.Unlock()
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	for i, d := range data.Items {
 		if _, ok := server.contents[isolated.HexDigest(d.Digest)]; !ok {
 			// Simulate a write to Cloud Storage for larger writes.
@@ -218,14 +223,14 @@ func (server *isolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *htt
 		return
 	}
 	digest := isolated.HexDigest(r.URL.Query().Get("digest"))
-	if digest != isolated.HashBytes(raw) {
+	if digest != isolated.HashBytes(raw, server.namespace) {
 		w.WriteHeader(400)
 		server.Fail(fmt.Errorf("invalid digest %#v", digest))
 		return
 	}
 
-	server.lock.Lock()
-	defer server.lock.Unlock()
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	server.staging[digest] = raw
 	w.WriteHeader(200)
 }
@@ -278,14 +283,14 @@ func (server *isolatedFake) finalizeGSUpload(r *http.Request) interface{} {
 		return map[string]string{"err": err.Error()}
 	}
 	digest := isolated.HexDigest(data.UploadTicket[len(prefix):])
-	if !digest.Validate() {
+	if !digest.Validate(server.namespace) {
 		err := fmt.Errorf("invalid digest %#v", digest)
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 
-	server.lock.Lock()
-	defer server.lock.Unlock()
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	if _, ok := server.staging[digest]; !ok {
 		err := fmt.Errorf("finalizing non uploaded file")
 		server.failLocked(err)
@@ -311,7 +316,7 @@ func (server *isolatedFake) storeInline(r *http.Request) interface{} {
 	}
 
 	digest := isolated.HexDigest(data.UploadTicket[len(prefix):])
-	if !digest.Validate() {
+	if !digest.Validate(server.namespace) {
 		err := fmt.Errorf("invalid digest %#v", digest)
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -332,14 +337,14 @@ func (server *isolatedFake) storeInline(r *http.Request) interface{} {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
-	if digest != isolated.HashBytes(raw) {
+	if digest != isolated.HashBytes(raw, server.namespace) {
 		err := fmt.Errorf("invalid digest %#v", digest)
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 
-	server.lock.Lock()
-	defer server.lock.Unlock()
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	server.contents[digest] = raw
 	//log.Printf("  storing %s = %d bytes", digest, len(raw))
 	return map[string]string{"ok": "true"}

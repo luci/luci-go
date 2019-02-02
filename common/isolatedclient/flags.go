@@ -45,7 +45,7 @@ func (c *Flags) Parse() error {
 		return errors.New("-isolate-server must be specified")
 	}
 	if c.ServerURL == "fake" {
-		ts := httptest.NewServer(isolatedfake.New())
+		ts := httptest.NewServer(isolatedfake.New(c.Namespace))
 		c.ServerURL = ts.URL
 	} else {
 		s, err := lhttp.CheckURL(c.ServerURL)

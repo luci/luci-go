@@ -157,7 +157,8 @@ func TestSkipsUpload(t *testing.T) {
 
 		uploader := &fakeUploader{}
 
-		ut := NewUploadTracker(checker, uploader, isol)
+		namespace := "default-gzip"
+		ut := NewUploadTracker(checker, uploader, isol, namespace)
 		fos := &fakeOS{}
 		ut.lOS = fos // Override filesystem calls with fake.
 
@@ -176,7 +177,7 @@ func TestSkipsUpload(t *testing.T) {
 		wantIsolJSON := []byte(`{"algo":"","version":""}`)
 		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
 
-		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON))
+		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON, namespace))
 		So(isolSummary.Name, ShouldEqual, "isolatedPath")
 
 		So(uploader.uploadBytesCalls, ShouldEqual, nil)
@@ -191,8 +192,8 @@ func TestDontSkipUpload(t *testing.T) {
 		checker := &fakeChecker{ps: &isolatedclient.PushState{}}
 
 		uploader := &fakeUploader{}
-
-		ut := NewUploadTracker(checker, uploader, isol)
+		namespace := "default-gzip"
+		ut := NewUploadTracker(checker, uploader, isol, namespace)
 		fos := &fakeOS{}
 		ut.lOS = fos // Override filesystem calls with fake.
 
@@ -211,7 +212,7 @@ func TestDontSkipUpload(t *testing.T) {
 		wantIsolJSON := []byte(`{"algo":"","version":""}`)
 		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
 
-		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON))
+		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON, namespace))
 		So(isolSummary.Name, ShouldEqual, "isolatedPath")
 
 		// Upload was not skipped.
@@ -230,8 +231,8 @@ func TestHandlesSymlinks(t *testing.T) {
 		// non-nil PushState means don't skip the upload.
 		checker := &fakeChecker{ps: &isolatedclient.PushState{}}
 		uploader := &fakeUploader{}
-
-		ut := NewUploadTracker(checker, uploader, isol)
+		namespace := "default-gzip"
+		ut := NewUploadTracker(checker, uploader, isol, namespace)
 		fos := &fakeOS{}
 		ut.lOS = fos // Override filesystem calls with fake.
 
@@ -261,7 +262,7 @@ func TestHandlesSymlinks(t *testing.T) {
 		wantIsolJSON := []byte(`{"algo":"","files":{"c":{"l":"link:/a/b/c"}},"version":""}`)
 		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
 
-		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON))
+		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON, namespace))
 		So(isolSummary.Name, ShouldEqual, "isolatedPath")
 
 		So(uploader.uploadBytesCalls, ShouldResemble, []uploaderUploadBytesArgs{
@@ -279,7 +280,8 @@ func TestHandlesIndividualFiles(t *testing.T) {
 		checker := &fakeChecker{ps: pushState}
 		uploader := &fakeUploader{}
 
-		ut := NewUploadTracker(checker, uploader, isol)
+		namespace := "default-gzip"
+		ut := NewUploadTracker(checker, uploader, isol, namespace)
 		fos := &fakeOS{
 			readFiles: map[string]io.Reader{
 				"/a/b/foo": strings.NewReader("foo contents"),
@@ -300,8 +302,8 @@ func TestHandlesIndividualFiles(t *testing.T) {
 		err := ut.UploadDeps(parts)
 		So(err, ShouldBeNil)
 
-		fooHash := isolated.HashBytes([]byte("foo contents"))
-		barHash := isolated.HashBytes([]byte("bar contents"))
+		fooHash := isolated.HashBytes([]byte("foo contents"), namespace)
+		barHash := isolated.HashBytes([]byte("bar contents"), namespace)
 		wantFiles := map[string]isolated.File{
 			"foo": {
 				Digest: fooHash,
@@ -324,7 +326,7 @@ func TestHandlesIndividualFiles(t *testing.T) {
 		wantIsolJSON := []byte(fmt.Sprintf(wantIsolJSONTmpl, barHash, fooHash))
 		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
 
-		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON))
+		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON, namespace))
 		So(isolSummary.Name, ShouldEqual, "isolatedPath")
 
 		So(uploader.uploadBytesCalls, ShouldResemble, []uploaderUploadBytesArgs{

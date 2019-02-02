@@ -80,11 +80,12 @@ type Policies struct {
 }
 
 // NewMemory creates a purely in-memory cache.
-func NewMemory(policies Policies) Cache {
+func NewMemory(policies Policies, namespace string) Cache {
 	return &memory{
-		policies: policies,
-		data:     map[isolated.HexDigest][]byte{},
-		lru:      makeLRUDict(),
+		policies:  policies,
+		namespace: namespace,
+		data:      map[isolated.HexDigest][]byte{},
+		lru:       makeLRUDict(namespace),
 	}
 }
 
@@ -92,14 +93,15 @@ func NewMemory(policies Policies) Cache {
 //
 // It may return both a valid Cache and an error if it failed to load the
 // previous cache metadata. It is safe to ignore this error.
-func NewDisk(policies Policies, path string) (Cache, error) {
+func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 	if !filepath.IsAbs(path) {
 		return nil, errors.New("must use absolute path")
 	}
 	d := &disk{
-		policies: policies,
-		path:     path,
-		lru:      makeLRUDict(),
+		policies:  policies,
+		path:      path,
+		namespace: namespace,
+		lru:       makeLRUDict(namespace),
 	}
 	p := d.statePath()
 	f, err := os.Open(p)
@@ -117,32 +119,33 @@ func NewDisk(policies Policies, path string) (Cache, error) {
 
 type memory struct {
 	// Immutable.
-	policies Policies
+	policies  Policies
+	namespace string
 
 	// Lock protected.
-	lock sync.Mutex
+	mu   sync.Mutex
 	data map[isolated.HexDigest][]byte // Contains the actual content.
 	lru  lruDict                       // Implements LRU based eviction.
 }
 
 func (m *memory) Close() error {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	return nil
 }
 
 func (m *memory) Keys() isolated.HexDigests {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	return m.lru.keys()
 }
 
 func (m *memory) Touch(digest isolated.HexDigest) bool {
-	if !digest.Validate() {
+	if !digest.Validate(m.namespace) {
 		return false
 	}
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if _, ok := m.data[digest]; !ok {
 		return false
 	}
@@ -151,21 +154,21 @@ func (m *memory) Touch(digest isolated.HexDigest) bool {
 }
 
 func (m *memory) Evict(digest isolated.HexDigest) {
-	if !digest.Validate() {
+	if !digest.Validate(m.namespace) {
 		return
 	}
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	delete(m.data, digest)
 	m.lru.pop(digest)
 }
 
 func (m *memory) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
-	if !digest.Validate() {
+	if !digest.Validate(m.namespace) {
 		return nil, os.ErrInvalid
 	}
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	content, ok := m.data[digest]
 	if !ok {
 		return nil, os.ErrNotExist
@@ -174,7 +177,7 @@ func (m *memory) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 }
 
 func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
-	if !digest.Validate() {
+	if !digest.Validate(m.namespace) {
 		return os.ErrInvalid
 	}
 	// TODO(maruel): Use a LimitedReader flavor that fails when reaching limit.
@@ -182,14 +185,14 @@ func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if isolated.HashBytes(content) != digest {
+	if isolated.HashBytes(content, m.namespace) != digest {
 		return errors.New("invalid hash")
 	}
 	if units.Size(len(content)) > m.policies.MaxSize {
 		return errors.New("item too large")
 	}
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.data[digest] = content
 	m.lru.pushFront(digest, units.Size(len(content)))
 	m.respectPolicies()
@@ -197,12 +200,12 @@ func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
 }
 
 func (m *memory) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
-	if !digest.Validate() {
+	if !digest.Validate(m.namespace) {
 		return os.ErrInvalid
 	}
-	m.lock.Lock()
+	m.mu.Lock()
 	content, ok := m.data[digest]
-	m.lock.Unlock()
+	m.mu.Unlock()
 	if !ok {
 		return os.ErrNotExist
 	}
@@ -218,19 +221,20 @@ func (m *memory) respectPolicies() {
 
 type disk struct {
 	// Immutable.
-	policies Policies
-	path     string
+	policies  Policies
+	path      string
+	namespace string
 
 	// Lock protected.
-	lock sync.Mutex
-	lru  lruDict // Implements LRU based eviction.
+	mu  sync.Mutex
+	lru lruDict // Implements LRU based eviction.
 	// TODO(maruel): Add stats about: # added, # removed.
 	// TODO(maruel): stateFile
 }
 
 func (d *disk) Close() error {
-	d.lock.Lock()
-	defer d.lock.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	if !d.lru.IsDirty() {
 		return nil
 	}
@@ -243,17 +247,17 @@ func (d *disk) Close() error {
 }
 
 func (d *disk) Keys() isolated.HexDigests {
-	d.lock.Lock()
-	defer d.lock.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.lru.keys()
 }
 
 func (d *disk) Touch(digest isolated.HexDigest) bool {
-	if !digest.Validate() {
+	if !digest.Validate(d.namespace) {
 		return false
 	}
-	d.lock.Lock()
-	defer d.lock.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	mtime := time.Now()
 	if err := os.Chtimes(d.itemPath(digest), mtime, mtime); err != nil {
 		return false
@@ -263,17 +267,17 @@ func (d *disk) Touch(digest isolated.HexDigest) bool {
 }
 
 func (d *disk) Evict(digest isolated.HexDigest) {
-	if !digest.Validate() {
+	if !digest.Validate(d.namespace) {
 		return
 	}
-	d.lock.Lock()
-	defer d.lock.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.lru.pop(digest)
 	_ = os.Remove(d.itemPath(digest))
 }
 
 func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
-	if !digest.Validate() {
+	if !digest.Validate(d.namespace) {
 		return nil, os.ErrInvalid
 	}
 	f, err := os.Open(d.itemPath(digest))
@@ -284,7 +288,7 @@ func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 }
 
 func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
-	if !digest.Validate() {
+	if !digest.Validate(d.namespace) {
 		return os.ErrInvalid
 	}
 	p := d.itemPath(digest)
@@ -292,7 +296,7 @@ func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 	if err != nil {
 		return err
 	}
-	h := isolated.GetHash()
+	h := isolated.GetHash(d.namespace)
 	// TODO(maruel): Use a LimitedReader flavor that fails when reaching limit.
 	size, err := io.Copy(dst, io.TeeReader(src, h))
 	if err2 := dst.Close(); err == nil {
@@ -311,15 +315,15 @@ func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 		return errors.New("item too large")
 	}
 
-	d.lock.Lock()
-	defer d.lock.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.lru.pushFront(digest, units.Size(size))
 	d.respectPolicies()
 	return nil
 }
 
 func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
-	if !digest.Validate() {
+	if !digest.Validate(d.namespace) {
 		return os.ErrInvalid
 	}
 	src := d.itemPath(digest)

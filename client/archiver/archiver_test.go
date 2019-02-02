@@ -57,7 +57,8 @@ func TestArchiverFile(t *testing.T) {
 	ctx := context.Background()
 
 	Convey(`An archiver should handle file archival operations.`, t, func() {
-		server := isolatedfake.New()
+		namespace := "default-gzip"
+		server := isolatedfake.New(namespace)
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		a := New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
@@ -103,7 +104,8 @@ func TestArchiverFileHit(t *testing.T) {
 	ctx := context.Background()
 
 	Convey(`An archiver should correctly cache an archived file.`, t, func() {
-		server := isolatedfake.New()
+		namespace := "default-gzip"
+		server := isolatedfake.New(namespace)
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		a := New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
@@ -126,7 +128,8 @@ func TestArchiverCancel(t *testing.T) {
 	ctx := context.Background()
 
 	Convey(`A cancelled archiver should produce sane output.`, t, func() {
-		server := isolatedfake.New()
+		namespace := "default-gzip"
+		server := isolatedfake.New(namespace)
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		a := New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)

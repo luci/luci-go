@@ -40,7 +40,8 @@ func mkFile(data []byte) *isolated.File {
 	mode := 0444
 	size := int64(len(data))
 	return &isolated.File{
-		Digest: isolated.HashBytes(data),
+		// TODO(maruel): This is incorrect.
+		Digest: isolated.HashBytes(data, "default-gzip"),
 		Mode:   &mode,
 		Size:   &size,
 	}

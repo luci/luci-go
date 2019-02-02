@@ -45,7 +45,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	data2 := []byte("wat")
 	tardata := genTar(t)
 
-	server := isolatedfake.New()
+	server := isolatedfake.New("default-gzip")
 	data1hash := server.Inject(data1)
 	data2hash := server.Inject(data2)
 	tardatahash := server.Inject(tardata)

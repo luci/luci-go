@@ -116,6 +116,10 @@ func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.
 	return i
 }
 
+func (i *Client) Namespace() string {
+	return i.namespace
+}
+
 // ServerCapabilities returns the server details.
 func (i *Client) ServerCapabilities(c context.Context) (*isolateservice.HandlersEndpointsV1ServerDetails, error) {
 	out := &isolateservice.HandlersEndpointsV1ServerDetails{}

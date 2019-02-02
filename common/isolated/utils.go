@@ -29,8 +29,8 @@ func Sum(h hash.Hash) HexDigest {
 }
 
 // Hash hashes a reader and returns a HexDigest from it.
-func Hash(src io.Reader) (HexDigest, error) {
-	h := GetHash()
+func Hash(src io.Reader, namespace string) (HexDigest, error) {
+	h := GetHash(namespace)
 	_, err := io.Copy(h, src)
 	if err != nil {
 		return HexDigest(""), err
@@ -39,15 +39,15 @@ func Hash(src io.Reader) (HexDigest, error) {
 }
 
 // HashBytes hashes content and returns a HexDigest from it.
-func HashBytes(content []byte) HexDigest {
-	h := GetHash()
+func HashBytes(content []byte, namespace string) HexDigest {
+	h := GetHash(namespace)
 	_, _ = h.Write(content)
 	return Sum(h)
 }
 
 // HashFile hashes a file and returns a HandlersEndpointsV1Digest out of it.
-func HashFile(path string) (isolateservice.HandlersEndpointsV1Digest, error) {
-	h := GetHash()
+func HashFile(path, namespace string) (isolateservice.HandlersEndpointsV1Digest, error) {
+	h := GetHash(namespace)
 	f, err := os.Open(path)
 	if err != nil {
 		return isolateservice.HandlersEndpointsV1Digest{}, err

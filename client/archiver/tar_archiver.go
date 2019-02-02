@@ -75,8 +75,8 @@ func oneBundle(items []*Item, threshold int64) (*itemBundle, []*Item) {
 
 // Digest returns the hash and total size of the tar constructed from the
 // bundle's items.
-func (b *itemBundle) Digest() (isolated.HexDigest, int64, error) {
-	h := isolated.GetHash()
+func (b *itemBundle) Digest(namespace string) (isolated.HexDigest, int64, error) {
+	h := isolated.GetHash(namespace)
 	cw := &iotools.CountingWriter{Writer: h}
 	if err := b.writeTar(cw); err != nil {
 		return "", 0, err

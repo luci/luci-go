@@ -44,7 +44,7 @@ func TestIsolateServerCaps(t *testing.T) {
 
 	t.Parallel()
 	Convey(`An empty archiver should produce sane output.`, t, func() {
-		server := isolatedfake.New()
+		server := isolatedfake.New(DefaultNamespace)
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		client := New(nil, nil, ts.URL, DefaultNamespace, nil, nil)
@@ -89,7 +89,7 @@ func TestIsolateServerDownloadRetryGCSPartial(t *testing.T) {
 	// GCS download is teared down in the middle.
 	t.Parallel()
 	Convey(``, t, func() {
-		server := isolatedfake.New()
+		server := isolatedfake.New(DefaultNamespace)
 		largeHash := server.Inject(large)
 		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/download": 1024}}
 		flaky.ts = httptest.NewServer(flaky)
@@ -110,13 +110,14 @@ func TestIsolateServerUploadRetryGCSPartial(t *testing.T) {
 	// GCS upload is teared down in the middle.
 	t.Parallel()
 	Convey(``, t, func() {
-		server := isolatedfake.New()
+		namespace := DefaultNamespace
+		server := isolatedfake.New(namespace)
 		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/upload": 1024}}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
-		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry, nil)
+		client := New(nil, nil, flaky.ts.URL, namespace, fastRetry, nil)
 
-		digests, contents, expected := makeItems(large)
+		digests, contents, expected := makeItems(namespace, large)
 		states, err := client.Contains(ctx, digests)
 		So(err, ShouldBeNil)
 		So(len(states), ShouldResemble, len(digests))
@@ -171,7 +172,7 @@ func TestRetryDownload(t *testing.T) {
 	// testFunc will return a failStep which indicates which step in the process failed.
 	testFunc := func(tc testCase) bool {
 		// Construct a server which will serve a single 503 for requests to tc.errURL before succeeding.
-		server := isolatedfake.New()
+		server := isolatedfake.New(DefaultNamespace)
 		itemHash := server.Inject(tc.item)
 		flaky := &killingMux{server: server, http503: make(map[string]int)}
 		if tc.errURL != "" {
@@ -278,16 +279,17 @@ func TestRetryUpload(t *testing.T) {
 	// testFunc will return a failStep which indicates which step in the process failed.
 	testFunc := func(tc testCase) failStep {
 		// Construct a server which will serve a single 503 for requests to tc.errURL before succeeding.
-		server := isolatedfake.New()
+		namespace := DefaultNamespace
+		server := isolatedfake.New(namespace)
 		flaky := &killingMux{server: server, http503: make(map[string]int)}
 		if tc.errURL != "" {
 			flaky.http503[tc.errURL] = 10
 		}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
-		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, tc.retryFactory, nil)
+		client := New(nil, nil, flaky.ts.URL, namespace, tc.retryFactory, nil)
 
-		digests, contents, expected := makeItems(tc.items...)
+		digests, contents, expected := makeItems(namespace, tc.items...)
 		states, err := client.Contains(ctx, digests)
 		if err != nil {
 			return failedContains
@@ -433,11 +435,11 @@ func init() {
 	}
 }
 
-func makeItems(contents ...[]byte) ([]*isolateservice.HandlersEndpointsV1Digest, [][]byte, map[isolated.HexDigest][]byte) {
+func makeItems(namespace string, contents ...[]byte) ([]*isolateservice.HandlersEndpointsV1Digest, [][]byte, map[isolated.HexDigest][]byte) {
 	digests := make([]*isolateservice.HandlersEndpointsV1Digest, 0, len(contents))
 	expected := make(map[isolated.HexDigest][]byte, len(contents))
 	for _, content := range contents {
-		hex := isolated.HashBytes(content)
+		hex := isolated.HashBytes(content, namespace)
 		digests = append(digests, &isolateservice.HandlersEndpointsV1Digest{Digest: string(hex), IsIsolated: false, Size: int64(len(content))})
 		expected[hex] = content
 	}
@@ -446,7 +448,7 @@ func makeItems(contents ...[]byte) ([]*isolateservice.HandlersEndpointsV1Digest,
 
 func testNormalDownload(ctx context.Context, t *testing.T, contents ...[]byte) {
 	Convey(``, func() {
-		server := isolatedfake.New()
+		server := isolatedfake.New(DefaultNamespace)
 		hashes := make([]isolated.HexDigest, 0, len(contents))
 		for _, file := range contents {
 			hashes = append(hashes, server.Inject(file))
@@ -466,11 +468,12 @@ func testNormalDownload(ctx context.Context, t *testing.T, contents ...[]byte) {
 
 func testNormalUpload(ctx context.Context, t *testing.T, contents ...[]byte) {
 	Convey(``, func() {
-		digests, _, expected := makeItems(contents...)
-		server := isolatedfake.New()
+		namespace := DefaultNamespace
+		digests, _, expected := makeItems(namespace, contents...)
+		server := isolatedfake.New(namespace)
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		client := New(nil, nil, ts.URL, DefaultNamespace, noRetry, nil)
+		client := New(nil, nil, ts.URL, namespace, noRetry, nil)
 		states, err := client.Contains(ctx, digests)
 		So(err, ShouldBeNil)
 		So(len(states), ShouldResemble, len(digests))
