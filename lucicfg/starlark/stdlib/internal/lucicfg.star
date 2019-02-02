@@ -84,6 +84,32 @@ def _version():
   return __native__.version()
 
 
+def _var(default=None, validator=None):
+  """Declares a new scoped variable.
+
+  DocTags:
+    Advanced.
+
+  Args:
+    default: a value to return from `get()` if the variable is unset.
+    validator: a callback called as `validator(value)` from `set(values)`, must
+        return the value to be assigned to the variable (usually just `value`).
+
+  Returns:
+    A struct with two methods: `set(value)` and `get(): value`.
+  """
+  var_id = __native__.var_declare()
+
+  def _set(value):
+    __native__.var_set(var_id, validator(value) if validator else value)
+
+  def _get():
+    value = __native__.var_get(var_id)
+    return value if value != None else default
+
+  return struct(set = _set, get = _get)
+
+
 def _generator(impl):
   """Registers a callback that is called at the end of the config generation
   stage to modify/append/delete generated configs in an arbitrary way.
@@ -110,5 +136,6 @@ def _generator(impl):
 lucicfg = struct(
     config = _config,
     version = _version,
+    var = _var,
     generator = _generator,
 )

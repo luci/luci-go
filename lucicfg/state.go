@@ -35,6 +35,7 @@ type State struct {
 	Configs ConfigSet // all generated config files, populated at the end
 	Meta    Meta      // lucicfg parameters, settable through Starlark
 
+	vars       scopedVars        // holds state of lucicfg.var() variables
 	errors     errors.MultiError // all errors emitted during the generation (if any)
 	seenErrs   stringset.Set     // set of all string backtraces in 'errors', for deduping
 	failOnErrs bool              // if true, 'emit_error' aborts the execution
@@ -45,7 +46,8 @@ type State struct {
 
 // clear resets the state.
 func (s *State) clear() {
-	*s = State{Inputs: s.Inputs}
+	*s = State{Inputs: s.Inputs, vars: s.vars}
+	s.vars.clearValues()
 }
 
 // err adds errors to the list of errors and returns the list as MultiError,

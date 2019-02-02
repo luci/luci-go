@@ -110,6 +110,32 @@ Returns a triple with lucicfg version: `(major, minor, revision)`.
 
 
 
+### lucicfg.var {#lucicfg.var}
+
+```python
+lucicfg.var(default = None, validator = None)
+```
+
+
+*** note
+**Advanced function.** It is not used for common use cases.
+***
+
+
+Declares a new scoped variable.
+
+#### Arguments {#lucicfg.var-args}
+
+* **default**: a value to return from `get()` if the variable is unset.
+* **validator**: a callback called as `validator(value)` from `set(values)`, must return the value to be assigned to the variable (usually just `value`).
+
+
+#### Returns  {#lucicfg.var-returns}
+
+A struct with two methods: `set(value)` and `get(): value`.
+
+
+
 ### lucicfg.generator {#lucicfg.generator}
 
 ```python

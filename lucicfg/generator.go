@@ -86,6 +86,8 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	intr := interpreter.Interpreter{
 		Predeclared: predeclared,
 		Packages:    pkgs,
+		PreExec:     state.vars.preExec,
+		PostExec:    state.vars.postExec,
 		ThreadModifier: func(th *starlark.Thread) {
 			if !in.testDisableFailureCollector {
 				failures.Install(th)
