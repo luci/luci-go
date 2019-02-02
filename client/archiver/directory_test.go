@@ -84,15 +84,16 @@ func TestPushDirectory(t *testing.T) {
 		mode = os.FileMode(0666)
 	}
 
+	// TODO(maruel): Move.
+	namespace := isolatedclient.DefaultNamespace
 	basicFile := func(contents string) isolated.File {
-		return isolated.BasicFile(isolated.HashBytes([]byte(contents)), int(mode), int64(len(contents)))
+		return isolated.BasicFile(isolated.HashBytes([]byte(contents), namespace), int(mode), int64(len(contents)))
 	}
-
 	expectValidPush := func(t *testing.T, root string, nodes []fileNode, blacklist []string) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(context.Background(), isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := New(context.Background(), isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
 
 		for _, node := range nodes {
 			if node.symlink != nil {
@@ -109,7 +110,7 @@ func TestPushDirectory(t *testing.T) {
 		So(a.Close(), ShouldBeNil)
 
 		expected := map[string]map[isolated.HexDigest]string{
-			isolatedclient.DefaultNamespace: {},
+			namespace: {},
 		}
 		expectedMisses := 1
 		expectedBytesPushed := 0
@@ -124,8 +125,8 @@ func TestPushDirectory(t *testing.T) {
 			}
 			expectedBytesPushed += int(len(node.contents))
 			expectedMisses++
-			digest := isolated.HashBytes([]byte(node.contents))
-			expected[isolatedclient.DefaultNamespace][digest] = node.contents
+			digest := isolated.HashBytes([]byte(node.contents), namespace)
+			expected[namespace][digest] = node.contents
 		}
 
 		isolatedData := isolated.Isolated{
@@ -136,8 +137,8 @@ func TestPushDirectory(t *testing.T) {
 		encoded, err := json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
-		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
-		expected[isolatedclient.DefaultNamespace][isolatedHash] = isolatedEncoded
+		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded), namespace)
+		expected[namespace][isolatedHash] = isolatedEncoded
 		expectedBytesPushed += len(isolatedEncoded)
 
 		actual := map[string]map[isolated.HexDigest]string{}

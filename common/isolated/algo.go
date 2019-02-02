@@ -19,15 +19,22 @@ package isolated
 import (
 	"compress/zlib"
 	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"hash"
 	"io"
+	"strings"
 )
 
 // GetHash returns a fresh instance of the hashing algorithm to be used to
 // calculate the HexDigest.
-//
-// It is currently hardcoded to sha-1.
-func GetHash() hash.Hash {
+func GetHash(namespace string) hash.Hash {
+	if strings.HasPrefix(namespace, "sha256-") {
+		return sha256.New()
+	}
+	if strings.HasPrefix(namespace, "sha512-") {
+		return sha512.New()
+	}
 	return sha1.New()
 }
 
@@ -55,8 +62,14 @@ func GetCompressor(out io.Writer) (io.WriteCloser, error) {
 type HexDigest string
 
 // Validate returns true if the hash is valid.
-func (d HexDigest) Validate() bool {
-	if len(d) != sha1.Size*2 {
+func (d HexDigest) Validate(namespace string) bool {
+	l := 40
+	if strings.HasPrefix(namespace, "sha256-") {
+		l = 64
+	} else if strings.HasPrefix(namespace, "sha512-") {
+		l = 128
+	}
+	if len(d) != l {
 		return false
 	}
 	for _, c := range d {

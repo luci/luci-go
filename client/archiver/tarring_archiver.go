@@ -39,14 +39,14 @@ func NewTarringArchiver(checker Checker, uploader Uploader) *TarringArchiver {
 }
 
 // Archive uploads a single isolate.
-func (ta *TarringArchiver) Archive(deps []string, rootDir string, isol *isolated.Isolated, blacklist []string, isolated string) (IsolatedSummary, error) {
+func (ta *TarringArchiver) Archive(deps []string, rootDir string, isol *isolated.Isolated, blacklist []string, isolated, namespace string) (IsolatedSummary, error) {
 	parts, err := partitionDeps(deps, rootDir, blacklist)
 	if err != nil {
 		return IsolatedSummary{}, fmt.Errorf("partitioning deps: %v", err)
 	}
 	log.Printf("Expanded to the following items to be isolated:\n%s", parts)
 
-	tracker := NewUploadTracker(ta.checker, ta.uploader, isol)
+	tracker := NewUploadTracker(ta.checker, ta.uploader, isol, namespace)
 	if err := tracker.UploadDeps(parts); err != nil {
 		return IsolatedSummary{}, err
 	}

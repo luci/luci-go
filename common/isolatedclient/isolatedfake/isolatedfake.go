@@ -130,7 +130,7 @@ func (s *isolatedFake) Contents() map[string]map[isolated.HexDigest][]byte {
 }
 
 func (s *isolatedFake) Inject(namespace string, data []byte) isolated.HexDigest {
-	h := isolated.HashBytes(data)
+	h := isolated.HashBytes(data, namespace)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.contents[namespace]; !ok {
@@ -236,7 +236,7 @@ func (s *isolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *http.Req
 		return
 	}
 	digest := isolated.HexDigest(r.URL.Query().Get("digest"))
-	if digest != isolated.HashBytes(raw) {
+	if digest != isolated.HashBytes(raw, namespace) {
 		w.WriteHeader(400)
 		s.Fail(fmt.Errorf("invalid digest %#v", digest))
 		return
@@ -313,7 +313,7 @@ func (s *isolatedFake) finalizeGSUpload(r *http.Request) interface{} {
 	}
 	namespace := parts[0]
 	digest := isolated.HexDigest(parts[1])
-	if !digest.Validate() {
+	if !digest.Validate(namespace) {
 		err := fmt.Errorf("invalid digest %#v", digest)
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -361,7 +361,7 @@ func (s *isolatedFake) storeInline(r *http.Request) interface{} {
 	}
 	namespace := parts[0]
 	digest := isolated.HexDigest(parts[1])
-	if !digest.Validate() {
+	if !digest.Validate(namespace) {
 		err := fmt.Errorf("invalid digest %#v", digest)
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -382,7 +382,7 @@ func (s *isolatedFake) storeInline(r *http.Request) interface{} {
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
-	if digest != isolated.HashBytes(raw) {
+	if digest != isolated.HashBytes(raw, namespace) {
 		err := fmt.Errorf("invalid digest %#v", digest)
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}

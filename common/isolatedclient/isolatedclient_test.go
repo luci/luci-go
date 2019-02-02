@@ -443,7 +443,7 @@ func makeItems(namespace string, contents ...[]byte) ([]*isolateservice.Handlers
 		namespace: make(map[isolated.HexDigest][]byte, len(contents)),
 	}
 	for _, content := range contents {
-		hex := isolated.HashBytes(content)
+		hex := isolated.HashBytes(content, namespace)
 		digests = append(digests, &isolateservice.HandlersEndpointsV1Digest{Digest: string(hex), IsIsolated: false, Size: int64(len(content))})
 		expected[namespace][hex] = content
 	}
