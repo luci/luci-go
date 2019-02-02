@@ -83,9 +83,11 @@ func TestArchiverFile(t *testing.T) {
 		So(stats.TotalMisses(), ShouldResemble, 2)
 		So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
 		So(stats.TotalBytesPushed(), ShouldResemble, units.Size(3))
-		expected := map[isolated.HexDigest][]byte{
-			"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": []byte("foo"),
-			"da39a3ee5e6b4b0d3255bfef95601890afd80709": {},
+		expected := map[string]map[isolated.HexDigest][]byte{
+			isolatedclient.DefaultNamespace: {
+				"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": []byte("foo"),
+				"da39a3ee5e6b4b0d3255bfef95601890afd80709": {},
+			},
 		}
 		So(server.Contents(), ShouldResemble, expected)
 		So(item1.Digest(), ShouldResemble, isolated.HexDigest("da39a3ee5e6b4b0d3255bfef95601890afd80709"))
@@ -107,7 +109,7 @@ func TestArchiverFileHit(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		a := New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
-		server.Inject([]byte("foo"))
+		server.Inject(isolatedclient.DefaultNamespace, []byte("foo"))
 		item := a.Push("foo", isolatedclient.NewBytesSource([]byte("foo")), 0)
 		item.WaitForHashed()
 		So(item.Digest(), ShouldResemble, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"))

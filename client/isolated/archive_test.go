@@ -112,20 +112,25 @@ func TestArchive(t *testing.T) {
 			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(winLinkData), 0666, int64(len(winLinkData)))
 		}
 		isolatedData := newArchiveExpectData(topIsolated)
-		expected := map[isolated.HexDigest]string{
-			isolated.HashBytes(barData): string(barData),
-			isolated.HashBytes(bozData): string(bozData),
-			baseData.Hash:               baseData.String,
-			isolatedData.Hash:           isolatedData.String,
-			secondData.Hash:             secondData.String,
+		expected := map[string]map[isolated.HexDigest]string{
+			isolatedclient.DefaultNamespace: {
+				isolated.HashBytes(barData): string(barData),
+				isolated.HashBytes(bozData): string(bozData),
+				baseData.Hash:               baseData.String,
+				isolatedData.Hash:           isolatedData.String,
+				secondData.Hash:             secondData.String,
+			},
 		}
 		if isWindows() {
-			expected[isolated.HashBytes(winLinkData)] = string(winLinkData)
+			expected[isolatedclient.DefaultNamespace][isolated.HashBytes(winLinkData)] = string(winLinkData)
 		}
-		actual := map[isolated.HexDigest]string{}
-		for k, v := range server.Contents() {
-			actual[isolated.HexDigest(k)] = string(v)
-			So(actual[isolated.HexDigest(k)], ShouldResemble, expected[isolated.HexDigest(k)])
+		actual := map[string]map[isolated.HexDigest]string{}
+		for namespace, c := range server.Contents() {
+			actual[isolatedclient.DefaultNamespace] = map[isolated.HexDigest]string{}
+			for k, v := range c {
+				actual[namespace][isolated.HexDigest(k)] = string(v)
+				So(actual[namespace][isolated.HexDigest(k)], ShouldResemble, expected[namespace][isolated.HexDigest(k)])
+			}
 		}
 		So(actual, ShouldResemble, expected)
 		So(item.Digest(), ShouldResemble, isolatedData.Hash)

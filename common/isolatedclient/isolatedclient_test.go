@@ -90,7 +90,7 @@ func TestIsolateServerDownloadRetryGCSPartial(t *testing.T) {
 	t.Parallel()
 	Convey(``, t, func() {
 		server := isolatedfake.New()
-		largeHash := server.Inject(large)
+		largeHash := server.Inject(DefaultNamespace, large)
 		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/download": 1024}}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
@@ -172,7 +172,7 @@ func TestRetryDownload(t *testing.T) {
 	testFunc := func(tc testCase) bool {
 		// Construct a server which will serve a single 503 for requests to tc.errURL before succeeding.
 		server := isolatedfake.New()
-		itemHash := server.Inject(tc.item)
+		itemHash := server.Inject(DefaultNamespace, tc.item)
 		flaky := &killingMux{server: server, http503: make(map[string]int)}
 		if tc.errURL != "" {
 			flaky.http503[tc.errURL] = 10
@@ -449,7 +449,7 @@ func testNormalDownload(ctx context.Context, t *testing.T, contents ...[]byte) {
 		server := isolatedfake.New()
 		hashes := make([]isolated.HexDigest, 0, len(contents))
 		for _, file := range contents {
-			hashes = append(hashes, server.Inject(file))
+			hashes = append(hashes, server.Inject(DefaultNamespace, file))
 		}
 		ts := httptest.NewServer(server)
 		defer ts.Close()
