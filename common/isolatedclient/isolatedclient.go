@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto"
 	"encoding/base64"
 	"errors"
 	"io"
@@ -116,6 +117,13 @@ func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.
 	return i
 }
 
+// Namespace returns the namespace onto which the client operates.
+//
+// The namespace can be used to control the hashing and compression algorithm.
+func (i *Client) Namespace() string {
+	return i.namespace
+}
+
 // ServerCapabilities returns the server details.
 func (i *Client) ServerCapabilities(c context.Context) (*isolateservice.HandlersEndpointsV1ServerDetails, error) {
 	out := &isolateservice.HandlersEndpointsV1ServerDetails{}
@@ -185,11 +193,18 @@ func (i *Client) Push(c context.Context, state *PushState, source Source) (err e
 // Fetch downloads an item from the server.
 func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Writer) error {
 	// Perform initial request.
+	h := isolated.GetHash(i.namespace)
+	name := "sha-1"
+	if h == crypto.SHA256 {
+		name = "sha-256"
+	} else if h == crypto.SHA512 {
+		name = "sha-512"
+	}
 	url := i.url + "/_ah/api/isolateservice/v1/retrieve"
 	in := &isolateservice.HandlersEndpointsV1RetrieveRequest{
 		Digest: string(digest),
 		Namespace: &isolateservice.HandlersEndpointsV1Namespace{
-			DigestHash: "sha-1",
+			DigestHash: name,
 			Namespace:  i.namespace,
 		},
 		Offset: 0,
@@ -205,7 +220,7 @@ func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Wri
 		if err != nil {
 			return err
 		}
-		decompressor, err := isolated.GetDecompressor(bytes.NewReader(decoded))
+		decompressor, err := isolated.GetDecompressor(i.namespace, bytes.NewReader(decoded))
 		if err != nil {
 			return err
 		}
@@ -251,7 +266,7 @@ func (i *Client) doPush(c context.Context, state *PushState, source Source) (err
 
 func (i *Client) doPushDB(c context.Context, state *PushState, reader io.Reader) error {
 	buf := bytes.Buffer{}
-	compressor, err := isolated.GetCompressor(&buf)
+	compressor, err := isolated.GetCompressor(i.namespace, &buf)
 	if err != nil {
 		return err
 	}
@@ -280,7 +295,7 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 	}
 	handler := func(resp *http.Response) error {
 		defer resp.Body.Close()
-		decompressor, err := isolated.GetDecompressor(resp.Body)
+		decompressor, err := isolated.GetDecompressor(i.namespace, resp.Body)
 		if err != nil {
 			return err
 		}
@@ -310,7 +325,7 @@ func (gcs defaultGCSHandler) Push(c context.Context, i *Client, status isolatese
 			src.Close()
 			return nil, err
 		}
-		request.Body = newCompressed(src)
+		request.Body = newCompressed(i.namespace, src)
 		request.Header.Set("Content-Type", "application/octet-stream")
 		return request, nil
 	}, func(resp *http.Response) error {
@@ -347,7 +362,7 @@ func (c *compressed) Close() error {
 // newCompressed creates a pipeline to compress a file into a ReadCloser via:
 // src (file as ReadCloser) -> gzip compressor (via io.CopyBuffer) -> bufio.Writer
 // -> io.Pipe Writer side -> io.Pipe Reader side
-func newCompressed(src io.ReadCloser) io.ReadCloser {
+func newCompressed(namespace string, src io.ReadCloser) io.ReadCloser {
 	pr, pw := io.Pipe()
 	go func() {
 		// Memory is cheap, we never want this pipeline to stall.
@@ -357,7 +372,7 @@ func newCompressed(src io.ReadCloser) io.ReadCloser {
 		// compressed(4096 bytes) each read.
 		bufWriter := bufio.NewWriterSize(pw, outBufSize)
 		// The compressor itself is not thread safe.
-		compressor, err := isolated.GetCompressor(bufWriter)
+		compressor, err := isolated.GetCompressor(namespace, bufWriter)
 		if err != nil {
 			pw.CloseWithError(err)
 			return

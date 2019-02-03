@@ -16,6 +16,7 @@ package archiver
 
 import (
 	"bytes"
+	"crypto"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -77,6 +78,7 @@ type UploadTracker struct {
 	checker  Checker
 	uploader Uploader
 	isol     *isolated.Isolated
+	h        crypto.Hash
 
 	// A cache of file hashes, to speed up future requests for a hash of the same file.
 	fileHashCache map[string]hashResult
@@ -85,13 +87,15 @@ type UploadTracker struct {
 	lOS limitedOS
 }
 
-// NewUploadTracker constructs an UploadTracker.  It tracks uploaded files in isol.Files.
-func NewUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated) *UploadTracker {
+// newUploadTracker constructs an UploadTracker.  It tracks uploaded files in isol.Files.
+func newUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated, namespace string) *UploadTracker {
+	// TODO(maruel): The namespace should be retrieved from the isolatedclient.Client.
 	isol.Files = make(map[string]isolated.File)
 	return &UploadTracker{
 		checker:       checker,
 		uploader:      uploader,
 		isol:          isol,
+		h:             isolated.GetHash(namespace),
 		fileHashCache: make(map[string]hashResult),
 		lOS:           standardOS{},
 	}
@@ -139,7 +143,7 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 
 	for _, bundle := range bundles {
 		bundle := bundle
-		digest, tarSize, err := bundle.Digest()
+		digest, tarSize, err := bundle.Digest(ut.h)
 		if err != nil {
 			return err
 		}
@@ -220,7 +224,7 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 	}
 
 	// Check and upload isolate JSON.
-	ut.checker.AddItem(isolFile.item(), true, func(item *Item, ps *isolatedclient.PushState) {
+	ut.checker.AddItem(isolFile.item(ut.h), true, func(item *Item, ps *isolatedclient.PushState) {
 		if ps == nil {
 			return
 		}
@@ -239,7 +243,7 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 
 	return IsolatedSummary{
 		Name:   isolFile.name(),
-		Digest: isolFile.item().Digest,
+		Digest: isolFile.item(ut.h).Digest,
 	}, nil
 }
 
@@ -262,7 +266,7 @@ func (ut *UploadTracker) doHashFile(path string) (isolated.HexDigest, error) {
 		return "", err
 	}
 	defer f.Close()
-	return isolated.Hash(f)
+	return isolated.Hash(ut.h, f)
 }
 
 // isolatedFile is an isolated file which is stored in memory.
@@ -282,11 +286,11 @@ func newIsolatedFile(isol *isolated.Isolated, path string) (*isolatedFile, error
 }
 
 // item creates an *Item to represent the isolated JSON file.
-func (ij *isolatedFile) item() *Item {
+func (ij *isolatedFile) item(h crypto.Hash) *Item {
 	return &Item{
 		Path:    ij.path,
 		RelPath: filepath.Base(ij.path),
-		Digest:  isolated.HashBytes(ij.json),
+		Digest:  isolated.HashBytes(h, ij.json),
 		Size:    int64(len(ij.json)),
 	}
 }
