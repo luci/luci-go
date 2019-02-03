@@ -156,7 +156,8 @@ func TestArchive(t *testing.T) {
 		encoded, err := json.Marshal(baseIsolatedData)
 		So(err, ShouldBeNil)
 		baseIsolatedEncoded := string(encoded) + "\n"
-		baseIsolatedHash := isolated.HashBytes([]byte(baseIsolatedEncoded))
+		h := isolated.GetHash(namespace)
+		baseIsolatedHash := isolated.HashBytes(h, []byte(baseIsolatedEncoded))
 
 		//   /second/
 		secondIsolatedData := isolated.Isolated{
@@ -169,7 +170,7 @@ func TestArchive(t *testing.T) {
 		encoded, err = json.Marshal(secondIsolatedData)
 		So(err, ShouldBeNil)
 		secondIsolatedEncoded := string(encoded) + "\n"
-		secondIsolatedHash := isolated.HashBytes([]byte(secondIsolatedEncoded))
+		secondIsolatedHash := isolated.HashBytes(h, []byte(secondIsolatedEncoded))
 
 		isolatedData := isolated.Isolated{
 			Algo:    "sha-1",
@@ -188,7 +189,7 @@ func TestArchive(t *testing.T) {
 		encoded, err = json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
-		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
+		isolatedHash := isolated.HashBytes(h, []byte(isolatedEncoded))
 
 		expected := map[string]map[isolated.HexDigest]string{
 			namespace: {
@@ -227,7 +228,7 @@ func TestArchive(t *testing.T) {
 		}
 
 		So(server.Error(), ShouldBeNil)
-		digest, err := isolated.HashFile(filepath.Join(tmpDir, "baz.isolated"))
+		digest, err := isolated.HashFile(h, filepath.Join(tmpDir, "baz.isolated"))
 		So(digest, ShouldResemble, isolateservice.HandlersEndpointsV1Digest{Digest: string(isolatedHash), IsIsolated: false, Size: int64(len(isolatedEncoded))})
 		So(err, ShouldBeNil)
 	})
