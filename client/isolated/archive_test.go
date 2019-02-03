@@ -90,7 +90,8 @@ func TestArchive(t *testing.T) {
 			Isolated:     filepath.Join(tmpDir, "baz.isolated"),
 			LeakIsolated: &buf,
 		}
-		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		namespace := isolatedclient.DefaultNamespace
+		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
 		item := Archive(ctx, a, opts)
 		So(item.DisplayName, ShouldResemble, filepath.Join(tmpDir, "baz.isolated"))
 		item.WaitForHashed()
@@ -112,20 +113,25 @@ func TestArchive(t *testing.T) {
 			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(winLinkData), 0666, int64(len(winLinkData)))
 		}
 		isolatedData := newArchiveExpectData(topIsolated)
-		expected := map[isolated.HexDigest]string{
-			isolated.HashBytes(barData): string(barData),
-			isolated.HashBytes(bozData): string(bozData),
-			baseData.Hash:               baseData.String,
-			isolatedData.Hash:           isolatedData.String,
-			secondData.Hash:             secondData.String,
+		expected := map[string]map[isolated.HexDigest]string{
+			namespace: {
+				isolated.HashBytes(barData): string(barData),
+				isolated.HashBytes(bozData): string(bozData),
+				baseData.Hash:               baseData.String,
+				isolatedData.Hash:           isolatedData.String,
+				secondData.Hash:             secondData.String,
+			},
 		}
 		if isWindows() {
-			expected[isolated.HashBytes(winLinkData)] = string(winLinkData)
+			// TODO(maruel): Fix symlink support on Windows.
+			expected[namespace][isolated.HashBytes(winLinkData)] = string(winLinkData)
 		}
-		actual := map[isolated.HexDigest]string{}
-		for k, v := range server.Contents() {
-			actual[isolated.HexDigest(k)] = string(v)
-			So(actual[isolated.HexDigest(k)], ShouldResemble, expected[isolated.HexDigest(k)])
+		actual := map[string]map[isolated.HexDigest]string{}
+		for n, c := range server.Contents() {
+			actual[n] = map[isolated.HexDigest]string{}
+			for k, v := range c {
+				actual[n][isolated.HexDigest(k)] = string(v)
+			}
 		}
 		So(actual, ShouldResemble, expected)
 		So(item.Digest(), ShouldResemble, isolatedData.Hash)
