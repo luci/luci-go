@@ -130,7 +130,7 @@ func (s *isolatedFake) Contents() map[string]map[isolated.HexDigest][]byte {
 }
 
 func (s *isolatedFake) Inject(namespace string, data []byte) isolated.HexDigest {
-	h := isolated.HashBytes(data)
+	h := isolated.HashBytes(isolated.GetHash(namespace), data)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.contents[namespace]; !ok {
@@ -216,7 +216,13 @@ func (s *isolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *http.Req
 		s.Fail(fmt.Errorf("invalid method: %q", r.Method))
 		return
 	}
-	decompressor, err := isolated.GetDecompressor(r.Body)
+	namespace := r.URL.Query().Get("namespace")
+	if namespace == "" {
+		w.WriteHeader(400)
+		s.Fail(fmt.Errorf("missing namespace"))
+		return
+	}
+	decompressor, err := isolated.GetDecompressor(namespace, r.Body)
 	if err != nil {
 		w.WriteHeader(500)
 		s.Fail(err)
@@ -229,14 +235,8 @@ func (s *isolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *http.Req
 		s.Fail(err)
 		return
 	}
-	namespace := r.URL.Query().Get("namespace")
-	if namespace == "" {
-		w.WriteHeader(400)
-		s.Fail(fmt.Errorf("missing namespace"))
-		return
-	}
 	digest := isolated.HexDigest(r.URL.Query().Get("digest"))
-	if digest != isolated.HashBytes(raw) {
+	if digest != isolated.HashBytes(isolated.GetHash(namespace), raw) {
 		w.WriteHeader(400)
 		s.Fail(fmt.Errorf("invalid digest %#v", digest))
 		return
@@ -273,7 +273,7 @@ func (s *isolatedFake) fakeCloudStorageDownload(w http.ResponseWriter, r *http.R
 		return
 	}
 	var buf bytes.Buffer
-	compressor, err := isolated.GetCompressor(&buf)
+	compressor, err := isolated.GetCompressor(namespace, &buf)
 	if err != nil {
 		w.WriteHeader(500)
 		s.Fail(err)
@@ -313,7 +313,7 @@ func (s *isolatedFake) finalizeGSUpload(r *http.Request) interface{} {
 	}
 	namespace := parts[0]
 	digest := isolated.HexDigest(parts[1])
-	if !digest.Validate() {
+	if !digest.Validate(isolated.GetHash(namespace)) {
 		err := fmt.Errorf("invalid digest %#v", digest)
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -361,7 +361,8 @@ func (s *isolatedFake) storeInline(r *http.Request) interface{} {
 	}
 	namespace := parts[0]
 	digest := isolated.HexDigest(parts[1])
-	if !digest.Validate() {
+	h := isolated.GetHash(namespace)
+	if !digest.Validate(h) {
 		err := fmt.Errorf("invalid digest %#v", digest)
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -371,7 +372,7 @@ func (s *isolatedFake) storeInline(r *http.Request) interface{} {
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
-	decompressor, err := isolated.GetDecompressor(bytes.NewReader(blob))
+	decompressor, err := isolated.GetDecompressor(namespace, bytes.NewReader(blob))
 	if err != nil {
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -382,7 +383,7 @@ func (s *isolatedFake) storeInline(r *http.Request) interface{} {
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
-	if digest != isolated.HashBytes(raw) {
+	if digest != isolated.HashBytes(h, raw) {
 		err := fmt.Errorf("invalid digest %#v", digest)
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -425,7 +426,7 @@ func (s *isolatedFake) retrieve(r *http.Request) interface{} {
 	// Since we decompress when we get the data, we need to recompress when
 	// something is fetched.
 	var buf bytes.Buffer
-	compressor, err := isolated.GetCompressor(&buf)
+	compressor, err := isolated.GetCompressor(namespace, &buf)
 	if err != nil {
 		s.Fail(err)
 		return map[string]string{"err": err.Error()}
