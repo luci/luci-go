@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
-// ArchiveOptions for achiving trees.
+// ArchiveOptions for archiving trees.
 type ArchiveOptions struct {
 	// Files is a map of working directories to files relative to that working
 	// directory.

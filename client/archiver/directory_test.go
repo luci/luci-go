@@ -79,8 +79,6 @@ type symlinkData struct {
 
 func TestPushDirectory(t *testing.T) {
 	t.Parallel()
-	emptyContext := context.Background()
-
 	mode := os.FileMode(0600)
 	if common.IsWindows() {
 		mode = os.FileMode(0666)
@@ -94,7 +92,8 @@ func TestPushDirectory(t *testing.T) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(emptyContext, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		namespace := isolatedclient.DefaultNamespace
+		a := New(context.Background(), isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
 
 		for _, node := range nodes {
 			if node.symlink != nil {
@@ -110,7 +109,7 @@ func TestPushDirectory(t *testing.T) {
 		item.WaitForHashed()
 		So(a.Close(), ShouldBeNil)
 
-		expectedServerContents := make(map[string]string)
+		expected := map[string]map[isolated.HexDigest]string{namespace: {}}
 		expectedMisses := 1
 		expectedBytesPushed := 0
 		files := make(map[string]isolated.File)
@@ -123,9 +122,9 @@ func TestPushDirectory(t *testing.T) {
 				continue
 			}
 			expectedBytesPushed += int(len(node.contents))
-			expectedMisses += 1
+			expectedMisses++
 			digest := isolated.HashBytes([]byte(node.contents))
-			expectedServerContents[string(digest)] = node.contents
+			expected[namespace][digest] = node.contents
 		}
 
 		isolatedData := isolated.Isolated{
@@ -137,14 +136,17 @@ func TestPushDirectory(t *testing.T) {
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
 		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
-		expectedServerContents[string(isolatedHash)] = isolatedEncoded
+		expected[namespace][isolatedHash] = isolatedEncoded
 		expectedBytesPushed += len(isolatedEncoded)
 
-		actualServerContents := map[string]string{}
-		for k, v := range server.Contents() {
-			actualServerContents[string(k)] = string(v)
+		actual := map[string]map[isolated.HexDigest]string{}
+		for n, c := range server.Contents() {
+			actual[n] = map[isolated.HexDigest]string{}
+			for k, v := range c {
+				actual[n][k] = string(v)
+			}
 		}
-		So(actualServerContents, ShouldResemble, expectedServerContents)
+		So(actual, ShouldResemble, expected)
 		So(item.Digest(), ShouldResemble, isolatedHash)
 
 		stats := a.Stats()
@@ -316,7 +318,7 @@ func TestPushDirectory(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer func() {
 				if err := os.RemoveAll(tmpDir); err != nil {
-					t.Fail()
+					t.Fatal(err)
 				}
 			}()
 			for _, node := range testCase.nodes {

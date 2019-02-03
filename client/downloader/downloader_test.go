@@ -45,10 +45,11 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	data2 := []byte("wat")
 	tardata := genTar(t)
 
+	namespace := isolatedclient.DefaultNamespace
 	server := isolatedfake.New()
-	data1hash := server.Inject(data1)
-	data2hash := server.Inject(data2)
-	tardatahash := server.Inject(tardata)
+	data1hash := server.Inject(namespace, data1)
+	data2hash := server.Inject(namespace, data2)
+	tardatahash := server.Inject(namespace, tardata)
 	tardataname := fmt.Sprintf("%s.tar", tardatahash)
 
 	onePath := filepath.Join("foo", "one.txt")
@@ -60,7 +61,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		tardataname: isolated.TarFile(tardatahash, int64(len(tardata))),
 	}
 	isolated1bytes, _ := json.Marshal(&isolated1)
-	isolated1hash := server.Inject(isolated1bytes)
+	isolated1hash := server.Inject(namespace, isolated1bytes)
 
 	lolPath := filepath.Join("bar", "lol.txt")
 	oloPath := filepath.Join("foo", "boz", "olo.txt")
@@ -88,11 +89,11 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	}
 	isolated2.Includes = isolated.HexDigests{isolated1hash}
 	isolated2bytes, _ := json.Marshal(&isolated2)
-	isolated2hash := server.Inject(isolated2bytes)
+	isolated2hash := server.Inject(namespace, isolated2bytes)
 
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	client := isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil)
+	client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
 
 	Convey(`A downloader should be able to download the isolated.`, t, func() {
 		tmpDir, err := ioutil.TempDir("", "isolated")

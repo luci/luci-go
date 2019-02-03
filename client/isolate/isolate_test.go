@@ -71,7 +71,8 @@ func TestArchive(t *testing.T) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		namespace := isolatedclient.DefaultNamespace
+		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
 
 		// Setup temporary directory.
 		//   /base/bar
@@ -189,20 +190,25 @@ func TestArchive(t *testing.T) {
 		isolatedEncoded := string(encoded) + "\n"
 		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
 
-		expected := map[string]string{
-			"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
-			"aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427": "foo2",
-			string(baseIsolatedHash):                   baseIsolatedEncoded,
-			string(isolatedHash):                       isolatedEncoded,
-			string(secondIsolatedHash):                 secondIsolatedEncoded,
+		expected := map[string]map[isolated.HexDigest]string{
+			namespace: {
+				"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
+				"aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427": "foo2",
+				baseIsolatedHash:   baseIsolatedEncoded,
+				isolatedHash:       isolatedEncoded,
+				secondIsolatedHash: secondIsolatedEncoded,
+			},
 		}
 		if IsWindows() {
-			expected["12339b9756c2994f85c310d560bc8c142a6b79a1"] = "no link on Windows"
+			// TODO(maruel): Fix symlink support on Windows.
+			expected[namespace]["12339b9756c2994f85c310d560bc8c142a6b79a1"] = "no link on Windows"
 		}
-		actual := map[string]string{}
-		for k, v := range server.Contents() {
-			actual[string(k)] = string(v)
-			So(actual[string(k)], ShouldResemble, expected[string(k)])
+		actual := map[string]map[isolated.HexDigest]string{}
+		for n, c := range server.Contents() {
+			actual[n] = map[isolated.HexDigest]string{}
+			for k, v := range c {
+				actual[n][k] = string(v)
+			}
 		}
 		So(actual, ShouldResemble, expected)
 		So(item.Digest(), ShouldResemble, isolatedHash)
