@@ -24,6 +24,7 @@ import (
 	"testing/iotest"
 
 	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -125,11 +126,12 @@ func TestItemBundle(t *testing.T) {
 				Size:    123,
 			},
 		}
-
+		namespace := isolatedclient.DefaultNamespace
+		h := isolated.GetHash(namespace)
 		bundles := shardItems(testItems, 0)
 		So(len(bundles), ShouldEqual, 2)
 		for _, bundle := range bundles {
-			if _, _, err := bundle.Digest(); err == nil {
+			if _, _, err := bundle.Digest(h); err == nil {
 				t.Errorf("Path %q, bundle.Digest gave nil error; want some error", bundle.items[0].Path)
 			}
 			rc, err := bundle.Contents()
@@ -179,9 +181,11 @@ func runShardItems(sizes []int64, threshold int64) (*shards, error) {
 		})
 	}
 	r := &shards{}
+	namespace := isolatedclient.DefaultNamespace
+	h := isolated.GetHash(namespace)
 	bundles := shardItems(items, threshold)
 	for i, b := range bundles {
-		digest, size, err := b.Digest()
+		digest, size, err := b.Digest(h)
 		if err != nil {
 			return nil, fmt.Errorf("bundle[%d] Digest failed: %s", i, err)
 		}
