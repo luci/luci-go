@@ -17,6 +17,7 @@ package isolated
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"encoding/json"
 	"io/ioutil"
 	"net/http/httptest"
@@ -103,28 +104,29 @@ func TestArchive(t *testing.T) {
 			mode = 0666
 		}
 
-		baseData := oneFileArchiveExpect(filepath.Join("base", "bar"), mode, barData)
-		secondData := oneFileArchiveExpect(filepath.Join("second", "boz"), mode, bozData)
+		h := isolated.GetHash(namespace)
+		baseData := oneFileArchiveExpect(h, filepath.Join("base", "bar"), mode, barData)
+		secondData := oneFileArchiveExpect(h, filepath.Join("second", "boz"), mode, bozData)
 		topIsolated := isolated.New()
 		topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
 		if !isWindows() {
-			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(barData), mode, int64(len(barData)))
+			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(h, barData), mode, int64(len(barData)))
 		} else {
-			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(winLinkData), 0666, int64(len(winLinkData)))
+			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(h, winLinkData), 0666, int64(len(winLinkData)))
 		}
-		isolatedData := newArchiveExpectData(topIsolated)
+		isolatedData := newArchiveExpectData(h, topIsolated)
 		expected := map[string]map[isolated.HexDigest]string{
 			namespace: {
-				isolated.HashBytes(barData): string(barData),
-				isolated.HashBytes(bozData): string(bozData),
-				baseData.Hash:               baseData.String,
-				isolatedData.Hash:           isolatedData.String,
-				secondData.Hash:             secondData.String,
+				isolated.HashBytes(h, barData): string(barData),
+				isolated.HashBytes(h, bozData): string(bozData),
+				baseData.Hash:                  baseData.String,
+				isolatedData.Hash:              isolatedData.String,
+				secondData.Hash:                secondData.String,
 			},
 		}
 		if isWindows() {
 			// TODO(maruel): Fix symlink support on Windows.
-			expected[namespace][isolated.HashBytes(winLinkData)] = string(winLinkData)
+			expected[namespace][isolated.HashBytes(h, winLinkData)] = string(winLinkData)
 		}
 		actual := map[string]map[isolated.HexDigest]string{}
 		for n, c := range server.Contents() {
@@ -136,7 +138,7 @@ func TestArchive(t *testing.T) {
 		So(actual, ShouldResemble, expected)
 		So(item.Digest(), ShouldResemble, isolatedData.Hash)
 		So(server.Error(), ShouldBeNil)
-		digest := isolated.HashBytes(buf.Bytes())
+		digest := isolated.HashBytes(h, buf.Bytes())
 		So(digest, ShouldResemble, isolatedData.Hash)
 	})
 }
@@ -151,18 +153,18 @@ type archiveExpectData struct {
 	Hash   isolated.HexDigest
 }
 
-func oneFileArchiveExpect(file string, mode int, data []byte) *archiveExpectData {
+func oneFileArchiveExpect(h crypto.Hash, file string, mode int, data []byte) *archiveExpectData {
 	i := isolated.New()
-	i.Files[file] = isolated.BasicFile(isolated.HashBytes(data), mode, int64(len(data)))
-	return newArchiveExpectData(i)
+	i.Files[file] = isolated.BasicFile(isolated.HashBytes(h, data), mode, int64(len(data)))
+	return newArchiveExpectData(h, i)
 }
 
-func newArchiveExpectData(i *isolated.Isolated) *archiveExpectData {
+func newArchiveExpectData(h crypto.Hash, i *isolated.Isolated) *archiveExpectData {
 	encoded, _ := json.Marshal(i)
 	str := string(encoded) + "\n"
 	return &archiveExpectData{
 		Isolated: i,
 		String:   str,
-		Hash:     isolated.HashBytes([]byte(str)),
+		Hash:     isolated.HashBytes(h, []byte(str)),
 	}
 }

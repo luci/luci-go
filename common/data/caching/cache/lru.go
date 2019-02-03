@@ -16,6 +16,7 @@ package cache
 
 import (
 	"container/list"
+	"crypto"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -137,13 +138,15 @@ func (o *orderedDict) serialized() []entry {
 //
 // Designed to be serialized as JSON on disk.
 type lruDict struct {
+	h     crypto.Hash
 	items orderedDict // ordered key -> value mapping, newest items at the bottom.
 	dirty bool        // true if was modified after loading until it is marshaled.
 	sum   units.Size  // sum of all the values.
 }
 
-func makeLRUDict() lruDict {
+func makeLRUDict(namespace string) lruDict {
 	return lruDict{
+		h:     isolated.GetHash(namespace),
 		items: makeOrderedDict(),
 	}
 }
@@ -220,7 +223,7 @@ func (l *lruDict) UnmarshalJSON(data []byte) error {
 	}
 	l.sum = 0
 	for _, e := range s.Items {
-		if !e.key.Validate() {
+		if !e.key.Validate(l.h) {
 			return fmt.Errorf("invalid entry: %s", e.key)
 		}
 		l.items.pushBack(e.key, e.value)
