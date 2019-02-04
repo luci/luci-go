@@ -17,6 +17,57 @@
 # modules.
 
 
+# TODO(vadimsh): Figure out how to document 'load'. The AST parser refuses to
+# parse a function named 'load' :(
+def __load(module, *args, **kwargs):
+  """Loads another Starlark module (if it haven't been loaded before), extracts
+  one or more values from it, and binds them to names in the current module.
+
+  This is not actually a function, but a core Starlark statement. We give it
+  additional meaning (related to [the execution model](#execution_doc)) worthy
+  of additional documentation.
+
+  A load statement requires at least two "arguments". The first must be a
+  literal string, it identifies the module to load. The remaining arguments are
+  a mixture of literal strings, such as `'x'`, or named literal strings, such as
+  `y='x'`.
+
+  The literal string (`'x'`), which must denote a valid identifier not starting
+  with `_`, specifies the name to extract from the loaded module. In effect,
+  names starting with `_` are not exported. The name (`y`) specifies the local
+  name. If no name is given, the local name matches the quoted name.
+
+  ```
+  load('//module.star', 'x', 'y', 'z')       # assigns x, y, and z
+  load('//module.star', 'x', y2='y', 'z')    # assigns x, y2, and z
+  ```
+
+  A load statement within a function is a static error.
+
+  TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
+  'exec' interact with each other.
+
+  Args:
+    module: module to load, i.e. `//path/within/current/package.star` or
+        `@<pkg>//path/within/pkg.star`. Required.
+  """
+
+
+def exec(module):
+  """Executes another Starlark module for its side effects.
+
+  TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
+  'exec' interact with each other.
+
+  Args:
+    module: module to execute, i.e. `//path/within/current/package.star` or
+        `@<pkg>//path/within/pkg.star`. Required.
+
+  Returns:
+    A struct with all exported symbols of the executed module.
+  """
+
+
 def fail(msg, trace=None):
   """Aborts the execution with an error message.
 

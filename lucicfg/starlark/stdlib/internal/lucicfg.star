@@ -13,6 +13,11 @@
 # limitations under the License.
 
 
+def _version():
+  """Returns a triple with lucicfg version: `(major, minor, revision)`."""
+  return __native__.version()
+
+
 def _config(
       config_service_host=None,
       config_set=None,
@@ -79,11 +84,6 @@ def _config(
     __native__.set_meta('fail_on_warnings', fail_on_warnings)
 
 
-def _version():
-  """Returns a triple with lucicfg version: `(major, minor, revision)`."""
-  return __native__.version()
-
-
 def _generator(impl):
   """Registers a callback that is called at the end of the config generation
   stage to modify/append/delete generated configs in an arbitrary way.
@@ -105,10 +105,84 @@ def _generator(impl):
   __native__.add_generator(impl)
 
 
+def _var(default=None, validator=None):
+  """Declares a variable.
+
+  A variable is a slot that can hold some frozen value. Initially this slot is
+  empty. lucicfg.var(...) returns a struct with methods to manipulate this slot:
+
+    * `set(value)`: sets the variable's value if it's unset, fails otherwise.
+    * `get()`: return the current value or `default` if unset.
+
+  Any module (loaded or exec'ed) can declare variables via lucicfg.var(...). But
+  only modules running through exec(...) can read and write them. Modules being
+  loaded via load(...) must not depend on the state of the world while they are
+  loading, since they may be loaded at unpredictable moments. Thus an attempt to
+  use `get` or `set` from a loading module causes an error.
+
+  Note that functions _exported_ by loaded modules still can do anything they
+  want with variables, as long as they are called from an exec-ing module. Only
+  code that executes _while the module is loading_ is forbidden to rely on state
+  of variables.
+
+  Assignments performed by an exec-ing module are visible only while this module
+  and all modules it execs are running. As soon as it finishes, all changes
+  made to variable values are "forgotten". Thus variables can be used to
+  implicitly propagate information down the exec call stack, but not up (use
+  exec's return value for that).
+
+  Generator callbacks registered via lucicfg.generator(...) are forbidden to
+  read or write variables, since they execute outside of context of any
+  exec(...). Generators must operate exclusively over state stored in the node
+  graph. Note that variables still can be used by functions that _build_ the
+  graph, they can transfer information from variables into the graph, if
+  necessary.
+
+  The most common application for lucicfg.var(...) is to "configure" library
+  modules with default values pertaining to some concrete executing script:
+
+    * A library declares variables while it loads and exposes them in its public
+      API either directly or via wrapping setter functions.
+    * An executing script uses library's public API to set variables' values to
+      values relating to what this script does.
+    * All calls made to the library from the executing script (or any scripts it
+      includes with exec(...)) can access variables' values now.
+
+  This is more magical but less wordy alternative to either passing specific
+  default values in every call to library functions, or wrapping all library
+  functions with wrappers that supply such defaults. These more explicit
+  approaches can become pretty convoluted when there are multiple scripts and
+  libraries involved.
+
+  DocTags:
+    Advanced.
+
+  Args:
+    default: a value to return from `get()` if the variable is unset.
+    validator: a callback called as `validator(value)` from `set(value)`, must
+        return the value to be assigned to the variable (usually just `value`
+        itself).
+
+  Returns:
+    A struct with two methods: `set(value)` and `get(): value`.
+  """
+  var_id = __native__.declare_var()
+
+  def _set(value):
+    __native__.set_var(var_id, validator(value) if validator else value)
+
+  def _get():
+    value, is_set = __native__.get_var(var_id)
+    return value if is_set else default
+
+  return struct(set = _set, get = _get)
+
+
 # Public API.
 
 lucicfg = struct(
-    config = _config,
     version = _version,
+    config = _config,
     generator = _generator,
+    var = _var,
 )
