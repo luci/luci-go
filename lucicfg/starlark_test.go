@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -49,8 +50,15 @@ func TestAllStarlark(t *testing.T) {
 
 	starlarktest.RunTests(t, starlarktest.Options{
 		TestsDir: "testdata",
+		Skip:     "support",
 
-		Executor: func(t *testing.T, path, body string, predeclared starlark.StringDict) error {
+		Executor: func(t *testing.T, path string, predeclared starlark.StringDict) error {
+			blob, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			body := string(blob)
+
 			expectErrExct := readCommentBlock(body, "Expect errors:")
 			expectErrLike := readCommentBlock(body, "Expect errors like:")
 			expectCfg := readCommentBlock(body, "Expect configs:")
@@ -64,14 +72,14 @@ func TestAllStarlark(t *testing.T) {
 			// See below for why this is important.
 			integrationTest := expectErrExct != "" || expectErrLike != "" || expectCfg != ""
 
-			// Use slash path to make stack traces look uniform across OSes.
-			path = filepath.ToSlash(path)
-
 			state, err := Generate(context.Background(), Inputs{
-				// Make sure error messages have the original scripts name by loading
-				// the test script under its true name.
-				Code:  interpreter.MemoryLoader(map[string]string{path: body}),
-				Entry: path,
+				// Use file system loader so test scripts can load supporting scripts
+				// (from '**/support/*' which is skipped by the test runner). This also
+				// makes error messages have the original scripts full name. Note that
+				// 'go test' executes tests with cwd set to corresponding package
+				// directories, regardless of what cwd was when 'go test' was called.
+				Code:  interpreter.FileSystemLoader("."),
+				Entry: filepath.ToSlash(path),
 
 				// Expose 'assert' module, hook up error reporting to 't'.
 				testPredeclared: predeclared,
