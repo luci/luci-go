@@ -107,8 +107,9 @@ type intrParams struct {
 	// package 'custom' is used by tests for Loaders.
 	custom Loader
 
-	// predeclared are just passed directly to the interpreter.
 	predeclared starlark.StringDict
+	preExec     func(th *starlark.Thread, pkg, path string)
+	postExec    func(th *starlark.Thread, pkg, path string)
 }
 
 // runIntr initializes and runs the interpreter over given scripts, by loading
@@ -124,6 +125,8 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 
 	intr := Interpreter{
 		Predeclared: p.predeclared,
+		PreExec:     p.preExec,
+		PostExec:    p.postExec,
 		Packages: map[string]Loader{
 			MainPkg:   deindentLoader(p.scripts),
 			StdlibPkg: deindentLoader(p.stdlib),
