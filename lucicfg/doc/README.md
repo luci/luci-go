@@ -37,6 +37,13 @@ TODO: To be written.
 ***
 
 
+### Execution model {#execution_doc}
+
+*** note
+TODO: To be written.
+***
+
+
 ### Resolving naming ambiguities
 
 *** note
@@ -51,7 +58,21 @@ TODO: To be written.
 ***
 
 
-## Configuring and inspecting lucicfg itself
+## Interfacing with lucicfg internals
+
+
+
+
+### lucicfg.version {#lucicfg.version}
+
+```python
+lucicfg.version()
+```
+
+
+
+Returns a triple with lucicfg version: `(major, minor, revision)`.
+
 
 
 
@@ -96,20 +117,6 @@ assigning to a variable.
 
 
 
-### lucicfg.version {#lucicfg.version}
-
-```python
-lucicfg.version()
-```
-
-
-
-Returns a triple with lucicfg version: `(major, minor, revision)`.
-
-
-
-
-
 ### lucicfg.generator {#lucicfg.generator}
 
 ```python
@@ -137,6 +144,78 @@ by adding new values there or mutating/deleting existing ones.
 
 * **impl**: a callback `func(ctx) -> None`.
 
+
+
+
+### lucicfg.var {#lucicfg.var}
+
+```python
+lucicfg.var(default = None, validator = None)
+```
+
+
+*** note
+**Advanced function.** It is not used for common use cases.
+***
+
+
+Declares a variable.
+
+A variable is a slot that can hold some frozen value. Initially this slot is
+empty. [lucicfg.var(...)](#lucicfg.var) returns a struct with methods to manipulate this slot:
+
+  * `set(value)`: sets the variable's value if it's unset, fails otherwise.
+  * `get()`: return the current value or `default` if unset.
+
+Any module (loaded or exec'ed) can declare variables via [lucicfg.var(...)](#lucicfg.var). But
+only modules running through [exec(...)](#exec) can read and write them. Modules being
+loaded via load(...) must not depend on the state of the world while they are
+loading, since they may be loaded at unpredictable moments. Thus an attempt to
+use `get` or `set` from a loading module causes an error.
+
+Note that functions _exported_ by loaded modules still can do anything they
+want with variables, as long as they are called from an exec-ing module. Only
+code that executes _while the module is loading_ is forbidden to rely on state
+of variables.
+
+Assignments performed by an exec-ing module are visible only while this module
+and all modules it execs are running. As soon as it finishes, all changes
+made to variable values are "forgotten". Thus variables can be used to
+implicitly propagate information down the exec call stack, but not up (use
+exec's return value for that).
+
+Generator callbacks registered via [lucicfg.generator(...)](#lucicfg.generator) are forbidden to
+read or write variables, since they execute outside of context of any
+[exec(...)](#exec). Generators must operate exclusively over state stored in the node
+graph. Note that variables still can be used by functions that _build_ the
+graph, they can transfer information from variables into the graph, if
+necessary.
+
+The most common application for [lucicfg.var(...)](#lucicfg.var) is to "configure" library
+modules with default values pertaining to some concrete executing script:
+
+  * A library declares variables while it loads and exposes them in its public
+    API either directly or via wrapping setter functions.
+  * An executing script uses library's public API to set variables' values to
+    values relating to what this script does.
+  * All calls made to the library from the executing script (or any scripts it
+    includes with [exec(...)](#exec)) can access variables' values now.
+
+This is more magical but less wordy alternative to either passing specific
+default values in every call to library functions, or wrapping all library
+functions with wrappers that supply such defaults. These more explicit
+approaches can become pretty convoluted when there are multiple scripts and
+libraries involved.
+
+#### Arguments {#lucicfg.var-args}
+
+* **default**: a value to return from `get()` if the variable is unset.
+* **validator**: a callback called as `validator(value)` from `set(value)`, must return the value to be assigned to the variable (usually just `value` itself).
+
+
+#### Returns  {#lucicfg.var-returns}
+
+A struct with two methods: `set(value)` and `get(): value`.
 
 
 
@@ -904,6 +983,72 @@ exposed in the global namespace by Starlark itself.
 In addition, `lucicfg` exposes the following functions.
 
 
+
+
+
+### __load {#__load}
+
+```python
+__load(module)
+```
+
+
+
+Loads another Starlark module (if it haven't been loaded before), extracts
+one or more values from it, and binds them to names in the current module.
+
+This is not actually a function, but a core Starlark statement. We give it
+additional meaning (related to [the execution model](#execution_doc)) worthy
+of additional documentation.
+
+A load statement requires at least two "arguments". The first must be a
+literal string, it identifies the module to load. The remaining arguments are
+a mixture of literal strings, such as `'x'`, or named literal strings, such as
+`y='x'`.
+
+The literal string (`'x'`), which must denote a valid identifier not starting
+with `_`, specifies the name to extract from the loaded module. In effect,
+names starting with `_` are not exported. The name (`y`) specifies the local
+name. If no name is given, the local name matches the quoted name.
+
+```
+load('//module.star', 'x', 'y', 'z')       # assigns x, y, and z
+load('//module.star', 'x', y2='y', 'z')    # assigns x, y2, and z
+```
+
+A load statement within a function is a static error.
+
+TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
+'exec' interact with each other.
+
+#### Arguments {#__load-args}
+
+* **module**: module to load, i.e. `//path/within/current/package.star` or `@<pkg>//path/within/pkg.star`. Required.
+
+
+
+
+### exec {#exec}
+
+```python
+exec(module)
+```
+
+
+
+Executes another Starlark module for its side effects.
+
+TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
+'exec' interact with each other.
+
+#### Arguments {#exec-args}
+
+* **module**: module to execute, i.e. `//path/within/current/package.star` or `@<pkg>//path/within/pkg.star`. Required.
+
+
+#### Returns  {#exec-returns}
+
+A struct with all exported symbols of the executed module.
 
 
 
