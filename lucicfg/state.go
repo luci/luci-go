@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucicfg/graph"
 	"go.chromium.org/luci/lucicfg/vars"
+	"go.chromium.org/luci/starlark/interpreter"
 )
 
 // State is mutated throughout execution of the script and at the end contains
@@ -86,6 +87,31 @@ func init() {
 			return nil, err
 		}
 		return &call.State.graph, nil
+	})
+
+	// interpreter_context() returns either 'EXEC', 'LOAD', 'GEN' or 'UNKNOWN'.
+	//
+	// EXEC: inside a module that was 'exec'-ed.
+	// LOAD: inside a module that was 'load'-ed.
+	// GEN: inside a generator callback.
+	// UNKNOWN: inside some other callback called from native code.
+	declNative("interpreter_context", func(call nativeCall) (starlark.Value, error) {
+		if err := call.unpack(0); err != nil {
+			return nil, err
+		}
+		if call.State.generators.runningNow {
+			return starlark.String("GEN"), nil
+		}
+		var val starlark.String
+		switch interpreter.GetThreadKind(call.Thread) {
+		case interpreter.ThreadLoading:
+			val = "LOAD"
+		case interpreter.ThreadExecing:
+			val = "EXEC"
+		default:
+			val = "UNKNOWN"
+		}
+		return val, nil
 	})
 
 	// clear_state() wipes the state of the generator, for tests.
