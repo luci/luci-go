@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "52ca76b6_1998db7c",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 8
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-04T20:03:49Z",
+      "side": 1,
+      "message": "Yes, this situation is possible. But without defaults the intended usage as \"configuration\" for libraries becomes cumbersome (suddenly each script MUST configure the library, even if library\u0027s defaults suffice).\n\nNote that var.set(\u0027other\u0027) is allowed only in \"exec\" context, which is imperative. I think this behavior is tolerable (though unfortunate).",
+      "parentUuid": "22105ac6_efa21662",
+      "range": {
+        "startLine": 168,
+        "startChar": 42,
+        "endLine": 168,
+        "endChar": 49
+      },
+      "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1d3a9198_f3b582fb",
         "filename": "lucicfg/starlark/stdlib/native_doc.star",
         "patchSetId": 8
@@ -45,6 +69,30 @@
       "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "693bf12a_dae56af5",
+        "filename": "lucicfg/starlark/stdlib/native_doc.star",
+        "patchSetId": 8
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-04T20:03:49Z",
+      "side": 1,
+      "message": "We need \u0027load\u0027 exactly, for cross-references to work. I\u0027ll add some directive to the document parsers to \"rename\" symbols.",
+      "parentUuid": "1d3a9198_f3b582fb",
+      "range": {
+        "startLine": 22,
+        "startChar": 4,
+        "endLine": 22,
+        "endChar": 10
+      },
+      "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "28439b07_8c43d1cf",
+        "filename": "lucicfg/vars/vars.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-04T20:03:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "60a82f58_0b7f214c",
+      "range": {
+        "startLine": 29,
+        "startChar": 40,
+        "endLine": 29,
+        "endChar": 41
+      },
+      "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e13f495b_a22a402c",
         "filename": "lucicfg/vars/vars.go",
         "patchSetId": 8
@@ -91,6 +163,30 @@
       "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8be8e00c_3a477f6b",
+        "filename": "lucicfg/vars/vars.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-04T20:03:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e13f495b_a22a402c",
+      "range": {
+        "startLine": 56,
+        "startChar": 13,
+        "endLine": 56,
+        "endChar": 14
+      },
+      "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
