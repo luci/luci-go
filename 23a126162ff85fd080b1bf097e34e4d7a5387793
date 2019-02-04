@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "22105ac6_efa21662",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 8
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-02-04T19:33:33Z",
+      "side": 1,
+      "message": "do we have to have default? Could this lead to a situation where:\n\n   # Some statements get default\n   var.set(\u0027other\u0027)\n   # but these statements don\u0027t\n\n?",
+      "range": {
+        "startLine": 168,
+        "startChar": 42,
+        "endLine": 168,
+        "endChar": 49
+      },
+      "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1d3a9198_f3b582fb",
         "filename": "lucicfg/starlark/stdlib/native_doc.star",
         "patchSetId": 8
