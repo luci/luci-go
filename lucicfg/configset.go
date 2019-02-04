@@ -338,14 +338,14 @@ func (cs *configSetValue) renderWithTextProto(header string) (ConfigSet, error) 
 // It lives in State. Generators are executed sequentially after all Starlark
 // code is loaded. They examine the state and generate configs based on it.
 type generators struct {
-	gen    []starlark.Callable
-	frozen bool // true while iterating over the list
+	gen        []starlark.Callable
+	runningNow bool // true while inside 'call'
 }
 
 // add registers a new generator callback.
 func (g *generators) add(cb starlark.Callable) error {
-	if g.frozen {
-		return fmt.Errorf("generators list is frozen during iteration")
+	if g.runningNow {
+		return fmt.Errorf("can't add a generator while already running them")
 	}
 	g.gen = append(g.gen, cb)
 	return nil
@@ -353,13 +353,13 @@ func (g *generators) add(cb starlark.Callable) error {
 
 // call calls all registered callbacks sequentially, collecting all errors.
 func (g *generators) call(th *starlark.Thread, ctx *genCtx) (errs errors.MultiError) {
-	if g.frozen {
+	if g.runningNow {
 		return errors.MultiError{
-			fmt.Errorf("generators list is frozen, nested iteration?"),
+			fmt.Errorf("can't call generators while they are already running"),
 		}
 	}
-	g.frozen = true
-	defer func() { g.frozen = false }()
+	g.runningNow = true
+	defer func() { g.runningNow = false }()
 
 	fc := builtins.GetFailureCollector(th)
 
