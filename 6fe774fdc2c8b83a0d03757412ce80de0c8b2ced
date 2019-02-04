@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a82a2168_86bf278f",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-04T17:23:33Z",
+      "side": 1,
+      "message": "Updated. If you\u0027re suggesting I incorporate \"mosys platform family\" as an example, please specify the phrasing to make that work.",
+      "parentUuid": "90fdca47_d8337568",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "109da154_b4e2e571",
         "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "102edff6_7c068e54",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-04T17:23:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "109da154_b4e2e571",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "169cf967_5e14767d",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-04T17:23:33Z",
+      "side": 1,
+      "message": "Updated to PerTargetTestRequirements, since this is a mapping of (build target or ref design)--\u003etests_to_run",
+      "parentUuid": "4dd11145_0a1c829c",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5dc802a6_f81703e6",
         "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
         "patchSetId": 2
@@ -67,6 +121,24 @@
       "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cefde5a6_46677011",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-04T17:23:33Z",
+      "side": 1,
+      "message": "Updated to \"TargetTestRequirementsCfg\".\nThis better describes what this proto does and doesn\u0027t do. This proto specifies for all of known reference designs (and some build targets), which tests need to be run. I want to keep this distinct from the \"test plan\", which involves a bunch of config sources, including this one.",
+      "parentUuid": "5dc802a6_f81703e6",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
