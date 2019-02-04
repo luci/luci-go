@@ -624,9 +624,10 @@ func (s *Service) withAuthService(c context.Context) context.Context {
 			// Pass our outer Context, since we don't want the cached Authenticator
 			// instance to be permanently bound to the inner Context.
 			a, err := s.authenticatorForScopes(c, scopes)
+			scopesStr := strings.Join(scopes, " ")
 			if err != nil {
 				log.Fields{
-					"scopes":     scopes,
+					"scopes":     scopesStr,
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to create authenticator.")
 				return nil, err
@@ -634,7 +635,7 @@ func (s *Service) withAuthService(c context.Context) context.Context {
 			tok, err := a.GetAccessToken(minAuthTokenLifetime)
 			if err != nil {
 				log.Fields{
-					"scopes":     scopes,
+					"scopes":     scopesStr,
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to mint access token.")
 			}
