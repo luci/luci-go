@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucicfg/graph"
+	"go.chromium.org/luci/lucicfg/vars"
 )
 
 // State is mutated throughout execution of the script and at the end contains
@@ -35,6 +36,7 @@ type State struct {
 	Configs ConfigSet // all generated config files, populated at the end
 	Meta    Meta      // lucicfg parameters, settable through Starlark
 
+	vars       vars.Vars         // holds state of lucicfg.var() variables
 	errors     errors.MultiError // all errors emitted during the generation (if any)
 	seenErrs   stringset.Set     // set of all string backtraces in 'errors', for deduping
 	failOnErrs bool              // if true, 'emit_error' aborts the execution
@@ -45,7 +47,8 @@ type State struct {
 
 // clear resets the state.
 func (s *State) clear() {
-	*s = State{Inputs: s.Inputs}
+	*s = State{Inputs: s.Inputs, vars: s.vars}
+	s.vars.ClearValues()
 }
 
 // err adds errors to the list of errors and returns the list as MultiError,
@@ -92,5 +95,36 @@ func init() {
 		}
 		call.State.clear()
 		return starlark.None, nil
+	})
+
+	// declare_var() allocates a new variable, returning its identifier.
+	declNative("declare_var", func(call nativeCall) (starlark.Value, error) {
+		if err := call.unpack(0); err != nil {
+			return nil, err
+		}
+		return call.State.vars.Declare(), nil
+	})
+
+	// set_var(var_id, val) sets the value of a variable.
+	declNative("set_var", func(call nativeCall) (starlark.Value, error) {
+		var id vars.ID
+		var val starlark.Value
+		if err := call.unpack(2, &id, &val); err != nil {
+			return nil, err
+		}
+		if err := call.State.vars.Set(call.Thread, id, val); err != nil {
+			return nil, err
+		}
+		return starlark.None, nil
+	})
+
+	// get_ver(var_id) returns (<value> or None, True if set or False if not).
+	declNative("get_var", func(call nativeCall) (starlark.Value, error) {
+		var id vars.ID
+		if err := call.unpack(1, &id); err != nil {
+			return nil, err
+		}
+		val, isSet, err := call.State.vars.Get(call.Thread, id)
+		return starlark.Tuple{val, isSet}, err
 	})
 }

@@ -51,6 +51,7 @@ def _add_node(key, props=None, idempotent=False, trace=None):
   Returns:
     graph.node object representing the node.
   """
+  # TODO(vadimsh): Allow only in 'exec' context.
   return __native__.graph().add_node(
       key, props or {}, bool(idempotent), trace or stacktrace(skip=1))
 
@@ -74,6 +75,7 @@ def _add_edge(parent, child, title=None, trace=None):
     title: a title for the edge, used in error messages.
     trace: a stack trace to associate with the edge.
   """
+  # TODO(vadimsh): Allow only in 'exec' context.
   return __native__.graph().add_edge(
       parent, child, title or '', trace or stacktrace(skip=1))
 
