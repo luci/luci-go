@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa3b5ba7_626ec673",
+        "filename": "lucicfg/starlark_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-04T02:12:32Z",
+      "side": 1,
+      "message": "\u0027go test\u0027 executes tests with cwd set to corresponding package directories, regardless what cwd was when \u0027go test\u0027 was called.",
+      "range": {
+        "startLine": 79,
+        "startChar": 40,
+        "endLine": 79,
+        "endChar": 43
+      },
+      "revId": "a7d49703e7885271f42bf283a3cbbf23bd84d389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
