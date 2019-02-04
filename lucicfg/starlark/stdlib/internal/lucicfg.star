@@ -84,6 +84,72 @@ def _version():
   return __native__.version()
 
 
+def _var(default=None, validator=None):
+  """Declares a variable.
+
+  A variable is just a slot that can hold some frozen value. Initially this slot
+  is empty. The return value of `lucicfg.var` is a struct with methods to
+  manipulate this slot:
+
+    * `set(value)`: sets the value if it's unset, fails otherwise.
+    * `get()`: return the current value or `default` if unset.
+
+  Any module (loaded or exec'ed) can declare variables. But only modules running
+  through `exec` can read and write variables. Modules being loaded via `load`
+  must not depend on the state of the world while they are loading, since they
+  may be loaded at unpredictable moments.
+
+  Note that functions _exported_ by loaded modules still can do anything they
+  want with variables, as long as they are called from an exec-ing module. Only
+  code that executes _while the module is loading_ is forbidden to rely on state
+  of variables.
+
+  Variables assignments performed by an exec'ed module are visible only while
+  this module and all modules it `exec`'s are running. As soon as it finishes,
+  all changes are "forgotten". Thus variables can be used to implicitly
+  propagate information down the `exec` call stack, but not up (use `exec`
+  return value for that).
+
+  The most common application for `lucicfg.var` is to "configuring" library-like
+  modules with default values pertaining to some executing script:
+
+    * A library declares variables while it is being loaded and exposes them in
+      its public API either directly or via wrapping setter functions.
+    * An executing script uses library's public API to set variables' values.
+    * All calls made to the library from the executing script (or any scripts it
+      includes with `exec`) can access variables' values.
+
+  This is a more magical but less wordy alternative to either passing
+  script-specific default values in every call to library functions, or wrapping
+  all library functions with script-specific wrappers that supply defaults.
+
+  These more explicit approaches can become pretty convoluted when there are
+  multiple scripts and libraries involved.
+
+  DocTags:
+    Advanced.
+
+  Args:
+    default: a value to return from `get()` if the variable is unset.
+    validator: a callback called as `validator(value)` from `set(value)`, must
+        return the value to be assigned to the variable (usually just `value`
+        itself).
+
+  Returns:
+    A struct with two methods: `set(value)` and `get(): value`.
+  """
+  var_id = __native__.declare_var()
+
+  def _set(value):
+    __native__.set_var(var_id, validator(value) if validator else value)
+
+  def _get():
+    value, is_set = __native__.get_var(var_id)
+    return value if is_set else default
+
+  return struct(set = _set, get = _get)
+
+
 def _generator(impl):
   """Registers a callback that is called at the end of the config generation
   stage to modify/append/delete generated configs in an arbitrary way.
@@ -110,5 +176,6 @@ def _generator(impl):
 lucicfg = struct(
     config = _config,
     version = _version,
+    var = _var,
     generator = _generator,
 )
