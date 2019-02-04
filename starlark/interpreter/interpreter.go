@@ -12,29 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package interpreter contains Starlark interpreter.
+// Package interpreter contains customized Starlark interpreter.
 //
-// It supports loading Starlark programs that consist of many files that
-// reference each other, thus allowing decomposing code into small logical
-// chunks and enabling code reuse.
+// It is an opinionated wrapper around the basic single-file interpreter
+// provided by go.starlark.net library. It implements 'load' and a new built-in
+// 'exec' in a specific way to support running Starlark programs that consist of
+// many files that reference each other, thus allowing decomposing code into
+// small logical chunks and enabling code reuse.
+//
 //
 // Modules and packages
 //
 // Two main new concepts are modules and packages. A package is a collection
 // of Starlark files living under the same root. A module is just one such
-// Starlark file.
+// Starlark file. Furthermore, modules can either be "library-like" (executed
+// via 'load' statement) or "script-like" (executed via 'exec' function).
 //
-// Modules within a single package can load each other (via 'load' statement)
-// using their root-relative paths that start with "//". Modules are executed
-// exactly once when they are loaded for the first time. All subsequent
-// load("//module/path", ...) calls just reuse the cached dict of the executed
-// module.
+// Library-like modules can load other library-like modules via 'load', but may
+// not call 'exec'. Script-like modules may use both 'load' and 'exec'.
+//
+// Modules within a single package can refer to each other (in 'load' and
+// 'exec') using their root-relative paths that start with "//".
 //
 // Packages also have identifiers, though they are local to the interpreter
 // (e.g. not defined anywhere in the package itself). For that reason they are
 // called "package aliases".
 //
-// Modules from one package may load modules from another package by using
+// Modules from one package may refer to modules from another package by using
 // the following syntax:
 //
 //   load("@<package alias>//<path within the package>", ...)
@@ -43,6 +47,7 @@
 // source code (a collection of *.star files under a single root) is static and
 // supplied by Go code that uses the interpreter. This may change in the future
 // to allow loading packages dynamically, e.g. over the network.
+//
 //
 // Special packages
 //
@@ -62,21 +67,42 @@
 // built-in global functions exposed by the interpreter.
 //
 //
-// Built-in symbols
-//
-// Embedders of the interpreter can also supply arbitrary "predeclared" symbols
-// they want to be available in the global scope of all loaded modules.
-// The interpreter itself adds 'exec' symbol.
-//
 // Exec'ing modules
 //
-// The built-in 'exec(...)' can be used to execute a module for its side
+// The built-in function 'exec' can be used to execute a module for its side
 // effects and get its global dict as a return value. It works similarly to
 // 'load', except it doesn't import any symbols into the caller's namespace, and
 // it is not idempotent: calling 'exec' on already executed module is an error.
 //
-// Modules can either be loaded or exec'ed, but not both. Attempting to load
+// Each module is executed with its own instance of starlark.Thread. Modules
+// are either loaded as libraries (via 'load' call or LoadModule) or executed
+// as scripts (via 'exec' or ExecModule), but not both. Attempting to load
 // a module that was previous exec'ed (and vice versa) is an error.
+//
+// Consequently, each Starlark thread created by the nterpreter is either
+// executing some 'load' or some 'exec'. This distinction is available to
+// builtins through GetThreadKind function. Some builtins may check it. For
+// example, a builtin that mutates a global state may return an error when it is
+// called from a 'load' thread.
+//
+// Dicts of modules loaded via 'load' are reused, e.g. if two different scripts
+// load the exact same module, they'll get the exact same symbols as a result.
+// The loaded code always executes only once. The interpreter MAY load modules
+// in parallel in the future, libraries must not rely on their loading order and
+// must not have side effects.
+//
+// On the other hand, modules executed via 'exec' are guaranteed to be executed
+// sequentially, and only once. Thus 'exec'-ed scripts essentially form a tree,
+// traversed exactly once in the depth first order.
+//
+//
+// Built-in symbols
+//
+// In addition to 'exec' builtin implemented by the interpreter itself, users
+// of the interpreter can also supply arbitrary "predeclared" symbols they want
+// to be available in the global scope of all modules. Predeclared symbols and
+// '@stdlib//builtins.star' module explained above, are the primary mechanisms
+// of making the interpreter do something useful.
 package interpreter
 
 import (
@@ -167,8 +193,8 @@ func GetThreadKind(th *starlark.Thread) ThreadKind {
 // allowing efficient use of string Go constants.
 type Loader func(path string) (dict starlark.StringDict, src string, err error)
 
-// Interpreter knows how to load starlark modules that can load other starlark
-// modules.
+// Interpreter knows how to execute starlark modules that can load or execute
+// other starlark modules.
 type Interpreter struct {
 	// Predeclared is a dict with predeclared symbols that are available globally.
 	//
@@ -195,6 +221,24 @@ type Interpreter struct {
 	// It can inject additional state into thread locals. Useful when hooking up
 	// a thread to starlarktest's reporter in unit tests.
 	ThreadModifier func(th *starlark.Thread)
+
+	// PreExec is called before launching code through some 'exec' or ExecModule.
+	//
+	// It may modify the thread or some other global state in preparation for
+	// executing a script.
+	//
+	// 'load' calls do not trigger PreExec/PostExec hooks.
+	PreExec func(th *starlark.Thread, pkg, path string)
+
+	// PostExec is called after finishing running code through some 'exec' or
+	// ExecModule.
+	//
+	// It is always called, even if the 'exec' failed. May restore the state
+	// modified by PreExec. Note that PreExec/PostExec calls can nest (if an
+	// 'exec'-ed script calls 'exec' itself).
+	//
+	// 'load' calls do not trigger PreExec/PostExec hooks.
+	PostExec func(th *starlark.Thread, pkg, path string)
 
 	modules map[moduleKey]*loadedModule // cache of the loaded modules
 	execed  map[moduleKey]struct{}      // a set of modules that were ever exec'ed
@@ -481,6 +525,15 @@ func (intr *Interpreter) runModule(ctx context.Context, pkg, path string, kind T
 		module = "@" + pkg
 	}
 	module += "//" + path
+
+	if kind == ThreadExecing {
+		if intr.PreExec != nil {
+			intr.PreExec(th, pkg, path)
+		}
+		if intr.PostExec != nil {
+			defer intr.PostExec(th, pkg, path)
+		}
+	}
 
 	// Execute the module. It may load other modules inside, which will call
 	// th.Load callback above.
