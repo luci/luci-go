@@ -113,6 +113,7 @@ import (
 	"strings"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -466,12 +467,7 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 			return nil, fmt.Errorf("cannot exec %s: %s", mod, err)
 		}
 
-		// StringDict -> regular Dict.
-		val := starlark.Dict{}
-		for k, v := range dict {
-			val.SetKey(starlark.String(k), v)
-		}
-		return &val, nil
+		return starlarkstruct.FromStringDict(starlark.String("execed"), dict), nil
 	})
 }
 
