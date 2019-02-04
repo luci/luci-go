@@ -242,7 +242,7 @@ Error: invalid call of non-function (NoneType)`)
 			scripts: map[string]string{
 				"main.star": `
 					res = exec("//execed.star")
-					print(res['a'])
+					print(res.a)
 				`,
 
 				"execed.star": `
