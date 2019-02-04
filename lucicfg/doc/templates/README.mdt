@@ -67,13 +67,16 @@ TODO: To be written.
 ### Concepts
 {{template "todo"}}
 
+### Execution model {#execution_doc}
+{{template "todo"}}
+
 ### Resolving naming ambiguities
 {{template "todo"}}
 
 ### Defining cron schedules {#schedules_doc}
 {{template "todo"}}
 
-## Configuring and inspecting lucicfg itself
+## Interfacing with lucicfg internals
 {{template "gen-funcs-doc" $lucicfg}}
 
 ## Working with time
