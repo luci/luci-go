@@ -25,6 +25,7 @@ func TestWorks(t *testing.T) {
 
 	RunTests(t, Options{
 		TestsDir: "testdata",
+		Skip:     "skipped",
 		Predeclared: starlark.StringDict{
 			"predecl": starlark.String("hello"),
 		},

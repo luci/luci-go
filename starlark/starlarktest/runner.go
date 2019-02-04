@@ -35,12 +35,13 @@ import (
 // Options describe where to discover tests and how to run them.
 type Options struct {
 	TestsDir    string              // directory to search for *.star files
+	Skip        string              // directories with this name are skipped
 	Predeclared starlark.StringDict // symbols to put into the global dict
 
-	// Executor runs a single starlark test file 'path', provided as 'body'.
+	// Executor runs a single starlark test file.
 	//
 	// If nil, RunTests will simply use starlark.ExecFile(...).
-	Executor func(t *testing.T, path, body string, predeclared starlark.StringDict) error
+	Executor func(t *testing.T, path string, predeclared starlark.StringDict) error
 }
 
 // RunTests loads and executes all test scripts (testdata/**/*.star).
@@ -66,7 +67,10 @@ func RunTests(t *testing.T, opts Options) {
 
 	var files []string
 	err = filepath.Walk(opts.TestsDir, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() && strings.HasSuffix(path, ".star") {
+		switch {
+		case info.IsDir() && info.Name() == opts.Skip:
+			return filepath.SkipDir
+		case !info.IsDir() && strings.HasSuffix(path, ".star"):
 			files = append(files, path)
 		}
 		return nil
@@ -92,15 +96,7 @@ func HookThread(th *starlark.Thread, t *testing.T) {
 }
 
 func runSingleTest(t *testing.T, script string, opts Options) {
-	code, err := ioutil.ReadFile(script)
-	if err != nil {
-		t.Errorf("Failed to open %q - %s", script, err)
-		return
-	}
-
-	// Use slash path as a script name to make stack traces look uniform across
-	// OSes.
-	if err := opts.Executor(t, filepath.ToSlash(script), string(code), opts.Predeclared); err != nil {
+	if err := opts.Executor(t, script, opts.Predeclared); err != nil {
 		if evalErr, _ := err.(*starlark.EvalError); evalErr != nil {
 			t.Errorf("%s\n", evalErr.Backtrace())
 		} else {
@@ -109,10 +105,18 @@ func runSingleTest(t *testing.T, script string, opts Options) {
 	}
 }
 
-func defaultExecutor(t *testing.T, path, body string, predeclared starlark.StringDict) error {
+func defaultExecutor(t *testing.T, path string, predeclared starlark.StringDict) error {
 	th := starlark.Thread{}
 	HookThread(&th, t)
-	_, err := starlark.ExecFile(&th, path, body, predeclared)
+
+	code, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	// Use slash path as a script name to make stack traces look uniform across
+	// OSes.
+	_, err = starlark.ExecFile(&th, filepath.ToSlash(path), code, predeclared)
 	return err
 }
 
