@@ -63,6 +63,7 @@ type scope struct {
 type varValue struct {
 	value starlark.Value
 	trace *builtins.CapturedStacktrace
+	auto  bool // true if the value was auto-initialized in get()
 }
 
 // OpenScope opens a new scope for variables.
@@ -121,46 +122,35 @@ func (v *Vars) Set(th *starlark.Thread, id ID, value starlark.Value) error {
 
 	// Must be unset.
 	if cur := v.lookup(id); cur != nil {
-		return fmt.Errorf("variable reassignment is forbidden, the previous value is set at: %s", cur.trace)
+		if cur.auto {
+			return fmt.Errorf("variable reassignment is forbidden, the previous value was auto-set to the default as a side effect of 'get' at: %s", cur.trace)
+		}
+		return fmt.Errorf("variable reassignment is forbidden, the previous value was set at: %s", cur.trace)
 	}
 
-	// Forbid sneaky cross-scope communication through in-place mutations of the
-	// variable's value.
-	value.Freeze()
-
-	// Remember where assignment happened, for the error message above.
-	trace, err := builtins.CaptureStacktrace(th, 0)
-	if err != nil {
-		return err
-	}
-
-	// Set in the innermost scope.
-	scope := v.scopes[len(v.scopes)-1]
-	if scope.values == nil {
-		scope.values = make(map[ID]varValue, 1)
-	}
-	scope.values[id] = varValue{value, trace}
-	return nil
+	return v.assign(th, id, value, false)
 }
 
-// Get returns the value of a variable (or None) and a boolean indicating
-// whether it is set or not.
-//
-// Note that value can be None itself (if None was explicitly written to the
-// variable via Set). That's the reason for the additional boolean.
+// Get returns the value of a variable, auto-initializing it to 'def' if
+// it was unset before.
 //
 // Variable can be assigned or read only from threads that perform 'exec' calls,
 // NOT when loading library modules via 'load' (the library modules must not
 // have side effects or depend on a transient state in vars), or executing
 // callbacks (callbacks do not have enough context to safely use vars).
-func (v *Vars) Get(th *starlark.Thread, id ID) (starlark.Value, starlark.Bool, error) {
+func (v *Vars) Get(th *starlark.Thread, id ID, def starlark.Value) (starlark.Value, error) {
 	if err := v.checkVarsAccess(th, id); err != nil {
-		return nil, starlark.False, err
+		return nil, err
 	}
+
+	// Return if set. Otherwise auto-set to the default and return the default.
 	if cur := v.lookup(id); cur != nil {
-		return cur.value, starlark.True, nil
+		return cur.value, nil
 	}
-	return starlark.None, starlark.False, nil
+	if err := v.assign(th, id, def, true); err != nil {
+		return nil, err
+	}
+	return def, nil
 }
 
 // checkVarsAccess verifies the variable is being used in an allowed context.
@@ -185,5 +175,26 @@ func (v *Vars) lookup(id ID) *varValue {
 			return &val
 		}
 	}
+	return nil
+}
+
+// assign sets the variable's value in the innermost scope.
+func (v *Vars) assign(th *starlark.Thread, id ID, value starlark.Value, auto bool) error {
+	// Forbid sneaky cross-scope communication through in-place mutations of the
+	// variable's value.
+	value.Freeze()
+
+	// Remember where assignment happened, for the error message in Set().
+	trace, err := builtins.CaptureStacktrace(th, 0)
+	if err != nil {
+		return err
+	}
+
+	// Set in the innermost scope.
+	scope := v.scopes[len(v.scopes)-1]
+	if scope.values == nil {
+		scope.values = make(map[ID]varValue, 1)
+	}
+	scope.values[id] = varValue{value, trace, auto}
 	return nil
 }

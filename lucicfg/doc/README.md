@@ -165,7 +165,14 @@ A variable is a slot that can hold some frozen value. Initially this slot is
 empty. [lucicfg.var(...)](#lucicfg.var) returns a struct with methods to manipulate this slot:
 
   * `set(value)`: sets the variable's value if it's unset, fails otherwise.
-  * `get()`: return the current value or `default` if unset.
+  * `get()`: returns the current value, auto-setting it to `default` if it was
+    unset.
+
+Note the auto-setting the value in `get()` means once `get()` is called on an
+unset variable, this variable can't be changed anymore, since it becomes
+initialized and initialized variables are immutable. In effect, all callers of
+`get()` within a scope always observe the exact same value (either an
+explicitly set one, or a default one).
 
 Any module (loaded or exec'ed) can declare variables via [lucicfg.var(...)](#lucicfg.var). But
 only modules running through [exec(...)](#exec) can read and write them. Modules being
@@ -209,7 +216,7 @@ libraries involved.
 
 #### Arguments {#lucicfg.var-args}
 
-* **default**: a value to return from `get()` if the variable is unset.
+* **default**: a value to auto-set to the variable in `get()` if it was unset.
 * **validator**: a callback called as `validator(value)` from `set(value)`, must return the value to be assigned to the variable (usually just `value` itself).
 
 

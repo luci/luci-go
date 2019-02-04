@@ -144,13 +144,13 @@ func init() {
 		return starlark.None, nil
 	})
 
-	// get_ver(var_id) returns (<value> or None, True if set or False if not).
+	// get_var(var_id, default) returns variable's value.
 	declNative("get_var", func(call nativeCall) (starlark.Value, error) {
 		var id vars.ID
-		if err := call.unpack(1, &id); err != nil {
+		var def starlark.Value
+		if err := call.unpack(2, &id, &def); err != nil {
 			return nil, err
 		}
-		val, isSet, err := call.State.vars.Get(call.Thread, id)
-		return starlark.Tuple{val, isSet}, err
+		return call.State.vars.Get(call.Thread, id, def)
 	})
 }

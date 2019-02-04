@@ -3,7 +3,6 @@ load('//testdata/misc/support/shared_vars.star', 'shared_vars')
 
 def test_vars_basics():
   a = lucicfg.var()
-  assert.eq(a.get(), None)
   a.set(123)
   assert.eq(a.get(), 123)
   # Setting again is forbidden.
@@ -13,8 +12,8 @@ def test_vars_basics():
 def test_vars_defaults():
   a = lucicfg.var(default=123)
   assert.eq(a.get(), 123)
-  a.set(None)
-  assert.eq(a.get(), None)
+  # Setting a var after it was auto-initialized is forbidden.
+  assert.fails(lambda: a.set(None), 'variable reassignment is forbidden')
 
 
 def test_vars_validator():
@@ -24,10 +23,6 @@ def test_vars_validator():
 
 
 def test_propagation_down_exec_stack():
-  # Unset initially.
-  assert.eq(shared_vars.a.get(), None)
-  assert.eq(shared_vars.b.get(), None)
-
   # Set 'a' only.
   shared_vars.a.set('from root')
 
