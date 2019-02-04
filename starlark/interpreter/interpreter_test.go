@@ -16,6 +16,7 @@ package interpreter
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"go.starlark.net/starlark"
@@ -342,5 +343,61 @@ Error: invalid call of non-function (NoneType)`)
 			},
 		})
 		So(err, ShouldErrLike, "exec //zzz.star: forbidden in this context, only exec'ed scripts can exec other scripts")
+	})
+
+	Convey("PreExec/PostExec hooks on success", t, func() {
+		var hooks []string
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `exec("@stdlib//exec1.star")`,
+			},
+			stdlib: map[string]string{
+				"exec1.star": `exec("//exec2.star")`,
+				"exec2.star": `print("hi")`,
+			},
+			preExec: func(th *starlark.Thread, pkg, path string) {
+				hooks = append(hooks, fmt.Sprintf("pre %s/%s", pkg, path))
+			},
+			postExec: func(th *starlark.Thread, pkg, path string) {
+				hooks = append(hooks, fmt.Sprintf("post %s/%s", pkg, path))
+			},
+		})
+		So(err, ShouldBeNil)
+		So(hooks, ShouldResemble, []string{
+			"pre __main__/main.star",
+			"pre stdlib/exec1.star",
+			"pre stdlib/exec2.star",
+			"post stdlib/exec2.star",
+			"post stdlib/exec1.star",
+			"post __main__/main.star",
+		})
+	})
+
+	Convey("PreExec/PostExec hooks on errors", t, func() {
+		var hooks []string
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `exec("@stdlib//exec1.star")`,
+			},
+			stdlib: map[string]string{
+				"exec1.star": `exec("//exec2.star")`,
+				"exec2.star": `BOOOM`,
+			},
+			preExec: func(th *starlark.Thread, pkg, path string) {
+				hooks = append(hooks, fmt.Sprintf("pre %s/%s", pkg, path))
+			},
+			postExec: func(th *starlark.Thread, pkg, path string) {
+				hooks = append(hooks, fmt.Sprintf("post %s/%s", pkg, path))
+			},
+		})
+		So(err, ShouldNotBeNil)
+		So(hooks, ShouldResemble, []string{
+			"pre __main__/main.star",
+			"pre stdlib/exec1.star",
+			"pre stdlib/exec2.star",
+			"post stdlib/exec2.star",
+			"post stdlib/exec1.star",
+			"post __main__/main.star",
+		})
 	})
 }
