@@ -17,6 +17,19 @@ _KEY_ORDER = 'key'
 _DEFINITION_ORDER = 'def'
 
 
+def _check_interpreter_context():
+  """Verifies add_node and add_edge are used only from 'exec' context."""
+  ctx = __native__.interpreter_context()
+  if ctx == 'EXEC':
+    return  # allowed
+  if ctx == 'LOAD':
+    fail('code executed via "load" must be side-effect free, consider using "exec" instead')
+  elif ctx == 'GEN':
+    fail('generators aren\'t allowed to modify the graph, only query it')
+  else:
+    fail('cannot modify the graph from interpreter context %s' % ctx)
+
+
 def _key(*args):
   """Returns a key with given [(kind, name)] path.
 
@@ -39,6 +52,10 @@ def _add_node(key, props=None, idempotent=False, trace=None):
   false), or verifies the existing node has also been marked as idempotent and
   has exact same props dict as being passed here.
 
+  Can be used only from code that was loaded via some exec(...). Fails if run
+  from a module being loaded via load(...). Such library-like modules must not
+  have side effects during their loading.
+
   Also fails if used from a generator callback: at this point the graph is
   frozen and can't be extended.
 
@@ -51,7 +68,7 @@ def _add_node(key, props=None, idempotent=False, trace=None):
   Returns:
     graph.node object representing the node.
   """
-  # TODO(vadimsh): Allow only in 'exec' context.
+  _check_interpreter_context()
   return __native__.graph().add_node(
       key, props or {}, bool(idempotent), trace or stacktrace(skip=1))
 
@@ -66,6 +83,10 @@ def _add_edge(parent, child, title=None, trace=None):
   Fails if there's already an edge between the given nodes with exact same title
   or the new edge introduces a cycle.
 
+  Can be used only from code that was loaded via some exec(...). Fails if run
+  from a module being loaded via load(...). Such library-like modules must not
+  have side effects during their loading.
+
   Also fails if used from a generator callback: at this point the graph is
   frozen and can't be extended.
 
@@ -75,7 +96,7 @@ def _add_edge(parent, child, title=None, trace=None):
     title: a title for the edge, used in error messages.
     trace: a stack trace to associate with the edge.
   """
-  # TODO(vadimsh): Allow only in 'exec' context.
+  _check_interpreter_context()
   return __native__.graph().add_edge(
       parent, child, title or '', trace or stacktrace(skip=1))
 
