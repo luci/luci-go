@@ -51,6 +51,9 @@ type Project struct {
 	ID               string `gae:"$id"`
 	LogoURL          string
 	BuildBugTemplate config.BugTemplate
+
+	// SecurityOptions define the configuration of security features.
+	SecurityOptions config.SecurityOptions
 }
 
 // Console is a datastore entity representing a single console.

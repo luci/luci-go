@@ -43,6 +43,9 @@ message Project {
   // If any specified placeholder cannot be satisfied then no URL
   // is rendered for the build page feedback link.
   BugTemplate build_bug_template = 5;
+
+  // SecurityOptions comprises per-project security feature configuration.
+  SecurityOptions security_options = 6;
 }
 
 // BugTemplate defines how to make custom feedback links to file Monorail
@@ -246,4 +249,21 @@ message Builder {
 
   // ShortName is the 1-3 character abbreviation of the builder.
   string short_name = 3;
+}
+
+// SecurityOptions comprises per-project security features.
+message SecurityOptions {
+
+  // FeatureSwitch describes the configured state of a security feature.
+  enum FeatureSwitch {
+    DEFAULT = 0;
+    ENABLED = 1;
+    DISABLED = 2;
+  }
+
+  //ProjectScopedServiceAccounts enables a service to use reduced-authority
+  //service accounts which enable better protection against accidental cross-project
+  //resource access.
+  FeatureSwitch ProjectScopedServiceAccounts = 1;
+
 }
