@@ -112,7 +112,14 @@ def _var(default=None, validator=None):
   empty. lucicfg.var(...) returns a struct with methods to manipulate this slot:
 
     * `set(value)`: sets the variable's value if it's unset, fails otherwise.
-    * `get()`: return the current value or `default` if unset.
+    * `get()`: returns the current value, auto-setting it to `default` if it was
+      unset.
+
+  Note the auto-setting the value in `get()` means once `get()` is called on an
+  unset variable, this variable can't be changed anymore, since it becomes
+  initialized and initialized variables are immutable. In effect, all callers of
+  `get()` within a scope always observe the exact same value (either an
+  explicitly set one, or a default one).
 
   Any module (loaded or exec'ed) can declare variables via lucicfg.var(...). But
   only modules running through exec(...) can read and write them. Modules being
@@ -158,7 +165,7 @@ def _var(default=None, validator=None):
     Advanced.
 
   Args:
-    default: a value to return from `get()` if the variable is unset.
+    default: a value to auto-set to the variable in `get()` if it was unset.
     validator: a callback called as `validator(value)` from `set(value)`, must
         return the value to be assigned to the variable (usually just `value`
         itself).
@@ -168,14 +175,14 @@ def _var(default=None, validator=None):
   """
   var_id = __native__.declare_var()
 
-  def _set(value):
-    __native__.set_var(var_id, validator(value) if validator else value)
+  # The default value (if any) must pass the validation itself.
+  if validator and default != None:
+    default = validator(default)
 
-  def _get():
-    value, is_set = __native__.get_var(var_id)
-    return value if is_set else default
-
-  return struct(set = _set, get = _get)
+  return struct(
+      set = lambda v: __native__.set_var(var_id, validator(v) if validator else v),
+      get = lambda: __native__.get_var(var_id, default),
+  )
 
 
 # Public API.
