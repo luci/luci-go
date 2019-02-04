@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1d3a9198_f3b582fb",
+        "filename": "lucicfg/starlark/stdlib/native_doc.star",
+        "patchSetId": 8
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-04T19:30:16Z",
+      "side": 1,
+      "message": "random idea: will _load_ be markdown-rendered as \"load\" while also keeping starlark happy?",
+      "range": {
+        "startLine": 22,
+        "startChar": 4,
+        "endLine": 22,
+        "endChar": 10
+      },
+      "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60a82f58_0b7f214c",
+        "filename": "lucicfg/vars/vars.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-04T19:30:16Z",
+      "side": 1,
+      "message": "by",
+      "range": {
+        "startLine": 29,
+        "startChar": 40,
+        "endLine": 29,
+        "endChar": 41
+      },
+      "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e13f495b_a22a402c",
+        "filename": "lucicfg/vars/vars.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-04T19:30:16Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 56,
+        "startChar": 13,
+        "endLine": 56,
+        "endChar": 14
+      },
+      "revId": "23a126162ff85fd080b1bf097e34e4d7a5387793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
