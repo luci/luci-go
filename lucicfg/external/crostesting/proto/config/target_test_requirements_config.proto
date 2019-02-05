@@ -29,6 +29,8 @@ message TestSuite {
 message BuildCriteria {
   oneof target_type {
     // A CrOS reference design that may represent many different build targets.
+    // This corresponds to values of `mosys platform family`, such as
+    // "Google_Coral".
     string reference_design = 1;
     // Any CrOS build target, such as "kevin". This should correspond to a
     // Portage overlay.
