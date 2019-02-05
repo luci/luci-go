@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a3cbd8d_97819515",
+        "filename": "lucicfg/external/crostesting/proto/config/target_test_requirements_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-05T20:03:49Z",
+      "side": 1,
+      "message": "A reminder that all this source code is public, so don\u0027t use any internal codenames and stuff (I have no idea what mosys and Google_Coral is).",
+      "range": {
+        "startLine": 32,
+        "startChar": 7,
+        "endLine": 33,
+        "endChar": 22
+      },
+      "revId": "7ad5904aabf2e6ae5ded3283adb843030008113f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
