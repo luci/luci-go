@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "fd8fb40d_13ca5a3c",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1206284
+      },
+      "writtenOn": "2019-02-05T14:50:03Z",
+      "side": 1,
+      "message": "reference_design will be used to match against the device reference-design label, which is generated via \u0027mosys platform family\u0027.  While this isn\u0027t perfectly aligned (based on historical evolution of the family concept in mosys), this will serve as a good-enough baseline for alignment across test planning rules and device criteria.",
+      "parentUuid": "a82a2168_86bf278f",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "109da154_b4e2e571",
         "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
         "patchSetId": 2
