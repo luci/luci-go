@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "61b8aa2d_b8f49bc1",
+        "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-05T16:23:08Z",
+      "side": 1,
+      "message": "I forgot to update the comment here. I\u0027ll do that in a followup commit.",
+      "parentUuid": "fd8fb40d_13ca5a3c",
+      "revId": "6fe774fdc2c8b83a0d03757412ce80de0c8b2ced",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "109da154_b4e2e571",
         "filename": "lucicfg/external/crostesting/proto/config/cq_test_plan_config.proto",
         "patchSetId": 2
