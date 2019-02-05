@@ -1,0 +1,54 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package crostesting;
+
+option go_package = "config";
+
+// A CrOS test suite.
+message TestSuite {
+  // The name of a CrOS test suite.
+  string test_suite_name = 1;
+}
+
+// Specifies a CrOS build, either by reference design or by a specific build
+// target.
+message BuildCriteria {
+  oneof target_type {
+    // A CrOS reference design that may represent many different build targets.
+    string reference_design = 1;
+    // Any CrOS build target, such as "kevin". This should correspond to a
+    // Portage overlay.
+    string build_target = 2;
+  }
+}
+
+// Details which testing is needed for a single CrOS build target.
+message PerTargetTestRequirements {
+  // Specifies the builds to which these testing requirements should be applied.
+  BuildCriteria build_criteria = 1;
+
+  // Test suites to run for builds matching the build criteria.
+  repeated TestSuite test_suite = 2;
+}
+
+// A listing of all testing that should be done for all CrOS builds.
+message TargetTestRequirementsCfg {
+  // The testing that should be performed for a single CrOS build target or
+  // reference design.
+  repeated PerTargetTestRequirements per_target_test_requirements = 1;
+}
+
