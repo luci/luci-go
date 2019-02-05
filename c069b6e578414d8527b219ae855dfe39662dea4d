@@ -46,6 +46,30 @@
       "revId": "c069b6e578414d8527b219ae855dfe39662dea4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58e99a5b_b09d45c0",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1210164
+      },
+      "writtenOn": "2019-02-05T17:12:41Z",
+      "side": 1,
+      "message": "Yes, the logic described in the cq.proto makes sense to me.",
+      "parentUuid": "211f3721_a017ccd9",
+      "range": {
+        "startLine": 330,
+        "startChar": 0,
+        "endLine": 334,
+        "endChar": 1
+      },
+      "revId": "c069b6e578414d8527b219ae855dfe39662dea4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
