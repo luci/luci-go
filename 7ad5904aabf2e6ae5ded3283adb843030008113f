@@ -22,6 +22,30 @@
       "revId": "7ad5904aabf2e6ae5ded3283adb843030008113f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5e5800c6_c06c1410",
+        "filename": "lucicfg/external/crostesting/proto/config/target_test_requirements_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-05T20:35:21Z",
+      "side": 1,
+      "message": "Thanks for the reminder. These are publicly known things, so there\u0027s no concern here.\nhttps://www.google.com/search?q\u003d\"mosys+platform+family\"\nhttps://chromium.googlesource.com/chromiumos/third_party/coreboot/+/chromeos-2016.05/src/mainboard/google/reef/Kconfig#82",
+      "parentUuid": "4a3cbd8d_97819515",
+      "range": {
+        "startLine": 32,
+        "startChar": 7,
+        "endLine": 33,
+        "endChar": 22
+      },
+      "revId": "7ad5904aabf2e6ae5ded3283adb843030008113f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
