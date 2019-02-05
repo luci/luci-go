@@ -22,6 +22,30 @@
       "revId": "c069b6e578414d8527b219ae855dfe39662dea4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "211f3721_a017ccd9",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-05T01:11:03Z",
+      "side": 1,
+      "message": "Drive-by reviews are appreciated, particularly so on CLs whereby I ask for feedback :)\n\nActually I decided to change semantics to match that of CQ:\nsee https://chromium.googlesource.com/infra/luci/luci-go/+/master/cq/api/config/v2/cq.proto#284\nabout location_regexp[_exclude]. I am not sure I fully understand what meant, but does my link explain it well enough?\n\nI didn\u0027t have time to update CL yet, will do so once I finish with troopering.",
+      "parentUuid": "6e266750_66f3c4f9",
+      "range": {
+        "startLine": 330,
+        "startChar": 0,
+        "endLine": 334,
+        "endChar": 1
+      },
+      "revId": "c069b6e578414d8527b219ae855dfe39662dea4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
