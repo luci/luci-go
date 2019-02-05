@@ -46,6 +46,30 @@
       "revId": "0747ce3ce2b0ec99e26bdc6a2178102ecbc7fe2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d8dad18d_26671146",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-05T00:07:16Z",
+      "side": 1,
+      "message": "fine, here you go: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1453516",
+      "parentUuid": "d18218f2_482054cd",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 16
+      },
+      "revId": "0747ce3ce2b0ec99e26bdc6a2178102ecbc7fe2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
