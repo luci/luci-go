@@ -17,7 +17,9 @@ package isolated
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
@@ -90,54 +92,59 @@ func TestArchive(t *testing.T) {
 			Isolated:     filepath.Join(tmpDir, "baz.isolated"),
 			LeakIsolated: &buf,
 		}
-		namespace := isolatedclient.DefaultNamespace
-		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
-		item := Archive(ctx, a, opts)
-		So(item.DisplayName, ShouldResemble, filepath.Join(tmpDir, "baz.isolated"))
-		item.WaitForHashed()
-		So(item.Error(), ShouldBeNil)
-		So(a.Close(), ShouldBeNil)
+		// TODO(maruel): Make other algorithms work too.
+		for _, namespace := range []string{isolatedclient.DefaultNamespace} {
+			Convey(fmt.Sprintf("Run on namespace %s", namespace), func() {
+				a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
+				item := Archive(ctx, a, opts)
+				So(item.DisplayName, ShouldResemble, filepath.Join(tmpDir, "baz.isolated"))
+				item.WaitForHashed()
+				So(item.Error(), ShouldBeNil)
+				So(a.Close(), ShouldBeNil)
 
-		mode := 0600
-		if isWindows() {
-			mode = 0666
-		}
+				mode := 0600
+				if isWindows() {
+					mode = 0666
+				}
 
-		baseData := oneFileArchiveExpect(filepath.Join("base", "bar"), mode, barData)
-		secondData := oneFileArchiveExpect(filepath.Join("second", "boz"), mode, bozData)
-		topIsolated := isolated.New()
-		topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
-		if !isWindows() {
-			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(barData), mode, int64(len(barData)))
-		} else {
-			topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(winLinkData), 0666, int64(len(winLinkData)))
+				h := isolated.GetHash(namespace)
+				baseData := oneFileArchiveExpect(h, filepath.Join("base", "bar"), mode, barData)
+				secondData := oneFileArchiveExpect(h, filepath.Join("second", "boz"), mode, bozData)
+				topIsolated := isolated.New()
+				topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
+				if !isWindows() {
+					topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(h, barData), mode, int64(len(barData)))
+				} else {
+					topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(h, winLinkData), 0666, int64(len(winLinkData)))
+				}
+				isolatedData := newArchiveExpectData(h, topIsolated)
+				expected := map[string]map[isolated.HexDigest]string{
+					namespace: {
+						isolated.HashBytes(h, barData): string(barData),
+						isolated.HashBytes(h, bozData): string(bozData),
+						baseData.Hash:                  baseData.String,
+						isolatedData.Hash:              isolatedData.String,
+						secondData.Hash:                secondData.String,
+					},
+				}
+				if isWindows() {
+					// TODO(maruel): Fix symlink support on Windows.
+					expected[namespace][isolated.HashBytes(h, winLinkData)] = string(winLinkData)
+				}
+				actual := map[string]map[isolated.HexDigest]string{}
+				for n, c := range server.Contents() {
+					actual[n] = map[isolated.HexDigest]string{}
+					for k, v := range c {
+						actual[n][isolated.HexDigest(k)] = string(v)
+					}
+				}
+				So(actual, ShouldResemble, expected)
+				So(item.Digest(), ShouldResemble, isolatedData.Hash)
+				So(server.Error(), ShouldBeNil)
+				digest := isolated.HashBytes(h, buf.Bytes())
+				So(digest, ShouldResemble, isolatedData.Hash)
+			})
 		}
-		isolatedData := newArchiveExpectData(topIsolated)
-		expected := map[string]map[isolated.HexDigest]string{
-			namespace: {
-				isolated.HashBytes(barData): string(barData),
-				isolated.HashBytes(bozData): string(bozData),
-				baseData.Hash:               baseData.String,
-				isolatedData.Hash:           isolatedData.String,
-				secondData.Hash:             secondData.String,
-			},
-		}
-		if isWindows() {
-			// TODO(maruel): Fix symlink support on Windows.
-			expected[namespace][isolated.HashBytes(winLinkData)] = string(winLinkData)
-		}
-		actual := map[string]map[isolated.HexDigest]string{}
-		for n, c := range server.Contents() {
-			actual[n] = map[isolated.HexDigest]string{}
-			for k, v := range c {
-				actual[n][isolated.HexDigest(k)] = string(v)
-			}
-		}
-		So(actual, ShouldResemble, expected)
-		So(item.Digest(), ShouldResemble, isolatedData.Hash)
-		So(server.Error(), ShouldBeNil)
-		digest := isolated.HashBytes(buf.Bytes())
-		So(digest, ShouldResemble, isolatedData.Hash)
 	})
 }
 
@@ -151,18 +158,18 @@ type archiveExpectData struct {
 	Hash   isolated.HexDigest
 }
 
-func oneFileArchiveExpect(file string, mode int, data []byte) *archiveExpectData {
+func oneFileArchiveExpect(h crypto.Hash, file string, mode int, data []byte) *archiveExpectData {
 	i := isolated.New()
-	i.Files[file] = isolated.BasicFile(isolated.HashBytes(data), mode, int64(len(data)))
-	return newArchiveExpectData(i)
+	i.Files[file] = isolated.BasicFile(isolated.HashBytes(h, data), mode, int64(len(data)))
+	return newArchiveExpectData(h, i)
 }
 
-func newArchiveExpectData(i *isolated.Isolated) *archiveExpectData {
+func newArchiveExpectData(h crypto.Hash, i *isolated.Isolated) *archiveExpectData {
 	encoded, _ := json.Marshal(i)
 	str := string(encoded) + "\n"
 	return &archiveExpectData{
 		Isolated: i,
 		String:   str,
-		Hash:     isolated.HashBytes([]byte(str)),
+		Hash:     isolated.HashBytes(h, []byte(str)),
 	}
 }
