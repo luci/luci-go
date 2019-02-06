@@ -39,8 +39,9 @@ const descPath = ".dm/quest_description.json"
 func mkFile(data []byte) *isolated.File {
 	mode := 0444
 	size := int64(len(data))
+	h := isolated.GetHash(isolatedclient.DefaultNamespace)
 	return &isolated.File{
-		Digest: isolated.HashBytes(data),
+		Digest: isolated.HashBytes(h, data),
 		Mode:   &mode,
 		Size:   &size,
 	}

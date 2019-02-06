@@ -442,8 +442,9 @@ func makeItems(namespace string, contents ...[]byte) ([]*isolateservice.Handlers
 	expected := map[string]map[isolated.HexDigest][]byte{
 		namespace: make(map[isolated.HexDigest][]byte, len(contents)),
 	}
+	h := isolated.GetHash(namespace)
 	for _, content := range contents {
-		hex := isolated.HashBytes(content)
+		hex := isolated.HashBytes(h, content)
 		digests = append(digests, &isolateservice.HandlersEndpointsV1Digest{Digest: string(hex), IsIsolated: false, Size: int64(len(content))})
 		expected[namespace][hex] = content
 	}
@@ -609,7 +610,8 @@ func TestCompressor(t *testing.T) {
 				Reader:   tc.Src,
 				CloseErr: tc.CloseErr,
 			}
-			comp := newCompressed(src)
+			namespace := DefaultNamespace
+			comp := newCompressed(namespace, src)
 
 			var readErr error
 			switch {

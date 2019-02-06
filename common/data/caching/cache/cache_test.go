@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -38,18 +39,20 @@ func testCache(t *testing.T, c Cache) isolated.HexDigests {
 			}
 		}()
 
+		namespace := isolatedclient.DefaultNamespace
+		h := isolated.GetHash(namespace)
 		fakeDigest := isolated.HexDigest("0123456789012345678901234567890123456789")
 		badDigest := isolated.HexDigest("012345678901234567890123456789012345678")
 		emptyContent := []byte{}
-		emptyDigest := isolated.HashBytes(emptyContent)
+		emptyDigest := isolated.HashBytes(h, emptyContent)
 		file1Content := []byte("foo")
-		file1Digest := isolated.HashBytes(file1Content)
+		file1Digest := isolated.HashBytes(h, file1Content)
 		file2Content := []byte("foo bar")
-		file2Digest := isolated.HashBytes(file2Content)
+		file2Digest := isolated.HashBytes(h, file2Content)
 		largeContent := bytes.Repeat([]byte("A"), 1023)
-		largeDigest := isolated.HashBytes(largeContent)
+		largeDigest := isolated.HashBytes(h, largeContent)
 		tooLargeContent := bytes.Repeat([]byte("A"), 1025)
-		tooLargeDigest := isolated.HashBytes(tooLargeContent)
+		tooLargeDigest := isolated.HashBytes(h, tooLargeContent)
 
 		So(c.Keys(), ShouldResemble, isolated.HexDigests{})
 
@@ -112,7 +115,7 @@ func testCache(t *testing.T, c Cache) isolated.HexDigests {
 
 func TestNewMemory(t *testing.T) {
 	Convey(`Test the memory-based cache of objects.`, t, func() {
-		testCache(t, NewMemory(Policies{MaxSize: 1024, MaxItems: 2}))
+		testCache(t, NewMemory(Policies{MaxSize: 1024, MaxItems: 2}, isolatedclient.DefaultNamespace))
 	})
 }
 
@@ -126,16 +129,17 @@ func TestNewDisk(t *testing.T) {
 			}
 		}()
 		pol := Policies{MaxSize: 1024, MaxItems: 2}
-		c, err := NewDisk(pol, td)
+		namespace := isolatedclient.DefaultNamespace
+		c, err := NewDisk(pol, td, namespace)
 		So(err, ShouldBeNil)
 		expected := testCache(t, c)
 
-		c, err = NewDisk(pol, td)
+		c, err = NewDisk(pol, td, namespace)
 		So(err, ShouldBeNil)
 		So(c.Keys(), ShouldResemble, expected)
 		So(c.Close(), ShouldBeNil)
 
-		c, err = NewDisk(pol, "non absolute path")
+		c, err = NewDisk(pol, "non absolute path", namespace)
 		So(c, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 	})

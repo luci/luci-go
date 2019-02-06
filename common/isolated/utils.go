@@ -15,6 +15,7 @@
 package isolated
 
 import (
+	"crypto"
 	"encoding/hex"
 	"hash"
 	"io"
@@ -29,33 +30,33 @@ func Sum(h hash.Hash) HexDigest {
 }
 
 // Hash hashes a reader and returns a HexDigest from it.
-func Hash(src io.Reader) (HexDigest, error) {
-	h := GetHash()
-	_, err := io.Copy(h, src)
+func Hash(h crypto.Hash, src io.Reader) (HexDigest, error) {
+	a := h.New()
+	_, err := io.Copy(a, src)
 	if err != nil {
 		return HexDigest(""), err
 	}
-	return Sum(h), nil
+	return Sum(a), nil
 }
 
 // HashBytes hashes content and returns a HexDigest from it.
-func HashBytes(content []byte) HexDigest {
-	h := GetHash()
-	_, _ = h.Write(content)
-	return Sum(h)
+func HashBytes(h crypto.Hash, content []byte) HexDigest {
+	a := h.New()
+	_, _ = a.Write(content)
+	return Sum(a)
 }
 
 // HashFile hashes a file and returns a HandlersEndpointsV1Digest out of it.
-func HashFile(path string) (isolateservice.HandlersEndpointsV1Digest, error) {
-	h := GetHash()
+func HashFile(h crypto.Hash, path string) (isolateservice.HandlersEndpointsV1Digest, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return isolateservice.HandlersEndpointsV1Digest{}, err
 	}
 	defer f.Close()
-	size, err := io.Copy(h, f)
+	a := h.New()
+	size, err := io.Copy(a, f)
 	if err != nil {
 		return isolateservice.HandlersEndpointsV1Digest{}, err
 	}
-	return isolateservice.HandlersEndpointsV1Digest{Digest: string(Sum(h)), IsIsolated: false, Size: size}, nil
+	return isolateservice.HandlersEndpointsV1Digest{Digest: string(Sum(a)), IsIsolated: false, Size: size}, nil
 }
