@@ -222,6 +222,16 @@ func getHistory(c context.Context, builderID buildsource.BuilderID, project stri
 
 	// Do fetches.
 	return &hist, parallel.FanOutIn(func(fetch chan<- func() error) {
+		// Get BuilderSummary for builderID, because the passed project may differ
+		// from the BuilderSummary's actual project (e.g. a chrome builder that also
+		// appears in the chromium console will pass "chromium" as the project and
+		// fail to link it). If no BuilderSummary is found, fall back on passed
+		// project.
+		matchingBuilder := model.BuilderSummary{BuilderID: string(builderID)}
+		if err := datastore.Get(c, &matchingBuilder); err == nil {
+			hist.BuilderLink = matchingBuilder.SelfLink()
+		}
+
 		if !builderID.Buildbot() {
 			// Pending builds
 			fetch <- func() error {
