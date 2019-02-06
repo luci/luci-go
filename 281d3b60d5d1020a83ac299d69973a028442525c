@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73151fba_e14c094f",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-02-06T14:16:34Z",
+      "side": 1,
+      "message": "What do you mean by retrying?\n\nI\u0027d prefer the tool to consistently abort if it passed an output directory that is not empty, it\u0027s fine if it exists, but not if it\u0027s not empty IMHO. Otherwise it\u0027s easy for someone to shoot themselves in the foot. For example someone collects results and gives \".\" as the output directory, deleting whatever happened to be the current directory. This is bad if this is run from $HOME!",
+      "range": {
+        "startLine": 97,
+        "startChar": 31,
+        "endLine": 97,
+        "endChar": 39
+      },
+      "revId": "281d3b60d5d1020a83ac299d69973a028442525c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
