@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "036f4ac2_6edf450e",
+        "filename": "common/isolated/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-02-06T22:33:45Z",
+      "side": 1,
+      "message": "No, this results in a bad file, which will eventually be detected down the pipe. The important bit is that it won\u0027t be a silent failure, the file will not be fetcheable.",
+      "parentUuid": "8b07ea44_4093b3f0",
+      "range": {
+        "startLine": 113,
+        "startChar": 0,
+        "endLine": 113,
+        "endChar": 2
+      },
+      "revId": "7fa9e704759f3be459750e6fa491410f04889d99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da19bfeb_e8082e48",
         "filename": "common/isolated/isolated_test.go",
         "patchSetId": 3
@@ -65,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "5bb446fe_e85861a4",
+        "filename": "common/isolated/isolated_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-02-06T22:33:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da19bfeb_e8082e48",
+      "revId": "7fa9e704759f3be459750e6fa491410f04889d99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9090474_aa787c25",
         "filename": "common/isolatedclient/isolatedclient_test.go",
         "patchSetId": 3
@@ -76,6 +118,30 @@
       "writtenOn": "2019-02-06T22:08:31Z",
       "side": 1,
       "message": "General question, if namespace ends with something other than -gzip or -deflate, this is accepted and just means \"not compresed\", right?",
+      "range": {
+        "startLine": 90,
+        "startChar": 72,
+        "endLine": 90,
+        "endChar": 75
+      },
+      "revId": "7fa9e704759f3be459750e6fa491410f04889d99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3fde2490_8b081c3b",
+        "filename": "common/isolatedclient/isolatedclient_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-02-06T22:33:45Z",
+      "side": 1,
+      "message": "Exact.",
+      "parentUuid": "e9090474_aa787c25",
       "range": {
         "startLine": 90,
         "startChar": 72,
