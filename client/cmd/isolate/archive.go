@@ -22,7 +22,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/signal"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -194,22 +193,6 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 		return 1
 	}
 	return 0
-}
-
-// CancelOnCtrlC is a temporary copy of the CancelOnCtrlC in internal/common/concurrent.go
-// This is needed until the old archive and batcharchive code (which uses Cancelers) is removed.
-// It operates on a concrete Archiver to avoid the dependency on Canceler.
-func CancelOnCtrlC(arch *archiver.Archiver) {
-	interrupted := make(chan os.Signal, 1)
-	signal.Notify(interrupted, os.Interrupt)
-	go func() {
-		defer signal.Stop(interrupted)
-		select {
-		case <-interrupted:
-			arch.Cancel(errors.New("Ctrl-C"))
-		case <-arch.Channel():
-		}
-	}()
 }
 
 func printSummary(al archiveLogger, summary archiver.IsolatedSummary) {
