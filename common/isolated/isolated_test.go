@@ -60,3 +60,12 @@ func TestNew(t *testing.T) {
 		t.Fatal(i.Files)
 	}
 }
+
+func TestNew_bad(t *testing.T) {
+	if a := New(crypto.MD5).Algo; a != "" {
+		t.Fatalf("Expected empty invalid algo, got %v", a)
+	}
+	if a := New(crypto.SHA224).Algo; a != "" {
+		t.Fatalf("Expected empty invalid algo, got %v", a)
+	}
+}
