@@ -14,6 +14,8 @@
 
 package isolated
 
+import "crypto"
+
 // IsolatedFormatVersion is version of *.isolated file format. Put into JSON.
 const IsolatedFormatVersion = "1.4"
 
@@ -34,9 +36,6 @@ const (
 	// temporary mapped directory.
 	DirsReadOnly ReadOnlyValue = 2
 )
-
-// Algorithm is the value for Algo.
-const Algorithm = "sha-1"
 
 // FileType describes the type of file being isolated.
 type FileType string
@@ -102,11 +101,18 @@ type Isolated struct {
 }
 
 // New returns a new Isolated with the default Algo and Version.
-func New() *Isolated {
+func New(h crypto.Hash) *Isolated {
+	a := ""
+	switch h {
+	case crypto.SHA1:
+		a = "sha-1"
+	case crypto.SHA256:
+		a = "sha-256"
+	case crypto.SHA512:
+		a = "sha-512"
+	}
 	return &Isolated{
-		// TODO(maruel): This is incorrect. Fix in follow up.
-		// https://crbug.com/787113
-		Algo:    Algorithm,
+		Algo:    a,
 		Version: IsolatedFormatVersion,
 		Files:   map[string]File{},
 	}

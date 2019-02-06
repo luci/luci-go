@@ -263,7 +263,7 @@ func (i *PendingItem) calcDigest() error {
 	}
 	defer src.Close()
 
-	h := isolated.GetHash(i.a.c.Namespace()).New()
+	h := i.a.c.Hash().New()
 	size, err := io.Copy(h, src)
 	if err != nil {
 		i.SetErr(err)

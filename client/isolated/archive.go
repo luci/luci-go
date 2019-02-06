@@ -62,8 +62,8 @@ type ArchiveOptions struct {
 // uploads it and its dependencies.
 //
 // Archive returns the digest of the composite isolated file.
-func Archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingItem {
-	item, err := archive(c, arch, opts)
+func Archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions, namespace string) *archiver.PendingItem {
+	item, err := archive(c, arch, opts, namespace)
 	if err != nil {
 		arch.Cancel(err)
 		i := &archiver.PendingItem{DisplayName: opts.Isolated}
@@ -76,7 +76,8 @@ func Archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) *
 // Convenience type to track pending items and their corresponding filepaths.
 type itemToPathMap map[*archiver.PendingItem]string
 
-func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (*archiver.PendingItem, error) {
+func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions, namespace string) (*archiver.PendingItem, error) {
+	// TODO(maruel): Should not need to pass namespace here.
 	// Archive all files.
 	fItems := make(itemToPathMap, len(opts.Files))
 	for file, wd := range opts.Files {
@@ -103,7 +104,7 @@ func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (
 	}
 
 	// Construct isolated file.
-	composite := isolated.New()
+	composite := isolated.New(isolated.GetHash(namespace))
 	err := waitOnItems(fItems, func(path, file string, digest isolated.HexDigest) error {
 		info, err := os.Lstat(path)
 		if err != nil {
