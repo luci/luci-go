@@ -103,7 +103,7 @@ func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (
 	}
 
 	// Construct isolated file.
-	composite := isolated.New()
+	composite := isolated.New(arch.Hash())
 	err := waitOnItems(fItems, func(path, file string, digest isolated.HexDigest) error {
 		info, err := os.Lstat(path)
 		if err != nil {

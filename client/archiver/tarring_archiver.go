@@ -29,17 +29,15 @@ import (
 // TarringArchiver archives the files specified by an isolate file to the server,
 // Small files are combining into tar archives before uploading.
 type TarringArchiver struct {
-	checker   Checker
-	uploader  Uploader
-	namespace string
+	checker  Checker
+	uploader Uploader
 }
 
 // NewTarringArchiver constructs a TarringArchiver.
 //
-func NewTarringArchiver(checker Checker, uploader Uploader, namespace string) *TarringArchiver {
-	// TODO(maruel): The namespace should be retrieved from the
-	// isolatedclient.Client of either Checker or Uploader.
-	return &TarringArchiver{checker: checker, uploader: uploader, namespace: namespace}
+func NewTarringArchiver(checker Checker, uploader Uploader) *TarringArchiver {
+
+	return &TarringArchiver{checker: checker, uploader: uploader}
 }
 
 // Archive uploads a single isolate.
@@ -50,7 +48,7 @@ func (ta *TarringArchiver) Archive(deps []string, rootDir string, isol *isolated
 	}
 	log.Printf("Expanded to the following items to be isolated:\n%s", parts)
 
-	tracker := newUploadTracker(ta.checker, ta.uploader, isol, ta.namespace)
+	tracker := newUploadTracker(ta.checker, ta.uploader, isol)
 	if err := tracker.UploadDeps(parts); err != nil {
 		return IsolatedSummary{}, err
 	}

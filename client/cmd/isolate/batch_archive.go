@@ -170,7 +170,7 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 	// disk at once.
 	checker := archiver.NewChecker(ctx, client, concurrentChecks)
 	uploader := archiver.NewUploader(ctx, client, concurrentUploads)
-	a := archiver.NewTarringArchiver(checker, uploader, client.Namespace())
+	a := archiver.NewTarringArchiver(checker, uploader)
 
 	var errArchive error
 	var isolSummaries []archiver.IsolatedSummary

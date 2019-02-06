@@ -152,7 +152,7 @@ func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.A
 	// Set up a checker and uploader.
 	checker := archiver.NewChecker(ctx, client, concurrentChecks)
 	uploader := archiver.NewUploader(ctx, client, concurrentUploads)
-	archiver := archiver.NewTarringArchiver(checker, uploader, client.Namespace())
+	archiver := archiver.NewTarringArchiver(checker, uploader)
 
 	isolSummary, err := archiver.Archive(deps, rootDir, isol, opts.Blacklist, opts.Isolated)
 	if err != nil {

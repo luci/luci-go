@@ -78,7 +78,6 @@ type UploadTracker struct {
 	checker  Checker
 	uploader Uploader
 	isol     *isolated.Isolated
-	h        crypto.Hash
 
 	// A cache of file hashes, to speed up future requests for a hash of the same file.
 	fileHashCache map[string]hashResult
@@ -88,14 +87,12 @@ type UploadTracker struct {
 }
 
 // newUploadTracker constructs an UploadTracker.  It tracks uploaded files in isol.Files.
-func newUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated, namespace string) *UploadTracker {
-	// TODO(maruel): The namespace should be retrieved from the isolatedclient.Client.
+func newUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated) *UploadTracker {
 	isol.Files = make(map[string]isolated.File)
 	return &UploadTracker{
 		checker:       checker,
 		uploader:      uploader,
 		isol:          isol,
-		h:             isolated.GetHash(namespace),
 		fileHashCache: make(map[string]hashResult),
 		lOS:           standardOS{},
 	}
@@ -143,7 +140,7 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 
 	for _, bundle := range bundles {
 		bundle := bundle
-		digest, tarSize, err := bundle.Digest(ut.h)
+		digest, tarSize, err := bundle.Digest(ut.checker.Hash())
 		if err != nil {
 			return err
 		}
@@ -224,7 +221,7 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 	}
 
 	// Check and upload isolate JSON.
-	ut.checker.AddItem(isolFile.item(ut.h), true, func(item *Item, ps *isolatedclient.PushState) {
+	ut.checker.AddItem(isolFile.item(ut.checker.Hash()), true, func(item *Item, ps *isolatedclient.PushState) {
 		if ps == nil {
 			return
 		}
@@ -243,7 +240,7 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 
 	return IsolatedSummary{
 		Name:   isolFile.name(),
-		Digest: isolFile.item(ut.h).Digest,
+		Digest: isolFile.item(ut.checker.Hash()).Digest,
 	}, nil
 }
 
@@ -266,7 +263,7 @@ func (ut *UploadTracker) doHashFile(path string) (isolated.HexDigest, error) {
 		return "", err
 	}
 	defer f.Close()
-	return isolated.Hash(ut.h, f)
+	return isolated.Hash(ut.checker.Hash(), f)
 }
 
 // isolatedFile is an isolated file which is stored in memory.

@@ -76,6 +76,7 @@ type Client struct {
 	retryFactory retry.Factory
 	url          string
 	namespace    string
+	h            crypto.Hash
 
 	authClient *http.Client // client that sends auth tokens
 	anonClient *http.Client // client that does NOT send auth tokens
@@ -95,6 +96,8 @@ type Client struct {
 // If you're unsure which namespace to use, use the DefaultNamespace constant.
 //
 // If gcs is nil, the defaultGCSHandler is used for fetching from and pushing to GCS.
+//
+// The hashing algorithm used depends on the namespace.
 func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory, gcs CloudStorage) *Client {
 	if anonClient == nil {
 		anonClient = http.DefaultClient
@@ -109,6 +112,7 @@ func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.
 		retryFactory: rFn,
 		url:          strings.TrimRight(host, "/"),
 		namespace:    namespace,
+		h:            isolated.GetHash(namespace),
 		authClient:   authClient,
 		anonClient:   anonClient,
 		gcsHandler:   gcs,
@@ -117,11 +121,9 @@ func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.
 	return i
 }
 
-// Namespace returns the namespace onto which the client operates.
-//
-// The namespace can be used to control the hashing and compression algorithm.
-func (i *Client) Namespace() string {
-	return i.namespace
+// Hash returns the hashing algorithm used for this client.
+func (i *Client) Hash() crypto.Hash {
+	return i.h
 }
 
 // ServerCapabilities returns the server details.
@@ -193,11 +195,13 @@ func (i *Client) Push(c context.Context, state *PushState, source Source) (err e
 // Fetch downloads an item from the server.
 func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Writer) error {
 	// Perform initial request.
-	h := isolated.GetHash(i.namespace)
-	name := "sha-1"
-	if h == crypto.SHA256 {
+	name := ""
+	switch i.h {
+	case crypto.SHA1:
+		name = "sha-1"
+	case crypto.SHA256:
 		name = "sha-256"
-	} else if h == crypto.SHA512 {
+	case crypto.SHA512:
 		name = "sha-512"
 	}
 	url := i.url + "/_ah/api/isolateservice/v1/retrieve"
@@ -247,15 +251,15 @@ func (i *Client) doPush(c context.Context, state *PushState, source Source) (err
 	end := tracer.Span(i, "push", tracer.Args{"useDB": useDB, "size": state.size})
 	defer func() { end(tracer.Args{"err": err}) }()
 	if useDB {
+		// Fast inline storage.
 		var src io.ReadCloser
-		src, err = source()
-		if err != nil {
+		if src, err = source(); err != nil {
 			return err
 		}
 		defer src.Close()
-
 		err = i.doPushDB(c, state, src)
 	} else {
+		// Storage is deferred to Google Cloud Storage.
 		err = i.gcsHandler.Push(c, i, state.status, source)
 	}
 	if err != nil {

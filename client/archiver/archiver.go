@@ -16,6 +16,7 @@ package archiver
 
 import (
 	"context"
+	"crypto"
 	"errors"
 	"fmt"
 	"io"
@@ -263,7 +264,7 @@ func (i *PendingItem) calcDigest() error {
 	}
 	defer src.Close()
 
-	h := isolated.GetHash(i.a.c.Namespace()).New()
+	h := i.a.c.Hash().New()
 	size, err := io.Copy(h, src)
 	if err != nil {
 		i.SetErr(err)
@@ -372,6 +373,11 @@ func (a *Archiver) CancelationReason() error {
 // Channel implements common.Canceler
 func (a *Archiver) Channel() <-chan error {
 	return a.canceler.Channel()
+}
+
+// Hash returns the hashing algorithm used by this archiver.
+func (a *Archiver) Hash() crypto.Hash {
+	return a.c.Hash()
 }
 
 // Push schedules item upload to the isolate server. Smaller priority value
