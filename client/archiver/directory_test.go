@@ -84,15 +84,17 @@ func TestPushDirectory(t *testing.T) {
 		mode = os.FileMode(0666)
 	}
 
+	// TODO(maruel): Move these variables so we can iterate over multiple
+	// namespaces.
+	namespace := isolatedclient.DefaultNamespace
+	h := isolated.GetHash(namespace)
 	basicFile := func(contents string) isolated.File {
-		return isolated.BasicFile(isolated.HashBytes([]byte(contents)), int(mode), int64(len(contents)))
+		return isolated.BasicFile(isolated.HashBytes(h, []byte(contents)), int(mode), int64(len(contents)))
 	}
-
 	expectValidPush := func(t *testing.T, root string, nodes []fileNode, blacklist []string) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		namespace := isolatedclient.DefaultNamespace
 		a := New(context.Background(), isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
 
 		for _, node := range nodes {
@@ -123,7 +125,7 @@ func TestPushDirectory(t *testing.T) {
 			}
 			expectedBytesPushed += int(len(node.contents))
 			expectedMisses++
-			digest := isolated.HashBytes([]byte(node.contents))
+			digest := isolated.HashBytes(h, []byte(node.contents))
 			expected[namespace][digest] = node.contents
 		}
 
@@ -135,7 +137,7 @@ func TestPushDirectory(t *testing.T) {
 		encoded, err := json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
-		isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
+		isolatedHash := isolated.HashBytes(h, []byte(isolatedEncoded))
 		expected[namespace][isolatedHash] = isolatedEncoded
 		expectedBytesPushed += len(isolatedEncoded)
 

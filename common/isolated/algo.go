@@ -18,17 +18,25 @@ package isolated
 
 import (
 	"compress/zlib"
-	"crypto/sha1"
-	"hash"
+	"crypto"
 	"io"
+	"io/ioutil"
+	"strings"
 )
 
 // GetHash returns a fresh instance of the hashing algorithm to be used to
 // calculate the HexDigest.
 //
-// It is currently hardcoded to sha-1.
-func GetHash() hash.Hash {
-	return sha1.New()
+// A prefix of "sha256-" and "sha512-" respectively returns a sha-256 and
+// sha-512 instance. Otherwise a sha-1 instance is returned.
+func GetHash(namespace string) crypto.Hash {
+	if strings.HasPrefix(namespace, "sha256-") {
+		return crypto.SHA256
+	}
+	if strings.HasPrefix(namespace, "sha512-") {
+		return crypto.SHA512
+	}
+	return crypto.SHA1
 }
 
 // GetDecompressor returns a fresh instance of the decompression algorithm.
@@ -36,8 +44,11 @@ func GetHash() hash.Hash {
 // It must be closed after use.
 //
 // It is currently hardcoded to RFC 1950 (zlib).
-func GetDecompressor(in io.Reader) (io.ReadCloser, error) {
-	return zlib.NewReader(in)
+func GetDecompressor(namespace string, in io.Reader) (io.ReadCloser, error) {
+	if isCompressed(namespace) {
+		return zlib.NewReader(in)
+	}
+	return ioutil.NopCloser(in), nil
 }
 
 // GetCompressor returns a fresh instance of the compression algorithm.
@@ -45,9 +56,12 @@ func GetDecompressor(in io.Reader) (io.ReadCloser, error) {
 // It must be closed after use.
 //
 // It is currently hardcoded to RFC 1950 (zlib).
-func GetCompressor(out io.Writer) (io.WriteCloser, error) {
+func GetCompressor(namespace string, out io.Writer) (io.WriteCloser, error) {
 	// Higher compression level uses cpu resources more than we want.
-	return zlib.NewWriterLevel(out, zlib.BestSpeed)
+	if isCompressed(namespace) {
+		return zlib.NewWriterLevel(out, zlib.BestSpeed)
+	}
+	return nopCloser{out}, nil
 }
 
 // HexDigest is the hash of a file that is hex-encoded. Only lower case letters
@@ -55,8 +69,8 @@ func GetCompressor(out io.Writer) (io.WriteCloser, error) {
 type HexDigest string
 
 // Validate returns true if the hash is valid.
-func (d HexDigest) Validate() bool {
-	if len(d) != sha1.Size*2 {
+func (d HexDigest) Validate(h crypto.Hash) bool {
+	if l := h.Size() * 2; len(d) != l {
 		return false
 	}
 	for _, c := range d {
@@ -74,3 +88,17 @@ type HexDigests []HexDigest
 func (h HexDigests) Len() int           { return len(h) }
 func (h HexDigests) Less(i, j int) bool { return h[i] < h[j] }
 func (h HexDigests) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+//
+
+func isCompressed(namespace string) bool {
+	return strings.HasSuffix(namespace, "-gzip") || strings.HasSuffix(namespace, "-flate")
+}
+
+type nopCloser struct {
+	io.Writer
+}
+
+func (n nopCloser) Close() error {
+	return nil
+}

@@ -104,6 +104,8 @@ type Isolated struct {
 // New returns a new Isolated with the default Algo and Version.
 func New() *Isolated {
 	return &Isolated{
+		// TODO(maruel): This is incorrect. Fix in follow up.
+		// https://crbug.com/787113
 		Algo:    Algorithm,
 		Version: IsolatedFormatVersion,
 		Files:   map[string]File{},

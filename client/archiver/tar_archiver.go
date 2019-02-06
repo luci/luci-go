@@ -16,6 +16,7 @@ package archiver
 
 import (
 	"archive/tar"
+	"crypto"
 	"io"
 	"os"
 	"sort"
@@ -75,13 +76,13 @@ func oneBundle(items []*Item, threshold int64) (*itemBundle, []*Item) {
 
 // Digest returns the hash and total size of the tar constructed from the
 // bundle's items.
-func (b *itemBundle) Digest() (isolated.HexDigest, int64, error) {
-	h := isolated.GetHash()
-	cw := &iotools.CountingWriter{Writer: h}
+func (b *itemBundle) Digest(h crypto.Hash) (isolated.HexDigest, int64, error) {
+	a := h.New()
+	cw := &iotools.CountingWriter{Writer: a}
 	if err := b.writeTar(cw); err != nil {
 		return "", 0, err
 	}
-	return isolated.Sum(h), cw.Count, nil
+	return isolated.Sum(a), cw.Count, nil
 }
 
 // Contents returns an io.ReadCloser containing the tar's contents.
