@@ -22,6 +22,30 @@
       "revId": "281d3b60d5d1020a83ac299d69973a028442525c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d56857e0_12dbeab9",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-02-06T21:31:39Z",
+      "side": 1,
+      "message": "I mean the case, in first call GetTaskOutputs, transient error is returned for some subset of file downloading.\nIn that case, client retries GetTaskOutputs but there is already directory for task output.\n\nSo we need to ignore file exist error from os.Mkdir in second call.\nAlso dir has taksID prefix, so removing the directory won\u0027t be so dangerous I think.\n\nAnd if there is subset of files in directory already, checking directory emptiness also does not work well?",
+      "parentUuid": "73151fba_e14c094f",
+      "range": {
+        "startLine": 97,
+        "startChar": 31,
+        "endLine": 97,
+        "endChar": 39
+      },
+      "revId": "281d3b60d5d1020a83ac299d69973a028442525c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
