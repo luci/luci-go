@@ -16,6 +16,7 @@ package archiver
 
 import (
 	"bytes"
+	"crypto"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -114,6 +115,10 @@ func (checker *fakeChecker) AddItem(item *Item, isolated bool, callback CheckerC
 
 func (checker *fakeChecker) PresumeExists(item *Item) {}
 
+func (checker *fakeChecker) Hash() crypto.Hash {
+	return crypto.SHA1
+}
+
 func (checker *fakeChecker) Close() error { return nil }
 
 // fakeChecker implements Uploader while recording method arguments.
@@ -159,7 +164,7 @@ func TestSkipsUpload(t *testing.T) {
 
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
-		ut := newUploadTracker(checker, uploader, isol, namespace)
+		ut := newUploadTracker(checker, uploader, isol)
 		fos := &fakeOS{}
 		ut.lOS = fos // Override filesystem calls with fake.
 
@@ -194,8 +199,7 @@ func TestDontSkipUpload(t *testing.T) {
 
 		uploader := &fakeUploader{}
 		namespace := isolatedclient.DefaultNamespace
-		h := isolated.GetHash(namespace)
-		ut := newUploadTracker(checker, uploader, isol, namespace)
+		ut := newUploadTracker(checker, uploader, isol)
 		fos := &fakeOS{}
 		ut.lOS = fos // Override filesystem calls with fake.
 
@@ -214,6 +218,7 @@ func TestDontSkipUpload(t *testing.T) {
 		wantIsolJSON := []byte(`{"algo":"","version":""}`)
 		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
 
+		h := isolated.GetHash(namespace)
 		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(h, wantIsolJSON))
 		So(isolSummary.Name, ShouldEqual, "isolatedPath")
 
@@ -234,8 +239,7 @@ func TestHandlesSymlinks(t *testing.T) {
 		checker := &fakeChecker{ps: &isolatedclient.PushState{}}
 		uploader := &fakeUploader{}
 		namespace := isolatedclient.DefaultNamespace
-		h := isolated.GetHash(namespace)
-		ut := newUploadTracker(checker, uploader, isol, namespace)
+		ut := newUploadTracker(checker, uploader, isol)
 		fos := &fakeOS{}
 		ut.lOS = fos // Override filesystem calls with fake.
 
@@ -265,6 +269,7 @@ func TestHandlesSymlinks(t *testing.T) {
 		wantIsolJSON := []byte(`{"algo":"","files":{"c":{"l":"link:/a/b/c"}},"version":""}`)
 		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
 
+		h := isolated.GetHash(namespace)
 		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(h, wantIsolJSON))
 		So(isolSummary.Name, ShouldEqual, "isolatedPath")
 
@@ -284,8 +289,7 @@ func TestHandlesIndividualFiles(t *testing.T) {
 		uploader := &fakeUploader{}
 
 		namespace := isolatedclient.DefaultNamespace
-		h := isolated.GetHash(namespace)
-		ut := newUploadTracker(checker, uploader, isol, namespace)
+		ut := newUploadTracker(checker, uploader, isol)
 		fos := &fakeOS{
 			readFiles: map[string]io.Reader{
 				"/a/b/foo": strings.NewReader("foo contents"),
@@ -306,6 +310,7 @@ func TestHandlesIndividualFiles(t *testing.T) {
 		err := ut.UploadDeps(parts)
 		So(err, ShouldBeNil)
 
+		h := isolated.GetHash(namespace)
 		fooHash := isolated.HashBytes(h, []byte("foo contents"))
 		barHash := isolated.HashBytes(h, []byte("bar contents"))
 		wantFiles := map[string]isolated.File{

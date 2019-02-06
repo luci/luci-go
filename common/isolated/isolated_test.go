@@ -15,6 +15,7 @@
 package isolated
 
 import (
+	"crypto"
 	"strings"
 	"testing"
 )
@@ -26,9 +27,30 @@ func TestFile(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	i := New()
-	// TODO(maruel): Make this configurable.
+	i := New(crypto.SHA1)
 	if i.Algo != "sha-1" {
+		t.Fatal(i.Algo)
+	}
+	if i.Version != "1.4" {
+		t.Fatal(i.Version)
+	}
+	if len(i.Files) != 0 {
+		t.Fatal(i.Files)
+	}
+
+	i = New(crypto.SHA256)
+	if i.Algo != "sha-256" {
+		t.Fatal(i.Algo)
+	}
+	if i.Version != "1.4" {
+		t.Fatal(i.Version)
+	}
+	if len(i.Files) != 0 {
+		t.Fatal(i.Files)
+	}
+
+	i = New(crypto.SHA512)
+	if i.Algo != "sha-512" {
 		t.Fatal(i.Algo)
 	}
 	if i.Version != "1.4" {

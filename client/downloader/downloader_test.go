@@ -46,6 +46,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	tardata := genTar(t)
 
 	namespace := isolatedclient.DefaultNamespace
+	h := isolated.GetHash(namespace)
 	server := isolatedfake.New()
 	data1hash := server.Inject(namespace, data1)
 	data2hash := server.Inject(namespace, data2)
@@ -54,7 +55,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 
 	onePath := filepath.Join("foo", "one.txt")
 	twoPath := filepath.Join("foo", "two.txt")
-	isolated1 := isolated.New()
+	isolated1 := isolated.New(h)
 	isolated1.Files = map[string]isolated.File{
 		onePath:     isolated.BasicFile(data1hash, 0664, int64(len(data1))),
 		twoPath:     isolated.BasicFile(data2hash, 0664, int64(len(data2))),
@@ -65,7 +66,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 
 	lolPath := filepath.Join("bar", "lol.txt")
 	oloPath := filepath.Join("foo", "boz", "olo.txt")
-	isolated2 := isolated.New()
+	isolated2 := isolated.New(h)
 	isolated2.Files = map[string]isolated.File{
 		lolPath: isolated.BasicFile(data1hash, 0664, int64(len(data1))),
 		oloPath: isolated.BasicFile(data2hash, 0664, int64(len(data2))),

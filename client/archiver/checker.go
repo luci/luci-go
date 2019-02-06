@@ -16,6 +16,7 @@ package archiver
 
 import (
 	"context"
+	"crypto"
 	"fmt"
 	"log"
 	"sync"
@@ -32,14 +33,16 @@ import (
 type isolateService interface {
 	Contains(context.Context, []*service.HandlersEndpointsV1Digest) ([]*isolatedclient.PushState, error)
 	Push(context.Context, *isolatedclient.PushState, isolatedclient.Source) error
+	Hash() crypto.Hash
 }
 
 // A Checker checks whether items are available on the server.
 // It has a single implementation, *BundlingChecker. See BundlingChecker for method documentation.
 type Checker interface {
+	Close() error
 	AddItem(item *Item, isolated bool, callback CheckerCallback)
 	PresumeExists(item *Item)
-	Close() error
+	Hash() crypto.Hash
 }
 
 // CheckerCallback is the callback used by Checker to indicate whether a file is
@@ -111,8 +114,8 @@ func NewChecker(ctx context.Context, client *isolatedclient.Client, maxConcurren
 
 func newChecker(ctx context.Context, svc isolateService, maxConcurrent int) *BundlingChecker {
 	c := &BundlingChecker{
-		svc:             svc,
 		ctx:             ctx,
+		svc:             svc,
 		existingDigests: make(map[string]struct{}),
 		waitc:           make(chan struct{}, maxConcurrent),
 	}
@@ -149,6 +152,11 @@ func (c *BundlingChecker) PresumeExists(item *Item) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.existingDigests[string(item.Digest)] = struct{}{}
+}
+
+// Hash returns the hashing algorithm used by this checker.
+func (c *BundlingChecker) Hash() crypto.Hash {
+	return c.svc.Hash()
 }
 
 func (c *BundlingChecker) exists(item *Item) bool {

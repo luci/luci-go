@@ -17,6 +17,8 @@ package isolated
 import (
 	"bytes"
 	"io/ioutil"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -121,5 +123,13 @@ func TestHexDigestInvalid(t *testing.T) {
 		if line.v.Validate(GetHash(line.namespace)) {
 			t.Fatalf("#%d: expected failure: %v", i, line)
 		}
+	}
+}
+
+func TestHexDigests(t *testing.T) {
+	v := HexDigests{"a", "c", "b", "d"}
+	sort.Sort(v)
+	if !reflect.DeepEqual(v, HexDigests{"a", "b", "c", "d"}) {
+		t.Fatal("sort failed")
 	}
 }

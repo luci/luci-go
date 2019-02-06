@@ -63,7 +63,8 @@ func mkIsolated(c context.Context, params *sv1.Parameters, prevFile, descFile *i
 		"${DM.HOST}", info.DefaultVersionHostname(c),
 	)
 
-	iso := isolated.New()
+	h := isolated.GetHash(isolatedclient.DefaultNamespace)
+	iso := isolated.New(h)
 	iso.Command = make([]string, len(params.Job.Command))
 	for i, tok := range params.Job.Command {
 		iso.Command[i] = cmdReplacer.Replace(tok)
