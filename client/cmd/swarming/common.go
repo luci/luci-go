@@ -53,10 +53,10 @@ var swarmingAPISuffix = "/_ah/api/swarming/v1/"
 // swarmingService is an interface intended to stub out the swarming API
 // bindings for testing.
 type swarmingService interface {
-	NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
-	GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
-	GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
-	GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
+	GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
+	GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
+	GetTaskOutputs(ctx context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error)
 }
 
 type swarmingServiceImpl struct {
@@ -66,31 +66,31 @@ type swarmingServiceImpl struct {
 	worker int
 }
 
-func (s *swarmingServiceImpl) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
-	err = retryGoogleRPC(c, "NewTask", func() (ierr error) {
-		res, ierr = s.Service.Tasks.New(req).Context(c).Do()
+func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
+	err = retryGoogleRPC(ctx, "NewTask", func() (ierr error) {
+		res, ierr = s.Service.Tasks.New(req).Context(ctx).Do()
 		return
 	})
 	return
 }
 
-func (s *swarmingServiceImpl) GetTaskResult(c context.Context, taskID string, perf bool) (res *swarming.SwarmingRpcsTaskResult, err error) {
-	err = retryGoogleRPC(c, "GetTaskResult", func() (ierr error) {
-		res, ierr = s.Service.Task.Result(taskID).IncludePerformanceStats(perf).Context(c).Do()
+func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string, perf bool) (res *swarming.SwarmingRpcsTaskResult, err error) {
+	err = retryGoogleRPC(ctx, "GetTaskResult", func() (ierr error) {
+		res, ierr = s.Service.Task.Result(taskID).IncludePerformanceStats(perf).Context(ctx).Do()
 		return
 	})
 	return
 }
 
-func (s *swarmingServiceImpl) GetTaskOutput(c context.Context, taskID string) (res *swarming.SwarmingRpcsTaskOutput, err error) {
-	err = retryGoogleRPC(c, "GetTaskOutput", func() (ierr error) {
-		res, ierr = s.Service.Task.Stdout(taskID).Context(c).Do()
+func (s *swarmingServiceImpl) GetTaskOutput(ctx context.Context, taskID string) (res *swarming.SwarmingRpcsTaskOutput, err error) {
+	err = retryGoogleRPC(ctx, "GetTaskOutput", func() (ierr error) {
+		res, ierr = s.Service.Task.Stdout(taskID).Context(ctx).Do()
 		return
 	})
 	return
 }
 
-func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 	// Create a task-id-based subdirectory to house the outputs.
 	dir := filepath.Join(filepath.Clean(outputDir), taskID)
 	if err := os.Mkdir(dir, os.ModePerm); err != nil {
@@ -100,15 +100,16 @@ func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDi
 
 	var filesMu sync.Mutex
 	var files []string
-	dl := downloader.New(c, isolatedClient, isolated.HexDigest(ref.Isolated), dir, &downloader.Options{
+	ctx = common.CancelOnCtrlC(ctx)
+	opts := &downloader.Options{
 		MaxConcurrentJobs: s.worker,
 		FileCallback: func(name string, _ *isolated.File) {
 			filesMu.Lock()
 			files = append(files, name)
 			filesMu.Unlock()
 		},
-	})
-	common.CancelOnCtrlC(dl)
+	}
+	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(ref.Isolated), dir, opts)
 	return files, dl.Wait()
 }
 
