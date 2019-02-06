@@ -48,6 +48,14 @@ var (
 
 // Well-known Google proto packages -> go packages they are implemented in.
 var googlePackages = map[string]string{
+	"google/type/color.proto":          "google.golang.org/genproto/googleapis/type/color",
+	"google/type/date.proto":           "google.golang.org/genproto/googleapis/type/date",
+	"google/type/dayofweek.proto":      "google.golang.org/genproto/googleapis/type/dayofweek",
+	"google/type/latlng.proto":         "google.golang.org/genproto/googleapis/type/latlng",
+	"google/type/money.proto":          "google.golang.org/genproto/googleapis/type/money",
+	"google/type/postal_address.proto": "google.golang.org/genproto/googleapis/type/postaladdress",
+	"google/type/timeofday.proto":      "google.golang.org/genproto/googleapis/type/timeofday",
+
 	"google/protobuf/any.proto":        "github.com/golang/protobuf/ptypes/any",
 	"google/protobuf/descriptor.proto": "github.com/golang/protobuf/protoc-gen-go/descriptor",
 	"google/protobuf/duration.proto":   "github.com/golang/protobuf/ptypes/duration",
