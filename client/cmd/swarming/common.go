@@ -93,6 +93,14 @@ func (s *swarmingServiceImpl) GetTaskOutput(c context.Context, taskID string) (r
 func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 	// Create a task-id-based subdirectory to house the outputs.
 	dir := filepath.Join(filepath.Clean(outputDir), taskID)
+
+	// This function can be retried when the RPC returned an HTTP 500. In this case,
+	// the directory will already exist and may contain partial results. Take no chance
+	// and restart from scratch.
+	if err := os.RemoveAll(dir); err != nil {
+		return nil, errors.Annotate(err, "failed to remove directory: %s", dir).Err()
+	}
+
 	if err := os.Mkdir(dir, os.ModePerm); err != nil {
 		return nil, err
 	}
