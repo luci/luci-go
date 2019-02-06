@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/isolatedclient"
-	"go.chromium.org/luci/common/logging/gologger"
 )
 
 type commonFlags struct {
@@ -53,9 +52,8 @@ func (c *commonFlags) Parse() error {
 	return err
 }
 
-func (c *commonFlags) createAuthClient() (*http.Client, error) {
+func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error) {
 	// Don't enforce authentication by using OptionalLogin mode. This is needed
 	// for IP whitelisted bots: they have NO credentials to send.
-	ctx := gologger.StdConfig.Use(context.Background())
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
