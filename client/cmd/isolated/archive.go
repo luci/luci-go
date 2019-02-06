@@ -122,7 +122,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 		defer dumpIsolated.Close()
 		opts.LeakIsolated = dumpIsolated
 	}
-	item := isolated.Archive(ctx, arch, &opts)
+	item := isolated.Archive(ctx, arch, &opts, c.isolatedFlags.Namespace)
 	if err = item.Error(); err != nil {
 		return
 	}

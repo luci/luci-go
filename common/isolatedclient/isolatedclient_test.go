@@ -84,24 +84,26 @@ func TestIsolateServerUploadLarge(t *testing.T) {
 }
 
 func TestIsolateServerDownloadRetryGCSPartial(t *testing.T) {
-	ctx := context.Background()
-
 	// GCS download is teared down in the middle.
 	t.Parallel()
 	Convey(``, t, func() {
-		server := isolatedfake.New()
-		namespace := DefaultNamespace
-		largeHash := server.Inject(namespace, large)
-		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/download": 1024}}
-		flaky.ts = httptest.NewServer(flaky)
-		defer flaky.ts.Close()
-		client := New(nil, nil, flaky.ts.URL, namespace, fastRetry, nil)
+		for _, namespace := range []string{"default", "default-gzip", "sha256-foo", "sha512-foo"} {
+			Convey(namespace, func() {
+				server := isolatedfake.New()
+				largeHash := server.Inject(namespace, large)
+				flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/download": 1024}}
+				flaky.ts = httptest.NewServer(flaky)
+				defer flaky.ts.Close()
+				client := New(nil, nil, flaky.ts.URL, namespace, fastRetry, nil)
 
-		var buffer bytes.Buffer
-		So(client.Fetch(ctx, largeHash, &buffer), ShouldBeNil)
-		So(server.Error(), ShouldBeNil)
-		So(buffer.Bytes(), ShouldResemble, large)
-		So(flaky.tearDown, ShouldResemble, map[string]int{})
+				var buffer bytes.Buffer
+				So(client.Fetch(context.Background(), largeHash, &buffer), ShouldBeNil)
+				So(server.Error(), ShouldBeNil)
+				So(buffer.Bytes(), ShouldResemble, large)
+				So(flaky.tearDown, ShouldResemble, map[string]int{})
+				So(client.Hash(), ShouldEqual, isolated.GetHash(namespace))
+			})
+		}
 	})
 }
 
