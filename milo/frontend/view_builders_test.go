@@ -60,9 +60,14 @@ func TestGetBuilderHistories(t *testing.T) {
 
 		// Populate consoles.
 		err := datastore.Put(c, &common.Console{
-			Parent:   proj,
-			ID:       "console",
-			Builders: []string{"buildbot/master/b1", "buildbot/master/b2", "buildbot/master/b4"},
+			Parent: proj,
+			ID:     "console",
+			Builders: []string{
+				"buildbot/master/b1",
+				"buildbot/master/b2",
+				"buildbot/master/b4",
+				"buildbucket/bucket/b5",
+			},
 		})
 		So(err, ShouldBeNil)
 		err = datastore.Put(c, &common.Console{
@@ -71,19 +76,28 @@ func TestGetBuilderHistories(t *testing.T) {
 			Builders: []string{"buildbot/master/b4"},
 		})
 		So(err, ShouldBeNil)
+		err = datastore.Put(c, &model.BuilderSummary{
+			BuilderID: "buildbucket/bucket/b5",
+			ProjectID: "private",
+		})
+		So(err, ShouldBeNil)
 
 		// Populate builds.
 		var builds []*model.BuildSummary
-		addBuilds := func(builder string, pending int, statuses ...model.Status) {
+		addBuilds := func(builder, project string, pending int, is_luci bool, statuses ...model.Status) {
 			err = buildstore.PutPendingCount(c, "master", builder, pending)
 			So(err, ShouldBeNil)
 
+			buildPrefix := "buildbot/master/"
+			if is_luci {
+				buildPrefix = "buildbucket/bucket/"
+			}
 			for i, status := range statuses {
-				buildID := fmt.Sprintf("buildbot/master/%s/%d", builder, i)
+				buildID := fmt.Sprintf("%s%s/%d", buildPrefix, builder, i)
 				builds = append(builds, &model.BuildSummary{
 					BuildKey:  datastore.MakeKey(c, "build", buildID),
-					ProjectID: p,
-					BuilderID: "buildbot/master/" + builder,
+					ProjectID: project,
+					BuilderID: buildPrefix + builder,
 					BuildID:   buildID,
 					Created:   testclock.TestRecentTimeUTC.Add(time.Duration(len(builds)) * time.Hour),
 					Summary:   model.Summary{Status: status},
@@ -93,7 +107,7 @@ func TestGetBuilderHistories(t *testing.T) {
 
 		// One builder has lots of builds.
 		// Save number of pending builds.
-		addBuilds("b2", 2,
+		addBuilds("b2", p, 2, false,
 			model.Running,
 			model.Success,
 			model.Running,
@@ -101,9 +115,11 @@ func TestGetBuilderHistories(t *testing.T) {
 			model.Running,
 			model.InfraFailure)
 		// One builder is not on any project's consoles.
-		addBuilds("b3", 0, model.Success)
+		addBuilds("b3", p, 0, false, model.Success)
 		// One builder is on two consoles.
-		addBuilds("b4", 0, model.Success)
+		addBuilds("b4", p, 0, false, model.Success)
+		// One builder is on the console of a different project.
+		addBuilds("b5", "private", 0, true, model.Success)
 		err = datastore.Put(c, builds)
 		So(err, ShouldBeNil)
 
@@ -114,7 +130,7 @@ func TestGetBuilderHistories(t *testing.T) {
 					So(err, ShouldBeNil)
 					hists, err := getBuilderHistories(c, builders, p, 2)
 					So(err, ShouldBeNil)
-					So(hists, ShouldHaveLength, 3)
+					So(hists, ShouldHaveLength, 4)
 
 					So(hists[0], ShouldResemble, &builderHistory{
 						BuilderID:    "buildbot/master/b1",
@@ -138,6 +154,14 @@ func TestGetBuilderHistories(t *testing.T) {
 					So(b4Hist.NumRunning, ShouldEqual, 0)
 					So(b4Hist.RecentBuilds, ShouldHaveLength, 1)
 					So(b4Hist.RecentBuilds[0].BuildID, ShouldEqual, "buildbot/master/b4/0")
+
+					b5Hist := hists[3]
+					So(b5Hist.BuilderID, ShouldEqual, "buildbucket/bucket/b5")
+					So(b5Hist.BuilderLink, ShouldEqual, "/p/private/builders/bucket/b5")
+					So(b5Hist.NumPending, ShouldEqual, 0)
+					So(b5Hist.NumRunning, ShouldEqual, 0)
+					So(b5Hist.RecentBuilds, ShouldHaveLength, 1)
+					So(b5Hist.RecentBuilds[0].BuildID, ShouldEqual, "buildbucket/bucket/b5/0")
 				})
 
 				Convey("with limit greater than number of finished builds works", func() {
@@ -145,7 +169,7 @@ func TestGetBuilderHistories(t *testing.T) {
 					So(err, ShouldBeNil)
 					hists, err := getBuilderHistories(c, builders, p, 5)
 					So(err, ShouldBeNil)
-					So(hists, ShouldHaveLength, 3)
+					So(hists, ShouldHaveLength, 4)
 
 					So(hists[0], ShouldResemble, &builderHistory{
 						BuilderID:    "buildbot/master/b1",
