@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e9526adb_6144107c",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-02-06T21:48:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09b1a1d1_3c947423",
+      "range": {
+        "startLine": 231,
+        "startChar": 52,
+        "endLine": 231,
+        "endChar": 58
+      },
+      "revId": "55db5031d3f1b5f4a7652ac8926628f7caaa8464",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5c681ecd_cf611f0b",
         "filename": "milo/frontend/view_builders.go",
         "patchSetId": 7
@@ -39,6 +63,24 @@
       "revId": "55db5031d3f1b5f4a7652ac8926628f7caaa8464",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7bcdf93_3af469d8",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-02-06T21:48:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5c681ecd_cf611f0b",
+      "revId": "55db5031d3f1b5f4a7652ac8926628f7caaa8464",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
