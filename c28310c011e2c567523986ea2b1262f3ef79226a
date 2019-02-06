@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2010af7b_f2304817",
+        "filename": "client/archiver/directory_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-02-06T00:25:40Z",
+      "side": 1,
+      "message": "Improved comment. :)",
+      "parentUuid": "1346ebac_2a606d3c",
+      "range": {
+        "startLine": 87,
+        "startChar": 18,
+        "endLine": 87,
+        "endChar": 22
+      },
+      "revId": "c28310c011e2c567523986ea2b1262f3ef79226a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9bd4d3aa_d3e1f9e1",
         "filename": "common/isolated/algo.go",
         "patchSetId": 10
@@ -39,6 +63,24 @@
       "revId": "c28310c011e2c567523986ea2b1262f3ef79226a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a070c946_f528347e",
+        "filename": "common/isolated/algo.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-02-06T00:25:40Z",
+      "side": 1,
+      "message": "It\u0027s a habit I have where I use this to separate public code from private one, for the ones where public code is first and private is second.",
+      "parentUuid": "9bd4d3aa_d3e1f9e1",
+      "revId": "c28310c011e2c567523986ea2b1262f3ef79226a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
