@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "610e413b_6bad685d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-02-06T22:08:31Z",
+      "side": 1,
+      "message": "Agreed, this is better.",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 60
+      },
+      "revId": "7fa9e704759f3be459750e6fa491410f04889d99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8b07ea44_4093b3f0",
+        "filename": "common/isolated/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-02-06T22:08:31Z",
+      "side": 1,
+      "message": "So in the default case, if a different crypto.Hash is passed, then we\u0027ll create an Isolated with Algo set to \"\", how would this be handled? Would a default hash algo be used?",
+      "range": {
+        "startLine": 113,
+        "startChar": 0,
+        "endLine": 113,
+        "endChar": 2
+      },
+      "revId": "7fa9e704759f3be459750e6fa491410f04889d99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da19bfeb_e8082e48",
+        "filename": "common/isolated/isolated_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-02-06T22:08:31Z",
+      "side": 1,
+      "message": "Could also be three little test funcs, TestNewSHA1, TestNewSHA256, TestNewSHA512. Could also test the \"other\" case, e.g. pass crypto.MD5 or crypto.SHA224.",
+      "revId": "7fa9e704759f3be459750e6fa491410f04889d99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9090474_aa787c25",
+        "filename": "common/isolatedclient/isolatedclient_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-02-06T22:08:31Z",
+      "side": 1,
+      "message": "General question, if namespace ends with something other than -gzip or -deflate, this is accepted and just means \"not compresed\", right?",
+      "range": {
+        "startLine": 90,
+        "startChar": 72,
+        "endLine": 90,
+        "endChar": 75
+      },
+      "revId": "7fa9e704759f3be459750e6fa491410f04889d99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
