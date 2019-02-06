@@ -148,7 +148,6 @@ func Archive(arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingIte
 	defer tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":archive", nil)(nil)
 	f, err := archive(arch, opts, displayName)
 	if err != nil {
-		arch.Cancel(err)
 		i := &archiver.PendingItem{DisplayName: displayName}
 		i.SetErr(err)
 		return i

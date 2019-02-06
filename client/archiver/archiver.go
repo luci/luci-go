@@ -123,9 +123,10 @@ func (s *Stats) deepCopy() *Stats {
 // ctx will be used for logging.
 func New(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver {
 	// TODO(maruel): Cache hashes and server cache presence.
+	ctx2, cancel := context.WithCancel(common.CancelOnCtrlC(ctx))
 	a := &Archiver{
-		ctx:                   ctx,
-		canceler:              common.NewCanceler(),
+		ctx:                   ctx2,
+		cancel:                cancel,
 		progress:              progress.New(headers, out),
 		c:                     c,
 		maxConcurrentHash:     5,
@@ -313,6 +314,7 @@ func (i *PendingItem) link(child *PendingItem) {
 type Archiver struct {
 	// Immutable.
 	ctx                   context.Context
+	cancel                func()
 	c                     *isolatedclient.Client
 	maxConcurrentHash     int           // Stage 2; Disk I/O bound.
 	maxConcurrentContains int           // Stage 3; Server overload due to parallelism (DDoS).
@@ -325,7 +327,6 @@ type Archiver struct {
 	stage3LookupChan      chan *PendingItem
 	stage4UploadChan      chan *PendingItem
 	wg                    sync.WaitGroup
-	canceler              common.Canceler
 	progress              progress.Progress
 
 	// Mutable.
@@ -352,26 +353,12 @@ func (a *Archiver) Close() error {
 	}
 	a.wg.Wait()
 	_ = a.progress.Close()
-	_ = a.canceler.Close()
-	err := a.CancelationReason()
 	tracer.Instant(a, "done", tracer.Global, nil)
+	err := a.ctx.Err()
+	// Documentation says that not calling cancel() could cause a leak, so call
+	// it, but not before taking the context's error, if any.
+	a.cancel()
 	return err
-}
-
-// Cancel implements common.Canceler
-func (a *Archiver) Cancel(reason error) {
-	tracer.Instant(a, "cancel", tracer.Thread, tracer.Args{"reason": reason})
-	a.canceler.Cancel(reason)
-}
-
-// CancelationReason implements common.Canceler
-func (a *Archiver) CancelationReason() error {
-	return a.canceler.CancelationReason()
-}
-
-// Channel implements common.Canceler
-func (a *Archiver) Channel() <-chan error {
-	return a.canceler.Channel()
 }
 
 // Push schedules item upload to the isolate server. Smaller priority value
@@ -452,7 +439,7 @@ func (a *Archiver) stage1DedupeLoop() {
 
 		// This loop must never block and must be as fast as it can as it is
 		// functionally equivalent to running with a.closeLock held.
-		if err := a.CancelationReason(); err != nil {
+		if err := a.ctx.Err(); err != nil {
 			item.SetErr(err)
 			item.done()
 			item.wgHashed.Done()
@@ -475,10 +462,10 @@ func (a *Archiver) stage1DedupeLoop() {
 
 	// Take care of the build up after the channel closed.
 	for _, item := range buildUp {
-		if err := a.CancelationReason(); err != nil {
+		if err := a.ctx.Err(); err != nil {
 			item.SetErr(err)
-			item.wgHashed.Done()
 			item.done()
+			item.wgHashed.Done()
 		} else {
 			// The Archiver is being closed, this has to happen synchronously.
 			a.stage2HashChan <- item
@@ -489,7 +476,7 @@ func (a *Archiver) stage1DedupeLoop() {
 
 func (a *Archiver) stage2HashLoop() {
 	defer close(a.stage3LookupChan)
-	pool := common.NewGoroutinePriorityPool(a.maxConcurrentHash, a.canceler)
+	pool := common.NewGoroutinePriorityPool(a.ctx, a.maxConcurrentHash)
 	defer func() {
 		_ = pool.Wait()
 	}()
@@ -505,7 +492,9 @@ func (a *Archiver) stage2HashLoop() {
 			end := tracer.Span(a, "hash", tracer.Args{"name": item.DisplayName})
 			if err := item.calcDigest(); err != nil {
 				end(tracer.Args{"err": err})
-				a.Cancel(err)
+				// When an error occurs, early exit the process.
+				a.cancel()
+				item.SetErr(err)
 				item.done()
 				return
 			}
@@ -516,16 +505,16 @@ func (a *Archiver) stage2HashLoop() {
 			a.progress.Update(groupLookup, groupLookupTodo, 1)
 			a.stage3LookupChan <- item
 		}, func() {
-			item.SetErr(a.CancelationReason())
-			item.wgHashed.Done()
+			item.SetErr(a.ctx.Err())
 			item.done()
+			item.wgHashed.Done()
 		})
 	}
 }
 
 func (a *Archiver) stage3LookupLoop() {
 	defer close(a.stage4UploadChan)
-	pool := common.NewGoroutinePool(a.maxConcurrentContains, a.canceler)
+	pool := common.NewGoroutinePool(a.ctx, a.maxConcurrentContains)
 	defer func() {
 		_ = pool.Wait()
 	}()
@@ -571,7 +560,7 @@ func (a *Archiver) stage3LookupLoop() {
 }
 
 func (a *Archiver) stage4UploadLoop() {
-	pool := common.NewGoroutinePriorityPool(a.maxConcurrentUpload, a.canceler)
+	pool := common.NewGoroutinePriorityPool(a.ctx, a.maxConcurrentUpload)
 	defer func() {
 		_ = pool.Wait()
 	}()
@@ -602,9 +591,11 @@ func (a *Archiver) doContains(items []*PendingItem) {
 	states, err := a.c.Contains(emptyBackgroundContext, tmp)
 	if err != nil {
 		err = fmt.Errorf("contains(%d) failed: %s", len(items), err)
-		a.Cancel(err)
+		// When an error occurs, early exit the process.
+		a.cancel()
 		for _, item := range items {
 			item.SetErr(err)
+			item.done()
 		}
 		return
 	}
@@ -631,12 +622,14 @@ func (a *Archiver) doUpload(item *PendingItem) {
 	start := time.Now()
 	if err := a.c.Push(emptyBackgroundContext, item.state, item.source); err != nil {
 		err = fmt.Errorf("push(%s) failed: %s", item.path, err)
-		a.Cancel(err)
+		// When an error occurs, early exit the process.
+		a.cancel()
 		item.SetErr(err)
-	} else {
-		a.progress.Update(groupUpload, groupUploadDone, 1)
-		a.progress.Update(groupUpload, groupUploadDoneSize, item.digestItem.Size)
+		item.done()
+		return
 	}
+	a.progress.Update(groupUpload, groupUploadDone, 1)
+	a.progress.Update(groupUpload, groupUploadDoneSize, item.digestItem.Size)
 	item.done()
 	size := units.Size(item.digestItem.Size)
 	u := &UploadStat{time.Since(start), size, item.DisplayName}
