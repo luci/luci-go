@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09b1a1d1_3c947423",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-06T21:32:19Z",
+      "side": 1,
+      "message": "this does not distinguish transient errors and \"not found\", which means sometimes the link may be wrong.\n\nIdeally we cover 3 cases (with a switch): 1) found 2) not found 3) unexpected error, in which case we return it",
+      "range": {
+        "startLine": 231,
+        "startChar": 52,
+        "endLine": 231,
+        "endChar": 58
+      },
+      "revId": "55db5031d3f1b5f4a7652ac8926628f7caaa8464",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c681ecd_cf611f0b",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-06T21:32:19Z",
+      "side": 1,
+      "message": "BuiilderLink is not used in inner-functions below, so let\u0027s place this RPC into \"a fetch\" func too, like the code below does",
+      "revId": "55db5031d3f1b5f4a7652ac8926628f7caaa8464",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
