@@ -15,7 +15,7 @@
 package common
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -25,7 +25,9 @@ import (
 )
 
 func ExampleNewGoroutinePool() {
-	pool := NewGoroutinePool(2, NewCanceler())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	pool := NewGoroutinePool(ctx, 2)
 	for _, s := range []string{"knock!", "knock!"} {
 		s := s // Create a new s for closure.
 		pool.Schedule(func() { fmt.Print(s) }, nil)
@@ -33,23 +35,28 @@ func ExampleNewGoroutinePool() {
 	if pool.Wait() == nil {
 		fmt.Printf("\n")
 	}
-	pool.Cancel(errors.New("pool is no more"))
+	cancel()
 	pool.Schedule(func() {}, func() {
-		fmt.Printf("canceled because %s\n", pool.CancelationReason())
+		fmt.Printf("canceled because %s\n", ctx.Err())
 	})
 	err := pool.Wait()
 	fmt.Printf("all jobs either executed or canceled (%s)\n", err)
 	// Output:
 	// knock!knock!
-	// canceled because pool is no more
-	// all jobs either executed or canceled (pool is no more)
+	// canceled because context canceled
+	// all jobs either executed or canceled (context canceled)
 }
 
-type newPoolFunc func(p int) GoroutinePool
+type goroutinePool interface {
+	Schedule(job, onCanceled func())
+	Wait() error
+}
+
+type newPoolFunc func(ctx context.Context, p int) goroutinePool
 
 func TestGoroutinePool(t *testing.T) {
-	testGoroutinePool(t, func(p int) GoroutinePool {
-		return NewGoroutinePool(p, NewCanceler())
+	testGoroutinePool(t, func(ctx context.Context, p int) goroutinePool {
+		return NewGoroutinePool(ctx, p)
 	})
 }
 
@@ -59,7 +66,7 @@ func testGoroutinePool(t *testing.T, newPool newPoolFunc) {
 
 		const MAX = 10
 		const J = 200
-		pool := newPool(MAX)
+		pool := newPool(context.Background(), MAX)
 		logs := make(chan int)
 		for i := 1; i <= J; i++ {
 			i := i
@@ -94,25 +101,25 @@ func testGoroutinePool(t *testing.T, newPool newPoolFunc) {
 }
 
 func TestGoroutinePoolCancel(t *testing.T) {
-	testGoroutinePoolCancel(t, func(p int) GoroutinePool {
-		return NewGoroutinePool(p, NewCanceler())
+	testGoroutinePoolCancel(t, func(ctx context.Context, p int) goroutinePool {
+		return NewGoroutinePool(ctx, p)
 	})
 }
 
 func testGoroutinePoolCancel(t *testing.T, newPool newPoolFunc) {
 	t.Parallel()
 	Convey(`A goroutine pool should handle a cancel request.`, t, func() {
-
-		cancelError := errors.New("cancelError")
 		const MAX = 10
 		const J = 11 * MAX
-		pool := newPool(MAX)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		pool := newPool(ctx, MAX)
 		logs := make(chan int, 2*J) // Avoid job blocking when writing to log.
 		for i := 1; i <= J; i++ {
 			i := i
 			pool.Schedule(func() {
 				if i == 1 {
-					pool.Cancel(cancelError)
+					cancel()
 				}
 				logs <- i
 			}, func() {
@@ -164,22 +171,20 @@ func testGoroutinePoolCancel(t *testing.T, newPool newPoolFunc) {
 			So(finishedAfter, ShouldBeLessThan, MAX)
 			So(canceled, ShouldBeGreaterThanOrEqualTo, J)
 		})
-		So(wait1, ShouldResemble, cancelError)
-		So(wait2, ShouldResemble, cancelError)
+		So(wait1, ShouldResemble, context.Canceled)
+		So(wait2, ShouldResemble, context.Canceled)
 	})
 }
 
 func TestGoroutinePoolCancelFuncCalled(t *testing.T) {
-	testGoroutinePoolCancelFuncCalled(t, func(p int) GoroutinePool {
-		return NewGoroutinePool(p, NewCanceler())
+	testGoroutinePoolCancelFuncCalled(t, func(ctx context.Context, p int) goroutinePool {
+		return NewGoroutinePool(ctx, p)
 	})
 }
 
 func testGoroutinePoolCancelFuncCalled(t *testing.T, newPool newPoolFunc) {
 	t.Parallel()
 	Convey(`A goroutine pool should handle an onCancel call.`, t, func() {
-
-		cancelError := errors.New("cancelError")
 		// Simulate deterministically when the semaphore returs immediately
 		// because of cancelation, as opposed to actually having a resource.
 		pipe := make(chan string, 2)
@@ -189,17 +194,19 @@ func testGoroutinePoolCancelFuncCalled(t *testing.T, newPool newPoolFunc) {
 			item := <-pipe
 			logs <- item
 		}
-		pool := newPool(1)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		pool := newPool(ctx, 1)
 		pool.Schedule(slow, slow)
 		// This job would have to wait for slow to finish,
 		// but slow is waiting for channel to have something.
 		// This is sort of a deadlock.
 		pool.Schedule(func() { pipe <- "job" }, func() { pipe <- "onCancel" })
-		pool.Cancel(cancelError)
+		cancel()
 		// Canceling should result in onCancel of last job.
 		// In case it's a bug, don't wait forever for slow, but unblock slow().
 		pipe <- "unblock"
-		So(pool.Wait(), ShouldResemble, cancelError)
+		So(pool.Wait(), ShouldResemble, context.Canceled)
 		close(pipe)
 		if pipeItem, ok := <-pipe; ok {
 			logs <- pipeItem
@@ -216,7 +223,7 @@ func testGoroutinePoolCancelFuncCalled(t *testing.T, newPool newPoolFunc) {
 
 // Purpose: re-use GoroutinePool tests for GoroutinePriorityPool.
 type goroutinePriorityPoolforTest struct {
-	GoroutinePriorityPool
+	*GoroutinePriorityPool
 }
 
 func (c *goroutinePriorityPoolforTest) Schedule(job func(), onCanceled func()) {
@@ -224,20 +231,20 @@ func (c *goroutinePriorityPoolforTest) Schedule(job func(), onCanceled func()) {
 }
 
 func TestGoroutinePriorityPool(t *testing.T) {
-	testGoroutinePool(t, func(p int) GoroutinePool {
-		return &goroutinePriorityPoolforTest{NewGoroutinePriorityPool(p, NewCanceler())}
+	testGoroutinePool(t, func(ctx context.Context, p int) goroutinePool {
+		return &goroutinePriorityPoolforTest{NewGoroutinePriorityPool(ctx, p)}
 	})
 }
 
 func TestGoroutinePriorityPoolCancel(t *testing.T) {
-	testGoroutinePoolCancel(t, func(p int) GoroutinePool {
-		return &goroutinePriorityPoolforTest{NewGoroutinePriorityPool(p, NewCanceler())}
+	testGoroutinePoolCancel(t, func(ctx context.Context, p int) goroutinePool {
+		return &goroutinePriorityPoolforTest{NewGoroutinePriorityPool(ctx, p)}
 	})
 }
 
 func TestGoroutinePriorityPoolCancelFuncCalled(t *testing.T) {
-	testGoroutinePoolCancelFuncCalled(t, func(p int) GoroutinePool {
-		return &goroutinePriorityPoolforTest{NewGoroutinePriorityPool(p, NewCanceler())}
+	testGoroutinePoolCancelFuncCalled(t, func(ctx context.Context, p int) goroutinePool {
+		return &goroutinePriorityPoolforTest{NewGoroutinePriorityPool(ctx, p)}
 	})
 }
 
@@ -246,7 +253,7 @@ func TestGoroutinePriorityPoolWithPriority(t *testing.T) {
 	Convey(`A goroutine pool should execute high priority jobs first.`, t, func(ctx C) {
 
 		const maxPriorities = 15
-		pool := NewGoroutinePriorityPool(1, NewCanceler())
+		pool := NewGoroutinePriorityPool(context.Background(), 1)
 		logs := make(chan int)
 		wg := sync.WaitGroup{}
 		for i := 0; i < maxPriorities; i++ {
@@ -280,102 +287,5 @@ func TestGoroutinePriorityPoolWithPriority(t *testing.T) {
 		for _, d := range doneJobs {
 			So(d, ShouldBeTrue)
 		}
-	})
-}
-
-func assertClosed(t *testing.T, c *canceler) {
-	Convey(`A goroutine pool should close channels when cleaning up`, func() {
-		// Both channels are unbuffered, so there should be at most one value.
-		<-c.channel
-		select {
-		case _, ok := <-c.channel:
-			So(ok, ShouldBeFalse)
-		default:
-			t.Fatalf("channel is not closed")
-		}
-
-		<-c.closeChannel
-		select {
-		case _, ok := <-c.closeChannel:
-			So(ok, ShouldBeFalse)
-		default:
-			t.Fatalf("channel is not closed")
-		}
-	})
-}
-
-func TestCancelable(t *testing.T) {
-	t.Parallel()
-	Convey(`A goroutine canceler clean up after a cancel.`, t, func(ctx C) {
-		c := newCanceler()
-		So(c.CancelationReason(), ShouldBeNil)
-		select {
-		case <-c.Channel():
-			t.FailNow()
-		default:
-		}
-
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			select {
-			case err, isCanceled := <-c.Channel():
-				ctx.So(isCanceled, ShouldBeTrue)
-				ctx.So(err, ShouldResemble, ErrCanceled)
-			}
-		}()
-		c.Cancel(nil)
-		So(c.CancelationReason(), ShouldResemble, ErrCanceled)
-		t.Log("waiting for goroutine above to end.")
-		wg.Wait()
-		So(c.Close(), ShouldBeNil)
-		assertClosed(t, c)
-	})
-}
-
-func TestCancelableDoubleCancel(t *testing.T) {
-	t.Parallel()
-	Convey(`A goroutine canceler should handle multiple calls.`, t, func() {
-		errReason := errors.New("reason")
-		errWhatever := errors.New("whatever")
-		c := newCanceler()
-		c.Cancel(errReason)
-		So(c.CancelationReason(), ShouldResemble, errReason)
-		c.Cancel(errWhatever)
-		So(c.CancelationReason(), ShouldResemble, errReason)
-		So(c.Close(), ShouldBeNil)
-	})
-}
-
-func TestCancelableDoubleCloseAndCancel(t *testing.T) {
-	t.Parallel()
-	Convey(`A goroutine canceler should handle multiple closes and cancels.`, t, func() {
-		errReason := errors.New("reason")
-		c := newCanceler()
-		So(c.Close(), ShouldBeNil)
-		So(c.Close(), ShouldBeNil)
-		c.Cancel(errReason)
-		So(c.CancelationReason(), ShouldResemble, errReason)
-	})
-}
-
-func TestCancelableUnblockAfterClosed(t *testing.T) {
-	t.Parallel()
-	Convey(`A goroutine canceler should clean up when closed.`, t, func(ctx C) {
-		c := newCanceler()
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			select {
-			case _, stillOpen := <-c.Channel():
-				ctx.So(stillOpen, ShouldBeFalse)
-			}
-		}()
-		So(c.Close(), ShouldBeNil)
-		t.Log("waiting for goroutine above to end.")
-		wg.Wait()
-		assertClosed(t, c)
 	})
 }

@@ -77,7 +77,7 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 		return err
 	}
 	client := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
-	ctx := context.Background()
+	ctx := common.CancelOnCtrlC(context.Background())
 	var filesMu sync.Mutex
 	var files []string
 	dl := downloader.New(ctx, client, isolated.HexDigest(c.isolated), c.outputDir, &downloader.Options{
@@ -87,7 +87,6 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 			filesMu.Unlock()
 		},
 	})
-	common.CancelOnCtrlC(dl)
 	if err := dl.Wait(); err != nil {
 		return errors.Annotate(err, "failed to call FetchIsolated()").Err()
 	}
