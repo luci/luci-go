@@ -46,6 +46,30 @@
       "revId": "281d3b60d5d1020a83ac299d69973a028442525c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82c90adc_d6692f88",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-02-06T21:45:10Z",
+      "side": 1,
+      "message": "Ok, fair enough, what saves here is that dir is not outputDir, but it includes the task id. I\u0027d prefer the comment to be expanded:\n\n  // This function can be retried when the RPC returned an HTTP 500. In this case,\n  // the directory will already exist and may contain partial results. Take no chance\n  // and restart from scratch.",
+      "parentUuid": "d56857e0_12dbeab9",
+      "range": {
+        "startLine": 97,
+        "startChar": 31,
+        "endLine": 97,
+        "endChar": 39
+      },
+      "revId": "281d3b60d5d1020a83ac299d69973a028442525c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
