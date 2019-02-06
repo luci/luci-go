@@ -87,7 +87,7 @@ func ReadConfigSet(dir string) (ConfigSet, error) {
 		if err != nil || !info.Mode().IsRegular() {
 			return err
 		}
-		content, err := ioutil.ReadFile(p)
+		content, err := ioutil.ReadFile(p) // I am modifying this line which gosec G304 would trigger for
 		if err != nil {
 			return err
 		}
