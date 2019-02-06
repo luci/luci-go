@@ -237,10 +237,9 @@ func TestArchive(t *testing.T) {
 // Test that if the isolate file is not found, the error is properly propagated.
 func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 
 	Convey(`The client should handle missing isolate files.`, t, func() {
-		a := archiver.New(ctx, isolatedclient.New(nil, nil, "http://unused", isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := archiver.New(context.Background(), isolatedclient.New(nil, nil, "http://unused", isolatedclient.DefaultNamespace, nil, nil), nil)
 		opts := &ArchiveOptions{
 			Isolate:  "/this-file-does-not-exist",
 			Isolated: "/this-file-doesnt-either",
@@ -249,8 +248,7 @@ func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 		item.WaitForHashed()
 		err := item.Error()
 		So(strings.HasPrefix(err.Error(), "open /this-file-does-not-exist: "), ShouldBeTrue)
-		closeErr := a.Close()
-		So(closeErr, ShouldNotBeNil)
-		So(strings.HasPrefix(closeErr.Error(), "open /this-file-does-not-exist: "), ShouldBeTrue)
+		// The archiver itself hasn't failed, it's Archive() that did.
+		So(a.Close(), ShouldBeNil)
 	})
 }

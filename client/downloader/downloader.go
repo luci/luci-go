@@ -40,11 +40,9 @@ import (
 //
 // Downloader provides functionality to download full isolated trees.
 type Downloader struct {
-	// TODO(iannucci,maruel): remove "Canceler" in favor of Context.Cancel().
-	common.Canceler
-
 	// Immutable variables.
-	ctx context.Context
+	ctx    context.Context
+	cancel func()
 
 	c         *isolatedclient.Client
 	rootHash  isolated.HexDigest
@@ -71,11 +69,7 @@ type Downloader struct {
 
 	// pool is a goroutine priority pool which manages jobs to download
 	// isolated trees and files.
-	//
-	// TODO(iannucci,maruel): migrate priority features into
-	// `go.chromium.org/luci/common/sync/parallel` and remove
-	// `go.chromium.org/luci/client/internal/common`
-	pool common.GoroutinePriorityPool
+	pool *common.GoroutinePriorityPool
 }
 
 // Options are some optional bits you can pass to New.
@@ -150,9 +144,10 @@ func New(ctx context.Context, c *isolatedclient.Client, hash isolated.HexDigest,
 		interval = opt.MaxFileStatsInterval
 	}
 
+	ctx2, cancel := context.WithCancel(ctx)
 	ret := &Downloader{
-		Canceler:  common.NewCanceler(),
-		ctx:       ctx,
+		ctx:       ctx2,
+		cancel:    cancel,
 		c:         c,
 		options:   opt,
 		interval:  interval,
@@ -173,12 +168,11 @@ func (d *Downloader) Start() {
 	}
 	d.started = true
 
-	d.pool = common.NewGoroutinePriorityPool(
-		d.options.MaxConcurrentJobs, d.Canceler)
+	d.pool = common.NewGoroutinePriorityPool(d.ctx, d.options.MaxConcurrentJobs)
 
 	if err := d.ensureDir(d.outputDir); err != nil {
 		d.addError(isolatedType, "<isolated setup>", err)
-		d.Canceler.Close()
+		d.cancel()
 		return
 	}
 
@@ -195,7 +189,6 @@ func (d *Downloader) Start() {
 func (d *Downloader) Wait() error {
 	d.Start()
 	_ = d.pool.Wait()
-	_ = d.Canceler.Close()
 	d.updateFileStats(func(s *FileStats) bool {
 		ret := d.finished == false
 		d.finished = true
@@ -410,7 +403,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 		}
 		d.completeFile(name, details)
 	}, func() {
-		d.addError(fileType, name, d.CancelationReason())
+		d.addError(fileType, name, d.ctx.Err())
 	})
 }
 
@@ -488,7 +481,7 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 		// Also issue a callback for the overall tarball.
 		d.completeFile(tarname, details)
 	}, func() {
-		d.addError(tarType, string(hash), d.CancelationReason())
+		d.addError(tarType, string(hash), d.ctx.Err())
 	})
 }
 
@@ -512,7 +505,7 @@ func (d *Downloader) scheduleIsolatedJob(hash isolated.HexDigest) {
 			d.processFile(name, details)
 		}
 	}, func() {
-		d.addError(isolatedType, string(hash), d.CancelationReason())
+		d.addError(isolatedType, string(hash), d.ctx.Err())
 	})
 }
 

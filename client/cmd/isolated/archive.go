@@ -95,6 +95,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 	isolatedClient := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
 	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+	ctx = common.CancelOnCtrlC(ctx)
 	arch := archiver.New(ctx, isolatedClient, out)
 	defer func() {
 		// This waits for all uploads.
@@ -103,7 +104,6 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 			return
 		}
 	}()
-	common.CancelOnCtrlC(arch)
 
 	opts := isolated.ArchiveOptions{
 		Files:     c.files,
