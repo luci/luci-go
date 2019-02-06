@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1346ebac_2a606d3c",
+        "filename": "client/archiver/directory_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-02-06T00:09:34Z",
+      "side": 1,
+      "message": "I\u0027m assuming you know where you want to move it to, so this is fine, although the todo could be explained a little.",
+      "range": {
+        "startLine": 87,
+        "startChar": 18,
+        "endLine": 87,
+        "endChar": 22
+      },
+      "revId": "c28310c011e2c567523986ea2b1262f3ef79226a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bd4d3aa_d3e1f9e1",
+        "filename": "common/isolated/algo.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-02-06T00:09:34Z",
+      "side": 1,
+      "message": "Remove (or add comment?)",
+      "revId": "c28310c011e2c567523986ea2b1262f3ef79226a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
