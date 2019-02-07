@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -133,8 +134,7 @@ func Run(templatePath string) {
 		bid := buildbucket.NewBuilderID(c.Params.ByName("bucket"), c.Params.ByName("builder"))
 		return BuilderHandler(c, buildsource.BuilderID(bid.String()))
 	}))
-	// TODO(nodir): delete this redirect and the chromium project assumption with it
-	r.GET("/buildbucket/:bucket/:builder", baseMW, movedPermanently("/p/chromium/builders/:bucket/:builder"))
+	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
 
 	// Buildbot
 	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
@@ -249,4 +249,14 @@ func redirect(pathTemplate string, status int) router.Handler {
 // TODO(nodir,iannucci): delete all usages.
 func movedPermanently(pathTemplate string) router.Handler {
 	return redirect(pathTemplate, http.StatusMovedPermanently)
+}
+
+func redirectFromProjectlessBuilder(c *router.Context) {
+	bucket := c.Params.ByName("bucket")
+	builder := c.Params.ByName("builder")
+
+	project, _ := bb.BucketNameToV2(bucket)
+	u := *c.Request.URL
+	u.Path = fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket, builder)
+	http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
 }
