@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3d96b399_a21007bb",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-02-07T17:40:03Z",
+      "side": 1,
+      "message": "Please inline this function.",
+      "revId": "4f3ab1248fdf875c3231f491169fda5d1d0c112b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
