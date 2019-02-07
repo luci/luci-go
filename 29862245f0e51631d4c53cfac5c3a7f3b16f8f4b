@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b3f3c6f5_74668936",
+        "filename": "common/bq/testdata/testmessage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002377
+      },
+      "writtenOn": "2019-02-07T19:25:17Z",
+      "side": 1,
+      "message": "Is there going to be a behavior difference between an anonymous and a named oneof? My original issue was with a named oneof.",
+      "revId": "29862245f0e51631d4c53cfac5c3a7f3b16f8f4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
