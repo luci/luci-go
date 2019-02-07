@@ -620,7 +620,7 @@ func init() {
 // * Make sure all consoles have either builder_view_only: true or manifest_name
 func validateProjectCfg(ctx *validation.Context, configSet, path string, content []byte) error {
 	proj := config.Project{}
-	if err := proto.UnmarshalText(string(content), &proj); err != nil {
+	if err := protoutil.UnmarshalTextML(string(content), &proj); err != nil {
 		ctx.Error(err)
 		return nil
 	}
@@ -687,7 +687,7 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 // * Make sure the config is able to be unmarshalled.
 func validateServiceCfg(ctx *validation.Context, configSet, path string, content []byte) error {
 	settings := config.Settings{}
-	if err := proto.UnmarshalText(string(content), &settings); err != nil {
+	if err := protoutil.UnmarshalTextML(string(content), &settings); err != nil {
 		ctx.Error(err)
 	}
 	gitacls.ValidateConfig(ctx, settings.SourceAcls)
