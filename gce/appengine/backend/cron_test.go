@@ -102,6 +102,44 @@ func TestCron(t *testing.T) {
 			})
 		})
 
+		Convey("expandConfigsAsync", func() {
+			Convey("none", func() {
+				err := expandConfigsAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("one", func() {
+				datastore.Put(c, &model.Config{
+					ID: "id",
+					Config: config.Config{
+						Amount: 1,
+						Attributes: &config.VM{
+							Project: "project",
+						},
+						Prefix: "prefix",
+					},
+				})
+				err := expandConfigsAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+
+			Convey("many", func() {
+				for i := 0; i < 100; i++ {
+					datastore.Put(c, &model.Config{
+						ID: fmt.Sprintf("id-%d", i),
+						Config: config.Config{
+							Amount: 1,
+						},
+					})
+				}
+				err := expandConfigsAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
+			})
+		})
+
 		Convey("manageBotsAsync", func() {
 			Convey("none", func() {
 				Convey("zero", func() {
@@ -128,44 +166,6 @@ func TestCron(t *testing.T) {
 				err := manageBotsAsync(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-			})
-		})
-
-		Convey("processConfigsAsync", func() {
-			Convey("none", func() {
-				err := processConfigsAsync(c)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
-			})
-
-			Convey("one", func() {
-				datastore.Put(c, &model.Config{
-					ID: "id",
-					Config: config.Config{
-						Amount: 1,
-						Attributes: &config.VM{
-							Project: "project",
-						},
-						Prefix: "prefix",
-					},
-				})
-				err := processConfigsAsync(c)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-			})
-
-			Convey("many", func() {
-				for i := 0; i < 100; i++ {
-					datastore.Put(c, &model.Config{
-						ID: fmt.Sprintf("id-%d", i),
-						Config: config.Config{
-							Amount: 1,
-						},
-					})
-				}
-				err := processConfigsAsync(c)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
 			})
 		})
 

@@ -139,32 +139,134 @@ func TestQueues(t *testing.T) {
 					err := drainVM(c, &tasks.DrainVM{})
 					So(err, ShouldErrLike, "ID is required")
 				})
+
+				Convey("config", func() {
+					datastore.Put(c, &model.VM{
+						ID: "id",
+					})
+					err := drainVM(c, &tasks.DrainVM{
+						Id: "id",
+					})
+					So(err, ShouldErrLike, "failed to fetch config")
+				})
 			})
 
 			Convey("valid", func() {
-				Convey("drained", func() {
-					datastore.Put(c, &model.VM{
-						ID:      "id-2",
-						Drained: false,
+				Convey("config", func() {
+					Convey("deleted", func() {
+						datastore.Put(c, &model.VM{
+							ID:     "id",
+							Config: "config",
+						})
+						err := drainVM(c, &tasks.DrainVM{
+							Id: "id",
+						})
+						So(err, ShouldBeNil)
+						v := &model.VM{
+							ID: "id",
+						}
+						datastore.Get(c, v)
+						So(v.Drained, ShouldBeTrue)
 					})
-					err := drainVM(c, &tasks.DrainVM{
-						Id: "id-2",
+
+					Convey("amount", func() {
+						Convey("unspecified", func() {
+							datastore.Put(c, &model.Config{
+								ID: "config",
+							})
+							datastore.Put(c, &model.VM{
+								ID:     "id",
+								Config: "config",
+							})
+							err := drainVM(c, &tasks.DrainVM{
+								Id: "id",
+							})
+							So(err, ShouldBeNil)
+							v := &model.VM{
+								ID: "id",
+							}
+							datastore.Get(c, v)
+							So(v.Drained, ShouldBeTrue)
+						})
+
+						Convey("matches", func() {
+							datastore.Put(c, &model.Config{
+								ID: "config",
+								Config: config.Config{
+									Amount: 2,
+								},
+							})
+							datastore.Put(c, &model.VM{
+								ID:     "id",
+								Config: "config",
+								Index:  2,
+							})
+							err := drainVM(c, &tasks.DrainVM{
+								Id: "id",
+							})
+							So(err, ShouldBeNil)
+							v := &model.VM{
+								ID: "id",
+							}
+							datastore.Get(c, v)
+							So(v.Drained, ShouldBeTrue)
+						})
+
+						Convey("exceeds", func() {
+							datastore.Put(c, &model.Config{
+								ID: "config",
+								Config: config.Config{
+									Amount: 1,
+								},
+							})
+							datastore.Put(c, &model.VM{
+								ID:     "id",
+								Config: "config",
+								Index:  2,
+							})
+							err := drainVM(c, &tasks.DrainVM{
+								Id: "id",
+							})
+							So(err, ShouldBeNil)
+							v := &model.VM{
+								ID: "id",
+							}
+							datastore.Get(c, v)
+							So(v.Drained, ShouldBeTrue)
+						})
+
+						Convey("active", func() {
+							datastore.Put(c, &model.Config{
+								ID: "config",
+								Config: config.Config{
+									Amount: 3,
+								},
+							})
+							datastore.Put(c, &model.VM{
+								ID:     "id",
+								Config: "config",
+								Index:  2,
+							})
+							err := drainVM(c, &tasks.DrainVM{
+								Id: "id",
+							})
+							So(err, ShouldBeNil)
+							v := &model.VM{
+								ID: "id",
+							}
+							datastore.Get(c, v)
+							So(v.Drained, ShouldBeFalse)
+						})
 					})
-					So(err, ShouldBeNil)
-					v := &model.VM{
-						ID: "id-2",
-					}
-					datastore.Get(c, v)
-					So(v.Drained, ShouldBeTrue)
 				})
 
-				Convey("non-existent", func() {
+				Convey("deleted", func() {
 					err := drainVM(c, &tasks.DrainVM{
-						Id: "id-2",
+						Id: "id",
 					})
 					So(err, ShouldBeNil)
 					err = datastore.Get(c, &model.VM{
-						ID: "id-2",
+						ID: "id",
 					})
 					So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 				})
@@ -278,22 +380,22 @@ func TestQueues(t *testing.T) {
 			})
 		})
 
-		Convey("processConfig", func() {
+		Convey("expandConfig", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {
-					err := processConfig(c, nil)
+					err := expandConfig(c, nil)
 					So(err, ShouldErrLike, "unexpected payload")
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
 				Convey("empty", func() {
-					err := processConfig(c, &tasks.ProcessConfig{})
+					err := expandConfig(c, &tasks.ExpandConfig{})
 					So(err, ShouldErrLike, "ID is required")
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
 				Convey("missing", func() {
-					err := processConfig(c, &tasks.ProcessConfig{
+					err := expandConfig(c, &tasks.ExpandConfig{
 						Id: "id",
 					})
 					So(err, ShouldErrLike, "failed to fetch config")
@@ -307,7 +409,7 @@ func TestQueues(t *testing.T) {
 						Id:     "id",
 						Config: &config.Config{},
 					})
-					err := processConfig(c, &tasks.ProcessConfig{
+					err := expandConfig(c, &tasks.ExpandConfig{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
@@ -321,37 +423,11 @@ func TestQueues(t *testing.T) {
 							Amount: 3,
 						},
 					})
-					err := processConfig(c, &tasks.ProcessConfig{
+					err := expandConfig(c, &tasks.ExpandConfig{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
-					task, ok := tqt.GetScheduledTasks()[2].Payload.(*tasks.EnsureVM)
-					So(ok, ShouldBeTrue)
-					So(task.Config, ShouldEqual, "id")
-					So(task.Index, ShouldEqual, 2)
-				})
-
-				Convey("drain", func() {
-					datastore.Put(c, &model.VM{
-						ID:     "id-2",
-						Config: "id",
-						Index:  2,
-					})
-					srv.Ensure(c, &config.EnsureRequest{
-						Id: "id",
-						Config: &config.Config{
-							Amount: 0,
-						},
-					})
-					err := processConfig(c, &tasks.ProcessConfig{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-					task, ok := tqt.GetScheduledTasks()[0].Payload.(*tasks.DrainVM)
-					So(ok, ShouldBeTrue)
-					So(task.Id, ShouldEqual, "id-2")
 				})
 			})
 		})
