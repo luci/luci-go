@@ -73,6 +73,7 @@ func TestSave(t *testing.T) {
 				Empty:    &empty.Empty{},
 				Empties:  []*empty.Empty{{}, {}},
 				Duration: ptypes.DurationProto(2*time.Second + 3*time.Millisecond),
+				OneOf:    &testdata.TestMessage_First{First: 1},
 			},
 			InsertID: "testid",
 		}
@@ -91,6 +92,7 @@ func TestSave(t *testing.T) {
 			"foo_repeated": []interface{}{"Y", "X"},
 			"struct":       `{"num":1,"str":"a"}`,
 			"duration":     2.003,
+			"first":        int32(1),
 		})
 	})
 

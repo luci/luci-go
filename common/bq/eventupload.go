@@ -46,8 +46,15 @@ var ID InsertIDGenerator
 // reflect.FieldByName is O(N) in the number of fields. To avoid using it in
 // mapFromMessage below, cache the field info for constant lookup.
 type fieldInfo struct {
-	structIndex       []int
-	*proto.Properties // embedded
+	*proto.Properties
+	structIndex []int
+	// oneOfFields maps a oneof struct type to its metadata.
+	oneOfFields map[reflect.Type]oneOfFieldInfo
+}
+
+type oneOfFieldInfo struct {
+	*proto.Properties
+	valueFieldIndex []int // index of the field within a oneof struct
 }
 
 var bqFields = map[reflect.Type][]fieldInfo{}
@@ -93,6 +100,8 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 	return m, r.InsertID, err
 }
 
+// mapFromMessage returns a {BQ Field name: BQ value} map.
+// path is a slice of Go field names leading to m.
 func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, error) {
 	sPtr := reflect.ValueOf(m)
 	switch {
@@ -116,9 +125,22 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 
 	var row map[string]bigquery.Value // keep it nil unless there are values
 	for _, fi := range infos {
+		var bqField string
 		var bqValue interface{}
 		path[len(path)-1] = fi.Name
-		if fi.Repeated {
+
+		switch {
+		case len(fi.oneOfFields) != 0:
+			val := s.FieldByIndex(fi.structIndex)
+			if val.IsNil() {
+				continue
+			}
+			structPtr := val.Elem()
+			oof := fi.oneOfFields[structPtr.Type()]
+			bqField = oof.OrigName
+			bqValue = structPtr.Elem().FieldByIndex(oof.valueFieldIndex).Interface()
+
+		case fi.Repeated:
 			f := s.FieldByIndex(fi.structIndex)
 			// init value only if there are elements
 			n := f.Len()
@@ -135,8 +157,11 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 					return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
 				}
 			}
+			bqField = fi.OrigName
 			bqValue = elems
-		} else {
+
+		default:
+			bqField = fi.OrigName
 			bqValue, err = getValue(s.FieldByIndex(fi.structIndex).Interface(), path, fi)
 			switch {
 			case err != nil:
@@ -150,7 +175,7 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 		if row == nil {
 			row = map[string]bigquery.Value{}
 		}
-		row[fi.OrigName] = bigquery.Value(bqValue)
+		row[bqField] = bigquery.Value(bqValue)
 	}
 	return row, nil
 }
@@ -173,19 +198,35 @@ func getFieldInfosLocked(t reflect.Type) ([]fieldInfo, error) {
 		return f, nil
 	}
 
-	props := proto.GetProperties(t).Prop
-	fields := make([]fieldInfo, 0, len(props))
-	for _, p := range props {
+	structProp := proto.GetProperties(t)
+
+	oneOfs := map[int]map[reflect.Type]oneOfFieldInfo{}
+	for _, of := range structProp.OneofTypes {
+		f, ok := of.Type.Elem().FieldByName(of.Prop.Name)
+		if !ok {
+			return nil, fmt.Errorf("field %q not found in %q", of.Prop.Name, of.Type)
+		}
+
+		typeMap := oneOfs[of.Field]
+		if typeMap == nil {
+			typeMap = map[reflect.Type]oneOfFieldInfo{}
+			oneOfs[of.Field] = typeMap
+		}
+		typeMap[of.Type] = oneOfFieldInfo{
+			Properties:      of.Prop,
+			valueFieldIndex: f.Index,
+		}
+	}
+
+	fields := make([]fieldInfo, 0, len(structProp.Prop))
+	for _, p := range structProp.Prop {
 		if strings.HasPrefix(p.Name, "XXX_") {
 			continue
 		}
 
 		f, ok := t.FieldByName(p.Name)
-		switch {
-		case !ok:
+		if !ok {
 			return nil, fmt.Errorf("field %q not found in %q", p.Name, t)
-		case p.OrigName == "":
-			return nil, fmt.Errorf("OrigName of field %q.%q is empty", t, p.Name)
 		}
 
 		ft := f.Type
@@ -207,7 +248,11 @@ func getFieldInfosLocked(t reflect.Type) ([]fieldInfo, error) {
 				}
 			}
 		}
-		fields = append(fields, fieldInfo{f.Index, p})
+		fields = append(fields, fieldInfo{
+			Properties:  p,
+			structIndex: f.Index,
+			oneOfFields: oneOfs[f.Index[0]],
+		})
 	}
 
 	bqFields[t] = fields
@@ -227,7 +272,7 @@ func getValue(value interface{}, path []string, fi fieldInfo) (interface{}, erro
 		}
 		value, err := ptypes.Duration(dpb)
 		if err != nil {
-			return nil, fmt.Errorf("tried to write an invalid duration for [%+v] for field %s", dpb, strings.Join(path, "."))
+			return nil, fmt.Errorf("tried to write an invalid duration for [%+v] for field %q", dpb, strings.Join(path, "."))
 		}
 		// Convert to FLOAT64.
 		return value.Seconds(), nil
@@ -237,7 +282,7 @@ func getValue(value interface{}, path []string, fi fieldInfo) (interface{}, erro
 		}
 		value, err := ptypes.Timestamp(tspb)
 		if err != nil {
-			return nil, fmt.Errorf("tried to write an invalid timestamp for [%+v] for field %s", tspb, strings.Join(path, "."))
+			return nil, fmt.Errorf("tried to write an invalid timestamp for [%+v] for field %q", tspb, strings.Join(path, "."))
 		}
 		return value, nil
 	} else if s, ok := value.(*structpb.Struct); ok {
