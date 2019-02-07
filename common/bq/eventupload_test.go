@@ -42,7 +42,7 @@ func TestMetric(t *testing.T) {
 }
 
 func TestSave(t *testing.T) {
-	Convey("TestSave", t, func() {
+	Convey("filled", t, func() {
 		recentTime := testclock.TestRecentTimeUTC
 		ts, err := ptypes.TimestampProto(recentTime)
 		So(err, ShouldBeNil)
@@ -91,6 +91,23 @@ func TestSave(t *testing.T) {
 			"foo_repeated": []interface{}{"Y", "X"},
 			"struct":       `{"num":1,"str":"a"}`,
 			"duration":     2.003,
+		})
+	})
+
+	Convey("empty", t, func() {
+		r := &Row{
+			Message:  &testdata.TestMessage{},
+			InsertID: "testid",
+		}
+		row, id, err := r.Save()
+		So(err, ShouldBeNil)
+		So(id, ShouldEqual, "testid")
+		So(row, ShouldResemble, map[string]bigquery.Value{
+			// only scalar proto fields
+			// because for them, proto3 does not distinguish empty and unset
+			// values.
+			"foo":  "X", // enums are always set
+			"name": "",  // in proto3, empty string and unset are indistinguishable
 		})
 	})
 }
