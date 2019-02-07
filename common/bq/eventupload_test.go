@@ -73,6 +73,9 @@ func TestSave(t *testing.T) {
 				Empty:    &empty.Empty{},
 				Empties:  []*empty.Empty{{}, {}},
 				Duration: ptypes.DurationProto(2*time.Second + 3*time.Millisecond),
+				OneOf: &testdata.TestMessage_First{First: &testdata.NestedTestMessage{
+					Name: "first",
+				}},
 			},
 			InsertID: "testid",
 		}
@@ -91,6 +94,7 @@ func TestSave(t *testing.T) {
 			"foo_repeated": []interface{}{"Y", "X"},
 			"struct":       `{"num":1,"str":"a"}`,
 			"duration":     2.003,
+			"first":        map[string]bigquery.Value{"name": "first"},
 		})
 	})
 

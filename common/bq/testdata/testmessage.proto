@@ -32,6 +32,11 @@ message TestMessage {
     google.protobuf.Empty empty = 8;
     repeated google.protobuf.Empty empties = 9;
     google.protobuf.Duration duration = 10;
+
+    oneof one_of {
+      NestedTestMessage first = 11;
+      NestedTestMessage second = 12;
+    }
 }
 
 message NestedTestMessage {
