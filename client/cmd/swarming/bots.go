@@ -18,12 +18,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"google.golang.org/api/googleapi"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
@@ -76,7 +78,8 @@ func (b *botsRun) Parse() error {
 }
 
 func (b *botsRun) main(a subcommands.Application) error {
-	client, err := b.createAuthClient()
+	ctx := common.CancelOnCtrlC(b.defaultFlags.MakeLoggingContext(os.Stderr))
+	client, err := b.createAuthClient(ctx)
 	if err != nil {
 		return err
 	}

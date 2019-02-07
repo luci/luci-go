@@ -62,10 +62,9 @@ type ArchiveOptions struct {
 // uploads it and its dependencies.
 //
 // Archive returns the digest of the composite isolated file.
-func Archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingItem {
-	item, err := archive(c, arch, opts)
+func Archive(ctx context.Context, arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingItem {
+	item, err := archive(ctx, arch, opts)
 	if err != nil {
-		arch.Cancel(err)
 		i := &archiver.PendingItem{DisplayName: opts.Isolated}
 		i.SetErr(err)
 		return i

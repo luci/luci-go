@@ -86,15 +86,15 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 func (c *archiveRun) main(a subcommands.Application, args []string) (err error) {
 	start := time.Now()
 	out := os.Stdout
+	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
 
 	var authClient *http.Client
-	authClient, err = c.createAuthClient()
+	authClient, err = c.createAuthClient(ctx)
 	if err != nil {
 		return
 	}
 	isolatedClient := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
-	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
 	arch := archiver.New(ctx, isolatedClient, out)
 	defer func() {
 		// This waits for all uploads.
@@ -103,7 +103,6 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 			return
 		}
 	}()
-	common.CancelOnCtrlC(arch)
 
 	opts := isolated.ArchiveOptions{
 		Files:     c.files,

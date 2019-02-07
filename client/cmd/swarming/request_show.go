@@ -16,11 +16,13 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/kr/pretty"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 )
@@ -53,7 +55,8 @@ func (c *requestShowRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
-	client, err := c.createAuthClient()
+	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	client, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err
 	}

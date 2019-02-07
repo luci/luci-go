@@ -26,6 +26,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
@@ -88,6 +89,7 @@ func (c *spawnTasksRun) Run(a subcommands.Application, args []string, env subcom
 
 func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
 	start := time.Now()
+	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
 
 	tasksFile, err := os.Open(c.jsonInput)
 	if err != nil {
@@ -98,11 +100,11 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 	if err != nil {
 		return err
 	}
-	service, err := c.createSwarmingClient()
+	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
-	results, merr := createNewTasks(context.Background(), service, requests)
+	results, merr := createNewTasks(ctx, service, requests)
 
 	var output io.Writer
 	if c.jsonOutput != "" {

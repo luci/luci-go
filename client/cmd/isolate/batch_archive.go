@@ -146,9 +146,9 @@ func convertPyToGoArchiveCMDArgs(args []string) []string {
 
 func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
-	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
 
-	authClient, err := c.createAuthClient()
+	authClient, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err
 	}

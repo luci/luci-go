@@ -31,6 +31,7 @@ import (
 	"golang.org/x/net/http2"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -397,15 +398,14 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 
 func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 	// Set up swarming service.
-	service, err := c.createSwarmingClient()
+	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
 
 	// Prepare context.
-	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
 	if c.timeout > 0 {
-		// TODO(mknyszek): Use cancel func to implement graceful exit on SIGINT.
 		var cancel func()
 		ctx, cancel = clock.WithTimeout(ctx, c.timeout)
 		defer cancel()
