@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1d772fd_1619c37d",
+        "filename": "client/internal/common/concurrent.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-07T02:13:30Z",
+      "side": 1,
+      "message": "nit: s/\\\u003cc\\\u003e/g  \nand it\u0027d be easier to read.",
+      "revId": "a861c31d1c163b4126a39e5329091eb181c33fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb6ad5e5_18564e13",
+        "filename": "client/internal/common/concurrent.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-07T02:13:30Z",
+      "side": 1,
+      "message": "this merely reduces CPU \u0026 memory usage **after** context got cancelled (on error or Ctrl+C). Hence, I think code isn\u0027t worth the cognitive overhead.",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 2
+      },
+      "revId": "a861c31d1c163b4126a39e5329091eb181c33fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10815693_9900d8c0",
+        "filename": "client/internal/common/concurrent.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-07T02:13:30Z",
+      "side": 1,
+      "message": "nit: del",
+      "range": {
+        "startLine": 148,
+        "startChar": 34,
+        "endLine": 148,
+        "endChar": 36
+      },
+      "revId": "a861c31d1c163b4126a39e5329091eb181c33fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06f3faf2_73621c90",
+        "filename": "client/internal/common/concurrent.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-07T02:13:30Z",
+      "side": 1,
+      "message": "ditto about this code not deserving to be here.",
+      "range": {
+        "startLine": 175,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 2
+      },
+      "revId": "a861c31d1c163b4126a39e5329091eb181c33fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e001ef6e_a5aca654",
+        "filename": "client/internal/common/concurrent.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-07T02:13:30Z",
+      "side": 1,
+      "message": "bikeshed: since Go has panics, i find previous code safer. That said, a counter argument to me is that panic happens IF AND *MOSTLY* IF tasks slice fails to resize, which would imply severe memory pressure and/or corruption, so \"why bother unlocking\".",
+      "range": {
+        "startLine": 184,
+        "startChar": 1,
+        "endLine": 184,
+        "endChar": 23
+      },
+      "revId": "a861c31d1c163b4126a39e5329091eb181c33fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
