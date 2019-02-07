@@ -16,6 +16,24 @@
       "revId": "29862245f0e51631d4c53cfac5c3a7f3b16f8f4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f8e3777_072ae251",
+        "filename": "common/bq/testdata/testmessage.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-07T19:27:01Z",
+      "side": 1,
+      "message": "what\u0027s anonymous oneof? I tried to remove \"one_of\" from this line and protoc complained:\n\n  go.chromium.org/luci/common/bq/testdata/testmessage.proto:36:11: Expected oneof name.\n\nalso, this example is not anonymous",
+      "parentUuid": "b3f3c6f5_74668936",
+      "revId": "29862245f0e51631d4c53cfac5c3a7f3b16f8f4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
