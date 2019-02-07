@@ -16,7 +16,6 @@ package archiver
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http/httptest"
@@ -24,7 +23,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -153,13 +151,7 @@ func TestArchiverCancel(t *testing.T) {
 		item2 := a.PushFile("existent", fileName, 0)
 		item1.WaitForHashed()
 		item2.WaitForHashed()
-		osErr := "no such file or directory"
-		if common.IsWindows() {
-			osErr = "The system cannot find the file specified."
-		}
-		expected := fmt.Errorf("source(foo) failed: open %s: %s", nonexistent, osErr)
-		So(<-a.Channel(), ShouldResemble, expected)
-		So(a.Close(), ShouldResemble, expected)
+		So(a.Close(), ShouldResemble, context.Canceled)
 		So(server.Error(), ShouldBeNil)
 	})
 }

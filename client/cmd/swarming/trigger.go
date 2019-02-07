@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -184,15 +183,16 @@ func (c *triggerRun) Run(a subcommands.Application, args []string, env subcomman
 
 func (c *triggerRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
 	start := time.Now()
+	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
 
 	request := c.processTriggerOptions(args, env)
 
-	service, err := c.createSwarmingClient()
+	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
 
-	result, err := service.NewTask(context.Background(), request)
+	result, err := service.NewTask(ctx, request)
 	if err != nil {
 		return err
 	}

@@ -15,9 +15,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 
@@ -72,12 +72,12 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 
 func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	// Prepare isolated client.
-	authClient, err := c.createAuthClient()
+	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	authClient, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err
 	}
 	client := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
-	ctx := context.Background()
 	var filesMu sync.Mutex
 	var files []string
 	dl := downloader.New(ctx, client, isolated.HexDigest(c.isolated), c.outputDir, &downloader.Options{
@@ -87,7 +87,6 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 			filesMu.Unlock()
 		},
 	})
-	common.CancelOnCtrlC(dl)
 	if err := dl.Wait(); err != nil {
 		return errors.Annotate(err, "failed to call FetchIsolated()").Err()
 	}
