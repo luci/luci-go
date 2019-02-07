@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	protoutil "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/retry/transient"
 	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
@@ -304,7 +305,7 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 		return nil, fmt.Errorf("could not load %s from luci-config: %s", globalConfigFilename, err)
 	}
 	settings := &config.Settings{}
-	err = proto.UnmarshalText(cfg.Content, settings)
+	err = protoutil.UnmarshalTextML(cfg.Content, settings)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"could not unmarshal proto from luci-config:\n%s", cfg.Content)
@@ -355,7 +356,7 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 // and then returns a set of known console names.
 func updateProjectConsoles(c context.Context, projectID string, cfg *configInterface.Config) (stringset.Set, error) {
 	proj := config.Project{}
-	if err := proto.UnmarshalText(cfg.Content, &proj); err != nil {
+	if err := protoutil.UnmarshalTextML(cfg.Content, &proj); err != nil {
 		return nil, errors.Annotate(err, "unmarshalling proto").Err()
 	}
 
