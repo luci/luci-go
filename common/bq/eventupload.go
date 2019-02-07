@@ -222,6 +222,9 @@ func getValue(value interface{}, path []string, fi fieldInfo) (interface{}, erro
 		}
 		return stringer.String(), nil
 	} else if dpb, ok := value.(*duration.Duration); ok {
+		if dpb == nil {
+			return nil, nil
+		}
 		value, err := ptypes.Duration(dpb)
 		if err != nil {
 			return nil, fmt.Errorf("tried to write an invalid duration for [%+v] for field %s", dpb, strings.Join(path, "."))
@@ -229,12 +232,18 @@ func getValue(value interface{}, path []string, fi fieldInfo) (interface{}, erro
 		// Convert to FLOAT64.
 		return value.Seconds(), nil
 	} else if tspb, ok := value.(*timestamp.Timestamp); ok {
+		if tspb == nil {
+			return nil, nil
+		}
 		value, err := ptypes.Timestamp(tspb)
 		if err != nil {
 			return nil, fmt.Errorf("tried to write an invalid timestamp for [%+v] for field %s", tspb, strings.Join(path, "."))
 		}
 		return value, nil
 	} else if s, ok := value.(*structpb.Struct); ok {
+		if s == nil {
+			return nil, nil
+		}
 		// Structs are persisted as JSONPB strings.
 		// See also https://bit.ly/chromium-bq-struct
 		var buf bytes.Buffer
@@ -243,6 +252,9 @@ func getValue(value interface{}, path []string, fi fieldInfo) (interface{}, erro
 		}
 		return buf.String(), nil
 	} else if nested, ok := value.(proto.Message); ok {
+		if nested == nil {
+			return nil, nil
+		}
 		m, err := mapFromMessage(nested, path)
 		if m == nil {
 			// a nil map is not nil when converted to interface{},
