@@ -99,7 +99,7 @@ func drainVM(c context.Context, payload proto.Message) error {
 		// Config doesn't exist, drain the VM.
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
-	case cfg.Config.GetAmount() > vm.Index:
+	case cfg.Config.GetAmount().GetDefault() > vm.Index:
 		// VM is configured to exist, don't drain the VM.
 		return nil
 	}
@@ -175,8 +175,8 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
-	t := make([]*tq.Task, cfg.Amount)
-	for i := int32(0); i < cfg.Amount; i++ {
+	t := make([]*tq.Task, cfg.GetAmount().GetDefault())
+	for i := int32(0); i < cfg.GetAmount().GetDefault(); i++ {
 		t[i] = &tq.Task{
 			Payload: &tasks.EnsureVM{
 				Attributes: cfg.Attributes,

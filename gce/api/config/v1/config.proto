@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package config;
 
+import "google/type/dayofweek.proto";
+
 // A description of a service account.
 message ServiceAccount {
   // The email address of this service account.
@@ -127,10 +129,44 @@ message TimePeriod {
   }
 }
 
+// A time of day.
+message TimeOfDay {
+  // The days of the week the time applies to.
+  repeated google.type.DayOfWeek day = 1;
+
+  // The location the time should be interpreted in.
+  // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.
+  string location = 2;
+
+  // The time in 24-hour <hour>:<minute>.
+  string time = 3;
+}
+
+// An amount of VMs for particular days of the week.
+message Schedule {
+  // The amount of VMs.
+  int32 amount = 1;
+
+  // The length of time the amount is in effect.
+  TimePeriod length = 2;
+
+  // The start times when this amount goes into effect.
+  TimeOfDay start = 3;
+}
+
+// An amount of VMs.
+message Amount {
+  // The default amount to use outside scheduled hours.
+  int32 default = 1;
+
+  // The amount of VMs to have at a particular time.
+  repeated Schedule change = 2;
+}
+
 // A config for one type of VM.
 message Config {
   // The amount of these VMs.
-  int32 amount = 1;
+  Amount amount = 1;
 
   // The attributes of these VMs.
   // Attributes here override attributes in the kind.

@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,56 +24,52 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateConfig(t *testing.T) {
+func TestAmount(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
+	Convey("Validate", t, func() {
 		c := &validation.Context{Context: context.Background()}
 
 		Convey("invalid", func() {
-			Convey("empty", func() {
-				cfg := &Config{}
-				cfg.Validate(c)
-				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "at least one disk is required")
-				So(errs, ShouldContainErr, "prefix is required")
-				So(errs, ShouldContainErr, "duration or seconds is required")
-			})
-
 			Convey("amount", func() {
-				cfg := &Config{
-					Amount: &Amount{
-						Default: -1,
-					},
+				a := &Amount{
+					Default: -1,
 				}
-				cfg.Validate(c)
+				a.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "default amount must be non-negative")
+			})
+
+			Convey("schedule", func() {
+				a := &Amount{
+					Change: []*Schedule{
+						{
+							Amount: -1,
+						},
+					},
+				}
+				a.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "amount must be non-negative")
+				So(errs, ShouldContainErr, "duration or seconds is required")
+				So(errs, ShouldContainErr, "time must match regex")
 			})
 		})
 
 		Convey("valid", func() {
-			cfg := &Config{
-				Attributes: &VM{
-					Disk: []*Disk{
-						{},
-					},
-					MachineType: "type",
-					NetworkInterface: []*NetworkInterface{
-						{},
-					},
-					Project: "project",
-					Zone:    "zone",
-				},
-				Lifetime: &TimePeriod{
-					Time: &TimePeriod_Seconds{
-						Seconds: 3600,
-					},
-				},
-				Prefix: "prefix",
-			}
-			cfg.Validate(c)
-			So(c.Finalize(), ShouldBeNil)
+			Convey("empty", func() {
+				a := &Amount{}
+				a.Validate(c)
+				So(c.Finalize(), ShouldBeNil)
+			})
+
+			Convey("default", func() {
+				a := &Amount{
+					Default: 1,
+				}
+				a.Validate(c)
+				So(c.Finalize(), ShouldBeNil)
+			})
 		})
 	})
 }

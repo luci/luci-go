@@ -53,13 +53,6 @@ func TestConfig(t *testing.T) {
 		Convey("valid", func() {
 			datastore.Put(c, &model.Config{
 				ID: "id",
-				Config: config.Config{
-					Amount: 1,
-					Attributes: &config.VM{
-						Project: "project",
-					},
-					Prefix: "prefix",
-				},
 			})
 			cfg, err := srv.Delete(c, &config.DeleteRequest{
 				Id: "id",
@@ -176,10 +169,6 @@ func TestConfig(t *testing.T) {
 				datastore.Put(c, &model.Config{
 					ID: "id",
 					Config: config.Config{
-						Amount: 1,
-						Attributes: &config.VM{
-							Project: "project",
-						},
 						Prefix: "prefix",
 					},
 				})
@@ -188,10 +177,6 @@ func TestConfig(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(cfg, ShouldResemble, &config.Config{
-					Amount: 1,
-					Attributes: &config.VM{
-						Project: "project",
-					},
 					Prefix: "prefix",
 				})
 			})

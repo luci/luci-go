@@ -54,13 +54,7 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("deleted", func() {
-			srv.cfg.Store("id", &config.Config{
-				Amount: 1,
-				Attributes: &config.VM{
-					Project: "project",
-				},
-				Prefix: "prefix",
-			})
+			srv.cfg.Store("id", &config.Config{})
 			cfg, err := srv.Delete(c, &config.DeleteRequest{
 				Id: "id",
 			})
@@ -105,19 +99,11 @@ func TestConfig(t *testing.T) {
 			cfg, err := srv.Ensure(c, &config.EnsureRequest{
 				Id: "id",
 				Config: &config.Config{
-					Amount: 1,
-					Attributes: &config.VM{
-						Project: "project",
-					},
 					Prefix: "prefix",
 				},
 			})
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, &config.Config{
-				Amount: 1,
-				Attributes: &config.VM{
-					Project: "project",
-				},
 				Prefix: "prefix",
 			})
 			_, ok := srv.cfg.Load("id")
@@ -153,10 +139,6 @@ func TestConfig(t *testing.T) {
 
 		Convey("found", func() {
 			srv.cfg.Store("id", &config.Config{
-				Amount: 1,
-				Attributes: &config.VM{
-					Project: "project",
-				},
 				Prefix: "prefix",
 			})
 			cfg, err := srv.Get(c, &config.GetRequest{
@@ -164,10 +146,6 @@ func TestConfig(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, &config.Config{
-				Amount: 1,
-				Attributes: &config.VM{
-					Project: "project",
-				},
 				Prefix: "prefix",
 			})
 		})

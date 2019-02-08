@@ -193,7 +193,9 @@ func TestQueues(t *testing.T) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: config.Config{
-									Amount: 2,
+									Amount: &config.Amount{
+										Default: 2,
+									},
 								},
 							})
 							datastore.Put(c, &model.VM{
@@ -216,7 +218,9 @@ func TestQueues(t *testing.T) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: config.Config{
-									Amount: 1,
+									Amount: &config.Amount{
+										Default: 1,
+									},
 								},
 							})
 							datastore.Put(c, &model.VM{
@@ -239,7 +243,9 @@ func TestQueues(t *testing.T) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: config.Config{
-									Amount: 3,
+									Amount: &config.Amount{
+										Default: 3,
+									},
 								},
 							})
 							datastore.Put(c, &model.VM{
@@ -420,7 +426,9 @@ func TestQueues(t *testing.T) {
 					srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
 						Config: &config.Config{
-							Amount: 3,
+							Amount: &config.Amount{
+								Default: 3,
+							},
 						},
 					})
 					err := expandConfig(c, &tasks.ExpandConfig{

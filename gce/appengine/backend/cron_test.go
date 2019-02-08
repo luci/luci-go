@@ -113,11 +113,9 @@ func TestCron(t *testing.T) {
 				datastore.Put(c, &model.Config{
 					ID: "id",
 					Config: config.Config{
-						Amount: 1,
-						Attributes: &config.VM{
-							Project: "project",
+						Amount: &config.Amount{
+							Default: 1,
 						},
-						Prefix: "prefix",
 					},
 				})
 				err := expandConfigsAsync(c)
@@ -130,7 +128,9 @@ func TestCron(t *testing.T) {
 					datastore.Put(c, &model.Config{
 						ID: fmt.Sprintf("id-%d", i),
 						Config: config.Config{
-							Amount: 1,
+							Amount: &config.Amount{
+								Default: 1,
+							},
 						},
 					})
 				}
