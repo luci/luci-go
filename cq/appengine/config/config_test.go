@@ -217,14 +217,6 @@ func TestValidation(t *testing.T) {
 					`more than 1 different gerrit url not **yet** allowed (given: `+
 						`["https://chromium-review.googlesource.com" "https://z-review.googlesource.com"])`)
 			})
-			Convey("at most 1 gerrit project", func() {
-				cfg.ConfigGroups[0].Gerrit[0].Projects = append(cfg.ConfigGroups[0].Gerrit[0].Projects, &v2.ConfigGroup_Gerrit_Project{
-					Name: "foo",
-				})
-				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike,
-					`more than 1 different gerrit project names not **yet** allowed (given: ["chromium/src" "foo"]`)
-			})
 		})
 
 		Convey("ConfiGroups", func() {

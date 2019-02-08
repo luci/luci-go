@@ -109,37 +109,27 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		validateConfigGroup(ctx, g)
 		ctx.Exit()
 	}
-	ensureAtMost1Project(ctx, cfg)
+	ensureAtMost1Gerrit(ctx, cfg)
 	bestEffortDisjointGroups(ctx, cfg)
 }
 
-// ensureAtMost1Project enforces temporary CQ limitation of supporting only a
-// single Gerrit url/project pair.
-// TODO(tandrii): remove the single project single gerrit limitation.
-func ensureAtMost1Project(ctx *validation.Context, cfg *v2.Config) {
+// ensureAtMost1Gerrit enforces temporary CQ limitation of supporting only a
+// single Gerrit url.
+// TODO(tandrii): remove the single gerrit limitation.
+func ensureAtMost1Gerrit(ctx *validation.Context, cfg *v2.Config) {
 	gerritURLs := stringset.Set{}
-	projectNames := stringset.Set{}
 	for _, gr := range cfg.ConfigGroups {
 		for _, g := range gr.Gerrit {
 			gerritURLs.Add(g.Url)
-			for _, p := range g.Projects {
-				projectNames.Add(p.Name)
-			}
 		}
 	}
 	// Ignore empty URLs and project names, because those already resulted in
 	// error earlier.
 	gerritURLs.Del("")
-	projectNames.Del("")
 	if gerritURLs.Len() > 1 {
 		urls := gerritURLs.ToSlice()
 		sort.Strings(urls)
 		ctx.Errorf("more than 1 different gerrit url not **yet** allowed (given: %q)", urls)
-	}
-	if projectNames.Len() > 1 {
-		names := projectNames.ToSlice()
-		sort.Strings(names)
-		ctx.Errorf("more than 1 different gerrit project names not **yet** allowed (given: %q)", names)
 	}
 }
 
