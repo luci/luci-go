@@ -263,50 +263,18 @@ func TestSync(t *testing.T) {
 		})
 
 		Convey("creates", func() {
-			Convey("first", func() {
-				cfgs := &gce.Configs{
-					Vms: []*gce.Config{
-						{
-							Prefix: "prefix",
-						},
+			cfgs := &gce.Configs{
+				Vms: []*gce.Config{
+					{
+						Prefix: "prefix",
 					},
-				}
-				So(sync(c, cfgs), ShouldBeNil)
-				rsp, err := srv.List(c, &gce.ListRequest{})
-				So(err, ShouldBeNil)
-				So(rsp.Configs, ShouldHaveLength, 1)
-				So(rsp.Configs[0].Prefix, ShouldEqual, "prefix")
-			})
-
-			Convey("second", func() {
-				srv.Ensure(c, &gce.EnsureRequest{
-					Id: "prefix1",
-					Config: &gce.Config{
-						Amount: 1,
-						Prefix: "prefix1",
-					},
-				})
-				cfgs := &gce.Configs{
-					Vms: []*gce.Config{
-						{
-							Amount: 2,
-							Prefix: "prefix2",
-						},
-					},
-				}
-				So(sync(c, cfgs), ShouldBeNil)
-				rsp, err := srv.List(c, &gce.ListRequest{})
-				So(err, ShouldBeNil)
-				So(rsp.Configs, ShouldHaveLength, 2)
-				So(rsp.Configs, ShouldContain, &gce.Config{
-					Amount: 1,
-					Prefix: "prefix1",
-				})
-				So(rsp.Configs, ShouldContain, &gce.Config{
-					Amount: 2,
-					Prefix: "prefix2",
-				})
-			})
+				},
+			}
+			So(sync(c, cfgs), ShouldBeNil)
+			rsp, err := srv.List(c, &gce.ListRequest{})
+			So(err, ShouldBeNil)
+			So(rsp.Configs, ShouldHaveLength, 1)
+			So(rsp.Configs[0].Prefix, ShouldEqual, "prefix")
 		})
 
 		Convey("updates", func() {
@@ -333,6 +301,21 @@ func TestSync(t *testing.T) {
 				Amount: 2,
 				Prefix: "prefix",
 			})
+		})
+
+		Convey("deletes", func() {
+			srv.Ensure(c, &gce.EnsureRequest{
+				Id: "prefix1",
+				Config: &gce.Config{
+					Amount: 1,
+					Prefix: "prefix1",
+				},
+			})
+			cfgs := &gce.Configs{}
+			So(sync(c, cfgs), ShouldBeNil)
+			rsp, err := srv.List(c, &gce.ListRequest{})
+			So(err, ShouldBeNil)
+			So(rsp.Configs, ShouldBeEmpty)
 		})
 	})
 }

@@ -3,11 +3,13 @@ cron:
   schedule: every 1 minutes
 - url: /internal/cron/delete-vms
   schedule: every 1 minutes
+- url: /internal/cron/drain-vms
+  schedule: every 1 minutes
+- url: /internal/cron/expand-configs
+  schedule: every 1 minutes
 - url: /internal/cron/import-config
   schedule: every 1 minutes
 - url: /internal/cron/manage-bots
-  schedule: every 1 minutes
-- url: /internal/cron/process-configs
   schedule: every 1 minutes
 - url: /internal/cron/report-quota
   schedule: every 1 minutes

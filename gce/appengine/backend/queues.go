@@ -80,15 +80,40 @@ func drainVM(c context.Context, payload proto.Message) error {
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
+	vm := &model.VM{
+		ID: task.Id,
+	}
+	switch err := datastore.Get(c, vm); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch VM").Err()
+	case vm.Drained:
+		return nil
+	}
+	cfg := &model.Config{
+		ID: vm.Config,
+	}
+	switch err := datastore.Get(c, cfg); {
+	case err == datastore.ErrNoSuchEntity:
+		// Config doesn't exist, drain the VM.
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch config").Err()
+	case cfg.Config.GetAmount() > vm.Index:
+		// VM is configured to exist, don't drain the VM.
+		return nil
+	}
+	logging.Debugf(c, "draining VM")
 	return datastore.RunInTransaction(c, func(c context.Context) error {
-		vm := &model.VM{
-			ID: task.Id,
-		}
+		// Double-check inside transaction.
+		// VM may already be drained or deleted.
 		switch err := datastore.Get(c, vm); {
 		case err == datastore.ErrNoSuchEntity:
 			return nil
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
+		case vm.Drained:
+			return nil
 		}
 		vm.Drained = true
 		if err := datastore.Put(c, vm); err != nil {
@@ -134,12 +159,12 @@ func ensureVM(c context.Context, payload proto.Message) error {
 	}, nil)
 }
 
-// processConfigQueue is the name of the process config task handler queue.
-const processConfigQueue = "process-config"
+// expandConfigQueue is the name of the expand config task handler queue.
+const expandConfigQueue = "expand-config"
 
-// processConfig creates task queue tasks to process each VM in the given config.
-func processConfig(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.ProcessConfig)
+// expandConfig creates task queue tasks to ensure each VM in the given config.
+func expandConfig(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.ExpandConfig)
 	switch {
 	case !ok:
 		return errors.Reason("unexpected payload type %T", payload).Err()
@@ -150,8 +175,6 @@ func processConfig(c context.Context, payload proto.Message) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
-	logging.Debugf(c, "found %d VMs", cfg.Amount)
-	// Trigger tasks to create VMs.
 	t := make([]*tq.Task, cfg.Amount)
 	for i := int32(0); i < cfg.Amount; i++ {
 		t[i] = &tq.Task{
@@ -167,27 +190,7 @@ func processConfig(c context.Context, payload proto.Message) error {
 	}
 	logging.Debugf(c, "ensuring %d VMs", len(t))
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
-		return errors.Annotate(err, "failed to schedule ensure tasks").Err()
-	}
-	// Trigger tasks to drain excess VMs.
-	t = make([]*tq.Task, 0)
-	q := datastore.NewQuery(model.VMKind).Eq("config", task.Id)
-	if err := datastore.Run(c, q, func(vm *model.VM) error {
-		if vm.Index < cfg.Amount {
-			return nil
-		}
-		t = append(t, &tq.Task{
-			Payload: &tasks.DrainVM{
-				Id: vm.ID,
-			},
-		})
-		return nil
-	}); err != nil {
-		return errors.Annotate(err, "failed to fetch VM to drain").Err()
-	}
-	logging.Debugf(c, "draining %d VMs", len(t))
-	if err := getDispatcher(c).AddTask(c, t...); err != nil {
-		return errors.Annotate(err, "failed to schedule drain tasks").Err()
+		return errors.Annotate(err, "failed to schedule tasks").Err()
 	}
 	return nil
 }
