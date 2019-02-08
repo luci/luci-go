@@ -81,6 +81,24 @@
       "revId": "3bf562bc4a246612a6c907d0a91de7cd5b925878",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1e423759_b842852c",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-08T02:17:33Z",
+      "side": 1,
+      "message": "ah, cool. I forgot that Vadim added that. Thanks!",
+      "parentUuid": "749c3949_c5eeca7d",
+      "revId": "3bf562bc4a246612a6c907d0a91de7cd5b925878",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
