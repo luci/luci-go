@@ -112,12 +112,6 @@ func (g *GoroutinePool) Wait() error {
 // If the GoroutinePool context is canceled, onCanceled is called instead. It
 // is fine to pass nil as onCanceled.
 func (g *GoroutinePool) Schedule(job, onCanceled func()) {
-	if g.ctx.Err() != nil {
-		if onCanceled != nil {
-			onCanceled()
-		}
-		return
-	}
 	g.wg.Add(1)
 	// Note: We could save a bit of memory by preallocating maxConcurrentJobs
 	// goroutines instead of one goroutine per item.
@@ -172,12 +166,6 @@ func (g *GoroutinePriorityPool) Wait() error {
 //
 // The lower the priority value, the higher the priority of the item.
 func (g *GoroutinePriorityPool) Schedule(priority int64, job, onCanceled func()) {
-	if g.ctx.Err() != nil {
-		if onCanceled != nil {
-			onCanceled()
-		}
-		return
-	}
 	g.wg.Add(1)
 	t := &task{priority, job, onCanceled}
 	g.mu.Lock()
