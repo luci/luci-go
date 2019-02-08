@@ -16,14 +16,13 @@ the backend package should recover without intervention.
 
 A Config is a datastore entity representing a configured type of VM. Creation of
 Configs is outside the scope of the backend package. Configs are mutable and may
-be created or updated at any time without negatively affecting the backend
-package. However, Configs may not be deleted-- they should be
-[drained](#drained) instead.
+be created, updated, or even deleted at any time and the backend package will
+react accordingly.
 
 ### VM
 
 A VM is a datastore entity representing a single configured VM, derived from a
-Config. [processConfig](#processConfig) is responsible for the derivation. VMs
+Config. [expandConfig](#expandConfig) is responsible for the derivation. VMs
 are mutable, but should only be modified by the backend package. To make changes
 to a VM, modify its corresponding Config and the backend package will propagate
 the changes. The Config:VM mapping is 1:n.
@@ -64,10 +63,14 @@ drained Config will be deleted once its corresponding VMs have been deleted.
 All cron jobs operate on multiple entities, triggering task queues which operate
 on a particular entity. All cron jobs are idempotent.
 
-### processConfigsAsync
+### expandConfigsAsync
 
-processConfigsAsync iterates over all Configs and triggers
-[processConfig](#processConfig) for each.
+expandConfigsAsync iterates over all Configs and triggers
+[expandConfig](#expandConfig) for each.
+
+### drainVMsAsync
+
+drainVMsAsync iterates over all VMs and triggers [drainVM](#drainVM) for each.
 
 ### createInstancesAsync
 
@@ -89,12 +92,10 @@ deleteVMsAsync iterates over all VMs which are [drained](#drained) and triggers
 All task queues are triggered with a particular entity to process. All task
 queues are idempotent.
 
-### processConfig
+### expandConfig
 
-processConfig receives a single Config to process. It checks how many VMs the
-Config declares and triggers [ensureVM](#ensureVM) for each. Next it checks how
-many VMs currently exist above the configured amount and triggers
-[drainVM](#drainVM) for each.
+expandConfig receives a single Config to expand. It checks how many VMs the
+Config declares and triggers [ensureVM](#ensureVM) for each.
 
 ### ensureVM
 
@@ -106,8 +107,10 @@ made to the Config, which will be reflected in the next created instance.
 
 ### drainVM
 
-drainVM receives a single VM to [drain](#drain). It attempts to record the VM as
-drained, but doesn't fail if the VM has already been deleted.
+drainVM receives a single VM to [drain](#drain). It checks if the referenced
+Config no longer exists or no longer references the given VM, and attempts to
+record the VM as drained if so, but doesn't fail if the VM has already been
+deleted.
 
 ### createInstance
 

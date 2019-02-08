@@ -58,15 +58,15 @@ message EnsureVM {
   string swarming = 6;
 }
 
-// A task to manage a Swarming bot associated with a VM.
-message ManageBot {
-  // The ID of the VM to manage a Swarming bot for.
+// A task to expand a config.
+message ExpandConfig {
+  // The ID of the config to expand.
   string id = 1;
 }
 
-// A task to process a config.
-message ProcessConfig {
-  // The ID of the config to process.
+// A task to manage a Swarming bot associated with a VM.
+message ManageBot {
+  // The ID of the VM to manage a Swarming bot for.
   string id = 1;
 }
 

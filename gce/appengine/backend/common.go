@@ -52,8 +52,8 @@ func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.DestroyInstance{}, destroyInstance, destroyInstanceQueue, nil)
 	dsp.RegisterTask(&tasks.DrainVM{}, drainVM, drainVMQueue, nil)
 	dsp.RegisterTask(&tasks.EnsureVM{}, ensureVM, ensureVMQueue, nil)
+	dsp.RegisterTask(&tasks.ExpandConfig{}, expandConfig, expandConfigQueue, nil)
 	dsp.RegisterTask(&tasks.ManageBot{}, manageBot, manageBotQueue, nil)
-	dsp.RegisterTask(&tasks.ProcessConfig{}, processConfig, processConfigQueue, nil)
 	dsp.RegisterTask(&tasks.ReportQuota{}, reportQuota, reportQuotaQueue, nil)
 	dsp.RegisterTask(&tasks.TerminateBot{}, terminateBot, terminateBotQueue, nil)
 }
@@ -140,7 +140,8 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	dsp.InstallRoutes(r, mw)
 	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstancesAsync))
 	r.GET("/internal/cron/delete-vms", mw, newHTTPHandler(deleteVMsAsync))
+	r.GET("/internal/cron/drain-vms", mw, newHTTPHandler(drainVMsAsync))
+	r.GET("/internal/cron/expand-configs", mw, newHTTPHandler(expandConfigsAsync))
 	r.GET("/internal/cron/manage-bots", mw, newHTTPHandler(manageBotsAsync))
-	r.GET("/internal/cron/process-configs", mw, newHTTPHandler(processConfigsAsync))
 	r.GET("/internal/cron/report-quota", mw, newHTTPHandler(reportQuotasAsync))
 }

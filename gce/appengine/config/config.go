@@ -209,23 +209,29 @@ func sync(c context.Context, cfgs *gce.Configs) error {
 		logging.Debugf(c, "fetched config %q", cfg.Prefix)
 		ids.Add(cfg.Prefix)
 	}
-	req := &gce.EnsureRequest{}
+	ens := &gce.EnsureRequest{}
 	for _, vms := range cfgs.Vms {
 		// Validation enforces prefix uniqueness, so use it as the ID.
-		req.Id = vms.Prefix
-		req.Config = vms
-		if _, err := srv.Ensure(c, req); err != nil {
-			return errors.Annotate(err, "failed to ensure config %q", req.Id).Err()
+		ens.Id = vms.Prefix
+		ens.Config = vms
+		if _, err := srv.Ensure(c, ens); err != nil {
+			return errors.Annotate(err, "failed to ensure config %q", ens.Id).Err()
 		}
-		logging.Debugf(c, "stored config %q", req.Id)
+		logging.Debugf(c, "stored config %q", ens.Id)
 		ids.Del(vms.Prefix)
 	}
+	del := &gce.DeleteRequest{}
+	err = nil
 	ids.Iter(func(id string) bool {
-		// TODO(smut): Delete unreferenced configs.
-		logging.Debugf(c, "unreferenced config %q", id)
+		del.Id = id
+		if _, err := srv.Delete(c, del); err != nil {
+			err = errors.Annotate(err, "failed to delete config %q", del.Id).Err()
+			return false
+		}
+		logging.Debugf(c, "deleted config %q", del.Id)
 		return true
 	})
-	return nil
+	return err
 }
 
 // Import fetches and validates configs from the config service.
