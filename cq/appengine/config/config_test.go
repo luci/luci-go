@@ -397,6 +397,8 @@ func TestTryjobValidation(t *testing.T) {
 				`name "a" doesn't match required format`)
 			So(validate(`builders {name: "a/b/c" equivalent_to {name: "z"}}`), ShouldErrLike,
 				`name "z" doesn't match required format`)
+			So(validate(`builders {name: "b/luci.b.try/c"}`), ShouldErrLike,
+				`name "b/luci.b.try/c" is highly likely malformed;`)
 
 			So(validate(`
 			  builders {name: "a/b/c"}
