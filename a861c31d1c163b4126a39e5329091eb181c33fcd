@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "93f554bb_7ac8430b",
+        "filename": "client/internal/common/concurrent.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-08T07:26:29Z",
+      "side": 1,
+      "message": "I tested your CL w/o this code, and even with -race mode, tests pass. This is no proof of correctness, of course.\n\nSo, I re-read code, and I stand by my claim:\n\nif c.ctx.Err() is not nil, then c.sema.wait(c.ctx) would return this error.\nHence, onCancel will get executed.\n\nWhat did I miss?",
+      "parentUuid": "12f29dfb_dd4ce24f",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 2
+      },
+      "revId": "a861c31d1c163b4126a39e5329091eb181c33fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "10815693_9900d8c0",
         "filename": "client/internal/common/concurrent.go",
         "patchSetId": 6
@@ -175,6 +199,30 @@
       "revId": "a861c31d1c163b4126a39e5329091eb181c33fcd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc990536_f3bf3163",
+        "filename": "client/internal/common/concurrent.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-08T07:26:29Z",
+      "side": 1,
+      "message": "also disagree. Once again, testGoroutinePoolCancel passes on my laptop even in -race mode.\nThe rational is the same as above, but there are more complications now because we must be certain that pushed to heap item will actually get pickedUp by executeOne().\n\nwhere am I wrong? maybe something special on Macs?",
+      "parentUuid": "d367121f_1ac0b8bc",
+      "range": {
+        "startLine": 175,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 2
+      },
+      "revId": "a861c31d1c163b4126a39e5329091eb181c33fcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
