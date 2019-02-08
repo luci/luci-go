@@ -469,7 +469,16 @@ func validateBuilderName(ctx *validation.Context, name string, knownNames string
 	}
 	parts := strings.Split(name, "/")
 	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
-		ctx.Errorf("name %q doesn't match required format project/bucket/builder, e.g. 'v8/try/linux'", name)
+		ctx.Errorf("name %q doesn't match required format project/short-bucket-name/builder, e.g. 'v8/try/linux'", name)
+	}
+	for _, part := range parts {
+		subs := strings.Split(part, ".")
+		if len(subs) >= 3 && subs[0] == "luci" {
+			// Technically, this is allowed. However, practically, this is exremely
+			// likely to be misunderstanding of project or bucket is.
+			ctx.Errorf("name %q is highly likely malformed; it should be project/short-bucket-name/builder, e.g. 'v8/try/linux'", name)
+			return
+		}
 	}
 }
 
