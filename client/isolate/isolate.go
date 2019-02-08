@@ -174,13 +174,13 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 		}
 	}
 
-	// Expand variables in the deps, and convert each path to a cleaned absolute form.
+	// Expand variables in the deps, and convert each path to an absolute form.
 	for i := range deps {
 		dep, err := ReplaceVariables(deps[i], opts)
 		if err != nil {
 			return nil, "", nil, err
 		}
-		deps[i] = join(isolateDir, dep)
+		deps[i] = filepath.Join(isolateDir, dep)
 	}
 
 	// Find the root directory of all the files (the root might be above isolateDir).
@@ -230,64 +230,35 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 	return deps, rootDir, isol, nil
 }
 
-func processing(opts *ArchiveOptions) (filesCount, dirsCount int, deps []string, rootDir string, isol *isolated.Isolated, err error) {
-	deps, rootDir, isol, err = ProcessIsolate(opts)
-	if err != nil {
-		return 0, 0, nil, "", nil, err
-	}
-
-	for i := range deps {
-		if deps[i][len(deps[i])-1] == os.PathSeparator {
-			dirsCount++
-		} else {
-			filesCount++
-		}
-	}
-
-	// Processing of the .isolate file ended.
-	return filesCount, dirsCount, deps, rootDir, isol, nil
-}
-
-// join joins the provided pair of path elements. Unlike filepath.Join, join
-// will preserve the trailing slash of the second element, if any.
-// TODO(djd): delete this function. Preserving the slash is fragile, and we
-// can tell if a path is a dir by stat'ing it (which we need to do anyway).
-func join(p1, p2 string) string {
-	joined := filepath.Join(p1, p2)
-	if p2[len(p2)-1] == os.PathSeparator {
-		joined += osPathSeparator // Retain trailing slash.
-	}
-	return joined
-}
-
 func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) (*archiver.PendingItem, error) {
 	end := tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":loading", nil)
-	filesCount, dirsCount, deps, rootDir, i, err := processing(opts)
+	deps, rootDir, i, err := ProcessIsolate(opts)
 	end(tracer.Args{"err": err})
 	if err != nil {
 		return nil, err
 	}
-	// Handle each dependency, either a file or a directory..
-	fileItems := make([]*archiver.PendingItem, 0, filesCount)
-	dirItems := make([]*archiver.PendingItem, 0, dirsCount)
+	// Handle each dependency, either a file or a directory.
+	var fileItems []*archiver.PendingItem
+	var dirItems []*archiver.PendingItem
 	for _, dep := range deps {
 		relPath, err := filepath.Rel(rootDir, dep)
 		if err != nil {
 			return nil, err
 		}
-		if dep[len(dep)-1] == os.PathSeparator {
+		// Grab the stats right away; this can be used for both checking whether
+		// it's a directory and checking whether it's a link.
+		info, err := os.Lstat(dep)
+		if err != nil {
+			return nil, err
+		}
+		mode := info.Mode()
+		if mode.IsDir() {
 			relPath, err := filepath.Rel(rootDir, dep)
 			if err != nil {
 				return nil, err
 			}
 			dirItems = append(dirItems, archiver.PushDirectory(arch, dep, relPath, opts.Blacklist))
 		} else {
-			// Grab the stats right away.
-			info, err := os.Lstat(dep)
-			if err != nil {
-				return nil, err
-			}
-			mode := info.Mode()
 			if mode&os.ModeSymlink == os.ModeSymlink {
 				l, err := os.Readlink(dep)
 				if err != nil {
