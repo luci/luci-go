@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e0d541bd_0c0980d3",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-02-08T02:03:04Z",
+      "side": 1,
+      "message": "triggered_by too? Or is that going away?",
+      "range": {
+        "startLine": 462,
+        "startChar": 5,
+        "endLine": 462,
+        "endChar": 24
+      },
+      "revId": "8c92bdc933de306d227c7ffae3961e0df393d21a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
