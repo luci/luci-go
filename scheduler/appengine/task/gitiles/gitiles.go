@@ -18,7 +18,9 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -107,6 +109,34 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 	c.Enter("refs")
 	gitiles.ValidateRefSet(c, cfg.Refs)
 	c.Exit()
+
+	validatePathRegexp := func(p string) {
+		if p == "" {
+			c.Errorf("must not be empty")
+		}
+		if strings.HasPrefix(p, "^") || strings.HasSuffix(p, "$") {
+			c.Errorf("^ and $ qualifiers are added automatically, please remove them")
+		}
+		_, err := regexp.Compile(p)
+		if err != nil {
+			c.Errorf("%s", err)
+		}
+	}
+
+	for _, p := range cfg.PathRegexps {
+		c.Enter("path_regexps %q", p)
+		validatePathRegexp(p)
+		c.Exit()
+	}
+	if len(cfg.PathRegexpsExclude) > 0 && len(cfg.PathRegexps) == 0 {
+		c.Errorf("Specifying path_regexps_exclude not allowed without at least one path_regexps")
+	} else {
+		for _, p := range cfg.PathRegexpsExclude {
+			c.Enter("path_regexps_exclude %q", p)
+			validatePathRegexp(p)
+			c.Exit()
+		}
+	}
 }
 
 // LaunchTask is part of Manager interface.
