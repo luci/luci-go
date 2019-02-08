@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "485a5c8c_78d3332c",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-08T03:08:06Z",
+      "side": 1,
+      "message": "Revised. Added link to the proto field documentation (for consistency with where links are for other fields).",
+      "parentUuid": "9dcb1c4d_d22e0837",
+      "revId": "000572f4e290470ca15fc4a3474a3cd238e6bba4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "88b80535_bb800b21",
         "filename": "gce/api/config/v1/timeofday.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "000572f4e290470ca15fc4a3474a3cd238e6bba4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04121eea_b6980334",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-08T03:08:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88b80535_bb800b21",
+      "range": {
+        "startLine": 63,
+        "startChar": 22,
+        "endLine": 63,
+        "endChar": 31
+      },
+      "revId": "000572f4e290470ca15fc4a3474a3cd238e6bba4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
