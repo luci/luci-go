@@ -16,6 +16,24 @@
       "revId": "4f3ab1248fdf875c3231f491169fda5d1d0c112b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5e7f9a9_0e31804a",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-02-08T00:21:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3d96b399_a21007bb",
+      "revId": "4f3ab1248fdf875c3231f491169fda5d1d0c112b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
