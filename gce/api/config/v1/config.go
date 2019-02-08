@@ -39,6 +39,9 @@ func (cfg *Config) ToProperty() (datastore.Property, error) {
 
 // Validate validates this config. Kind must already be applied.
 func (cfg *Config) Validate(c *validation.Context) {
+	c.Enter("amount")
+	cfg.GetAmount().Validate(c)
+	c.Exit()
 	c.Enter("attributes")
 	cfg.GetAttributes().Validate(c)
 	c.Exit()

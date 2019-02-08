@@ -281,14 +281,18 @@ func TestSync(t *testing.T) {
 			srv.Ensure(c, &gce.EnsureRequest{
 				Id: "prefix",
 				Config: &gce.Config{
-					Amount: 1,
+					Amount: &gce.Amount{
+						Default: 1,
+					},
 					Prefix: "prefix",
 				},
 			})
 			cfgs := &gce.Configs{
 				Vms: []*gce.Config{
 					{
-						Amount: 2,
+						Amount: &gce.Amount{
+							Default: 2,
+						},
 						Prefix: "prefix",
 					},
 				},
@@ -298,7 +302,9 @@ func TestSync(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(rsp.Configs, ShouldHaveLength, 1)
 			So(rsp.Configs, ShouldContain, &gce.Config{
-				Amount: 2,
+				Amount: &gce.Amount{
+					Default: 2,
+				},
 				Prefix: "prefix",
 			})
 		})
@@ -307,7 +313,6 @@ func TestSync(t *testing.T) {
 			srv.Ensure(c, &gce.EnsureRequest{
 				Id: "prefix1",
 				Config: &gce.Config{
-					Amount: 1,
 					Prefix: "prefix1",
 				},
 			})
