@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f1bb9627_1dd79f8c",
+        "filename": "gce/appengine/backend/cron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-08T00:09:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "19ed750b_e8651094",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 107,
+        "endChar": 38
+      },
+      "revId": "3bf562bc4a246612a6c907d0a91de7cd5b925878",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0d0f9ab_9a620b20",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "3bf562bc4a246612a6c907d0a91de7cd5b925878",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "749c3949_c5eeca7d",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-08T00:09:56Z",
+      "side": 1,
+      "message": "The tq package already logs it.",
+      "parentUuid": "d0d0f9ab_9a620b20",
+      "revId": "3bf562bc4a246612a6c907d0a91de7cd5b925878",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
