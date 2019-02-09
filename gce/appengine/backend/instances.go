@@ -124,7 +124,7 @@ func setCreated(c context.Context, id, url string, at time.Time) error {
 			// Already created.
 			return nil
 		}
-		vm.Deadline = at.Unix() + vm.Lifetime
+		vm.Created = at.Unix()
 		vm.URL = url
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
@@ -138,6 +138,35 @@ func logErrors(c context.Context, err *googleapi.Error) {
 	for _, err := range err.Errors {
 		logging.Errorf(c, "%s", err.Message)
 	}
+}
+
+// conflictingInstance deals with a GCE instance creation conflict.
+func conflictingInstance(c context.Context, vm *model.VM) error {
+	// Hostnames are required to be unique per project.
+	// A conflict only occurs in the case of name collision.
+	srv := getCompute(c).Instances
+	call := srv.Get(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
+	inst, err := call.Context(c).Do()
+	if err != nil {
+		if gerr, ok := err.(*googleapi.Error); ok {
+			if gerr.Code == http.StatusNotFound {
+				// Instance doesn't exist in this zone.
+				if err := resetVM(c, vm.ID); err != nil {
+					return errors.Annotate(err, "instance exists in another zone").Err()
+				}
+				return errors.Reason("instance exists in another zone").Err()
+			}
+			logErrors(c, gerr)
+		}
+		return errors.Annotate(err, "failed to fetch instance").Err()
+	}
+	// Instance exists in this zone.
+	logging.Debugf(c, "instance exists: %s", inst.SelfLink)
+	t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
+	if err != nil {
+		return errors.Annotate(err, "failed to parse instance creation time").Err()
+	}
+	return setCreated(c, vm.ID, inst.SelfLink, t)
 }
 
 // createInstanceQueue is the name of the create instance task handler queue.
@@ -168,39 +197,17 @@ func createInstance(c context.Context, payload proto.Message) error {
 	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.GetInstance())
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
-		gerr := err.(*googleapi.Error)
-		logErrors(c, gerr)
-		if gerr.Code == http.StatusConflict {
-			// Conflict with an existing instance. Conflicts arise from name collisions.
-			// Hostnames are required to be unique per project. Either this instance already
-			// exists, or a same-named instance exists in a different zone. Figure out which.
-			call := srv.Get(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
-			inst, err := call.Context(c).Do()
-			if err != nil {
-				if gerr, ok := err.(*googleapi.Error); ok {
-					logErrors(c, gerr)
-					if gerr.Code == http.StatusNotFound {
-						// Instance doesn't exist in this zone.
-						if err := resetVM(c, task.Id); err != nil {
-							return errors.Annotate(err, "instance exists in another zone").Err()
-						}
-						return errors.Reason("instance exists in another zone").Err()
-					}
-				}
-				return errors.Annotate(err, "failed to fetch instance").Err()
+		if gerr, ok := err.(*googleapi.Error); ok {
+			if gerr.Code == http.StatusConflict {
+				return conflictingInstance(c, vm)
 			}
-			// Instance exists in this zone.
-			logging.Debugf(c, "instance exists: %s", inst.SelfLink)
-			t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
-			if err != nil {
-				return errors.Annotate(err, "failed to parse instance creation time").Err()
+			if err := resetVM(c, task.Id); err != nil {
+				return errors.Annotate(err, "failed to create instance").Err()
 			}
-			return setCreated(c, task.Id, inst.SelfLink, t)
+			logErrors(c, gerr)
+			return errors.Reason("failed to create instance").Err()
 		}
-		if err := resetVM(c, task.Id); err != nil {
-			return errors.Annotate(err, "failed to create instance").Err()
-		}
-		return errors.Reason("failed to create instance").Err()
+		return errors.Annotate(err, "failed to create instance").Err()
 	}
 	if op.Error != nil && len(op.Error.Errors) > 0 {
 		for _, err := range op.Error.Errors {
@@ -267,14 +274,15 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	call := srv.Delete(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
-		gerr := err.(*googleapi.Error)
-		logErrors(c, gerr)
-		if gerr.Code == http.StatusNotFound {
-			// Instance is already destroyed.
-			logging.Debugf(c, "instance does not exist: %s", vm.URL)
-			return deleteBotAsync(c, task.Id, vm.Hostname)
+		if gerr, ok := err.(*googleapi.Error); ok {
+			if gerr.Code == http.StatusNotFound {
+				// Instance is already destroyed.
+				logging.Debugf(c, "instance does not exist: %s", vm.URL)
+				return deleteBotAsync(c, task.Id, vm.Hostname)
+			}
+			logErrors(c, gerr)
 		}
-		return errors.Reason("failed to destroy instance").Err()
+		return errors.Annotate(err, "failed to destroy instance").Err()
 	}
 	if op.Error != nil && len(op.Error.Errors) > 0 {
 		for _, err := range op.Error.Errors {
