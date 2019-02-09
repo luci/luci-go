@@ -16,6 +16,24 @@
       "revId": "e0b0c42084200b020650664cc21a2885b90856d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dd7d3dd_85949907",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-09T03:11:12Z",
+      "side": 0,
+      "message": "It\u0027s really long, it annoys me. Added shorter version.",
+      "parentUuid": "a23b952a_e3137ea3",
+      "revId": "e0b0c42084200b020650664cc21a2885b90856d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

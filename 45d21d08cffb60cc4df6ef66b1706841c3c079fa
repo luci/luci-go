@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e4b824f9_7bda6608",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-09T03:11:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2ef9b37_f08405e6",
+      "revId": "45d21d08cffb60cc4df6ef66b1706841c3c079fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "11336c2d_12bfdcb8",
         "filename": "gce/appengine/backend/instances.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "45d21d08cffb60cc4df6ef66b1706841c3c079fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62167e93_191bf15c",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-09T03:11:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11336c2d_12bfdcb8",
+      "revId": "45d21d08cffb60cc4df6ef66b1706841c3c079fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -56,6 +92,30 @@
       "revId": "45d21d08cffb60cc4df6ef66b1706841c3c079fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bc2a1e9_a1fbe3c7",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-09T03:11:12Z",
+      "side": 1,
+      "message": "Mistake. Definitely should be annotated.",
+      "parentUuid": "bc546e20_fee701c3",
+      "range": {
+        "startLine": 280,
+        "startChar": 9,
+        "endLine": 280,
+        "endChar": 23
+      },
+      "revId": "45d21d08cffb60cc4df6ef66b1706841c3c079fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
