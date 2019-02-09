@@ -82,7 +82,7 @@ func TestDeleteBot(t *testing.T) {
 				}
 				datastore.Put(c, &model.VM{
 					ID:       "id",
-					Deadline: 1,
+					Created:  1,
 					Hostname: "name",
 					URL:      "url",
 				})
@@ -95,7 +95,7 @@ func TestDeleteBot(t *testing.T) {
 					ID: "id",
 				}
 				datastore.Get(c, v)
-				So(v.Deadline, ShouldEqual, 1)
+				So(v.Created, ShouldEqual, 1)
 				So(v.Hostname, ShouldEqual, "name")
 				So(v.URL, ShouldEqual, "url")
 			})
@@ -106,7 +106,7 @@ func TestDeleteBot(t *testing.T) {
 				}
 				datastore.Put(c, &model.VM{
 					ID:       "id",
-					Deadline: 1,
+					Created:  1,
 					Hostname: "name",
 					URL:      "url",
 				})
@@ -119,7 +119,7 @@ func TestDeleteBot(t *testing.T) {
 					ID: "id",
 				}
 				datastore.Get(c, v)
-				So(v.Deadline, ShouldEqual, 0)
+				So(v.Created, ShouldEqual, 0)
 				So(v.Hostname, ShouldBeEmpty)
 				So(v.URL, ShouldBeEmpty)
 			})
@@ -130,7 +130,7 @@ func TestDeleteBot(t *testing.T) {
 				}
 				datastore.Put(c, &model.VM{
 					ID:       "id",
-					Deadline: 1,
+					Created:  1,
 					Hostname: "name",
 					URL:      "url",
 				})
@@ -143,7 +143,7 @@ func TestDeleteBot(t *testing.T) {
 					ID: "id",
 				}
 				datastore.Get(c, v)
-				So(v.Deadline, ShouldEqual, 0)
+				So(v.Created, ShouldEqual, 0)
 				So(v.Hostname, ShouldBeEmpty)
 				So(v.URL, ShouldBeEmpty)
 			})
@@ -260,7 +260,8 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
-						Deadline: 1,
+						Created:  1,
+						Lifetime: 1,
 						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{

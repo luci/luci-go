@@ -229,7 +229,7 @@ func TestCreate(t *testing.T) {
 						ID: "id",
 					}
 					datastore.Get(c, v)
-					So(v.Deadline, ShouldNotEqual, 0)
+					So(v.Created, ShouldNotEqual, 0)
 					So(v.URL, ShouldEqual, "url")
 				})
 			})
@@ -294,7 +294,7 @@ func TestCreate(t *testing.T) {
 						ID: "id",
 					}
 					datastore.Get(c, v)
-					So(v.Deadline, ShouldNotEqual, 0)
+					So(v.Created, ShouldNotEqual, 0)
 					So(v.URL, ShouldEqual, "url")
 				})
 			})
@@ -405,7 +405,7 @@ func TestDestroyInstance(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
-						Deadline: 1,
+						Created:  1,
 						Hostname: "name",
 						URL:      "url",
 					})
@@ -418,7 +418,7 @@ func TestDestroyInstance(t *testing.T) {
 						ID: "id",
 					}
 					datastore.Get(c, v)
-					So(v.Deadline, ShouldEqual, 1)
+					So(v.Created, ShouldEqual, 1)
 					So(v.Hostname, ShouldEqual, "name")
 					So(v.URL, ShouldEqual, "url")
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
@@ -433,7 +433,7 @@ func TestDestroyInstance(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
-						Deadline: 1,
+						Created:  1,
 						Hostname: "name",
 						URL:      "url",
 					})
@@ -446,7 +446,7 @@ func TestDestroyInstance(t *testing.T) {
 						ID: "id",
 					}
 					datastore.Get(c, v)
-					So(v.Deadline, ShouldEqual, 1)
+					So(v.Created, ShouldEqual, 1)
 					So(v.Hostname, ShouldEqual, "name")
 					So(v.URL, ShouldEqual, "url")
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)

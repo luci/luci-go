@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -32,10 +33,49 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
+// manageExistingBot manages an existing Swarming bot.
+func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm *model.VM) error {
+	// A bot connected to Swarming may be executing workload.
+	// To destroy the instance, terminate the bot first to avoid interruptions.
+	// Termination can be skipped if the bot is deleted, dead, or already terminated.
+	switch {
+	case bot.Deleted:
+		logging.Debugf(c, "bot deleted")
+		return destroyInstanceAsync(c, vm.ID, vm.URL)
+	case bot.IsDead:
+		logging.Debugf(c, "bot dead")
+		return destroyInstanceAsync(c, vm.ID, vm.URL)
+	}
+	srv := getSwarming(c, vm.Swarming).Bot
+	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Do()
+	if err != nil {
+		if gerr, ok := err.(*googleapi.Error); ok {
+			logErrors(c, gerr)
+			return errors.Reason("failed to fetch bot events").Err()
+		}
+		return errors.Annotate(err, "failed to fetch bot events").Err()
+	}
+	for _, e := range events.Items {
+		if e.EventType == "bot_terminate" {
+			logging.Debugf(c, "bot terminated")
+			return destroyInstanceAsync(c, vm.ID, vm.URL)
+		}
+	}
+	switch {
+	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < time.Now().Unix():
+		logging.Debugf(c, "deadline %d exceeded", vm.Created+vm.Lifetime)
+		return terminateBotAsync(c, vm.ID, vm.Hostname)
+	case vm.Drained:
+		logging.Debugf(c, "VM drained")
+		return terminateBotAsync(c, vm.ID, vm.Hostname)
+	}
+	return nil
+}
+
 // manageBotQueue is the name of the manage bot task handler queue.
 const manageBotQueue = "manage-bot"
 
-// manageBot manages an existing Swarming bot.
+// manageBot manages a Swarming bot.
 func manageBot(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.ManageBot)
 	switch {
@@ -56,53 +96,19 @@ func manageBot(c context.Context, payload proto.Message) error {
 	bot, err := srv.Get(vm.Hostname).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, gerr)
 			if gerr.Code == http.StatusNotFound {
 				// Bot hasn't connected to Swarming yet.
 				// TODO(smut): Delete the GCE instance if it's been too long.
 				logging.Debugf(c, "bot not found")
 				return nil
 			}
+			logErrors(c, gerr)
+			return errors.Reason("failed to fetch bot").Err()
 		}
 		return errors.Annotate(err, "failed to fetch bot").Err()
 	}
 	logging.Debugf(c, "found bot")
-	// In general, to replace a GCE instance first terminate the Swarming bot, then destroy the
-	// GCE instance, then delete the Swarming bot. The Swarming bot must be terminated first so
-	// that the GCE instance is never destroyed while executing Swarming workload. However, if
-	// the Swarming bot died or was deleted by some external factor, we can skip the termination
-	// step because we already know the GCE instance can't execute Swarming workload anymore.
-	switch {
-	case bot.Deleted:
-		logging.Debugf(c, "bot deleted")
-		return destroyInstanceAsync(c, task.Id, vm.URL)
-	case bot.IsDead:
-		logging.Debugf(c, "bot dead")
-		return destroyInstanceAsync(c, task.Id, vm.URL)
-	}
-	// Bot is connected to Swarming.
-	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Do()
-	if err != nil {
-		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, gerr)
-		}
-		return errors.Annotate(err, "failed to fetch bot events").Err()
-	}
-	for _, e := range events.Items {
-		if e.EventType == "bot_terminate" {
-			logging.Debugf(c, "bot terminated")
-			return destroyInstanceAsync(c, task.Id, vm.URL)
-		}
-	}
-	switch {
-	case vm.Deadline > 0 && vm.Deadline < time.Now().Unix():
-		logging.Debugf(c, "deadline %d exceeded", vm.Deadline)
-		return terminateBotAsync(c, task.Id, vm.Hostname)
-	case vm.Drained:
-		logging.Debugf(c, "VM drained")
-		return terminateBotAsync(c, task.Id, vm.Hostname)
-	}
-	return nil
+	return manageExistingBot(c, bot, vm)
 }
 
 // terminateBotAsync schedules a task queue task to terminate a Swarming bot.
@@ -146,12 +152,13 @@ func terminateBot(c context.Context, payload proto.Message) error {
 	_, err = srv.Bot.Terminate(vm.Hostname).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, gerr)
 			if gerr.Code == http.StatusNotFound {
 				// Bot is already deleted.
 				logging.Debugf(c, "bot not found")
 				return nil
 			}
+			logErrors(c, gerr)
+			return errors.Reason("failed to terminate bot").Err()
 		}
 		return errors.Annotate(err, "failed to terminate bot").Err()
 	}
@@ -199,12 +206,13 @@ func deleteBot(c context.Context, payload proto.Message) error {
 	_, err = srv.Delete(vm.Hostname).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, gerr)
 			if gerr.Code == http.StatusNotFound {
 				// Bot is already deleted.
 				logging.Debugf(c, "bot not found")
 				return setDeleted(c, task.Id, vm.Hostname)
 			}
+			logErrors(c, gerr)
+			return errors.Reason("failed to delete bot").Err()
 		}
 		return errors.Annotate(err, "failed to delete bot").Err()
 	}
@@ -224,7 +232,7 @@ func setDeleted(c context.Context, id, hostname string) error {
 			// Already deleted. A new one may even be created.
 			return nil
 		}
-		vm.Deadline = 0
+		vm.Created = 0
 		vm.Hostname = ""
 		vm.URL = ""
 		if err := datastore.Put(c, vm); err != nil {

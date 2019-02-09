@@ -85,9 +85,8 @@ type VM struct {
 	Attributes config.VM `gae:"attributes,noindex"`
 	// Config is the ID of the config this VM was created from.
 	Config string `gae:"config"`
-	// Deadline is the Unix time when the GCE instance should be deleted.
-	// This time is in UTC and in seconds.
-	Deadline int64 `gae:"deadline"`
+	// Created is the Unix time when the GCE instance was created.
+	Created int64 `gae:"created"`
 	// Drained indicates whether or not this VM is drained.
 	// A GCE instance should not be created for a drained VM.
 	// Any existing GCE instance should be deleted regardless of deadline.
