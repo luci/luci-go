@@ -124,7 +124,7 @@ func setCreated(c context.Context, id, url string, at time.Time) error {
 			// Already created.
 			return nil
 		}
-		vm.Deadline = at.Unix() + vm.Lifetime
+		vm.Created = at.Unix()
 		vm.URL = url
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
@@ -168,34 +168,35 @@ func createInstance(c context.Context, payload proto.Message) error {
 	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.GetInstance())
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
-		gerr := err.(*googleapi.Error)
-		logErrors(c, gerr)
-		if gerr.Code == http.StatusConflict {
-			// Conflict with an existing instance. Conflicts arise from name collisions.
-			// Hostnames are required to be unique per project. Either this instance already
-			// exists, or a same-named instance exists in a different zone. Figure out which.
-			call := srv.Get(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
-			inst, err := call.Context(c).Do()
-			if err != nil {
-				if gerr, ok := err.(*googleapi.Error); ok {
-					logErrors(c, gerr)
-					if gerr.Code == http.StatusNotFound {
-						// Instance doesn't exist in this zone.
-						if err := resetVM(c, task.Id); err != nil {
-							return errors.Annotate(err, "instance exists in another zone").Err()
+		if gerr, ok := err.(*googleapi.Error); ok {
+			logErrors(c, gerr)
+			if gerr.Code == http.StatusConflict {
+				// Conflict with an existing instance. Conflicts arise from name collisions.
+				// Hostnames are required to be unique per project. Either this instance already
+				// exists, or a same-named instance exists in a different zone. Figure out which.
+				call := srv.Get(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
+				inst, err := call.Context(c).Do()
+				if err != nil {
+					if gerr, ok := err.(*googleapi.Error); ok {
+						logErrors(c, gerr)
+						if gerr.Code == http.StatusNotFound {
+							// Instance doesn't exist in this zone.
+							if err := resetVM(c, task.Id); err != nil {
+								return errors.Annotate(err, "instance exists in another zone").Err()
+							}
+							return errors.Reason("instance exists in another zone").Err()
 						}
-						return errors.Reason("instance exists in another zone").Err()
 					}
+					return errors.Annotate(err, "failed to fetch instance").Err()
 				}
-				return errors.Annotate(err, "failed to fetch instance").Err()
+				// Instance exists in this zone.
+				logging.Debugf(c, "instance exists: %s", inst.SelfLink)
+				t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
+				if err != nil {
+					return errors.Annotate(err, "failed to parse instance creation time").Err()
+				}
+				return setCreated(c, task.Id, inst.SelfLink, t)
 			}
-			// Instance exists in this zone.
-			logging.Debugf(c, "instance exists: %s", inst.SelfLink)
-			t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
-			if err != nil {
-				return errors.Annotate(err, "failed to parse instance creation time").Err()
-			}
-			return setCreated(c, task.Id, inst.SelfLink, t)
 		}
 		if err := resetVM(c, task.Id); err != nil {
 			return errors.Annotate(err, "failed to create instance").Err()
@@ -267,12 +268,13 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	call := srv.Delete(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
-		gerr := err.(*googleapi.Error)
-		logErrors(c, gerr)
-		if gerr.Code == http.StatusNotFound {
-			// Instance is already destroyed.
-			logging.Debugf(c, "instance does not exist: %s", vm.URL)
-			return deleteBotAsync(c, task.Id, vm.Hostname)
+		if gerr, ok := err.(*googleapi.Error); ok {
+			logErrors(c, gerr)
+			if gerr.Code == http.StatusNotFound {
+				// Instance is already destroyed.
+				logging.Debugf(c, "instance does not exist: %s", vm.URL)
+				return deleteBotAsync(c, task.Id, vm.Hostname)
+			}
 		}
 		return errors.Reason("failed to destroy instance").Err()
 	}
