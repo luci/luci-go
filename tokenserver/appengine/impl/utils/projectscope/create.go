@@ -16,52 +16,16 @@ package projectscope
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"go.chromium.org/luci/common/gcloud/iam"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 )
 
-// generateDisplayName creates the GCP IAM service account "DisplayName" field content.
-//
-// It contains meta data about the project-scoped service account used for debugging and auditing.
-func generateDisplayName(identity *ScopedIdentity) (string, error) {
-	if identity.Service == "" {
-		return "", fmt.Errorf("service name is empty")
-	}
-	if identity.Project == "" {
-		return "", fmt.Errorf("project name is empty")
-	}
-
-	format := struct {
-		Service string `json:"luci_svc"`
-		Project string `json:"luci_prj"`
-	}{
-		Service: identity.Service,
-		Project: identity.Project,
-	}
-
-	bytes, err := json.Marshal(format)
-	if err != nil {
-		return "", err
-	}
-	if len(bytes) > iam.MaxServiceAccountDisplayNameUtf8Bytes {
-		bytes = bytes[:iam.MaxServiceAccountDisplayNameUtf8Bytes]
-	}
-	return string(bytes), nil
-}
-
 // ServiceAccountClient resembles the interface for service account creating clients.
 type ServiceAccountClient interface {
-	CreateServiceAccount(ctx context.Context, gcpProject, accountid, displayName string) (*iam.ServiceAccount, error)
-	GetServiceAccount(ctx context.Context, gcpProject, accountid string) (*iam.ServiceAccount, error)
+	GetServiceAccount(ctx context.Context, email string) (*iam.ServiceAccount, error)
 }
-
-// ServiceAccountCreator is used to decouble from concrete GCP IAM service account creation implementations.
-type ServiceAccountCreator func(ctx context.Context, gcpProject string, identity *ScopedIdentity, client ServiceAccountClient) (*iam.ServiceAccount, error)
 
 // createClient instantiates a service account creation client.
 func createClient(ctx context.Context) (*iam.Client, error) {
@@ -71,28 +35,4 @@ func createClient(ctx context.Context) (*iam.Client, error) {
 	}
 	client := &iam.Client{Client: &http.Client{Transport: asSelf}}
 	return client, nil
-}
-
-// CreateServiceAccount creates a service account representing the scoped identity.
-func CreateServiceAccount(ctx context.Context, gcpProject string, identity *ScopedIdentity, client ServiceAccountClient) (*iam.ServiceAccount, error) {
-	logging.Debugf(ctx, "CreateServiceAccount(gcpProject=%s, identity=%v)", gcpProject, identity)
-
-	displayName, err := generateDisplayName(identity)
-	if err != nil {
-		return nil, err
-	}
-	if client == nil {
-		client, err = createClient(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-	serviceAccount, err := client.CreateServiceAccount(ctx, gcpProject, identity.AccountID, displayName)
-	if err != nil {
-		if err == iam.ErrAlreadyExists {
-			return client.GetServiceAccount(ctx, gcpProject, identity.AccountID)
-		}
-		return nil, err
-	}
-	return serviceAccount, nil
 }

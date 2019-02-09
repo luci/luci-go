@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/retry/transient"
 
@@ -33,55 +32,43 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
-// ScopedIdentities is the default storage for all scoped identities.
-var scopedIdentities = &persistentIdentityManager{}
+// projectIdentities is the default storage for all scoped identities.
+var projectIdentities = &persistentIdentityManager{}
 
-// ScopedIdentities returns the global scoped identity storage.
-func ScopedIdentities(ctx context.Context) ScopedIdentityManager {
-	return scopedIdentities
+// ProjectIdentities returns the global scoped identity storage.
+func ProjectIdentities(ctx context.Context) ProjectIdentityManager {
+	return projectIdentities
 }
 
-// ScopedIdentityManager interface declares the interface to the scoped identity storage.
-type ScopedIdentityManager interface {
-	// GetOrCreate retrieves a scoped identity from the storage if it exists, or otherwise creates it first.
-	GetOrCreate(c context.Context, service, project, gcpProject string, onCreate ServiceAccountCreator) (*ScopedIdentity, bool, error)
+// ProjectIdentityManager interface declares the interface to the scoped identity storage.
+type ProjectIdentityManager interface {
 
-	// Get retrieves a scoped identity from the storage, keyed by (service, project) pair.
-	Get(c context.Context, service, project string) (*ScopedIdentity, error)
+	// Create an identity based on a (project, email) combination
+	Create(c context.Context, project, email string, serviceAccount iam.ServiceAccount) (*ProjectIdentity, error)
 
-	// Lookup performs an identity lookup by account id.
-	Lookup(c context.Context, accountID string) (*ScopedIdentity, error)
+	// Delete an identity from the storage.
+	Delete(c context.Context, identity *ProjectIdentity) error
+
+	// Lookup an identity from the storage.
+	Lookup(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error)
+
+	// LookupByProject performs a lookup by project name.
+	LookupByProject(c context.Context, project string) (*ProjectIdentity, error)
 }
 
-// ScopedIdentity defines a scoped identity in the storage.
-type ScopedIdentity struct {
-	_kind            string `gae:"$kind,ScopedIdentity"`
-	AccountID        string `gae:"$id"`
-	Service          string
-	Project          string
-	GcpProject       string
-	CreatedTimestamp int64
-	ServiceAccount   iam.ServiceAccount `gae:",noindex"`
-}
-
-// NewScopedIdentity creates a new scoped identity.
-func NewScopedIdentity(service, project, gcpProject string) *ScopedIdentity {
-	identity := &ScopedIdentity{
-		Service:          service,
-		Project:          project,
-		GcpProject:       gcpProject,
-		CreatedTimestamp: 0,
-	}
-
-	identity.AccountID = GenerateAccountID(service, project)
-	return identity
+// ProjectIdentity defines a scoped identity in the storage.
+type ProjectIdentity struct {
+	_kind          string `gae:"$kind,ScopedIdentity"`
+	Project        string `gae:"$id"`
+	Email          string
+	ServiceAccount iam.ServiceAccount `gae:",noindex"`
 }
 
 // persistentIdentityManager implements ScopedIdentityManager.
 type persistentIdentityManager struct {
 }
 
-func (s *persistentIdentityManager) getInternal(c context.Context, identity *ScopedIdentity) error {
+func (s *persistentIdentityManager) lookupInternal(c context.Context, identity *ProjectIdentity) error {
 	if err := ds.Get(c, identity); err != nil {
 		switch {
 		case err == ds.ErrNoSuchEntity:
@@ -93,62 +80,51 @@ func (s *persistentIdentityManager) getInternal(c context.Context, identity *Sco
 	return nil
 }
 
-func (s *persistentIdentityManager) Lookup(c context.Context, accountEmail string) (*ScopedIdentity, error) {
-	identity := &ScopedIdentity{
-		AccountID: accountEmail,
-	}
-	if err := s.getInternal(c, identity); err != nil {
+// LookupByProject returns the project identity stored for a given project.
+func (s *persistentIdentityManager) LookupByProject(c context.Context, project string) (*ProjectIdentity, error) {
+	return s.Lookup(c, &ProjectIdentity{Project: project})
+}
+
+// Lookup reads an identity from the storage based on what fields are set in the identity struct.
+func (s *persistentIdentityManager) Lookup(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
+	if err := s.lookupInternal(c, identity); err != nil {
 		return nil, err
 	}
 	return identity, nil
 }
 
-func (s *persistentIdentityManager) Get(c context.Context, service, project string) (*ScopedIdentity, error) {
-	identity := NewScopedIdentity(service, project, "")
-	if err := s.getInternal(c, identity); err != nil {
-		return nil, err
-	}
-	return identity, nil
-}
-
-func (s *persistentIdentityManager) GetOrCreate(c context.Context, service, project, gcpProject string, createServiceAccount ServiceAccountCreator) (*ScopedIdentity, bool, error) {
-	identity := NewScopedIdentity(service, project, gcpProject)
-
-	err := s.getInternal(c, identity)
-	if err == nil {
-		return identity, false, nil
-	}
-
-	// If err is anything other than ErrNotFound, emit transient error
-	if err != ErrNotFound {
-		return nil, false, err
-	}
-
-	// If this function is not given a service account creator function
-	// then we are done here.
-	if createServiceAccount == nil {
-		return nil, false, err
-	}
-
-	// Attempt to create service account.
-	// Will fetch the service account if it was already created.
-	serviceAccount, err := createServiceAccount(c, gcpProject, identity, nil)
-	if err != nil {
-		if err == ErrAlreadyExists {
-			return nil, false, transient.Tag.Apply(ErrAlreadyExists)
+// Delete removes an identity from the storage.
+func (s *persistentIdentityManager) Delete(c context.Context, identity *ProjectIdentity) error {
+	return ds.RunInTransaction(c, func(c context.Context) error {
+		err := s.lookupInternal(c, identity)
+		if err != nil {
+			return err
 		}
-		return nil, false, err
+		return ds.Delete(c, identity)
+	}, nil)
+
+}
+
+// Create stores a new entry for a project identity.
+func (s *persistentIdentityManager) Create(c context.Context, project, email string, serviceAccount iam.ServiceAccount) (*ProjectIdentity, error) {
+	identity := &ProjectIdentity{
+		Project:        project,
+		Email:          email,
+		ServiceAccount: serviceAccount,
 	}
-
-	identity.CreatedTimestamp = clock.Now(c).Unix()
-	identity.ServiceAccount = *serviceAccount
-
-	// Using transaction to leverage retry logic
-	err = ds.RunInTransaction(c, func(c context.Context) error {
-		return ds.Put(c, identity)
+	err := ds.RunInTransaction(c, func(c context.Context) error {
+		err := s.lookupInternal(c, identity)
+		switch {
+		case err == nil:
+			return ErrAlreadyExists
+		case err == ErrNotFound:
+			return ds.Put(c, identity)
+		default:
+			return err
+		}
 	}, nil)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	return identity, true, nil
+	return identity, nil
 }
