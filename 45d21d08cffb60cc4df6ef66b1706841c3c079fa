@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c2ef9b37_f08405e6",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-09T02:38:52Z",
+      "side": 1,
+      "message": "this indented stuff is getting very hard to read.\nCan you refactor this as a follow up? \nEven encapsulating StatusConflict block with a function would be very helpful.",
+      "revId": "45d21d08cffb60cc4df6ef66b1706841c3c079fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11336c2d_12bfdcb8",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-09T02:38:52Z",
+      "side": 1,
+      "message": "(for potential follow up if you agree with me) under better late than never: why log generic error if you are already handling its specific case?\nI suggest to move logErrors below StatusConflict block right before resetVM. This will make logs less noisy and easier for trooper to find what\u0027s really going unexpected vs _rare but expected_ error handling.\n\nI see similar cases elsewhere in this file, e.g., L181, L273.",
+      "revId": "45d21d08cffb60cc4df6ef66b1706841c3c079fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc546e20_fee701c3",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-09T02:38:52Z",
+      "side": 1,
+      "message": "any reason for not annotating here? it might be useful for debugging rare network issues.",
+      "range": {
+        "startLine": 280,
+        "startChar": 9,
+        "endLine": 280,
+        "endChar": 23
+      },
+      "revId": "45d21d08cffb60cc4df6ef66b1706841c3c079fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

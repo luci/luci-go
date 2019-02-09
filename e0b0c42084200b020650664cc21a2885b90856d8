@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a23b952a_e3137ea3",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-09T02:38:52Z",
+      "side": 0,
+      "message": "i find this comment still useful. MInd moving it to new func?",
+      "revId": "e0b0c42084200b020650664cc21a2885b90856d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
