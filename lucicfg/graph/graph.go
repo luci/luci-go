@@ -229,18 +229,18 @@ func (g *Graph) initNode(k *Key) *Node {
 // Trying to use AddNode after the graph has been finalized is an error.
 //
 // Freezes props.values() as a side effect.
-func (g *Graph) AddNode(k *Key, props *starlark.Dict, idempotent bool, trace *builtins.CapturedStacktrace) (*Node, error) {
+func (g *Graph) AddNode(k *Key, props *starlark.Dict, idempotent bool, trace *builtins.CapturedStacktrace) error {
 	if g.finalized {
-		return nil, ErrFinalized
+		return ErrFinalized
 	}
 	if err := g.validateKey("key", k); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Only string keys are allowed in 'props'.
 	for _, pk := range props.Keys() {
 		if _, ok := pk.(starlark.String); !ok {
-			return nil, fmt.Errorf("non-string key %s in 'props'", pk)
+			return fmt.Errorf("non-string key %s in 'props'", pk)
 		}
 	}
 	propsStruct := starlarkstruct.FromKeywords(starlark.String("props"), props.Items())
@@ -249,7 +249,7 @@ func (g *Graph) AddNode(k *Key, props *starlark.Dict, idempotent bool, trace *bu
 	if !n.Declared() {
 		n.declare(g.nextIndex, propsStruct, idempotent, trace)
 		g.nextIndex++
-		return n, nil
+		return nil
 	}
 
 	// Only idempotent nodes can be redeclared, and only if all declarations
@@ -257,12 +257,12 @@ func (g *Graph) AddNode(k *Key, props *starlark.Dict, idempotent bool, trace *bu
 	if n.Idempotent && idempotent {
 		switch eq, err := starlark.Equal(propsStruct, n.Props); {
 		case err != nil:
-			return nil, err
+			return err
 		case eq:
-			return n, nil
+			return nil
 		}
 	}
-	return nil, &NodeRedeclarationError{Trace: trace, Previous: n}
+	return &NodeRedeclarationError{Trace: trace, Previous: n}
 }
 
 // AddEdge adds an edge to the graph.
@@ -657,7 +657,8 @@ var graphAttrs = map[string]*starlark.Builtin{
 				return nil, err
 			}
 		}
-		return b.Receiver().(*Graph).AddNode(key, props, bool(idempotent), trace)
+		err = b.Receiver().(*Graph).AddNode(key, props, bool(idempotent), trace)
+		return starlark.None, err
 	}),
 
 	// add_edge(parent: graph.Key, child: graph.Key, title='', trace=stacktrace())

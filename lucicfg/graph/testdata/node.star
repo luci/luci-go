@@ -4,8 +4,10 @@ trace =  stacktrace()
 def test_add_node_ok():
   g = new_graph()
   k = g.key('parent', 'par', 'kind', 'name')
+  g.add_node(k, props={'prop': ['v1', 'v2']})
 
-  n = g.add_node(k, props={'prop': ['v1', 'v2']})
+  g.finalize()
+  n = g.node(k)
 
   assert.true(n != None)
   assert.true(n)
@@ -15,16 +17,26 @@ def test_add_node_ok():
   assert.eq(n.props.prop, ['v1', 'v2'])
   assert.eq(str(n.trace),
       'Traceback (most recent call last):\n'
-      + '  testdata/node.star:21: in <toplevel>\n'
-      + '  testdata/node.star:8: in test_add_node_ok\n')
+      + '  testdata/node.star:23: in <toplevel>\n'
+      + '  testdata/node.star:7: in test_add_node_ok\n')
 
 test_add_node_ok()
 
 
 def test_node_can_be_used_in_sets():
   g = new_graph()
-  n1 = g.add_node(g.key('t1', 'id1'))
-  n2 = g.add_node(g.key('t1', 'id2'))
+
+  k1 = g.key('t1', 'id1')
+  k2 = g.key('t1', 'id2')
+
+  g.add_node(k1)
+  g.add_node(k2)
+
+  g.finalize()
+
+  n1 = g.node(k1)
+  n2 = g.node(k2)
+
   s = set([n1, n2])
   assert.true(n1 in s)
 
@@ -76,7 +88,10 @@ def test_freezes_props():
   k = g.key('t1', 'id1')
 
   vals = ['v1', 'v2']
-  n = g.add_node(k, props={'prop': vals})
+  g.add_node(k, props={'prop': vals})
+
+  g.finalize()
+  n = g.node(k)
 
   # Note that freezing is NOT copying, original 'vals' is also frozen now.
   assert.fails(lambda: n.props.prop.append('z'), 'cannot append to frozen list')
