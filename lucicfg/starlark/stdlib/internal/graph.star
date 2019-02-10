@@ -64,12 +64,9 @@ def _add_node(key, props=None, idempotent=False, trace=None):
     props: a dict with node properties, will be frozen.
     idempotent: True if this node can be redeclared, but only with same props.
     trace: a stack trace to associate with the node.
-
-  Returns:
-    graph.node object representing the node.
   """
   _check_interpreter_context()
-  return __native__.graph().add_node(
+  __native__.graph().add_node(
       key, props or {}, bool(idempotent), trace or stacktrace(skip=1))
 
 
@@ -97,7 +94,7 @@ def _add_edge(parent, child, title=None, trace=None):
     trace: a stack trace to associate with the edge.
   """
   _check_interpreter_context()
-  return __native__.graph().add_edge(
+  __native__.graph().add_edge(
       parent, child, title or '', trace or stacktrace(skip=1))
 
 
