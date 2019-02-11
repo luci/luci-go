@@ -154,7 +154,13 @@ core.builder(
 # === cr-buildbucket.cfg
 # buckets: <
 #   name: "ci"
-#   acl_sets: "ci"
+#   acls: <
+#     role: WRITER
+#     group: "admins"
+#   >
+#   acls: <
+#     group: "all"
+#   >
 #   swarming: <
 #     builders: <
 #       name: "cron builder"
@@ -213,7 +219,17 @@ core.builder(
 # >
 # buckets: <
 #   name: "try"
-#   acl_sets: "try"
+#   acls: <
+#     role: WRITER
+#     group: "admins"
+#   >
+#   acls: <
+#     group: "all"
+#   >
+#   acls: <
+#     role: SCHEDULER
+#     group: "devs"
+#   >
 #   swarming: <
 #     builders: <
 #       name: "generically named builder"
@@ -233,30 +249,6 @@ core.builder(
 #         cipd_version: "refs/heads/master"
 #       >
 #     >
-#   >
-# >
-# acl_sets: <
-#   name: "ci"
-#   acls: <
-#     role: WRITER
-#     group: "admins"
-#   >
-#   acls: <
-#     group: "all"
-#   >
-# >
-# acl_sets: <
-#   name: "try"
-#   acls: <
-#     role: WRITER
-#     group: "admins"
-#   >
-#   acls: <
-#     group: "all"
-#   >
-#   acls: <
-#     role: SCHEDULER
-#     group: "devs"
 #   >
 # >
 # ===
