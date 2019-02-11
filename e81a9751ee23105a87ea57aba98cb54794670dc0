@@ -16,6 +16,24 @@
       "revId": "e81a9751ee23105a87ea57aba98cb54794670dc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be7c10b5_c31e448a",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-02-11T18:27:17Z",
+      "side": 1,
+      "message": "That\u0027s a fair request but I\u0027ll skip because it\u0027s really just a best effort thing. The end goal is to get rid of this, the warning are just to be a bit helpful but not really anything blocking.",
+      "parentUuid": "ec3ebee9_01196417",
+      "revId": "e81a9751ee23105a87ea57aba98cb54794670dc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
