@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3d222bd9_714bff0b",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-11T23:09:35Z",
+      "side": 1,
+      "message": "Yeah, I agree. I started to reduce \u0027core\u0027 a bit already (by introducing \u0027lucicfg\u0027 namespace for real core-core things like lucicfg.generator and lucicfg.var). \n\nI\u0027ll rename it in a separate CL. No one is officially allowed to use this stuff yet, so if it breaks them, its their own problem :) (the fix would be trivial).",
+      "parentUuid": "b5ccb63f_9bd5e518",
+      "range": {
+        "startLine": 74,
+        "startChar": 42,
+        "endLine": 74,
+        "endChar": 54
+      },
+      "revId": "587bf1e87fbf029ca21dfe9e047cf5d69ac6f24a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0eef996c_0a5e5122",
         "filename": "lucicfg/starlark/stdlib/internal/graph.star",
         "patchSetId": 5
@@ -39,6 +63,24 @@
       "revId": "587bf1e87fbf029ca21dfe9e047cf5d69ac6f24a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "164e9ad0_396d13a7",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-11T23:09:35Z",
+      "side": 1,
+      "message": "What do you mean \"does not match the code\"?.. We are expecting to find `kind` in the keyset, but discover it has only keys[0].kind. See wrong_kind.star test for how it looks.",
+      "parentUuid": "0eef996c_0a5e5122",
+      "revId": "587bf1e87fbf029ca21dfe9e047cf5d69ac6f24a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
