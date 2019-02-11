@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4ba87247_ed105b62",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-11T22:33:56Z",
+      "side": 1,
+      "message": "This function in its entirety was extracted as common repeating pattern. I removed it.",
+      "parentUuid": "83996b04_2d39ffb6",
+      "range": {
+        "startLine": 96,
+        "startChar": 2,
+        "endLine": 97,
+        "endChar": 15
+      },
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b325ddb_d9d62073",
         "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e56bf7eb_592edae8",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-11T22:33:56Z",
+      "side": 1,
+      "message": "Then what from_keyset does now will be basically copy-pasted a bunch of times. I initially did this and then extracted repeated code into a function. \n\nI\u0027ve changed .get() to fail on unknown key instead of returning None. This reduced copy-pasta a bit.",
+      "parentUuid": "9b325ddb_d9d62073",
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "c05e637d_2924c2ff",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-11T22:33:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec893a2c_7732c2e7",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 15
+      },
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9bca1ca1_e26590f4",
         "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
         "patchSetId": 3
@@ -79,6 +145,24 @@
       "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25aff5a7_41483688",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-11T22:33:56Z",
+      "side": 1,
+      "message": "No, it can\u0027t. Keysets are detected on line 67.",
+      "parentUuid": "9bca1ca1_e26590f4",
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -102,6 +186,30 @@
       "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "785a1cd4_76f6d31b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-11T22:33:56Z",
+      "side": 1,
+      "message": "Make these functions accept keysets if it becomes necessary. I think it is pretty clear from the body of the TODO. It meant to raise attention that there\u0027s something can be done here.",
+      "parentUuid": "2adea7af_b46f6ae7",
+      "range": {
+        "startLine": 100,
+        "startChar": 8,
+        "endLine": 100,
+        "endChar": 10
+      },
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
