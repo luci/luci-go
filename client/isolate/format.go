@@ -26,6 +26,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -211,7 +212,7 @@ func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 		return nil, fmt.Errorf("failed to load configuration; absolute include path %s", include)
 	}
 	includedIsolate := filepath.Clean(filepath.Join(isolateDir, include))
-	if IsWindows() && (strings.ToLower(includedIsolate)[0] != strings.ToLower(isolateDir)[0]) {
+	if runtime.GOOS == "windows" && (strings.ToLower(includedIsolate)[0] != strings.ToLower(isolateDir)[0]) {
 		return nil, errors.New("can't reference a .isolate file from another drive")
 	}
 	content, err := ioutil.ReadFile(includedIsolate)
@@ -421,7 +422,7 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		return lhs, nil
 	}
 
-	if IsWindows() && strings.ToLower(lhs.IsolateDir)[0] != strings.ToLower(rhs.IsolateDir)[0] {
+	if runtime.GOOS == "windows" && strings.ToLower(lhs.IsolateDir)[0] != strings.ToLower(rhs.IsolateDir)[0] {
 		return nil, errors.New("All .isolate files must be on same drive")
 	}
 

@@ -16,10 +16,10 @@ package main
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -98,7 +98,7 @@ func TestArchiveCMDParsing(t *testing.T) {
 		So(opts.Isolated, ShouldResemble, filepath.Join(base, "biz", "bar.isolated"))
 		So(err, ShouldBeNil)
 		So(stringmapflag.Value{"OS": "linux"}, ShouldResemble, opts.ConfigVariables)
-		if common.IsWindows() {
+		if runtime.GOOS == "windows" {
 			So(stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": ".exe", "DEPTH": "../.."}, ShouldResemble, opts.PathVariables)
 		} else {
 			So(stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": "", "DEPTH": "../.."}, ShouldResemble, opts.PathVariables)
@@ -127,7 +127,7 @@ func TestArchiveAbsolutePaths(t *testing.T) {
 
 // absToOS converts a POSIX path to OS specific format.
 func absToOS(drive, p string) string {
-	if common.IsWindows() {
+	if runtime.GOOS == "windows" {
 		return drive + strings.Replace(p, "/", "\\", -1)
 	}
 	return p

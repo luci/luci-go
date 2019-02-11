@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -70,7 +71,7 @@ type ArchiveOptions struct {
 func (a *ArchiveOptions) Init() {
 	a.Blacklist = stringlistflag.Flag{}
 	a.PathVariables = map[string]string{}
-	if IsWindows() {
+	if runtime.GOOS == "windows" {
 		a.PathVariables["EXECUTABLE_SUFFIX"] = ".exe"
 	} else {
 		a.PathVariables["EXECUTABLE_SUFFIX"] = ""

@@ -21,10 +21,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -80,7 +80,7 @@ type symlinkData struct {
 func TestPushDirectory(t *testing.T) {
 	t.Parallel()
 	mode := os.FileMode(0600)
-	if common.IsWindows() {
+	if runtime.GOOS == "windows" {
 		mode = os.FileMode(0666)
 	}
 
@@ -220,7 +220,7 @@ func TestPushDirectory(t *testing.T) {
 		},
 	}
 
-	if !common.IsWindows() {
+	if runtime.GOOS != "windows" {
 		otherDir, err := ioutil.TempDir("", "archiver")
 		if err != nil {
 			t.Fail()
