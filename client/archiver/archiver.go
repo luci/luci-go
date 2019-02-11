@@ -126,26 +126,40 @@ func New(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver
 	// TODO(maruel): Cache hashes and server cache presence.
 	ctx2, cancel := context.WithCancel(common.CancelOnCtrlC(ctx))
 	a := &Archiver{
-		ctx:                   ctx2,
-		cancel:                cancel,
-		progress:              progress.New(headers, out),
-		c:                     c,
-		maxConcurrentHash:     5,
-		maxConcurrentContains: 64,
-		maxConcurrentUpload:   8,
-		containsBatchingDelay: 100 * time.Millisecond,
-		containsBatchSize:     50,
-		stage1DedupeChan:      make(chan *PendingItem),
-		stage2HashChan:        make(chan *PendingItem),
-		stage3LookupChan:      make(chan *PendingItem),
-		stage4UploadChan:      make(chan *PendingItem),
+		ctx:      ctx2,
+		cancel:   cancel,
+		progress: progress.New(headers, out),
+		c:        c,
+		stage1:   make(chan *PendingItem),
 	}
 	tracer.NewPID(a, "archiver")
 
+	// Tuning parameters.
+
+	// Stage 1 is single threaded.
+
+	// Stage 2; Disk I/O bound.
+	// TODO(maruel): Reduce to 1 or 2.
+	const maxConcurrentHash = 5
+
+	// Stage 3; Control server overload due to parallelism (DDoS).
+	const maxConcurrentContains = 64
+	const containsBatchingDelay = 100 * time.Millisecond
+	const containsBatchSize = 50
+
+	// Stage 4; Network I/O bound.
+	const maxConcurrentUpload = 8
+
+	stage2 := make(chan *PendingItem)
+	stage3 := make(chan *PendingItem)
+	stage4 := make(chan *PendingItem)
 	a.wg.Add(1)
 	go func() {
-		defer a.wg.Done()
-		a.stage1DedupeLoop()
+		defer func() {
+			a.wg.Done()
+			close(stage2)
+		}()
+		a.stage1DedupeLoop(a.stage1, stage2)
 	}()
 
 	// TODO(todd): Create on-disk cache in a new stage inserted between stages 1
@@ -154,25 +168,31 @@ func New(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver
 
 	a.wg.Add(1)
 	go func() {
-		defer a.wg.Done()
-		a.stage2HashLoop()
+		defer func() {
+			a.wg.Done()
+			close(stage3)
+		}()
+		a.stage2HashLoop(stage2, stage3, maxConcurrentHash)
+	}()
+
+	a.wg.Add(1)
+	go func() {
+		defer func() {
+			a.wg.Done()
+			close(stage4)
+		}()
+		a.stage3LookupLoop(stage3, stage4, maxConcurrentContains, containsBatchingDelay, containsBatchSize)
 	}()
 
 	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
-		a.stage3LookupLoop()
-	}()
-
-	a.wg.Add(1)
-	go func() {
-		defer a.wg.Done()
-		a.stage4UploadLoop()
+		a.stage4UploadLoop(stage4, maxConcurrentUpload)
 	}()
 
 	// Push an nil item to enforce stage1DedupeLoop() woke up. Otherwise this
 	// could lead to a race condition if Close() is called too quickly.
-	a.stage1DedupeChan <- nil
+	a.stage1 <- nil
 	return a
 }
 
@@ -314,21 +334,13 @@ func (i *PendingItem) link(child *PendingItem) {
 //   - Uploading cache misses.
 type Archiver struct {
 	// Immutable.
-	ctx                   context.Context
-	cancel                func()
-	c                     *isolatedclient.Client
-	maxConcurrentHash     int           // Stage 2; Disk I/O bound.
-	maxConcurrentContains int           // Stage 3; Server overload due to parallelism (DDoS).
-	maxConcurrentUpload   int           // Stage 4; Network I/O bound.
-	containsBatchingDelay time.Duration // Used by stage 3
-	containsBatchSize     int           // Used by stage 3
-	closeLock             sync.Mutex
-	stage1DedupeChan      chan *PendingItem
-	stage2HashChan        chan *PendingItem
-	stage3LookupChan      chan *PendingItem
-	stage4UploadChan      chan *PendingItem
-	wg                    sync.WaitGroup
-	progress              progress.Progress
+	ctx       context.Context
+	cancel    func()
+	c         *isolatedclient.Client
+	closeLock sync.Mutex
+	stage1    chan *PendingItem
+	wg        sync.WaitGroup
+	progress  progress.Progress
 
 	// Mutable.
 	statsLock sync.Mutex
@@ -342,9 +354,9 @@ func (a *Archiver) Close() error {
 
 	a.closeLock.Lock()
 	ok := false
-	if a.stage1DedupeChan != nil {
-		close(a.stage1DedupeChan)
-		a.stage1DedupeChan = nil
+	if a.stage1 != nil {
+		close(a.stage1)
+		a.stage1 = nil
 		ok = true
 	}
 	a.closeLock.Unlock()
@@ -401,22 +413,20 @@ func (a *Archiver) push(item *PendingItem) *PendingItem {
 }
 
 func (a *Archiver) pushLocked(item *PendingItem) bool {
-	// The close(a.stage1DedupeChan) call is always occurring with the lock held.
+	// The close(a.stage1) call is always occurring with the lock held.
 	a.closeLock.Lock()
 	defer a.closeLock.Unlock()
-	if a.stage1DedupeChan == nil {
+	if a.stage1 == nil {
 		// Archiver was closed.
 		return false
 	}
 	// stage1DedupeLoop must never block and must be as fast as it can because it
 	// is done while holding a.closeLock.
-	a.stage1DedupeChan <- item
+	a.stage1 <- item
 	return true
 }
 
-func (a *Archiver) stage1DedupeLoop() {
-	c := a.stage1DedupeChan
-	defer close(a.stage2HashChan)
+func (a *Archiver) stage1DedupeLoop(in <-chan *PendingItem, out chan<- *PendingItem) {
 	seen := map[string]*PendingItem{}
 	// Create our own goroutine-local channel buffer, which doesn't need to be
 	// synchronized (unlike channels).
@@ -426,11 +436,11 @@ func (a *Archiver) stage1DedupeLoop() {
 		var item *PendingItem
 		ok := true
 		if len(buildUp) == 0 {
-			item, ok = <-c
+			item, ok = <-in
 		} else {
 			select {
-			case item, ok = <-c:
-			case a.stage2HashChan <- buildUp[0]:
+			case item, ok = <-in:
+			case out <- buildUp[0]:
 				// Pop first item from buildUp.
 				buildUp = buildUp[1:]
 				a.progress.Update(groupHash, groupHashTodo, 1)
@@ -474,19 +484,18 @@ func (a *Archiver) stage1DedupeLoop() {
 			item.wgHashed.Done()
 		} else {
 			// The Archiver is being closed, this has to happen synchronously.
-			a.stage2HashChan <- item
+			out <- item
 			a.progress.Update(groupHash, groupHashTodo, 1)
 		}
 	}
 }
 
-func (a *Archiver) stage2HashLoop() {
-	defer close(a.stage3LookupChan)
-	pool := common.NewGoroutinePriorityPool(a.ctx, a.maxConcurrentHash)
+func (a *Archiver) stage2HashLoop(in <-chan *PendingItem, out chan<- *PendingItem, parallelism int) {
+	pool := common.NewGoroutinePriorityPool(a.ctx, parallelism)
 	defer func() {
 		_ = pool.Wait()
 	}()
-	for file := range a.stage2HashChan {
+	for file := range in {
 		// This loop will implicitly buffer when stage1 is too fast by creating a
 		// lot of hung goroutines in pool. This permits reducing the contention on
 		// a.closeLock.
@@ -509,7 +518,7 @@ func (a *Archiver) stage2HashLoop() {
 			a.progress.Update(groupHash, groupHashDone, 1)
 			a.progress.Update(groupHash, groupHashDoneSize, item.digestItem.Size)
 			a.progress.Update(groupLookup, groupLookupTodo, 1)
-			a.stage3LookupChan <- item
+			out <- item
 		}, func() {
 			item.SetErr(a.ctx.Err())
 			item.done()
@@ -518,9 +527,8 @@ func (a *Archiver) stage2HashLoop() {
 	}
 }
 
-func (a *Archiver) stage3LookupLoop() {
-	defer close(a.stage4UploadChan)
-	pool := common.NewGoroutinePool(a.ctx, a.maxConcurrentContains)
+func (a *Archiver) stage3LookupLoop(in <-chan *PendingItem, out chan<- *PendingItem, parallelism int, batchingDelay time.Duration, batchSize int) {
+	pool := common.NewGoroutinePool(a.ctx, parallelism)
 	defer func() {
 		_ = pool.Wait()
 	}()
@@ -532,61 +540,53 @@ func (a *Archiver) stage3LookupLoop() {
 		select {
 		case <-timer:
 			batch := items
-			pool.Schedule(func() { a.doContains(batch) }, nil)
+			pool.Schedule(func() { a.doContains(out, batch) }, nil)
 			items = []*PendingItem{}
 			timer = never
 
-		case item, ok := <-a.stage3LookupChan:
+		case item, ok := <-in:
 			if !ok {
 				loop = false
 				break
 			}
 			items = append(items, item)
-			if len(items) == a.containsBatchSize {
+			if len(items) == batchSize {
 				batch := items
-				pool.Schedule(func() { a.doContains(batch) }, nil)
+				pool.Schedule(func() { a.doContains(out, batch) }, nil)
 				items = []*PendingItem{}
 				timer = never
 			} else if timer == never {
-				timer = time.After(a.containsBatchingDelay)
+				timer = time.After(batchingDelay)
 			}
 		}
 	}
 
 	if len(items) != 0 {
 		batch := items
-		pool.Schedule(func() { a.doContains(batch) }, nil)
+		pool.Schedule(func() { a.doContains(out, batch) }, nil)
 	}
 }
 
-func (a *Archiver) stage4UploadLoop() {
-	pool := common.NewGoroutinePriorityPool(a.ctx, a.maxConcurrentUpload)
+func (a *Archiver) stage4UploadLoop(in <-chan *PendingItem, parallelism int) {
+	pool := common.NewGoroutinePriorityPool(a.ctx, parallelism)
 	defer func() {
 		_ = pool.Wait()
 	}()
-	for state := range a.stage4UploadChan {
+	for state := range in {
 		item := state
 		pool.Schedule(item.priority, func() { a.doUpload(item) }, nil)
 	}
 }
 
-// emptyBackgroundContext is a placeholder context for usage with the isolated
-// client. A better implementation would use a real context to allow the isolate
-// client calls to be Cancel'd. This could be done by wiring up
-// archvier.canceller to a fake context which is passed to the isolated client,
-// or it could be done by actually implementing real contexts in Archiver (and
-// deprecating the use of canceler).
-var emptyBackgroundContext = context.Background()
-
 // doContains is called by stage 3.
-func (a *Archiver) doContains(items []*PendingItem) {
+func (a *Archiver) doContains(out chan<- *PendingItem, items []*PendingItem) {
 	tmp := make([]*isolateservice.HandlersEndpointsV1Digest, len(items))
 	// No need to lock each item at that point, no mutation occurs on
 	// PendingItem.digestItem after stage 2.
 	for i, item := range items {
 		tmp[i] = &item.digestItem
 	}
-	states, err := a.c.Contains(emptyBackgroundContext, tmp)
+	states, err := a.c.Contains(a.ctx, tmp)
 	if err != nil {
 		err = fmt.Errorf("contains(%d) failed: %s", len(items), err)
 		// When an error occurs, early exit the process.
@@ -609,7 +609,7 @@ func (a *Archiver) doContains(items []*PendingItem) {
 			items[index].state = state
 			a.progress.Update(groupUpload, groupUploadTodo, 1)
 			a.progress.Update(groupUpload, groupUploadTodoSize, items[index].digestItem.Size)
-			a.stage4UploadChan <- items[index]
+			out <- items[index]
 		}
 	}
 	logging.Infof(a.ctx, "Looked up %d items", len(items))
@@ -618,7 +618,7 @@ func (a *Archiver) doContains(items []*PendingItem) {
 // doUpload is called by stage 4.
 func (a *Archiver) doUpload(item *PendingItem) {
 	start := time.Now()
-	if err := a.c.Push(emptyBackgroundContext, item.state, item.source); err != nil {
+	if err := a.c.Push(a.ctx, item.state, item.source); err != nil {
 		err = fmt.Errorf("push(%s) failed: %s", item.path, err)
 		// When an error occurs, early exit the process.
 		a.cancel()
