@@ -17,15 +17,9 @@ package common
 import (
 	"io"
 	"os"
-	"runtime"
 
 	"go.chromium.org/luci/common/system/terminal"
 )
-
-// IsWindows returns True when running on the best OS there is.
-func IsWindows() bool {
-	return runtime.GOOS == "windows"
-}
 
 // IsTerminal returns true if the specified io.Writer is a terminal.
 func IsTerminal(out io.Writer) bool {

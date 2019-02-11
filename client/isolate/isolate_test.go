@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -121,7 +122,7 @@ func TestArchive(t *testing.T) {
 	}`
 		isolatePath := filepath.Join(fooDir, "baz.isolate")
 		So(ioutil.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
-		if !IsWindows() {
+		if runtime.GOOS != "windows" {
 			So(os.Symlink(filepath.Join("base", "bar"), filepath.Join(tmpDir, "link")), ShouldBeNil)
 		} else {
 			So(ioutil.WriteFile(filepath.Join(tmpDir, "link"), []byte("no link on Windows"), 0600), ShouldBeNil)
@@ -141,7 +142,7 @@ func TestArchive(t *testing.T) {
 		So(a.Close(), ShouldBeNil)
 
 		mode := 0600
-		if IsWindows() {
+		if runtime.GOOS == "windows" {
 			mode = 0666
 		}
 
@@ -181,7 +182,7 @@ func TestArchive(t *testing.T) {
 			RelativeCwd: "foo",
 			Version:     isolated.IsolatedFormatVersion,
 		}
-		if !IsWindows() {
+		if runtime.GOOS != "windows" {
 			isolatedData.Files["link"] = isolated.SymLink(filepath.Join("base", "bar"))
 		} else {
 			isolatedData.Files["link"] = isolated.BasicFile("12339b9756c2994f85c310d560bc8c142a6b79a1", 0666, 18)
@@ -200,7 +201,7 @@ func TestArchive(t *testing.T) {
 				secondIsolatedHash: secondIsolatedEncoded,
 			},
 		}
-		if IsWindows() {
+		if runtime.GOOS == "windows" {
 			// TODO(maruel): Fix symlink support on Windows.
 			expected[namespace]["12339b9756c2994f85c310d560bc8c142a6b79a1"] = "no link on Windows"
 		}
@@ -218,7 +219,7 @@ func TestArchive(t *testing.T) {
 		So(stats.TotalHits(), ShouldBeZeroValue)
 		So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
 		size := 3 + 4 + len(baseIsolatedEncoded) + len(isolatedEncoded) + len(secondIsolatedEncoded)
-		if !IsWindows() {
+		if runtime.GOOS != "windows" {
 			So(stats.TotalMisses(), ShouldEqual, 5)
 			So(stats.TotalBytesPushed(), ShouldResemble, units.Size(size))
 		} else {
