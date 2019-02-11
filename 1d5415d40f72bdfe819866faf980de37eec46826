@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "83996b04_2d39ffb6",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-11T22:04:50Z",
+      "side": 1,
+      "message": "why?",
+      "range": {
+        "startLine": 96,
+        "startChar": 2,
+        "endLine": 97,
+        "endChar": 15
+      },
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b325ddb_d9d62073",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-11T22:04:50Z",
+      "side": 1,
+      "message": "i think it would be clearer if this code checked \"is ref a keyset\" explicitly\n\nthen we don\u0027t need from_keyset",
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec893a2c_7732c2e7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-11T22:04:50Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 15
+      },
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bca1ca1_e26590f4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-11T22:04:50Z",
+      "side": 1,
+      "message": "this code may run if ref is a keyset, but does not have the requested kind. This error message would be confusing",
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2adea7af_b46f6ae7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-11T22:04:50Z",
+      "side": 1,
+      "message": "what is the DO part of the TODO? what\u0027s needed to be done exactly?",
+      "range": {
+        "startLine": 100,
+        "startChar": 8,
+        "endLine": 100,
+        "endChar": 10
+      },
+      "revId": "1d5415d40f72bdfe819866faf980de37eec46826",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
