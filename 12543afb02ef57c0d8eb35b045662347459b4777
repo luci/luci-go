@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "6122cef0_62e66c95",
+        "filename": "lucicfg/external/crostesting/proto/config/target_test_requirements_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2019-02-11T22:17:05Z",
+      "side": 1,
+      "message": "Maybe these two should be submessages of VmTestCfg and there shouldn\u0027t be a TastVmTestCfg at all. Then, VmTestCfg would be:\n\n  repeated VmTest vm_test \u003d 1;\n  repeated TastVmTest tast_vm_test \u003d 2;",
+      "range": {
+        "startLine": 101,
+        "startChar": 10,
+        "endLine": 105,
+        "endChar": 20
+      },
+      "revId": "12543afb02ef57c0d8eb35b045662347459b4777",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a87196e8_88a28fa4",
         "filename": "lucicfg/external/crostesting/proto/config/target_test_requirements_config.proto",
         "patchSetId": 3
