@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ec3ebee9_01196417",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-02-11T18:24:44Z",
+      "side": 1,
+      "message": "Could optionally be made more explicit: c.PathVariables is expected to be 1 because it contains EXECUTABLE_SUFFIX?",
+      "revId": "e81a9751ee23105a87ea57aba98cb54794670dc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
