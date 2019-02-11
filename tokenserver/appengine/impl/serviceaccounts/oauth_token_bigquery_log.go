@@ -57,14 +57,13 @@ type OAuthTokenInfo struct {
 	AuthDBRev   int64     // revision of groups database (or 0 if unknown)
 }
 
-// MintedServiceOAuthTokenInfo is passed to LogOAuthToken.
+// MintedProjectTokenInfo is passed to LogOAuthToken.
 //
 // It carries all information about the returned token.
-type MintedServiceOAuthTokenInfo struct {
+type MintedProjectTokenInfo struct {
 	OAuthTokenInfo
-	Request  *minter.MintServiceOAuthTokenRequest  // RPC input, as is
-	Response *minter.MintServiceOAuthTokenResponse // RPC output, as is
-	Rule     *admin.ServiceConfig                  // the particular rule used to authorize the request
+	Request  *minter.MintProjectTokenRequest  // RPC input, as is
+	Response *minter.MintProjectTokenResponse // RPC output, as is
 }
 
 // MintedOAuthTokenInfo is passed to LogOAuthToken.
@@ -97,17 +96,13 @@ func (i *OAuthTokenInfo) toBigQueryMessage() *bqpb.OAuthToken {
 }
 
 // toBigQueryMessage returns a message to upload to BigQuery.
-func (i *MintedServiceOAuthTokenInfo) toBigQueryMessage() *bqpb.OAuthToken {
+func (i *MintedProjectTokenInfo) toBigQueryMessage() *bqpb.OAuthToken {
 	res := i.OAuthTokenInfo.toBigQueryMessage()
 	res.Fingerprint = utils.TokenFingerprint(i.Response.AccessToken)
 	res.OauthScopes = i.Request.OauthScope
-	res.ConfigRule = i.Rule.Service
-
 	res.Expiration = i.Response.Expiry
-
 	// Information supplied by the caller.
 	res.AuditTags = i.Request.AuditTags
-
 	// Information about the request handler environment.
 	res.ServiceVersion = i.Response.ServiceVersion
 	return res

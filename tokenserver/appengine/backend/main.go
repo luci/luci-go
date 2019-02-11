@@ -99,15 +99,6 @@ func readConfigCron(c *router.Context) {
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_, errs[2] = adminServer.ImportProjectScopedServiceAccountsConfigs(c.Context, nil)
-		if errs[2] != nil {
-			logging.Errorf(c.Context, "ImportProjectScopedServiceAccountsConfigs failed - %s", errs[2])
-		}
-	}()
-
 	wg.Wait()
 
 	// Retry cron job only on transient errors. On fatal errors let it rerun one

@@ -133,7 +133,7 @@ service TokenMinter {
   // The token will be scoped to the project such that clients are protected from
   // accidentally providing access to resources from another project which would
   // be a security issue.
-  rpc MintServiceOAuthToken(MintServiceOAuthTokenRequest) returns (MintServiceOAuthTokenResponse);
+  rpc MintProjectToken(MintProjectTokenRequest) returns (MintProjectTokenResponse);
 }
 
 
@@ -427,8 +427,8 @@ message MintOAuthTokenViaGrantResponse {
 }
 
 
-// MintServiceOAuthTokenRequest is passed to MintServiceOAuthToken.
-message MintServiceOAuthTokenRequest {
+// MintProjectTokenRequest is passed to MintProjectToken.
+message MintProjectTokenRequest {
   // Luci project to which this token will be bound.
   string luci_project = 1;
 
@@ -445,8 +445,8 @@ message MintServiceOAuthTokenRequest {
 }
 
 
-// MintServiceOAuthTokenResponse is returned by MintServiceOAuthToken.
-message MintServiceOAuthTokenResponse {
+// MintProjectTokenResponse is returned by MintProjectToken.
+message MintProjectTokenResponse {
   // Full service account email.
   string service_account = 1;
 

@@ -15,12 +15,8 @@
 package projectscope
 
 import (
-	"context"
 	"testing"
-	"time"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/gcloud/iam"
 
 	"go.chromium.org/luci/appengine/gaetesting"
@@ -30,62 +26,71 @@ import (
 
 func TestScopedServiceAccountStorage(t *testing.T) {
 
-	createServiceAccount := func(ctx context.Context, gcpProject string, identity *ScopedIdentity, client ServiceAccountClient) (*iam.ServiceAccount, error) {
-		return &iam.ServiceAccount{}, nil
-	}
+	Convey("Test successful creation of several identities", t, func() {
+		ctx := gaetesting.TestingContext()
+		var err error
+		var actual *ProjectIdentity
+		var expected *ProjectIdentity
 
-	ctx := gaetesting.TestingContext()
-	ctx, _ = testclock.UseTime(ctx, time.Date(2000, time.February, 3, 4, 5, 6, 7, time.UTC))
-
-	Convey("Test persistent storage state handling", t, func() {
 		storage := &persistentIdentityManager{}
 
-		_, err := storage.Get(ctx, "service1", "project1")
-		So(err, ShouldNotBeNil)
+		expected = &ProjectIdentity{
+			Email:          "sa1@project1.iamserviceaccounts.com",
+			Project:        "project1",
+			ServiceAccount: iam.ServiceAccount{},
+		}
 
-		identity, created, err := storage.GetOrCreate(ctx, "service1", "project1", "", createServiceAccount)
+		actual, err = storage.Create(ctx, expected.Project, expected.Email, expected.ServiceAccount)
 		So(err, ShouldBeNil)
-		So(created, ShouldResemble, true)
-		So(identity.AccountID, ShouldResemble, GenerateAccountID("service1", "project1"))
+		So(actual, ShouldResemble, expected)
 
-		identity, err = storage.Get(ctx, "service1", "project1")
+		expected = &ProjectIdentity{
+			Email:          "sa1@project2.iamserviceaccounts.com",
+			Project:        "project2",
+			ServiceAccount: iam.ServiceAccount{},
+		}
+
+		actual, err = storage.Create(ctx, expected.Project, expected.Email, expected.ServiceAccount)
 		So(err, ShouldBeNil)
-		So(identity.AccountID, ShouldResemble, GenerateAccountID("service1", "project1"))
+		So(actual, ShouldResemble, expected)
 
-		identity, created, err = storage.GetOrCreate(ctx, "service1", "project1", "", createServiceAccount)
+		expected = &ProjectIdentity{
+			Email:          "sa3@project3.iamserviceaccounts.com",
+			Project:        "project3",
+			ServiceAccount: iam.ServiceAccount{},
+		}
+
+		actual, err = storage.Create(ctx, expected.Project, expected.Email, expected.ServiceAccount)
 		So(err, ShouldBeNil)
-		So(created, ShouldResemble, false)
-		So(identity.AccountID, ShouldResemble, GenerateAccountID("service1", "project1"))
+		So(actual, ShouldResemble, expected)
 
-		identity, created, err = storage.GetOrCreate(ctx, "service2", "project2", "", createServiceAccount)
-		So(err, ShouldBeNil)
-		So(created, ShouldResemble, true)
-		So(identity.AccountID, ShouldResemble, GenerateAccountID("service2", "project2"))
+		Convey("Test error raised upon duplicate", func() {
+			_, err = storage.Create(ctx, expected.Project, expected.Email, expected.ServiceAccount)
+			So(err, ShouldNotBeNil)
+			So(err, ShouldResemble, ErrAlreadyExists)
+		})
 
-		identity, created, err = storage.GetOrCreate(ctx, "service2", "project2", "", createServiceAccount)
-		So(err, ShouldBeNil)
-		So(created, ShouldResemble, false)
-		So(identity.AccountID, ShouldResemble, GenerateAccountID("service2", "project2"))
-	})
+		Convey("Test reading by identities by project and email", func() {
+			actual, err = storage.Lookup(ctx, expected)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, expected)
 
-	Convey("Test Lookup functionality", t, func() {
-		service := "servicefoo"
-		project := "projectbar"
-		storage := &persistentIdentityManager{}
+			actual, err = storage.LookupByProject(ctx, expected.Project)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, expected)
+		})
 
-		identity, created, err := storage.GetOrCreate(ctx, service, project, "", createServiceAccount)
-		So(err, ShouldBeNil)
-		So(created, ShouldResemble, true)
-		So(identity.AccountID, ShouldResemble, GenerateAccountID(service, project))
+		Convey("Test deleting identity", func() {
+			actual, err = storage.Lookup(ctx, expected)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, expected)
 
-		scopedIdentity, err := storage.Lookup(ctx, identity.AccountID)
-		So(err, ShouldBeNil)
-		So(scopedIdentity, ShouldResemble, &ScopedIdentity{
-			AccountID:        identity.AccountID,
-			Service:          service,
-			Project:          project,
-			CreatedTimestamp: clock.Now(ctx).Unix(),
+			err = storage.Delete(ctx, expected)
+			So(err, ShouldBeNil)
+
+			_, err = storage.Lookup(ctx, expected)
+			So(err, ShouldNotBeNil)
+
 		})
 	})
-
 }

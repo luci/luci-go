@@ -188,33 +188,6 @@ message ServiceAccountsPermissions {
 }
 
 
-// ProjectScopedServiceAccounts is read from project_scoped_service_accounts.cfg in luci-config.
-message ProjectScopedServiceAccounts {
-  // Services specify the association between LUCI services and their GCP project.
-  //
-  // Services define a mapping {LUCI service -> GCP Project},
-  // where GCP Project is used by tokenserver to host the LUCI service's
-  // scoped service accounts under. Every service account is assigned a LUCI project
-  // scoped so when the service acquires a token for that account its operations
-  // are limited to objects inside that LUCI project.
-  repeated ServiceConfig services = 1;
-}
-
-
-message ServiceConfig {
-  // Service is the LUCI service caller id name whose authority is being limited to a project.
-  // E.g. user:luci-scheduler@appspot.gserviceaccount.com
-  string service = 1;
-
-  // CloudProject is the GCP project to which service is associated with.
-  string cloud_project_id = 2;
-
-  // Maximum allowed validity duration (sec) of minted project scoped service
-  // account tokens. Default is one hour. Max is one hour.
-  int64 max_validity_duration = 3;
-}
-
-
 // ServiceAccountRule describes a single allowed case of using service accounts.
 //
 // The usage of a service account is initiated by an end user, through some
