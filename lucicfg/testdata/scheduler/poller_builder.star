@@ -1,25 +1,25 @@
-core.project(
+luci.project(
     name = 'project',
     buildbucket = 'cr-buildbucket.appspot.com',
     scheduler = 'luci-scheduler.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
 
-core.recipe(
+luci.recipe(
     name = 'noop',
     cipd_package = 'noop',
 )
 
-core.bucket(name = 'ci')
+luci.bucket(name = 'ci')
 
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'poller',
     bucket = 'ci',
     repo = 'https://noop.com',
     triggers = ['builder'],
 )
 
-core.builder(
+luci.builder(
     name = 'builder',
     bucket = 'ci',
     recipe = 'noop',

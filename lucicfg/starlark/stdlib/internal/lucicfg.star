@@ -45,7 +45,7 @@ def _config(
         usually `luci-config.appspot.com`.
     config_set: name of the config set in LUCI Config Service to use for
         validation. Default is `projects/<name>` where `<name>` is taken from
-        core.project(...) rule. If there's no such rule, the default is "",
+        luci.project(...) rule. If there's no such rule, the default is "",
         meaning the generated config will not be validated via LUCI Config
         Service.
     config_dir: a directory to place generated configs into, relative to the

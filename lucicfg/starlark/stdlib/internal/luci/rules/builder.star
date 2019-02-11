@@ -85,7 +85,7 @@ def builder(
   corresponding service account to the bucket ACLs:
 
   ```python
-  core.bucket(
+  luci.bucket(
       ...
       acls = [
           ...
@@ -99,8 +99,8 @@ def builder(
 
   Args:
     name: name of the builder, will show up in UIs and logs. Required.
-    bucket: a bucket the builder is in, see core.bucket(...) rule. Required.
-    recipe: a recipe to run, see core.recipe(...) rule. Required.
+    bucket: a bucket the builder is in, see luci.bucket(...) rule. Required.
+    recipe: a recipe to run, see luci.recipe(...) rule. Required.
 
     properties: a dict with string keys and JSON-serializable values, defining
         properties to pass to the recipe.
@@ -135,7 +135,7 @@ def builder(
         periodically.
     triggering_policy: scheduler.policy(...) struct with a configuration that
         defines when and how LUCI Scheduler should launch new builds in response
-        to triggering requests from core.gitiles_poller(...) or from
+        to triggering requests from luci.gitiles_poller(...) or from
         EmitTriggers API. Does not apply to builds started directly through
         Buildbucket. By default, only one concurrent build is allowed and while
         it runs, triggering requests accumulate in a queue. Once the build

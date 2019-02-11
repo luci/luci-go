@@ -245,7 +245,7 @@ func init() {
 	//
 	// Unlike set_meta, which is almost directly exposed through
 	// lucicfg.config(...), set_meta_default is currently a private API, used only
-	// to set the default config set name based on core.project(name=...). It is
+	// to set the default config set name based on luci.project(name=...). It is
 	// expected that no one will really need to use set_meta_default, so it's not
 	// worth exporting and documenting it.
 	declNative("set_meta_default", func(call nativeCall) (starlark.Value, error) {

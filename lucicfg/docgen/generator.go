@@ -220,7 +220,7 @@ func (s *symbol) Anchor(sub ...string) string {
 //
 // Like this:
 //
-//     core.recipe(
+//     luci.recipe(
 //         # Required arguments.
 //         name,
 //         cipd_package,

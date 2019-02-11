@@ -1,25 +1,25 @@
-core.project(
+luci.project(
     name = 'project',
     buildbucket = 'cr-buildbucket.appspot.com',
     scheduler = 'luci-scheduler.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
 
-core.recipe(
+luci.recipe(
     name = 'noop',
     cipd_package = 'noop',
 )
 
-core.bucket(name = 'ci')
+luci.bucket(name = 'ci')
 
-core.builder(
+luci.builder(
     name = 'b1',
     bucket = 'ci',
     recipe = 'noop',
     service_account = 'noop@example.com',
     triggers = ['b2'],
 )
-core.builder(
+luci.builder(
     name = 'b2',
     bucket = 'ci',
     recipe = 'noop',

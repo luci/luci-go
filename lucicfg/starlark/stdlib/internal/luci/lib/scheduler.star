@@ -27,7 +27,7 @@ def _policy(
   """Policy for how LUCI Scheduler should handle incoming triggering requests.
 
   This policy defines when and how LUCI Scheduler should launch new builds in
-  response to triggering requests from core.gitiles_poller(...) or from
+  response to triggering requests from luci.gitiles_poller(...) or from
   EmitTriggers RPC call.
 
   The following batching strategies are supported:
@@ -53,7 +53,7 @@ def _policy(
         triggering request result in a separate build. When multiple triggering
         request are collapsed into a single build, properties of the most recent
         triggering request are used to derive properties for the build. For
-        example, when triggering requests come from a core.gitiles_poller(...),
+        example, when triggering requests come from a luci.gitiles_poller(...),
         only a git revision from the latest triggering request (i.e. the latest
         commit) will end up in the build properties. Default is 1000
         (effectively unlimited).

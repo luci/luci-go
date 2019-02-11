@@ -2,7 +2,7 @@ lucicfg.config(config_dir = '.output')
 lucicfg.config(tracked_files = ['*.cfg'])
 lucicfg.config(fail_on_warnings = True)
 
-core.project(
+luci.project(
     name = 'infra',
 
     buildbucket = 'cr-buildbucket.appspot.com',
@@ -30,12 +30,12 @@ core.project(
     ],
 )
 
-core.logdog(gs_bucket = 'chromium-luci-logdog')
+luci.logdog(gs_bucket = 'chromium-luci-logdog')
 
 
 # Recipes.
 
-core.recipe(
+luci.recipe(
     name = 'main/recipe',
     cipd_package = 'recipe/bundles/main',
 )
@@ -43,7 +43,7 @@ core.recipe(
 
 # CI bucket.
 
-core.bucket(
+luci.bucket(
     name = 'ci',
 
     # Allow developers to force-launch CI builds through Scheduler, but not
@@ -59,7 +59,7 @@ core.bucket(
     ],
 )
 
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'master-poller',
     bucket = 'ci',
     repo = 'https://noop.com',
@@ -68,7 +68,7 @@ core.gitiles_poller(
     schedule = 'with 10s interval',
 )
 
-core.builder(
+luci.builder(
     name = 'linux ci builder',
     bucket = 'ci',
     recipe = 'main/recipe',
@@ -108,7 +108,7 @@ core.builder(
     )
 )
 
-core.builder(
+luci.builder(
     name = 'generically named builder',
     bucket = 'ci',
     recipe = 'main/recipe',
@@ -116,7 +116,7 @@ core.builder(
     triggered_by = ['master-poller'],
 )
 
-core.builder(
+luci.builder(
     name = 'cron builder',
     bucket = 'ci',
     recipe = 'main/recipe',
@@ -126,7 +126,7 @@ core.builder(
 
 # Try bucket.
 
-core.bucket(
+luci.bucket(
     name = 'try',
 
     # Allow developers to launch try jobs directly with whatever parameters
@@ -136,13 +136,13 @@ core.bucket(
     ],
 )
 
-core.builder(
+luci.builder(
     name = 'linux try builder',
     bucket = 'try',
     recipe = 'main/recipe',
 )
 
-core.builder(
+luci.builder(
     name = 'generically named builder',
     bucket = 'try',
     recipe = 'main/recipe',
@@ -152,10 +152,10 @@ core.builder(
 # Inline definitions.
 
 
-core.builder(
+luci.builder(
     name = 'triggerer builder',
-    bucket = core.bucket(name = 'inline'),
-    recipe = core.recipe(
+    bucket = luci.bucket(name = 'inline'),
+    recipe = luci.recipe(
         name = 'inline/recipe',
         cipd_package = 'recipe/bundles/inline',
     ),
@@ -163,7 +163,7 @@ core.builder(
     service_account = 'builder@example.com',
 
     triggers = [
-        core.builder(
+        luci.builder(
             name = 'triggered builder',
             bucket = 'inline',
             recipe = 'inline/recipe',
@@ -171,7 +171,7 @@ core.builder(
     ],
 
     triggered_by = [
-        core.gitiles_poller(
+        luci.gitiles_poller(
             name = 'inline poller',
             bucket = 'inline',
             repo = 'https://noop.com',

@@ -126,11 +126,11 @@ def _cache(path, name=None, wait_for_warm_cache=None):
 def _dimension(value, expiration=None):
   """A value of some Swarming dimension, annotated with its expiration time.
 
-  Intended to be used as a value in `dimensions` dict of core.builder(...) when
+  Intended to be used as a value in `dimensions` dict of luci.builder(...) when
   using dimensions that expire:
 
   ```python
-  core.builder(
+  luci.builder(
       ...
       dimensions = {
           ...

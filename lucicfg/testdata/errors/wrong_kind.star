@@ -1,12 +1,12 @@
-core.project(
+luci.project(
     name = 'proj',
     buildbucket = 'cr-buildbucket.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
 
-core.builder(
+luci.builder(
     name = 'builder',
-    bucket = core.recipe(
+    bucket = luci.recipe(
         name = 'noop',
         cipd_package = 'noop',
     ),
@@ -18,4 +18,4 @@ core.builder(
 #   //testdata/errors/wrong_kind.star:7: in <toplevel>
 #   @stdlib//internal/luci/rules/builder.star:165: in builder
 #   ...
-# Error: expecting core.bucket, got core.recipe
+# Error: expecting luci.bucket, got luci.recipe

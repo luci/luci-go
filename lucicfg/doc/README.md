@@ -109,7 +109,7 @@ assigning to a variable.
 #### Arguments {#lucicfg.config-args}
 
 * **config_service_host**: a hostname of a LUCI Config Service to send validation requests to. Default is whatever is hardcoded in `lucicfg` binary, usually `luci-config.appspot.com`.
-* **config_set**: name of the config set in LUCI Config Service to use for validation. Default is `projects/<name>` where `<name>` is taken from [core.project(...)](#core.project) rule. If there's no such rule, the default is "", meaning the generated config will not be validated via LUCI Config Service.
+* **config_set**: name of the config set in LUCI Config Service to use for validation. Default is `projects/<name>` where `<name>` is taken from [luci.project(...)](#luci.project) rule. If there's no such rule, the default is "", meaning the generated config will not be validated via LUCI Config Service.
 * **config_dir**: a directory to place generated configs into, relative to the directory that contains the entry point \*.star file. `..` is allowed. If set via `-config-dir` command line flag, it is relative to the current working directory. Will be created if absent. If `-`, the configs are just printed to stdout in a format useful for debugging. Default is "generated".
 * **tracked_files**: a list of glob patterns that define a subset of files under `config_dir` that are considered generated. This is important if some generated file disappears from `lucicfg` output: it must be deleted from the disk as well. To do this, `lucicfg` needs to know what files are safe to delete. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file under `config_dir` (or any of its subdirectories) is considered tracked if it matches any of the positive globs and none of the negative globs. For example, `tracked_files` for prod and dev projects co-hosted in the same directory may look like `['*.cfg', '!*-dev.cfg']` for prod and `['*-dev.cfg']` for dev. If `tracked_files` is empty (default), lucicfg will never delete any files. In this case it is responsibility of the caller to make sure no stale output remains.
 * **fail_on_warnings**: if set to True treat validation warnings as errors. Default is False (i.e. warnings do to cause the validation to fail). If set to True via `lucicfg.config` and you want to override it to False via command line flags use `-fail-on-warnings=false`.
@@ -329,15 +329,15 @@ A list of 1-based day indexes. Monday is 1.
 
 
 
-## Core rules
+## Core LUCI rules
 
 
 
 
-### core.project {#core.project}
+### luci.project {#luci.project}
 
 ```python
-core.project(
+luci.project(
     # Required arguments.
     name,
 
@@ -356,7 +356,7 @@ Defines a LUCI project.
 
 There should be exactly one such definition in the top-level config file.
 
-#### Arguments {#core.project-args}
+#### Arguments {#luci.project-args}
 
 * **name**: full name of the project. Required.
 * **buildbucket**: hostname of a Buildbucket service to use (if any).
@@ -368,10 +368,10 @@ There should be exactly one such definition in the top-level config file.
 
 
 
-### core.logdog {#core.logdog}
+### luci.logdog {#luci.logdog}
 
 ```python
-core.logdog(gs_bucket = None)
+luci.logdog(gs_bucket = None)
 ```
 
 
@@ -380,24 +380,24 @@ Defines configuration of the LogDog service for this project.
 
 Usually required for any non-trivial project.
 
-#### Arguments {#core.logdog-args}
+#### Arguments {#luci.logdog-args}
 
 * **gs_bucket**: base Google Storage archival path, archive logs will be written to this bucket/path.
 
 
 
 
-### core.bucket {#core.bucket}
+### luci.bucket {#luci.bucket}
 
 ```python
-core.bucket(name, acls = None)
+luci.bucket(name, acls = None)
 ```
 
 
 
 Defines a bucket: a container for LUCI resources that share the same ACL.
 
-#### Arguments {#core.bucket-args}
+#### Arguments {#luci.bucket-args}
 
 * **name**: name of the bucket, e.g. `ci` or `try`. Required.
 * **acls**: list of [acl.entry(...)](#acl.entry) objects.
@@ -405,10 +405,10 @@ Defines a bucket: a container for LUCI resources that share the same ACL.
 
 
 
-### core.recipe {#core.recipe}
+### luci.recipe {#luci.recipe}
 
 ```python
-core.recipe(
+luci.recipe(
     # Required arguments.
     name,
     cipd_package,
@@ -423,7 +423,7 @@ core.recipe(
 
 Defines where to locate a particular recipe.
 
-Builders refer to recipes in their `recipe` field, see [core.builder(...)](#core.builder).
+Builders refer to recipes in their `recipe` field, see [luci.builder(...)](#luci.builder).
 Multiple builders can execute the same recipe (perhaps passing different
 properties to it).
 
@@ -442,7 +442,7 @@ elsewhere.
 The cipd version to fetch is usually a lower-cased git ref (like
 `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
 
-#### Arguments {#core.recipe-args}
+#### Arguments {#luci.recipe-args}
 
 * **name**: name of this recipe entity, to refer to it from builders. If `recipe` is None, also specifies the recipe name within the bundle. Required.
 * **cipd_package**: a cipd package name with the recipe bundle. Required.
@@ -452,10 +452,10 @@ The cipd version to fetch is usually a lower-cased git ref (like
 
 
 
-### core.builder {#core.builder}
+### luci.builder {#luci.builder}
 
 ```python
-core.builder(
+luci.builder(
     # Required arguments.
     name,
     bucket,
@@ -515,7 +515,7 @@ author (you) to correctly specify Buildbucket ACLs, for example by adding the
 corresponding service account to the bucket ACLs:
 
 ```python
-core.bucket(
+luci.bucket(
     ...
     acls = [
         ...
@@ -527,11 +527,11 @@ core.bucket(
 
 This is not necessary if the recipe uses Scheduler API instead of Buildbucket.
 
-#### Arguments {#core.builder-args}
+#### Arguments {#luci.builder-args}
 
 * **name**: name of the builder, will show up in UIs and logs. Required.
-* **bucket**: a bucket the builder is in, see [core.bucket(...)](#core.bucket) rule. Required.
-* **recipe**: a recipe to run, see [core.recipe(...)](#core.recipe) rule. Required.
+* **bucket**: a bucket the builder is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
+* **recipe**: a recipe to run, see [luci.recipe(...)](#luci.recipe) rule. Required.
 * **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the recipe.
 * **service_account**: an email of a service account to run the recipe under: the recipe (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI).
 * **caches**: a list of [swarming.cache(...)](#swarming.cache) objects describing Swarming named caches that should be present on the bot. See [swarming.cache(...)](#swarming.cache) doc for more details.
@@ -541,7 +541,7 @@ This is not necessary if the recipe uses Scheduler API instead of Buildbucket.
 * **swarming_tags**: a list of tags (`k:v` strings) to assign to the Swarming task that runs the builder. Each tag will also end up in `swarming_tag` Buildbucket tag, for example `swarming_tag:builder:release`.
 * **expiration_timeout**: how long to wait for a build to be picked up by a matching bot (based on `dimensions`) before canceling the build and marking it as expired. If None, defer the decision to Buildbucket service.
 * **schedule**: string with a cron schedule that describes when to run this builder. See [Defining cron schedules](#schedules_doc) for the expected format of this field. If None, the builder will not be running periodically.
-* **triggering_policy**: [scheduler.policy(...)](#scheduler.policy) struct with a configuration that defines when and how LUCI Scheduler should launch new builds in response to triggering requests from [core.gitiles_poller(...)](#core.gitiles_poller) or from EmitTriggers API. Does not apply to builds started directly through Buildbucket. By default, only one concurrent build is allowed and while it runs, triggering requests accumulate in a queue. Once the build finishes, if the queue is not empty, a new build starts right away, "consuming" all pending requests. See [scheduler.policy(...)](#scheduler.policy) doc for more details.
+* **triggering_policy**: [scheduler.policy(...)](#scheduler.policy) struct with a configuration that defines when and how LUCI Scheduler should launch new builds in response to triggering requests from [luci.gitiles_poller(...)](#luci.gitiles_poller) or from EmitTriggers API. Does not apply to builds started directly through Buildbucket. By default, only one concurrent build is allowed and while it runs, triggering requests accumulate in a queue. Once the build finishes, if the queue is not empty, a new build starts right away, "consuming" all pending requests. See [scheduler.policy(...)](#scheduler.policy) doc for more details.
 * **build_numbers**: if True, generate monotonically increasing contiguous numbers for each build, unique within the builder. If None, defer the decision to Buildbucket service.
 * **experimental**: if True, by default a new build in this builder will be marked as experimental. This is seen from recipes and they may behave differently (e.g. avoiding any side-effects). If None, defer the decision to Buildbucket service.
 * **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service.
@@ -552,10 +552,10 @@ This is not necessary if the recipe uses Scheduler API instead of Buildbucket.
 
 
 
-### core.gitiles_poller {#core.gitiles_poller}
+### luci.gitiles_poller {#luci.gitiles_poller}
 
 ```python
-core.gitiles_poller(
+luci.gitiles_poller(
     # Required arguments.
     name,
     bucket,
@@ -583,7 +583,7 @@ each iteration it triggers builders if either:
     builders triggered by this poller. How they are converted to actual builds
     depends on `triggering_policy` of a builder. For example, some builders
     may want to have one build per commit, others don't care and just want to
-    test the latest commit. See [core.builder(...)](#core.builder) and [scheduler.policy(...)](#scheduler.policy)
+    test the latest commit. See [luci.builder(...)](#luci.builder) and [scheduler.policy(...)](#scheduler.policy)
     for more details.
 
     *** note
@@ -604,10 +604,10 @@ expressions to define what refs belong to the watched set. Both fields can
 be used at the same time. If neither is set, the gitiles_poller defaults to
 watching `refs/heads/master`.
 
-#### Arguments {#core.gitiles_poller-args}
+#### Arguments {#luci.gitiles_poller-args}
 
 * **name**: name of the poller, to refer to it from other rules. Required.
-* **bucket**: a bucket the poller is in, see [core.bucket(...)](#core.bucket) rule. Required.
+* **bucket**: a bucket the poller is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
 * **repo**: URL of a git repository to poll, starting with `https://`. Required.
 * **refs**: a list of fully qualified refs to watch, e.g. `refs/heads/master` or `refs/tags/v1.2.3`.
 * **refs_regexps**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
@@ -627,8 +627,8 @@ Below is the table with role constants that can be passed as `roles` in
 [acl.entry(...)](#acl.entry).
 
 Due to some inconsistencies in how LUCI service are currently implemented, some
-roles can be assigned only in [core.project(...)](#core.project) rule, but
-some also in individual [core.bucket(...)](#core.bucket) rules.
+roles can be assigned only in [luci.project(...)](#luci.project) rule, but
+some also in individual [luci.bucket(...)](#luci.bucket) rules.
 
 Similarly some roles can be assigned to individual users, other only to groups.
 
@@ -659,14 +659,14 @@ acl.entry(roles, groups = None, users = None)
 Returns an ACL binding which assigns given role (or roles) to given
 individuals or groups.
 
-Lists of acl.entry structs are passed to `acls` fields of [core.project(...)](#core.project)
-and [core.bucket(...)](#core.bucket) rules.
+Lists of acl.entry structs are passed to `acls` fields of [luci.project(...)](#luci.project)
+and [luci.bucket(...)](#luci.bucket) rules.
 
 An empty ACL binding is allowed. It is ignored everywhere. Useful for things
 like:
 
 ```python
-core.project(
+luci.project(
     acls = [
         acl.entry(acl.PROJECT_CONFIGS_READER, groups = [
             # TODO: members will be added later
@@ -772,11 +772,11 @@ swarming.dimension(value, expiration = None)
 
 A value of some Swarming dimension, annotated with its expiration time.
 
-Intended to be used as a value in `dimensions` dict of [core.builder(...)](#core.builder) when
+Intended to be used as a value in `dimensions` dict of [luci.builder(...)](#luci.builder) when
 using dimensions that expire:
 
 ```python
-core.builder(
+luci.builder(
     ...
     dimensions = {
         ...
@@ -909,7 +909,7 @@ scheduler.policy(
 Policy for how LUCI Scheduler should handle incoming triggering requests.
 
 This policy defines when and how LUCI Scheduler should launch new builds in
-response to triggering requests from [core.gitiles_poller(...)](#core.gitiles_poller) or from
+response to triggering requests from [luci.gitiles_poller(...)](#luci.gitiles_poller) or from
 EmitTriggers RPC call.
 
 The following batching strategies are supported:
@@ -927,7 +927,7 @@ The following batching strategies are supported:
 
 * **kind**: one of `*_BATCHING_KIND` values above. Required.
 * **max_concurrent_invocations**: limit on a number of builds running at the same time. If the number of currently running builds launched through LUCI Scheduler is more than or equal to this setting, LUCI Scheduler will keep queuing up triggering requests, waiting for some running build to finish before starting a new one. Default is 1.
-* **max_batch_size**: limit on how many pending triggering requests to "collapse" into a new single build. For example, setting this to 1 will make each triggering request result in a separate build. When multiple triggering request are collapsed into a single build, properties of the most recent triggering request are used to derive properties for the build. For example, when triggering requests come from a [core.gitiles_poller(...)](#core.gitiles_poller), only a git revision from the latest triggering request (i.e. the latest commit) will end up in the build properties. Default is 1000 (effectively unlimited).
+* **max_batch_size**: limit on how many pending triggering requests to "collapse" into a new single build. For example, setting this to 1 will make each triggering request result in a separate build. When multiple triggering request are collapsed into a single build, properties of the most recent triggering request are used to derive properties for the build. For example, when triggering requests come from a [luci.gitiles_poller(...)](#luci.gitiles_poller), only a git revision from the latest triggering request (i.e. the latest commit) will end up in the build properties. Default is 1000 (effectively unlimited).
 * **log_base**: base of the logarithm operation during logarithmic batching. For example, setting this to 2, will cause 3 out of 8 pending triggering requests to be combined into a single build. Required when using `LOGARITHMIC_BATCHING_KIND`, ignored otherwise. Must be larger or equal to 1.0001 for numerical stability reasons.
 
 

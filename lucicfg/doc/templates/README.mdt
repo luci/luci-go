@@ -49,7 +49,7 @@ TODO: To be written.
 */}}
 {{ $lucicfg := Symbol "@stdlib//builtins.star" "lucicfg" }}
 {{ $time := Symbol "@stdlib//builtins.star" "time" }}
-{{ $core := Symbol "@stdlib//builtins.star" "core" }}
+{{ $luci := Symbol "@stdlib//builtins.star" "luci" }}
 {{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
 {{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
 {{ $scheduler := Symbol "@stdlib//builtins.star" "scheduler" }}
@@ -82,8 +82,8 @@ TODO: To be written.
 ## Working with time
 {{template "gen-funcs-doc" $time}}
 
-## Core rules
-{{template "gen-funcs-doc" $core}}
+## Core LUCI rules
+{{template "gen-funcs-doc" $luci}}
 
 ## ACLs
 
@@ -93,8 +93,8 @@ Below is the table with role constants that can be passed as `roles` in
 {{LinkifySymbols "acl.entry(...)"}}.
 
 Due to some inconsistencies in how LUCI service are currently implemented, some
-roles can be assigned only in {{LinkifySymbols "core.project(...)"}} rule, but
-some also in individual {{LinkifySymbols "core.bucket(...)"}} rules.
+roles can be assigned only in {{LinkifySymbols "luci.project(...)"}} rule, but
+some also in individual {{LinkifySymbols "luci.bucket(...)"}} rules.
 
 Similarly some roles can be assigned to individual users, other only to groups.
 

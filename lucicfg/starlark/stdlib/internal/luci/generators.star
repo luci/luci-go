@@ -56,7 +56,7 @@ def get_service(kind, why):
   svc = getattr(proj.props, kind)
   if not svc:
     fail(
-        'missing %r in core.project(...), it is required for %s' % (kind, why),
+        'missing %r in luci.project(...), it is required for %s' % (kind, why),
         trace=proj.trace,
     )
   return svc
@@ -212,7 +212,7 @@ def _buildbucket_acls(elementary):
 
 
 def _buildbucket_builders(bucket, swarming_host):
-  """core.bucket(...) node => [buildbucket_pb.Builder]."""
+  """luci.bucket(...) node => [buildbucket_pb.Builder]."""
   out = []
   for node in graph.children(bucket.key, kinds.BUILDER):
     out.append(buildbucket_pb.Builder(

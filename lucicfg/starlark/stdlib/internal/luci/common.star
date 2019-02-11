@@ -23,16 +23,16 @@ load('@stdlib//internal/validate.star', 'validate')
 
 
 # Node edges (parent -> child):
-#   core.project: root
-#   core.project -> core.logdog
-#   core.project -> [core.bucket]
-#   core.bucket -> [core.builder]
-#   core.bucket -> [core.gitiles_poller]
-#   core.builder_ref -> core.builder
-#   core.builder -> [core.triggerer]
-#   core.builder -> core.recipe
-#   core.gitiles_poller -> [core.triggerer]
-#   core.triggerer -> [core.builder_ref]
+#   luci.project: root
+#   luci.project -> luci.logdog
+#   luci.project -> [luci.bucket]
+#   luci.bucket -> [luci.builder]
+#   luci.bucket -> [luci.gitiles_poller]
+#   luci.builder_ref -> luci.builder
+#   luci.builder -> [luci.triggerer]
+#   luci.builder -> luci.recipe
+#   luci.gitiles_poller -> [luci.triggerer]
+#   luci.triggerer -> [luci.builder_ref]
 
 
 def _global_key(kind, attr, ref):
@@ -75,16 +75,16 @@ def _bucket_scoped_key(kind, attr, ref):
 # Kinds is a enum-like struct with node kinds of various LUCI config nodes.
 kinds = struct(
     # Publicly declarable nodes.
-    PROJECT = 'core.project',
-    LOGDOG = 'core.logdog',
-    BUCKET = 'core.bucket',
-    RECIPE = 'core.recipe',
-    BUILDER = 'core.builder',
-    GITILES_POLLER = 'core.gitiles_poller',
+    PROJECT = 'luci.project',
+    LOGDOG = 'luci.logdog',
+    BUCKET = 'luci.bucket',
+    RECIPE = 'luci.recipe',
+    BUILDER = 'luci.builder',
+    GITILES_POLLER = 'luci.gitiles_poller',
 
     # Internal nodes (declared internally as dependency of other nodes).
-    BUILDER_REF = 'core.builder_ref',
-    TRIGGERER = 'core.triggerer',
+    BUILDER_REF = 'luci.builder_ref',
+    TRIGGERER = 'luci.triggerer',
 )
 
 

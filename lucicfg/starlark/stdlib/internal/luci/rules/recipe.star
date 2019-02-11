@@ -26,7 +26,7 @@ def recipe(
   ):
   """Defines where to locate a particular recipe.
 
-  Builders refer to recipes in their `recipe` field, see core.builder(...).
+  Builders refer to recipes in their `recipe` field, see luci.builder(...).
   Multiple builders can execute the same recipe (perhaps passing different
   properties to it).
 

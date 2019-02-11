@@ -41,7 +41,7 @@ time = _time
 
 # LUCI-specific public API.
 
-core = struct(
+luci = struct(
     project = _project,
     logdog =  _logdog,
     bucket = _bucket,

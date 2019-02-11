@@ -1,14 +1,14 @@
-core.project(
+luci.project(
     name = 'project',
     buildbucket = 'cr-buildbucket.appspot.com',
     scheduler = 'luci-scheduler.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
 
-core.bucket(name = 'ci')
+luci.bucket(name = 'ci')
 
 # This poller is still defined even though it doesn't trigger anything.
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'poller',
     repo = 'https://noop.com',
     bucket = 'ci',
