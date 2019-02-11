@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a87196e8_88a28fa4",
+        "filename": "lucicfg/external/crostesting/proto/config/target_test_requirements_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-11T21:46:26Z",
+      "side": 1,
+      "message": "Jason and I had talked about TastVmTest data being stored as part of VmTest, but the details seem fairly separate, based on inspection of config_dump.json.\n\ne.g. for amd64-generic-paladin\n\n\"vm_tests_override\": [\n      \"{\\n    \\\"max_retries\\\": 5,\\n    \\\"retry\\\": false,\\n    \\\"test_suite\\\": \\\"smoke\\\",\\n    \\\"test_type\\\": \\\"vm_suite\\\",\\n    \\\"timeout\\\": 5400,\\n    \\\"use_ctest\\\": false,\\n    \\\"warn_only\\\": false\\n}\",\n      \"{\\n    \\\"max_retries\\\": 5,\\n    \\\"retry\\\": false,\\n    \\\"test_suite\\\": null,\\n    \\\"test_type\\\": \\\"pfq_suite\\\",\\n    \\\"timeout\\\": 5400,\\n    \\\"use_ctest\\\": true,\\n    \\\"warn_only\\\": false\\n}\",\n      \"{\\n    \\\"max_retries\\\": 5,\\n    \\\"retry\\\": false,\\n    \\\"test_suite\\\": null,\\n    \\\"test_type\\\": \\\"cros_vm_test\\\",\\n    \\\"timeout\\\": 5400,\\n    \\\"use_ctest\\\": true,\\n    \\\"warn_only\\\": false\\n}\"\n    ]\n\n\"tast_vm_tests\": [\n      \"{\\n    \\\"suite_name\\\": \\\"tast_vm_paladin\\\",\\n    \\\"test_exprs\\\": [\\n        \\\"(!disabled \u0026\u0026 !\\\\\\\"group:*\\\\\\\" \u0026\u0026 !informational)\\\"\\n    ],\\n    \\\"timeout\\\": 3600\\n}\"\n    ],",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 1
+      },
+      "revId": "12543afb02ef57c0d8eb35b045662347459b4777",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
