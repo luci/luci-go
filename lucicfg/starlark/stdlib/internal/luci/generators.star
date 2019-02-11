@@ -190,13 +190,9 @@ def gen_buildbucket_cfg(ctx):
   ctx.config_set[buildbucket.cfg_file] = cfg
 
   for bucket in buckets:
-    cfg.acl_sets.append(buildbucket_pb.AclSet(
-        name = bucket.props.name,
-        acls = _buildbucket_acls(get_bucket_acls(bucket)),
-    ))
     cfg.buckets.append(buildbucket_pb.Bucket(
         name = bucket.props.name,
-        acl_sets = [bucket.props.name],
+        acls = _buildbucket_acls(get_bucket_acls(bucket)),
         swarming = buildbucket_pb.Swarming(
             builders = _buildbucket_builders(bucket, swarming.host),
         ),

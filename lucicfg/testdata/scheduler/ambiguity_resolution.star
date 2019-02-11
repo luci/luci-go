@@ -62,7 +62,6 @@ core.builder(
 # === cr-buildbucket.cfg
 # buckets: <
 #   name: "b1"
-#   acl_sets: "b1"
 #   swarming: <
 #     builders: <
 #       name: "builder-builder"
@@ -77,7 +76,6 @@ core.builder(
 # >
 # buckets: <
 #   name: "b2"
-#   acl_sets: "b2"
 #   swarming: <
 #     builders: <
 #       name: "builder-builder"
@@ -98,12 +96,6 @@ core.builder(
 #       >
 #     >
 #   >
-# >
-# acl_sets: <
-#   name: "b1"
-# >
-# acl_sets: <
-#   name: "b2"
 # >
 # ===
 #

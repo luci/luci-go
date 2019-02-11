@@ -19,12 +19,8 @@ core.gitiles_poller(
 # === cr-buildbucket.cfg
 # buckets: <
 #   name: "ci"
-#   acl_sets: "ci"
 #   swarming: <
 #   >
-# >
-# acl_sets: <
-#   name: "ci"
 # >
 # ===
 #
