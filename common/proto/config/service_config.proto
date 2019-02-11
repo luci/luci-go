@@ -29,6 +29,13 @@ message ConfigSetLocation {
   StorageType storage_type = 2;
 }
 
+// Used to specify project specific identities to use when LUCI acts on
+// behalf of a project.
+message IdentityConfig {
+  // The email of the service account to use as identity.
+  string service_account_email = 1;
+}
+
 /******************************************************************************/
 /* Projects                                                                   */
 /******************************************************************************/
@@ -39,6 +46,8 @@ message Project {
   string id = 1;
   // Where to import "projects/<id>" config set from.
   ConfigSetLocation config_location = 2;
+  // If set, defines project specific identities to use.
+  IdentityConfig identity_config = 3;
 }
 
 // Schema of projects.cfg file. Represents luci tenants registry.
