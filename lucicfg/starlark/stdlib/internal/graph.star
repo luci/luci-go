@@ -17,6 +17,10 @@ _KEY_ORDER = 'key'
 _DEFINITION_ORDER = 'def'
 
 
+# A constructor for graph.keyset structs.
+_keyset_ctor = __native__.genstruct('graph.keyset')
+
+
 def _check_interpreter_context():
   """Verifies add_node and add_edge are used only from 'exec' context."""
   ctx = __native__.interpreter_context()
@@ -43,6 +47,58 @@ def _key(*args):
     graph.key object representing this path.
   """
   return __native__.graph().key(*args)
+
+
+def _keyset(*keys):
+  """Returns a struct that encapsulates a set of keys of different kinds.
+
+  Keysets are returned by rules such as core.builder(...). Internally such rules
+  add a bunch of nodes to the graph, representing different aspects of the
+  definition. Keysets represent keys of "publicly exposed" nodes, so that other
+  nodes can connect to them.
+
+  For example, core.builder(...) is internally represented by nodes of 3 kinds:
+      * core.builder (actual builder definition)
+      * core.builder_ref (used when the builder is treated as a builder)
+      * core.triggerer (used when the builder is treated as a triggerer).
+
+  Other nodes, depending of what they do, sometimes want to connect to
+  `core.builder_ref` or to `core.triggerer`. So in general rules accept keysets,
+  and their implementations then pick a key they want via `keyset.get(...)`.
+
+  Note that `keys` must all have different kinds, otherwise `get` has no way
+  to target a particular key. graph.keyset(...) fails if some keys have the same
+  kind.
+
+  Returns:
+    A graph.keyset struct with a single method `get(kind): graph.key or None`.
+  """
+  as_map = {}
+  for k in keys:
+    if k.kind in as_map:
+      fail('bad key set %s, kind %s is duplicated' % (keys, k.kind))
+    as_map[k.kind] = k
+  return _keyset_ctor(get = lambda kind: as_map.get(kind))
+
+
+def _from_keyset(keyset, kind):
+  """Grabs a key of the given kind from the keyset or fails if not there.
+
+  Returns None if `keyset` is not in fact a `graph.keyset` struct.
+
+  Args:
+    keyset: either a `graph.keyset` struct or something else.
+    kind: a string with the key kind to lookup in the keyset.
+
+  Returns:
+    A key of given kind or None if `keyset` is not `graph.keyset` struct.
+  """
+  if __native__.ctor(keyset) != _keyset_ctor:
+    return None
+  k = keyset.get(kind)
+  if not k:
+    fail('expecting %s' % kind)
+  return k
 
 
 def _add_node(key, props=None, idempotent=False, trace=None):
@@ -210,6 +266,8 @@ graph = struct(
     DEFINITION_ORDER = _DEFINITION_ORDER,
 
     key = _key,
+    keyset = _keyset,
+    from_keyset = _from_keyset,
     add_node = _add_node,
     add_edge = _add_edge,
     node = _node,

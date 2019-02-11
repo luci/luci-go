@@ -27,8 +27,10 @@ def bucket(name=None, acls=None):
     acls: list of acl.entry(...) objects.
   """
   name = validate.string('name', name)
-  graph.add_node(keys.bucket(name), props = {
+  key = keys.bucket(name)
+  graph.add_node(key, props = {
       'name': name,
       'acls': aclimpl.validate_acls(acls, project_level=False),
   })
-  graph.add_edge(keys.project(), keys.bucket(name))
+  graph.add_edge(keys.project(), key)
+  return graph.keyset(key)
