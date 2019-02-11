@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5ccb63f_9bd5e518",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-11T23:02:40Z",
+      "side": 1,
+      "message": "in the retrospect, it seems \u0027luci.builder\u0027 would be a better name. How hard is it to rename it before release?",
+      "range": {
+        "startLine": 74,
+        "startChar": 42,
+        "endLine": 74,
+        "endChar": 54
+      },
+      "revId": "587bf1e87fbf029ca21dfe9e047cf5d69ac6f24a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0eef996c_0a5e5122",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-11T23:02:40Z",
+      "side": 1,
+      "message": "i find this error message a bit confusing because it does not match the code, but it is not a big deal",
+      "revId": "587bf1e87fbf029ca21dfe9e047cf5d69ac6f24a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
