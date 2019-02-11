@@ -39,6 +39,24 @@
       "revId": "12543afb02ef57c0d8eb35b045662347459b4777",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bffad182_1a4f24b7",
+        "filename": "lucicfg/external/crostesting/proto/config/target_test_requirements_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-11T22:14:48Z",
+      "side": 1,
+      "message": "Which value are you referring to?\n\nThroughout this, I\u0027m quite sure there are fields that always have the same value that we can always drop. I\u0027ll come by again later to prune such fields (after writing some Starlark), since I can\u0027t tell yet which ones those are.",
+      "parentUuid": "0c929190_000fc36e",
+      "revId": "12543afb02ef57c0d8eb35b045662347459b4777",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
