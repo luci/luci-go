@@ -20,6 +20,7 @@ package tokenminter
 import (
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/certchecker"
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
@@ -38,6 +39,7 @@ type serverImpl struct {
 	delegation.MintDelegationTokenRPC
 	serviceaccounts.MintOAuthTokenGrantRPC
 	serviceaccounts.MintOAuthTokenViaGrantRPC
+	projectscope.ProjectIdentityValidator
 }
 
 // NewServer returns prod TokenMinterServer implementation.
