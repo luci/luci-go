@@ -99,8 +99,8 @@ def builder(
 
   Args:
     name: name of the builder, will show up in UIs and logs. Required.
-    bucket: name of the bucket the builder belongs to. Required.
-    recipe: name of a recipe to run, see core.recipe(...) rule. Required.
+    bucket: a bucket the builder is in, see core.bucket(...) rule. Required.
+    recipe: a recipe to run, see core.recipe(...) rule. Required.
 
     properties: a dict with string keys and JSON-serializable values, defining
         properties to pass to the recipe.
@@ -158,18 +158,18 @@ def builder(
         migration from Buildbot to LUCI. Refer to Buildbucket docs for the
         meaning.
 
-    triggers: names of builders this builder triggers.
-    triggered_by: names of builders or pollers this builder is triggered by.
+    triggers: builders this builder triggers.
+    triggered_by: builders or pollers this builder is triggered by.
   """
   name = validate.string('name', name)
-  bucket = validate.string('bucket', bucket)
-  recipe = validate.string('recipe', recipe)
+  bucket_key = keys.bucket(bucket)
+  recipe_key = keys.recipe(recipe)
 
   # Node that carries the full definition of the builder.
-  builder_key = keys.builder(bucket, name)
+  builder_key = keys.builder(bucket_key.id, name)
   graph.add_node(builder_key, props = {
       'name': name,
-      'bucket': bucket,
+      'bucket': bucket_key.id,
       'properties': validate.str_dict('properties', properties),
       'service_account': validate.string('service_account', service_account, required=False),
       'caches': swarming.validate_caches('caches', caches),
@@ -185,8 +185,8 @@ def builder(
       'task_template_canary_percentage': validate.int('task_template_canary_percentage', task_template_canary_percentage, min=0, max=100, required=False),
       'luci_migration_host': validate.string('luci_migration_host', luci_migration_host, required=False)
   })
-  graph.add_edge(keys.bucket(bucket), builder_key)
-  graph.add_edge(builder_key, keys.recipe(recipe))
+  graph.add_edge(bucket_key, builder_key)
+  graph.add_edge(builder_key, recipe_key)
 
   # Allow this builder to be referenced from other nodes via its bucket-scoped
   # name and via a global (perhaps ambiguous) name. See builder_ref.add(...).
@@ -201,14 +201,16 @@ def builder(
   for t in validate.list('triggers', triggers):
     graph.add_edge(
         parent = triggerer_key,
-        child = keys.builder_ref(validate.string('triggers', t)),
+        child = keys.builder_ref(t),
         title = 'triggers',
     )
 
   # And link to nodes this builder is triggered by.
   for t in validate.list('triggered_by', triggered_by):
     graph.add_edge(
-        parent = keys.triggerer(validate.string('triggered_by', t)),
+        parent = keys.triggerer(t),
         child = builder_ref_key,
         title = 'triggered_by',
     )
+
+  return graph.keyset(builder_key, builder_ref_key, triggerer_key)

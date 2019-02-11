@@ -62,7 +62,7 @@ def gitiles_poller(
 
   Args:
     name: name of the poller, to refer to it from other rules. Required.
-    bucket: name of the bucket the poller belongs to. Required.
+    bucket: a bucket the poller is in, see core.bucket(...) rule. Required.
     repo: URL of a git repository to poll, starting with `https://`. Required.
     refs: a list of fully qualified refs to watch, e.g. `refs/heads/master` or
         `refs/tags/v1.2.3`.
@@ -77,11 +77,11 @@ def gitiles_poller(
         of the poller. See [Defining cron schedules](#schedules_doc) for the
         expected format of this field. Note that it is rare to use custom
         schedules for pollers. By default, the poller will run each 30 sec.
-    triggers: names of builders to trigger whenever the poller detects a new git
+    triggers: builders to trigger whenever the poller detects a new git
         commit on any ref in the watched ref set.
   """
   name = validate.string('name', name)
-  bucket = validate.string('bucket', bucket)
+  bucket_key = keys.bucket(bucket)
 
   refs = validate.list('refs', refs)
   for r in refs:
@@ -95,16 +95,16 @@ def gitiles_poller(
     refs = ['refs/heads/master']
 
   # Node that carries the full definition of the poller.
-  poller_key = keys.gitiles_poller(bucket, name)
+  poller_key = keys.gitiles_poller(bucket_key.id, name)
   graph.add_node(poller_key, props = {
       'name': name,
-      'bucket': bucket,
+      'bucket': bucket_key.id,
       'repo': validate.string('repo', repo, regexp=r'https://.+'),
       'refs': refs,
       'refs_regexps': refs_regexps,
       'schedule': validate.string('schedule', schedule, required=False),
   })
-  graph.add_edge(keys.bucket(bucket), poller_key)
+  graph.add_edge(bucket_key, poller_key)
 
   # Setup nodes that indicate this poller can be referenced in 'triggered_by'
   # relations (either via its bucket-scoped name or via its global name).
@@ -114,6 +114,8 @@ def gitiles_poller(
   for t in validate.list('triggers', triggers):
     graph.add_edge(
         parent = triggerer_key,
-        child = keys.builder_ref(validate.string('triggers', t)),
+        child = keys.builder_ref(t),
         title = 'triggers',
     )
+
+  return graph.keyset(poller_key, triggerer_key)

@@ -27,7 +27,9 @@ def logdog(gs_bucket=None):
     gs_bucket: base Google Storage archival path, archive logs will be written
         to this bucket/path.
   """
-  graph.add_node(keys.logdog(), props = {
+  key = keys.logdog()
+  graph.add_node(key, props = {
       'gs_bucket': validate.string('gs_bucket', gs_bucket, required=False),
   })
-  graph.add_edge(keys.project(), keys.logdog())
+  graph.add_edge(keys.project(), key)
+  return graph.keyset(key)

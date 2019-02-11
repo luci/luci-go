@@ -19,6 +19,7 @@ Should not import other LUCI modules to avoid dependency cycles.
 
 load('@stdlib//internal/error.star', 'error')
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/validate.star', 'validate')
 
 
 # Node edges (parent -> child):
@@ -34,16 +35,38 @@ load('@stdlib//internal/graph.star', 'graph')
 #   core.triggerer -> [core.builder_ref]
 
 
-def _bucket_scoped_key(kind, name):
+def _global_key(kind, attr, ref):
+  """Returns a key either by grabbing it from the keyset or constructing.
+
+  Args:
+    kind: kind of the key to return;
+    attr: field name that supplies 'ref', for error messages.
+    ref: either a keyset or a string "<name>".
+
+  Returns:
+    graph.key of the requested kind.
+  """
+  if graph.is_keyset(ref):
+    return ref.get(kind)
+  return graph.key(kind, validate.string(attr, ref))
+
+
+def _bucket_scoped_key(kind, attr, ref):
   """Returns either a bucket-scoped or a global key of the given kind.
 
   Bucket-scoped keys have (BUCKET, <name>) as the first component of the key.
 
   Args:
-    kind: kind of the key.
-    name: either "<bucket>/<name>" or just "<name>".
+    kind: kind of the key to return.
+    attr: field name that supplies 'ref', for error messages.
+    ref: either a keyset, a string "<bucket>/<name>" or just "<name>".
+
+  Returns:
+    graph.key of the requested kind.
   """
-  chunks = name.split('/', 1)
+  if graph.is_keyset(ref):
+    return ref.get(kind)
+  chunks = validate.string(attr, ref).split('/', 1)
   if len(chunks) == 1:
     return graph.key(kind, chunks[0])
   return graph.key(kinds.BUCKET, chunks[0], kind, chunks[1])
@@ -55,8 +78,8 @@ kinds = struct(
     PROJECT = 'core.project',
     LOGDOG = 'core.logdog',
     BUCKET = 'core.bucket',
-    BUILDER = 'core.builder',
     RECIPE = 'core.recipe',
+    BUILDER = 'core.builder',
     GITILES_POLLER = 'core.gitiles_poller',
 
     # Internal nodes (declared internally as dependency of other nodes).
@@ -70,14 +93,19 @@ keys = struct(
     # Publicly declarable nodes.
     project = lambda: graph.key(kinds.PROJECT, '...'),  # singleton
     logdog = lambda: graph.key(kinds.LOGDOG, '...'),  # singleton
-    bucket = lambda name: graph.key(kinds.BUCKET, name),
+    bucket = lambda ref: _global_key(kinds.BUCKET, 'bucket', ref),
+    recipe = lambda ref: _global_key(kinds.RECIPE, 'recipe', ref),
+
+    # TODO(vadimsh): Make them accept keysets if necessary. These currently
+    # require strings, not keysets. They are currently not directly used by
+    # anything, only through 'builder_ref' and 'triggerer' nodes. As such, they
+    # are never consumed via keysets.
     builder = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.BUILDER, name),
-    recipe = lambda name: graph.key(kinds.RECIPE, name),
     gitiles_poller = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.GITILES_POLLER, name),
 
-    # Internal nodes.
-    builder_ref = lambda name: _bucket_scoped_key(kinds.BUILDER_REF, name),
-    triggerer = lambda name: _bucket_scoped_key(kinds.TRIGGERER, name),
+    # Internal nodes (declared internally as dependency of other nodes).
+    builder_ref = lambda ref: _bucket_scoped_key(kinds.BUILDER_REF, 'triggers', ref),
+    triggerer = lambda ref: _bucket_scoped_key(kinds.TRIGGERER, 'triggered_by', ref),
 )
 
 

@@ -42,7 +42,8 @@ def project(
     swarming: hostname of a Swarming service to use (if any).
     acls: list of acl.entry(...) objects, will be inherited by all buckets.
   """
-  graph.add_node(keys.project(), props = {
+  key = keys.project()
+  graph.add_node(key, props = {
       'name': validate.string('name', name),
       'buildbucket': service.from_host('buildbucket', buildbucket),
       'logdog': service.from_host('logdog', logdog),
@@ -50,3 +51,4 @@ def project(
       'swarming': service.from_host('swarming', swarming),
       'acls': aclimpl.validate_acls(acls, project_level=True),
   })
+  return graph.keyset(key)

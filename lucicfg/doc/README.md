@@ -530,8 +530,8 @@ This is not necessary if the recipe uses Scheduler API instead of Buildbucket.
 #### Arguments {#core.builder-args}
 
 * **name**: name of the builder, will show up in UIs and logs. Required.
-* **bucket**: name of the bucket the builder belongs to. Required.
-* **recipe**: name of a recipe to run, see [core.recipe(...)](#core.recipe) rule. Required.
+* **bucket**: a bucket the builder is in, see [core.bucket(...)](#core.bucket) rule. Required.
+* **recipe**: a recipe to run, see [core.recipe(...)](#core.recipe) rule. Required.
 * **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the recipe.
 * **service_account**: an email of a service account to run the recipe under: the recipe (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI).
 * **caches**: a list of [swarming.cache(...)](#swarming.cache) objects describing Swarming named caches that should be present on the bot. See [swarming.cache(...)](#swarming.cache) doc for more details.
@@ -546,8 +546,8 @@ This is not necessary if the recipe uses Scheduler API instead of Buildbucket.
 * **experimental**: if True, by default a new build in this builder will be marked as experimental. This is seen from recipes and they may behave differently (e.g. avoiding any side-effects). If None, defer the decision to Buildbucket service.
 * **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service.
 * **luci_migration_host**: deprecated setting that was important during the migration from Buildbot to LUCI. Refer to Buildbucket docs for the meaning.
-* **triggers**: names of builders this builder triggers.
-* **triggered_by**: names of builders or pollers this builder is triggered by.
+* **triggers**: builders this builder triggers.
+* **triggered_by**: builders or pollers this builder is triggered by.
 
 
 
@@ -607,12 +607,12 @@ watching `refs/heads/master`.
 #### Arguments {#core.gitiles_poller-args}
 
 * **name**: name of the poller, to refer to it from other rules. Required.
-* **bucket**: name of the bucket the poller belongs to. Required.
+* **bucket**: a bucket the poller is in, see [core.bucket(...)](#core.bucket) rule. Required.
 * **repo**: URL of a git repository to poll, starting with `https://`. Required.
 * **refs**: a list of fully qualified refs to watch, e.g. `refs/heads/master` or `refs/tags/v1.2.3`.
 * **refs_regexps**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
 * **schedule**: string with a schedule that describes when to run one iteration of the poller. See [Defining cron schedules](#schedules_doc) for the expected format of this field. Note that it is rare to use custom schedules for pollers. By default, the poller will run each 30 sec.
-* **triggers**: names of builders to trigger whenever the poller detects a new git commit on any ref in the watched ref set.
+* **triggers**: builders to trigger whenever the poller detects a new git commit on any ref in the watched ref set.
 
 
 

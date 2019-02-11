@@ -57,7 +57,8 @@ def recipe(
         `recipe` can provide the actual recipe name. Defaults to `name`.
   """
   name = validate.string('name', name)
-  graph.add_node(keys.recipe(name), props = {
+  key = keys.recipe(name)
+  graph.add_node(key, props = {
       'cipd_package': validate.string('cipd_package', cipd_package),
       'cipd_version': validate.string(
           'cipd_version',
@@ -72,3 +73,4 @@ def recipe(
           required=False,
       ),
   })
+  return graph.keyset(key)

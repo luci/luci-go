@@ -149,6 +149,40 @@ core.builder(
 )
 
 
+# Inline definitions.
+
+
+core.builder(
+    name = 'triggerer builder',
+    bucket = core.bucket(name = 'inline'),
+    recipe = core.recipe(
+        name = 'inline/recipe',
+        cipd_package = 'recipe/bundles/inline',
+    ),
+
+    service_account = 'builder@example.com',
+
+    triggers = [
+        core.builder(
+            name = 'triggered builder',
+            bucket = 'inline',
+            recipe = 'inline/recipe',
+        ),
+    ],
+
+    triggered_by = [
+        core.gitiles_poller(
+            name = 'inline poller',
+            bucket = 'inline',
+            repo = 'https://noop.com',
+            refs = ['refs/heads/master', 'refs/tags/blah'],
+            refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+            schedule = 'with 10s interval',
+        ),
+    ],
+)
+
+
 # Expect configs:
 #
 # === cr-buildbucket.cfg
@@ -213,6 +247,37 @@ core.builder(
 #         path: "path1"
 #       >
 #       build_numbers: YES
+#       service_account: "builder@example.com"
+#     >
+#   >
+# >
+# buckets: <
+#   name: "inline"
+#   acls: <
+#     role: WRITER
+#     group: "admins"
+#   >
+#   acls: <
+#     group: "all"
+#   >
+#   swarming: <
+#     builders: <
+#       name: "triggered builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "inline/recipe"
+#         cipd_package: "recipe/bundles/inline"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
+#     builders: <
+#       name: "triggerer builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "inline/recipe"
+#         cipd_package: "recipe/bundles/inline"
+#         cipd_version: "refs/heads/master"
+#       >
 #       service_account: "builder@example.com"
 #     >
 #   >
@@ -296,6 +361,40 @@ core.builder(
 #     builder: "linux ci builder"
 #   >
 # >
+# job: <
+#   id: "triggered builder"
+#   acls: <
+#     role: TRIGGERER
+#     granted_to: "builder@example.com"
+#   >
+#   acl_sets: "inline"
+#   buildbucket: <
+#     server: "cr-buildbucket.appspot.com"
+#     bucket: "inline"
+#     builder: "triggered builder"
+#   >
+# >
+# job: <
+#   id: "triggerer builder"
+#   acl_sets: "inline"
+#   buildbucket: <
+#     server: "cr-buildbucket.appspot.com"
+#     bucket: "inline"
+#     builder: "triggerer builder"
+#   >
+# >
+# trigger: <
+#   id: "inline poller"
+#   schedule: "with 10s interval"
+#   acl_sets: "inline"
+#   triggers: "triggerer builder"
+#   gitiles: <
+#     repo: "https://noop.com"
+#     refs: "refs/heads/master"
+#     refs: "refs/tags/blah"
+#     refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
+#   >
+# >
 # trigger: <
 #   id: "master-poller"
 #   schedule: "with 10s interval"
@@ -321,6 +420,16 @@ core.builder(
 #   acls: <
 #     role: TRIGGERER
 #     granted_to: "group:devs"
+#   >
+# >
+# acl_sets: <
+#   name: "inline"
+#   acls: <
+#     role: OWNER
+#     granted_to: "group:admins"
+#   >
+#   acls: <
+#     granted_to: "group:all"
 #   >
 # >
 # ===
