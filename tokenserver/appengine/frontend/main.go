@@ -18,6 +18,7 @@ package frontend
 
 import (
 	"context"
+	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
@@ -63,9 +64,12 @@ func init() {
 
 	// Register config validation rules.
 	adminSrv := adminsrv.NewServer()
+	tokenminter := tokenminter.NewServer()
 	adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
 	adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
 	adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
+	// TODO(fmatenaar): Merge this with MintProjectTokenRPC implementation.
+	projectscope.Validator.SetupConfigValidation(&validation.Rules)
 
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
@@ -88,7 +92,7 @@ func init() {
 		Service: adminSrv,
 		Prelude: adminPrelude("admin.Admin"),
 	})
-	minter.RegisterTokenMinterServer(&api, tokenminter.NewServer()) // auth inside
+	minter.RegisterTokenMinterServer(&api, tokenminter) // auth inside
 	discovery.Enable(&api)
 	api.InstallHandlers(r, base)
 
