@@ -116,7 +116,8 @@ func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
 			}
 		}
 	}
-	if len(c.ConfigVariables) != 0 || len(c.ExtraVariables) != 0 || len(c.PathVariables) != 0 {
+	// Account for EXECUTABLE_SUFFIX.
+	if len(c.ConfigVariables) != 0 || len(c.ExtraVariables) != 0 || len(c.PathVariables) > 1 {
 		os.Stderr.WriteString(
 			"WARNING: -config-variables, -path-variables and -extra-variables\n" +
 				"         will be unsupported soon. Please contact the LUCI team.\n" +
