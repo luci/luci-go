@@ -30,7 +30,7 @@ func TestParse(t *testing.T) {
   Specifying an empty ACL entry is allowed. It is ignored everywhere. Useful for
   things like:
 
-      core.project(...)
+      luci.project(...)
 
 
   Args:
@@ -63,7 +63,7 @@ func TestParse(t *testing.T) {
 			"Specifying an empty ACL entry is allowed. It is ignored everywhere. Useful for",
 			"things like:",
 			"",
-			"    core.project(...)",
+			"    luci.project(...)",
 		}, "\n"))
 
 		So(out.Fields, ShouldResemble, []FieldsBlock{

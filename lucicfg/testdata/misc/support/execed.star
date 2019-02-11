@@ -1,4 +1,4 @@
-core.project(name = 'test')
+luci.project(name = 'test')
 
 # Expect configs:
 #

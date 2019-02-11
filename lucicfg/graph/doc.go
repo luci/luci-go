@@ -29,8 +29,8 @@
 //     (string kind, string id) pairs. Once constructed, a key is an opaque
 //     label (e.g. there's no way to explore what's inside the key through
 //     Starlark, to keep the API simple). Examples of keys:
-//        [core.Bucket("ci")]
-//        [core.Bucket("ci"), core.Builder("infra-builder")]
+//        [luci.bucket("ci")]
+//        [luci.bucket("ci"), luci.builder("infra-builder")]
 //   * Has a props dict of arbitrary properties (all keys are strings, values
 //     are arbitrary).
 //   * Has a captured stack trace of where in Starlark it was defined (for error

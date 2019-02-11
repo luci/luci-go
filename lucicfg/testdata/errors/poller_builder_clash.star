@@ -1,20 +1,20 @@
-core.project(
+luci.project(
     name = 'proj',
     buildbucket = 'cr-buildbucket.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
     scheduler = 'luci-scheduler.appspot.com',
 )
-core.recipe(
+luci.recipe(
     name = 'noop',
     cipd_package = 'noop',
 )
-core.bucket(name = 'b')
-core.builder(
+luci.bucket(name = 'b')
+luci.builder(
     name = 'clashing name',
     bucket = 'b',
     recipe = 'noop',
 )
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'clashing name',
     bucket = 'b',
     repo = 'https://noop.com',
@@ -25,7 +25,7 @@ core.gitiles_poller(
 # Traceback (most recent call last):
 #   //testdata/errors/poller_builder_clash.star:17: in <toplevel>
 #   ...
-# Error: core.triggerer("b/clashing name") is redeclared, previous declaration:
+# Error: luci.triggerer("b/clashing name") is redeclared, previous declaration:
 # Traceback (most recent call last):
 #   //testdata/errors/poller_builder_clash.star:12: in <toplevel>
 #   ...

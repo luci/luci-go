@@ -90,14 +90,14 @@ def _entry(roles, groups=None, users=None):
   """Returns an ACL binding which assigns given role (or roles) to given
   individuals or groups.
 
-  Lists of acl.entry structs are passed to `acls` fields of core.project(...)
-  and core.bucket(...) rules.
+  Lists of acl.entry structs are passed to `acls` fields of luci.project(...)
+  and luci.bucket(...) rules.
 
   An empty ACL binding is allowed. It is ignored everywhere. Useful for things
   like:
 
   ```python
-  core.project(
+  luci.project(
       acls = [
           acl.entry(acl.PROJECT_CONFIGS_READER, groups = [
               # TODO: members will be added later

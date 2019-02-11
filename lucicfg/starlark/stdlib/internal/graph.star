@@ -52,18 +52,18 @@ def _key(*args):
 def _keyset(*keys):
   """Returns a struct that encapsulates a set of keys of different kinds.
 
-  Keysets are returned by rules such as core.builder(...). Internally such rules
+  Keysets are returned by rules such as luci.builder(...). Internally such rules
   add a bunch of nodes to the graph, representing different aspects of the
   definition. Keysets represent keys of "publicly exposed" nodes, so that other
   nodes can connect to them.
 
-  For example, core.builder(...) is internally represented by nodes of 3 kinds:
-      * core.builder (actual builder definition)
-      * core.builder_ref (used when the builder is treated as a builder)
-      * core.triggerer (used when the builder is treated as a triggerer).
+  For example, luci.builder(...) is internally represented by nodes of 3 kinds:
+      * luci.builder (actual builder definition)
+      * luci.builder_ref (used when the builder is treated as a builder)
+      * luci.triggerer (used when the builder is treated as a triggerer).
 
   Other nodes, depending of what they do, sometimes want to connect to
-  `core.builder_ref` or to `core.triggerer`. So in general rules accept keysets,
+  `luci.builder_ref` or to `luci.triggerer`. So in general rules accept keysets,
   and their implementations then pick a key they want via `keyset.get(...)`.
 
   Note that `keys` must all have different kinds, otherwise `get` has no way
@@ -71,7 +71,7 @@ def _keyset(*keys):
   kind.
 
   The kind of the first key in the keyset is used for error messages. It should
-  be the "most representative" key (e.g. `core.builder` in the example above).
+  be the "most representative" key (e.g. `luci.builder` in the example above).
 
   Returns:
     A graph.keyset struct with a single method `get(kind): graph.key`. It either

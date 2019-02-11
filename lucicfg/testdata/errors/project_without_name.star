@@ -1,4 +1,4 @@
-core.project()
+luci.project()
 
 # Expect errors like:
 #

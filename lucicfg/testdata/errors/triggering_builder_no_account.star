@@ -1,29 +1,29 @@
-core.project(
+luci.project(
     name = 'project',
     buildbucket = 'cr-buildbucket.appspot.com',
     scheduler = 'luci-scheduler.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
 
-core.recipe(
+luci.recipe(
     name = 'noop',
     cipd_package = 'noop',
 )
 
-core.bucket(name = 'ci')
+luci.bucket(name = 'ci')
 
-core.builder(
+luci.builder(
     name = 'b1',
     bucket = 'ci',
     recipe = 'noop',
     triggers = ['b2', 'b3'],
 )
-core.builder(
+luci.builder(
     name = 'b2',
     bucket = 'ci',
     recipe = 'noop',
 )
-core.builder(
+luci.builder(
     name = 'b3',
     bucket = 'ci',
     recipe = 'noop',
@@ -34,4 +34,4 @@ core.builder(
 # Traceback (most recent call last):
 #   //testdata/errors/triggering_builder_no_account.star:15: in <toplevel>
 #   ...
-# Error: core.builder("ci/b1") needs service_account set, it triggers other builders: core.builder("ci/b2"), core.builder("ci/b3")
+# Error: luci.builder("ci/b1") needs service_account set, it triggers other builders: luci.builder("ci/b2"), luci.builder("ci/b3")

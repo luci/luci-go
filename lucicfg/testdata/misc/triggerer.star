@@ -69,9 +69,9 @@ def test_ambiguous_builder_ref():
   b2 = builder('buck2', 'b')
   __native__.graph().finalize()
   assert.fails(lambda: targets(p),
-      'ambiguous reference "b" in core.gitiles_poller\("buck/p"\), possible variants:\n' +
-      '  core.builder\("buck1/b"\)\n' +
-      '  core.builder\("buck2/b"\)'
+      'ambiguous reference "b" in luci.gitiles_poller\("buck/p"\), possible variants:\n' +
+      '  luci.builder\("buck1/b"\)\n' +
+      '  luci.builder\("buck2/b"\)'
   )
 
 
@@ -82,10 +82,10 @@ def test_ambiguous_triggerer():
   b = builder('buck', 'b', triggered_by=['p'])
   __native__.graph().finalize()
   err_re = (
-      'ambiguous reference "p" in core.builder\("buck/b"\), possible variants:\n' +
-      '  core.gitiles_poller\("buck1/p"\)\n' +
-      '  core.gitiles_poller\("buck2/p"\)\n' +
-      '  core.builder\("buck3/p"\)'
+      'ambiguous reference "p" in luci.builder\("buck/b"\), possible variants:\n' +
+      '  luci.gitiles_poller\("buck1/p"\)\n' +
+      '  luci.gitiles_poller\("buck2/p"\)\n' +
+      '  luci.builder\("buck3/p"\)'
   )
   assert.fails(lambda: targets(p1), err_re)
   assert.fails(lambda: targets(p2), err_re)

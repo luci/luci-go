@@ -39,7 +39,7 @@ def gitiles_poller(
       builders triggered by this poller. How they are converted to actual builds
       depends on `triggering_policy` of a builder. For example, some builders
       may want to have one build per commit, others don't care and just want to
-      test the latest commit. See core.builder(...) and scheduler.policy(...)
+      test the latest commit. See luci.builder(...) and scheduler.policy(...)
       for more details.
 
       *** note
@@ -62,7 +62,7 @@ def gitiles_poller(
 
   Args:
     name: name of the poller, to refer to it from other rules. Required.
-    bucket: a bucket the poller is in, see core.bucket(...) rule. Required.
+    bucket: a bucket the poller is in, see luci.bucket(...) rule. Required.
     repo: URL of a git repository to poll, starting with `https://`. Required.
     refs: a list of fully qualified refs to watch, e.g. `refs/heads/master` or
         `refs/tags/v1.2.3`.

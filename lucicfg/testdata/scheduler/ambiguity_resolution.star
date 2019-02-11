@@ -1,37 +1,37 @@
-core.project(
+luci.project(
     name = 'project',
     buildbucket = 'cr-buildbucket.appspot.com',
     scheduler = 'luci-scheduler.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
 
-core.recipe(
+luci.recipe(
     name = 'noop',
     cipd_package = 'noop',
 )
 
-core.bucket(name = 'b1')
-core.bucket(name = 'b2')
+luci.bucket(name = 'b1')
+luci.bucket(name = 'b2')
 
 # Poller<->Poller clash.
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'poller',
     bucket = 'b1',
     repo = 'https://noop.com',
 )
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'poller',
     bucket = 'b2',
     repo = 'https://noop.com',
 )
 
 # Poller<->Builder clash.
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'poller-builder',
     bucket = 'b1',
     repo = 'https://noop.com',
 )
-core.builder(
+luci.builder(
     name = 'poller-builder',
     bucket = 'b2',
     recipe = 'noop',
@@ -39,18 +39,18 @@ core.builder(
 )
 
 # Builder<->Builder clash.
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'some poller',
     bucket = 'b1',
     repo = 'https://noop.com',
 )
-core.builder(
+luci.builder(
     name = 'builder-builder',
     bucket = 'b1',
     recipe = 'noop',
     triggered_by = ['some poller'],
 )
-core.builder(
+luci.builder(
     name = 'builder-builder',
     bucket = 'b2',
     recipe = 'noop',

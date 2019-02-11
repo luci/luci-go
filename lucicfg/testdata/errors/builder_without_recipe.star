@@ -1,12 +1,12 @@
-core.project(
+luci.project(
     name = 'project',
     buildbucket = 'cr-buildbucket.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
 
-core.bucket(name = 'ci')
+luci.bucket(name = 'ci')
 
-core.builder(
+luci.builder(
     name = 'b',
     bucket = 'ci',
     service_account = 'noop@example.com',

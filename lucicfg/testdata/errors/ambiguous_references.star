@@ -1,4 +1,4 @@
-core.project(
+luci.project(
     name = 'proj',
     buildbucket = 'cr-buildbucket.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
@@ -6,40 +6,40 @@ core.project(
 )
 
 
-core.recipe(
+luci.recipe(
     name = 'noop',
     cipd_package = 'noop',
 )
 
 
-core.bucket(name = 'b1')
-core.bucket(name = 'b2')
+luci.bucket(name = 'b1')
+luci.bucket(name = 'b2')
 
 
-core.builder(
+luci.builder(
     name = 'b1 builder',
     bucket = 'b1',
     recipe = 'noop',
     service_account = 'noop@example.com',
 )
-core.builder(
+luci.builder(
     name = 'ambiguous builder',
     bucket = 'b1',
     recipe = 'noop',
 )
-core.builder(
+luci.builder(
     name = 'b2 builder',
     bucket = 'b2',
     recipe = 'noop',
 )
-core.builder(
+luci.builder(
     name = 'ambiguous builder',
     bucket = 'b2',
     recipe = 'noop',
 )
 
 
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'valid',
     bucket = 'b1',
     repo = 'https://noop.com',
@@ -51,7 +51,7 @@ core.gitiles_poller(
     ],
 )
 
-core.gitiles_poller(
+luci.gitiles_poller(
     name = 'ambiguous',
     bucket = 'b1',
     repo = 'https://noop.com',
@@ -62,7 +62,7 @@ core.gitiles_poller(
 )
 
 
-core.builder(
+luci.builder(
     name = 'triggered',
     bucket = 'b1',
     recipe = 'noop',
@@ -77,13 +77,13 @@ core.builder(
 # Traceback (most recent call last):
 #   //testdata/errors/ambiguous_references.star:54: in <toplevel>
 #   ...
-# Error: ambiguous reference "ambiguous builder" in core.gitiles_poller("b1/ambiguous"), possible variants:
-#   core.builder("b1/ambiguous builder")
-#   core.builder("b2/ambiguous builder")
+# Error: ambiguous reference "ambiguous builder" in luci.gitiles_poller("b1/ambiguous"), possible variants:
+#   luci.builder("b1/ambiguous builder")
+#   luci.builder("b2/ambiguous builder")
 #
 # Traceback (most recent call last):
 #   //testdata/errors/ambiguous_references.star:65: in <toplevel>
 #   ...
-# Error: ambiguous reference "ambiguous builder" in core.builder("b1/triggered"), possible variants:
-#   core.builder("b1/ambiguous builder")
-#   core.builder("b2/ambiguous builder")
+# Error: ambiguous reference "ambiguous builder" in luci.builder("b1/triggered"), possible variants:
+#   luci.builder("b1/ambiguous builder")
+#   luci.builder("b2/ambiguous builder")
