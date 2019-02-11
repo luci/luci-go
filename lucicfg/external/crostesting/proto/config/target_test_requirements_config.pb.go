@@ -20,45 +20,671 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// A CrOS test suite.
-type TestSuite struct {
-	// The name of a CrOS test suite.
-	TestSuiteName        string   `protobuf:"bytes,1,opt,name=test_suite_name,json=testSuiteName,proto3" json:"test_suite_name,omitempty"`
+type GceTestCfg struct {
+	GceTest              []*GceTestCfg_GceTest `protobuf:"bytes,1,rep,name=gce_test,json=gceTest,proto3" json:"gce_test,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *GceTestCfg) Reset()         { *m = GceTestCfg{} }
+func (m *GceTestCfg) String() string { return proto.CompactTextString(m) }
+func (*GceTestCfg) ProtoMessage()    {}
+func (*GceTestCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{0}
+}
+
+func (m *GceTestCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GceTestCfg.Unmarshal(m, b)
+}
+func (m *GceTestCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GceTestCfg.Marshal(b, m, deterministic)
+}
+func (m *GceTestCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GceTestCfg.Merge(m, src)
+}
+func (m *GceTestCfg) XXX_Size() int {
+	return xxx_messageInfo_GceTestCfg.Size(m)
+}
+func (m *GceTestCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_GceTestCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GceTestCfg proto.InternalMessageInfo
+
+func (m *GceTestCfg) GetGceTest() []*GceTestCfg_GceTest {
+	if m != nil {
+		return m.GceTest
+	}
+	return nil
+}
+
+type GceTestCfg_GceTest struct {
+	// Test type to be run.
+	TestType string `protobuf:"bytes,1,opt,name=test_type,json=testType,proto3" json:"test_type,omitempty"`
+	// Test suite to be run in GCETest.
+	TestSuite string `protobuf:"bytes,2,opt,name=test_suite,json=testSuite,proto3" json:"test_suite,omitempty"`
+	// Number of seconds to wait before timing out waiting for results.
+	TimeoutSec int32 `protobuf:"varint,3,opt,name=timeout_sec,json=timeoutSec,proto3" json:"timeout_sec,omitempty"`
+	// Use the old ctest code path rather than the new chromite one.
+	UseCtest             bool     `protobuf:"varint,4,opt,name=use_ctest,json=useCtest,proto3" json:"use_ctest,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TestSuite) Reset()         { *m = TestSuite{} }
-func (m *TestSuite) String() string { return proto.CompactTextString(m) }
-func (*TestSuite) ProtoMessage()    {}
-func (*TestSuite) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efae681839d29e51, []int{0}
+func (m *GceTestCfg_GceTest) Reset()         { *m = GceTestCfg_GceTest{} }
+func (m *GceTestCfg_GceTest) String() string { return proto.CompactTextString(m) }
+func (*GceTestCfg_GceTest) ProtoMessage()    {}
+func (*GceTestCfg_GceTest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{0, 0}
 }
 
-func (m *TestSuite) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TestSuite.Unmarshal(m, b)
+func (m *GceTestCfg_GceTest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GceTestCfg_GceTest.Unmarshal(m, b)
 }
-func (m *TestSuite) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TestSuite.Marshal(b, m, deterministic)
+func (m *GceTestCfg_GceTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GceTestCfg_GceTest.Marshal(b, m, deterministic)
 }
-func (m *TestSuite) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TestSuite.Merge(m, src)
+func (m *GceTestCfg_GceTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GceTestCfg_GceTest.Merge(m, src)
 }
-func (m *TestSuite) XXX_Size() int {
-	return xxx_messageInfo_TestSuite.Size(m)
+func (m *GceTestCfg_GceTest) XXX_Size() int {
+	return xxx_messageInfo_GceTestCfg_GceTest.Size(m)
 }
-func (m *TestSuite) XXX_DiscardUnknown() {
-	xxx_messageInfo_TestSuite.DiscardUnknown(m)
+func (m *GceTestCfg_GceTest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GceTestCfg_GceTest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TestSuite proto.InternalMessageInfo
+var xxx_messageInfo_GceTestCfg_GceTest proto.InternalMessageInfo
 
-func (m *TestSuite) GetTestSuiteName() string {
+func (m *GceTestCfg_GceTest) GetTestType() string {
 	if m != nil {
-		return m.TestSuiteName
+		return m.TestType
 	}
 	return ""
+}
+
+func (m *GceTestCfg_GceTest) GetTestSuite() string {
+	if m != nil {
+		return m.TestSuite
+	}
+	return ""
+}
+
+func (m *GceTestCfg_GceTest) GetTimeoutSec() int32 {
+	if m != nil {
+		return m.TimeoutSec
+	}
+	return 0
+}
+
+func (m *GceTestCfg_GceTest) GetUseCtest() bool {
+	if m != nil {
+		return m.UseCtest
+	}
+	return false
+}
+
+type HwTestCfg struct {
+	HwTest               []*HwTestCfg_HwTest `protobuf:"bytes,1,rep,name=hw_test,json=hwTest,proto3" json:"hw_test,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
+}
+
+func (m *HwTestCfg) Reset()         { *m = HwTestCfg{} }
+func (m *HwTestCfg) String() string { return proto.CompactTextString(m) }
+func (*HwTestCfg) ProtoMessage()    {}
+func (*HwTestCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{1}
+}
+
+func (m *HwTestCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_HwTestCfg.Unmarshal(m, b)
+}
+func (m *HwTestCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_HwTestCfg.Marshal(b, m, deterministic)
+}
+func (m *HwTestCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HwTestCfg.Merge(m, src)
+}
+func (m *HwTestCfg) XXX_Size() int {
+	return xxx_messageInfo_HwTestCfg.Size(m)
+}
+func (m *HwTestCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_HwTestCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_HwTestCfg proto.InternalMessageInfo
+
+func (m *HwTestCfg) GetHwTest() []*HwTestCfg_HwTest {
+	if m != nil {
+		return m.HwTest
+	}
+	return nil
+}
+
+// Configuration for a hardware test suite.
+type HwTestCfg_HwTest struct {
+	// Name of the test suite to run.
+	Suite string `protobuf:"bytes,1,opt,name=suite,proto3" json:"suite,omitempty"`
+	// Number of seconds to wait before timing out waiting for results.
+	TimeoutSec int32 `protobuf:"varint,2,opt,name=timeout_sec,json=timeoutSec,proto3" json:"timeout_sec,omitempty"`
+	// Pool to use for hw testing.
+	Pool string `protobuf:"bytes,3,opt,name=pool,proto3" json:"pool,omitempty"`
+	// Note, if you want multiple suites to block other suites but run
+	// in parallel, you should only mark the last one scheduled as
+	// blocking (it effectively serves as a thread/process join).
+	Blocking bool `protobuf:"varint,4,opt,name=blocking,proto3" json:"blocking,omitempty"`
+	// Fire-and-forget suite.
+	Async bool `protobuf:"varint,5,opt,name=async,proto3" json:"async,omitempty"`
+	// Failure on HW tests warns only (does not generate error).
+	WarnOnly bool `protobuf:"varint,6,opt,name=warn_only,json=warnOnly,proto3" json:"warn_only,omitempty"`
+	// Usually we consider structural failures here as OK.
+	Critical bool `protobuf:"varint,7,opt,name=critical,proto3" json:"critical,omitempty"`
+	// Priority at which tests in the suite will be scheduled in the hw lab.
+	Priority string `protobuf:"bytes,8,opt,name=priority,proto3" json:"priority,omitempty"`
+	// Should we file bugs if a test fails in a suite run.
+	FileBugs bool `protobuf:"varint,9,opt,name=file_bugs,json=fileBugs,proto3" json:"file_bugs,omitempty"`
+	// Minimum number of DUTs required for testing in the hw lab.
+	MinimumDuts int32 `protobuf:"varint,10,opt,name=minimum_duts,json=minimumDuts,proto3" json:"minimum_duts,omitempty"`
+	// Whether we should retry tests that fail in a suite run.
+	Retry bool `protobuf:"varint,11,opt,name=retry,proto3" json:"retry,omitempty"`
+	// Maximum job retries allowed at suite level. 0 for no max.
+	MaxRetries int32 `protobuf:"varint,12,opt,name=max_retries,json=maxRetries,proto3" json:"max_retries,omitempty"`
+	// Preferred minimum duts. Lab will prioritize on getting such
+	// number of duts even if the suite is competing with
+	// other suites that have higher priority.
+	SuiteMinDuts int32 `protobuf:"varint,13,opt,name=suite_min_duts,json=suiteMinDuts,proto3" json:"suite_min_duts,omitempty"`
+	// Only offload failed tests to Google Storage.
+	OffloadFailuresOnly  bool     `protobuf:"varint,14,opt,name=offload_failures_only,json=offloadFailuresOnly,proto3" json:"offload_failures_only,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *HwTestCfg_HwTest) Reset()         { *m = HwTestCfg_HwTest{} }
+func (m *HwTestCfg_HwTest) String() string { return proto.CompactTextString(m) }
+func (*HwTestCfg_HwTest) ProtoMessage()    {}
+func (*HwTestCfg_HwTest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{1, 0}
+}
+
+func (m *HwTestCfg_HwTest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_HwTestCfg_HwTest.Unmarshal(m, b)
+}
+func (m *HwTestCfg_HwTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_HwTestCfg_HwTest.Marshal(b, m, deterministic)
+}
+func (m *HwTestCfg_HwTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HwTestCfg_HwTest.Merge(m, src)
+}
+func (m *HwTestCfg_HwTest) XXX_Size() int {
+	return xxx_messageInfo_HwTestCfg_HwTest.Size(m)
+}
+func (m *HwTestCfg_HwTest) XXX_DiscardUnknown() {
+	xxx_messageInfo_HwTestCfg_HwTest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_HwTestCfg_HwTest proto.InternalMessageInfo
+
+func (m *HwTestCfg_HwTest) GetSuite() string {
+	if m != nil {
+		return m.Suite
+	}
+	return ""
+}
+
+func (m *HwTestCfg_HwTest) GetTimeoutSec() int32 {
+	if m != nil {
+		return m.TimeoutSec
+	}
+	return 0
+}
+
+func (m *HwTestCfg_HwTest) GetPool() string {
+	if m != nil {
+		return m.Pool
+	}
+	return ""
+}
+
+func (m *HwTestCfg_HwTest) GetBlocking() bool {
+	if m != nil {
+		return m.Blocking
+	}
+	return false
+}
+
+func (m *HwTestCfg_HwTest) GetAsync() bool {
+	if m != nil {
+		return m.Async
+	}
+	return false
+}
+
+func (m *HwTestCfg_HwTest) GetWarnOnly() bool {
+	if m != nil {
+		return m.WarnOnly
+	}
+	return false
+}
+
+func (m *HwTestCfg_HwTest) GetCritical() bool {
+	if m != nil {
+		return m.Critical
+	}
+	return false
+}
+
+func (m *HwTestCfg_HwTest) GetPriority() string {
+	if m != nil {
+		return m.Priority
+	}
+	return ""
+}
+
+func (m *HwTestCfg_HwTest) GetFileBugs() bool {
+	if m != nil {
+		return m.FileBugs
+	}
+	return false
+}
+
+func (m *HwTestCfg_HwTest) GetMinimumDuts() int32 {
+	if m != nil {
+		return m.MinimumDuts
+	}
+	return 0
+}
+
+func (m *HwTestCfg_HwTest) GetRetry() bool {
+	if m != nil {
+		return m.Retry
+	}
+	return false
+}
+
+func (m *HwTestCfg_HwTest) GetMaxRetries() int32 {
+	if m != nil {
+		return m.MaxRetries
+	}
+	return 0
+}
+
+func (m *HwTestCfg_HwTest) GetSuiteMinDuts() int32 {
+	if m != nil {
+		return m.SuiteMinDuts
+	}
+	return 0
+}
+
+func (m *HwTestCfg_HwTest) GetOffloadFailuresOnly() bool {
+	if m != nil {
+		return m.OffloadFailuresOnly
+	}
+	return false
+}
+
+type MoblabVmTestCfg struct {
+	MoblabTest           []*MoblabVmTestCfg_MoblabTest `protobuf:"bytes,1,rep,name=moblab_test,json=moblabTest,proto3" json:"moblab_test,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *MoblabVmTestCfg) Reset()         { *m = MoblabVmTestCfg{} }
+func (m *MoblabVmTestCfg) String() string { return proto.CompactTextString(m) }
+func (*MoblabVmTestCfg) ProtoMessage()    {}
+func (*MoblabVmTestCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{2}
+}
+
+func (m *MoblabVmTestCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MoblabVmTestCfg.Unmarshal(m, b)
+}
+func (m *MoblabVmTestCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MoblabVmTestCfg.Marshal(b, m, deterministic)
+}
+func (m *MoblabVmTestCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MoblabVmTestCfg.Merge(m, src)
+}
+func (m *MoblabVmTestCfg) XXX_Size() int {
+	return xxx_messageInfo_MoblabVmTestCfg.Size(m)
+}
+func (m *MoblabVmTestCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_MoblabVmTestCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MoblabVmTestCfg proto.InternalMessageInfo
+
+func (m *MoblabVmTestCfg) GetMoblabTest() []*MoblabVmTestCfg_MoblabTest {
+	if m != nil {
+		return m.MoblabTest
+	}
+	return nil
+}
+
+type MoblabVmTestCfg_MoblabTest struct {
+	// Test type to be run.
+	TestType string `protobuf:"bytes,1,opt,name=test_type,json=testType,proto3" json:"test_type,omitempty"`
+	// Number of seconds to wait before timing out waiting for results.
+	TimeoutSec           int32    `protobuf:"varint,2,opt,name=timeout_sec,json=timeoutSec,proto3" json:"timeout_sec,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *MoblabVmTestCfg_MoblabTest) Reset()         { *m = MoblabVmTestCfg_MoblabTest{} }
+func (m *MoblabVmTestCfg_MoblabTest) String() string { return proto.CompactTextString(m) }
+func (*MoblabVmTestCfg_MoblabTest) ProtoMessage()    {}
+func (*MoblabVmTestCfg_MoblabTest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{2, 0}
+}
+
+func (m *MoblabVmTestCfg_MoblabTest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MoblabVmTestCfg_MoblabTest.Unmarshal(m, b)
+}
+func (m *MoblabVmTestCfg_MoblabTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MoblabVmTestCfg_MoblabTest.Marshal(b, m, deterministic)
+}
+func (m *MoblabVmTestCfg_MoblabTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MoblabVmTestCfg_MoblabTest.Merge(m, src)
+}
+func (m *MoblabVmTestCfg_MoblabTest) XXX_Size() int {
+	return xxx_messageInfo_MoblabVmTestCfg_MoblabTest.Size(m)
+}
+func (m *MoblabVmTestCfg_MoblabTest) XXX_DiscardUnknown() {
+	xxx_messageInfo_MoblabVmTestCfg_MoblabTest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MoblabVmTestCfg_MoblabTest proto.InternalMessageInfo
+
+func (m *MoblabVmTestCfg_MoblabTest) GetTestType() string {
+	if m != nil {
+		return m.TestType
+	}
+	return ""
+}
+
+func (m *MoblabVmTestCfg_MoblabTest) GetTimeoutSec() int32 {
+	if m != nil {
+		return m.TimeoutSec
+	}
+	return 0
+}
+
+type TastVmTestCfg struct {
+	TastVmTest           []*TastVmTestCfg_TastVmTest `protobuf:"bytes,1,rep,name=tast_vm_test,json=tastVmTest,proto3" json:"tast_vm_test,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *TastVmTestCfg) Reset()         { *m = TastVmTestCfg{} }
+func (m *TastVmTestCfg) String() string { return proto.CompactTextString(m) }
+func (*TastVmTestCfg) ProtoMessage()    {}
+func (*TastVmTestCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{3}
+}
+
+func (m *TastVmTestCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TastVmTestCfg.Unmarshal(m, b)
+}
+func (m *TastVmTestCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TastVmTestCfg.Marshal(b, m, deterministic)
+}
+func (m *TastVmTestCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TastVmTestCfg.Merge(m, src)
+}
+func (m *TastVmTestCfg) XXX_Size() int {
+	return xxx_messageInfo_TastVmTestCfg.Size(m)
+}
+func (m *TastVmTestCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_TastVmTestCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TastVmTestCfg proto.InternalMessageInfo
+
+func (m *TastVmTestCfg) GetTastVmTest() []*TastVmTestCfg_TastVmTest {
+	if m != nil {
+		return m.TastVmTest
+	}
+	return nil
+}
+
+type TastVmTestCfg_TastTestExpr struct {
+	// A single tast test expression. See https://goo.gl/UPNEgT
+	TestExpr             string   `protobuf:"bytes,1,opt,name=test_expr,json=testExpr,proto3" json:"test_expr,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TastVmTestCfg_TastTestExpr) Reset()         { *m = TastVmTestCfg_TastTestExpr{} }
+func (m *TastVmTestCfg_TastTestExpr) String() string { return proto.CompactTextString(m) }
+func (*TastVmTestCfg_TastTestExpr) ProtoMessage()    {}
+func (*TastVmTestCfg_TastTestExpr) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{3, 0}
+}
+
+func (m *TastVmTestCfg_TastTestExpr) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TastVmTestCfg_TastTestExpr.Unmarshal(m, b)
+}
+func (m *TastVmTestCfg_TastTestExpr) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TastVmTestCfg_TastTestExpr.Marshal(b, m, deterministic)
+}
+func (m *TastVmTestCfg_TastTestExpr) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TastVmTestCfg_TastTestExpr.Merge(m, src)
+}
+func (m *TastVmTestCfg_TastTestExpr) XXX_Size() int {
+	return xxx_messageInfo_TastVmTestCfg_TastTestExpr.Size(m)
+}
+func (m *TastVmTestCfg_TastTestExpr) XXX_DiscardUnknown() {
+	xxx_messageInfo_TastVmTestCfg_TastTestExpr.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TastVmTestCfg_TastTestExpr proto.InternalMessageInfo
+
+func (m *TastVmTestCfg_TastTestExpr) GetTestExpr() string {
+	if m != nil {
+		return m.TestExpr
+	}
+	return ""
+}
+
+type TastVmTestCfg_TastVmTest struct {
+	// String containing short human-readable name describing test suite.
+	SuiteName string `protobuf:"bytes,1,opt,name=suite_name,json=suiteName,proto3" json:"suite_name,omitempty"`
+	// List of string expressions describing which tests to run; this
+	// is passed directly to the 'tast run' command. See
+	// https://goo.gl/UPNEgT for info about test expressions.
+	TastTestExpr []*TastVmTestCfg_TastTestExpr `protobuf:"bytes,2,rep,name=tast_test_expr,json=tastTestExpr,proto3" json:"tast_test_expr,omitempty"`
+	// Number of seconds to wait before timing out waiting for results.
+	TimeoutSec           int32    `protobuf:"varint,3,opt,name=timeout_sec,json=timeoutSec,proto3" json:"timeout_sec,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TastVmTestCfg_TastVmTest) Reset()         { *m = TastVmTestCfg_TastVmTest{} }
+func (m *TastVmTestCfg_TastVmTest) String() string { return proto.CompactTextString(m) }
+func (*TastVmTestCfg_TastVmTest) ProtoMessage()    {}
+func (*TastVmTestCfg_TastVmTest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{3, 1}
+}
+
+func (m *TastVmTestCfg_TastVmTest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TastVmTestCfg_TastVmTest.Unmarshal(m, b)
+}
+func (m *TastVmTestCfg_TastVmTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TastVmTestCfg_TastVmTest.Marshal(b, m, deterministic)
+}
+func (m *TastVmTestCfg_TastVmTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TastVmTestCfg_TastVmTest.Merge(m, src)
+}
+func (m *TastVmTestCfg_TastVmTest) XXX_Size() int {
+	return xxx_messageInfo_TastVmTestCfg_TastVmTest.Size(m)
+}
+func (m *TastVmTestCfg_TastVmTest) XXX_DiscardUnknown() {
+	xxx_messageInfo_TastVmTestCfg_TastVmTest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TastVmTestCfg_TastVmTest proto.InternalMessageInfo
+
+func (m *TastVmTestCfg_TastVmTest) GetSuiteName() string {
+	if m != nil {
+		return m.SuiteName
+	}
+	return ""
+}
+
+func (m *TastVmTestCfg_TastVmTest) GetTastTestExpr() []*TastVmTestCfg_TastTestExpr {
+	if m != nil {
+		return m.TastTestExpr
+	}
+	return nil
+}
+
+func (m *TastVmTestCfg_TastVmTest) GetTimeoutSec() int32 {
+	if m != nil {
+		return m.TimeoutSec
+	}
+	return 0
+}
+
+type VmTestCfg struct {
+	VmTest               []*VmTestCfg_VmTest `protobuf:"bytes,1,rep,name=vm_test,json=vmTest,proto3" json:"vm_test,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
+}
+
+func (m *VmTestCfg) Reset()         { *m = VmTestCfg{} }
+func (m *VmTestCfg) String() string { return proto.CompactTextString(m) }
+func (*VmTestCfg) ProtoMessage()    {}
+func (*VmTestCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{4}
+}
+
+func (m *VmTestCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VmTestCfg.Unmarshal(m, b)
+}
+func (m *VmTestCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VmTestCfg.Marshal(b, m, deterministic)
+}
+func (m *VmTestCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VmTestCfg.Merge(m, src)
+}
+func (m *VmTestCfg) XXX_Size() int {
+	return xxx_messageInfo_VmTestCfg.Size(m)
+}
+func (m *VmTestCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_VmTestCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VmTestCfg proto.InternalMessageInfo
+
+func (m *VmTestCfg) GetVmTest() []*VmTestCfg_VmTest {
+	if m != nil {
+		return m.VmTest
+	}
+	return nil
+}
+
+type VmTestCfg_VmTest struct {
+	// Test type to be run.
+	TestType string `protobuf:"bytes,1,opt,name=test_type,json=testType,proto3" json:"test_type,omitempty"`
+	// Test suite to be run in VMTest.
+	TestSuite string `protobuf:"bytes,2,opt,name=test_suite,json=testSuite,proto3" json:"test_suite,omitempty"`
+	// Number of seconds to wait before timing out waiting for results.
+	TimeoutSec int32 `protobuf:"varint,3,opt,name=timeout_sec,json=timeoutSec,proto3" json:"timeout_sec,omitempty"`
+	// Whether we should retry tests that fail in a suite run.
+	Retry bool `protobuf:"varint,4,opt,name=retry,proto3" json:"retry,omitempty"`
+	// Maximum job retries allowed at suite level. 0 for no max.
+	MaxRetries int32 `protobuf:"varint,5,opt,name=max_retries,json=maxRetries,proto3" json:"max_retries,omitempty"`
+	// Failure on VM tests warns only.
+	WarnOnly bool `protobuf:"varint,6,opt,name=warn_only,json=warnOnly,proto3" json:"warn_only,omitempty"`
+	// Use the old ctest code path rather than the new chromite one.
+	UseCtest             bool     `protobuf:"varint,7,opt,name=use_ctest,json=useCtest,proto3" json:"use_ctest,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *VmTestCfg_VmTest) Reset()         { *m = VmTestCfg_VmTest{} }
+func (m *VmTestCfg_VmTest) String() string { return proto.CompactTextString(m) }
+func (*VmTestCfg_VmTest) ProtoMessage()    {}
+func (*VmTestCfg_VmTest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efae681839d29e51, []int{4, 0}
+}
+
+func (m *VmTestCfg_VmTest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VmTestCfg_VmTest.Unmarshal(m, b)
+}
+func (m *VmTestCfg_VmTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VmTestCfg_VmTest.Marshal(b, m, deterministic)
+}
+func (m *VmTestCfg_VmTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VmTestCfg_VmTest.Merge(m, src)
+}
+func (m *VmTestCfg_VmTest) XXX_Size() int {
+	return xxx_messageInfo_VmTestCfg_VmTest.Size(m)
+}
+func (m *VmTestCfg_VmTest) XXX_DiscardUnknown() {
+	xxx_messageInfo_VmTestCfg_VmTest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VmTestCfg_VmTest proto.InternalMessageInfo
+
+func (m *VmTestCfg_VmTest) GetTestType() string {
+	if m != nil {
+		return m.TestType
+	}
+	return ""
+}
+
+func (m *VmTestCfg_VmTest) GetTestSuite() string {
+	if m != nil {
+		return m.TestSuite
+	}
+	return ""
+}
+
+func (m *VmTestCfg_VmTest) GetTimeoutSec() int32 {
+	if m != nil {
+		return m.TimeoutSec
+	}
+	return 0
+}
+
+func (m *VmTestCfg_VmTest) GetRetry() bool {
+	if m != nil {
+		return m.Retry
+	}
+	return false
+}
+
+func (m *VmTestCfg_VmTest) GetMaxRetries() int32 {
+	if m != nil {
+		return m.MaxRetries
+	}
+	return 0
+}
+
+func (m *VmTestCfg_VmTest) GetWarnOnly() bool {
+	if m != nil {
+		return m.WarnOnly
+	}
+	return false
+}
+
+func (m *VmTestCfg_VmTest) GetUseCtest() bool {
+	if m != nil {
+		return m.UseCtest
+	}
+	return false
 }
 
 // Specifies a CrOS build, either by reference design or by a specific build
@@ -77,7 +703,7 @@ func (m *BuildCriteria) Reset()         { *m = BuildCriteria{} }
 func (m *BuildCriteria) String() string { return proto.CompactTextString(m) }
 func (*BuildCriteria) ProtoMessage()    {}
 func (*BuildCriteria) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efae681839d29e51, []int{1}
+	return fileDescriptor_efae681839d29e51, []int{5}
 }
 
 func (m *BuildCriteria) XXX_Unmarshal(b []byte) error {
@@ -147,18 +773,22 @@ func (*BuildCriteria) XXX_OneofWrappers() []interface{} {
 type PerTargetTestRequirements struct {
 	// Specifies the builds to which these testing requirements should be applied.
 	BuildCriteria *BuildCriteria `protobuf:"bytes,1,opt,name=build_criteria,json=buildCriteria,proto3" json:"build_criteria,omitempty"`
-	// Test suites to run for builds matching the build criteria.
-	TestSuite            []*TestSuite `protobuf:"bytes,2,rep,name=test_suite,json=testSuite,proto3" json:"test_suite,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
-	XXX_unrecognized     []byte       `json:"-"`
-	XXX_sizecache        int32        `json:"-"`
+	// These configure what testing is needed for these BuildCriteria.
+	GceTestCfg           *GceTestCfg      `protobuf:"bytes,2,opt,name=gce_test_cfg,json=gceTestCfg,proto3" json:"gce_test_cfg,omitempty"`
+	HwTestCfg            *HwTestCfg       `protobuf:"bytes,3,opt,name=hw_test_cfg,json=hwTestCfg,proto3" json:"hw_test_cfg,omitempty"`
+	MoblabVmTestCfg      *MoblabVmTestCfg `protobuf:"bytes,4,opt,name=moblab_vm_test_cfg,json=moblabVmTestCfg,proto3" json:"moblab_vm_test_cfg,omitempty"`
+	TastVmTestCfg        *TastVmTestCfg   `protobuf:"bytes,5,opt,name=tast_vm_test_cfg,json=tastVmTestCfg,proto3" json:"tast_vm_test_cfg,omitempty"`
+	VmTestCfg            *VmTestCfg       `protobuf:"bytes,6,opt,name=vm_test_cfg,json=vmTestCfg,proto3" json:"vm_test_cfg,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *PerTargetTestRequirements) Reset()         { *m = PerTargetTestRequirements{} }
 func (m *PerTargetTestRequirements) String() string { return proto.CompactTextString(m) }
 func (*PerTargetTestRequirements) ProtoMessage()    {}
 func (*PerTargetTestRequirements) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efae681839d29e51, []int{2}
+	return fileDescriptor_efae681839d29e51, []int{6}
 }
 
 func (m *PerTargetTestRequirements) XXX_Unmarshal(b []byte) error {
@@ -186,9 +816,37 @@ func (m *PerTargetTestRequirements) GetBuildCriteria() *BuildCriteria {
 	return nil
 }
 
-func (m *PerTargetTestRequirements) GetTestSuite() []*TestSuite {
+func (m *PerTargetTestRequirements) GetGceTestCfg() *GceTestCfg {
 	if m != nil {
-		return m.TestSuite
+		return m.GceTestCfg
+	}
+	return nil
+}
+
+func (m *PerTargetTestRequirements) GetHwTestCfg() *HwTestCfg {
+	if m != nil {
+		return m.HwTestCfg
+	}
+	return nil
+}
+
+func (m *PerTargetTestRequirements) GetMoblabVmTestCfg() *MoblabVmTestCfg {
+	if m != nil {
+		return m.MoblabVmTestCfg
+	}
+	return nil
+}
+
+func (m *PerTargetTestRequirements) GetTastVmTestCfg() *TastVmTestCfg {
+	if m != nil {
+		return m.TastVmTestCfg
+	}
+	return nil
+}
+
+func (m *PerTargetTestRequirements) GetVmTestCfg() *VmTestCfg {
+	if m != nil {
+		return m.VmTestCfg
 	}
 	return nil
 }
@@ -207,7 +865,7 @@ func (m *TargetTestRequirementsCfg) Reset()         { *m = TargetTestRequirement
 func (m *TargetTestRequirementsCfg) String() string { return proto.CompactTextString(m) }
 func (*TargetTestRequirementsCfg) ProtoMessage()    {}
 func (*TargetTestRequirementsCfg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_efae681839d29e51, []int{3}
+	return fileDescriptor_efae681839d29e51, []int{7}
 }
 
 func (m *TargetTestRequirementsCfg) XXX_Unmarshal(b []byte) error {
@@ -236,7 +894,17 @@ func (m *TargetTestRequirementsCfg) GetPerTargetTestRequirements() []*PerTargetT
 }
 
 func init() {
-	proto.RegisterType((*TestSuite)(nil), "crostesting.TestSuite")
+	proto.RegisterType((*GceTestCfg)(nil), "crostesting.GceTestCfg")
+	proto.RegisterType((*GceTestCfg_GceTest)(nil), "crostesting.GceTestCfg.GceTest")
+	proto.RegisterType((*HwTestCfg)(nil), "crostesting.HwTestCfg")
+	proto.RegisterType((*HwTestCfg_HwTest)(nil), "crostesting.HwTestCfg.HwTest")
+	proto.RegisterType((*MoblabVmTestCfg)(nil), "crostesting.MoblabVmTestCfg")
+	proto.RegisterType((*MoblabVmTestCfg_MoblabTest)(nil), "crostesting.MoblabVmTestCfg.MoblabTest")
+	proto.RegisterType((*TastVmTestCfg)(nil), "crostesting.TastVmTestCfg")
+	proto.RegisterType((*TastVmTestCfg_TastTestExpr)(nil), "crostesting.TastVmTestCfg.TastTestExpr")
+	proto.RegisterType((*TastVmTestCfg_TastVmTest)(nil), "crostesting.TastVmTestCfg.TastVmTest")
+	proto.RegisterType((*VmTestCfg)(nil), "crostesting.VmTestCfg")
+	proto.RegisterType((*VmTestCfg_VmTest)(nil), "crostesting.VmTestCfg.VmTest")
 	proto.RegisterType((*BuildCriteria)(nil), "crostesting.BuildCriteria")
 	proto.RegisterType((*PerTargetTestRequirements)(nil), "crostesting.PerTargetTestRequirements")
 	proto.RegisterType((*TargetTestRequirementsCfg)(nil), "crostesting.TargetTestRequirementsCfg")
@@ -247,26 +915,63 @@ func init() {
 }
 
 var fileDescriptor_efae681839d29e51 = []byte{
-	// 328 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x91, 0xc1, 0x4a, 0xc3, 0x40,
-	0x10, 0x86, 0x4d, 0x85, 0x62, 0x27, 0xc6, 0x4a, 0x0e, 0x92, 0x8a, 0x87, 0x12, 0xa1, 0x14, 0x84,
-	0x04, 0x5a, 0x7c, 0x00, 0x5b, 0x0f, 0x9e, 0x44, 0x62, 0x4f, 0x5e, 0x96, 0x74, 0x3b, 0x59, 0x17,
-	0x9a, 0xdd, 0x38, 0xd9, 0x80, 0xde, 0x7d, 0x05, 0xdf, 0x57, 0xb2, 0x69, 0x6b, 0x03, 0xe6, 0x12,
-	0xc8, 0xfc, 0xf3, 0xef, 0xfc, 0xdf, 0x0c, 0x6c, 0x84, 0x8e, 0xf8, 0x3b, 0xe9, 0x5c, 0x56, 0x79,
-	0xa4, 0x49, 0xc4, 0xdb, 0x8a, 0x4b, 0xfb, 0xe1, 0x99, 0x88, 0xf1, 0xd3, 0x20, 0xa9, 0x74, 0x1b,
-	0x73, 0xd2, 0xa5, 0xc1, 0xd2, 0x48, 0x25, 0xe2, 0x82, 0xb4, 0xd1, 0x31, 0xd7, 0x2a, 0x93, 0x22,
-	0x36, 0x29, 0x09, 0x34, 0xac, 0xd6, 0x18, 0xe1, 0x47, 0x25, 0x09, 0x73, 0x54, 0xa6, 0x64, 0x8d,
-	0x1e, 0xd9, 0x66, 0xdf, 0x3d, 0xf2, 0x87, 0x73, 0x18, 0xac, 0xb0, 0x34, 0xaf, 0x95, 0x34, 0xe8,
-	0x4f, 0x60, 0x68, 0xbd, 0x65, 0xfd, 0xc7, 0x54, 0x9a, 0x63, 0xe0, 0x8c, 0x9d, 0xe9, 0x20, 0xf1,
-	0xcc, 0xbe, 0xe7, 0x39, 0xcd, 0x31, 0x2c, 0xc0, 0x5b, 0x54, 0x72, 0xbb, 0x59, 0x92, 0x34, 0x48,
-	0x32, 0xf5, 0xef, 0xe0, 0x92, 0x30, 0x43, 0x42, 0xc5, 0x91, 0x6d, 0xb0, 0x94, 0x42, 0x35, 0xce,
-	0xa7, 0x93, 0x64, 0x78, 0x50, 0x1e, 0xad, 0xe0, 0xdf, 0xc2, 0xf9, 0xba, 0x76, 0xb3, 0x26, 0x6e,
-	0xd0, 0xdb, 0x35, 0xba, 0xb6, 0xba, 0xb2, 0xc5, 0x85, 0x07, 0xee, 0x9e, 0xe6, 0xab, 0xc0, 0xf0,
-	0xc7, 0x81, 0xd1, 0x0b, 0x52, 0x23, 0xd6, 0x81, 0x93, 0x23, 0x3c, 0xff, 0x01, 0x2e, 0x9a, 0x17,
-	0xf9, 0x2e, 0x90, 0x1d, 0xee, 0xce, 0xae, 0xa3, 0x23, 0xd4, 0xa8, 0x15, 0x39, 0xf1, 0xd6, 0x2d,
-	0x82, 0x7b, 0x80, 0x3f, 0xf4, 0xa0, 0x37, 0x3e, 0x9d, 0xba, 0xb3, 0xab, 0x96, 0xfd, 0xb0, 0xa6,
-	0x64, 0x70, 0xd8, 0x46, 0xf8, 0xed, 0xc0, 0xe8, 0xff, 0x50, 0xcb, 0x4c, 0xf8, 0x02, 0x6e, 0x0a,
-	0x24, 0xd6, 0x75, 0x96, 0xc0, 0xb1, 0x63, 0x26, 0xad, 0x31, 0x9d, 0x94, 0xc9, 0xa8, 0xe8, 0x92,
-	0x16, 0x67, 0x6f, 0xfd, 0xe6, 0xc4, 0xeb, 0xbe, 0xbd, 0xf1, 0xfc, 0x37, 0x00, 0x00, 0xff, 0xff,
-	0x07, 0x38, 0xff, 0x6b, 0x4b, 0x02, 0x00, 0x00,
+	// 920 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0xcd, 0x6e, 0xe4, 0x44,
+	0x10, 0x5e, 0xcf, 0x64, 0x7e, 0x5c, 0x9e, 0x49, 0x56, 0xe6, 0xcf, 0x19, 0x76, 0xb5, 0x61, 0xf8,
+	0x8b, 0xb4, 0xd2, 0x8c, 0x14, 0xa4, 0x48, 0x70, 0x23, 0x59, 0xd8, 0x80, 0x14, 0x40, 0xde, 0x88,
+	0x03, 0x17, 0xcb, 0xd3, 0xd3, 0x76, 0x5a, 0xb8, 0x6d, 0xd3, 0xdd, 0x4e, 0x66, 0xce, 0xf0, 0x12,
+	0x08, 0x6e, 0x1c, 0x38, 0xf0, 0x2e, 0x1c, 0x79, 0x0f, 0xde, 0x00, 0x75, 0xb5, 0x3d, 0xb6, 0x93,
+	0xc9, 0xec, 0x89, 0xcb, 0x4c, 0x55, 0x7d, 0x5d, 0xd5, 0x5f, 0x55, 0x77, 0x55, 0x1b, 0x96, 0x71,
+	0x36, 0x23, 0xd7, 0x22, 0xe3, 0xac, 0xe0, 0xb3, 0x4c, 0xc4, 0xf3, 0xa4, 0x20, 0x0c, 0x7f, 0x48,
+	0x14, 0xcf, 0xe9, 0x4a, 0x51, 0x91, 0x86, 0xc9, 0x9c, 0x88, 0x4c, 0x2a, 0x2a, 0x15, 0x4b, 0xe3,
+	0x79, 0x2e, 0x32, 0x95, 0xcd, 0x49, 0x96, 0x46, 0x2c, 0x9e, 0xab, 0x50, 0xc4, 0x54, 0x05, 0x1a,
+	0x0b, 0x04, 0xfd, 0xa9, 0x60, 0x82, 0x72, 0x9a, 0x2a, 0x19, 0x18, 0x7c, 0x86, 0x8b, 0x5d, 0xa7,
+	0xe1, 0x3f, 0xfd, 0xdb, 0x02, 0x78, 0x49, 0xe8, 0x15, 0x95, 0xea, 0x3c, 0x8a, 0xdd, 0xcf, 0x60,
+	0x18, 0x13, 0x8a, 0x11, 0x3c, 0xeb, 0xa8, 0x7b, 0xec, 0x9c, 0x3c, 0x9b, 0x35, 0x96, 0xcf, 0xea,
+	0xa5, 0x95, 0xe8, 0x0f, 0x62, 0x23, 0x4c, 0x7e, 0xb6, 0x60, 0x50, 0x1a, 0xdd, 0x77, 0xc1, 0x46,
+	0x16, 0x6a, 0x9d, 0x53, 0xcf, 0x3a, 0xb2, 0x8e, 0x6d, 0x7f, 0xa8, 0x0d, 0x57, 0xeb, 0x9c, 0xba,
+	0x4f, 0x01, 0x10, 0x94, 0x05, 0x53, 0xd4, 0xeb, 0x20, 0x8a, 0xcb, 0x5f, 0x69, 0x83, 0xfb, 0x0c,
+	0x1c, 0xc5, 0x38, 0xcd, 0x0a, 0x15, 0x48, 0x4a, 0xbc, 0xee, 0x91, 0x75, 0xdc, 0xf3, 0xa1, 0x34,
+	0xbd, 0xa2, 0x44, 0x07, 0x2f, 0x24, 0x0d, 0x08, 0xb2, 0xdc, 0x3b, 0xb2, 0x8e, 0x87, 0xfe, 0xb0,
+	0x90, 0xf4, 0x5c, 0xeb, 0xd3, 0x7f, 0xbb, 0x60, 0x5f, 0xdc, 0x56, 0xf9, 0x9c, 0xc2, 0xe0, 0xfa,
+	0xb6, 0x99, 0xce, 0xd3, 0x56, 0x3a, 0x9b, 0x85, 0xa5, 0xe4, 0xf7, 0xaf, 0xf1, 0x7f, 0xf2, 0x57,
+	0x17, 0xfa, 0xc6, 0xe4, 0xbe, 0x09, 0x3d, 0x43, 0xd4, 0xa4, 0x61, 0x94, 0xbb, 0x24, 0x3b, 0xf7,
+	0x48, 0xba, 0xb0, 0x97, 0x67, 0x59, 0x82, 0xf4, 0x6d, 0x1f, 0x65, 0x77, 0x02, 0xc3, 0x45, 0x92,
+	0x91, 0x1f, 0x59, 0x1a, 0x57, 0xbc, 0x2b, 0x5d, 0x6f, 0x13, 0xca, 0x75, 0x4a, 0xbc, 0x1e, 0x02,
+	0x46, 0xd1, 0xa9, 0xde, 0x86, 0x22, 0x0d, 0xb2, 0x34, 0x59, 0x7b, 0x7d, 0xe3, 0xa2, 0x0d, 0xdf,
+	0xa6, 0xc9, 0x5a, 0x87, 0x23, 0x82, 0x29, 0x46, 0xc2, 0xc4, 0x1b, 0x18, 0xac, 0xd2, 0x35, 0x96,
+	0x0b, 0x96, 0x09, 0xa6, 0xd6, 0xde, 0xd0, 0xd4, 0xbf, 0xd2, 0x75, 0xd0, 0x88, 0x25, 0x34, 0x58,
+	0x14, 0xb1, 0xf4, 0x6c, 0xe3, 0xa8, 0x0d, 0x67, 0x45, 0x2c, 0xdd, 0xf7, 0x60, 0xc4, 0x59, 0xca,
+	0x78, 0xc1, 0x83, 0x65, 0xa1, 0xa4, 0x07, 0x98, 0x99, 0x53, 0xda, 0x5e, 0x14, 0x4a, 0x6a, 0xaa,
+	0x82, 0x2a, 0xb1, 0xf6, 0x1c, 0x43, 0x15, 0x15, 0x5d, 0x11, 0x1e, 0xae, 0x02, 0xad, 0x30, 0x2a,
+	0xbd, 0x91, 0xa9, 0x08, 0x0f, 0x57, 0xbe, 0xb1, 0xb8, 0x1f, 0xc0, 0x3e, 0xd6, 0x2e, 0xe0, 0x2c,
+	0x35, 0xb1, 0xc7, 0xb8, 0x66, 0x84, 0xd6, 0x4b, 0x96, 0x62, 0xf0, 0x13, 0x78, 0x2b, 0x8b, 0xa2,
+	0x24, 0x0b, 0x97, 0x41, 0x14, 0xb2, 0xa4, 0x10, 0x54, 0x9a, 0xec, 0xf7, 0x71, 0xb3, 0x37, 0x4a,
+	0xf0, 0xcb, 0x12, 0xd3, 0x85, 0x98, 0xfe, 0x69, 0xc1, 0xc1, 0x65, 0xb6, 0x48, 0xc2, 0xc5, 0xf7,
+	0xbc, 0x3a, 0xf9, 0x0b, 0x70, 0x38, 0x9a, 0x9a, 0xa7, 0xff, 0x71, 0xeb, 0xf4, 0xef, 0xb8, 0x94,
+	0x3a, 0xde, 0x03, 0xe0, 0x1b, 0x79, 0xf2, 0x35, 0x40, 0x8d, 0xec, 0xbe, 0xd9, 0xaf, 0xbb, 0x15,
+	0xd3, 0x3f, 0x3a, 0x30, 0xbe, 0x0a, 0xa5, 0xaa, 0x79, 0xbe, 0x84, 0x91, 0x0a, 0xa5, 0x0a, 0x6e,
+	0x78, 0x93, 0xe8, 0x87, 0x2d, 0xa2, 0x2d, 0x8f, 0x86, 0xe6, 0x83, 0xda, 0xc8, 0x93, 0xe7, 0x30,
+	0xd2, 0x88, 0x96, 0xbf, 0x58, 0xe5, 0x62, 0x43, 0x94, 0xae, 0x72, 0xd1, 0x24, 0xaa, 0xc1, 0xc9,
+	0x6f, 0x16, 0x40, 0x1d, 0x47, 0x77, 0xa4, 0x39, 0x9a, 0x34, 0xe4, 0x55, 0x56, 0x36, 0x5a, 0xbe,
+	0x09, 0x39, 0x75, 0x2f, 0x61, 0x1f, 0x39, 0xd6, 0xf1, 0x3a, 0x5b, 0xca, 0x79, 0x9f, 0x65, 0xc5,
+	0xc5, 0xc7, 0x14, 0x37, 0xcc, 0x5e, 0xd7, 0xe0, 0xd3, 0xdf, 0x3b, 0x60, 0xd7, 0x15, 0x3a, 0x85,
+	0x41, 0xbb, 0x38, 0xed, 0x1e, 0xae, 0xb7, 0x2c, 0x8b, 0xd2, 0xbf, 0x31, 0x05, 0xf9, 0xc7, 0x82,
+	0x7e, 0x99, 0xdf, 0xff, 0x3a, 0x8e, 0x36, 0xed, 0xb0, 0xb7, 0xa3, 0x1d, 0x7a, 0xf7, 0xda, 0x61,
+	0x67, 0x6b, 0xb7, 0x46, 0xdc, 0xe0, 0xce, 0x88, 0xcb, 0x61, 0x7c, 0x56, 0xb0, 0x64, 0x79, 0x2e,
+	0x98, 0xa2, 0x82, 0x85, 0xee, 0x73, 0x78, 0x2c, 0x68, 0x44, 0x05, 0x4d, 0x09, 0x0d, 0x96, 0x54,
+	0xb2, 0x38, 0x35, 0x59, 0x5e, 0x3c, 0xf2, 0x0f, 0x36, 0xc8, 0x0b, 0x04, 0xdc, 0xf7, 0x61, 0xb4,
+	0xd0, 0xde, 0x81, 0x79, 0x2d, 0x4c, 0xc2, 0x17, 0x8f, 0x7c, 0x07, 0xad, 0x57, 0x68, 0x3c, 0x1b,
+	0x83, 0x53, 0x3d, 0x26, 0xeb, 0x9c, 0x4e, 0x7f, 0xed, 0xc2, 0xe1, 0x77, 0x54, 0x18, 0x10, 0x8b,
+	0xdc, 0x78, 0x5d, 0xdc, 0xcf, 0x61, 0xdf, 0x44, 0x24, 0x25, 0x21, 0xdc, 0xdc, 0x39, 0x99, 0xb4,
+	0xce, 0xa9, 0x45, 0xd9, 0x1f, 0x2f, 0x5a, 0x19, 0x7c, 0x0a, 0xa3, 0xea, 0xdd, 0x09, 0x48, 0x14,
+	0x23, 0x29, 0xe7, 0xe4, 0x9d, 0x07, 0xde, 0x1e, 0x1f, 0xe2, 0xfa, 0xc9, 0x3a, 0x05, 0xa7, 0x1c,
+	0xf1, 0xe8, 0xd9, 0x45, 0xcf, 0xb7, 0xb7, 0x8f, 0x79, 0xdf, 0xbe, 0xde, 0x3c, 0x0d, 0x5f, 0x81,
+	0x5b, 0x0e, 0x88, 0xf2, 0x76, 0xa1, 0xfb, 0x1e, 0xba, 0x3f, 0xd9, 0x35, 0x27, 0xfc, 0x03, 0x7e,
+	0x67, 0xd6, 0x9c, 0xc3, 0xe3, 0x66, 0x0f, 0x63, 0xa0, 0xde, 0x96, 0x12, 0xb4, 0x3a, 0xc4, 0x1f,
+	0xab, 0xd6, 0x20, 0x38, 0x05, 0xa7, 0xe9, 0xdf, 0xdf, 0x92, 0x47, 0xed, 0x6b, 0xdf, 0x54, 0xe2,
+	0xf4, 0x17, 0x0b, 0x0e, 0xb7, 0x1f, 0x8c, 0x8e, 0x1a, 0xc3, 0x93, 0x9c, 0x8a, 0xe0, 0xa1, 0x2f,
+	0x83, 0xb2, 0xa3, 0x3e, 0x6a, 0x6d, 0xf3, 0xe0, 0x49, 0xfb, 0x87, 0xf9, 0x43, 0xd0, 0xd9, 0xf0,
+	0x87, 0xbe, 0xf9, 0xca, 0x58, 0xf4, 0xf1, 0x33, 0xe3, 0x93, 0xff, 0x02, 0x00, 0x00, 0xff, 0xff,
+	0x65, 0xc6, 0x6e, 0x20, 0xce, 0x08, 0x00, 0x00,
 }
