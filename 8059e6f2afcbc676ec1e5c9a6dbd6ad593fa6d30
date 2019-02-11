@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "171b7f22_10e009d2",
+        "filename": "client/internal/common/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-02-11T18:05:44Z",
+      "side": 0,
+      "message": ":-P silly comment",
+      "revId": "8059e6f2afcbc676ec1e5c9a6dbd6ad593fa6d30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
