@@ -22,6 +22,23 @@
       "revId": "12543afb02ef57c0d8eb35b045662347459b4777",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0c929190_000fc36e",
+        "filename": "lucicfg/external/crostesting/proto/config/target_test_requirements_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1293515
+      },
+      "writtenOn": "2019-02-11T22:03:20Z",
+      "side": 1,
+      "message": "Do any vm tests actually set this value to true?",
+      "revId": "12543afb02ef57c0d8eb35b045662347459b4777",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
