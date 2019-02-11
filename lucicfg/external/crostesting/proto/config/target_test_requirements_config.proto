@@ -18,11 +18,123 @@ package crostesting;
 
 option go_package = "config";
 
-// A CrOS test suite.
-message TestSuite {
-  // The name of a CrOS test suite.
-  string test_suite_name = 1;
+message GceTestCfg {
+  message GceTest {
+    // Test type to be run.
+    string test_type = 1;
+    // Test suite to be run in GCETest.
+    string test_suite = 2;
+    // Number of seconds to wait before timing out waiting for results.
+    int32 timeout_sec = 3;
+    // Use the old ctest code path rather than the new chromite one.
+    bool use_ctest = 4;
+  }
+
+  repeated GceTest gce_test = 1;
 }
+
+message HwTestCfg {
+  // TODO(crbug.com/923001): Finalize the approach for where to enable Skylab
+  // testing; add such fields here as needed.
+
+  // Configuration for a hardware test suite.
+  message HwTest {
+    // Name of the test suite to run.
+    string suite = 1;
+    // Number of seconds to wait before timing out waiting for results.
+    int32 timeout_sec = 2;
+    // Pool to use for hw testing.
+    string pool = 3;
+    // Setting this to true requires that this suite must PASS for suites
+    // scheduled after it to run. This also means any suites that are
+    // scheduled before a blocking one are also blocking ones scheduled
+    // after. This should be used when you want some suites to block
+    // whether or not others should run e.g. only run longer-running
+    // suites if some core ones pass first.
+
+    // Note, if you want multiple suites to block other suites but run
+    // in parallel, you should only mark the last one scheduled as
+    // blocking (it effectively serves as a thread/process join).
+    bool blocking = 4;
+    // Fire-and-forget suite.
+    bool async = 5;
+    // Failure on HW tests warns only (does not generate error).
+    bool warn_only = 6;
+    // Usually we consider structural failures here as OK.
+    bool critical = 7;
+    // Priority at which tests in the suite will be scheduled in the hw lab.
+    string priority = 8;
+    // Should we file bugs if a test fails in a suite run.
+    bool file_bugs = 9;
+    // Minimum number of DUTs required for testing in the hw lab.
+    int32 minimum_duts = 10;
+    // Whether we should retry tests that fail in a suite run.
+    bool retry = 11;
+    // Maximum job retries allowed at suite level. 0 for no max.
+    int32 max_retries = 12;
+    // Preferred minimum duts. Lab will prioritize on getting such
+    // number of duts even if the suite is competing with
+    // other suites that have higher priority.
+    int32 suite_min_duts = 13;
+    // Only offload failed tests to Google Storage.
+    bool offload_failures_only = 14;
+    // TODO(crbug.com/923001): Do we need suite_args here? Possibly not, since
+    // they only seem to be used for the hardware provisioning step.
+    // http://cs/chromeos_public/chromite/lib/config_lib.py?l=512-514&rcl=dbec33e55f7acef520a56e1d2b4aa832311a9b13
+  }
+
+  repeated HwTest hw_test = 1;
+}
+
+message MoblabVmTestCfg {
+  message MoblabTest {
+    // Test type to be run.
+    string test_type = 1;
+    // Number of seconds to wait before timing out waiting for results.
+    int32 timeout_sec = 2;
+  }
+
+  repeated MoblabTest moblab_test = 1;
+}
+
+message VmTestCfg {
+  message VmTest {
+    // Test type to be run.
+    string test_type = 1;
+    // Test suite to be run in VMTest.
+    string test_suite = 2;
+    // Number of seconds to wait before timing out waiting for results.
+    int32 timeout_sec = 3;
+    // Whether we should retry tests that fail in a suite run.
+    bool retry = 4;
+    // Maximum job retries allowed at suite level. 0 for no max.
+    int32 max_retries = 5;
+    // Failure on VM tests warns only.
+    bool warn_only = 6;
+    // Use the old ctest code path rather than the new chromite one.
+    bool use_ctest = 7;
+  }
+
+  repeated VmTest vm_test = 1;
+
+  message TastTestExpr {
+    // A single tast test expression. See https://goo.gl/UPNEgT
+    string test_expr = 1;
+  }
+  message TastVmTest {
+    // String containing short human-readable name describing test suite.
+    string suite_name = 1;
+    // List of string expressions describing which tests to run; this
+    // is passed directly to the 'tast run' command. See
+    // https://goo.gl/UPNEgT for info about test expressions.
+    repeated TastTestExpr tast_test_expr = 2;
+    // Number of seconds to wait before timing out waiting for results.
+    int32 timeout_sec = 3;
+  }
+
+  repeated TastVmTest tast_vm_test = 2;
+}
+
 
 // Specifies a CrOS build, either by reference design or by a specific build
 // target.
@@ -43,8 +155,11 @@ message PerTargetTestRequirements {
   // Specifies the builds to which these testing requirements should be applied.
   BuildCriteria build_criteria = 1;
 
-  // Test suites to run for builds matching the build criteria.
-  repeated TestSuite test_suite = 2;
+  // These configure what testing is needed for these BuildCriteria.
+  GceTestCfg gce_test_cfg = 2;
+  HwTestCfg hw_test_cfg = 3;
+  MoblabVmTestCfg moblab_vm_test_cfg = 4;
+  VmTestCfg vm_test_cfg = 5;
 }
 
 // A listing of all testing that should be done for all CrOS builds.
