@@ -112,6 +112,30 @@
     },
     {
       "key": {
+        "uuid": "9d6fed5a_a06c6846",
+        "filename": "tokenserver/appengine/frontend/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-12T23:37:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2751a9f4_54367e24",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 63
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9e9a679_dc113724",
         "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
         "patchSetId": 6
@@ -126,6 +150,24 @@
       "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e68fbdc7_501f56de",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-12T23:37:17Z",
+      "side": 1,
+      "message": "xD",
+      "parentUuid": "c9e9a679_dc113724",
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -152,6 +194,30 @@
     },
     {
       "key": {
+        "uuid": "cb09ba61_3b08d477",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-12T23:37:17Z",
+      "side": 1,
+      "message": "Plan is to attach this method to the MintProjectTokenRPC object but I didn\u0027t want to bloat the CL, hence this is more of a placeholder and will be changed with the introduction of the minting RPC.",
+      "parentUuid": "bdc07d93_646d5664",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 1
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51738e5f_573bc25f",
         "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
         "patchSetId": 6
@@ -172,6 +238,30 @@
       "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93d3ec7c_d6d5ecb3",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-12T23:37:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51738e5f_573bc25f",
+      "range": {
+        "startLine": 52,
+        "startChar": 15,
+        "endLine": 52,
+        "endChar": 36
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -222,6 +312,30 @@
     },
     {
       "key": {
+        "uuid": "d2f53e6d_d5bf135a",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-12T23:37:17Z",
+      "side": 1,
+      "message": "Captured this discussion in the source to capture for when this is going to be implemented.",
+      "parentUuid": "9b846abb_76c529f4",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 75,
+        "endChar": 102
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "512fd3be_613dbf16",
         "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
         "patchSetId": 6
@@ -257,6 +371,30 @@
       "side": 1,
       "message": "plz add TODO for Vadimsh then :)",
       "parentUuid": "512fd3be_613dbf16",
+      "range": {
+        "startLine": 80,
+        "startChar": 21,
+        "endLine": 80,
+        "endChar": 32
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "39824569_d6c5cd58",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-12T23:37:17Z",
+      "side": 1,
+      "message": "Changed to ${config_service_appid} provided in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1468661",
+      "parentUuid": "80356a2b_02d36834",
       "range": {
         "startLine": 80,
         "startChar": 21,
