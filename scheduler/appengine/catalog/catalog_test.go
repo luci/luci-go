@@ -383,7 +383,9 @@ func TestValidateConfig(t *testing.T) {
 	})
 
 	rules := validation.RuleSet{}
-	rules.RegisterVar("appid", func(context.Context) string { return "luci-scheduler" })
+	rules.RegisterVar("appid", func(context.Context) (string, error) {
+		return "luci-scheduler", nil
+	})
 	catalog.RegisterConfigRules(&rules)
 
 	Convey("Patterns are correct", t, func() {
