@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2075a342_593dbb06",
+        "filename": "common/proto/config/service_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-12T00:13:12Z",
+      "side": 1,
+      "message": "this file is copied, see\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/03/1464903/6/common/proto/config/generate.go#17\n\nit should not updated like this",
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
