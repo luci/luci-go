@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e87dce9_91983fe1",
+        "filename": "config/validation/rules.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-12T20:16:20Z",
+      "side": 1,
+      "message": "nit: May return error instead and offer MustRegisterVar as panic wrapper.",
+      "range": {
+        "startLine": 86,
+        "startChar": 4,
+        "endLine": 86,
+        "endChar": 5
+      },
+      "revId": "77917ba802c7b32bc487ddbcb0fadf8a78cf2aed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
