@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"go.chromium.org/gae/service/info"
+
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
@@ -32,14 +33,21 @@ func init() {
 	RegisterValidationVars(&validation.Rules)
 }
 
-// RegisterValidationVars registers placeholders (like ${appid}) that can be
-// used in validation rules patterns.
+// RegisterValidationVars registers placeholders that can be used in validation
+// rules patterns.
+//
+// Registers:
+//    ${appid} - expands into a GAE app ID of the running service.
+//    ${config_service_appid} - expands into a GAE app ID of a LUCI Config
+//        service that the running service is using (or empty string if
+//        unconfigured).
 //
 // This function is called during init() time for default rule set.
 func RegisterValidationVars(rules *validation.RuleSet) {
 	rules.RegisterVar("appid", func(c context.Context) (string, error) {
 		return info.TrimmedAppID(c), nil
 	})
+	rules.RegisterVar("config_service_appid", getConfigServiceAppID)
 }
 
 // InstallValidationHandlers installs handlers for config validation.
@@ -112,4 +120,24 @@ func isAuthorizedCall(c context.Context, s *Settings) (bool, error) {
 
 	// A total stranger.
 	return false, nil
+}
+
+// getConfigServiceAppID looks up the app ID of the LUCI Config service, as set
+// in the app's settings.
+//
+// Returns an empty string if the LUCI Config integration is not configured for
+// the app.
+func getConfigServiceAppID(c context.Context) (string, error) {
+	s, err := FetchCachedSettings(c)
+	switch {
+	case err != nil:
+		return "", err
+	case s.ConfigServiceHost == "":
+		return "", nil
+	}
+	info, err := signing.FetchServiceInfoFromLUCIService(c, "https://"+s.ConfigServiceHost)
+	if err != nil {
+		return "", err
+	}
+	return info.AppID, nil
 }
