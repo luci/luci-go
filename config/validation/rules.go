@@ -55,16 +55,15 @@ type ConfigPattern struct {
 // App ID is not yet known), the rule patterns can have placeholders (such as
 // "${appid}") that are substituted during actual config validation time.
 type RuleSet struct {
-	l sync.Mutex
-	v map[string]func(context.Context) string
+	l sync.RWMutex
+	v map[string]func(context.Context) (string, error)
 	r []*rule
 }
 
 type rule struct {
-	configSet string         // pattern string with ${var} placeholders
-	path      string         // same
-	cb        Func           // a validator function to use for matching files
-	rendered  *ConfigPattern // lazily-populated rendered and compiled pattern
+	configSet string // pattern string with ${var} placeholders
+	path      string // same
+	cb        Func   // a validator function to use for matching files
 }
 
 // RegisterVar registers a placeholder that can be used in patterns as ${name}.
@@ -74,18 +73,15 @@ type rule struct {
 // the pattern string as is. So for example if the pattern is 'regex:...',
 // the placeholder value can be a chunk of regexp.
 //
-// It is assumed the returned value doesn't change (in fact, it is getting
-// cached after the first call).
-//
 // The primary use case for this mechanism is too allow to register rule
 // patterns that depend on not-yet known values during init() time.
 //
 // Panics if such variable is already registered.
-func (r *RuleSet) RegisterVar(name string, value func(context.Context) string) {
+func (r *RuleSet) RegisterVar(name string, value func(context.Context) (string, error)) {
 	r.l.Lock()
 	defer r.l.Unlock()
 	if r.v == nil {
-		r.v = make(map[string]func(context.Context) string, 1)
+		r.v = make(map[string]func(context.Context) (string, error), 1)
 	}
 	if r.v[name] != nil {
 		panic(fmt.Sprintf("variable %q is already registered", name))
@@ -136,17 +132,16 @@ func (r *RuleSet) Add(configSet, path string, cb Func) {
 		panic(fmt.Sprintf("bad path pattern %q - %s", path, err))
 	}
 
-	r.r = append(r.r, &rule{configSet, path, cb, nil})
+	r.r = append(r.r, &rule{configSet, path, cb})
 }
 
-// ConfigPatterns lazily renders all registered config patterns and returns
-// them.
+// ConfigPatterns renders all registered config patterns and returns them.
 //
 // Used by the metadata handler to notify the config service about config files
 // we understand.
 func (r *RuleSet) ConfigPatterns(c context.Context) ([]*ConfigPattern, error) {
-	r.l.Lock()
-	defer r.l.Unlock()
+	r.l.RLock()
+	defer r.l.RUnlock()
 
 	out := make([]*ConfigPattern, len(r.r))
 	for i, rule := range r.r {
@@ -185,8 +180,8 @@ func (r *RuleSet) ValidateConfig(ctx *Context, configSet, path string, content [
 
 // matchingFuncs returns a validator callbacks matching the given file.
 func (r *RuleSet) matchingFuncs(c context.Context, configSet, path string) ([]Func, error) {
-	r.l.Lock()
-	defer r.l.Unlock()
+	r.l.RLock()
+	defer r.l.RUnlock()
 
 	out := []Func{}
 	for _, rule := range r.r {
@@ -201,17 +196,13 @@ func (r *RuleSet) matchingFuncs(c context.Context, configSet, path string) ([]Fu
 	return out, nil
 }
 
-// renderedConfigPattern lazily populates rule.rendered and returns it.
+// renderedConfigPattern expands variables in the config patterns.
 //
-// Must be called with r.l held.
+// Must be called with r.l read lock held.
 func (r *RuleSet) renderedConfigPattern(c context.Context, rule *rule) (*ConfigPattern, error) {
-	if rule.rendered != nil {
-		return rule.rendered, nil
-	}
-
 	sub := func(name string) (string, error) {
 		if cb := r.v[name]; cb != nil {
-			return cb(c), nil
+			return cb(c)
 		}
 		return "", fmt.Errorf("no placeholder named %q is registered", name)
 	}
@@ -225,11 +216,10 @@ func (r *RuleSet) renderedConfigPattern(c context.Context, rule *rule) (*ConfigP
 		return nil, errors.Annotate(err, "failed to compile path pattern %q", rule.path).Err()
 	}
 
-	rule.rendered = &ConfigPattern{
+	return &ConfigPattern{
 		ConfigSet: configSet,
 		Path:      path,
-	}
-	return rule.rendered, nil
+	}, nil
 }
 
 var placeholderRe = regexp.MustCompile(`\${[^}]*}`)
