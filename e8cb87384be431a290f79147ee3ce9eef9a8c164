@@ -16,6 +16,167 @@
       "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e097449a_c3bc9ab3",
+        "filename": "common/proto/config/service_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-12T00:19:46Z",
+      "side": 1,
+      "message": "This comment is not very helpful since it basically repeats the name of the field. Explaining what this identity is used for and how to get it would be nicer.",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 74
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45c5a4d4_82c5cc7a",
+        "filename": "common/proto/config/service_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-12T00:19:46Z",
+      "side": 1,
+      "message": "Note that this *.proto file is a copy. The original is in luci-py (this is where luci-config implementation lives). See comment in https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/proto/config/generate.go",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 0
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2751a9f4_54367e24",
+        "filename": "tokenserver/appengine/frontend/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-12T00:19:46Z",
+      "side": 1,
+      "message": "nit: please move this import to the bottom\n\nOrder of imports: stdlib, third party libs, \"far away\" luci-go code, \"close by\" luci-go code. (And no, there\u0027s no linter for that).",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 63
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdc07d93_646d5664",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-12T00:19:46Z",
+      "side": 1,
+      "message": "These abstractions aren\u0027t necessary. SetupConfigValidation can totally be a regular top-level function.",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 1
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51738e5f_573bc25f",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-12T00:19:46Z",
+      "side": 1,
+      "message": "nit: use stringset.Set https://cs.chromium.org/search/?q\u003dstringset.New\u0026sq\u003dpackage:chromium\u0026type\u003dcs",
+      "range": {
+        "startLine": 52,
+        "startChar": 15,
+        "endLine": 52,
+        "endChar": 36
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71b31854_a15a6c8e",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-12T00:19:46Z",
+      "side": 1,
+      "message": "This actually will require some careful approach:\n1. We probably do not want to mint tokens for all projects on all validation calls (this is a lot of RPCs). Only for accounts we haven\u0027t seen before. So we may need some cache.\n2. If the account had invalid ACLs, and they were fixed, there\u0027s currently no way to retrigger the validation. LUCI Config uses contents of the config as sole input. If config body didn\u0027t change, it would think the config is still broken. The workaround is either a whitespace change in the config, or manually \"Reimport config\" button in https://luci-config.appspot.com UI.",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 75,
+        "endChar": 102
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "512fd3be_613dbf16",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-12T00:19:46Z",
+      "side": 1,
+      "message": "Strictly speaking this is wrong, since it hardcodes particular instance of LUCI Config service (luci-config.appspot.com). We have also dev and staging instances. \n\nIn general we should extract the name of this config set from \"Config service host\" in https://luci-token-server.appspot.com/admin/portal/gaeconfig.\n\nThis is doable but requires using some arcane APIs. I can do it later.",
+      "range": {
+        "startLine": 80,
+        "startChar": 21,
+        "endLine": 80,
+        "endChar": 32
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
