@@ -22,6 +22,30 @@
       "revId": "cf8d95c24a1aa918b256e05d6b0bb758458b029a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4994d438_b7b5c2a6",
+        "filename": "config/appengine/gaeconfig/validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-12T23:15:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57a48639_7e200a83",
+      "range": {
+        "startLine": 36,
+        "startChar": 49,
+        "endLine": 36,
+        "endChar": 52
+      },
+      "revId": "cf8d95c24a1aa918b256e05d6b0bb758458b029a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
