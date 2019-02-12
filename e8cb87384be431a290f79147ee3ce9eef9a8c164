@@ -88,6 +88,47 @@
     },
     {
       "key": {
+        "uuid": "be4d3265_d27f43ff",
+        "filename": "tokenserver/appengine/frontend/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-12T19:58:07Z",
+      "side": 1,
+      "message": "Vadim, please add this to README.md of this repo.",
+      "parentUuid": "2751a9f4_54367e24",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 63
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9e9a679_dc113724",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-12T19:58:07Z",
+      "side": 1,
+      "message": "happy new 2019 year :)",
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bdc07d93_646d5664",
         "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
         "patchSetId": 6
@@ -157,6 +198,30 @@
     },
     {
       "key": {
+        "uuid": "9b846abb_76c529f4",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-12T19:58:07Z",
+      "side": 1,
+      "message": "this is one of my use-cases for validation context warning instead of Error.\n\nconfig may eventually be correct if some other system\u0027s state change,\n\u003d\u003e accept config, but tell user about problems.",
+      "parentUuid": "71b31854_a15a6c8e",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 75,
+        "endChar": 102
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "512fd3be_613dbf16",
         "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
         "patchSetId": 6
@@ -168,6 +233,30 @@
       "writtenOn": "2019-02-12T00:19:46Z",
       "side": 1,
       "message": "Strictly speaking this is wrong, since it hardcodes particular instance of LUCI Config service (luci-config.appspot.com). We have also dev and staging instances. \n\nIn general we should extract the name of this config set from \"Config service host\" in https://luci-token-server.appspot.com/admin/portal/gaeconfig.\n\nThis is doable but requires using some arcane APIs. I can do it later.",
+      "range": {
+        "startLine": 80,
+        "startChar": 21,
+        "endLine": 80,
+        "endChar": 32
+      },
+      "revId": "e8cb87384be431a290f79147ee3ce9eef9a8c164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "80356a2b_02d36834",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-12T19:58:07Z",
+      "side": 1,
+      "message": "plz add TODO for Vadimsh then :)",
+      "parentUuid": "512fd3be_613dbf16",
       "range": {
         "startLine": 80,
         "startChar": 21,
