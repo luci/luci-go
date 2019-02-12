@@ -230,11 +230,27 @@ message BotGroup {
 //   * IP + require_luci_machine_token: requires both to pass.
 //   * IP + require_service_account: requires both to pass.
 //   * IP + require_gce_vm_token: requires both to pass.
+//
+// Next ID: 6.
 message BotAuth {
   // See require_gce_vm_token below.
   message GCE {
     string project = 1;
   }
+
+  // If true, log an error (but proceed) if this method didn't succeed.
+  //
+  // This field is totally optional and makes sense only when there are more
+  // than one auth method. Affects only logging levels.
+  //
+  // Doesn't apply to methods that were skipped because some method before them
+  // succeeded. Thus methods that have 'log_if_failed' should be in front of
+  // BotGroup.auth list.
+  //
+  // This is useful when migrating from one auth method to another to verify
+  // the new method is used in 100% of cases, while still keeping a fallback
+  // to an old method.
+  bool log_if_failed = 5;
 
   // If true, the bot should provide valid X-Luci-Machine-Token header.
   //
