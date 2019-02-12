@@ -29,6 +29,11 @@ message ConfigSetLocation {
   StorageType storage_type = 2;
 }
 
+message IdentityConfig {
+  // ServiceAccountEmail is the full service account email of an identity.
+  string service_account_email = 1;
+}
+
 /******************************************************************************/
 /* Projects                                                                   */
 /******************************************************************************/
@@ -39,6 +44,10 @@ message Project {
   string id = 1;
   // Where to import "projects/<id>" config set from.
   ConfigSetLocation config_location = 2;
+
+  // IdentityConfig determines what identities are used when LUCI acts on
+  // behalf of that project towards external services.
+  IdentityConfig identity_config = 3;
 }
 
 // Schema of projects.cfg file. Represents luci tenants registry.
