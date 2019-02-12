@@ -37,7 +37,9 @@ func init() {
 //
 // This function is called during init() time for default rule set.
 func RegisterValidationVars(rules *validation.RuleSet) {
-	rules.RegisterVar("appid", info.TrimmedAppID)
+	rules.RegisterVar("appid", func(c context.Context) (string, error) {
+		return info.TrimmedAppID(c), nil
+	})
 }
 
 // InstallValidationHandlers installs handlers for config validation.
