@@ -38,6 +38,7 @@ type State struct {
 	Meta    Meta      // lucicfg parameters, settable through Starlark
 
 	vars       vars.Vars         // holds state of lucicfg.var() variables
+	seq        sequences         // holds state for __native__.sequence_next()
 	errors     errors.MultiError // all errors emitted during the generation (if any)
 	seenErrs   stringset.Set     // set of all string backtraces in 'errors', for deduping
 	failOnErrs bool              // if true, 'emit_error' aborts the execution
