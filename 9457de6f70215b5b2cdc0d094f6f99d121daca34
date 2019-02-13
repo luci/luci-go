@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88f74a10_0230014e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T05:59:03Z",
+      "side": 1,
+      "message": "Copy pasting this everywhere is not really helpful. Please either remove or replace with a description of what this particular commit does and why. See go/cl-descriptions in particular http://go/cl-descriptions#small-cl-that-needs-some-context",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 30
+      },
+      "revId": "9457de6f70215b5b2cdc0d094f6f99d121daca34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76ee6b2f_4cbac561",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T05:59:03Z",
+      "side": 1,
+      "message": "We now also need \"Update\", for cases when service accounts for existing projects in projects.cfg change (this is allowed).\n\nI think \"Create\" can be changed to be an upsert operation (https://en.wiktionary.org/wiki/upsert) taking *ProjectIdentity as input:\n\nUpdate(c context.Context, identity *ProjectIdentity) error {\n  1. Lookup the existing one if any.\n  2. Do nothing if already matches \u0027identity\u0027.\n  3. Otherwise ds.Put(...) new identity (which will either create the entity or update existing one).\n}\n\n(this will also make the operation idempotent, which is nice)",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 27
+      },
+      "revId": "9457de6f70215b5b2cdc0d094f6f99d121daca34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be95919a_b7f5d514",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T05:59:03Z",
+      "side": 1,
+      "message": "Is this going to be used by the code outside of this package? Can it be made private? (we already have LookupByProject, maybe it is enough. Smaller interfaces are better interfaces).",
+      "range": {
+        "startLine": 87,
+        "startChar": 36,
+        "endLine": 87,
+        "endChar": 42
+      },
+      "revId": "9457de6f70215b5b2cdc0d094f6f99d121daca34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bf0e58c_29e65e26",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T05:59:03Z",
+      "side": 1,
+      "message": "Is it important to get ErrNotFound if there were no such identity?\n\nBecause if not, we don\u0027t need the lookup or transaction. Just ds.Delete(c, identity) would do the trick.\n\n(And this will make Delete idempotent as well).",
+      "range": {
+        "startLine": 95,
+        "startChar": 89,
+        "endLine": 95,
+        "endChar": 94
+      },
+      "revId": "9457de6f70215b5b2cdc0d094f6f99d121daca34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
