@@ -29,6 +29,15 @@ message ConfigSetLocation {
   StorageType storage_type = 2;
 }
 
+// Used to define project specific identities for LUCI to act on behalf when
+// interacting with external systems. This allows projects to use exclusive
+// and isolated identities to not be accidentally affected by other projects.
+message IdentityConfig {
+  // ServiceAccountEmail is the full service account email to use when
+  // LUCI acts on behalf of the project.
+  string service_account_email = 1;
+}
+
 /******************************************************************************/
 /* Projects                                                                   */
 /******************************************************************************/
@@ -39,6 +48,9 @@ message Project {
   string id = 1;
   // Where to import "projects/<id>" config set from.
   ConfigSetLocation config_location = 2;
+  // IdentityConfig determines what identities are used when LUCI acts on
+  // behalf of the project towards external services.
+  IdentityConfig identity_config = 3;
 }
 
 // Schema of projects.cfg file. Represents luci tenants registry.
@@ -99,10 +111,14 @@ message ServicesCfg {
 
 
 // Schema of acl.cfg file.
+// Next tag: 8.
 message AclCfg {
   // Name of the group that has access to all projects/* config sets.
   // Only trusted services should be in this group.
   string project_access_group = 2;
+  // Name of the group that has access to all services/* config sets.
+  // Only trusted services should be in this group.
+  string service_access_group = 7;
   // Name of the group that has admin access to the app.
   string admin_group = 3;
   // Name of the group that can access configs by hash.
@@ -122,8 +138,10 @@ message ImportCfg {
     int32 fetch_log_deadline = 1;
     // Request timeout in seconds when requesting directory archive.
     int32 fetch_archive_deadline = 2;
+    // DEPRECATED, ignored. TODO(nodir): remove.
     // Default ref for project configs.
     string project_config_default_ref = 3;
+    // DEPRECATED, ignored. TODO(nodir): remove.
     // Default directory for project configs.
     string project_config_default_path = 4;
     // Default directory for ref configs.
@@ -199,10 +217,12 @@ message ValidationResponseMessage {
   }
   // A message that explains why a config is valid or not.
   message Message {
-    // Textual representation of the message.
-    string text = 1;
+    // Path of the config file that has an error.
+    string path = 1;
     // If an error, a config is considered invalid. Defaults to INFO.
     Severity severity = 2;
+    // Textual representation of the message.
+    string text = 3;
   }
   // Errors, warnings and other information found during validation.
   // If at least one error is found, the config is considered invalid.

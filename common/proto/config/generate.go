@@ -17,7 +17,7 @@
 // Copied from:
 //
 // Repo: https://chromium.googlesource.com/infra/luci/luci-py/
-// Revision: 7fb14584fc00e85e3414302b64d8f6cfbb6747a8
+// Revision: 02d3bf84b066902b5ee6a83c4bf260c91298d1b9
 // Path: appengine/components/components/config/proto/*.proto
 //
 // Modification: none.
