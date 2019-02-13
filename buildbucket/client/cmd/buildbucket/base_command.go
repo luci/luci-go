@@ -178,3 +178,24 @@ func (a *buildIDArg) parseArgs(args []string) error {
 	a.buildID = id
 	return nil
 }
+
+type repeatedBuildIDArg struct {
+	buildIDs []int64
+}
+
+func (a *repeatedBuildIDArg) parseArgs(args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("missing parameter: <Build ID>")
+	}
+
+	a.buildIDs = make([]int64, len(args))
+	for i, arg := range args {
+		id, err := strconv.ParseInt(arg, 10, 64)
+		if err != nil {
+			return fmt.Errorf("expected a build id (int64), got %s: %s", arg, err)
+		}
+		a.buildIDs[i] = id
+	}
+
+	return nil
+}
