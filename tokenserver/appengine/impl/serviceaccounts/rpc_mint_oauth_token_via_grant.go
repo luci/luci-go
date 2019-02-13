@@ -1,6 +1,16 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package serviceaccounts
 
@@ -26,7 +36,7 @@ import (
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 )
@@ -73,7 +83,7 @@ type MintOAuthTokenViaGrantRPC struct {
 	// LogOAuthToken is mocked in tests.
 	//
 	// In prod it is LogOAuthToken from oauth_token_bigquery_log.go.
-	LogOAuthToken func(context.Context, *MintedOAuthTokenInfo) error
+	LogOAuthToken func(context.Context, LoggableOAuthTokenInfo) error
 }
 
 // MintOAuthTokenViaGrant produces new OAuth token given a grant.
@@ -133,15 +143,17 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 		// a monitoring counter that tracks number of errors, so they are not
 		// totally invisible.
 		info := MintedOAuthTokenInfo{
-			RequestedAt: clock.Now(c),
-			Request:     req,
-			Response:    resp,
-			GrantBody:   grantBody,
-			ConfigRev:   rule.Revision,
-			Rule:        rule.Rule,
-			PeerIP:      state.PeerIP(),
-			RequestID:   info.RequestID(c),
-			AuthDBRev:   authdb.Revision(state.DB()),
+			Request:   req,
+			Response:  resp,
+			GrantBody: grantBody,
+			Rule:      rule.Rule,
+			OAuthTokenInfo: OAuthTokenInfo{
+				RequestedAt: clock.Now(c),
+				ConfigRev:   rule.Revision,
+				PeerIP:      state.PeerIP(),
+				RequestID:   info.RequestID(c),
+				AuthDBRev:   authdb.Revision(state.DB()),
+			},
 		}
 		if logErr := r.LogOAuthToken(c, &info); logErr != nil {
 			logging.WithError(logErr).Errorf(c, "Failed to insert the oauth token into the BigQuery log")
