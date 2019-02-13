@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a062eac_c3d26ebe",
+        "filename": "buildbucket/client/cmd/buildbucket/base_command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T19:39:49Z",
+      "side": 1,
+      "message": "nit: sorry, didn\u0027t realize this earlier. We can pre-allocate this array\n\n  make([]int64, len(args)) \n\nand then use\n\n  a.buildIDs[i] \u003d id",
+      "range": {
+        "startLine": 191,
+        "startChar": 14,
+        "endLine": 191,
+        "endChar": 17
+      },
+      "revId": "b3299f3132cf5eee3b4f86b44fcebb0cfd029f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa0a9e07_4bbf9a3b",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T19:39:49Z",
+      "side": 1,
+      "message": "JSONPB",
+      "range": {
+        "startLine": 40,
+        "startChar": 11,
+        "endLine": 40,
+        "endChar": 15
+      },
+      "revId": "b3299f3132cf5eee3b4f86b44fcebb0cfd029f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8261edb_955b48a2",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T19:39:49Z",
+      "side": 1,
+      "message": "nice",
+      "range": {
+        "startLine": 84,
+        "startChar": 114,
+        "endLine": 84,
+        "endChar": 117
+      },
+      "revId": "b3299f3132cf5eee3b4f86b44fcebb0cfd029f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "edd53a0c_6924170d",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T19:39:49Z",
+      "side": 1,
+      "message": "just return the error returned by Encode",
+      "range": {
+        "startLine": 149,
+        "startChar": 1,
+        "endLine": 149,
+        "endChar": 11
+      },
+      "revId": "b3299f3132cf5eee3b4f86b44fcebb0cfd029f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
