@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "96bb18e8_491ee0c2",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T23:08:45Z",
+      "side": 1,
+      "message": "This should just be inside lookupInternal (then no need for \u0027lookup\u0027 function at all). We can add it when it is necessary.",
+      "range": {
+        "startLine": 85,
+        "startChar": 0,
+        "endLine": 89,
+        "endChar": 17
+      },
+      "revId": "4a6b69021044a4a1c1f40bf4033100c4f7f64bdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee69ebc9_50f048af",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T23:08:45Z",
+      "side": 1,
+      "message": "nit: this can be shorter and without goto\n\ntmp, err :\u003d s.lookup(...)\nswitch {\n  case err !\u003d nil \u0026\u0026 err !\u003d ErrNotFound:\n     return nil, err\n  case err \u003d\u003d nil \u0026\u0026 *tmp \u003d\u003d *identity:\n     return identity, nil\n}\n\nif err :\u003d ds.Put(...); ... {\n  ...\n}",
+      "range": {
+        "startLine": 104,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 21
+      },
+      "revId": "4a6b69021044a4a1c1f40bf4033100c4f7f64bdc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
