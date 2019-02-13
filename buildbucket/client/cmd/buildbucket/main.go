@@ -33,6 +33,7 @@ var logCfg = gologger.LoggerConfig{
 	Out:    os.Stderr,
 }
 
+// GetApplication creates the application and configures its subcommands.
 func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 	return &cli.Application{
 		Name:  "buildbucket",
@@ -47,6 +48,7 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 			cmdConvertBuilders,
 			cmdRetry(defaultAuthOpts),
 			cmdBatch(defaultAuthOpts),
+			cmdCollect(defaultAuthOpts),
 			subcommands.CmdHelp,
 		},
 	}
