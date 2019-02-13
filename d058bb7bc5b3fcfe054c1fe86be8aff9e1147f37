@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "6f18e81e_92252c18",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-13T20:59:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3e9f266_0490f063",
+      "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bb86b373_4357ce4a",
         "filename": "starlark/starlarkproto/functions.go",
         "patchSetId": 3
@@ -57,6 +75,30 @@
       "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da81e12f_169ce51a",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-13T20:59:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb86b373_4357ce4a",
+      "range": {
+        "startLine": 85,
+        "startChar": 67,
+        "endLine": 85,
+        "endChar": 79
+      },
+      "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -104,6 +146,30 @@
       "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f47a8a2e_7fd4c8d8",
+        "filename": "starlark/starlarkproto/testdata/to_jsonpb.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-13T20:59:57Z",
+      "side": 1,
+      "message": "Oh wow, nice catch. I had my mind set on kwargs for some reason. I\u0027ve updated it now and I\u0027ve made a better test.\nThe lack of typing in Python (/Starlark) is so frustrating.",
+      "parentUuid": "2263dd08_a13426d6",
+      "range": {
+        "startLine": 35,
+        "startChar": 35,
+        "endLine": 35,
+        "endChar": 58
+      },
+      "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
