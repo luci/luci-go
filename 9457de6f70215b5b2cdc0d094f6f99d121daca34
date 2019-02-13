@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "edaf5581_a55d6142",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-13T21:16:48Z",
+      "side": 1,
+      "message": "Changed Create to Upsert and added \"Update\" method even though they\u0027re the same.",
+      "parentUuid": "76ee6b2f_4cbac561",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 27
+      },
+      "revId": "9457de6f70215b5b2cdc0d094f6f99d121daca34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be95919a_b7f5d514",
         "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
         "patchSetId": 1
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "70c57bdb_e96aaca8",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-13T21:16:48Z",
+      "side": 1,
+      "message": "Made private.",
+      "parentUuid": "be95919a_b7f5d514",
+      "range": {
+        "startLine": 87,
+        "startChar": 36,
+        "endLine": 87,
+        "endChar": 42
+      },
+      "revId": "9457de6f70215b5b2cdc0d094f6f99d121daca34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9bf0e58c_29e65e26",
         "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
         "patchSetId": 1
@@ -91,6 +139,30 @@
       "revId": "9457de6f70215b5b2cdc0d094f6f99d121daca34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4ffc561_bc2258ff",
+        "filename": "tokenserver/appengine/impl/utils/projectscope/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-13T21:16:48Z",
+      "side": 1,
+      "message": "I thought it might be helpful to detect potential errors in tracking the service accounts. I\u0027m going to simplify for now and potentially re-add it later.",
+      "parentUuid": "9bf0e58c_29e65e26",
+      "range": {
+        "startLine": 95,
+        "startChar": 89,
+        "endLine": 95,
+        "endChar": 94
+      },
+      "revId": "9457de6f70215b5b2cdc0d094f6f99d121daca34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
