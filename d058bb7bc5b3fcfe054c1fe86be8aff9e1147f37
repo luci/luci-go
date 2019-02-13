@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c3e9f266_0490f063",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T19:53:38Z",
+      "side": 1,
+      "message": "So looks like UnpackArgs recognizes that \u0027bool\u0027 and starlark.Bool are compatible. Still, please use Starlark types here, since this is coincidental (in general starlark types, as accepted by UnpackArgs are not aliases for Go types).",
+      "parentUuid": "58afad95_b949b669",
+      "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bb86b373_4357ce4a",
         "filename": "starlark/starlarkproto/functions.go",
         "patchSetId": 3
@@ -53,6 +71,30 @@
       "writtenOn": "2019-02-13T19:35:11Z",
       "side": 1,
       "message": "er.. does this work? I saw this in the commit message and thought it was some sort of typo. Why not simply:\n\n  proto.to_jsonpb(m, emit_defaults\u003dTrue) ?\n\n(That\u0027s what the UnpackArgs currently expects sans bool needs to be starlark.Bool. It actually should panic with bool...).",
+      "range": {
+        "startLine": 35,
+        "startChar": 35,
+        "endLine": 35,
+        "endChar": 58
+      },
+      "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2263dd08_a13426d6",
+        "filename": "starlark/starlarkproto/testdata/to_jsonpb.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T19:53:38Z",
+      "side": 1,
+      "message": "So this works because {\u0027emit_defaults\u0027: True} is treated as a positional argument and it is True-ish (by being a non-empty dict). If you pass {\u0027emit_defaults\u0027: False}, the test would still pass (but it shouldn\u0027t).",
+      "parentUuid": "a188cfeb_fc08a2c8",
       "range": {
         "startLine": 35,
         "startChar": 35,
