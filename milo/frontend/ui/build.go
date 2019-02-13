@@ -168,6 +168,9 @@ type property struct {
 // properties returns the values in the proto struct fields as
 // a json rendered slice of pairs, sorted by key.
 func properties(props *structpb.Struct) []property {
+	if props == nil {
+		return nil
+	}
 	// Render the fields to JSON.
 	m := jsonpb.Marshaler{}
 	buf := bytes.NewBuffer(nil)
@@ -201,11 +204,11 @@ func properties(props *structpb.Struct) []property {
 }
 
 func (bp *BuildPage) InputProperties() []property {
-	return properties(bp.Input.Properties)
+	return properties(bp.GetInput().GetProperties())
 }
 
 func (bp *BuildPage) OutputProperties() []property {
-	return properties(bp.Output.Properties)
+	return properties(bp.GetOutput().GetProperties())
 }
 
 func (bp *BuildPage) Builder() *Link {

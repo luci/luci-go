@@ -113,8 +113,8 @@
     <h2>Overview</h2>
     <div class="result status {{.BuildPage.Status}}">
       <div class="main-status">{{ .BuildPage.HumanStatus }}</div>
-      {{ if .BuildPage.Output.SummaryMarkdown }}
-        {{ .BuildPage.Output.SummaryMarkdown | renderMarkdown }}
+      {{ with .BuildPage.Output.GetSummaryMarkdown }}
+        {{ . | renderMarkdown }}
       {{ else }}
         {{ range .BuildPage.Summary }}
           {{ . }}<br>
