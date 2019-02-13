@@ -50,7 +50,7 @@ func TestMakeModuleKey(t *testing.T) {
 
 		// Picks up default package name from the thread, if given.
 		th := starlark.Thread{}
-		th.SetLocal(threadPkgKey, "pkg")
+		th.SetLocal(threadModKey, moduleKey{pkg: "pkg", path: "zzz"})
 		k, err = makeModuleKey("//some/mod", &th)
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, moduleKey{"pkg", "some/mod"})
@@ -399,5 +399,90 @@ Error: invalid call of non-function (NoneType)`)
 			"post stdlib/exec1.star",
 			"post __main__/main.star",
 		})
+	})
+
+	loadSrcBuiltin := starlark.NewBuiltin("load_src", func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, _ []starlark.Tuple) (starlark.Value, error) {
+		src, err := GetThreadInterpreter(th).LoadSource(th, args[0].(starlark.String).GoString())
+		return starlark.String(src), err
+	})
+
+	Convey("LoadSource works with abs paths", t, func() {
+		_, logs, err := runIntr(intrParams{
+			predeclared: starlark.StringDict{"load_src": loadSrcBuiltin},
+			scripts: map[string]string{
+				"main.star": `
+					print(load_src("//data1.txt"))
+					print(load_src("@stdlib//data2.txt"))
+					exec("@stdlib//execed.star")
+				`,
+				"data1.txt": "blah 1",
+			},
+			stdlib: map[string]string{
+				"execed.star": `print(load_src("//data3.txt"))`,
+				"data2.txt":   "blah 2",
+				"data3.txt":   "blah 3",
+			},
+		})
+		So(err, ShouldBeNil)
+		So(logs, ShouldResemble, []string{
+			"[//main.star:2] blah 1",
+			"[//main.star:3] blah 2",
+			"[@stdlib//execed.star:1] blah 3",
+		})
+	})
+
+	Convey("LoadSource works with rel paths", t, func() {
+		_, logs, err := runIntr(intrParams{
+			predeclared: starlark.StringDict{"load_src": loadSrcBuiltin},
+			scripts: map[string]string{
+				"main.star": `
+					print(load_src("data1.txt"))
+					print(load_src("inner/data2.txt"))
+					exec("//inner/execed.star")
+					exec("@stdlib//inner/execed.star")
+				`,
+				"inner/execed.star": `
+					print(load_src("../data1.txt"))
+					print(load_src("data2.txt"))
+				`,
+				"data1.txt":       "blah 1",
+				"inner/data2.txt": "blah 2",
+			},
+			stdlib: map[string]string{
+				"inner/execed.star": `print(load_src("data3.txt"))`,
+				"inner/data3.txt":   "blah 3",
+			},
+		})
+		So(err, ShouldBeNil)
+		So(logs, ShouldResemble, []string{
+			"[//main.star:2] blah 1",
+			"[//main.star:3] blah 2",
+			"[//inner/execed.star:2] blah 1",
+			"[//inner/execed.star:3] blah 2",
+			"[@stdlib//inner/execed.star:1] blah 3",
+		})
+	})
+
+	Convey("LoadSource handles missing files", t, func() {
+		_, _, err := runIntr(intrParams{
+			predeclared: starlark.StringDict{"load_src": loadSrcBuiltin},
+			scripts: map[string]string{
+				"main.star": `load_src("data1.txt")`,
+			},
+		})
+		So(err, ShouldErrLike, "cannot load source code of //data1.txt: no such module")
+	})
+
+	Convey("LoadSource handles go modules", t, func() {
+		_, _, err := runIntr(intrParams{
+			predeclared: starlark.StringDict{"load_src": loadSrcBuiltin},
+			scripts: map[string]string{
+				"main.star": `load_src("@custom//something.txt")`,
+			},
+			custom: func(string) (starlark.StringDict, string, error) {
+				return starlark.StringDict{}, "", nil
+			},
+		})
+		So(err, ShouldErrLike, "cannot load source code of @custom//something.txt: it is a native Go module")
 	})
 }

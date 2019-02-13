@@ -107,6 +107,7 @@ package interpreter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -114,8 +115,6 @@ import (
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-
-	"go.chromium.org/luci/common/errors"
 )
 
 var (
@@ -155,10 +154,12 @@ const (
 const (
 	// Key of context.Context inside starlark.Thread's local store.
 	threadCtxKey = "interpreter.Context"
-	// Key with the current package name inside starlark.Thread's local store.
-	threadPkgKey = "interpreter.Package"
+	// Key with *Interpreter that created the thread.
+	threadIntrKey = "interpreter.Interpreter"
 	// Key with TheadKind of the thread.
 	threadKindKey = "interpreter.ThreadKind"
+	// Key with the moduleKey of the currently executing module.
+	threadModKey = "interpreter.ModuleKey"
 )
 
 // Context returns a context of the thread created through Interpreter.
@@ -168,7 +169,17 @@ func Context(th *starlark.Thread) context.Context {
 	if ctx := th.Local(threadCtxKey); ctx != nil {
 		return ctx.(context.Context)
 	}
-	panic("not an Interpreter thread, no context in it")
+	panic("not an Interpreter thread, no context in its locals")
+}
+
+// GetThreadInterpreter returns Interpreter that created the Starlark thread.
+//
+// Panics if the Starlark thread wasn't created through Interpreter.Thread().
+func GetThreadInterpreter(th *starlark.Thread) *Interpreter {
+	if intr := th.Local(threadIntrKey); intr != nil {
+		return intr.(*Interpreter)
+	}
+	panic("not an Interpreter thread, no Interpreter in its locals")
 }
 
 // GetThreadKind tells what sort of thread 'th' is: it is either inside some
@@ -180,7 +191,7 @@ func GetThreadKind(th *starlark.Thread) ThreadKind {
 	if k := th.Local(threadKindKey); k != nil {
 		return k.(ThreadKind)
 	}
-	panic("not an Interpreter thread, no ThreadKind in it")
+	panic("not an Interpreter thread, no ThreadKind in its locals")
 }
 
 // Loader knows how to load modules of some concrete package.
@@ -252,6 +263,19 @@ type moduleKey struct {
 	path string // path within the package, e.g. "abc/script.star"
 }
 
+// String returns a fully-qualified module name to use in error messages.
+//
+// If is either "@pkg//path" or just "//path" if pkg is "__main__". We omit the
+// name of the top-level package with user-supplied code ("__main__") to avoid
+// confusing users who are oblivious of packages.
+func (key moduleKey) String() string {
+	pkg := ""
+	if key.pkg != MainPkg {
+		pkg = "@" + key.pkg
+	}
+	return pkg + "//" + key.path
+}
+
 // makeModuleKey takes '[@pkg]//path', parses and cleans it up a bit.
 //
 // Does some light validation. Module loaders are expected to validate module
@@ -278,12 +302,12 @@ func makeModuleKey(ref string, th *starlark.Thread) (key moduleKey, err error) {
 
 	// Grab the package name from thread locals, if given.
 	if !hasPkg && th != nil {
-		if key.pkg, _ = th.Local(threadPkgKey).(string); key.pkg == "" {
+		if modKey, ok := th.Local(threadModKey).(moduleKey); ok {
+			key.pkg = modKey.pkg
+		} else {
 			err = errors.New("no current package name in thread locals")
-			return
 		}
 	}
-
 	return
 }
 
@@ -364,7 +388,7 @@ func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (star
 	}
 	defer func() { intr.modules[key] = m }()
 
-	m.dict, m.err = intr.runModule(ctx, pkg, path, ThreadLoading)
+	m.dict, m.err = intr.runModule(ctx, key, ThreadLoading)
 	return m.dict, m.err
 }
 
@@ -396,7 +420,54 @@ func (intr *Interpreter) ExecModule(ctx context.Context, pkg, path string) (star
 	intr.execed[key] = struct{}{}
 
 	// Actually execute the code.
-	return intr.runModule(ctx, pkg, path, ThreadExecing)
+	return intr.runModule(ctx, key, ThreadExecing)
+}
+
+// LoadSource returns a body of a file inside a package.
+//
+// It doesn't have to be a Starlark file, can be any text file as long as
+// the corresponding package Loader can find it.
+//
+// 'ref' is either an absolute reference to the file, in the same format as
+// accepted by 'load' and 'exec' (i.e. "[@pkg]//path"), or a path relative to
+// the currently executing module (i.e. just "path").
+//
+// Only Starlark threads started via LoadModule or ExecModule can be used with
+// this function. Other threads don't have enough context to resolve paths
+// correctly.
+func (intr *Interpreter) LoadSource(th *starlark.Thread, ref string) (string, error) {
+	if kind := GetThreadKind(th); kind != ThreadLoading && kind != ThreadExecing {
+		return "", errors.New("wrong kind of thread (not enough information to " +
+			"resolve the file reference), only threads that do 'load' and 'exec' can call this function")
+	}
+
+	var target moduleKey
+	if strings.HasPrefix(ref, "//") || strings.HasPrefix(ref, "@") {
+		// An absolute path (within the same or some other package).
+		var err error
+		if target, err = makeModuleKey(ref, th); err != nil {
+			return "", err
+		}
+	} else {
+		// A path relative to the currently executing module.
+		//
+		// Note that threadModKey is guaranteed to be set at this point per
+		// GetThreadKind check above.
+		running := th.Local(threadModKey).(moduleKey)
+		target = moduleKey{
+			pkg:  running.pkg,
+			path: path.Join(path.Dir(running.path), ref),
+		}
+	}
+
+	dict, src, err := intr.invokeLoader(target)
+	if err == nil && dict != nil {
+		err = fmt.Errorf("it is a native Go module")
+	}
+	if err != nil {
+		return "", fmt.Errorf("cannot load source code of %s: %s", target, err)
+	}
+	return src, nil
 }
 
 // Thread creates a new Starlark thread associated with the given context.
@@ -421,6 +492,7 @@ func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
 		},
 	}
 	th.SetLocal(threadCtxKey, ctx)
+	th.SetLocal(threadIntrKey, intr)
 	th.SetLocal(threadKindKey, ThreadUnknown)
 	if intr.ThreadModifier != nil {
 		intr.ThreadModifier(th)
@@ -471,20 +543,25 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 	})
 }
 
+// invokeLoader loads the module via the loader associated with the package.
+func (intr *Interpreter) invokeLoader(key moduleKey) (dict starlark.StringDict, src string, err error) {
+	loader, ok := intr.Packages[key.pkg]
+	if !ok {
+		return nil, "", ErrNoPackage
+	}
+	return loader(key.path)
+}
+
 // runModule really loads and executes the module, used by both LoadModule and
 // ExecModule.
-func (intr *Interpreter) runModule(ctx context.Context, pkg, path string, kind ThreadKind) (starlark.StringDict, error) {
-	loader, ok := intr.Packages[pkg]
-	if !ok {
-		return nil, ErrNoPackage
-	}
-	dict, src, err := loader(path)
-	if err != nil {
+func (intr *Interpreter) runModule(ctx context.Context, key moduleKey, kind ThreadKind) (starlark.StringDict, error) {
+	// Grab the source code.
+	dict, src, err := intr.invokeLoader(key)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-
-	// This is a native module constructed in Go? No need to interpret it then.
-	if dict != nil {
+	case dict != nil:
+		// This is a native module constructed in Go, no need to interpret it.
 		return dict, nil
 	}
 
@@ -509,29 +586,23 @@ func (intr *Interpreter) runModule(ctx context.Context, pkg, path string, kind T
 	// Let builtins know what this thread is doing. Some calls (most notably Exec
 	// itself) are allowed only from exec'ing threads, not from load'ing ones.
 	th.SetLocal(threadKindKey, kind)
-	// Let builtins (and in particular makeModuleKey) know the package the module
-	// belongs too.
-	th.SetLocal(threadPkgKey, pkg)
-
-	// Construct a full module name for error messages and stack traces. Omit the
-	// name of the top-level package with user-supplied code ("__main__") to avoid
-	// confusing users who are oblivious of packages.
-	module := ""
-	if pkg != MainPkg {
-		module = "@" + pkg
-	}
-	module += "//" + path
+	// Let builtins (and in particular makeModuleKey and LoadSource) know the
+	// package and the module that the thread executes.
+	th.SetLocal(threadModKey, key)
 
 	if kind == ThreadExecing {
 		if intr.PreExec != nil {
-			intr.PreExec(th, pkg, path)
+			intr.PreExec(th, key.pkg, key.path)
 		}
 		if intr.PostExec != nil {
-			defer intr.PostExec(th, pkg, path)
+			defer intr.PostExec(th, key.pkg, key.path)
 		}
 	}
 
-	// Execute the module. It may load other modules inside, which will call
-	// th.Load callback above.
-	return starlark.ExecFile(th, module, src, intr.globals)
+	// Execute the module. It may 'load' or 'exec' other modules inside, which
+	// will either call LoadModule or ExecModule.
+	//
+	// Use user-friendly module name (with omitted "@__main__") for error messages
+	// and stack traces to avoid confusing the user.
+	return starlark.ExecFile(th, key.String(), src, intr.globals)
 }
