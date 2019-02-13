@@ -42,9 +42,7 @@ func Main(params base.Parameters, args []string) int {
 	resolve.AllowFloat = true
 	resolve.AllowSet = true
 
-	a := GetApplication(params)
-	return subcommands.Run(
-		a, fixflagpos.FixSubcommands(args, fixflagpos.MaruelSubcommandsFn(a)))
+	return subcommands.Run(GetApplication(params), fixflagpos.FixSubcommands(args))
 }
 
 // GetApplication returns lucicfg cli.Application.
