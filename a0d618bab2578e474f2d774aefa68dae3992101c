@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ec076f8_8abfebff",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T01:44:53Z",
+      "side": 0,
+      "message": "Its super powers (like stack traces and tags) weren\u0027t used. Also Starlark lib stringifies all errors anyway. And it has its own (starlark) stack traces. I decided just to use standard errors to avoid a mess.",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 37
+      },
+      "revId": "a0d618bab2578e474f2d774aefa68dae3992101c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

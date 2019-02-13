@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3efef42e_63f46ccd",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T01:44:53Z",
+      "side": 1,
+      "message": "For consistency with other similar functions here. The (obvious I hope) expectation is that users of \u0027interpreter\u0027 package use Starlark only through Interpreter struct. If they don\u0027t, they\u0027ll learn soon enough that they should by seeing all these panics.",
+      "range": {
+        "startLine": 177,
+        "startChar": 3,
+        "endLine": 177,
+        "endChar": 77
+      },
+      "revId": "1e366e45e9c8e33ed5475aaa68c235ff2de3a561",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5c89323b_d786ac63",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T01:44:53Z",
+      "side": 1,
+      "message": "extracted from below",
+      "range": {
+        "startLine": 271,
+        "startChar": 4,
+        "endLine": 271,
+        "endChar": 38
+      },
+      "revId": "1e366e45e9c8e33ed5475aaa68c235ff2de3a561",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "627cccdd_8f439d00",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 547,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T01:44:53Z",
+      "side": 1,
+      "message": "extracted from below",
+      "range": {
+        "startLine": 547,
+        "startChar": 25,
+        "endLine": 547,
+        "endChar": 37
+      },
+      "revId": "1e366e45e9c8e33ed5475aaa68c235ff2de3a561",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
