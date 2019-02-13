@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
 	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
 	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
+	projectscopeutils "go.chromium.org/luci/tokenserver/appengine/impl/utils/projectscope"
 )
 
 // Server implements minter.TokenMinterServer RPC interface.
@@ -70,8 +71,8 @@ func NewServer() minter.TokenMinterServer {
 		MintProjectTokenRPC: projectscope.MintProjectTokenRPC{
 			Signer:            gaesigner.Signer{},
 			MintAccessToken:   auth.MintAccessTokenForServiceAccount,
-			LogOAuthToken:     nil,
-			ProjectIdentities: nil,
+			LogOAuthToken:     serviceaccounts.LogOAuthToken,
+			ProjectIdentities: projectscopeutils.ProjectIdentities,
 		},
 	}
 }
