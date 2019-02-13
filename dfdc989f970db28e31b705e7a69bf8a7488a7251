@@ -22,6 +22,30 @@
       "revId": "dfdc989f970db28e31b705e7a69bf8a7488a7251",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e5358ba4_daeba5d5",
+        "filename": "buildbucket/client/cmd/buildbucket/base_command.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T13:42:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9206267e_7d6b345a",
+      "range": {
+        "startLine": 110,
+        "startChar": 18,
+        "endLine": 110,
+        "endChar": 35
+      },
+      "revId": "dfdc989f970db28e31b705e7a69bf8a7488a7251",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
