@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd89e9f4_6101b3b5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-02-13T21:34:06Z",
+      "side": 1,
+      "message": "XD lol",
+      "revId": "ca1a45d7b2c5001d3748590e47a5e9a93a19060a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
