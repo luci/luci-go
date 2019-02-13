@@ -22,6 +22,18 @@ assert.eq(proto.to_jsonpb(m), """{
 	"i": "123"
 }""")
 
+# Prints default values when requested.
+# Just do a "contain" rather than eq so that this test doesn't break every time
+# testProtos.Simple gets a new field.
+m.i = 0
+assert.contains(proto.to_jsonpb(m, emit_defaults=True), '"i": "0",')
+
+# Doesn't print default values when 'emit_defaults' is False.
+m.i = 0
+assert.eq(proto.to_jsonpb(m, emit_defaults=False), """{
+
+}""")
+
 # to_jsonpb expects an argument.
 def to_jsonpb_no_args():
   proto.to_jsonpb()
@@ -29,8 +41,8 @@ assert.fails(to_jsonpb_no_args, 'missing argument for msg')
 
 # Too many arguments.
 def to_jsonpb_too_many_args():
-  proto.to_jsonpb(m, m)
-assert.fails(to_jsonpb_too_many_args, 'to_jsonpb: got 2 arguments, want at most 1')
+  proto.to_jsonpb(m, m, m)
+assert.fails(to_jsonpb_too_many_args, 'to_jsonpb: got 3 arguments, want at most 2')
 
 # None argument.
 def to_jsonpb_with_none():
