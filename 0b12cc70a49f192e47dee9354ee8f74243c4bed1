@@ -23,6 +23,30 @@
       "revId": "0b12cc70a49f192e47dee9354ee8f74243c4bed1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7732e95_7fda776c",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-02-13T19:20:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96899339_4fe799d2",
+      "range": {
+        "startLine": 84,
+        "startChar": 55,
+        "endLine": 84,
+        "endChar": 60
+      },
+      "revId": "0b12cc70a49f192e47dee9354ee8f74243c4bed1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
