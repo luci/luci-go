@@ -17,9 +17,7 @@ package fixflagpos
 import (
 	"testing"
 
-	"github.com/maruel/subcommands"
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/cli"
 )
 
 func TestFixSubcommands(t *testing.T) {
@@ -29,48 +27,62 @@ func TestFixSubcommands(t *testing.T) {
 		return args
 	}
 
-	tests := []struct {
-		Name string
-		In   []string
-		Fn   IsCommandFn
-		Out  []string
-	}{
-		{Name: "empty"},
+	Convey(`Fix`, t, func() {
+		tests := []struct {
+			Name string
+			In   []string
+			Out  []string
+		}{
+			{Name: "empty"},
 
-		{Name: "no func",
-			In:  s("hello", "world", "-flag", "100"),
-			Out: s("-flag", "100", "hello", "world")},
+			{Name: "no func",
+				In:  s("hello", "world", "-flag", "100"),
+				Out: s("-flag", "100", "hello", "world")},
 
-		{Name: "no flags",
-			In:  s("hello", "world", "thing", "100"),
-			Out: s("hello", "world", "thing", "100")},
+			{Name: "no flags",
+				In:  s("hello", "world", "thing", "100"),
+				Out: s("hello", "world", "thing", "100")},
 
-		{Name: "single subcommand",
-			In: s("hello", "world", "-flag", "100"),
-			Fn: func(toks []string) bool {
-				return len(toks) == 1 && toks[0] == "hello"
-			},
-			Out: s("hello", "-flag", "100", "world")},
+			{Name: "positional after flags",
+				In:  s("-flag", "100", "hello", "world"),
+				Out: s("-flag", "100", "hello", "world")},
 
-		{Name: "MaruelSubcommandsFn",
-			In: s("hello", "world", "-flag", "100"),
-			Fn: MaruelSubcommandsFn(&cli.Application{
-				Commands: []*subcommands.Command{
-					{UsageLine: "hello world"},
-				},
-			}),
-			Out: s("hello", "-flag", "100", "world")},
-	}
+			{Name: "positional mixed with flags",
+				In:  s("hello", "-flag", "100", "world"),
+				Out: s("-flag", "100", "world", "hello")},
 
-	Convey(`FixSubcommands`, t, func() {
+			{Name: "using --",
+				In:  s("hello", "--", "-flag", "100", "world"),
+				Out: s("--", "-flag", "100", "world", "hello")},
+		}
 		for _, tc := range tests {
 			tc := tc
 			Convey(tc.Name, func() {
-				So(FixSubcommands(tc.In, tc.Fn), ShouldResemble, tc.Out)
+				So(Fix(tc.In), ShouldResemble, tc.Out)
+			})
+		}
+	})
 
-				if tc.Fn == nil {
-					So(Fix(tc.In), ShouldResemble, tc.Out)
-				}
+	Convey(`FixSubcommands`, t, func() {
+		tests := []struct {
+			Name string
+			In   []string
+			Out  []string
+		}{
+			{Name: "empty"},
+
+			{Name: "no flags",
+				In:  s("hello", "world", "thing", "100"),
+				Out: s("hello", "world", "thing", "100")},
+
+			{Name: "single subcommand",
+				In:  s("hello", "world", "-flag", "100"),
+				Out: s("hello", "-flag", "100", "world")},
+		}
+		for _, tc := range tests {
+			tc := tc
+			Convey(tc.Name, func() {
+				So(FixSubcommands(tc.In), ShouldResemble, tc.Out)
 			})
 		}
 	})

@@ -16,98 +16,47 @@ package fixflagpos
 
 import (
 	"strings"
-
-	"github.com/maruel/subcommands"
 )
 
-// IsCommandFn will be invoked with successive groups of tokens in order to
-// determine what portion of the command line is a 'subcommand'. E.g. for the
-// command line:
+// Fix rearranges an `args []string` command line to enable positional arguments
+// to be allowed before flag arguments, which makes some invocations look more
+// natural.
 //
-//   prog show cool subcommand option -flag 1
-//
-// This would be invoked with:
-//   * ['show']
-//   * ['show', 'cool']
-//   * ['show', 'cool', 'subcommand']
-//   * ['show', 'cool', 'subcommand', 'option']
-//
-// And the function would return `true` for the first three and `false` for the
-// fourth. This way FixSubcommands could know that 'option' is a positional
-// argument and not a subcommand.
-type IsCommandFn func(toks []string) bool
-
-// MaruelSubcommandsFn returns an IsCommandFn which is compatible with
-// "maruel/subcommands".Application objects.
-func MaruelSubcommandsFn(a subcommands.Application) IsCommandFn {
-	return func(toks []string) bool {
-		if len(toks) == 1 {
-			for _, c := range a.GetCommands() {
-				if toks[0] == c.Name() {
-					return true
-				}
-			}
-		}
-		return false
-	}
-}
-
-func splitCmdLine(args []string, isCommand IsCommandFn) (subcmd []string, flags []string, pos []string) {
-	// No subcomand, just flags.
-	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
-		return nil, args, nil
-	}
-
-	if isCommand != nil {
-		for len(args) > 0 {
-			maybeSub := append(subcmd, args[0])
-			if !isCommand(maybeSub) {
-				break
-			}
-			args = args[1:]
-			subcmd = maybeSub
+// Converts [pos1 pos2 -flag value pos3] into [-flag value pos3 pos1 pos2].
+func Fix(args []string) []string {
+	// Find the first flag argument or '--'.
+	flagIdx := -1
+	for i, arg := range args {
+		if strings.HasPrefix(arg, "-") {
+			flagIdx = i
+			break
 		}
 	}
 
-	// Pick subcommand, than collect all positional args up to a first flag.
-	for len(args) > 0 && !strings.HasPrefix(args[0], "-") {
-		pos = append(pos, args[0])
-		args = args[1:]
+	if flagIdx == -1 {
+		return args // no arguments at all or only positional arguments
 	}
 
-	flags = args
-
-	return
+	// Move positional arguments after the flags.
+	buf := make([]string, 0, len(args))
+	return append(append(buf, args[flagIdx:]...), args[:flagIdx]...)
 }
 
-// FixSubcommands rearanges an `args []string` command line to enable flag
-// arguments and positional arguments to be mixed, which makes some invocations
-// look more natural.
+// FixSubcommands is like Fix, except the first positional argument is
+// understood as a subcommand name and it is not moved.
+//
+// Converts [pos1 pos2 -flag value pos3] into [pos1 -flag value pos3 pos2].
 //
 // Taking cipd as an example, compare:
 //   * Default: cipd set-ref -ref=abc -version=def package/name
 //   * Improved: cipd set-ref package/name -ref=abc -version=def
 //
 // Much better.
-//
-// Pass a function isCommand which should return true if the tokens in `toks`
-// indicate a subcommand. As long as this function returns true, FixSubcommands
-// will keep these tokens at the beginning of the returned slice. As soon as it
-// returns false, the remaining tokens will be sorted into flags and positional
-// arguments, and the positional arguments will be moved to the end of the
-// slice. Passing `nil` means that no tokens will be treated as subcommands (do
-// this if you're not using a subcommand-parsing library).
-func FixSubcommands(args []string, isCommand IsCommandFn) []string {
-	cmd, flags, positional := splitCmdLine(args, isCommand)
-	length := len(cmd) + len(flags) + len(positional)
-	if length == 0 {
-		return nil
+func FixSubcommands(args []string) []string {
+	// Nothing do it if the first argument is a flag.
+	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+		return args
 	}
-	buf := make([]string, 0, length)
-	return append(append(append(buf, cmd...), flags...), positional...)
-}
-
-// Fix is a shorthand for `FixSubcommands(args, nil)`.
-func Fix(args []string) []string {
-	return FixSubcommands(args, nil)
+	buf := make([]string, 0, len(args))
+	return append(append(buf, args[0]), Fix(args[1:])...)
 }
