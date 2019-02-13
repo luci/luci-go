@@ -69,20 +69,20 @@ func toPbText(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwar
 	return starlark.String(proto.MarshalTextString(pb)), nil
 }
 
-// TODO(vadimsh): Some options here can be moved to to_jsonpb kwargs if needed.
-var jsonMarshaler = &jsonpb.Marshaler{Indent: "\t"}
-
 // toJSONPb takes a single protobuf message and serializes it using JSONPB
 // serialization.
 func toJSONPb(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var msg *Message
-	if err := starlark.UnpackArgs("to_jsonpb", args, kwargs, "msg", &msg); err != nil {
+	var emitDefaults starlark.Bool
+	if err := starlark.UnpackArgs("to_jsonpb", args, kwargs, "msg", &msg, "emit_defaults?", &emitDefaults); err != nil {
 		return nil, err
 	}
 	pb, err := msg.ToProto()
 	if err != nil {
 		return nil, err
 	}
+	// More jsonpb Marshaler options may be added here as needed.
+	var jsonMarshaler = &jsonpb.Marshaler{Indent: "\t", EmitDefaults: bool(emitDefaults)}
 	str, err := jsonMarshaler.MarshalToString(pb)
 	if err != nil {
 		return nil, err
