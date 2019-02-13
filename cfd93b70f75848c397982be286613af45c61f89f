@@ -1,0 +1,376 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b35426fb_413ab5a5",
+        "filename": "buildbucket/client/cmd/buildbucket/base_command.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "i think we should we nil this before the loop",
+      "range": {
+        "startLine": 196,
+        "startChar": 2,
+        "endLine": 196,
+        "endChar": 12
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1836fcc7_10b85a58",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "nit: just \"...\" here",
+      "range": {
+        "startLine": 35,
+        "startChar": 52,
+        "endLine": 35,
+        "endChar": 70
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7be135b8_66535997",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "optionally",
+      "range": {
+        "startLine": 37,
+        "startChar": 49,
+        "endLine": 37,
+        "endChar": 50
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f75913e0_6d484939",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "nit: W",
+      "range": {
+        "startLine": 37,
+        "startChar": 13,
+        "endLine": 37,
+        "endChar": 14
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e2ede84_40d55ea9",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "duration",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 9
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a53cce2b_0d8913d9",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "remove\n\nit is specified in the duration user prefers",
+      "range": {
+        "startLine": 45,
+        "startChar": 10,
+        "endLine": 45,
+        "endChar": 21
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2daf536_94829b37",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "json-output to be consistent with others\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/cipd/client/cli/main.go?type\u003dcs\u0026q\u003df:cipd+json-output+lang:go\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d139",
+      "range": {
+        "startLine": 46,
+        "startChar": 36,
+        "endLine": 46,
+        "endChar": 42
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "350c3871_6d43c8a9",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "let\u0027s make this a global. we are currently recreating this before each request",
+      "range": {
+        "startLine": 68,
+        "startChar": 12,
+        "endLine": 89,
+        "endChar": 4
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f6812a6_99d724be",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "it might be useful to tell which builds are finished or unfinished anywhere in the logging",
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "077273d6_8992e0f0",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 119,
+        "startChar": 22,
+        "endLine": 119,
+        "endChar": 26
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4264e85_26389af2",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "i think they should be returned in the same order as buildIDs parameter",
+      "range": {
+        "startLine": 123,
+        "startChar": 8,
+        "endLine": 123,
+        "endChar": 25
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "feffb3d4_25db3322",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "i think this belongs to the callsite",
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22855bc1_5425d36a",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "i think this has little value",
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32e4e865_a5633504",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "defer outputFile.Close()\nhere",
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11bca369_c1f1b32c",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "here we copy bytes to string\nhttps://github.com/golang/protobuf/blob/master/jsonpb/jsonpb.go#L147\nand in L144 we copy string to bytes\n\nlet\u0027s use https://godoc.org/github.com/golang/protobuf/jsonpb#Marshaler.Marshal",
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc71f986_4af35f01",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "when the length is known in advance, we usually do just encodedMessages[i] \u003d ...",
+      "range": {
+        "startLine": 144,
+        "startChar": 17,
+        "endLine": 144,
+        "endChar": 43
+      },
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1495ca8d_26796244",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "https://godoc.org/encoding/json#NewEncoder directly to outputFile",
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b683db02_2024c745",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T17:28:02Z",
+      "side": 1,
+      "message": "nit: fits prev line?",
+      "revId": "cfd93b70f75848c397982be286613af45c61f89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
