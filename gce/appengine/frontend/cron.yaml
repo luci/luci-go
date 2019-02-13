@@ -1,8 +1,6 @@
 cron:
 - url: /internal/cron/create-instances
   schedule: every 1 minutes
-- url: /internal/cron/delete-vms
-  schedule: every 1 minutes
 - url: /internal/cron/drain-vms
   schedule: every 1 minutes
 - url: /internal/cron/expand-configs

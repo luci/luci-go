@@ -52,78 +52,107 @@ func TestQueues(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("deleteVM", func() {
+		Convey("createVM", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {
-					err := deleteVM(c, nil)
+					err := createVM(c, nil)
 					So(err, ShouldErrLike, "unexpected payload")
 				})
 
 				Convey("empty", func() {
-					err := deleteVM(c, &tasks.DeleteVM{})
-					So(err, ShouldErrLike, "ID is required")
+					err := createVM(c, &tasks.CreateVM{})
+					So(err, ShouldErrLike, "config is required")
 				})
 			})
 
 			Convey("valid", func() {
-				Convey("non-existent", func() {
-					err := deleteVM(c, &tasks.DeleteVM{
-						Id: "id",
+				Convey("nil", func() {
+					err := createVM(c, &tasks.CreateVM{
+						Index:  2,
+						Config: "id",
 					})
 					So(err, ShouldBeNil)
 					err = datastore.Get(c, &model.VM{
-						ID: "id",
+						ID: "id-2",
 					})
-					So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+					So(err, ShouldBeNil)
 				})
 
-				Convey("error", func() {
-					Convey("not drained", func() {
-						datastore.Put(c, &model.VM{
-							ID: "id",
-						})
-						err := deleteVM(c, &tasks.DeleteVM{
-							Id: "id",
-						})
-						So(err, ShouldErrLike, "VM not drained")
-						err = datastore.Get(c, &model.VM{
-							ID: "id",
-						})
-						So(err, ShouldBeNil)
+				Convey("empty", func() {
+					err := createVM(c, &tasks.CreateVM{
+						Attributes: &config.VM{},
+						Index:      2,
+						Config:     "id",
 					})
+					So(err, ShouldBeNil)
+					err = datastore.Get(c, &model.VM{
+						ID:      "id-2",
+						Drained: false,
+					})
+					So(err, ShouldBeNil)
+				})
 
-					Convey("active", func() {
-						datastore.Put(c, &model.VM{
-							ID:       "id",
-							Drained:  true,
-							Hostname: "name",
-						})
-						err := deleteVM(c, &tasks.DeleteVM{
-							Id: "id",
-						})
-						So(err, ShouldErrLike, "creating instance")
-						v := &model.VM{
-							ID: "id",
-						}
-						err = datastore.Get(c, v)
-						So(err, ShouldBeNil)
-						So(v.Hostname, ShouldEqual, "name")
+				Convey("non-empty", func() {
+					err := createVM(c, &tasks.CreateVM{
+						Attributes: &config.VM{
+							Disk: []*config.Disk{
+								{
+									Image: "image",
+								},
+							},
+						},
+						Index:  2,
+						Config: "id",
+					})
+					So(err, ShouldBeNil)
+					v := &model.VM{
+						ID: "id-2",
+					}
+					err = datastore.Get(c, v)
+					So(err, ShouldBeNil)
+					So(v, ShouldResemble, &model.VM{
+						ID: "id-2",
+						Attributes: config.VM{
+							Disk: []*config.Disk{
+								{
+									Image: "image",
+								},
+							},
+						},
+						Config:  "id",
+						Drained: false,
+						Index:   2,
 					})
 				})
 
-				Convey("deletes", func() {
+				Convey("not updated", func() {
 					datastore.Put(c, &model.VM{
-						ID:      "id",
+						ID: "id-2",
+						Attributes: config.VM{
+							Zone: "zone",
+						},
 						Drained: true,
 					})
-					err := deleteVM(c, &tasks.DeleteVM{
-						Id: "id",
+					err := createVM(c, &tasks.CreateVM{
+						Attributes: &config.VM{
+							Project: "project",
+						},
+						Index:  2,
+						Config: "id",
 					})
 					So(err, ShouldBeNil)
-					err = datastore.Get(c, &model.VM{
-						ID: "id",
+					v := &model.VM{
+						ID: "id-2",
+					}
+					err = datastore.Get(c, v)
+					So(err, ShouldBeNil)
+					So(v, ShouldResemble, &model.VM{
+						ID: "id-2",
+						Attributes: config.VM{
+							Zone: "zone",
+						},
+						Drained: true,
 					})
-					So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 				})
 			})
 		})
@@ -279,113 +308,6 @@ func TestQueues(t *testing.T) {
 			})
 		})
 
-		Convey("ensureVM", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
-					err := ensureVM(c, nil)
-					So(err, ShouldErrLike, "unexpected payload")
-				})
-
-				Convey("empty", func() {
-					err := ensureVM(c, &tasks.EnsureVM{})
-					So(err, ShouldErrLike, "config is required")
-				})
-			})
-
-			Convey("valid", func() {
-				Convey("nil", func() {
-					err := ensureVM(c, &tasks.EnsureVM{
-						Index:  2,
-						Config: "id",
-					})
-					So(err, ShouldBeNil)
-					err = datastore.Get(c, &model.VM{
-						ID: "id-2",
-					})
-					So(err, ShouldBeNil)
-				})
-
-				Convey("empty", func() {
-					err := ensureVM(c, &tasks.EnsureVM{
-						Attributes: &config.VM{},
-						Index:      2,
-						Config:     "id",
-					})
-					So(err, ShouldBeNil)
-					err = datastore.Get(c, &model.VM{
-						ID:      "id-2",
-						Drained: false,
-					})
-					So(err, ShouldBeNil)
-				})
-
-				Convey("non-empty", func() {
-					err := ensureVM(c, &tasks.EnsureVM{
-						Attributes: &config.VM{
-							Disk: []*config.Disk{
-								{
-									Image: "image",
-								},
-							},
-						},
-						Index:  2,
-						Config: "id",
-					})
-					So(err, ShouldBeNil)
-					v := &model.VM{
-						ID: "id-2",
-					}
-					err = datastore.Get(c, v)
-					So(err, ShouldBeNil)
-					So(v, ShouldResemble, &model.VM{
-						ID: "id-2",
-						Attributes: config.VM{
-							Disk: []*config.Disk{
-								{
-									Image: "image",
-								},
-							},
-						},
-						Config:  "id",
-						Drained: false,
-						Index:   2,
-					})
-				})
-
-				Convey("updated", func() {
-					datastore.Put(c, &model.VM{
-						ID: "id-0",
-						Attributes: config.VM{
-							Zone: "zone",
-						},
-						Drained: true,
-					})
-					err := ensureVM(c, &tasks.EnsureVM{
-						Attributes: &config.VM{
-							Project: "project",
-						},
-						Index:  2,
-						Config: "id",
-					})
-					So(err, ShouldBeNil)
-					v := &model.VM{
-						ID: "id-2",
-					}
-					err = datastore.Get(c, v)
-					So(err, ShouldBeNil)
-					So(v, ShouldResemble, &model.VM{
-						ID: "id-2",
-						Attributes: config.VM{
-							Project: "project",
-						},
-						Config:  "id",
-						Drained: false,
-						Index:   2,
-					})
-				})
-			})
-		})
-
 		Convey("expandConfig", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {
@@ -422,7 +344,7 @@ func TestQueues(t *testing.T) {
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
-				Convey("ensure", func() {
+				Convey("create", func() {
 					srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
 						Config: &config.Config{

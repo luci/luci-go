@@ -118,10 +118,7 @@ func TestDeleteBot(t *testing.T) {
 				v := &model.VM{
 					ID: "id",
 				}
-				datastore.Get(c, v)
-				So(v.Created, ShouldEqual, 0)
-				So(v.Hostname, ShouldBeEmpty)
-				So(v.URL, ShouldBeEmpty)
+				So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
 			})
 
 			Convey("deletes", func() {
@@ -142,11 +139,45 @@ func TestDeleteBot(t *testing.T) {
 				v := &model.VM{
 					ID: "id",
 				}
-				datastore.Get(c, v)
-				So(v.Created, ShouldEqual, 0)
-				So(v.Hostname, ShouldBeEmpty)
-				So(v.URL, ShouldBeEmpty)
+				So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
 			})
+		})
+	})
+}
+
+func TestDeleteVM(t *testing.T) {
+	t.Parallel()
+
+	Convey("deleteVM", t, func() {
+		c := memory.Use(context.Background())
+
+		Convey("deletes", func() {
+			datastore.Put(c, &model.VM{
+				ID:       "id",
+				Hostname: "name",
+			})
+			So(deleteVM(c, "id", "name"), ShouldBeNil)
+			v := &model.VM{
+				ID: "id",
+			}
+			So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
+		})
+
+		Convey("deleted", func() {
+			So(deleteVM(c, "id", "name"), ShouldBeNil)
+		})
+
+		Convey("replaced", func() {
+			datastore.Put(c, &model.VM{
+				ID:       "id",
+				Hostname: "name-2",
+			})
+			So(deleteVM(c, "id", "name-1"), ShouldBeNil)
+			v := &model.VM{
+				ID: "id",
+			}
+			So(datastore.Get(c, v), ShouldBeNil)
+			So(v.Hostname, ShouldEqual, "name-2")
 		})
 	})
 }
