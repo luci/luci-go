@@ -22,8 +22,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/proto/google"
-
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -38,7 +37,14 @@ func TestMintedOAuthTokenInfo(t *testing.T) {
 		epoch := time.Date(2015, time.February, 1, 2, 3, 4, 5, time.UTC)
 
 		info := MintedOAuthTokenInfo{
-			RequestedAt: epoch.Add(30 * time.Minute),
+			OAuthTokenInfo: OAuthTokenInfo{
+				RequestedAt: epoch.Add(30 * time.Minute),
+				ConfigRev:   "config-rev",
+
+				PeerIP:    net.ParseIP("127.10.10.10"),
+				RequestID: "gae-request-id",
+				AuthDBRev: 123,
+			},
 			Request: &minter.MintOAuthTokenViaGrantRequest{
 				GrantToken: "grant-token",
 				OauthScope: []string{"https://scope1", "https://scope2"},
@@ -57,13 +63,9 @@ func TestMintedOAuthTokenInfo(t *testing.T) {
 				IssuedAt:         google.NewTimestamp(epoch),
 				ValidityDuration: 3600,
 			},
-			ConfigRev: "config-rev",
 			Rule: &admin.ServiceAccountRule{
 				Name: "rule-name",
 			},
-			PeerIP:    net.ParseIP("127.10.10.10"),
-			RequestID: "gae-request-id",
-			AuthDBRev: 123,
 		}
 
 		So(info.toBigQueryMessage(), ShouldResemble, &bqpb.OAuthToken{
