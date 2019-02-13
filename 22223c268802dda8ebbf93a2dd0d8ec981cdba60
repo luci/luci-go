@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "31c31bbe_9b6b78a7",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-13T18:11:37Z",
+      "side": 1,
+      "message": "for mocking, i think we can just pass \n  \n  sleep func()\n\nhere instead of interval",
+      "range": {
+        "startLine": 60,
+        "startChar": 99,
+        "endLine": 60,
+        "endChar": 107
+      },
+      "revId": "22223c268802dda8ebbf93a2dd0d8ec981cdba60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
