@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "727ff5b6_dd081c3a",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T02:03:04Z",
+      "side": 1,
+      "message": "nit: \\n before this block.\n\nThese comments are actually understood by RPC explorer tool. See https://luci-token-server.appspot.com/rpcexplorer/services/ \n\nIIRC it takes first paragraph as the title. Paragraph separators is empty line.",
+      "range": {
+        "startLine": 133,
+        "startChar": 5,
+        "endLine": 133,
+        "endChar": 6
+      },
+      "revId": "41ba07ca603d0c46068a98634b07a7db88e37234",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -140,6 +140,30 @@
       "revId": "cf30894eb5616f4546a6d3cc97f039bb97e87a7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f946f508_4c1bec20",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T02:03:04Z",
+      "side": 1,
+      "message": "Would have been nice to document the default value (or at least its existence) then.",
+      "parentUuid": "14c3111e_4c5c8e52",
+      "range": {
+        "startLine": 439,
+        "startChar": 8,
+        "endLine": 439,
+        "endChar": 29
+      },
+      "revId": "cf30894eb5616f4546a6d3cc97f039bb97e87a7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
