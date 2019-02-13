@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "58afad95_b949b669",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T19:35:11Z",
+      "side": 1,
+      "message": "starlark.Bool",
+      "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb86b373_4357ce4a",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T19:35:11Z",
+      "side": 1,
+      "message": "bool(emitDefauls)",
+      "range": {
+        "startLine": 85,
+        "startChar": 67,
+        "endLine": 85,
+        "endChar": 79
+      },
+      "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a188cfeb_fc08a2c8",
+        "filename": "starlark/starlarkproto/testdata/to_jsonpb.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T19:35:11Z",
+      "side": 1,
+      "message": "er.. does this work? I saw this in the commit message and thought it was some sort of typo. Why not simply:\n\n  proto.to_jsonpb(m, emit_defaults\u003dTrue) ?\n\n(That\u0027s what the UnpackArgs currently expects sans bool needs to be starlark.Bool. It actually should panic with bool...).",
+      "range": {
+        "startLine": 35,
+        "startChar": 35,
+        "endLine": 35,
+        "endChar": 58
+      },
+      "revId": "d058bb7bc5b3fcfe054c1fe86be8aff9e1147f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
