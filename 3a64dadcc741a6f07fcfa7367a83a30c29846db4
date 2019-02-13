@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bd39da97_a440a5e7",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T00:36:30Z",
+      "side": 1,
+      "message": "Note: we try to limit comments to 80 chars per line otherwise continuous blobs of text are hard to read.\n(And no, there\u0027s no linter for that).\n\nIt\u0027s no big deal to keep this as is, considering it is temporary. But for proper \"long term\" code documentation, please keep lines short.",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 50
+      },
+      "revId": "3a64dadcc741a6f07fcfa7367a83a30c29846db4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c01f44e5_88e0825f",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-13T00:36:30Z",
+      "side": 1,
+      "message": "nit: please swap this lines. Stdlib imports first, then third part libraries, then \"far away\" luci-go code, then \"close by\" luci-go code.",
+      "range": {
+        "startLine": 21,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 34
+      },
+      "revId": "3a64dadcc741a6f07fcfa7367a83a30c29846db4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
