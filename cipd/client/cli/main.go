@@ -32,6 +32,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -53,7 +54,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/cipd/version/versioncmd"
 )
 
 // TODO(vadimsh): Add some tests.
@@ -2918,7 +2918,7 @@ func GetApplication(params Parameters) *cli.Application {
 
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
-			versioncmd.Version,
+			versioncli.CmdVersion(cipd.UserAgent),
 
 			// Authentication related commands.
 			{}, // These are spacers so that the commands appear in groups.

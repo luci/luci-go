@@ -23,7 +23,6 @@ import (
 	"go.starlark.net/resolve"
 
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/cipd/version/versioncmd"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -71,7 +70,7 @@ func GetApplication(params base.Parameters) *cli.Application {
 
 			subcommands.Section("Misc\n"),
 			subcommands.CmdHelp,
-			versioncmd.Version,
+			versioncli.Version(lucicfg.UserAgent),
 		},
 	}
 }
