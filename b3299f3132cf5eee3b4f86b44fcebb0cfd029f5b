@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7fcf3215_c64d0a69",
+        "filename": "buildbucket/client/cmd/buildbucket/base_command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-02-13T19:55:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a062eac_c3d26ebe",
+      "range": {
+        "startLine": 191,
+        "startChar": 14,
+        "endLine": 191,
+        "endChar": 17
+      },
+      "revId": "b3299f3132cf5eee3b4f86b44fcebb0cfd029f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa0a9e07_4bbf9a3b",
         "filename": "buildbucket/client/cmd/buildbucket/collect.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "b3299f3132cf5eee3b4f86b44fcebb0cfd029f5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "368f1c0f_6cca65d1",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-02-13T19:55:56Z",
+      "side": 1,
+      "message": "As discussed offline, the array is  pure JSON. It\u0027s the messages that it contains use JSONPB encoding.",
+      "parentUuid": "aa0a9e07_4bbf9a3b",
+      "range": {
+        "startLine": 40,
+        "startChar": 11,
+        "endLine": 40,
+        "endChar": 15
+      },
+      "revId": "b3299f3132cf5eee3b4f86b44fcebb0cfd029f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -91,6 +139,30 @@
       "revId": "b3299f3132cf5eee3b4f86b44fcebb0cfd029f5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09ebe692_74bfa464",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-02-13T19:55:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "edd53a0c_6924170d",
+      "range": {
+        "startLine": 149,
+        "startChar": 1,
+        "endLine": 149,
+        "endChar": 11
+      },
+      "revId": "b3299f3132cf5eee3b4f86b44fcebb0cfd029f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
