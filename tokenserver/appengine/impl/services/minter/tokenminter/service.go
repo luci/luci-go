@@ -21,12 +21,12 @@ import (
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certchecker"
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
+	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
 	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
-
-	"go.chromium.org/luci/tokenserver/api/minter/v1"
 )
 
 // Server implements minter.TokenMinterServer RPC interface.
@@ -38,6 +38,7 @@ type serverImpl struct {
 	delegation.MintDelegationTokenRPC
 	serviceaccounts.MintOAuthTokenGrantRPC
 	serviceaccounts.MintOAuthTokenViaGrantRPC
+	projectscope.MintProjectTokenRPC
 }
 
 // NewServer returns prod TokenMinterServer implementation.
@@ -65,6 +66,12 @@ func NewServer() minter.TokenMinterServer {
 			Rules:           serviceaccounts.GlobalRulesCache.Rules,
 			MintAccessToken: auth.MintAccessTokenForServiceAccount,
 			LogOAuthToken:   serviceaccounts.LogOAuthToken,
+		},
+		MintProjectTokenRPC: projectscope.MintProjectTokenRPC{
+			Signer:            gaesigner.Signer{},
+			MintAccessToken:   auth.MintAccessTokenForServiceAccount,
+			LogOAuthToken:     nil,
+			ProjectIdentities: nil,
 		},
 	}
 }
