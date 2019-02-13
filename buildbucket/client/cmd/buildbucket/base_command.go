@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -26,10 +27,12 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/prpc"
 )
 
 type baseCommandRun struct {
@@ -48,20 +51,32 @@ func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
 	r.authFlags.Register(&r.Flags, defaultAuthOpts)
 }
 
-func (r *baseCommandRun) createClient(ctx context.Context) (*client, error) {
+func (r *baseCommandRun) validateHost() error {
 	if r.host == "" {
-		return nil, fmt.Errorf("a host for the buildbucket service must be provided")
+		return fmt.Errorf("a host for the buildbucket service must be provided")
 	}
 	if strings.ContainsRune(r.host, '/') {
-		return nil, fmt.Errorf("invalid host %q", r.host)
+		return fmt.Errorf("invalid host %q", r.host)
 	}
+	return nil
+}
+
+func (r *baseCommandRun) createHTTPClient(ctx context.Context) (*http.Client, error) {
 	var err error
 	if r.parsedAuthOpts, err = r.authFlags.Options(); err != nil {
 		return nil, err
 	}
 
 	authenticator := auth.NewAuthenticator(ctx, auth.OptionalLogin, r.parsedAuthOpts)
-	httpClient, err := authenticator.Client()
+	return authenticator.Client()
+}
+
+func (r *baseCommandRun) newLegacyClient(ctx context.Context) (*legacyClient, error) {
+	if err := r.validateHost(); err != nil {
+		return nil, err
+	}
+
+	httpClient, err := r.createHTTPClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +86,7 @@ func (r *baseCommandRun) createClient(ctx context.Context) (*client, error) {
 		protocol = "http"
 	}
 
-	return &client{
+	return &legacyClient{
 		HTTP: httpClient,
 		baseURL: &url.URL{
 			Scheme: protocol,
@@ -79,6 +94,32 @@ func (r *baseCommandRun) createClient(ctx context.Context) (*client, error) {
 			Path:   "/_ah/api/buildbucket/v1/",
 		},
 	}, nil
+}
+
+func (r *baseCommandRun) newClient(ctx context.Context) (buildbucketpb.BuildsClient, error) {
+	if err := r.validateHost(); err != nil {
+		return nil, err
+	}
+
+	httpClient, err := r.createHTTPClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := prpc.DefaultOptions()
+	opts.Insecure = lhttp.IsLocalHost(r.host)
+
+	info, err := version.GetCurrentVersion()
+	if err != nil {
+		return nil, err
+	}
+	opts.UserAgent = fmt.Sprintf("buildbucket CLI, instanceID=%q", info.InstanceID)
+
+	return buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
+		C:       httpClient,
+		Host:    r.host,
+		Options: opts,
+	}), nil
 }
 
 func (r *baseCommandRun) done(ctx context.Context, err error) int {
@@ -91,7 +132,7 @@ func (r *baseCommandRun) done(ctx context.Context, err error) int {
 
 // callAndDone makes a buildbucket API call, prints error or response, and returns exit code.
 func (r *baseCommandRun) callAndDone(ctx context.Context, method, relURL string, body interface{}) int {
-	client, err := r.createClient(ctx)
+	client, err := r.newLegacyClient(ctx)
 	if err != nil {
 		return r.done(ctx, err)
 	}

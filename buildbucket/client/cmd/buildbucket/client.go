@@ -30,14 +30,14 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-type client struct {
+type legacyClient struct {
 	HTTP    *http.Client
 	baseURL *url.URL
 }
 
 // call makes an HTTP call with exponential back-off on transient errors.
 // if urlStr is relative, rebases it on c.baseURL.
-func (c *client) call(ctx context.Context, method, urlStr string, body interface{}) (response []byte, err error) {
+func (c *legacyClient) call(ctx context.Context, method, urlStr string, body interface{}) (response []byte, err error) {
 	if !c.baseURL.IsAbs() {
 		panic("baseURL is not absolute")
 	}
