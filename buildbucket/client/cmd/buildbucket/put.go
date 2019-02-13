@@ -89,7 +89,7 @@ func (r *putBatchRun) Run(a subcommands.Application, args []string, env subcomma
 		return r.done(ctx, err)
 	}
 
-	client, err := r.createClient(ctx)
+	client, err := r.newLegacyClient(ctx)
 	if err != nil {
 		return r.done(ctx, err)
 	}
