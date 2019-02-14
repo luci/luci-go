@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "357983f7_fe97e7c6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 515,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T05:14:22Z",
+      "side": 1,
+      "message": "I\u0027m not sure about this. Is there are use case to ALLOW repeating same builder in a list or a console?",
+      "range": {
+        "startLine": 515,
+        "startChar": 6,
+        "endLine": 515,
+        "endChar": 58
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b18b278_a32dd879",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 546,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T05:14:22Z",
+      "side": 1,
+      "message": "I\u0027m not sure Milo understands short bucket names...",
+      "range": {
+        "startLine": 546,
+        "startChar": 8,
+        "endLine": 546,
+        "endChar": 18
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
