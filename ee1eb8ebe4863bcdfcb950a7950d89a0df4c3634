@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "29f74600_b9bfefc3",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T19:14:01Z",
+      "side": 1,
+      "message": "From UI perspective it would be nicer to be able to see non-criticallity of a build while it is still running (I assume this flag is available pretty early in the build process).\n\nMaybe there\u0027s a way to move it into the build portion updated by UpdateBuild?",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "ee1eb8ebe4863bcdfcb950a7950d89a0df4c3634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
