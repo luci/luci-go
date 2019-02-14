@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6a41bc67_d1f8a298",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-14T23:12:02Z",
+      "side": 1,
+      "message": "removed",
+      "parentUuid": "8c3771ce_8484a67a",
+      "range": {
+        "startLine": 9,
+        "startChar": 9,
+        "endLine": 9,
+        "endChar": 93
+      },
+      "revId": "ee1eb8ebe4863bcdfcb950a7950d89a0df4c3634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29f74600_b9bfefc3",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 4
@@ -69,6 +93,30 @@
       "revId": "ee1eb8ebe4863bcdfcb950a7950d89a0df4c3634",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ec91cf5_a47d6175",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-14T23:12:02Z",
+      "side": 1,
+      "message": "+1 to what Robbie said. UI will update as soon as recipe sets this value",
+      "parentUuid": "f80af32e_8fe49a50",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "ee1eb8ebe4863bcdfcb950a7950d89a0df4c3634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
