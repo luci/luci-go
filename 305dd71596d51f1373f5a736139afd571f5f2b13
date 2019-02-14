@@ -232,6 +232,24 @@
     },
     {
       "key": {
+        "uuid": "3b751d65_552aae3b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:58:30Z",
+      "side": 1,
+      "message": "Fine, removed it. I\u0027ll refer to you if people start complaining :)",
+      "parentUuid": "b45d78b7_5d24f449",
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "839a7cf7_2b3b7b1f",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view_entry.star",
         "patchSetId": 4
