@@ -142,14 +142,16 @@ func (n *Node) listParents() []*Node {
 // String is a part of starlark.Value interface.
 //
 // Returns a node title as derived from the kind of last component of its key
-// and IDs of all key components. It's not 1-to-1 mapping to the full
-// information in the key, but usually "unique enough" to identify the node in
-// error messages.
+// and IDs of all key components whose kind doesn't start with '_'. It's not
+// 1-to-1 mapping to the full information in the key, but usually good enough to
+// identify the node in error messages.
 func (n *Node) String() string {
 	ids := make([]string, 0, 5) // overestimate
 	p := n.Key
 	for p != nil {
-		ids = append(ids, p.ID())
+		if !strings.HasPrefix(p.Kind(), "_") {
+			ids = append(ids, p.ID())
+		}
 		p = p.Container()
 	}
 	for l, r := 0, len(ids)-1; l < r; l, r = l+1, r-1 {
