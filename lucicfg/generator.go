@@ -13,6 +13,12 @@
 // limitations under the License.
 
 // Package lucicfg contains LUCI config generator.
+//
+// All Starlark code is executed sequentially in a single goroutine from inside
+// Generate function, thus this package doesn't used any mutexes or other
+// synchronization primitives. It is safe to call Generate concurrently though,
+// since there's no global shared state, each Generate call operates on its
+// own state.
 package lucicfg
 
 import (
