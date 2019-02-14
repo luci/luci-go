@@ -19,7 +19,7 @@ load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/time.star', 'time')
 
-load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'triggerer')
+load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'kinds', 'triggerer')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
 load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
@@ -27,6 +27,7 @@ load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
 load('@proto//luci/buildbucket/project_config.proto', buildbucket_pb='buildbucket')
 load('@proto//luci/config/project_config.proto', config_pb='config')
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
+load('@proto//luci/milo/project_config.proto', milo_pb='milo')
 load('@proto//luci/scheduler/project_config.proto', scheduler_pb='scheduler.config')
 
 
@@ -36,6 +37,7 @@ def register():
   lucicfg.generator(impl = gen_logdog_cfg)
   lucicfg.generator(impl = gen_buildbucket_cfg)
   lucicfg.generator(impl = gen_scheduler_cfg)
+  lucicfg.generator(impl = gen_milo_cfg)
 
 
 ################################################################################
@@ -455,3 +457,91 @@ def _scheduler_acls(elementary):
       )
       for a in filter_acls(elementary, _scheduler_roles.keys())
   ]
+
+
+################################################################################
+## milo.cfg.
+
+
+# TODO(vadimsh): Add consoles support.
+# TODO(vadimsh): Add headers support.
+# TODO(vadimsh): Add build_bug_template support.
+
+
+def gen_milo_cfg(ctx):
+  """Generates milo.cfg."""
+  views = graph.children(keys.project(), kinds.LIST_VIEW)
+  if not views:
+    return
+
+  milo_node = graph.node(keys.milo())
+  opts = struct(
+      logo = milo_node.props.logo if milo_node else None,
+      favicon = milo_node.props.favicon if milo_node else None,
+  )
+
+  project = get_project()
+  milo = get_service('milo', 'using list or console views')
+
+  ctx.config_set[milo.cfg_file] = milo_pb.Project(
+      logo_url = opts.logo,
+      consoles = [
+          _milo_list_view(view, opts, project.props.name)
+          for view in views
+      ],
+  )
+
+
+def _milo_list_view(view, opts, project_name):
+  """Given a LIST_VIEW node produces milo_pb.Console."""
+
+  entries = []
+  seen = {}  # BUILDER key -> LIST_VIEW_ENTRY node that added it.
+
+  for e in graph.children(view.key, kinds.LIST_VIEW_ENTRY, order_by=graph.DEFINITION_ORDER):
+    # Note: this is a one-item list for regular entries and an empty list for
+    # entries that have only deprecated Buildbot references. Other cases are
+    # impossible per list_view_entry implementation.
+    refs = graph.children(e.key, kinds.BUILDER_REF)
+    if len(refs) > 1:
+      fail('impossible result %s' % (refs,))
+
+    # ['buildbucket/...', 'buildbot/...'].
+    names = []
+
+    if refs:
+      builder = builder_ref.follow(refs[0], context_node=e)
+
+      # Adding a builder to the view twice is not allowed.
+      if builder.key in seen:
+        error(
+            'builder %s was already added to %s, previous declaration:\n%s' %
+            (builder, view, seen[builder.key].trace),
+            trace=e.trace)
+        continue
+      seen[builder.key] = e
+
+      names.append('buildbucket/%s/%s' % (
+          _milo_bucket_name(builder.props.bucket, project_name),
+          builder.props.name,
+      ))
+
+    if e.props.buildbot:
+      names.append('buildbot/%s' % e.props.buildbot)
+
+    entries.append(milo_pb.Builder(name = names))
+
+  return milo_pb.Console(
+      id = view.props.name,
+      name = view.props.title,
+      repo_url = view.props.repo,
+      favicon_url = view.props.favicon or opts.favicon,
+      builder_view_only = True,
+      builders = entries,
+  )
+
+
+def _milo_bucket_name(bucket_name, project_name):
+  """Prefixes the bucket name with `luci.<project>.` if necessary."""
+  pfx = 'luci.%s.' % project_name
+  return bucket_name if bucket_name.startswith(pfx) else pfx + bucket_name
