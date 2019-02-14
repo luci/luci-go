@@ -34,6 +34,24 @@
       "revId": "300b7b0719c27685ff9001383264e780c4eeba82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b82104e_ee31de51",
+        "filename": "lucicfg/sequence.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T01:18:02Z",
+      "side": 1,
+      "message": "Added comment to State and to the lucicfg package doc.",
+      "parentUuid": "3fb27214_8d1ddbf0",
+      "revId": "300b7b0719c27685ff9001383264e780c4eeba82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
