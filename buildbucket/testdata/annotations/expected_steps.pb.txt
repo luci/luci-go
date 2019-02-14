@@ -82,6 +82,8 @@ steps: <
 steps: <
   name: "other links url"
   summary_markdown: <<END
+some text here
+
 * [1](https://example.com/1)
 * [2](https://example.com/2)
 END
