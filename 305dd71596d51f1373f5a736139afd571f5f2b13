@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ca00df1d_17e1477b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:06:54Z",
+      "side": 1,
+      "message": "This will likely change when/if we support multiple projects within single config tree.",
+      "parentUuid": "ea7b8540_9028b66e",
+      "range": {
+        "startLine": 102,
+        "startChar": 48,
+        "endLine": 102,
+        "endChar": 51
+      },
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0870632d_b15293f1",
         "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
         "patchSetId": 4
@@ -36,6 +60,30 @@
       "writtenOn": "2019-02-14T22:25:23Z",
       "side": 1,
       "message": "now that I look at the usage, i don\u0027t understand why kind is needed here. Nobody is going to look at these numbers anyway",
+      "range": {
+        "startLine": 132,
+        "startChar": 71,
+        "endLine": 132,
+        "endChar": 75
+      },
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a80a8cd_71c4090f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:06:54Z",
+      "side": 1,
+      "message": "Need something to pass to sequence.next(...). Why not kind. As you noticed, it doesn\u0027t really matter.\n\n(And I didn\u0027t want to make global parameterless sequence.next()).",
+      "parentUuid": "0870632d_b15293f1",
       "range": {
         "startLine": 132,
         "startChar": 71,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "099bac7e_035c4c7e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:06:54Z",
+      "side": 1,
+      "message": "They still need to refer to it in luci.project(...) and luci.milo(...). I think it is fine. If we follow this logic we should also stop using names Logdog and Buildbucket, which will be hard.",
+      "parentUuid": "58537c1c_ba0a517e",
+      "range": {
+        "startLine": 29,
+        "startChar": 7,
+        "endLine": 29,
+        "endChar": 11
+      },
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "41167392_520bb75d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view.star",
         "patchSetId": 4
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "3c62b30e_ca1399f9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:06:54Z",
+      "side": 1,
+      "message": "They do: https://screenshot.googleplex.com/2uN8UTm30Ho.png",
+      "parentUuid": "41167392_520bb75d",
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "839a7cf7_2b3b7b1f",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view_entry.star",
         "patchSetId": 4
@@ -102,6 +192,24 @@
       "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "906e093b_b8157f20",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view_entry.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:06:54Z",
+      "side": 1,
+      "message": "Considered. As I replied to Andrii, I don\u0027t want to block lucicfg deployment on full migration off Buildbot, considering extra cost to support Buildbot view is like only 40 lines of code.\n\nBuildbot support is very rudimentary though, there a no extra checks or anything (precisely because it is very deprecated case).",
+      "parentUuid": "839a7cf7_2b3b7b1f",
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -125,6 +233,30 @@
       "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31951e4e_9e473723",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view_entry.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:06:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fd8be621_448a3a2c",
+      "range": {
+        "startLine": 82,
+        "startChar": 12,
+        "endLine": 82,
+        "endChar": 15
+      },
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
