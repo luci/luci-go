@@ -96,6 +96,7 @@ substep: <
 substep: <
   step: <
     name: "other links url"
+    text: "some text here"
     other_links: <
       label: "1"
       url: "https://example.com/1"

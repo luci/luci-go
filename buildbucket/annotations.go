@@ -104,13 +104,6 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 		summary = append(summary, fd.Text)
 	}
 
-	// Handle logs.
-	logs, lines := p.convertLinks(c, ann)
-	bb.Logs = logs
-	if len(lines) > 0 {
-		summary = append(summary, strings.Join(lines, "\n"))
-	}
-
 	// Handle text. Below description copied from
 	// https://cs.chromium.org/chromium/infra/appengine/cr-buildbucket/annotations.py?l=85&rcl=ec46b5a76fd9948d43a9116051435cbccafa12f1.
 	// Although annotation.proto says each line in step_text is a consecutive
@@ -122,6 +115,13 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 	// HTML is valid Markdown, so use it as is.
 	if len(ann.Text) > 0 {
 		summary = append(summary, strings.Join(ann.Text, " "))
+	}
+
+	// Handle logs.
+	logs, lines := p.convertLinks(c, ann)
+	bb.Logs = logs
+	if len(lines) > 0 {
+		summary = append(summary, strings.Join(lines, "\n"))
 	}
 
 	// Put completed summary into current step.
