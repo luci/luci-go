@@ -43,44 +43,27 @@ message HwTestCfg {
     string suite = 1;
     // Number of seconds to wait before timing out waiting for results.
     int32 timeout_sec = 2;
-    // Pool to use for hw testing.
-    string pool = 3;
-    // Setting this to true requires that this suite must PASS for suites
-    // scheduled after it to run. This also means any suites that are
-    // scheduled before a blocking one are also blocking ones scheduled
-    // after. This should be used when you want some suites to block
-    // whether or not others should run e.g. only run longer-running
-    // suites if some core ones pass first.
-
-    // Note, if you want multiple suites to block other suites but run
-    // in parallel, you should only mark the last one scheduled as
-    // blocking (it effectively serves as a thread/process join).
-    bool blocking = 4;
-    // Fire-and-forget suite.
-    bool async = 5;
     // Failure on HW tests warns only (does not generate error).
-    bool warn_only = 6;
+    bool warn_only = 3;
     // Usually we consider structural failures here as OK.
-    bool critical = 7;
-    // Priority at which tests in the suite will be scheduled in the hw lab.
-    string priority = 8;
+    bool critical = 4;
     // Should we file bugs if a test fails in a suite run.
-    bool file_bugs = 9;
+    bool file_bugs = 5;
     // Minimum number of DUTs required for testing in the hw lab.
-    int32 minimum_duts = 10;
+    int32 minimum_duts = 6;
     // Whether we should retry tests that fail in a suite run.
-    bool retry = 11;
+    bool retry = 7;
     // Maximum job retries allowed at suite level. 0 for no max.
-    int32 max_retries = 12;
+    int32 max_retries = 8;
     // Preferred minimum duts. Lab will prioritize on getting such
     // number of duts even if the suite is competing with
     // other suites that have higher priority.
-    int32 suite_min_duts = 13;
+    int32 suite_min_duts = 9;
     // Only offload failed tests to Google Storage.
-    bool offload_failures_only = 14;
+    bool offload_failures_only = 10;
     // TODO(crbug.com/923001): Do we need suite_args here? Possibly not, since
     // they only seem to be used for the hardware provisioning step.
-    // http://cs/chromeos_public/chromite/lib/config_lib.py?l=512-514&rcl=dbec33e55f7acef520a56e1d2b4aa832311a9b13
+    // https://cs.chromium.org/chromium/src/third_party/chromite/lib/config_lib.py?l=512-514&rcl=aea01e37674869d75cf26c8a826195b4dd6a890b
   }
 
   repeated HwTest hw_test = 1;
@@ -95,6 +78,25 @@ message MoblabVmTestCfg {
   }
 
   repeated MoblabTest moblab_test = 1;
+}
+
+message TastVmTestCfg {
+  message TastTestExpr {
+    // A single tast test expression. See https://goo.gl/UPNEgT
+    string test_expr = 1;
+  }
+  message TastVmTest {
+    // String containing short human-readable name describing test suite.
+    string suite_name = 1;
+    // List of string expressions describing which tests to run; this
+    // is passed directly to the 'tast run' command. See
+    // https://goo.gl/UPNEgT for info about test expressions.
+    repeated TastTestExpr tast_test_expr = 2;
+    // Number of seconds to wait before timing out waiting for results.
+    int32 timeout_sec = 3;
+  }
+
+  repeated TastVmTest tast_vm_test = 1;
 }
 
 message VmTestCfg {
@@ -116,23 +118,6 @@ message VmTestCfg {
   }
 
   repeated VmTest vm_test = 1;
-
-  message TastTestExpr {
-    // A single tast test expression. See https://goo.gl/UPNEgT
-    string test_expr = 1;
-  }
-  message TastVmTest {
-    // String containing short human-readable name describing test suite.
-    string suite_name = 1;
-    // List of string expressions describing which tests to run; this
-    // is passed directly to the 'tast run' command. See
-    // https://goo.gl/UPNEgT for info about test expressions.
-    repeated TastTestExpr tast_test_expr = 2;
-    // Number of seconds to wait before timing out waiting for results.
-    int32 timeout_sec = 3;
-  }
-
-  repeated TastVmTest tast_vm_test = 2;
 }
 
 
@@ -159,6 +144,7 @@ message PerTargetTestRequirements {
   GceTestCfg gce_test_cfg = 2;
   HwTestCfg hw_test_cfg = 3;
   MoblabVmTestCfg moblab_vm_test_cfg = 4;
+  TastVmTestCfg tast_vm_test_cfg = 6;
   VmTestCfg vm_test_cfg = 5;
 }
 
