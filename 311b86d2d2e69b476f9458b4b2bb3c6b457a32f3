@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "4da78281_d0533f94",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T20:27:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8efc0e4_142fb071",
+      "range": {
+        "startLine": 13,
+        "startChar": 16,
+        "endLine": 13,
+        "endChar": 20
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d805bdc_1f4a7eb9",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -68,6 +92,30 @@
       "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72b3f521_31c74ac3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T20:27:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d805bdc_1f4a7eb9",
+      "range": {
+        "startLine": 17,
+        "startChar": 6,
+        "endLine": 17,
+        "endChar": 16
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "39e53138_d41e8528",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T20:27:51Z",
+      "side": 1,
+      "message": "There are still Buildbot-only builder lists in chromium/src. I would also need this mechanism for equivalent builder in console. So I prefer to have it here too.\n\nNote that I don\u0027t want to block lucicfg deployment on full migration off Buildbot, considering extra cost to support Buildbot view is like only 40 lines of code.",
+      "parentUuid": "318370e5_f21795e2",
+      "range": {
+        "startLine": 18,
+        "startChar": 6,
+        "endLine": 18,
+        "endChar": 41
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30244457_2ea2d042",
         "filename": "lucicfg/doc/README.md",
         "patchSetId": 1
@@ -114,6 +186,30 @@
       "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d97c33e4_99475d82",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 366,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T20:27:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30244457_2ea2d042",
+      "range": {
+        "startLine": 366,
+        "startChar": 24,
+        "endLine": 366,
+        "endChar": 25
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "78dd7c72_6bae7f07",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T20:27:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66d29230_b1ffb619",
+      "range": {
+        "startLine": 79,
+        "startChar": 32,
+        "endLine": 79,
+        "endChar": 33
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c376d1d9_40f294c6",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
@@ -160,6 +280,30 @@
       "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0586279d_42c7197f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T20:27:51Z",
+      "side": 1,
+      "message": "This code has been refactored in the next patchset.",
+      "parentUuid": "c376d1d9_40f294c6",
+      "range": {
+        "startLine": 501,
+        "startChar": 6,
+        "endLine": 501,
+        "endChar": 7
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -207,6 +351,30 @@
       "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "420de3bf_7b029d13",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 515,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T20:27:51Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "88c6bd51_ab5dd2fc",
+      "range": {
+        "startLine": 515,
+        "startChar": 6,
+        "endLine": 515,
+        "endChar": 58
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
