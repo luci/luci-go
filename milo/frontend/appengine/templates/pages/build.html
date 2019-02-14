@@ -96,7 +96,7 @@
       </ul>
       <div id="overview-tab">
         {{ template "overview" . }}
-        {{ template "properties" . }}
+        {{ template "attributes" . }}
         {{ template "changes" . }}
       </div>
       <div id="timeline-tab" style="display: none;">{{ template "timeline_tab" . }}</div>
@@ -215,17 +215,18 @@
 {{end}}
 
 
-{{define "properties"}}
-<div id="properties" class="column">
-  <h2>Input Properties</h2>{{ template "properties_table" .BuildPage.InputProperties }}
-  <h2>Output Properties</h2>{{ template "properties_table" .BuildPage.OutputProperties }}
+{{define "attributes"}}
+<div id="attributes" class="column">
+  <h2>Tags</h2>{{ template "kv_table" .BuildPage.Build.GetTags }}
+  <h2>Input Properties</h2>{{ template "kv_table" .BuildPage.InputProperties }}
+  <h2>Output Properties</h2>{{ template "kv_table" .BuildPage.OutputProperties }}
 </div>
 {{end}}
 
 
-{{define "properties_table"}}
+{{define "kv_table"}}
   {{ with . }}
-    <table class="info BuildProperties" width="100%">
+    <table class="info KVTable" width="100%">
     <tr><th>Name</th><th>Value</th></tr>
     {{ range . }}
       <tr>
@@ -234,6 +235,8 @@
       </tr>
     {{ end }}
     </table>
+  {{ else }}
+    <div>N/A</div>
   {{ end }}
 {{end}}
 
