@@ -74,14 +74,6 @@ var (
 		"The number of Butler bundle entries pulled.",
 		nil,
 		field.String("stream"))
-	// tsBundleEntryLogs tracks the number of LogEntry ingested per bundle.
-	//
-	// The "stream" field is the type of log stream.
-	tsBundleEntryLogs = metric.NewCumulativeDistribution("logdog/collector/bundle/entry/logs",
-		"The number of log entries per bundle.",
-		nil,
-		distribution.DefaultBucketer,
-		field.String("stream"))
 	tsBundleEntryProcessingTime = metric.NewCumulativeDistribution("logdog/collector/bundle/entry/processing_time_ms",
 		"The amount of time in milliseconds that a bundle entry takes to process.",
 		&tsmon_types.MetricMetadata{Units: tsmon_types.Milliseconds},
@@ -432,7 +424,7 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 					return err
 				}
 
-				tsLogs.Add(ctx, int64(len(logData)), streamTypeField)
+				tsLogs.Add(ctx, int64(len(logData)))
 				return nil
 			}
 		}
