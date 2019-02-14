@@ -214,6 +214,24 @@
     },
     {
       "key": {
+        "uuid": "b45d78b7_5d24f449",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-14T23:17:47Z",
+      "side": 1,
+      "message": "i mean, yeah, it happens to be there because builder lists were made on top of consoles and because milo abstractions is a mess, but repo still makes no sense in list view",
+      "parentUuid": "7007dc79_0ae3b357",
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "839a7cf7_2b3b7b1f",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view_entry.star",
         "patchSetId": 4
