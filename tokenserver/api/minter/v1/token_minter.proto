@@ -130,6 +130,7 @@ service TokenMinter {
 
   // MintProjectToken mints an OAuth2 identity token that represents an identity
   // associated with a LUCI project.
+  //
   // Project-scoped tokens prevent accidental cross-project identity confusion
   // when LUCI services access project specific resources such as a source code
   // repository.
