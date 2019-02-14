@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -51,7 +51,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		max_grant_validity_duration: 7200
 	}`)
 
-	var loggedInfo *MintedOAuthTokenInfo
+	loggedInfo := &MintedOAuthTokenInfo{}
 	var lastMintParams auth.MintAccessTokenParams
 	rpc := MintOAuthTokenViaGrantRPC{
 		Signer: testingSigner(),
@@ -65,8 +65,8 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 				Expiry:      clock.Now(ctx).Add(time.Hour),
 			}, nil
 		},
-		LogOAuthToken: func(c context.Context, i *MintedOAuthTokenInfo) error {
-			loggedInfo = i
+		LogOAuthToken: func(c context.Context, i LoggableOAuthTokenInfo) error {
+			loggedInfo = i.(*MintedOAuthTokenInfo)
 			return nil
 		},
 	}
@@ -104,14 +104,16 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		So(loggedInfo.GrantBody, ShouldResembleProto, grantBody)
 		loggedInfo.GrantBody = nil
 		So(loggedInfo, ShouldResemble, &MintedOAuthTokenInfo{
-			RequestedAt: testclock.TestTimeUTC,
-			Request:     req,
-			Response:    resp,
-			ConfigRev:   "fake-revision",
-			Rule:        rules.rulesPerAcc["serviceaccount@robots.com"].Rule,
-			PeerIP:      net.ParseIP("127.10.10.10"),
-			RequestID:   "gae-request-id",
-			AuthDBRev:   1234,
+			OAuthTokenInfo: OAuthTokenInfo{
+				RequestedAt: testclock.TestTimeUTC,
+				ConfigRev:   "fake-revision",
+				PeerIP:      net.ParseIP("127.10.10.10"),
+				RequestID:   "gae-request-id",
+				AuthDBRev:   1234,
+			},
+			Request:  req,
+			Response: resp,
+			Rule:     rules.rulesPerAcc["serviceaccount@robots.com"].Rule,
 		})
 	})
 
