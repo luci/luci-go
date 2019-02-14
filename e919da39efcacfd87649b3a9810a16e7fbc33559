@@ -1,0 +1,234 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "390ac8bc_ac8503e5",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "does it have to be public?",
+      "range": {
+        "startLine": 84,
+        "startChar": 30,
+        "endLine": 84,
+        "endChar": 31
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc1fc154_932308b1",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "This does nothing, just prepares a context. Use logging.WithError(err).Errorf(c, \"Invalid request\")",
+      "range": {
+        "startLine": 132,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 24
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "badb4647_f9ba9cf9",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "This is unnecessary, there\u0027s a way to mock auth state globally for the tests, so all IsMember calls see same mocked state. See https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/server/auth/authtest/state.go?q\u003dauthtest.+lang:go\u0026sq\u003dpackage:chromium\u0026dr\u003dC\u0026l\u003d27",
+      "range": {
+        "startLine": 143,
+        "startChar": 16,
+        "endLine": 143,
+        "endChar": 32
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b2fddff_7a5788ff",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "errors returned by gRPC/pRPC handler MUST be raw status.Errorf(...), otherwise gRPC/pRPC layer doesn\u0027t know how to convert them to RPC status codes.",
+      "range": {
+        "startLine": 150,
+        "startChar": 14,
+        "endLine": 150,
+        "endChar": 34
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cf30b41_e622e1a3",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "maybe just reject such requests in validateRequest?",
+      "range": {
+        "startLine": 162,
+        "startChar": 23,
+        "endLine": 162,
+        "endChar": 44
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7a518f5_818170a4",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "Errorf already accepts format string and args for it (as implied by \u0027f\u0027)",
+      "range": {
+        "startLine": 170,
+        "startChar": 45,
+        "endLine": 170,
+        "endChar": 57
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "046e1684_4c378527",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "nit: time.Second * time.Duration(req.MinValidityDuration)",
+      "range": {
+        "startLine": 182,
+        "startChar": 18,
+        "endLine": 182,
+        "endChar": 77
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4aa10507_686327b7",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/oauth_token_bigquery_log.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "This is irrelevant for project scoped accounts, we need revision of projects.cfg used to \"import\" the service account. It can stored in the datastore alongside service account name.",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 67
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af65eefe_08f7e513",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/oauth_token_bigquery_log.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "I think we either need to move project scoped accounts to its own BigQuery table, or add a new field to OAuthToken that specifies what kind of token is this (project scoped account or task service account).\n\nConsidering many existing fields of OAuthToken make no sense for project scoped accounts, I think we need a new table (and implementation in its own *.go file, I\u0027m not a fan of mingling these two use cases together).\n\nIf you prefer, you can leave BQ logging out of the scope for now and add it later.",
+      "range": {
+        "startLine": 79,
+        "startChar": 51,
+        "endLine": 79,
+        "endChar": 61
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2ae8c4d_d5aa5e6a",
+        "filename": "tokenserver/appengine/impl/services/minter/tokenminter/service.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T23:50:34Z",
+      "side": 1,
+      "message": "nit: use of aliases for package in go is reserved for cases when there are conflicts or the package name is too generic or ambigious. \u0027projectscope\u0027 is good enough on its own, no need to rename it into \u0027projectscroptutils\u0027.",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 18
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
