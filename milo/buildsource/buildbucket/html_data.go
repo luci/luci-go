@@ -27,7 +27,7 @@ import (
 
 // TestCases are the list of known mock data.
 // We put this here instead of _test.go to allow for debug data in dev instances.
-var TestCases = []string{"linux-rel", "MacTests"}
+var TestCases = []string{"linux-rel", "MacTests", "scheduled"}
 
 // GetTestBuild returns a debug build from testdata.
 func GetTestBuild(c context.Context, relDir, name string) (*buildbucketpb.Build, error) {

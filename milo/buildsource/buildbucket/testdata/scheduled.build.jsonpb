@@ -1,0 +1,156 @@
+{
+  "status": "SCHEDULED",
+  "updateTime": "2019-01-30T23:56:11.481378Z",
+  "builder": {
+    "project": "chromium",
+    "builder": "mac-rel",
+    "bucket": "try"
+  },
+  "number": 5963,
+  "id": "8922862144121312624",
+  "createdBy": "user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com",
+  "input": {
+    "properties": {
+      "category": "cq",
+      "buildnumber": 5963.0,
+      "patch_set": 3.0,
+      "patch_gerrit_url": "https://chromium-review.googlesource.com",
+      "repository": "https://chromium.googlesource.com/chromium/src",
+      "patch_repository_url": "https://chromium.googlesource.com/chromium/src",
+      "buildername": "mac-rel",
+      "mastername": "tryserver.chromium.mac",
+      "patch_issue": 1447158.0,
+      "patch_storage": "gerrit",
+      "$recipe_engine/runtime": {
+        "is_experimental": false,
+        "is_luci": true
+      },
+      "buildbucket": {
+        "hostname": "cr-buildbucket.appspot.com",
+        "build": {
+          "created_ts": 1548892566525946.0,
+          "tags": [
+            "build_address:luci.chromium.try/mac-rel/5963",
+            "builder:mac-rel",
+            "buildset:patch/gerrit/chromium-review.googlesource.com/1447158/3",
+            "cq_experimental:false",
+            "user_agent:cq"
+          ],
+          "bucket": "luci.chromium.try",
+          "created_by": "user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com",
+          "project": "chromium",
+          "id": "8922862144121312624"
+        }
+      },
+      "attempt_start_ts": 1548892530000000.0,
+      "$kitchen": {
+        "devshell": true,
+        "git_auth": true
+      },
+      "patch_ref": "refs/changes/58/1447158/3",
+      "$recipe_engine/buildbucket": {
+        "build": {
+          "tags": [
+            {
+              "key": "builder",
+              "value": "mac-rel"
+            },
+            {
+              "key": "buildset",
+              "value": "patch/gerrit/chromium-review.googlesource.com/1447158/3"
+            },
+            {
+              "key": "cq_experimental",
+              "value": "false"
+            },
+            {
+              "key": "user_agent",
+              "value": "cq"
+            }
+          ],
+          "builder": {
+            "project": "chromium",
+            "builder": "mac-rel",
+            "bucket": "try"
+          },
+          "number": 5963.0,
+          "createTime": "2019-01-30T23:56:06.525946Z",
+          "infra": {
+            "buildbucket": {
+              "serviceConfigRevision": "01134cf47e8a2d5d7cea5ec1232ca64ed2f16a5c"
+            },
+            "swarming": {
+              "hostname": "chromium-swarm.appspot.com"
+            },
+            "recipe": {
+              "name": "chromium_trybot",
+              "cipdPackage": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build"
+            }
+          },
+          "createdBy": "user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com",
+          "input": {
+            "gerritChanges": [
+              {
+                "project": "chromium/src",
+                "host": "chromium-review.googlesource.com",
+                "patchset": "3",
+                "change": "1447158"
+              }
+            ]
+          },
+          "id": "8922862144121312624"
+        }
+      },
+      "reason": "CQ",
+      "blamelist": [
+        "gyuyoung@igalia.com"
+      ],
+      "$build/goma": {
+        "jobs": 150.0
+      },
+      "patch_project": "chromium/src",
+      "revision": "HEAD"
+    },
+    "gerritChanges": [
+      {
+        "project": "chromium/src",
+        "host": "chromium-review.googlesource.com",
+        "patchset": "3",
+        "change": "1447158"
+      }
+    ]
+  },
+  "infra": {
+    "buildbucket": {
+      "serviceConfigRevision": "01134cf47e8a2d5d7cea5ec1232ca64ed2f16a5c",
+      "requestedProperties": {
+        "category": "cq",
+        "patch_set": 3.0,
+        "patch_gerrit_url": "https://chromium-review.googlesource.com",
+        "patch_repository_url": "https://chromium.googlesource.com/chromium/src",
+        "patch_ref": "refs/changes/58/1447158/3",
+        "patch_storage": "gerrit",
+        "attempt_start_ts": 1548892530000000.0,
+        "patch_issue": 1447158.0,
+        "reason": "CQ",
+        "patch_project": "chromium/src",
+        "revision": "HEAD"
+      }
+    },
+    "recipe": {
+      "name": "chromium_trybot",
+      "cipdPackage": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build"
+    },
+    "swarming": {
+      "hostname": "chromium-swarm.appspot.com",
+      "taskId": "42ba0286a65eff10",
+      "taskServiceAccount": "chromium-try-builder@chops-service-accounts.iam.gserviceaccount.com"
+    },
+    "logdog": {
+      "project": "chromium",
+      "prefix": "buildbucket/cr-buildbucket.appspot.com/8922862144121312624",
+      "hostname": "logs.chromium.org"
+    }
+  },
+  "createTime": "2019-01-30T23:56:06.525946Z"
+}
