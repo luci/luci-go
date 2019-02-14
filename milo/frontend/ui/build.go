@@ -159,8 +159,9 @@ func (bp *BuildPage) HumanStatus() string {
 }
 
 type property struct {
-	// Key is the key of the property relative to a build.
-	Key string
+	// Name is the name of the property relative to a build.
+	// Note: We call this a "Name" not a "Key", since this was the term used in BuildBot.
+	Name string
 	// Value is a JSON string of the value.
 	Value string
 }
@@ -183,20 +184,20 @@ func properties(props *structpb.Struct) []property {
 		panic(err) // This shouldn't happen.
 	}
 
-	// Sort the keys.
-	keys := make([]string, 0, len(jsonProps))
-	for k := range jsonProps {
-		keys = append(keys, k)
+	// Sort the names.
+	names := make([]string, 0, len(jsonProps))
+	for n := range jsonProps {
+		names = append(names, n)
 	}
-	sort.Strings(keys)
+	sort.Strings(names)
 
 	// Rearrange the fields into a slice.
 	results := make([]property, len(jsonProps))
-	for i, k := range keys {
+	for i, n := range names {
 		buf.Reset()
-		json.Indent(buf, jsonProps[k], "", "  ")
+		json.Indent(buf, jsonProps[n], "", "  ")
 		results[i] = property{
-			Key:   k,
+			Name:  n,
 			Value: buf.String(),
 		}
 	}

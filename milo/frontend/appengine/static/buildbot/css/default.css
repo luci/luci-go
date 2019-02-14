@@ -123,7 +123,7 @@ div.Announcement>div.Closed {
   text-align: center;
 }
 
-.BuildProperties td.middle {
+.BuildProperties td.middle, .BuildTags td.middle {
   max-width: 250px;
   text-overflow: ellipsis;
   overflow: hidden;
