@@ -2,6 +2,167 @@
   "comments": [
     {
       "key": {
+        "uuid": "bccd5796_93a74551",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-14T17:30:04Z",
+      "side": 1,
+      "message": "maybe we can still name it \"ui\"?\nupdate: ah, it\u0027s just app properties. fine.",
+      "range": {
+        "startLine": 10,
+        "startChar": 11,
+        "endLine": 10,
+        "endChar": 15
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b8efc0e4_142fb071",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-14T17:30:04Z",
+      "side": 1,
+      "message": "kind\n(i first thought you were talking about sorting order)",
+      "range": {
+        "startLine": 13,
+        "startChar": 16,
+        "endLine": 13,
+        "endChar": 20
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d805bdc_1f4a7eb9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-14T17:30:04Z",
+      "side": 1,
+      "message": "has been defined",
+      "range": {
+        "startLine": 17,
+        "startChar": 6,
+        "endLine": 17,
+        "endChar": 16
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "318370e5_f21795e2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-14T17:30:04Z",
+      "side": 1,
+      "message": "do we really care to support this use-case?\nupdate: i guess equiv. luci builder is still useful\n\nupdate on update: scratch above...\nI\u0027m very confused. Isn\u0027t this for build_view_only \"consoles\"?\nIf yes, then I don\u0027t think we need to support equivalent builders (it\u0027s possible today because it was easiest to introduce  such view by re-using console definition in milo.cfg). Definitely not buildbot. But it\u0027s a useful thing to keep for real console view.",
+      "range": {
+        "startLine": 18,
+        "startChar": 6,
+        "endLine": 18,
+        "endChar": 41
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30244457_2ea2d042",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 366,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-14T17:30:04Z",
+      "side": 1,
+      "message": "nit: space",
+      "range": {
+        "startLine": 366,
+        "startChar": 24,
+        "endLine": 366,
+        "endChar": 25
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66d29230_b1ffb619",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-14T17:30:04Z",
+      "side": 1,
+      "message": "nit: del",
+      "range": {
+        "startLine": 79,
+        "startChar": 32,
+        "endLine": 79,
+        "endChar": 33
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c376d1d9_40f294c6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-14T17:30:04Z",
+      "side": 1,
+      "message": "entry\n(keeping in mind what e stands for on L522 is hard)",
+      "range": {
+        "startLine": 501,
+        "startChar": 6,
+        "endLine": 501,
+        "endChar": 7
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "357983f7_fe97e7c6",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
@@ -13,6 +174,30 @@
       "writtenOn": "2019-02-14T05:14:22Z",
       "side": 1,
       "message": "I\u0027m not sure about this. Is there are use case to ALLOW repeating same builder in a list or a console?",
+      "range": {
+        "startLine": 515,
+        "startChar": 6,
+        "endLine": 515,
+        "endChar": 58
+      },
+      "revId": "311b86d2d2e69b476f9458b4b2bb3c6b457a32f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88c6bd51_ab5dd2fc",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 515,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-14T17:30:04Z",
+      "side": 1,
+      "message": "i can imagine a use case, but i can work around by creating two consoles instead. So, I\u0027m fine with code as is. If we get strong use case in the future, we can change this code to support it. Agree?",
+      "parentUuid": "357983f7_fe97e7c6",
       "range": {
         "startLine": 515,
         "startChar": 6,
