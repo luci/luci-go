@@ -102,6 +102,7 @@ func redirectLUCIBuild(c *router.Context) error {
 		return errors.Annotate(err, "invalid id").Tag(common.CodeParameterError).Err()
 	}
 
+	// TODO(hinoka): Use the Buildbucket V2 API here instead.
 	build, err := buildbucket.GetRawBuild(c.Context, idStr)
 	if err != nil {
 		return err
@@ -113,7 +114,9 @@ func redirectLUCIBuild(c *router.Context) error {
 	for _, t := range build.Tags {
 		switch k, v := strpair.Parse(t); k {
 		case bbv1.TagBuildAddress:
-			_, project, bucket, builder, number, _ := bbv1.ParseBuildAddress(v)
+			_, project, v1bucket, builder, number, _ := bbv1.ParseBuildAddress(v)
+			// Use V2 bucket
+			_, bucket := bb.BucketNameToV2(v1bucket)
 			if number > 0 {
 				u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%d", project, bucket, builder, number)
 				http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
@@ -128,7 +131,9 @@ func redirectLUCIBuild(c *router.Context) error {
 		return errors.Reason("build %s does not have a builder", idStr).Tag(common.CodeParameterError).Err()
 	}
 
-	u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/b%d", build.Project, build.Bucket, builder, build.Id)
+	// Use V2 bucket
+	_, bucket := bb.BucketNameToV2(build.Bucket)
+	u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/b%d", build.Project, bucket, builder, build.Id)
 	http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
 	return nil
 }
