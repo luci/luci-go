@@ -16,6 +16,24 @@
       "revId": "300b7b0719c27685ff9001383264e780c4eeba82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fb27214_8d1ddbf0",
+        "filename": "lucicfg/sequence.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-14T00:29:59Z",
+      "side": 1,
+      "message": "I replied to this before: NOTHING in lucicfg is thread safe. There are NO mutexes. Where should I document this?",
+      "parentUuid": "d5b83957_7d66bbf7",
+      "revId": "300b7b0719c27685ff9001383264e780c4eeba82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
