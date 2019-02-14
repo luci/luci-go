@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common"
@@ -185,25 +186,6 @@ func GetBuild(c context.Context, host string, bid buildbucketpb.GetBuildRequest)
 	return client.GetBuild(c, &bid)
 }
 
-var fullBuildMask = &field_mask.FieldMask{
-	// TODO(hinoka): Add statusReason here.
-	Paths: []string{
-		"id",
-		"builder",
-		"number",
-		"created_by",
-		"create_time",
-		"start_time",
-		"end_time",
-		"update_time",
-		"status",
-		"input",
-		"output",
-		"steps",
-		"infra",
-	},
-}
-
 // getBugLink attempts to formulate and return the build page bug link
 // for the given build.
 func getBugLink(c *router.Context, b *buildbucketpb.Build) (string, error) {
@@ -229,26 +211,153 @@ func getBugLink(c *router.Context, b *buildbucketpb.Build) (string, error) {
 	})
 }
 
+// getRelatedBuilds fetches build summaries of builds with the same buildset as b.
+func getRelatedBuilds(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Build, error) {
+	client, err := buildbucketClient(c, host)
+	if err != nil {
+		return nil, err
+	}
+
+	ub := ui.Build(*b)
+	bs := ub.Buildsets()
+	if len(bs) == 0 {
+		return nil, nil
+	}
+	// Use multiple requests instead of a single batch request.
+	// A single large request is CPU bound on the buildbucket side.
+	// Multiple requests allows parallelism.
+	logging.Debugf(c, "Related build buildsets: %s", bs)
+	sbrs := make([]*buildbucketpb.SearchBuildsRequest, len(bs))
+	for i, buildset := range bs {
+		sbrs[i] = &buildbucketpb.SearchBuildsRequest{
+			Predicate: &buildbucketpb.BuildPredicate{
+				Tags: []*buildbucketpb.StringPair{{Key: "buildset", Value: buildset}},
+			}, PageSize: 1000,
+		}
+	}
+
+	resps := make([]*buildbucketpb.SearchBuildsResponse, len(sbrs))
+	err = parallel.FanOutIn(func(ch chan<- func() error) {
+		for i, sbr := range sbrs {
+			i := i
+			sbr := sbr
+			ch <- func() (err error) {
+				logging.Debugf(c, "Running %s (%d)", sbr, i)
+				resps[i], err = client.SearchBuilds(c, sbr)
+				return
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*ui.Build
+	// Dedupe builds.
+	seenIDs := map[int64]bool{b.Id: true}
+	for _, resp := range resps {
+		for _, rb := range resp.GetBuilds() {
+			if _, ok := seenIDs[rb.Id]; ok {
+				continue
+			}
+			seenIDs[rb.Id] = true
+			ub := ui.Build(*rb)
+			result = append(result, &ub)
+		}
+	}
+	return result, nil
+}
+
+var (
+	fullBuildMask = &field_mask.FieldMask{
+		// TODO(hinoka): Add statusReason here.
+		Paths: []string{
+			"id",
+			"builder",
+			"number",
+			"created_by",
+			"create_time",
+			"start_time",
+			"end_time",
+			"update_time",
+			"status",
+			"input",
+			"output",
+			"steps",
+			"infra",
+			"tags",
+		},
+	}
+	tagsAndGitilesMask = &field_mask.FieldMask{
+		Paths: []string{
+			"id",
+			"number",
+			"builder",
+			"input.gitiles_commit",
+			"tags",
+		},
+	}
+	summaryBuildMask = &field_mask.FieldMask{
+		Paths: []string{
+			"builds.id",
+			"builds.builder",
+			"builds.number",
+			"builds.status",
+		},
+	}
+)
+
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
-func GetBuildPage(c *router.Context, br buildbucketpb.GetBuildRequest) (*ui.BuildPage, error) {
-	br.Fields = fullBuildMask
-	host, err := getHost(c.Context)
+func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, related bool) (*ui.BuildPage, error) {
+	c := ctx.Context
+	host, err := getHost(c)
 	if err != nil {
 		return nil, err
 	}
-	b, err := GetBuild(c.Context, host, br)
-	if err != nil {
+	var b *buildbucketpb.Build
+	var relatedBuilds []*ui.Build
+	var blame []*ui.Commit
+	if err = parallel.FanOutIn(func(ch chan<- func() error) {
+		ch <- func() (err error) {
+			br := br
+			br.Fields = fullBuildMask
+			b, err = GetBuild(c, host, br)
+			return
+		}
+		ch <- func() (err error) {
+			// Fetch a small build with just a tiny bit of information.
+			// We use this to get the Gitiles tag so that we can fetch
+			// related builds and blamelist in parallel.
+			br := br
+			br.Fields = tagsAndGitilesMask
+			sb, err := GetBuild(c, host, br)
+			if err != nil {
+				return
+			}
+			return parallel.FanOutIn(func(ch chan<- func() error) {
+				if related {
+					ch <- func() (err error) {
+						relatedBuilds, err = getRelatedBuilds(c, host, sb)
+						return
+					}
+				}
+				ch <- func() (err error) {
+					blame, err = getBlame(c, host, sb)
+					return
+				}
+				return
+			})
+		}
+	}); err != nil {
 		return nil, err
 	}
-	blame, err := getBlame(c.Context, host, b)
-	if err != nil {
-		return nil, err
-	}
-	link, err := getBugLink(c, b)
+	link, err := getBugLink(ctx, b)
 	return &ui.BuildPage{
-		Build:        *b,
-		Blame:        blame,
-		BuildBugLink: link,
-	}, nil
+		Build:         ui.Build(*b),
+		Blame:         blame,
+		RelatedBuilds: relatedBuilds,
+		Related:       related,
+		BuildBugLink:  link,
+	}, err
 }
