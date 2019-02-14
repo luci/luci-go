@@ -34,13 +34,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type tokenMinterMock struct {
+type delegationTokenMinterMock struct {
 	request  minter.MintDelegationTokenRequest
 	response minter.MintDelegationTokenResponse
 	err      error
 }
 
-func (m *tokenMinterMock) MintDelegationToken(ctx context.Context, in *minter.MintDelegationTokenRequest, opts ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error) {
+func (m *delegationTokenMinterMock) MintDelegationToken(ctx context.Context, in *minter.MintDelegationTokenRequest, opts ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error) {
 	m.request = *in
 	if m.err != nil {
 		return nil, m.err
@@ -58,7 +58,7 @@ func TestMintDelegationToken(t *testing.T) {
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = Initialize(ctx, &Config{})
 
-		mockedClient := &tokenMinterMock{
+		mockedClient := &delegationTokenMinterMock{
 			response: minter.MintDelegationTokenResponse{
 				Token: "tok",
 				DelegationSubtoken: &messages.Subtoken{
