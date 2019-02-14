@@ -21,9 +21,10 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/starlark/interpreter"
+
 	"go.chromium.org/luci/lucicfg/graph"
 	"go.chromium.org/luci/lucicfg/vars"
-	"go.chromium.org/luci/starlark/interpreter"
 )
 
 // State is mutated throughout execution of the script and at the end contains
@@ -32,12 +33,16 @@ import (
 // It is available in the implementation of native functions exposed to the
 // Starlark side. Starlark code operates with the state exclusively through
 // these functions.
+//
+// All Starlark code is executed sequentially in a single goroutine, thus the
+// state is not protected by any mutexes.
 type State struct {
 	Inputs  Inputs    // all inputs, exactly as passed to Generate.
 	Configs ConfigSet // all generated config files, populated at the end
 	Meta    Meta      // lucicfg parameters, settable through Starlark
 
 	vars       vars.Vars         // holds state of lucicfg.var() variables
+	seq        sequences         // holds state for __native__.sequence_next()
 	errors     errors.MultiError // all errors emitted during the generation (if any)
 	seenErrs   stringset.Set     // set of all string backtraces in 'errors', for deduping
 	failOnErrs bool              // if true, 'emit_error' aborts the execution
