@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d5b83957_7d66bbf7",
+        "filename": "lucicfg/sequence.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-14T00:17:22Z",
+      "side": 1,
+      "message": "this func looks like it is thread-safe, but it is not. Let\u0027s either document it as a non-thread-safe or put a simple mutex",
+      "revId": "300b7b0719c27685ff9001383264e780c4eeba82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
