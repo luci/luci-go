@@ -217,6 +217,7 @@
 
 {{define "properties"}}
 <div id="properties" class="column">
+  <h2>Tags</h2>{{ template "properties_table" .BuildPage.Build.GetTags }}
   <h2>Input Properties</h2>{{ template "properties_table" .BuildPage.InputProperties }}
   <h2>Output Properties</h2>{{ template "properties_table" .BuildPage.OutputProperties }}
 </div>
@@ -234,6 +235,8 @@
       </tr>
     {{ end }}
     </table>
+  {{ else }}
+    N/A
   {{ end }}
 {{end}}
 

@@ -6408,5 +6408,39 @@
       "prefix": "buildbucket/cr-buildbucket.appspot.com/8922889567037688512",
       "hostname": "logs.chromium.org"
     }
-  }
+  },
+	"tags": [
+        {
+            "value": "Mac10.10 Tests",
+            "key": "builder"
+        },
+        {
+            "value": "commit/gitiles/chromium.googlesource.com/chromium/src/+/9b2a2e5310b7f63e0601d235016769dbcf8a592f",
+            "key": "buildset"
+        },
+        {
+            "value": "Mac Builder",
+            "key": "parent_buildername"
+        },
+        {
+            "value": "94857",
+            "key": "parent_buildnumber"
+        },
+        {
+            "value": "9088319629333457984",
+            "key": "scheduler_invocation_id"
+        },
+        {
+            "value": "chromium/Mac10.10 Tests",
+            "key": "scheduler_job_id"
+        },
+        {
+            "value": "luci-scheduler",
+            "key": "user_agent"
+        },
+        {
+            "value": "recipe",
+            "key": "user_agent"
+        }
+    ]
 }
