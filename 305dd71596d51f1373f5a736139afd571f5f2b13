@@ -178,6 +178,24 @@
     },
     {
       "key": {
+        "uuid": "8df5d79f_6addbb3a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-14T23:11:29Z",
+      "side": 1,
+      "message": "your example uses consoles, not builder lists\n\nrepo does not make sense in the definition of a builder list",
+      "parentUuid": "3c62b30e_ca1399f9",
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "839a7cf7_2b3b7b1f",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view_entry.star",
         "patchSetId": 4
