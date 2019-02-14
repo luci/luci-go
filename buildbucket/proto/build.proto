@@ -93,6 +93,12 @@ message Build {
     //
     // V1 equivalent: this supersedes all got_revision output property.
     GitilesCommit gitiles_commit = 3;
+
+    // If NO, then the build status SHOULD NOT be used to assess correctness of
+    // the input gitiles_commit or gerrit_changes.
+    // For example, if a pre-submit build has failed, CQ MAY still land the CL.
+    // For example, if a post-submit build has failed, CLs MAY continue landing.
+    Trinary critical = 4;
   }
 
   reserved 5; // view_url
