@@ -344,6 +344,7 @@ luci.project(
     # Optional arguments.
     buildbucket = None,
     logdog = None,
+    milo = None,
     scheduler = None,
     swarming = None,
     acls = None,
@@ -359,10 +360,11 @@ There should be exactly one such definition in the top-level config file.
 #### Arguments {#luci.project-args}
 
 * **name**: full name of the project. Required.
-* **buildbucket**: hostname of a Buildbucket service to use (if any).
-* **logdog**: hostname of a LogDog service to use (if any).
-* **scheduler**: hostname of a LUCI Scheduler service to use (if any).
-* **swarming**: hostname of a Swarming service to use (if any).
+* **buildbucket**: appspot hostname of a Buildbucket service to use (if any).
+* **logdog**: appspot hostname of a LogDog service to use (if any).
+* **milo**: appspot hostname of a Milo service to use (if any).
+* **scheduler**: appspot hostname of a LUCI Scheduler service to use (if any).
+* **swarming**: appspot hostname of a Swarming service to use (if any).
 * **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets.
 
 
@@ -613,6 +615,123 @@ watching `refs/heads/master`.
 * **refs_regexps**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
 * **schedule**: string with a schedule that describes when to run one iteration of the poller. See [Defining cron schedules](#schedules_doc) for the expected format of this field. Note that it is rare to use custom schedules for pollers. By default, the poller will run each 30 sec.
 * **triggers**: builders to trigger whenever the poller detects a new git commit on any ref in the watched ref set.
+
+
+
+
+### luci.milo {#luci.milo}
+
+```python
+luci.milo(logo = None, favicon = None)
+```
+
+
+
+Defines optional configuration of the Milo service for this project.
+
+Milo service is a public user interface for displaying (among other things)
+builds, builders, builder lists (see [luci.list_view(...)](#luci.list_view)) and consoles
+(see luci.console_view(...)).
+
+#### Arguments {#luci.milo-args}
+
+* **logo**: optional https URL to the project logo, must be hosted on `storage.googleapis.com`.
+* **favicon**: optional https URL to the project favicon, must be hosted on `storage.googleapis.com`.
+
+
+
+
+### luci.list_view {#luci.list_view}
+
+```python
+luci.list_view(
+    # Required arguments.
+    name,
+
+    # Optional arguments.
+    title = None,
+    favicon = None,
+    entries = None,
+)
+```
+
+
+
+A Milo UI view that displays a list of builders.
+
+Builders that belong to this view can be specified either right here:
+
+    luci.list_view(
+        name = 'Try builders',
+        entries = [
+            'win',
+            'linux',
+            luci.list_view_entry('osx'),
+        ],
+    )
+
+Or separately one by one via [luci.list_view_entry(...)](#luci.list_view_entry) declarations:
+
+    luci.list_view(name = 'Try builders')
+    luci.list_view_entry(
+        builder = 'win',
+        list_view = 'Try builders',
+    )
+    luci.list_view_entry(
+        builder = 'linux',
+        list_view = 'Try builders',
+    )
+
+Note that declaring Buildbot builders (which is deprecated) requires the use
+of [luci.list_view_entry(...)](#luci.list_view_entry). It's the only way to provide a reference to a
+Buildbot builder (see `buildbot` field).
+
+#### Arguments {#luci.list_view-args}
+
+* **name**: a name of this view, will show up in URLs. Required.
+* **title**: a title of this view, will show up in UI. Defaults to `name`.
+* **favicon**: optional https URL to the favicon for this view, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
+* **entries**: a list of builders or [luci.list_view_entry(...)](#luci.list_view_entry) entities to include into this view.
+
+
+
+
+### luci.list_view_entry {#luci.list_view_entry}
+
+```python
+luci.list_view_entry(builder = None, list_view = None, buildbot = None)
+```
+
+
+
+A builder entry in some [luci.list_view(...)](#luci.list_view).
+
+Can be used to declare that a builder belongs to a list view outside of
+the list view declaration. In particular useful in functions. For example:
+
+    luci.list_view(name = 'Try builders')
+
+    def try_builder(name, ...):
+      luci.builder(name = name, ...)
+      luci.list_view_entry(list_view = 'Try builders', builder = name)
+
+Can also be used inline in [luci.list_view(...)](#luci.list_view) declarations, for consistency
+with corresponding luci.console_view_entry(...) usage. `list_view` argument
+can be omitted in this case:
+
+    luci.list_view(
+        name = 'Try builders',
+        entries = [
+            luci.list_view_entry(builder = 'Win'),
+            ...
+        ],
+    )
+
+#### Arguments {#luci.list_view_entry-args}
+
+* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can be omitted for **extra deprecated** case of Buildbot-only views. `buildbot` field must be set in this case.
+* **list_view**: a list view to add the builder to. Can be omitted if `list_view_entry` is used inline inside some [luci.list_view(...)](#luci.list_view) declaration.
+* **buildbot**: a reference to an equivalent Buildbot builder, given as `<master>/<builder>` string. **Deprecated**. Exists only to aid in the migration off Buildbot.
 
 
 
