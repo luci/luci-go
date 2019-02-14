@@ -22,6 +22,30 @@
       "revId": "2e0401fd70bbc4bb6d52958831c93c958f2cbe33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54cc461d_dca2b8b3",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-02-14T00:47:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74e0c87a_3a310024",
+      "range": {
+        "startLine": 114,
+        "startChar": 11,
+        "endLine": 114,
+        "endChar": 47
+      },
+      "revId": "2e0401fd70bbc4bb6d52958831c93c958f2cbe33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
