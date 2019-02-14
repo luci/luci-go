@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5bb29ae_1500fcfa",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-14T22:55:26Z",
+      "side": 1,
+      "message": "please add a TODO to use v2 API here. Then we wouldn\u0027t have to do parsing in L113, L116 and L134",
+      "revId": "a13486d47cb3718e2c679c4150a6f41a900250bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
