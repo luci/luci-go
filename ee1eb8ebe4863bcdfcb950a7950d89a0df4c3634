@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "8c3771ce_8484a67a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-02-14T19:49:03Z",
+      "side": 1,
+      "message": "this document should probably be made public, or not be in the public CL message?\n\n(or pull out the public bit of it)",
+      "range": {
+        "startLine": 9,
+        "startChar": 9,
+        "endLine": 9,
+        "endChar": 93
+      },
+      "revId": "ee1eb8ebe4863bcdfcb950a7950d89a0df4c3634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "29f74600_b9bfefc3",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 4
@@ -13,6 +36,30 @@
       "writtenOn": "2019-02-14T19:14:01Z",
       "side": 1,
       "message": "From UI perspective it would be nicer to be able to see non-criticallity of a build while it is still running (I assume this flag is available pretty early in the build process).\n\nMaybe there\u0027s a way to move it into the build portion updated by UpdateBuild?",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "ee1eb8ebe4863bcdfcb950a7950d89a0df4c3634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f80af32e_8fe49a50",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-02-14T19:49:03Z",
+      "side": 1,
+      "message": "IIUC this Output message will also be live-updated by UpdateBuild at some point (soon, I think) too",
+      "parentUuid": "29f74600_b9bfefc3",
       "range": {
         "startLine": 74,
         "startChar": 10,
