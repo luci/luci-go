@@ -211,6 +211,15 @@ func (bp *BuildPage) OutputProperties() []property {
 	return properties(bp.GetOutput().GetProperties())
 }
 
+func (bp *BuildPage) Tags() []property {
+	tags := bp.Build.GetTags()
+	result := make([]property, len(tags))
+	for i, tag := range tags {
+		result[i] = property{Key: tag.Key, Value: tag.Value}
+	}
+	return result
+}
+
 func (bp *BuildPage) Builder() *Link {
 	if bp.Build.Builder == nil {
 		panic("Invalid build")
