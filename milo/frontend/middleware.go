@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	blackfriday "gopkg.in/russross/blackfriday.v2"
 
@@ -69,7 +68,6 @@ var funcMap = template.FuncMap{
 	"percent":          percent,
 	"prefix":           prefix,
 	"renderMarkdown":   renderMarkdown,
-	"renderProperties": renderProperties,
 	"shortenEmail":     shortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
@@ -363,15 +361,6 @@ func renderMarkdown(t string) (results template.HTML) {
 		return template.HTML(fmt.Sprintf("Failed to render markdown: %s", template.HTMLEscapeString(err.Error())))
 	}
 	return template.HTML(out.String())
-}
-
-// renderProperties renders a structpb.Struct as a properties table.
-// TODO(hinoka): Implement me.
-func renderProperties(p *structpb.Struct) (results template.HTML) {
-	if p == nil {
-		return
-	}
-	return
 }
 
 // pagedURL returns a self URL with the given cursor and limit paging options.

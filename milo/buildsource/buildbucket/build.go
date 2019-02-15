@@ -201,6 +201,7 @@ var fullBuildMask = &field_mask.FieldMask{
 		"output",
 		"steps",
 		"infra",
+		"tags",
 	},
 }
 
