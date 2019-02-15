@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7c9742ad_a78a0211",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-02-15T00:26:10Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "56850724_6ff97223",
+      "revId": "ec65631628014fae055c1731c19547ddd94cfb97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2dc821a_6ffebe09",
         "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_linux-rel.html",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "ec65631628014fae055c1731c19547ddd94cfb97",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e68fe4c5_f8999c1a",
+        "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_linux-rel.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 967,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-02-15T00:26:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2dc821a_6ffebe09",
+      "range": {
+        "startLine": 965,
+        "startChar": 2,
+        "endLine": 967,
+        "endChar": 2
+      },
+      "revId": "ec65631628014fae055c1731c19547ddd94cfb97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
