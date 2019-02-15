@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c21e116d_510ef0ab",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "390ac8bc_ac8503e5",
+      "range": {
+        "startLine": 84,
+        "startChar": 30,
+        "endLine": 84,
+        "endChar": 31
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cc1fc154_932308b1",
         "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
         "patchSetId": 20
@@ -45,6 +69,30 @@
       "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c0b4a38_8254461d",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc1fc154_932308b1",
+      "range": {
+        "startLine": 132,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 24
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "2f6f087c_46232e3e",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "badb4647_f9ba9cf9",
+      "range": {
+        "startLine": 143,
+        "startChar": 16,
+        "endLine": 143,
+        "endChar": 32
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b2fddff_7a5788ff",
         "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
         "patchSetId": 20
@@ -91,6 +163,30 @@
       "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83be8374_ecc0dfb5",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b2fddff_7a5788ff",
+      "range": {
+        "startLine": 150,
+        "startChar": 14,
+        "endLine": 150,
+        "endChar": 34
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "d1d34575_d1608148",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "I prefer to normalize such request over rejection. The client shouldn\u0027t have an expectation of a guaranteed token lifetime anyway. Sort of following the style \"be forgiving in what you accept, be strict on what you emit\".",
+      "parentUuid": "6cf30b41_e622e1a3",
+      "range": {
+        "startLine": 162,
+        "startChar": 23,
+        "endLine": 162,
+        "endChar": 44
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c7a518f5_818170a4",
         "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
         "patchSetId": 20
@@ -137,6 +257,30 @@
       "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ba09088_54de7190",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7a518f5_818170a4",
+      "range": {
+        "startLine": 170,
+        "startChar": 45,
+        "endLine": 170,
+        "endChar": 57
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "5d1b2cbd_5432b831",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "046e1684_4c378527",
+      "range": {
+        "startLine": 182,
+        "startChar": 18,
+        "endLine": 182,
+        "endChar": 77
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4aa10507_686327b7",
         "filename": "tokenserver/appengine/impl/serviceaccounts/oauth_token_bigquery_log.go",
         "patchSetId": 20
@@ -183,6 +351,30 @@
       "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cfa7ef6_587e4e47",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/oauth_token_bigquery_log.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4aa10507_686327b7",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 67
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "6f2d03e1_870fc295",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/oauth_token_bigquery_log.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "Filed a ticket for it and reversed the patch.",
+      "parentUuid": "af65eefe_08f7e513",
+      "range": {
+        "startLine": 79,
+        "startChar": 51,
+        "endLine": 79,
+        "endChar": 61
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b2ae8c4d_d5aa5e6a",
         "filename": "tokenserver/appengine/impl/services/minter/tokenminter/service.go",
         "patchSetId": 20
@@ -229,6 +445,30 @@
       "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fff590d2_ecb1a5ce",
+        "filename": "tokenserver/appengine/impl/services/minter/tokenminter/service.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-02-15T19:35:27Z",
+      "side": 1,
+      "message": "Unfortunately there is a conflict with \n\n28      \"go.chromium.org/luci/tokenserver/appengine/impl/projectscope\"\n\nI renamed the package to \"projectidentity\" under utils/.",
+      "parentUuid": "b2ae8c4d_d5aa5e6a",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 18
+      },
+      "revId": "e919da39efcacfd87649b3a9810a16e7fbc33559",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
