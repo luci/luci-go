@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8eacbd54_44784221",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 24
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-15T23:17:16Z",
+      "side": 1,
+      "message": "this is noop",
+      "range": {
+        "startLine": 119,
+        "startChar": 2,
+        "endLine": 119,
+        "endChar": 24
+      },
+      "revId": "54a8083134ba5cd2568a8083a13c3476b33cbb1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91490fe3_42565b77",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 24
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-15T23:17:16Z",
+      "side": 1,
+      "message": "nit: just \u0027projectActorsGroup\u0027, this indirection through a constant is not helpful for readability.",
+      "range": {
+        "startLine": 133,
+        "startChar": 33,
+        "endLine": 133,
+        "endChar": 52
+      },
+      "revId": "54a8083134ba5cd2568a8083a13c3476b33cbb1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5848d217_84c3fb06",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 24
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-15T23:17:16Z",
+      "side": 1,
+      "message": "nit: !member",
+      "range": {
+        "startLine": 138,
+        "startChar": 6,
+        "endLine": 138,
+        "endChar": 21
+      },
+      "revId": "54a8083134ba5cd2568a8083a13c3476b33cbb1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3dbe9bc4_155308d2",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 24
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-15T23:17:16Z",
+      "side": 1,
+      "message": "Can also log projectIdentity.Email, it will be helpful in debugging issues.",
+      "revId": "54a8083134ba5cd2568a8083a13c3476b33cbb1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c34de36a_796ce1fb",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 24
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-15T23:17:16Z",
+      "side": 1,
+      "message": "We should probably also return projectIdentity.Email here. The caller is authorized to see it. This will be helpful for debugging issues as well (in particular, as they are seen from RPC client side).",
+      "range": {
+        "startLine": 167,
+        "startChar": 44,
+        "endLine": 167,
+        "endChar": 66
+      },
+      "revId": "54a8083134ba5cd2568a8083a13c3476b33cbb1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
