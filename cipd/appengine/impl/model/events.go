@@ -40,7 +40,7 @@ import (
 )
 
 var eventsLog = bqlog.Log{
-	QueueName:           "bqlog-events", // see queues.yaml
+	QueueName:           "bqlog-events", // see queue.yaml
 	DatasetID:           "cipd",         // see push_bq_schema.sh
 	TableID:             "events",
 	DumpEntriesToLogger: true,
