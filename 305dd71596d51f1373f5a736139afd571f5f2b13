@@ -250,6 +250,24 @@
     },
     {
       "key": {
+        "uuid": "7b571b12_0f2a23af",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-15T01:34:05Z",
+      "side": 1,
+      "message": "yes, please",
+      "parentUuid": "3b751d65_552aae3b",
+      "revId": "305dd71596d51f1373f5a736139afd571f5f2b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "839a7cf7_2b3b7b1f",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/list_view_entry.star",
         "patchSetId": 4
