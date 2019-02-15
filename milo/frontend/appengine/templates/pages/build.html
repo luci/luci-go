@@ -96,7 +96,7 @@
       </ul>
       <div id="overview-tab">
         {{ template "overview" . }}
-        {{ template "properties" . }}
+        {{ template "attributes" . }}
         {{ template "changes" . }}
       </div>
       <div id="timeline-tab" style="display: none;">{{ template "timeline_tab" . }}</div>
@@ -215,25 +215,47 @@
 {{end}}
 
 
-{{define "properties"}}
-<div id="properties" class="column">
+{{define "attributes"}}
+<div id="attributes" class="column">
+  <h2>Tags</h2>{{ template "tags_table" .BuildPage.Build.GetTags }}
   <h2>Input Properties</h2>{{ template "properties_table" .BuildPage.InputProperties }}
   <h2>Output Properties</h2>{{ template "properties_table" .BuildPage.OutputProperties }}
 </div>
 {{end}}
 
-
+<!--- Note: Properties have "Names" and Tags have "Keys".
+            This is the standard nomenclature stemming from
+            Buildbot Properties and Swarming Tags.
+            We will preserve this nomenclature in the UI.-->
 {{define "properties_table"}}
   {{ with . }}
     <table class="info BuildProperties" width="100%">
     <tr><th>Name</th><th>Value</th></tr>
     {{ range . }}
       <tr>
-        <td class="left">{{.Key}}</td>
+        <td class="left">{{.Name}}</td>
         <td class="middle"><abbr title="{{.Value}}">{{.Value}}</abbr></td>
       </tr>
     {{ end }}
     </table>
+  {{ else }}
+    <div>N/A</div>
+  {{ end }}
+{{end}}
+
+{{define "tags_table"}}
+  {{ with . }}
+    <table class="info BuildTags" width="100%">
+    <tr><th>Key</th><th>Value</th></tr>
+    {{ range . }}
+      <tr>
+        <td class="left">{{.Key}}</td>
+        <td class="middle">{{.Value}}</td>
+      </tr>
+    {{ end }}
+    </table>
+  {{ else }}
+    <div>N/A</div>
   {{ end }}
 {{end}}
 
