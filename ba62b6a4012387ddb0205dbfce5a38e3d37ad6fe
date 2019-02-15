@@ -1,0 +1,176 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b8baced_3f9d8ba8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-15T17:50:08Z",
+      "side": 1,
+      "message": "thanks",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 43
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "676a7ca1_6ffdf344",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-15T17:50:08Z",
+      "side": 1,
+      "message": "this problem isn\u0027t specific to milo, is it? can we implement connection-check at the graph level?\nthen we don\u0027t have to make milo-\u003eentry edges",
+      "range": {
+        "startLine": 501,
+        "startChar": 16,
+        "endLine": 501,
+        "endChar": 27
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "354ecd7d_0d164178",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-15T17:50:08Z",
+      "side": 1,
+      "message": "why is this important to mention? milo doesn\u0027t assume anything about committer time",
+      "range": {
+        "startLine": 59,
+        "startChar": 13,
+        "endLine": 59,
+        "endChar": 40
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a441ee9_b2620ea7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-15T17:50:08Z",
+      "side": 1,
+      "message": "missing console_view",
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02d3de27_0651d36b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-15T17:50:08Z",
+      "side": 1,
+      "message": "is this the right place to say that consoles and list_views live in the same namespace?\n\nif so, list_view should be updated too",
+      "range": {
+        "startLine": 88,
+        "startChar": 56,
+        "endLine": 88,
+        "endChar": 65
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7c80ae4_5ebe7f15",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-15T17:50:08Z",
+      "side": 1,
+      "message": "regexp\u003d\u0027refs/.+\u0027\n\nwe don\u0027t want \"master\" here, a common mistake\n\ncould be done in L120 too\n\nunless you meant to delegate this to the server https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/api/gitiles/refset.go?q\u003dValidateRefSet\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d125",
+      "range": {
+        "startLine": 117,
+        "startChar": 29,
+        "endLine": 117,
+        "endChar": 30
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fd47680_21f97ab1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view_entry.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-15T17:50:08Z",
+      "side": 1,
+      "message": "this does not allow builders from a different luci project. I think it is being used now, for example in internal consoles to show both public and internal builders on one page\n\nunless we add project\u003d\u0027another\u0027 in luci.builder which means it is external and serves only as a ref. We can reference such builders as \u0027project/bucket/builder\u0027\n\nTODO here and another CL?",
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "caf63b50_477a031b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view_entry.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-15T17:50:08Z",
+      "side": 1,
+      "message": "maybe \"builder columns\" or \"columns of the commit-builder matrix\"\n- builders aren\u0027t hierarchical\n- console header means something different",
+      "range": {
+        "startLine": 62,
+        "startChar": 25,
+        "endLine": 62,
+        "endChar": 62
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
