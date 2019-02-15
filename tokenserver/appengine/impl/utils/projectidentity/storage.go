@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package projectscope
+package projectidentity
 
 import (
 	"context"
@@ -29,15 +29,15 @@ var (
 )
 
 // projectIdentities is the default storage for all scoped identities.
-var projectIdentities = &persistentIdentityManager{}
+var projectIdentities = &persistentStorage{}
 
 // ProjectIdentities returns the global scoped identity storage.
-func ProjectIdentities(ctx context.Context) ProjectIdentityManager {
+func ProjectIdentities(ctx context.Context) Storage {
 	return projectIdentities
 }
 
-// ProjectIdentityManager interface declares the interface to the scoped identity storage.
-type ProjectIdentityManager interface {
+// Storage interface declares methods for the scoped identity storage.
+type Storage interface {
 
 	// Create an identity or update if it already exists.
 	Create(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error)
@@ -59,12 +59,12 @@ type ProjectIdentity struct {
 	Email   string
 }
 
-// persistentIdentityManager implements ScopedIdentityManager.
-type persistentIdentityManager struct {
+// persistentStorage implements ScopedIdentityManager.
+type persistentStorage struct {
 }
 
 // lookup reads an identity from the storage based on what fields are set in the identity struct.
-func (s *persistentIdentityManager) lookup(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
+func (s *persistentStorage) lookup(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
 	tmp := *identity
 	if err := ds.Get(c, &tmp); err != nil {
 		switch {
@@ -78,22 +78,22 @@ func (s *persistentIdentityManager) lookup(c context.Context, identity *ProjectI
 }
 
 // LookupByProject returns the project identity stored for a given project.
-func (s *persistentIdentityManager) LookupByProject(c context.Context, project string) (*ProjectIdentity, error) {
+func (s *persistentStorage) LookupByProject(c context.Context, project string) (*ProjectIdentity, error) {
 	return s.lookup(c, &ProjectIdentity{Project: project})
 }
 
 // Delete removes an identity from the storage.
-func (s *persistentIdentityManager) Delete(c context.Context, identity *ProjectIdentity) error {
+func (s *persistentStorage) Delete(c context.Context, identity *ProjectIdentity) error {
 	return ds.Delete(c, identity)
 }
 
 // Create stores a new entry for a project identity.
-func (s *persistentIdentityManager) Create(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
+func (s *persistentStorage) Create(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
 	return s.Update(c, identity)
 }
 
 // Update allows an identity to be updated, e.g. when the service account email changes.
-func (s *persistentIdentityManager) Update(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
+func (s *persistentStorage) Update(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
 	tmp, err := s.lookup(c, identity)
 	switch {
 	case err == nil && *tmp == *identity: // Doesn't need update
