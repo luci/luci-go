@@ -61,14 +61,14 @@ func Run(templatePath string) {
 	)
 	htmlMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
-		auth.Authenticate(server.CookieAuth),
+		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
 		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		withGitMiddleware,
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
 	devHtmlMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
-		auth.Authenticate(server.CookieAuth),
+		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
 		withGitMiddleware,
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
