@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c956f5ea_9a0cb7e0",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-15T20:54:33Z",
+      "side": 1,
+      "message": "use this instead: https://chromium.googlesource.com/infra/luci/luci-go/+/master/appengine/gaeauth/server/oauth.go#43\n\nauth.GoogleOAuth2Method is \"generic\" implementation that works on Flex, K8S, etc. server.OAuth2Method is specific for GAE-standard. It is faster and more reliable there.",
+      "revId": "ed240371dc7094df7d1e07876a14edee9454b9af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
