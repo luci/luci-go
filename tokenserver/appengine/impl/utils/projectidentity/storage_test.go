@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package projectscope
+package projectidentity
 
 import (
 	"testing"
@@ -30,7 +30,7 @@ func TestScopedServiceAccountStorage(t *testing.T) {
 		var actual *ProjectIdentity
 		var expected *ProjectIdentity
 
-		storage := &persistentIdentityManager{}
+		storage := &persistentStorage{}
 
 		expected = &ProjectIdentity{
 			Email:   "sa1@project1.iamserviceaccounts.com",
