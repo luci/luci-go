@@ -16,6 +16,7 @@ package ui
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -30,6 +31,7 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -40,6 +42,7 @@ type Step struct {
 	*buildbucketpb.Step
 	Children  []*Step
 	Collapsed bool
+	Now       time.Time // Current time, use for determining intervals of unfinished steps.
 }
 
 // ShortName returns the leaf name of a potentially nested step.
@@ -52,6 +55,12 @@ func (s *Step) ShortName() string {
 	return parts[len(parts)-1]
 }
 
+func (s *Step) Interval() common.Interval {
+	i := common.ToInterval(s.GetStartTime(), s.GetEndTime())
+	i.Now = s.Now
+	return i
+}
+
 // BuildPage represents a build page on Milo.
 // The core of the build page is the underlying build proto, but can contain
 // extra information depending on the context, for example a blamelist,
@@ -59,6 +68,9 @@ func (s *Step) ShortName() string {
 type BuildPage struct {
 	// Build is the underlying build proto for the build page.
 	buildbucketpb.Build
+
+	// Now is the current time.
+	Now time.Time
 
 	// Blame is a list of people and commits that likely caused the build result.
 	// It is usually used as the list of commits between the previous run of the
@@ -81,6 +93,13 @@ type BuildPage struct {
 
 	// steps caches the result of Steps().
 	steps []*Step
+}
+
+func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
+	return &BuildPage{
+		Build: *b,
+		Now:   clock.Now(c),
+	}
 }
 
 // Summary returns a summary of failures in the build.
@@ -118,6 +137,7 @@ func (bp *BuildPage) Steps() []*Step {
 		s := &Step{
 			Step:      step,
 			Collapsed: collapseGreen && step.Status == buildbucketpb.Status_SUCCESS,
+			Now:       bp.Now,
 		}
 		stepMap[step.Name] = s
 		switch nameParts := strings.Split(step.Name, "|"); len(nameParts) {
@@ -407,7 +427,7 @@ func (bp *BuildPage) Timeline() string {
 		statusClassName := fmt.Sprintf("status-%s", step.Status)
 		data := stepData{
 			Label:           html.EscapeString(step.Name),
-			Duration:        common.Duration(step.StartTime, step.EndTime),
+			Duration:        common.Duration(step.StartTime, step.EndTime, bp.Now),
 			LogURL:          logURL,
 			StatusClassName: statusClassName,
 		}
