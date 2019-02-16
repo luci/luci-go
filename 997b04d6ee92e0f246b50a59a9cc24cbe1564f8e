@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3e4b8ae_91eccbaf",
+        "filename": "lucicfg/starlark/stdlib/internal/io.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-16T16:59:50Z",
+      "side": 1,
+      "message": "nit: delete",
+      "range": {
+        "startLine": 25,
+        "startChar": 49,
+        "endLine": 25,
+        "endChar": 52
+      },
+      "revId": "997b04d6ee92e0f246b50a59a9cc24cbe1564f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70685450_b3a87694",
+        "filename": "lucicfg/testdata/misc/read_file.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-16T16:59:50Z",
+      "side": 1,
+      "message": "i\u0027d have preferred workspace instead of \"package root\". Is this starlark\u0027s built-in error, or can you change it?",
+      "range": {
+        "startLine": 8,
+        "startChar": 60,
+        "endLine": 8,
+        "endChar": 84
+      },
+      "revId": "997b04d6ee92e0f246b50a59a9cc24cbe1564f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
