@@ -48,6 +48,7 @@ TODO: To be written.
   know that they can be referred to through anchors.
 */}}
 {{ $lucicfg := Symbol "@stdlib//builtins.star" "lucicfg" }}
+{{ $io := Symbol "@stdlib//builtins.star" "io" }}
 {{ $time := Symbol "@stdlib//builtins.star" "time" }}
 {{ $luci := Symbol "@stdlib//builtins.star" "luci" }}
 {{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
@@ -126,3 +127,4 @@ In addition, `lucicfg` exposes the following functions.
 
 {{template "gen-funcs-doc" $native}}
 {{template "gen-funcs-doc" $proto}}
+{{template "gen-funcs-doc" $io}}

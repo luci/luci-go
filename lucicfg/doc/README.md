@@ -19,6 +19,7 @@
 
 
 
+
 [TOC]
 
 ## Overview
@@ -1453,6 +1454,36 @@ Serializes a protobuf message to a string using JSONPB serialization.
 
 * **msg**: a proto message to serialize. Required.
 
+
+
+
+
+
+
+
+
+### io.read_file {#io.read_file}
+
+```python
+io.read_file(path)
+```
+
+
+
+Reads a file and returns its contents as a string.
+
+Useful for rules that accept large chunks of free form text. By using
+`io.read_file` such text can be kept in a separate file.
+
+#### Arguments {#io.read_file-args}
+
+* **path**: either a path relative to the currently executing Starlark script, or (if starts with `//`) an absolute path within the current workspace. If it is a relative path, it must be inside of the current workspace. Required.
+
+
+#### Returns  {#io.read_file-returns}
+
+The contents of the file as a string. Fails if there's no such file, it
+can't be read, or it is outside of the current workspace.
 
 
 
