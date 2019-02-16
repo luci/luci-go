@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "aee7156d_e97a3814",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-16T01:11:22Z",
+      "side": 1,
+      "message": "This check is not generalizable to the entire graph. Some nodes are allowed to have 0 parents (luci.project for example), some (luci.builder for example) are allowed to have more than one parent.\n\nThough I realized that luci.milo is a bad parent for this, since it doesn\u0027t necessary exists (luci.milo(...) is optional).",
+      "parentUuid": "676a7ca1_6ffdf344",
+      "range": {
+        "startLine": 501,
+        "startChar": 16,
+        "endLine": 501,
+        "endChar": 27
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "354ecd7d_0d164178",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
         "patchSetId": 2
@@ -59,6 +83,30 @@
       "writtenOn": "2019-02-15T17:50:08Z",
       "side": 1,
       "message": "why is this important to mention? milo doesn\u0027t assume anything about committer time",
+      "range": {
+        "startLine": 59,
+        "startChar": 13,
+        "endLine": 59,
+        "endChar": 40
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66598744_743f29a0",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-16T01:11:22Z",
+      "side": 1,
+      "message": "I copy-pasted this from Milo proto documentation: https://chromium.googlesource.com/infra/luci/luci-go/+/master/milo/api/config/project.proto#178\n\nIs it wrong? How should I reword this?",
+      "parentUuid": "354ecd7d_0d164178",
       "range": {
         "startLine": 59,
         "startChar": 13,
@@ -88,6 +136,24 @@
     },
     {
       "key": {
+        "uuid": "96c76bf8_b217d872",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-16T01:11:22Z",
+      "side": 1,
+      "message": "Good catch.",
+      "parentUuid": "9a441ee9_b2620ea7",
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "02d3de27_0651d36b",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
         "patchSetId": 2
@@ -108,6 +174,30 @@
       "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dd5959b_6b2904ce",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-16T01:11:22Z",
+      "side": 1,
+      "message": "Yep, totally forgot about this. This will actually require graph structure change to enforce :-/",
+      "parentUuid": "02d3de27_0651d36b",
+      "range": {
+        "startLine": 88,
+        "startChar": 56,
+        "endLine": 88,
+        "endChar": 65
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +224,30 @@
     },
     {
       "key": {
+        "uuid": "2bf26df2_fb2e71bd",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-16T01:11:22Z",
+      "side": 1,
+      "message": "Added validation for \u0027refs\u0027. Prefer to delegate refs_regexps validation to the server, since it is more involved and may change in the future.",
+      "parentUuid": "f7c80ae4_5ebe7f15",
+      "range": {
+        "startLine": 117,
+        "startChar": 29,
+        "endLine": 117,
+        "endChar": 30
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0fd47680_21f97ab1",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view_entry.star",
         "patchSetId": 2
@@ -148,6 +262,24 @@
       "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "502f0d63_3fec390f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view_entry.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-16T01:11:22Z",
+      "side": 1,
+      "message": "Added TODO. Cross-project references is a separate topic. CQ will also need it.",
+      "parentUuid": "0fd47680_21f97ab1",
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -171,6 +303,30 @@
       "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8182d643_c2ab4b07",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view_entry.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-16T01:11:22Z",
+      "side": 1,
+      "message": "I copied this from Milo docs (including all the typos..): https://chromium.googlesource.com/infra/luci/luci-go/+/master/milo/api/config/project.proto#243\n\nChanged to \"builder columns\".",
+      "parentUuid": "caf63b50_477a031b",
+      "range": {
+        "startLine": 62,
+        "startChar": 25,
+        "endLine": 62,
+        "endChar": 62
+      },
+      "revId": "ba62b6a4012387ddb0205dbfce5a38e3d37ad6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
