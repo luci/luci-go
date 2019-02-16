@@ -25,6 +25,7 @@ def project(
 
       buildbucket=None,
       logdog=None,
+      milo=None,
       scheduler=None,
       swarming=None,
 
@@ -36,10 +37,11 @@ def project(
 
   Args:
     name: full name of the project. Required.
-    buildbucket: hostname of a Buildbucket service to use (if any).
-    logdog: hostname of a LogDog service to use (if any).
-    scheduler: hostname of a LUCI Scheduler service to use (if any).
-    swarming: hostname of a Swarming service to use (if any).
+    buildbucket: appspot hostname of a Buildbucket service to use (if any).
+    logdog: appspot hostname of a LogDog service to use (if any).
+    milo: appspot hostname of a Milo service to use (if any).
+    scheduler: appspot hostname of a LUCI Scheduler service to use (if any).
+    swarming: appspot hostname of a Swarming service to use (if any).
     acls: list of acl.entry(...) objects, will be inherited by all buckets.
   """
   key = keys.project()
@@ -47,6 +49,7 @@ def project(
       'name': validate.string('name', name),
       'buildbucket': service.from_host('buildbucket', buildbucket),
       'logdog': service.from_host('logdog', logdog),
+      'milo': service.from_host('milo', milo),
       'scheduler': service.from_host('scheduler', scheduler),
       'swarming': service.from_host('swarming', swarming),
       'acls': aclimpl.validate_acls(acls, project_level=True),

@@ -7,6 +7,7 @@ luci.project(
 
     buildbucket = 'cr-buildbucket.appspot.com',
     logdog = 'luci-logdog.appspot.com',
+    milo = 'luci-milo.appspot.com',
     scheduler = 'luci-scheduler.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 
@@ -31,6 +32,11 @@ luci.project(
 )
 
 luci.logdog(gs_bucket = 'chromium-luci-logdog')
+
+luci.milo(
+    logo = 'https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png',
+    favicon = 'https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico',
+)
 
 
 # Recipes.
@@ -183,6 +189,32 @@ luci.builder(
 )
 
 
+# List views.
+
+
+luci.list_view(
+    name = 'List view',
+    entries = [
+        'cron builder',
+        'ci/generically named builder',
+        luci.list_view_entry(
+            builder = 'linux ci builder',
+            buildbot = 'master/builder',
+        ),
+    ],
+)
+
+luci.list_view_entry(
+    list_view = 'List view',
+    builder = 'inline/triggered builder',
+)
+
+luci.list_view_entry(
+    list_view = 'List view',
+    buildbot = 'master/very buildbot',
+)
+
+
 # Expect configs:
 #
 # === cr-buildbucket.cfg
@@ -321,6 +353,32 @@ luci.builder(
 # === luci-logdog.cfg
 # reader_auth_groups: "all"
 # archive_gs_bucket: "chromium-luci-logdog"
+# ===
+#
+# === luci-milo.cfg
+# consoles: <
+#   id: "List view"
+#   name: "List view"
+#   builders: <
+#     name: "buildbucket/luci.infra.ci/cron builder"
+#   >
+#   builders: <
+#     name: "buildbucket/luci.infra.ci/generically named builder"
+#   >
+#   builders: <
+#     name: "buildbot/master/builder"
+#     name: "buildbucket/luci.infra.ci/linux ci builder"
+#   >
+#   builders: <
+#     name: "buildbucket/luci.infra.inline/triggered builder"
+#   >
+#   builders: <
+#     name: "buildbot/master/very buildbot"
+#   >
+#   favicon_url: "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico"
+#   builder_view_only: true
+# >
+# logo_url: "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png"
 # ===
 #
 # === luci-scheduler.cfg

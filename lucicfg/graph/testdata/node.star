@@ -23,6 +23,16 @@ def test_add_node_ok():
 test_add_node_ok()
 
 
+def test_private_kind():
+  g = new_graph()
+  k = g.key('_skipped', 'skipped', 'kind', 'name')
+  g.add_node(k)
+  g.finalize()
+  assert.eq(str(g.node(k)), 'kind("name")')
+
+test_private_kind()
+
+
 def test_node_can_be_used_in_sets():
   g = new_graph()
 

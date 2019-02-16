@@ -20,7 +20,10 @@ load('@stdlib//internal/time.star', _time='time')
 load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
 load('@stdlib//internal/luci/rules/builder.star', _builder='builder')
 load('@stdlib//internal/luci/rules/gitiles_poller.star', _gitiles_poller='gitiles_poller')
+load('@stdlib//internal/luci/rules/list_view.star', _list_view='list_view')
+load('@stdlib//internal/luci/rules/list_view_entry.star', _list_view_entry='list_view_entry')
 load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
+load('@stdlib//internal/luci/rules/milo.star', _milo='milo')
 load('@stdlib//internal/luci/rules/project.star', _project='project')
 load('@stdlib//internal/luci/rules/recipe.star', _recipe='recipe')
 
@@ -39,7 +42,7 @@ _register()
 lucicfg = _lucicfg
 time = _time
 
-# LUCI-specific public API.
+# LUCI-specific public API. Order of entries matters for documentation.
 
 luci = struct(
     project = _project,
@@ -48,6 +51,9 @@ luci = struct(
     recipe = _recipe,
     builder = _builder,
     gitiles_poller = _gitiles_poller,
+    milo = _milo,
+    list_view = _list_view,
+    list_view_entry = _list_view_entry,
 )
 acl = _acl
 scheduler = _scheduler

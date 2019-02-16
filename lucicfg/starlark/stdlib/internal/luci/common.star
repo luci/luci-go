@@ -19,13 +19,16 @@ Should not import other LUCI modules to avoid dependency cycles.
 
 load('@stdlib//internal/error.star', 'error')
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/sequence.star', 'sequence')
 load('@stdlib//internal/validate.star', 'validate')
 
 
 # Node edges (parent -> child):
 #   luci.project: root
 #   luci.project -> luci.logdog
+#   luci.project -> luci.milo
 #   luci.project -> [luci.bucket]
+#   luci.project -> [luci.list_view]
 #   luci.bucket -> [luci.builder]
 #   luci.bucket -> [luci.gitiles_poller]
 #   luci.builder_ref -> luci.builder
@@ -33,6 +36,8 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.builder -> luci.recipe
 #   luci.gitiles_poller -> [luci.triggerer]
 #   luci.triggerer -> [luci.builder_ref]
+#   luci.list_view -> [luci.list_view_entry]
+#   luci.list_view_entry -> list.builder_ref
 
 
 def _global_key(kind, attr, ref):
@@ -81,6 +86,9 @@ kinds = struct(
     RECIPE = 'luci.recipe',
     BUILDER = 'luci.builder',
     GITILES_POLLER = 'luci.gitiles_poller',
+    MILO = 'luci.milo',
+    LIST_VIEW = 'luci.list_view',
+    LIST_VIEW_ENTRY = 'luci.list_view_entry',
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = 'luci.builder_ref',
@@ -103,9 +111,25 @@ keys = struct(
     builder = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.BUILDER, name),
     gitiles_poller = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.GITILES_POLLER, name),
 
+    milo = lambda: graph.key(kinds.MILO, '...'),  # singleton
+    list_view = lambda ref: _global_key(kinds.LIST_VIEW, 'list_view', ref),
+
     # Internal nodes (declared internally as dependency of other nodes).
-    builder_ref = lambda ref: _bucket_scoped_key(kinds.BUILDER_REF, 'triggers', ref),
-    triggerer = lambda ref: _bucket_scoped_key(kinds.TRIGGERER, 'triggered_by', ref),
+    builder_ref = lambda ref, attr='triggers': _bucket_scoped_key(kinds.BUILDER_REF, attr, ref),
+    triggerer = lambda ref, attr='triggered_by': _bucket_scoped_key(kinds.TRIGGERER, attr, ref),
+
+    # Generates a key of the given kind and name within some auto-generated
+    # unique container key.
+    #
+    # Used with LIST_VIEW_ENTRY helper nodes. They don't really represent any
+    # "external" entities, and their names don't really matter, other than for
+    # error messages.
+    #
+    # Note that IDs of keys whose kind stars with '_' (like '_UNIQUE' here),
+    # are skipped when printing the key in error messages. Thus the meaningless
+    # confusing auto-generated part of the key isn't showing up in error
+    # messages.
+    unique = lambda kind, name: graph.key('_UNIQUE', str(sequence.next(kind)), kind, name),
 )
 
 
