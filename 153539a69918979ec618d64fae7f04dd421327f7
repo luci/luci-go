@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9eb6ee0_f025ede8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-16T19:24:22Z",
+      "side": 1,
+      "message": "not-blocking comment: Gerrit plugin is already graying out scheduled but not started builds.",
+      "range": {
+        "startLine": 14,
+        "startChar": 40,
+        "endLine": 14,
+        "endChar": 48
+      },
+      "revId": "153539a69918979ec618d64fae7f04dd421327f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e186b146_1a2f37d8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-16T19:24:22Z",
+      "side": 1,
+      "message": "yeah, this does make sense.",
+      "range": {
+        "startLine": 16,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 66
+      },
+      "revId": "153539a69918979ec618d64fae7f04dd421327f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fe104f7d_b2ccf1d5",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-16T19:24:22Z",
+      "side": 1,
+      "message": "minor: i think critical doesn\u0027t fit the name of this field (though I ack that CrOS is a precedent).\nI\u0027d use \"valuable\" or \"relevant\" instead.\nOther ideas are \"important\" and \"significant\".",
+      "range": {
+        "startLine": 101,
+        "startChar": 12,
+        "endLine": 101,
+        "endChar": 20
+      },
+      "revId": "153539a69918979ec618d64fae7f04dd421327f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
