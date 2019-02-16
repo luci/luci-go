@@ -74,8 +74,11 @@ def _keyset(*keys):
   be the "most representative" key (e.g. `luci.builder` in the example above).
 
   Returns:
-    A graph.keyset struct with a single method `get(kind): graph.key`. It either
-    returns a key with given kind or fails if it's not there.
+    A graph.keyset struct with two methods:
+      `get(kind): graph.key`: either returns a key with given kind or fails with
+          an informative message if it's not there.
+      `has(kind): bool`: returns True if there's a key with given kind in the
+          keyset.
   """
   if not keys:
     fail('bad empty keyset')
@@ -92,7 +95,10 @@ def _keyset(*keys):
       fail('expecting %s, got %s' % (kind, keys[0].kind))
     return k
 
-  return _keyset_ctor(get=get)
+  def has(kind):
+    return kind in as_map
+
+  return _keyset_ctor(get=get, has=has)
 
 
 def _is_keyset(keyset):

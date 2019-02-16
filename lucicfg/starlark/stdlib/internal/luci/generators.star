@@ -19,7 +19,7 @@ load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/time.star', 'time')
 
-load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'triggerer')
+load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'kinds', 'triggerer')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
 load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
@@ -27,6 +27,7 @@ load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
 load('@proto//luci/buildbucket/project_config.proto', buildbucket_pb='buildbucket')
 load('@proto//luci/config/project_config.proto', config_pb='config')
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
+load('@proto//luci/milo/project_config.proto', milo_pb='milo')
 load('@proto//luci/scheduler/project_config.proto', scheduler_pb='scheduler.config')
 
 
@@ -36,6 +37,7 @@ def register():
   lucicfg.generator(impl = gen_logdog_cfg)
   lucicfg.generator(impl = gen_buildbucket_cfg)
   lucicfg.generator(impl = gen_scheduler_cfg)
+  lucicfg.generator(impl = gen_milo_cfg)
 
 
 ################################################################################
@@ -455,3 +457,119 @@ def _scheduler_acls(elementary):
       )
       for a in filter_acls(elementary, _scheduler_roles.keys())
   ]
+
+
+################################################################################
+## milo.cfg.
+
+
+# TODO(vadimsh): Add consoles support.
+# TODO(vadimsh): Add headers support.
+# TODO(vadimsh): Add build_bug_template support.
+
+
+def gen_milo_cfg(ctx):
+  """Generates milo.cfg."""
+  _milo_check_connections()
+
+  views = graph.children(keys.project(), kinds.LIST_VIEW)
+  if not views:
+    return
+
+  # Note: luci.milo(...) node is optional.
+  milo_node = graph.node(keys.milo())
+  opts = struct(
+      logo = milo_node.props.logo if milo_node else None,
+      favicon = milo_node.props.favicon if milo_node else None,
+  )
+
+  milo = get_service('milo', 'using list or console views')
+  project_name = get_project().props.name
+
+  ctx.config_set[milo.cfg_file] = milo_pb.Project(
+      logo_url = opts.logo,
+      consoles = [
+          _milo_list_view(view, opts, project_name)
+          for view in views
+      ],
+  )
+
+
+def _milo_check_connections():
+  """Ensures all list_view_entry are connected to one and only one list_view."""
+  for e in graph.children(keys.milo(), kinds.LIST_VIEW_ENTRY):
+    parents = graph.parents(e.key, kinds.LIST_VIEW)
+    if len(parents) == 0:
+      error('%s is not added to any view, either remove or comment it out' % e, trace=e.trace)
+    elif len(parents) > 1:
+      error(
+          '%s is added to multiple views: %s' %
+          (e, ', '.join([str(v) for v in parents])),
+          trace=e.trace)
+
+
+def _milo_list_view(view, opts, project_name):
+  """Given a LIST_VIEW node produces milo_pb.Console."""
+  builders = []
+  seen = {}
+  for e in graph.children(view.key, kinds.LIST_VIEW_ENTRY, order_by=graph.DEFINITION_ORDER):
+    pb = _milo_builder_pb(e, view, project_name, seen)
+    if pb:
+      builders.append(pb)
+  return milo_pb.Console(
+      id = view.props.name,
+      name = view.props.title,
+      favicon_url = view.props.favicon or opts.favicon,
+      builder_view_only = True,
+      builders = builders,
+  )
+
+
+def _milo_builder_pb(entry, view, project_name, seen):
+  """Returns milo_pb.Builder given LIST_VIEW_ENTRY node.
+
+  Args:
+    entry: a LIST_VIEW_ENTRY node.
+    view: a parent LIST_VIEW node (for error messages).
+    project_name: LUCI project name, to expand short bucket names into
+        luci.<project>.<bucket> ones.
+    seen: a dict {BUILDER key -> LIST_VIEW_ENTRY node that added it} with
+        already added builders, to detect dups. Mutated.
+
+  Returns:
+    milo_pb.Builder or None on errors.
+  """
+  builder_pb = milo_pb.Builder()
+  if entry.props.buildbot:
+    builder_pb.name.append('buildbot/%s' % entry.props.buildbot)
+
+  # Note: this is a one-item list for regular entries and an empty list for
+  # entries that have only deprecated Buildbot references. Other cases are
+  # impossible per list_view_entry implementation.
+  refs = graph.children(entry.key, kinds.BUILDER_REF)
+  if len(refs) > 1:
+    fail('impossible result %s' % (refs,))
+  if len(refs) == 0:
+    return builder_pb  # pure Buildbot entry, we don't care much for them
+
+  # Grab BUILDER node and ensure it hasn't be added to this view yet.
+  builder = builder_ref.follow(refs[0], context_node=entry)
+  if builder.key in seen:
+    error(
+        'builder %s was already added to %s, previous declaration:\n%s' %
+        (builder, view, seen[builder.key].trace),
+        trace=entry.trace)
+    return None
+  seen[builder.key] = entry
+
+  builder_pb.name.append('buildbucket/%s/%s' % (
+      _milo_bucket_name(builder.props.bucket, project_name),
+      builder.props.name,
+  ))
+  return builder_pb
+
+
+def _milo_bucket_name(bucket_name, project_name):
+  """Prefixes the bucket name with `luci.<project>.` if necessary."""
+  pfx = 'luci.%s.' % project_name
+  return bucket_name if bucket_name.startswith(pfx) else pfx + bucket_name
