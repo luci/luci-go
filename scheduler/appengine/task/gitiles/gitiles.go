@@ -160,7 +160,6 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		ctl.DebugLog("Error fetching state of the world: %s", err)
 		return err
 	}
-	ctl.DebugLog("Fetched refs: %d from datastore, %d from gitiles", len(refs.known), len(refs.current))
 
 	refs.pruneKnown(ctl)
 	leftToProcess, err := m.emitTriggersRefAtATime(c, ctl, g, cfg.Repo, refs)
@@ -222,7 +221,7 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg *messages.GitilesTask, g *gitilesClient, repoURL *url.URL) (*refsState, error) {
 	refs := &refsState{}
 	refs.watched = gitiles.NewRefSet(cfg.GetRefs())
-	return refs, parallel.FanOutIn(func(work chan<- func() error) {
+	err := parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (loadErr error) {
 			refs.known, loadErr = loadState(c, ctl.JobID(), repoURL)
 			return
@@ -234,6 +233,19 @@ func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg 
 			return
 		}
 	})
+	if err != nil {
+		return nil, err
+	}
+	ctl.DebugLog("Fetched refs: %d from datastore, %d from gitiles", len(refs.known), len(refs.current))
+	missingRefs := gitiles.FindNotMatchedRefs(cfg.GetRefs(), refs.current)
+	if len(missingRefs) > 0 {
+		ctl.DebugLog("The following configured refs didn't match a single actual ref: %s\n"+
+			"Hint: have you granted read access to LUCI Scheduler on relevant refs in %q\n"+
+			"Resolved refs from gitiles:\n%s\n",
+			missingRefs, cfg.Repo, refs.current)
+		return nil, errors.Reason("%d unresolved refs", len(missingRefs)).Err()
+	}
+	return refs, nil
 }
 
 // emitTriggersRefAtATime processes refs one a time and emits triggers if ref
