@@ -221,6 +221,7 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 	if err != nil {
 		return r.Header, []byte{}, errors.Annotate(err, "could not read response body").Err()
 	}
+	logging.Errorf(ctx, "TODO(crbug/932645): code %d body %s", r.StatusCode, body)
 
 	switch r.StatusCode {
 	case http.StatusOK:
