@@ -297,6 +297,9 @@ message GitilesTask {
   //     the literal prefix "refs/release-" contains only one slash. The regexp
   //     should not start with ^ or end with $ as they will be added
   //     automatically.
+  //
+  // Each tracked ref, either fully qualified or regexp, must match at least 1
+  // ref in gitiles output.
   repeated string refs = 2;
 
   // Optional path_regexps and path_regexps_exclude are lists of regular

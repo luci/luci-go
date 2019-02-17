@@ -54,7 +54,7 @@ func NewRefSet(refs []string) RefSet {
 	w := RefSet{map[string]*refSetPrefix{}}
 	nsRegexps := map[string][]string{}
 	for _, ref := range refs {
-		prefix, literalRef, refRegexp := parseRef(ref)
+		prefix, literalRef, refRegexp, _ := parseRef(ref)
 		if _, exists := w.byPrefix[prefix]; !exists {
 			w.byPrefix[prefix] = &refSetPrefix{prefix: prefix}
 		}
@@ -115,6 +115,32 @@ func (w RefSet) Resolve(c context.Context, client gitiles.GitilesClient, project
 			}
 		}
 	})
+}
+
+// FindNotMatchedRefs returns all refs which don't match to any resolved ref.
+//
+// Operates on refs in the same format as NewRefSet() and resolvedMap as output
+// of Resolve() method.
+func FindNotMatchedRefs(refs []string, resolvedMap map[string]string) []string {
+	missing := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		_, _, _, compiledRegexp := parseRef(ref)
+		matched := false
+		if compiledRegexp == nil {
+			_, matched = resolvedMap[ref]
+		} else {
+			for resolvedRef := range resolvedMap {
+				if compiledRegexp.MatchString(resolvedRef) {
+					matched = true
+					break
+				}
+			}
+		}
+		if !matched {
+			missing = append(missing, ref)
+		}
+	}
+	return missing
 }
 
 // ValidateRefSet validates strings representing a set of refs.
@@ -194,14 +220,11 @@ func validateRegexpRef(c *validation.Context, ref string) {
 	}
 }
 
-func parseRef(ref string) (prefix, literalRef, refRegexp string) {
+func parseRef(ref string) (prefix, literalRef, refRegexp string, compiledRegexp *regexp.Regexp) {
 	if strings.HasPrefix(ref, "regexp:") {
 		refRegexp = strings.TrimPrefix(ref, "regexp:")
-		descendantRegexp, err := regexp.Compile(refRegexp)
-		if err != nil {
-			panic(err)
-		}
-		literalPrefix, _ := descendantRegexp.LiteralPrefix()
+		compiledRegexp = regexp.MustCompile(refRegexp)
+		literalPrefix, _ := compiledRegexp.LiteralPrefix()
 		prefix = literalPrefix[:strings.LastIndex(literalPrefix, "/")]
 		return
 	}
@@ -209,6 +232,5 @@ func parseRef(ref string) (prefix, literalRef, refRegexp string) {
 	// Plain ref name, just extract the ref prefix from it.
 	lastSlash := strings.LastIndex(ref, "/")
 	prefix, literalRef = ref[:lastSlash], ref
-
 	return
 }

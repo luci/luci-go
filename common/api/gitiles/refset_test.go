@@ -152,3 +152,44 @@ func TestRefSet(t *testing.T) {
 		})
 	})
 }
+
+func TestFindNotMatchedRefs(t *testing.T) {
+	t.Parallel()
+
+	Convey("FindNotMatchedRefs", t, func() {
+		Convey("Simple missing", func() {
+			So(FindNotMatchedRefs([]string{"refs/heads/master"}, map[string]string{}),
+				ShouldResemble, []string{"refs/heads/master"})
+			So(FindNotMatchedRefs([]string{"regexp:refs/heads/.+"}, map[string]string{}),
+				ShouldResemble, []string{"regexp:refs/heads/.+"})
+		})
+
+		Convey("Simple present", func() {
+			So(FindNotMatchedRefs([]string{"refs/heads/master"}, map[string]string{
+				"refs/heads/master": "deadbeef",
+			}), ShouldResemble, []string{})
+			So(FindNotMatchedRefs([]string{"regexp:refs/heads/.+"}, map[string]string{
+				"refs/heads/master": "deadbeef",
+			}), ShouldResemble, []string{})
+		})
+
+		Convey("Hard mix", func() {
+			So(FindNotMatchedRefs([]string{
+				"refs/heads/master",
+				"refs/heads/missing",
+				"refs/heads/dups-allowed",
+				"refs/heads/dups-allowed",
+				"regexp:refs/heads/.+",
+				"regexp:refs/digit/\\d",
+			}, map[string]string{
+				"refs/heads/master":      "deadbeef",
+				"refs/digit/not-a-digit": "deadbeef",
+			}), ShouldResemble, []string{
+				"refs/heads/missing",
+				"refs/heads/dups-allowed",
+				"refs/heads/dups-allowed",
+				"regexp:refs/digit/\\d",
+			})
+		})
+	})
+}
