@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f39841af_2687a2fb",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-19T23:55:53Z",
+      "side": 1,
+      "message": "looks redundant to me, you are doing exactly the same below inside transaction \u0026\u0026 given the callers of this func, early check isn\u0027t avoiding a transaction in most cases.",
+      "range": {
+        "startLine": 227,
+        "startChar": 1,
+        "endLine": 236,
+        "endChar": 2
+      },
+      "revId": "f3f7cca0051fa0d000fda0268f11cbff7879fc1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cedbaafc_ac538540",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-19T23:55:53Z",
+      "side": 1,
+      "message": "so, here I can see why it\u0027s useful -- since these createVM tasks are created all the time, you want to avoid needless transactions. Please, add a comment about this before L107.",
+      "range": {
+        "startLine": 107,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 2
+      },
+      "revId": "f3f7cca0051fa0d000fda0268f11cbff7879fc1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
