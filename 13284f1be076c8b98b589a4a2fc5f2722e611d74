@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8f82bce_6e4325de",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-19T20:36:31Z",
+      "side": 1,
+      "message": "nit: this will mistakenly match e.g. \"stuffrefs/heads/...\". Notice that NewRefsSet adds ^$ which we don\u0027t do here\n\nCan FindNonMatchedRefs be a method of RefSet and reuse its w.byPrefix[prefix] structures (which has correct regexps already and even hasRef method which seems like what we want)?",
+      "range": {
+        "startLine": 133,
+        "startChar": 7,
+        "endLine": 133,
+        "endChar": 33
+      },
+      "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ae056e0_4345d993",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-19T20:36:31Z",
+      "side": 1,
+      "message": "cool, didn\u0027t know about it",
+      "range": {
+        "startLine": 227,
+        "startChar": 37,
+        "endLine": 227,
+        "endChar": 50
+      },
+      "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11ec344f_42d2eda9",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-19T20:36:31Z",
+      "side": 1,
+      "message": "This panics if literalPrefix doesn\u0027t have \u0027/\u0027. Is that OK?",
+      "range": {
+        "startLine": 228,
+        "startChar": 11,
+        "endLine": 228,
+        "endChar": 64
+      },
+      "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
