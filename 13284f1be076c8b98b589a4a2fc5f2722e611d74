@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "75c84988_b597016c",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-19T20:42:29Z",
+      "side": 1,
+      "message": "Ah, I see, we need association between values in \u0027refs\u0027 and hits we get, and w.byPrefix[prefix].refRegexp doesn\u0027t have it, since it\u0027s one big regexp with everything inside it.\n\nStill I think FindNotMatchedRefs is more natural as a method of RefsSet or even just as an additional return value from Resolve.",
+      "parentUuid": "b8f82bce_6e4325de",
+      "range": {
+        "startLine": 133,
+        "startChar": 7,
+        "endLine": 133,
+        "endChar": 33
+      },
+      "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0ae056e0_4345d993",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 2
