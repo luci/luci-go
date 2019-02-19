@@ -114,6 +114,24 @@
       "revId": "678d114c114f3a78d8104e648275d9c623165ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cab726d_c239a8f7",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-19T21:06:40Z",
+      "side": 1,
+      "message": "you are right. Can we then store Interval instead? we already have step-level computations L139, so this would be one more computation, but it will happen to be a function of time. Then you don\u0027t need Interval() func in L58",
+      "parentUuid": "c086168d_3dd9b4af",
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
