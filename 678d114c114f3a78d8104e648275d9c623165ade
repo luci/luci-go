@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84494653_67231e4b",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-19T20:35:48Z",
+      "side": 1,
+      "message": "unused? template uses CurrentTime",
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eebe4ef5_2619fe2c",
+        "filename": "milo/common/time.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-19T20:35:48Z",
+      "side": 1,
+      "message": "i think a param to Duration() would be more appropriate, because Now is volatile\nnote that you will have no problem passing it in L66",
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adff7bf1_08cd3550",
+        "filename": "milo/common/time.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-19T20:35:48Z",
+      "side": 1,
+      "message": "this may look very weird. Imagine end\u003csub permanently (for some bad reason). The duration will grow and grow over time. Let\u0027s either return negative value, or zero, or error",
+      "range": {
+        "startLine": 41,
+        "startChar": 16,
+        "endLine": 42,
+        "endChar": 14
+      },
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee9ad91a_eb04fbe8",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-19T20:35:48Z",
+      "side": 1,
+      "message": "in BuildPage it is called \"Now\". I am confused.",
+      "range": {
+        "startLine": 207,
+        "startChar": 82,
+        "endLine": 207,
+        "endChar": 93
+      },
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff98beb1_321a523c",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-19T20:35:48Z",
+      "side": 1,
+      "message": "not needed if Page passes its CurrentTime to Duration() func",
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
