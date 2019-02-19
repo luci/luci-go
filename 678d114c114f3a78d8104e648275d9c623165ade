@@ -96,6 +96,24 @@
       "revId": "678d114c114f3a78d8104e648275d9c623165ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c086168d_3dd9b4af",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-02-19T20:54:01Z",
+      "side": 1,
+      "message": "This is here mostly due to how the build page is structured.\n\nFor step rendering, the page rendering code only has access to the Step struct, so it has no access to CurrentTime, which is more or less \"global\".\nIn that case, i thought it would make sense for the current time to be a property of the Step,\nSince we need to know the current time to accurately render the step (duration).",
+      "parentUuid": "ff98beb1_321a523c",
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
