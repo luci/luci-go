@@ -236,15 +236,18 @@ func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*u
 		swarming.TaskPageURL(b.Tags.Get("swarming_hostname"), task).String(),
 		"Swarming task page for task "+task)
 
+	// Use v2 bucket names.
+	_, bucket := buildbucket.BucketNameToV2(b.Bucket)
+
 	result.Summary.ParentLabel = ui.NewLink(
 		b.Builder,
-		fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, b.Bucket, b.Builder),
+		fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, bucket, b.Builder),
 		fmt.Sprintf("builder %s", b.Builder))
 	if b.Number != nil {
 		numStr := strconv.Itoa(*b.Number)
 		result.Summary.Label = ui.NewLink(
 			numStr,
-			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
+			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, bucket, b.Builder, numStr),
 			fmt.Sprintf("build #%s", numStr))
 	} else {
 		idStr := strconv.FormatInt(b.ID, 10)

@@ -125,7 +125,7 @@ func TestBuildIDLink(t *testing.T) {
 				So(
 					buildIDLink(buildID, project),
 					ShouldEqual,
-					"/p/proj/builders/luci.proj.bucket/builder/123")
+					"/p/proj/builders/bucket/builder/123")
 			})
 
 			Convey("with only ID info", func() {
