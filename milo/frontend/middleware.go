@@ -71,7 +71,6 @@ var funcMap = template.FuncMap{
 	"shortenEmail":     shortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
-	"toInterval":       common.ToInterval,
 	"toLower":          strings.ToLower,
 	"toTime":           toTime,
 }
