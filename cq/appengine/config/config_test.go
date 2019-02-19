@@ -206,19 +206,6 @@ func TestValidation(t *testing.T) {
 			})
 		})
 
-		Convey("Temporary limitations", func() {
-			Convey("At most 1 gerrit URL", func() {
-				cfg.ConfigGroups[0].Gerrit = append(cfg.ConfigGroups[0].Gerrit, &v2.ConfigGroup_Gerrit{
-					Url:      "https://z-review.googlesource.com",
-					Projects: cfg.ConfigGroups[0].Gerrit[0].Projects,
-				})
-				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike,
-					`more than 1 different gerrit url not **yet** allowed (given: `+
-						`["https://chromium-review.googlesource.com" "https://z-review.googlesource.com"])`)
-			})
-		})
-
 		Convey("ConfiGroups", func() {
 			Convey("with Gerrit", func() {
 				cfg.ConfigGroups[0].Gerrit = nil

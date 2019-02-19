@@ -109,28 +109,7 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		validateConfigGroup(ctx, g)
 		ctx.Exit()
 	}
-	ensureAtMost1Gerrit(ctx, cfg)
 	bestEffortDisjointGroups(ctx, cfg)
-}
-
-// ensureAtMost1Gerrit enforces temporary CQ limitation of supporting only a
-// single Gerrit url.
-// TODO(tandrii): remove the single gerrit limitation.
-func ensureAtMost1Gerrit(ctx *validation.Context, cfg *v2.Config) {
-	gerritURLs := stringset.Set{}
-	for _, gr := range cfg.ConfigGroups {
-		for _, g := range gr.Gerrit {
-			gerritURLs.Add(g.Url)
-		}
-	}
-	// Ignore empty URLs and project names, because those already resulted in
-	// error earlier.
-	gerritURLs.Del("")
-	if gerritURLs.Len() > 1 {
-		urls := gerritURLs.ToSlice()
-		sort.Strings(urls)
-		ctx.Errorf("more than 1 different gerrit url not **yet** allowed (given: %q)", urls)
-	}
 }
 
 type refKey struct {
