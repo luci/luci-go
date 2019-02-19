@@ -40,7 +40,8 @@ func handleDevBuild(c *router.Context) error {
 	if err != nil {
 		return err
 	}
-	return renderBuild(c, &ui.BuildPage{Build: *b}, nil)
+	bp := ui.NewBuildPage(c.Context, b)
+	return renderBuild(c, bp, nil)
 }
 
 // handleLUCIBuild renders a LUCI build.
