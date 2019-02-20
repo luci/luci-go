@@ -16,7 +16,6 @@ package starlarkproto
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/golang/protobuf/proto"
 
@@ -33,7 +32,7 @@ type Message struct {
 	fields starlark.StringDict // populated fields, keyed by proto field name
 }
 
-// NewMessage instantiates a message of the given type.
+// NewMessage instantiates a new empty message of the given type.
 func NewMessage(typ *MessageType) *Message {
 	return &Message{
 		typ:    typ,
@@ -51,8 +50,8 @@ func (m *Message) MessageType() *MessageType { return m.typ }
 // Returns an error if the data inside the starlark representation of
 // the message has a wrong type.
 func (m *Message) ToProto() (proto.Message, error) {
-	ptr := reflect.New(m.typ.Type().Elem()) // ~ ptr := &ProtoMessage{}
-	msg := ptr.Elem()                       // ~ msg := *ptr (a reference)
+	ptr := m.typ.NewProtoMessage() // ~ ptr := &ProtoMessage{}
+	msg := ptr.Elem()              // ~ msg := *ptr (a reference)
 
 	for name, val := range m.fields {
 		fd, ok := m.typ.fields[name]
@@ -65,6 +64,14 @@ func (m *Message) ToProto() (proto.Message, error) {
 	}
 
 	return ptr.Interface().(proto.Message), nil
+}
+
+// FromProto populates fields of this message based on values in proto.Message.
+//
+// Returns an error on type mismatch.
+func (m *Message) FromProto(p proto.Message) error {
+	// TODO(vadimsh): Implement.
+	return nil
 }
 
 // Basic starlark.Value interface.
