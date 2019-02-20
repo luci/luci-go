@@ -45,6 +45,5 @@
 // To clear a field, assign None to it (regardless of its type).
 package starlarkproto
 
-// TODO: support known types (any, struct).
-// TODO: support freezing.
+// TODO: support more known types (any, struct).
 // TODO: support '==' ?
