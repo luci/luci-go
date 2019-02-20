@@ -204,6 +204,27 @@ func assign(gv reflect.Value, sv starlark.Value) error {
 	return assigner(gv)
 }
 
+// toStarlarkValue converts the Go value to Starlark value.
+//
+// Used to convert a proto.Message into a Starlark value after it was
+// deserialized, thus geared only towards understanding types that can appear
+// inside *.pb.go files.
+//
+// Recognizes basic types:
+//    * bool -> starlark.Bool.
+//    * floats -> starlark.Float.
+//    * integers (signed and unsigned, all sizes) -> starlark.Int.
+//    * Proto enums -> starlark.Int.
+//    * string -> starlark.String.
+//    * proto.Message -> *Message.
+//
+// Also understands slices of basic types (converting them to starlark.List) and
+// maps with string keys (converting them to starlark.Dict).
+func toStarlarkValue(gv reflect.Value) (starlark.Value, error) {
+	// TODO(vadimsh): Implement.
+	return starlark.None, nil
+}
+
 // typDesc returns a human readable description of the type, for error messages.
 //
 // Recognize proto types and report their proto names. Otherwise just reports
