@@ -23,14 +23,18 @@ import (
 	"go.starlark.net/starlark"
 )
 
-// Message is a starlark value that implements a struct-like type structured
+// Message is a Starlark value that implements a struct-like type structured
 // like a protobuf message.
 //
 // Implements starlark.Value, starlark.HasAttrs and starlark.HasSetField
 // interfaces.
+//
+// TODO(vadimsh): Currently not safe for a cross-goroutine use without external
+// locking, even when frozen.
 type Message struct {
 	typ    *MessageType        // type information
 	fields starlark.StringDict // populated fields, keyed by proto field name
+	frozen bool                // true after Freeze()
 }
 
 // NewMessage instantiates a new empty message of the given type.
@@ -48,7 +52,7 @@ func (m *Message) MessageType() *MessageType { return m.typ }
 
 // ToProto returns a new populated proto message of an appropriate type.
 //
-// Returns an error if the data inside the starlark representation of
+// Returns an error if the data inside the Starlark representation of
 // the message has a wrong type.
 func (m *Message) ToProto() (proto.Message, error) {
 	ptr := m.typ.NewProtoMessage() // ~ ptr := &ProtoMessage{}
@@ -141,8 +145,8 @@ func (m *Message) String() string {
 
 // Type implements starlark.Value.
 func (m *Message) Type() string {
-	// The receiver is nil when doing type checks with starlark.UnpackArgs. It asks
-	// the nil message for its type for the error message.
+	// The receiver is nil when doing type checks with starlark.UnpackArgs. It
+	// asks the nil message for its type for the error message.
 	if m == nil {
 		return "proto.Message"
 	}
@@ -150,7 +154,12 @@ func (m *Message) Type() string {
 }
 
 // Freeze implements starlark.Value.
-func (m *Message) Freeze() {} // TODO
+func (m *Message) Freeze() {
+	if !m.frozen {
+		m.fields.Freeze()
+		m.frozen = true
+	}
+}
 
 // Truth implements starlark.Value.
 func (m *Message) Truth() starlark.Bool { return starlark.True }
@@ -183,6 +192,19 @@ func (m *Message) Attr(name string) (starlark.Value, error) {
 		if err != nil {
 			return nil, err
 		}
+		// Lazy initialization of fields is an implementation detail. From the
+		// caller's point of view, all fields had their default values even before
+		// the object was frozen. Lazy-initialize the field, even if we are frozen,
+		// but make sure it is frozen itself too.
+		//
+		// TODO(vadimsh): This is not thread safe and should be improved if a frozen
+		// *Message is shared between goroutines. Generally frozen values are
+		// assumed to be safe for cross-goroutine use, which is not the case here.
+		// If this becomes important, we can force-initialize and freeze all default
+		// fields in Freeze().
+		if m.frozen {
+			def.Freeze()
+		}
 		m.fields[name] = def
 		return def, nil
 	}
@@ -204,6 +226,9 @@ func (m *Message) SetField(name string, val starlark.Value) error {
 
 	// Setting a field to None removes it completely.
 	if val == starlark.None {
+		if err := m.checkMutable(); err != nil {
+			return err
+		}
 		delete(m.fields, name)
 		return nil
 	}
@@ -225,6 +250,9 @@ func (m *Message) SetField(name string, val starlark.Value) error {
 	if err := checkAssignable(fd.typ, val); err != nil {
 		return fmt.Errorf("can't assign value of type %q to field %q in proto %q - %s", val.Type(), name, m.Type(), err)
 	}
+	if err := m.checkMutable(); err != nil {
+		return err
+	}
 	m.fields[name] = val
 
 	// onChanged hooks is used by oneof's to clear alternatives that weren't
@@ -233,6 +261,14 @@ func (m *Message) SetField(name string, val starlark.Value) error {
 		fd.onChanged(m.fields)
 	}
 
+	return nil
+}
+
+// checkMutable returns an error if the message is frozen.
+func (m *Message) checkMutable() error {
+	if m.frozen {
+		return fmt.Errorf("cannot modify frozen proto message %q", m.Type())
+	}
 	return nil
 }
 
