@@ -204,6 +204,26 @@ func assign(gv reflect.Value, sv starlark.Value) error {
 	return assigner(gv)
 }
 
+// toStarlarkValue converts the Go value to Starlark value.
+//
+// Recognizes basic types:
+//    * nil pointer of any kind -> starlark.None.
+//    * bool -> starlark.Bool.
+//    * floats -> starlark.Float.
+//    * integers (signed and unsigned, all sizes) -> starlark.Int.
+//    * Proto enums -> starlark.Int.
+//    * string -> starlark.String.
+//    * proto.Message -> *Message.
+//
+// Also understands non-empty slices of basic types (converting them to
+// starlark.List) and non-empty maps with string keys and values of a basic type
+// (converting them to starlark.Dict). Empty slices and dicts are converted to
+// starlark.None.
+func toStarlarkValue(gv reflect.Value) (starlark.Value, error) {
+	// TODO(vadimsh): Implement.
+	return starlark.None, nil
+}
+
 // typDesc returns a human readable description of the type, for error messages.
 //
 // Recognize proto types and report their proto names. Otherwise just reports
