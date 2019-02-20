@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9f1cd8bf_f1146070",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-02-20T00:43:01Z",
+      "side": 1,
+      "message": "Now private.",
+      "parentUuid": "84494653_67231e4b",
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eebe4ef5_2619fe2c",
         "filename": "milo/common/time.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "678d114c114f3a78d8104e648275d9c623165ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad5ecfaa_d834d0a9",
+        "filename": "milo/common/time.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-02-20T00:43:01Z",
+      "side": 1,
+      "message": "Needs to be a property of interval due to how template is structured.",
+      "parentUuid": "eebe4ef5_2619fe2c",
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "c0c3221e_8e6a2441",
+        "filename": "milo/common/time.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-02-20T00:43:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "adff7bf1_08cd3550",
+      "range": {
+        "startLine": 41,
+        "startChar": 16,
+        "endLine": 42,
+        "endChar": 14
+      },
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee9ad91a_eb04fbe8",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 4
@@ -79,6 +139,30 @@
       "revId": "678d114c114f3a78d8104e648275d9c623165ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "208ab452_eb2745de",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-02-20T00:43:01Z",
+      "side": 1,
+      "message": "At this point in the template either can be accessed.  I\u0027ll arbitrarily make it .CurrentTime instead of .BuildPage.Now, and change .BuildPage.Now to private.",
+      "parentUuid": "ee9ad91a_eb04fbe8",
+      "range": {
+        "startLine": 207,
+        "startChar": 82,
+        "endLine": 207,
+        "endChar": 93
+      },
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -132,6 +216,24 @@
       "revId": "678d114c114f3a78d8104e648275d9c623165ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c951b7b8_55bfaa97",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-02-20T00:43:01Z",
+      "side": 1,
+      "message": "Makes sense.",
+      "parentUuid": "9cab726d_c239a8f7",
+      "revId": "678d114c114f3a78d8104e648275d9c623165ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
