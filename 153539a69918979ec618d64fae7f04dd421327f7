@@ -116,6 +116,30 @@
       "revId": "153539a69918979ec618d64fae7f04dd421327f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2b79960_d84b5f26",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2019-02-20T16:11:53Z",
+      "side": 1,
+      "message": "We already use \"important\" and \"experimental\" for related concepts in CBuildBot and they are a source of endless confusion because they intersect in non-obvious ways. I would prefer \"critical\" but we could standardize on \"important\" if it\u0027s widely adopted. The network effects could overcome the confusion. \"Significant\" is too abstract.",
+      "parentUuid": "bc854d52_1aab09f1",
+      "range": {
+        "startLine": 101,
+        "startChar": 12,
+        "endLine": 101,
+        "endChar": 20
+      },
+      "revId": "153539a69918979ec618d64fae7f04dd421327f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
