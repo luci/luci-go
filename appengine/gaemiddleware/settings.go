@@ -20,6 +20,8 @@ import (
 
 	mc "go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )
@@ -70,6 +72,20 @@ func fetchCachedSettings(c context.Context) gaeSettings {
 	default:
 		panic(fmt.Errorf("could not fetch GAE settings - %s", err))
 	}
+}
+
+// dsCacheDisabled is a metric for reporting the value of DSCacheDisabled in
+// gaeSettings.
+var dsCacheDisabled = metric.NewBool(
+	"appengine/settings/dscache_disabled",
+	"Whether or not dscache is disabled in the admin portal.",
+	nil,
+)
+
+// reportDSCacheDisabled reports the value of DSCacheDisabled in settings to
+// tsmon.
+func reportDSCacheDisabled(c context.Context) {
+	dsCacheDisabled.Set(c, bool(fetchCachedSettings(c).DisableDSCache))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -166,4 +182,5 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 
 func init() {
 	portal.RegisterPage(settingsKey, settingsPage{})
+	tsmon.RegisterGlobalCallback(reportDSCacheDisabled, dsCacheDisabled)
 }
