@@ -34,11 +34,11 @@ assert.eq(m.rep[0].i, 456)
 # currently. This is discovered later when trying to serialize the object.
 m.rep = [testprotos.Simple(i=456), testprotos.MessageFields()]
 def serialize():
-  proto.to_pbtext(m)
+  proto.to_textpb(m)
 assert.fails(serialize, 'list item #1 - can\'t assign a testprotos.MessageFields message to a testprotos.Simple message')
 
 # Serialization to text proto works.
-text = proto.to_pbtext(testprotos.MessageFields(
+text = proto.to_textpb(testprotos.MessageFields(
   rep=[
     testprotos.Simple(i=123),
     testprotos.Simple(i=456),

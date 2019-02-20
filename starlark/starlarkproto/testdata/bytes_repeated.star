@@ -24,7 +24,7 @@ assert.eq(m.bs_rep, [])
 # Setter and getter works.
 m.bs_rep = [[], [1, 2, 3]]
 assert.eq(m.bs_rep, [[], [1, 2, 3]])
-assert.eq(proto.to_pbtext(m), 'bs_rep: ""\nbs_rep: "\\001\\002\\003"\n')
+assert.eq(proto.to_textpb(m), 'bs_rep: ""\nbs_rep: "\\001\\002\\003"\n')
 
 # Setting through constructor works.
 m2 = testprotos.SimpleFields(bs_rep=[[0], [1]])
@@ -42,11 +42,11 @@ assert.fails(set_bad, 'can\'t assign integer to a value of kind "slice"')
 # None values are forbidden when serializing.
 def set_none_item():
   m2.bs_rep = [None]
-  proto.to_pbtext(m2)
+  proto.to_textpb(m2)
 assert.fails(set_none_item, 'can\'t assign nil to a value of kind "slice"')
 
 # Trying to put a wrong type into the list fails when serializing.
 def set_bad_item():
   m2.bs_rep = [1]
-  proto.to_pbtext(m2)
+  proto.to_textpb(m2)
 assert.fails(set_bad_item, 'can\'t assign integer to a value of kind "slice"')

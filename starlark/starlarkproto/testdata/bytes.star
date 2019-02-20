@@ -26,7 +26,7 @@ assert.eq(m.bs, [])
 # Setter and getter works.
 m.bs = [0, 1, 2, 3]
 assert.eq(m.bs, [0, 1, 2, 3])
-assert.eq(proto.to_pbtext(m), 'bs: "\\000\\001\\002\\003"\n')
+assert.eq(proto.to_textpb(m), 'bs: "\\000\\001\\002\\003"\n')
 
 # Setting through constructor works.
 m2 = testprotos.SimpleFields(bs=[0, 1])
@@ -45,10 +45,10 @@ assert.fails(set_bad, 'can\'t assign integer to a value of kind "slice"')
 # Trying to serialize out-of-range byte fails.
 def serialize_min():
   m2.bs = [-1]
-  proto.to_pbtext(m2)
+  proto.to_textpb(m2)
 assert.fails(serialize_min, 'integer -1 doesn\'t fit into uint8')
 
 def serialize_max():
   m2.bs = [256]
-  proto.to_pbtext(m2)
+  proto.to_textpb(m2)
 assert.fails(serialize_max, 'integer 256 doesn\'t fit into uint8')
