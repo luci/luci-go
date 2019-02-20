@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2245763f_8d490cbf",
+        "filename": "lucicfg/starlark/stdlib/internal/io.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-20T20:32:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3e4b8ae_91eccbaf",
+      "range": {
+        "startLine": 25,
+        "startChar": 49,
+        "endLine": 25,
+        "endChar": 52
+      },
+      "revId": "997b04d6ee92e0f246b50a59a9cc24cbe1564f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70685450_b3a87694",
         "filename": "lucicfg/testdata/misc/read_file.star",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "997b04d6ee92e0f246b50a59a9cc24cbe1564f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ecefec9_7ed395e8",
+        "filename": "lucicfg/testdata/misc/read_file.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-20T20:32:40Z",
+      "side": 1,
+      "message": "Actually, \"workspace\" is undefined concept (unlike \"package root\" which is documented in starlark/interpreter and will also be eventually documented in lucicfg/doc). So I replaced \"workspace\" with \"package\" in the doc string.",
+      "parentUuid": "70685450_b3a87694",
+      "range": {
+        "startLine": 8,
+        "startChar": 60,
+        "endLine": 8,
+        "endChar": 84
+      },
+      "revId": "997b04d6ee92e0f246b50a59a9cc24cbe1564f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
