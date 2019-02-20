@@ -18,24 +18,24 @@ m = testprotos.Simple()
 
 # Works in general.
 m.i = 123
-assert.eq(proto.to_pbtext(m), 'i: 123\n')
+assert.eq(proto.to_textpb(m), 'i: 123\n')
 
-# to_pbtext expects an argument.
-def to_pbtext_no_args():
-  proto.to_pbtext()
-assert.fails(to_pbtext_no_args, 'missing argument for msg')
+# to_textpb expects an argument.
+def to_textpb_no_args():
+  proto.to_textpb()
+assert.fails(to_textpb_no_args, 'missing argument for msg')
 
 # Too many arguments.
-def to_pbtext_too_many_args():
-  proto.to_pbtext(m, m)
-assert.fails(to_pbtext_too_many_args, 'to_pbtext: got 2 arguments, want at most 1')
+def to_textpb_too_many_args():
+  proto.to_textpb(m, m)
+assert.fails(to_textpb_too_many_args, 'to_textpb: got 2 arguments, want at most 1')
 
 # None argument.
-def to_pbtext_with_none():
-  proto.to_pbtext(None)
-assert.fails(to_pbtext_with_none, 'for parameter 1: got NoneType, want proto.Message')
+def to_textpb_with_none():
+  proto.to_textpb(None)
+assert.fails(to_textpb_with_none, 'for parameter 1: got NoneType, want proto.Message')
 
 # Wrongly typed argument.
-def to_pbtext_with_int():
-  proto.to_pbtext(1)
-assert.fails(to_pbtext_with_int, 'for parameter 1: got int, want proto.Message')
+def to_textpb_with_int():
+  proto.to_textpb(1)
+assert.fails(to_textpb_with_int, 'for parameter 1: got int, want proto.Message')

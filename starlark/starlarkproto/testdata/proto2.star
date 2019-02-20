@@ -38,4 +38,4 @@ m.rep_i = [1, 2, 3]
 assert.eq(m.rep_i, [1, 2, 3])
 
 # Serialization also works.
-assert.eq(proto.to_pbtext(m), "rep_i: 1\nrep_i: 2\nrep_i: 3\n")
+assert.eq(proto.to_textpb(m), "rep_i: 1\nrep_i: 2\nrep_i: 3\n")

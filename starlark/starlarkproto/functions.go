@@ -30,7 +30,7 @@ import (
 //
 // Exported functions:
 //
-//    def to_pbtext(msg):
+//    def to_textpb(msg):
 //      """Serializes a protobuf message to text proto.
 //
 //      Args:
@@ -51,7 +51,7 @@ import (
 //        An str representing msg in JSONPB format.
 //      """
 //
-//    def from_pbtext(ctor, text):
+//    def from_textpb(ctor, text):
 //      """Deserializes a protobuf message given in text proto form.
 //
 //      Unknown fields are not allowed.
@@ -79,19 +79,19 @@ import (
 func ProtoLib() starlark.StringDict {
 	return starlark.StringDict{
 		"proto": starlarkstruct.FromStringDict(starlark.String("proto"), starlark.StringDict{
-			"to_pbtext":   starlark.NewBuiltin("to_pbtext", toPbText),
+			"to_textpb":   starlark.NewBuiltin("to_textpb", toTextPb),
 			"to_jsonpb":   starlark.NewBuiltin("to_jsonpb", toJSONPb),
-			"from_pbtext": starlark.NewBuiltin("from_pbtext", fromPbText),
+			"from_textpb": starlark.NewBuiltin("from_textpb", fromTextPb),
 			"from_jsonpb": starlark.NewBuiltin("from_jsonpb", fromJSONPb),
 		}),
 	}
 }
 
-// toPbText takes a single protobuf message and serializes it using text
+// toTextPb takes a single protobuf message and serializes it using text
 // protobuf serialization.
-func toPbText(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func toTextPb(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var msg *Message
-	if err := starlark.UnpackArgs("to_pbtext", args, kwargs, "msg", &msg); err != nil {
+	if err := starlark.UnpackArgs("to_textpb", args, kwargs, "msg", &msg); err != nil {
 		return nil, err
 	}
 	pb, err := msg.ToProto()
@@ -122,28 +122,28 @@ func toJSONPb(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwar
 	return starlark.String(str), nil
 }
 
-// fromPbText takes a text-serialized proto messages and returns *Message.
-func fromPbText(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+// fromTextPb takes a text-serialized proto messages and returns *Message.
+func fromTextPb(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var ctor starlark.Value
 	var text starlark.String
-	if err := starlark.UnpackArgs("from_pbtext", args, kwargs, "ctor", &ctor, "text", &text); err != nil {
+	if err := starlark.UnpackArgs("from_textpb", args, kwargs, "ctor", &ctor, "text", &text); err != nil {
 		return nil, err
 	}
 
 	c, ok := ctor.(*messageCtor)
 	if !ok {
-		return nil, fmt.Errorf("from_pbtext: got %s, expecting a proto message constructor", ctor.Type())
+		return nil, fmt.Errorf("from_textpb: got %s, expecting a proto message constructor", ctor.Type())
 	}
 	typ := c.typ
 
 	protoMsg := typ.NewProtoMessage().Interface().(proto.Message)
 	if err := proto.UnmarshalText(text.GoString(), protoMsg); err != nil {
-		return nil, fmt.Errorf("from_pbtext: %s", err)
+		return nil, fmt.Errorf("from_textpb: %s", err)
 	}
 
 	msg := NewMessage(typ)
 	if err := msg.FromProto(protoMsg); err != nil {
-		return nil, fmt.Errorf("from_pbtext: %s", err)
+		return nil, fmt.Errorf("from_textpb: %s", err)
 	}
 	return msg, nil
 }

@@ -24,7 +24,7 @@ msg.m['k'] = testprotos.Simple(i=123)
 assert.eq(msg.m['k'].i, 123)
 
 # Serialization to text proto works.
-text = proto.to_pbtext(testprotos.MapWithMessageType(m={
+text = proto.to_textpb(testprotos.MapWithMessageType(m={
   'k1': testprotos.Simple(i=1),
   'k2': testprotos.Simple(i=2),
 }))
@@ -44,7 +44,7 @@ m: <
 
 # Conversion to proto does full type checking.
 def check_fail(m, msg):
-  assert.fails(lambda: proto.to_pbtext(testprotos.MapWithMessageType(m=m)), msg)
+  assert.fails(lambda: proto.to_textpb(testprotos.MapWithMessageType(m=m)), msg)
 
 check_fail({'': None}, 'can\'t assign nil to a testprotos.Simple message')
 check_fail({'': 1}, 'can\'t assign integer to a testprotos.Simple message')

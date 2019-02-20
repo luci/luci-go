@@ -1276,17 +1276,17 @@ Doesn't support integers that do not fit int64. Fails if the value has cycles.
 
 
 
-### proto.to_pbtext {#proto.to_pbtext}
+### proto.to_textpb {#proto.to_textpb}
 
 ```python
-proto.to_pbtext(msg)
+proto.to_textpb(msg)
 ```
 
 
 
 Serializes a protobuf message to a string using ASCII proto serialization.
 
-#### Arguments {#proto.to_pbtext-args}
+#### Arguments {#proto.to_textpb-args}
 
 * **msg**: a proto message to serialize. Required.
 
@@ -1296,7 +1296,7 @@ Serializes a protobuf message to a string using ASCII proto serialization.
 ### proto.to_jsonpb {#proto.to_jsonpb}
 
 ```python
-proto.to_jsonpb(msg)
+proto.to_jsonpb(msg, emit_defaults = None)
 ```
 
 
@@ -1306,7 +1306,52 @@ Serializes a protobuf message to a string using JSONPB serialization.
 #### Arguments {#proto.to_jsonpb-args}
 
 * **msg**: a proto message to serialize. Required.
+* **emit_defaults**: if True, do not omit fields with default values.
 
+
+
+
+### proto.from_textpb {#proto.from_textpb}
+
+```python
+proto.from_textpb(ctor, text)
+```
+
+
+
+Deserializes a protobuf message given its ASCII proto serialization.
+
+#### Arguments {#proto.from_textpb-args}
+
+* **ctor**: a message constructor function, same one you would normally use to create a new message. Required.
+* **text**: a string with the serialized message. Required.
+
+
+#### Returns  {#proto.from_textpb-returns}
+
+Deserialized message constructed via `ctor`.
+
+
+
+### proto.from_jsonpb {#proto.from_jsonpb}
+
+```python
+proto.from_jsonpb(ctor, text)
+```
+
+
+
+Deserializes a protobuf message given its JSONPB serialization.
+
+#### Arguments {#proto.from_jsonpb-args}
+
+* **ctor**: a message constructor function, same one you would normally use to create a new message. Required.
+* **text**: a string with the serialized message. Required.
+
+
+#### Returns  {#proto.from_jsonpb-returns}
+
+Deserialized message constructed via `ctor`.
 
 
 

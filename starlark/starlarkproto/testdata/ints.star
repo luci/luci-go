@@ -52,5 +52,5 @@ def set_float():
 assert.fails(set_float, 'can\'t assign float to a value of kind "int64"')
 
 # Serialization to text proto works.
-text = proto.to_pbtext(testprotos.SimpleFields(i64=987))
+text = proto.to_textpb(testprotos.SimpleFields(i64=987))
 assert.eq(text, "i64: 987\n")
