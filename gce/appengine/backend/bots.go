@@ -209,34 +209,33 @@ func deleteBot(c context.Context, payload proto.Message) error {
 			if gerr.Code == http.StatusNotFound {
 				// Bot is already deleted.
 				logging.Debugf(c, "bot not found")
-				return setDeleted(c, task.Id, vm.Hostname)
+				return deleteVM(c, task.Id, vm.Hostname)
 			}
 			logErrors(c, gerr)
 			return errors.Reason("failed to delete bot").Err()
 		}
 		return errors.Annotate(err, "failed to delete bot").Err()
 	}
-	return setDeleted(c, task.Id, vm.Hostname)
+	return deleteVM(c, task.Id, vm.Hostname)
 }
 
-// setDeleted sets the Swarming bot as deleted in the datastore if it isn't already.
-func setDeleted(c context.Context, id, hostname string) error {
+// deleteVM deletes the given VM from the datastore if it exists.
+func deleteVM(c context.Context, id, hostname string) error {
 	vm := &model.VM{
 		ID: id,
 	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
-		if err := datastore.Get(c, vm); err != nil {
+		switch err := datastore.Get(c, vm); {
+		case err == datastore.ErrNoSuchEntity:
+			return nil
+		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
-		}
-		if vm.Hostname != hostname {
-			// Already deleted. A new one may even be created.
+		case vm.Hostname != hostname:
+			logging.Debugf(c, "VM %q does not exist", hostname)
 			return nil
 		}
-		vm.Created = 0
-		vm.Hostname = ""
-		vm.URL = ""
-		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM").Err()
+		if err := datastore.Delete(c, vm); err != nil {
+			return errors.Annotate(err, "failed to delete VM").Err()
 		}
 		return nil
 	}, nil)
