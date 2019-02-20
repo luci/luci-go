@@ -48,6 +48,10 @@ message Simple {
   repeated int64 many_i = 2;
 }
 
+message AnotherSimple {
+  int64 j = 1;
+}
+
 message Complex {
   enum InnerEnum {
     UNKNOWN    = 0;
@@ -67,7 +71,7 @@ message Complex {
 
   oneof oneof_val {
     Simple simple = 6;
-    InnerMessage inner_msg = 7;
+    AnotherSimple another_simple = 7;
   }
 }
 
