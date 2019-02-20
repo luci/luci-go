@@ -20,24 +20,30 @@ import (
 	"go.starlark.net/starlark"
 )
 
-// builtinWithAttrs decorates a Builtin by adding attributes to it and changing
-// its type name to match the builtin name.
+// messageCtor represents a proto message constructor: it is a callable that
+// produces instances of Message.
 //
-// Implements HasAttrs interface.
-type builtinWithAttrs struct {
+// Instances of messageCtor are created (and put into a module dict) in
+// loader.go.
+//
+// Implements HasAttrs interface. Attributes represent constructors for nested
+// messages and values of enums.
+type messageCtor struct {
 	*starlark.Builtin
+
+	typ   *MessageType
 	attrs starlark.StringDict
 }
 
-func (b *builtinWithAttrs) Type() string {
+func (b *messageCtor) Type() string {
 	return b.Name()
 }
 
-func (b *builtinWithAttrs) Attr(name string) (starlark.Value, error) {
+func (b *messageCtor) Attr(name string) (starlark.Value, error) {
 	return b.attrs[name], nil // (nil, nil) means "not found"
 }
 
-func (b *builtinWithAttrs) AttrNames() []string {
+func (b *messageCtor) AttrNames() []string {
 	keys := make([]string, 0, len(b.attrs))
 	for k := range b.attrs {
 		keys = append(keys, k)

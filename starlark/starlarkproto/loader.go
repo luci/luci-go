@@ -43,7 +43,7 @@ func LoadProtoModule(name string) (starlark.StringDict, error) {
 
 	// Add constructors for all messages defined at the package level.
 	for _, msg := range desc.MessageType {
-		val, err := messageCtor(pkg, msg)
+		val, err := newMessageCtor(pkg, msg)
 		if err != nil {
 			return nil, err
 		}
@@ -60,10 +60,10 @@ func LoadProtoModule(name string) (starlark.StringDict, error) {
 	}, nil
 }
 
-// messageCtor returns a starlark callable that acts as constructor of new
+// newMessageCtor returns a starlark callable that acts as constructor of new
 // proto messages (of a type described by the given descriptor) and has
 // constructors for the nested messages available as attributes.
-func messageCtor(ns string, desc *descpb.DescriptorProto) (starlark.Value, error) {
+func newMessageCtor(ns string, desc *descpb.DescriptorProto) (starlark.Value, error) {
 	// Get type descriptor for the proto message.
 	name := ns + "." + desc.GetName()
 	typ := proto.MessageType(name)
@@ -98,7 +98,7 @@ func messageCtor(ns string, desc *descpb.DescriptorProto) (starlark.Value, error
 		// map<...> fields are represented by magical map message types. We
 		// represent maps using Starlark dicts, so we skip map message types.
 		if !nested.GetOptions().GetMapEntry() {
-			if attrs[nested.GetName()], err = messageCtor(name, nested); err != nil {
+			if attrs[nested.GetName()], err = newMessageCtor(name, nested); err != nil {
 				return nil, err
 			}
 		}
@@ -109,7 +109,11 @@ func messageCtor(ns string, desc *descpb.DescriptorProto) (starlark.Value, error
 		injectEnumValues(attrs, enum)
 	}
 
-	return &builtinWithAttrs{ctor, attrs}, nil
+	return &messageCtor{
+		Builtin: ctor,
+		attrs:   attrs,
+		typ:     t,
+	}, nil
 }
 
 // injectEnumValues takes enum constants defined in 'enum' and puts them
