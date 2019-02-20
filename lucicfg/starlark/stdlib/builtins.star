@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # Non-LUCI features.
+load('@stdlib//internal/io.star', _io='io')
 load('@stdlib//internal/lucicfg.star', _lucicfg='lucicfg')
 load('@stdlib//internal/time.star', _time='time')
 
@@ -39,6 +40,7 @@ _register()
 
 # Non-LUCI-specific public API.
 
+io = _io
 lucicfg = _lucicfg
 time = _time
 

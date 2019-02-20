@@ -465,7 +465,12 @@ func (intr *Interpreter) LoadSource(th *starlark.Thread, ref string) (string, er
 		err = fmt.Errorf("it is a native Go module")
 	}
 	if err != nil {
-		return "", fmt.Errorf("cannot load source code of %s: %s", target, err)
+		// Avoid term "module" since LoadSource is often used to load non-star
+		// files.
+		if err == ErrNoModule {
+			err = fmt.Errorf("no such file")
+		}
+		return "", fmt.Errorf("cannot load %s: %s", target, err)
 	}
 	return src, nil
 }
