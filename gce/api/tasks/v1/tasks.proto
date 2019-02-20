@@ -22,12 +22,6 @@ message DeleteBot {
   string hostname = 2;
 }
 
-// A task to delete a VM.
-message DeleteVM {
-  // The ID of the VM to delete.
-  string id = 1;
-}
-
 // A task to destroy a GCE instance created from a VM.
 message DestroyInstance {
   // The ID of the VM to destroy a GCE instance for.
@@ -42,9 +36,9 @@ message DrainVM {
   string id = 1;
 }
 
-// A task to create or update a particular VM.
-message EnsureVM {
-  // The index of the VM to create or update.
+// A task to create a particular VM.
+message CreateVM {
+  // The index of the VM to create.
   int32 index = 1;
   // The attributes of the VM.
   config.VM attributes = 2;

@@ -33,41 +33,6 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
-// deleteVMQueue is the name of the delete VM task handler queue.
-const deleteVMQueue = "delete-vm"
-
-// deleteVM deletes a given VM.
-func deleteVM(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.DeleteVM)
-	switch {
-	case !ok:
-		return errors.Reason("unexpected payload type %T", payload).Err()
-	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
-	}
-	return datastore.RunInTransaction(c, func(c context.Context) error {
-		vm := &model.VM{
-			ID: task.Id,
-		}
-		switch err := datastore.Get(c, vm); {
-		case err == datastore.ErrNoSuchEntity:
-			return nil
-		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM").Err()
-		case vm.URL != "":
-			return errors.Reason("instance exists: %s", vm.URL).Err()
-		case vm.Hostname != "":
-			return errors.Reason("creating instance %q", vm.Hostname).Err()
-		case !vm.Drained:
-			return errors.Reason("VM not drained").Err()
-		}
-		if err := datastore.Delete(c, vm); err != nil {
-			return errors.Annotate(err, "failed to delete VM").Err()
-		}
-		return nil
-	}, nil)
-}
-
 // drainVMQueue is the name of the drain VM task handler queue.
 const drainVMQueue = "drain-vm"
 
@@ -123,12 +88,12 @@ func drainVM(c context.Context, payload proto.Message) error {
 	}, nil)
 }
 
-// ensureVMQueue is the name of the ensure VM task handler queue.
-const ensureVMQueue = "ensure-vm"
+// createVMQueue is the name of the create VM task handler queue.
+const createVMQueue = "create-vm"
 
-// ensureVM creates or updates a given VM.
-func ensureVM(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.EnsureVM)
+// createVM creates a VM if it doesn't already exist.
+func createVM(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.CreateVM)
 	switch {
 	case !ok:
 		return errors.Reason("unexpected payload type %T", payload).Err()
@@ -136,12 +101,25 @@ func ensureVM(c context.Context, payload proto.Message) error {
 		return errors.Reason("config is required").Err()
 	}
 	id := fmt.Sprintf("%s-%d", task.Config, task.Index)
+	vm := &model.VM{
+		ID: id,
+	}
+	// createVM is called repeatedly, so do a fast check outside the transaction.
+	// In most cases, this will skip the more expensive transactional check.
+	switch err := datastore.Get(c, vm); {
+	case err == datastore.ErrNoSuchEntity:
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch VM").Err()
+	default:
+		return nil
+	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
-		vm := &model.VM{
-			ID: id,
-		}
-		if err := datastore.Get(c, vm); err != nil && err != datastore.ErrNoSuchEntity {
+		switch err := datastore.Get(c, vm); {
+		case err == datastore.ErrNoSuchEntity:
+		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
+		default:
+			return nil
 		}
 		if task.Attributes != nil {
 			vm.Attributes = *task.Attributes
@@ -162,7 +140,7 @@ func ensureVM(c context.Context, payload proto.Message) error {
 // expandConfigQueue is the name of the expand config task handler queue.
 const expandConfigQueue = "expand-config"
 
-// expandConfig creates task queue tasks to ensure each VM in the given config.
+// expandConfig creates task queue tasks to create each VM in the given config.
 func expandConfig(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.ExpandConfig)
 	switch {
@@ -178,7 +156,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	t := make([]*tq.Task, cfg.GetAmount().GetDefault())
 	for i := int32(0); i < cfg.GetAmount().GetDefault(); i++ {
 		t[i] = &tq.Task{
-			Payload: &tasks.EnsureVM{
+			Payload: &tasks.CreateVM{
 				Attributes: cfg.Attributes,
 				Config:     task.Id,
 				Index:      i,
@@ -188,7 +166,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 			},
 		}
 	}
-	logging.Debugf(c, "ensuring %d VMs", len(t))
+	logging.Debugf(c, "creating %d VMs", len(t))
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
 		return errors.Annotate(err, "failed to schedule tasks").Err()
 	}

@@ -85,32 +85,6 @@ func getVM(c context.Context, id string) (*model.VM, error) {
 	return vm, nil
 }
 
-// resetVM resets a VM by removing its hostname from the datastore.
-func resetVM(c context.Context, id string) error {
-	vm := &model.VM{
-		ID: id,
-	}
-	if err := datastore.Get(c, vm); err != nil {
-		return errors.Annotate(err, "failed to fetch VM").Err()
-	}
-	if vm.Hostname == "" {
-		return nil
-	}
-	return datastore.RunInTransaction(c, func(c context.Context) error {
-		if err := datastore.Get(c, vm); err != nil {
-			return errors.Annotate(err, "failed to fetch VM").Err()
-		}
-		if vm.Hostname == "" {
-			return nil
-		}
-		vm.Hostname = ""
-		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM").Err()
-		}
-		return nil
-	}, nil)
-}
-
 // setCreated sets the GCE instance as created in the datastore if it isn't already.
 func setCreated(c context.Context, id, url string, at time.Time) error {
 	vm := &model.VM{
@@ -151,7 +125,7 @@ func conflictingInstance(c context.Context, vm *model.VM) error {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
 				// Instance doesn't exist in this zone.
-				if err := resetVM(c, vm.ID); err != nil {
+				if err := deleteVM(c, vm.ID, vm.Hostname); err != nil {
 					return errors.Annotate(err, "instance exists in another zone").Err()
 				}
 				return errors.Reason("instance exists in another zone").Err()
@@ -201,7 +175,7 @@ func createInstance(c context.Context, payload proto.Message) error {
 			if gerr.Code == http.StatusConflict {
 				return conflictingInstance(c, vm)
 			}
-			if err := resetVM(c, task.Id); err != nil {
+			if err := deleteVM(c, task.Id, vm.Hostname); err != nil {
 				return errors.Annotate(err, "failed to create instance").Err()
 			}
 			logErrors(c, gerr)
@@ -213,7 +187,7 @@ func createInstance(c context.Context, payload proto.Message) error {
 		for _, err := range op.Error.Errors {
 			logging.Errorf(c, "%s: %s", err.Code, err.Message)
 		}
-		if err := resetVM(c, task.Id); err != nil {
+		if err := deleteVM(c, task.Id, vm.Hostname); err != nil {
 			return errors.Annotate(err, "failed to create instance").Err()
 		}
 		return errors.Reason("failed to create instance").Err()

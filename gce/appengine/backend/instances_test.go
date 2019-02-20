@@ -95,7 +95,7 @@ func TestCreate(t *testing.T) {
 					v := &model.VM{
 						ID: "id",
 					}
-					datastore.Get(c, v)
+					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Hostname, ShouldBeEmpty)
 				})
 
@@ -136,8 +136,7 @@ func TestCreate(t *testing.T) {
 					v := &model.VM{
 						ID: "id",
 					}
-					datastore.Get(c, v)
-					So(v.Hostname, ShouldBeEmpty)
+					So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
 				})
 
 				Convey("operation", func() {
@@ -162,8 +161,7 @@ func TestCreate(t *testing.T) {
 					v := &model.VM{
 						ID: "id",
 					}
-					datastore.Get(c, v)
-					So(v.Hostname, ShouldBeEmpty)
+					So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
 				})
 			})
 
@@ -194,9 +192,7 @@ func TestCreate(t *testing.T) {
 					v := &model.VM{
 						ID: "id",
 					}
-					datastore.Get(c, v)
-					So(v.Hostname, ShouldBeEmpty)
-					So(v.URL, ShouldBeEmpty)
+					So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
 				})
 
 				Convey("exists", func() {
@@ -228,7 +224,7 @@ func TestCreate(t *testing.T) {
 					v := &model.VM{
 						ID: "id",
 					}
-					datastore.Get(c, v)
+					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Created, ShouldNotEqual, 0)
 					So(v.URL, ShouldEqual, "url")
 				})
@@ -293,7 +289,7 @@ func TestCreate(t *testing.T) {
 					v := &model.VM{
 						ID: "id",
 					}
-					datastore.Get(c, v)
+					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Created, ShouldNotEqual, 0)
 					So(v.URL, ShouldEqual, "url")
 				})

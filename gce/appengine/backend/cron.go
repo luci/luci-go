@@ -66,29 +66,6 @@ func createInstancesAsync(c context.Context) error {
 	return nil
 }
 
-// deleteVMsAsync schedules task queue tasks to delete each VM.
-func deleteVMsAsync(c context.Context) error {
-	var keys []*datastore.Key
-	q := datastore.NewQuery(model.VMKind).Eq("drained", true)
-	if err := datastore.GetAll(c, q, &keys); err != nil {
-		return errors.Annotate(err, "failed to fetch VMs").Err()
-	}
-	t := make([]*tq.Task, len(keys))
-	for i, k := range keys {
-		id := k.StringID()
-		t[i] = &tq.Task{
-			Payload: &tasks.DeleteVM{
-				Id: id,
-			},
-		}
-	}
-	logging.Debugf(c, "found %d VMs", len(t))
-	if err := getDispatcher(c).AddTask(c, t...); err != nil {
-		return errors.Annotate(err, "failed to schedule tasks").Err()
-	}
-	return nil
-}
-
 // drainVMsAsync schedules task queue tasks to drain each VM.
 func drainVMsAsync(c context.Context) error {
 	var keys []*datastore.Key
