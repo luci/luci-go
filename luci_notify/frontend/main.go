@@ -17,11 +17,15 @@ package frontend
 import (
 	"context"
 	"net/http"
+	"time"
+
+	"google.golang.org/appengine"
 
 	authServer "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -58,10 +62,12 @@ func init() {
 
 	// Pub/Sub endpoint.
 	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
+		c.Context, _ = context.WithTimeout(c.Context, 50*time.Second)
 		ctx := c.Context
+
 		status := ""
 		switch err := notify.BuildbucketPubSubHandler(c, &taskDispatcher); {
-		case transient.Tag.In(err):
+		case transient.Tag.In(err) || appengine.IsTimeoutError(errors.Unwrap(err)):
 			status = "transient-failure"
 			logging.Errorf(ctx, "transient failure: %s", err)
 			// Retry the message.
