@@ -470,7 +470,7 @@ Error: invalid call of non-function (NoneType)`)
 				"main.star": `load_src("data1.txt")`,
 			},
 		})
-		So(err, ShouldErrLike, "cannot load source code of //data1.txt: no such module")
+		So(err, ShouldErrLike, "cannot load //data1.txt: no such file")
 	})
 
 	Convey("LoadSource handles go modules", t, func() {
@@ -483,6 +483,6 @@ Error: invalid call of non-function (NoneType)`)
 				return starlark.StringDict{}, "", nil
 			},
 		})
-		So(err, ShouldErrLike, "cannot load source code of @custom//something.txt: it is a native Go module")
+		So(err, ShouldErrLike, "cannot load @custom//something.txt: it is a native Go module")
 	})
 }
