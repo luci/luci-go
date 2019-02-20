@@ -225,6 +225,11 @@ func (m *MessageType) Type() reflect.Type {
 	return m.ptr
 }
 
+// NewProtoMessage constructs &ProtoMessage{} and returns it as reflect.Value.
+func (m *MessageType) NewProtoMessage() reflect.Value {
+	return reflect.New(m.ptr.Elem())
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Oneof implementation helpers.
 
