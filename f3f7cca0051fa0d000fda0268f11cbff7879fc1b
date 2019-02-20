@@ -49,6 +49,29 @@
     },
     {
       "key": {
+        "uuid": "13513f6c_bc732b3d",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-20T00:11:52Z",
+      "side": 1,
+      "message": "i wish go linter told us about unused private funcs :(",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 1
+      },
+      "revId": "f3f7cca0051fa0d000fda0268f11cbff7879fc1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cedbaafc_ac538540",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
