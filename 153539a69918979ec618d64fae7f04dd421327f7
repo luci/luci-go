@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b4544c38_bc960f33",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-20T02:16:59Z",
+      "side": 1,
+      "message": "clarified \"graying out\". Gerrit plugin doesn\u0027t do this.",
+      "parentUuid": "e9eb6ee0_f025ede8",
+      "range": {
+        "startLine": 14,
+        "startChar": 40,
+        "endLine": 14,
+        "endChar": 48
+      },
+      "revId": "153539a69918979ec618d64fae7f04dd421327f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e186b146_1a2f37d8",
         "filename": "/COMMIT_MSG",
         "patchSetId": 5
@@ -59,6 +83,30 @@
       "writtenOn": "2019-02-16T19:24:22Z",
       "side": 1,
       "message": "minor: i think critical doesn\u0027t fit the name of this field (though I ack that CrOS is a precedent).\nI\u0027d use \"valuable\" or \"relevant\" instead.\nOther ideas are \"important\" and \"significant\".",
+      "range": {
+        "startLine": 101,
+        "startChar": 12,
+        "endLine": 101,
+        "endChar": 20
+      },
+      "revId": "153539a69918979ec618d64fae7f04dd421327f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc854d52_1aab09f1",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-20T02:16:59Z",
+      "side": 1,
+      "message": "\u003e minor: i think critical doesn\u0027t fit the name of this field (though I ack that CrOS is a precedent).\n\nwhy it doesn\u0027t fit?\n\n\u003e I\u0027d use \"valuable\" \n\nI find this a bit abstract.\n\n\u003e or \"relevant\" instead.\n\nThe build may be perfectly relevant, but its failure is considered non-critical/unimportant.\nIn particular, Chrome OS needs \"relevancy\" field too. It would be set to NO if \nthe builder decided the patch does not touch parts of the code that the builder is building (based on build dep graph).\n\n\u003e Other ideas are \"important\" and \"significant\".\n\nI am fine with important and significant. They represent the comment above well.\n\nJason, Lann, WDYT? I think Jason and Lann had some other plans for \"important\" term.",
+      "parentUuid": "fe104f7d_b2ccf1d5",
       "range": {
         "startLine": 101,
         "startChar": 12,
