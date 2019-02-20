@@ -15,8 +15,12 @@
 package notify
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -57,9 +61,19 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *EmailT
 			continue
 		}
 
-		et := &internal.EmailTask{}
-		et.Subject, et.Body = bundle.GenerateEmail(name, input)
-		taskTemplates[name] = et
+		subject, body := bundle.GenerateEmail(name, input)
+
+		// Note: this buffer should not be reused.
+		buf := &bytes.Buffer{}
+		gz := gzip.NewWriter(buf)
+		io.WriteString(gz, body)
+		if err := gz.Close(); err != nil {
+			panic("failed to gzip HTML body in memory")
+		}
+		taskTemplates[name] = &internal.EmailTask{
+			Subject:  subject,
+			BodyGzip: buf.Bytes(),
+		}
 	}
 
 	// Create a task per recipient.
@@ -185,10 +199,24 @@ func SendEmail(c context.Context, task proto.Message) error {
 
 	// TODO(mknyszek): Query Milo for additional build information.
 	emailTask := task.(*internal.EmailTask)
+
+	body := emailTask.Body
+	if len(emailTask.BodyGzip) > 0 {
+		r, err := gzip.NewReader(bytes.NewReader(emailTask.BodyGzip))
+		if err != nil {
+			return err
+		}
+		buf, err := ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
+		body = string(buf)
+	}
+
 	return mail.Send(c, &mail.Message{
 		Sender:   sender,
 		To:       emailTask.Recipients,
 		Subject:  emailTask.Subject,
-		HTMLBody: emailTask.Body,
+		HTMLBody: body,
 	})
 }

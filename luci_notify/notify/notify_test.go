@@ -15,13 +15,15 @@
 package notify
 
 import (
+	"bytes"
+	"compress/gzip"
+	"io/ioutil"
 	"testing"
 
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
@@ -89,32 +91,25 @@ func TestNotify(t *testing.T) {
 				OldStatus: buildbucketpb.Status_SUCCESS,
 			})
 			So(err, ShouldBeNil)
-			So(tasks, ShouldResemble, []*tq.Task{
-				{
-					DeduplicationKey: "54-default-jane@example.com",
-					Payload: &internal.EmailTask{
-						Recipients: []string{"jane@example.com"},
-						Subject:    "Build 54 completed",
-						Body:       "Build 54 completed with status SUCCESS",
-					},
-				},
-				{
-					DeduplicationKey: "54-default-john@example.com",
-					Payload: &internal.EmailTask{
-						Recipients: []string{"john@example.com"},
-						Subject:    "Build 54 completed",
-						Body:       "Build 54 completed with status SUCCESS",
-					},
-				},
-				{
-					DeduplicationKey: "54-non-default-don@example.com",
-					Payload: &internal.EmailTask{
-						Recipients: []string{"don@example.com"},
-						Subject:    "Build 54 completed from non-default template",
-						Body:       "Build 54 completed with status SUCCESS from non-default template",
-					},
-				},
-			})
+			So(tasks, ShouldHaveLength, 3)
+
+			t := tasks[0].Payload.(*internal.EmailTask)
+			So(tasks[0].DeduplicationKey, ShouldEqual, "54-default-jane@example.com")
+			So(t.Recipients, ShouldResemble, []string{"jane@example.com"})
+			So(t.Subject, ShouldEqual, "Build 54 completed")
+			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS")
+
+			t = tasks[1].Payload.(*internal.EmailTask)
+			So(tasks[1].DeduplicationKey, ShouldEqual, "54-default-john@example.com")
+			So(t.Recipients, ShouldResemble, []string{"john@example.com"})
+			So(t.Subject, ShouldEqual, "Build 54 completed")
+			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS")
+
+			t = tasks[2].Payload.(*internal.EmailTask)
+			So(tasks[2].DeduplicationKey, ShouldEqual, "54-non-default-don@example.com")
+			So(t.Recipients, ShouldResemble, []string{"don@example.com"})
+			So(t.Subject, ShouldEqual, "Build 54 completed from non-default template")
+			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS from non-default template")
 		})
 
 		Convey("createEmailTasks with dup notifies", func() {
@@ -134,4 +129,12 @@ func TestNotify(t *testing.T) {
 			So(tasks, ShouldHaveLength, 1)
 		})
 	})
+}
+
+func decompress(gzipped []byte) string {
+	r, err := gzip.NewReader(bytes.NewReader(gzipped))
+	So(err, ShouldBeNil)
+	buf, err := ioutil.ReadAll(r)
+	So(err, ShouldBeNil)
+	return string(buf)
 }
