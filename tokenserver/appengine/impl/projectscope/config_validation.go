@@ -16,6 +16,7 @@ package projectscope
 
 import (
 	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config/validation"
