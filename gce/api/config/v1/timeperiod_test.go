@@ -85,13 +85,6 @@ func TestTimePeriod(t *testing.T) {
 		c := &validation.Context{Context: context.Background()}
 
 		Convey("invalid", func() {
-			Convey("empty", func() {
-				tp := &TimePeriod{}
-				tp.Validate(c)
-				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "duration or seconds is required")
-			})
-
 			Convey("duration", func() {
 				tp := &TimePeriod{
 					Time: &TimePeriod_Duration{
@@ -111,11 +104,17 @@ func TestTimePeriod(t *testing.T) {
 				}
 				tp.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "seconds must be positive")
+				So(errs, ShouldContainErr, "seconds must be non-negative")
 			})
 		})
 
 		Convey("valid", func() {
+			Convey("empty", func() {
+				tp := &TimePeriod{}
+				tp.Validate(c)
+				So(c.Finalize(), ShouldBeNil)
+			})
+
 			Convey("duration", func() {
 				tp := &TimePeriod{
 					Time: &TimePeriod_Duration{
