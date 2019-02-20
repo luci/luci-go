@@ -25,6 +25,7 @@ import (
 type Interval struct {
 	Start time.Time
 	End   time.Time
+	Now   time.Time
 }
 
 func (in Interval) Started() bool {
@@ -36,12 +37,19 @@ func (in Interval) Ended() bool {
 }
 
 func (in Interval) Duration() time.Duration {
-	// Only return something if the interval is complete.
-	if !(in.Ended() && in.Started()) {
+	// An interval that hasn't started has no duration.
+	if !in.Started() {
 		return 0
 	}
+
+	end := in.End
+	if end.IsZero() {
+		// Open Interval
+		end = in.Now
+	}
+
 	// Don't return non-sensical values.
-	if d := in.End.Sub(in.Start); d > 0 {
+	if d := end.Sub(in.Start); d > 0 {
 		return d
 	}
 	return 0
@@ -57,9 +65,10 @@ func ToInterval(start, end *timestamp.Timestamp) (result Interval) {
 	return
 }
 
-func Duration(start, end *timestamp.Timestamp) string {
+func Duration(start, end *timestamp.Timestamp, now time.Time) string {
 	in := ToInterval(start, end)
-	if in.Started() && in.Ended() {
+	in.Now = now
+	if in.Started() && (in.Ended() || !in.Now.IsZero()) {
 		return HumanDuration(in.Duration())
 	}
 	return "N/A"
