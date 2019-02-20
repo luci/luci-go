@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package crostesting;
 
-option go_package = "config";
+option go_package = "go.chromium.org/luci/lucicfg/external/crostesting/proto/config;config";
 
 // Testing restrictions to apply to a source tree.
 message TestRestriction {
