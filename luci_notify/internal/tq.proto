@@ -17,7 +17,10 @@ message EmailTask {
   // Subject is the subject line of the email to be sent.
   string subject = 2;
 
-  // Body is an HTML-formatted string containing the body of the email
-  // to be sent.
+  // DEPRECATED. See body_gzip.
   string body = 3;
+
+  // Gzipped, HTML-formatted string containing the body of the email
+  // to be sent.
+  bytes body_gzip = 4;
 }
