@@ -23,6 +23,43 @@ import (
 
 func TestFuncs(t *testing.T) {
 	Convey("Time Tests", t, func() {
+
+		Convey("Interval", func() {
+			from := time.Date(2019, time.February, 3, 4, 5, 0, 0, time.UTC)
+			to := time.Date(2019, time.February, 3, 4, 6, 0, 0, time.UTC)
+			now := time.Date(2019, time.February, 3, 4, 7, 0, 0, time.UTC)
+			Convey("Not started", func() {
+				i := Interval{time.Time{}, time.Time{}, now}
+				So(i.Started(), ShouldBeFalse)
+				So(i.Ended(), ShouldBeFalse)
+				So(i.Duration(), ShouldEqual, 0)
+			})
+			Convey("Started, not ended", func() {
+				i := Interval{from, time.Time{}, now}
+				So(i.Started(), ShouldBeTrue)
+				So(i.Ended(), ShouldBeFalse)
+				So(i.Duration(), ShouldEqual, 2*time.Minute)
+			})
+			Convey("Started and ended", func() {
+				i := Interval{from, to, now}
+				So(i.Started(), ShouldBeTrue)
+				So(i.Ended(), ShouldBeTrue)
+				So(i.Duration(), ShouldEqual, 1*time.Minute)
+			})
+			Convey("Ended before started", func() {
+				i := Interval{to, from, now}
+				So(i.Started(), ShouldBeTrue)
+				So(i.Ended(), ShouldBeTrue)
+				So(i.Duration(), ShouldEqual, 0)
+			})
+			Convey("Ended, not started", func() {
+				i := Interval{time.Time{}, to, now}
+				So(i.Started(), ShouldBeFalse)
+				So(i.Ended(), ShouldBeTrue)
+				So(i.Duration(), ShouldEqual, 0)
+			})
+		})
+
 		Convey("humanDuration", func() {
 			Convey("3 hrs", func() {
 				h := HumanDuration(3 * time.Hour)
