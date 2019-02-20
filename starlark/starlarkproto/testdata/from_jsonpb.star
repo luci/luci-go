@@ -14,10 +14,10 @@
 
 load("go.chromium.org/luci/starlark/starlarkproto/testprotos/test.proto", "testprotos")
 
-# Works in general.
+# Works in general. Detailed tests for type conversions are in from_proto.star.
 m = proto.from_jsonpb(testprotos.Simple, '{"i": 123}')
 assert.eq(type(m), 'testprotos.Simple')
-# TODO(vadimsh): Add more assertions once deserialization works.
+assert.eq(m.i, 123)
 
 # Bad JSONPB proto.
 def from_jsonpb_bad_proto():
