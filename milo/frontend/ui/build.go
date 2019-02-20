@@ -16,6 +16,7 @@ package ui
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -30,6 +31,7 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -40,6 +42,7 @@ type Step struct {
 	*buildbucketpb.Step
 	Children  []*Step
 	Collapsed bool
+	Interval  common.Interval
 }
 
 // ShortName returns the leaf name of a potentially nested step.
@@ -81,6 +84,16 @@ type BuildPage struct {
 
 	// steps caches the result of Steps().
 	steps []*Step
+
+	// Now is the current time, used for generating step intervals.
+	now time.Time
+}
+
+func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
+	return &BuildPage{
+		Build: *b,
+		now:   clock.Now(c),
+	}
 }
 
 // Summary returns a summary of failures in the build.
@@ -115,9 +128,12 @@ func (bp *BuildPage) Steps() []*Step {
 	// which is always true in the build proto.
 	stepMap := map[string]*Step{}
 	for _, step := range bp.Build.Steps {
+		i := common.ToInterval(step.GetStartTime(), step.GetEndTime())
+		i.Now = bp.now
 		s := &Step{
 			Step:      step,
 			Collapsed: collapseGreen && step.Status == buildbucketpb.Status_SUCCESS,
+			Interval:  i,
 		}
 		stepMap[step.Name] = s
 		switch nameParts := strings.Split(step.Name, "|"); len(nameParts) {
@@ -407,7 +423,7 @@ func (bp *BuildPage) Timeline() string {
 		statusClassName := fmt.Sprintf("status-%s", step.Status)
 		data := stepData{
 			Label:           html.EscapeString(step.Name),
-			Duration:        common.Duration(step.StartTime, step.EndTime),
+			Duration:        common.Duration(step.StartTime, step.EndTime, bp.now),
 			LogURL:          logURL,
 			StatusClassName: statusClassName,
 		}

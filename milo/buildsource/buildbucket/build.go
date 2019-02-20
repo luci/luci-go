@@ -247,9 +247,9 @@ func GetBuildPage(c *router.Context, br buildbucketpb.GetBuildRequest) (*ui.Buil
 		return nil, err
 	}
 	link, err := getBugLink(c, b)
-	return &ui.BuildPage{
-		Build:        *b,
-		Blame:        blame,
-		BuildBugLink: link,
-	}, nil
+
+	bp := ui.NewBuildPage(c.Context, b)
+	bp.Blame = blame
+	bp.BuildBugLink = link
+	return bp, err
 }

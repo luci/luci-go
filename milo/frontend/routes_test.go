@@ -114,7 +114,7 @@ func TestPages(t *testing.T) {
 		r := &http.Request{URL: &url.URL{Path: "/foobar"}}
 		c := context.Background()
 		c = memory.Use(c)
-		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
+		c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 		c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{Expiration: time.Second}))
 		err := settings.Set(c, "analytics", &analyticsSettings{"UA-12345-01"}, "", "")
