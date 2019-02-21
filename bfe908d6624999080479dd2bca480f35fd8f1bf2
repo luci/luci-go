@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0dd6143c_303a0e68",
+        "filename": "starlark/starlarkproto/message.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-21T23:16:58Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 243,
+        "startChar": 12,
+        "endLine": 243,
+        "endChar": 14
+      },
+      "revId": "bfe908d6624999080479dd2bca480f35fd8f1bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21a9b9bc_56f5e112",
+        "filename": "starlark/starlarkproto/message.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-21T23:16:58Z",
+      "side": 1,
+      "message": "what cases? other funcs in this package?",
+      "range": {
+        "startLine": 247,
+        "startChar": 17,
+        "endLine": 247,
+        "endChar": 37
+      },
+      "revId": "bfe908d6624999080479dd2bca480f35fd8f1bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3255ad9f_ec416d1e",
+        "filename": "starlark/starlarkproto/message.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-21T23:16:58Z",
+      "side": 1,
+      "message": "missing \u0027e\u0027",
+      "range": {
+        "startLine": 295,
+        "startChar": 5,
+        "endLine": 295,
+        "endChar": 15
+      },
+      "revId": "bfe908d6624999080479dd2bca480f35fd8f1bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5204bb4_b1e07f04",
+        "filename": "starlark/starlarkproto/testdata/from_dict.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-21T23:16:58Z",
+      "side": 1,
+      "message": "at first I was thinking \"wtf?\", but this indeed makes it easier to see intent of tests.",
+      "range": {
+        "startLine": 16,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 17
+      },
+      "revId": "bfe908d6624999080479dd2bca480f35fd8f1bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
