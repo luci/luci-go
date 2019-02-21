@@ -67,3 +67,8 @@ func (*UpstartStrategy) autostart(c context.Context, path, user string) error {
 	}
 	return nil
 }
+
+// canUseUpstart returns whether or not UpstartStrategy can be used.
+func canUseUpstart() bool {
+	return exec.Command("initctl", "--version").Run() == nil
+}
