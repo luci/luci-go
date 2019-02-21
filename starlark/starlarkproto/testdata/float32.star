@@ -22,7 +22,7 @@ assert.eq(m.f32, 0.0)
 # Setter and getter works.
 m.f32 = 1.0
 assert.eq(m.f32, 1.0)
-assert.eq(proto.to_pbtext(m), 'f32: 1\n')
+assert.eq(proto.to_textpb(m), 'f32: 1\n')
 
 # Setting through constructor works.
 m2 = testprotos.SimpleFields(f32=1.0)
@@ -40,4 +40,4 @@ assert.fails(set_bad, 'can\'t assign list to a value of kind "float32"')
 # Implicit conversion from int to float is supported.
 m2.f32 = 123
 assert.eq(m2.f32, 123.0)
-assert.eq(proto.to_pbtext(m2), 'f32: 123\n')
+assert.eq(proto.to_textpb(m2), 'f32: 123\n')
