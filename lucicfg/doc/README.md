@@ -750,6 +750,7 @@ luci.console_view(
     refs = None,
     refs_regexps = None,
     exclude_ref = None,
+    header = None,
     include_experimental_builds = None,
     favicon = None,
     entries = None,
@@ -823,6 +824,7 @@ Or separately one by one via [luci.console_view_entry(...)](#luci.console_view_e
 * **refs**: a list of fully qualified refs to pull commits from when displaying the console, e.g. `refs/heads/master` or `refs/tags/v1.2.3`. Each ref must start with `refs/`.
 * **refs_regexps**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
 * **exclude_ref**: a single ref, commits from which are ignored even when they are reachable from refs specified via `refs` and `refs_regexps`. Note that force pushes to this ref are not supported. Milo uses caching assuming set of commits reachable from this ref may only grow, never lose some commits.
+* **header**: a header to display at the top of the console. Can either be specified inline as a dict or loaded from an external file. See [luci.load_console_header(...)](#luci.load_console_header) for more information.
 * **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.
 * **favicon**: optional https URL to the favicon for this console, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
 * **entries**: a list of [luci.console_view_entry(...)](#luci.console_view_entry) entities specifying builders to show on the console.
@@ -881,6 +883,49 @@ the console declaration. In particular useful in functions. For example:
 * **console_view**: a console view to add the builder to. Can be omitted if `console_view_entry` is used inline inside some [luci.console_view(...)](#luci.console_view) declaration.
 * **buildbot**: a reference to an equivalent Buildbot builder, given as `<master>/<builder>` string. **Deprecated**. Exists only to aid in the migration off Buildbot.
 
+
+
+
+### luci.load_console_header {#luci.load_console_header}
+
+```python
+luci.load_console_header(path)
+```
+
+
+
+Reads the console view header definition from a proto file.
+
+See `Header` message in Milo's [project.proto] for its schema and detailed
+description of all fields.
+
+As an alternative to loading the header from an external file, you can also
+describe it using a dict with the schema matching `Header` message, passing
+it as `header` to [luci.console_view(...)](#luci.console_view):
+
+  luci.console_view(
+      ...
+      header = {
+          'links': [
+              {'name': '...', 'links': [...]},
+              ...
+          ],
+      },
+      ...
+  )
+
+This is handy for small headers.
+
+[project.proto]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/milo/api/config/project.proto
+
+#### Arguments {#luci.load_console_header-args}
+
+* **path**: either a path relative to the currently executing Starlark script, or (if starts with `//`) an absolute path within the currently executing package. If it is a relative path, it must point somewhere inside the current package directory. Its extension is used to determine the expected proto message encoding: `*.json` and `*.jsonpb` imply JSONPB encoding, everything else implies text proto encoding. Required.
+
+
+#### Returns  {#luci.load_console_header-returns}
+
+An object that can be passed as `header` field to [luci.console_view(...)](#luci.console_view).
 
 
 

@@ -18,8 +18,8 @@ load('@stdlib//internal/validate.star', 'validate')
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
 load('@stdlib//internal/luci/rules/console_view_entry.star', 'console_view_entry')
 
+load('@proto//luci/milo/project_config.proto', milo_pb='milo')
 
-# TODO(vadimsh): Add headers support.
 
 # TODO(vadimsh): Document how builders should be configured to be eligible for
 # inclusion into a console.
@@ -33,6 +33,7 @@ def console_view(
       refs_regexps=None,
       exclude_ref=None,
       include_experimental_builds=None,
+      header=None,
       favicon=None,
       entries=None,
   ):
@@ -117,6 +118,9 @@ def console_view(
         force pushes to this ref are not supported. Milo uses caching assuming
         set of commits reachable from this ref may only grow, never lose some
         commits.
+    header: a header to display at the top of the console. Can either be
+        specified inline as a dict or loaded from an external file. See
+        luci.load_console_header(...) for more information.
     include_experimental_builds: if True, this console will not filter out
         builds marked as Experimental. By default consoles only show production
         builds.
@@ -134,6 +138,11 @@ def console_view(
   if not refs and not refs_regexps:
     refs = ['refs/heads/master']
 
+  if type(header) == 'dict':
+    header = milo_pb.Header(**header)
+  else:
+    header = validate.type('header', header, milo_pb.Header(), required=False)
+
   return view.add_view(
       key = keys.console_view(name),
       entry_kind = kinds.CONSOLE_VIEW_ENTRY,
@@ -146,6 +155,7 @@ def console_view(
           'refs': refs,
           'refs_regexps': refs_regexps,
           'exclude_ref': validate.string('exclude_ref', exclude_ref, required=False),
+          'header': header,
           'include_experimental_builds': validate.bool('include_experimental_builds', include_experimental_builds, required=False),
           'favicon': validate.string('favicon', favicon, regexp=r'https://storage\.googleapis\.com/.+', required=False),
       },

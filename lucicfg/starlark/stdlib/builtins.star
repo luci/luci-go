@@ -32,6 +32,7 @@ load('@stdlib//internal/luci/rules/recipe.star', _recipe='recipe')
 
 # LUCI helper modules.
 load('@stdlib//internal/luci/lib/acl.star', _acl='acl')
+load('@stdlib//internal/luci/lib/milo.star', _miloimpl='miloimpl')
 load('@stdlib//internal/luci/lib/scheduler.star', _scheduler='scheduler')
 load('@stdlib//internal/luci/lib/swarming.star', _swarming='swarming')
 
@@ -60,6 +61,7 @@ luci = struct(
     list_view_entry = _list_view_entry,
     console_view = _console_view,
     console_view_entry = _console_view_entry,
+    load_console_header = _miloimpl.load_console_header,
 )
 acl = _acl
 scheduler = _scheduler
