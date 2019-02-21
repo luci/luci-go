@@ -18,40 +18,40 @@ m = testprotos.Complex()
 
 # Oneof alternatives have no defaults.
 assert.eq(m.simple, None)
-assert.eq(m.inner_msg, None)
+assert.eq(m.another_simple, None)
 
 # Setting one alternative resets the other (and doesn't touch other fields).
 m.i64 = 123
 m.simple = testprotos.Simple()
 assert.true(m.simple != None)
-assert.true(m.inner_msg == None)
+assert.true(m.another_simple == None)
 assert.eq(m.i64, 123)
-m.inner_msg = testprotos.Complex.InnerMessage()
+m.another_simple = testprotos.AnotherSimple()
 assert.true(m.simple == None)
-assert.true(m.inner_msg != None)
+assert.true(m.another_simple != None)
 assert.eq(m.i64, 123)
 
 # Setting a "picked" alternative to None resets it.
-assert.true(m.inner_msg != None)
-m.inner_msg = None
-assert.true(m.inner_msg == None)
+assert.true(m.another_simple != None)
+m.another_simple = None
+assert.true(m.another_simple == None)
 
 # Setting some other alternative to None does nothing.
 m.simple = testprotos.Simple()
-m.inner_msg = None
+m.another_simple = None
 assert.true(m.simple != None)
 
 # In constructors the last kwarg wins (starlark dicts preserve order).
 m2 = testprotos.Complex(
     simple=testprotos.Simple(),
-    inner_msg=testprotos.Complex.InnerMessage())
+    another_simple=testprotos.AnotherSimple())
 assert.true(m2.simple == None)
-assert.true(m2.inner_msg != None)
+assert.true(m2.another_simple != None)
 m3 = testprotos.Complex(
-    inner_msg=testprotos.Complex.InnerMessage(),
+    another_simple=testprotos.AnotherSimple(),
     simple=testprotos.Simple())
 assert.true(m3.simple != None)
-assert.true(m3.inner_msg == None)
+assert.true(m3.another_simple == None)
 
 # Serialization works.
 assert.eq(

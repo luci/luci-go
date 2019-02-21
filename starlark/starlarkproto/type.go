@@ -25,6 +25,13 @@ import (
 	"go.starlark.net/starlark"
 )
 
+type reflectionDirection bool
+
+const (
+	reflectToProto   reflectionDirection = false
+	reflectFromProto reflectionDirection = true
+)
+
 var typeRegistry struct {
 	m     sync.RWMutex
 	types map[reflect.Type]*MessageType
@@ -64,16 +71,23 @@ type fieldDesc struct {
 	onChanged func(dict starlark.StringDict)
 
 	// onProtoReflection is called when the starlark message representation is
-	// reflected back into a proto struct.
+	// reflected to or from a proto struct (depending on a value of 'dir').
 	//
-	// It takes a reference to the proto struct and returns a reference to the
-	// settable value (of type 'typ') to write the actual data to.
+	// It takes a reference to the proto struct (of reflect.Struct kind, NOT a
+	// pointer) and returns a reference to the reflect.Value (of type 'typ') to
+	// write or read the actual data to/from.
 	//
-	// Has side effects: the callback is allowed to modify the proto struct in a
-	// way it sees fit to get the assignable value. This is important for oneof
-	// fields that require instantiation of a helper wrapping struct to get a
-	// reference to an assignable field.
-	onProtoReflection func(msg reflect.Value) reflect.Value
+	// When reflecting to proto (dir == reflectToProto), may have side effects:
+	// the callback is allowed to modify the proto struct in a way it sees fit to
+	// get the assignable value. This is important for oneof fields that require
+	// instantiation of a helper wrapping struct to get a reference to an
+	// assignable field.
+	//
+	// When reflecting from proto (dir == reflectFromProto), may return zero value
+	// (use IsValid to check) if the given field must not be used to read data.
+	// Again, this is important for alternative oneof fields to indicate that some
+	// other alternative is realized and this field must be skipped.
+	onProtoReflection func(msg reflect.Value, dir reflectionDirection) reflect.Value
 }
 
 // GetMessageType extracts type description for protobuf message of given type.
@@ -122,7 +136,7 @@ func GetMessageType(typ reflect.Type) (*MessageType, error) {
 		fields[prop.OrigName] = fieldDesc{
 			typ:         f.Type,
 			defaultable: true,
-			onProtoReflection: func(msg reflect.Value) reflect.Value {
+			onProtoReflection: func(msg reflect.Value, _ reflectionDirection) reflect.Value {
 				return msg.FieldByName(prop.Name)
 			},
 		}
@@ -271,8 +285,11 @@ func (g *oneofGroup) fieldDescs() map[string]fieldDesc {
 			onChanged: func(dict starlark.StringDict) {
 				g.onAlternativePicked(alt, dict)
 			},
-			onProtoReflection: func(msg reflect.Value) reflect.Value {
-				return g.onReflectingAlternative(alt, msg)
+			onProtoReflection: func(msg reflect.Value, dir reflectionDirection) reflect.Value {
+				if dir == reflectToProto {
+					return g.onWritingAlternative(alt, msg)
+				}
+				return g.onReadingAlternative(alt, msg)
 			},
 		}
 	}
@@ -290,13 +307,27 @@ func (g *oneofGroup) onAlternativePicked(alt *oneofAlternative, dict starlark.St
 	}
 }
 
-// onReflectingAlternative is called when writing starlark value into the proto
-// message.
+// onWritingAlternative is called when writing a value to the proto message.
 //
 // It instantiates the oneof wrapping struct of a correct type (based on the
 // picked alternative) and returns a reference to the value to be set there.
-func (g *oneofGroup) onReflectingAlternative(alt *oneofAlternative, msg reflect.Value) reflect.Value {
+func (g *oneofGroup) onWritingAlternative(alt *oneofAlternative, msg reflect.Value) reflect.Value {
 	wrap := reflect.New(alt.outerTyp.Elem()) // ~ wrap = &testprotos.Msg_FieldA{}
 	msg.Field(g.fieldIdx).Set(wrap)          // ~ msg.Wrapper = wrap
 	return wrap.Elem().Field(0)              // ~ ref to wrap.A, to be set to
+}
+
+// onReadingAlternative is called when reading a value from the proto message.
+//
+// If returns a valid reflect.Value if the given alternative is realized in
+// the 'msg' or an invalid zero reflect.Value otherwise.
+func (g *oneofGroup) onReadingAlternative(alt *oneofAlternative, msg reflect.Value) reflect.Value {
+	switch wrap := msg.Field(g.fieldIdx); {
+	case wrap.IsNil():
+		return reflect.Value{} // no alternatives are set
+	case wrap.Elem().Type() != alt.outerTyp:
+		return reflect.Value{} // some other alternative is set
+	default:
+		return wrap.Elem().Elem().Field(0) // ~ (*msg.Wrapper).A
+	}
 }

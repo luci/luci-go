@@ -40,10 +40,10 @@ func TestGetMessageType(t *testing.T) {
 
 		// Discovered all fields.
 		So(mt.fieldNames, ShouldResemble, []string{
+			"another_simple",
 			"enum_val",
 			"i64",
 			"i64_rep",
-			"inner_msg",
 			"msg_val",
 			"msg_val_rep",
 			"simple",
@@ -60,35 +60,64 @@ func TestGetMessageType(t *testing.T) {
 
 		var desc fieldDesc
 
-		// Copy-pasta below to avoid using reflection for testing reflection to reduce
-		// chances of making identical self-canceling mistakes in tests and code under
-		// test.
+		// Copy-pasta below to avoid using reflection for testing reflection to
+		// reduce chances of making identical self-canceling mistakes in tests and
+		// code under test.
 
 		desc = mt.fields["enum_val"]
 		So(desc.typ, ShouldEqual, reflect.TypeOf(msg.EnumVal))
-		So(desc.onProtoReflection(val).Interface().(testprotos.Complex_InnerEnum), ShouldEqual, msg.EnumVal)
+		So(desc.onProtoReflection(val, reflectToProto).Interface().(testprotos.Complex_InnerEnum), ShouldEqual, msg.EnumVal)
 
 		desc = mt.fields["i64"]
 		So(desc.typ, ShouldEqual, reflect.TypeOf(msg.I64))
-		So(desc.onProtoReflection(val).Interface().(int64), ShouldEqual, msg.I64)
+		So(desc.onProtoReflection(val, reflectToProto).Interface().(int64), ShouldEqual, msg.I64)
 
 		desc = mt.fields["i64_rep"]
 		So(desc.typ, ShouldEqual, reflect.TypeOf(msg.I64Rep))
-		So(desc.onProtoReflection(val).Interface().([]int64), ShouldResemble, msg.I64Rep)
+		So(desc.onProtoReflection(val, reflectToProto).Interface().([]int64), ShouldResemble, msg.I64Rep)
 
 		desc = mt.fields["msg_val"]
 		So(desc.typ, ShouldEqual, reflect.TypeOf(msg.MsgVal))
-		So(desc.onProtoReflection(val).Interface().(*testprotos.Complex_InnerMessage), ShouldEqual, msg.MsgVal)
+		So(desc.onProtoReflection(val, reflectToProto).Interface().(*testprotos.Complex_InnerMessage), ShouldEqual, msg.MsgVal)
 
 		desc = mt.fields["msg_val_rep"]
 		So(desc.typ, ShouldEqual, reflect.TypeOf(msg.MsgValRep))
-		So(desc.onProtoReflection(val).Interface().([]*testprotos.Complex_InnerMessage), ShouldEqual, msg.MsgValRep)
+		So(desc.onProtoReflection(val, reflectToProto).Interface().([]*testprotos.Complex_InnerMessage), ShouldEqual, msg.MsgValRep)
 
 		// Grabbing a oneof alternative "switches" the wrapper to point to it.
-		desc = mt.fields["inner_msg"]
-		So(desc.typ, ShouldEqual, reflect.TypeOf(&testprotos.Complex_InnerMessage{}))
-		So(desc.onProtoReflection(val).Interface().(*testprotos.Complex_InnerMessage),
-			ShouldResemble, (*testprotos.Complex_InnerMessage)(nil))
-		So(msg.OneofVal, ShouldHaveSameTypeAs, &testprotos.Complex_InnerMsg{})
+		desc = mt.fields["another_simple"]
+		So(desc.typ, ShouldEqual, reflect.TypeOf(&testprotos.AnotherSimple{}))
+		So(desc.onProtoReflection(val, reflectToProto).Interface().(*testprotos.AnotherSimple),
+			ShouldResemble, (*testprotos.AnotherSimple)(nil))
+		So(msg.OneofVal, ShouldHaveSameTypeAs, &testprotos.Complex_AnotherSimple{})
+	})
+
+	Convey("Reading oneof fields works", t, func() {
+		msg := &testprotos.Complex{}
+		mt, _ := GetMessageType(reflect.ValueOf(msg).Type())
+		mv := reflect.ValueOf(msg).Elem()
+
+		oneOfReflect := func(field string) reflect.Value {
+			return mt.fields[field].onProtoReflection(mv, reflectFromProto)
+		}
+
+		// All oneof fields are reported as "must not use" if none of the
+		// alternatives are set.
+		So(oneOfReflect("simple").IsValid(), ShouldBeFalse)
+		So(oneOfReflect("another_simple").IsValid(), ShouldBeFalse)
+
+		// Setting one alternative.
+		msg.OneofVal = &testprotos.Complex_Simple{Simple: &testprotos.Simple{I: 123}}
+		So(oneOfReflect("simple").IsValid(), ShouldBeTrue)
+		So(oneOfReflect("another_simple").IsValid(), ShouldBeFalse)
+		val := oneOfReflect("simple").Interface()
+		So(val.(*testprotos.Simple), ShouldResemble, &testprotos.Simple{I: 123})
+
+		// Setting another alternative (even if the inner message is nil).
+		msg.OneofVal = &testprotos.Complex_AnotherSimple{}
+		So(oneOfReflect("simple").IsValid(), ShouldBeFalse)
+		So(oneOfReflect("another_simple").IsValid(), ShouldBeTrue)
+		val = oneOfReflect("another_simple").Interface()
+		So(val.(*testprotos.AnotherSimple), ShouldResemble, (*testprotos.AnotherSimple)(nil))
 	})
 }
