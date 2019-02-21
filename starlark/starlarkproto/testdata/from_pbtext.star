@@ -17,9 +17,9 @@ load("go.chromium.org/luci/starlark/starlarkproto/testprotos/test.proto", "testp
 # Works in general.
 m = proto.from_pbtext(testprotos.Simple, 'i: 123')
 assert.eq(type(m), 'testprotos.Simple')
-# TODO(vadimsh): Add more assertions once deserialization works.
+assert.eq(m.i, 123)
 
-# Bad text proto.
+# Bad text proto. Detailed tests for type conversions are in from_proto.star.
 def from_pbtext_bad_proto():
   proto.from_pbtext(testprotos.Simple, 'huh?')
 assert.fails(from_pbtext_bad_proto, 'from_pbtext: line 1.0: unknown field name "huh" in testprotos.Simple')

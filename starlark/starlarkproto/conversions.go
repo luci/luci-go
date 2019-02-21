@@ -19,6 +19,7 @@ import (
 	"math"
 	"reflect"
 
+	"github.com/golang/protobuf/proto"
 	"go.starlark.net/starlark"
 )
 
@@ -45,11 +46,8 @@ var intRanges = map[reflect.Kind]struct {
 // a go value of the given type, or an error if such assignment is not allowed
 // due to incompatible types.
 func getAssigner(typ reflect.Type, sv starlark.Value) (func(reflect.Value) error, error) {
-	// Proto3 use pointers only to represent message-valued fields. Proto2 also
-	// uses them to represent scalar-valued fields. We don't support proto2. So
-	// check that if typ is a pointer, it points to a struct.
-	if typ.Kind() == reflect.Ptr && typ.Elem().Kind() != reflect.Struct {
-		return nil, errNoProto2
+	if err := refuseProto2(typ); err != nil {
+		return nil, err
 	}
 
 	switch val := sv.(type) {
@@ -221,8 +219,105 @@ func assign(gv reflect.Value, sv starlark.Value) error {
 // Also understands slices of basic types (converting them to starlark.List) and
 // maps with string keys (converting them to starlark.Dict).
 func toStarlarkValue(gv reflect.Value) (starlark.Value, error) {
-	// TODO(vadimsh): Implement.
-	return starlark.None, nil
+	typ := gv.Type()
+	kind := typ.Kind()
+	if err := refuseProto2(typ); err != nil {
+		return nil, err
+	}
+
+	// Boolean.
+	if kind == reflect.Bool {
+		return starlark.Bool(gv.Bool()), nil
+	}
+
+	// Floats.
+	if kind == reflect.Float32 || kind == reflect.Float64 {
+		return starlark.Float(gv.Float()), nil
+	}
+
+	// Integers and enums.
+	if rng, ok := intRanges[kind]; ok {
+		if rng.signed {
+			return starlark.MakeInt64(gv.Int()), nil
+		}
+		return starlark.MakeUint64(gv.Uint()), nil
+	}
+
+	// String.
+	if kind == reflect.String {
+		return starlark.String(gv.String()), nil
+	}
+
+	// Message fields (recurses into toStarlarkValue though FromProto).
+	if kind == reflect.Ptr {
+		if gv.IsNil() {
+			return starlark.None, nil
+		}
+
+		// Instantiate *Message of a corresponding type.
+		msgTyp, err := GetMessageType(typ)
+		if err != nil {
+			return nil, err
+		}
+		msg := NewMessage(msgTyp)
+
+		// Populate it from fields of 'gv'.
+		pb, ok := gv.Interface().(proto.Message)
+		if !ok {
+			return nil, fmt.Errorf("unexpected pointer to a struct that is not a proto.Message: %s", gv)
+		}
+		if err := msg.FromProto(pb); err != nil {
+			return nil, err
+		}
+
+		return msg, nil
+	}
+
+	// Repeated and 'bytes' fields.
+	if kind == reflect.Slice {
+		l := make([]starlark.Value, gv.Len())
+		for i := range l {
+			var err error
+			if l[i], err = toStarlarkValue(gv.Index(i)); err != nil {
+				return nil, err
+			}
+		}
+		return starlark.NewList(l), nil
+	}
+
+	// Map fields. Only string keys are supported.
+	if kind == reflect.Map {
+		if typ.Key().Kind() != reflect.String {
+			return nil, fmt.Errorf("unexpected map with %s keys, expecting string keys", typ.Key().Kind())
+		}
+		// TODO(vadimsh): Switch to reflect.Value.MapRange once it is available
+		// (go 1.12).
+		d := &starlark.Dict{}
+		for _, k := range gv.MapKeys() {
+			val, err := toStarlarkValue(gv.MapIndex(k))
+			if err != nil {
+				return nil, err
+			}
+			if err := d.SetKey(starlark.String(k.String()), val); err != nil {
+				return nil, err
+			}
+		}
+		return d, nil
+	}
+
+	return nil, fmt.Errorf("don't know how to convert %s to a Starlark value", typDesc(typ))
+}
+
+// refuseProto2 returns errNoProto2 if the given typ came from proto2 message.
+//
+// Proto3 use pointers only to represent message-valued fields. Proto2 also
+// uses them to represent scalar-valued fields. We don't support proto2. So
+// check that if typ is a pointer, it points to a struct.
+func refuseProto2(typ reflect.Type) error {
+	if typ.Kind() == reflect.Ptr && typ.Elem().Kind() != reflect.Struct {
+		return errNoProto2
+	}
+	return nil
 }
 
 // typDesc returns a human readable description of the type, for error messages.
