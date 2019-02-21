@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "abc4aafa_c16c5aa4",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-21T19:37:48Z",
+      "side": 1,
+      "message": "suggestion: reverse condition for readability.",
+      "range": {
+        "startLine": 225,
+        "startChar": 4,
+        "endLine": 225,
+        "endChar": 19
+      },
+      "revId": "a192854b7959bc645be4deda1dfd32a653214de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f02b26a2_cb02b097",
         "filename": "milo/buildsource/buildbucket/builder.go",
         "patchSetId": 1
