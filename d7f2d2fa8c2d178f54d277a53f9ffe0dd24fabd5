@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "8a57dafa_7f9dbb95",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-21T19:43:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64ffa6b3_3418e778",
+      "range": {
+        "startLine": 18,
+        "startChar": 38,
+        "endLine": 18,
+        "endChar": 40
+      },
+      "revId": "d7f2d2fa8c2d178f54d277a53f9ffe0dd24fabd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9dc7a014_f4a5ec85",
         "filename": "starlark/starlarkproto/message.go",
         "patchSetId": 4
@@ -68,6 +92,30 @@
       "revId": "d7f2d2fa8c2d178f54d277a53f9ffe0dd24fabd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf3e32b8_d81eb13a",
+        "filename": "starlark/starlarkproto/message.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-21T19:43:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9dc7a014_f4a5ec85",
+      "range": {
+        "startLine": 82,
+        "startChar": 66,
+        "endLine": 82,
+        "endChar": 67
+      },
+      "revId": "d7f2d2fa8c2d178f54d277a53f9ffe0dd24fabd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
