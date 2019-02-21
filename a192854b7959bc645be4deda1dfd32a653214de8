@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f02b26a2_cb02b097",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-02-21T19:23:14Z",
+      "side": 1,
+      "message": "That\u0027s awesome. Infra build failure for such builds is a great idea.",
+      "range": {
+        "startLine": 230,
+        "startChar": 14,
+        "endLine": 230,
+        "endChar": 32
+      },
+      "revId": "a192854b7959bc645be4deda1dfd32a653214de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
