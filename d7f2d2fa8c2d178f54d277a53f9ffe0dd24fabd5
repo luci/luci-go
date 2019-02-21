@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b65a7fa_d2939869",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-21T17:37:18Z",
+      "side": 1,
+      "message": "indeed. Paragraph below was very confusing to read, but diff in test file helped grok it.",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 7
+      },
+      "revId": "d7f2d2fa8c2d178f54d277a53f9ffe0dd24fabd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "64ffa6b3_3418e778",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-21T17:37:18Z",
+      "side": 1,
+      "message": "useD",
+      "range": {
+        "startLine": 18,
+        "startChar": 38,
+        "endLine": 18,
+        "endChar": 40
+      },
+      "revId": "d7f2d2fa8c2d178f54d277a53f9ffe0dd24fabd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9dc7a014_f4a5ec85",
+        "filename": "starlark/starlarkproto/message.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-21T17:37:18Z",
+      "side": 1,
+      "message": "m",
+      "range": {
+        "startLine": 82,
+        "startChar": 66,
+        "endLine": 82,
+        "endChar": 67
+      },
+      "revId": "d7f2d2fa8c2d178f54d277a53f9ffe0dd24fabd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
