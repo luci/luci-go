@@ -16,6 +16,7 @@ package starlarkproto
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/golang/protobuf/proto"
 
@@ -58,7 +59,7 @@ func (m *Message) ToProto() (proto.Message, error) {
 		if !ok {
 			panic("should not happen, SetField and Attr checks the structure already")
 		}
-		if err := assign(fd.onProtoReflection(msg), val); err != nil {
+		if err := assign(fd.onProtoReflection(msg, reflectToProto), val); err != nil {
 			return nil, fmt.Errorf("bad value for field %q of %q - %s", name, m.Type(), err)
 		}
 	}
@@ -70,7 +71,33 @@ func (m *Message) ToProto() (proto.Message, error) {
 //
 // Returns an error on type mismatch.
 func (m *Message) FromProto(p proto.Message) error {
-	// TODO(vadimsh): Implement.
+	ptr := reflect.ValueOf(p)
+	if ptr.Type() != m.typ.Type() {
+		return fmt.Errorf("bad message type: got %s, expect %s", ptr.Type(), m.typ.Type())
+	}
+
+	msg := ptr.Elem()
+	for name, fd := range m.typ.fields {
+		// Get the field's value from the proto message as reflect.Value. For unused
+		// oneof alternatives this is an invalid zero value, we skip them right
+		// away. For other fields it is reflect.Value (of fd.typ type) that MAY be
+		// nil inside (for unset fields). toStarlarkValue converts such values to
+		// starlark.None.
+		val := fd.onProtoReflection(msg, reflectFromProto)
+		if !val.IsValid() {
+			continue
+		}
+		// Convert the Go value to the corresponding Starlark value and assign it to
+		// the field in 'm'.
+		sv, err := toStarlarkValue(val)
+		if err != nil {
+			return fmt.Errorf("cannot recognize value of field %s: %s", name, err)
+		}
+		if err := m.SetField(name, sv); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
