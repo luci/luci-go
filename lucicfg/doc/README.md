@@ -623,7 +623,15 @@ watching `refs/heads/master`.
 ### luci.milo {#luci.milo}
 
 ```python
-luci.milo(logo = None, favicon = None)
+luci.milo(
+    # Optional arguments.
+    logo = None,
+    favicon = None,
+    monorail_project = None,
+    monorail_components = None,
+    bug_summary = None,
+    bug_description = None,
+)
 ```
 
 
@@ -634,10 +642,38 @@ Milo service is a public user interface for displaying (among other things)
 builds, builders, builder lists (see [luci.list_view(...)](#luci.list_view)) and consoles
 (see [luci.console_view(...)](#luci.console_view)).
 
+Can optionally be configured with a reference to a [Monorail] project to use
+for filing bugs via custom feedback links on build pages. The format of a new
+bug is defined via `bug_summary` and `bug_description` fields which are
+interpreted as Golang [text templates]. Supported interpolations are the
+fields of the standard build proto such as:
+
+    {{.Build.Builder.Project}}
+    {{.Build.Builder.Bucket}}
+    {{.Build.Builder.Builder}}
+
+Others available fields include:
+
+    {{.MiloBuildUrl}}
+    {{.MiloBuilderUrl}}
+
+If any specified placeholder cannot be satisfied then no URL is rendered for
+the build page feedback link.
+
+Templates can be either defined inline as strings, or loaded from external
+files via [io.read_file(...)](#io.read_file).
+
+[Monorail]: https://bugs.chromium.org
+[text templates]: https://golang.org/pkg/text/template
+
 #### Arguments {#luci.milo-args}
 
 * **logo**: optional https URL to the project logo, must be hosted on `storage.googleapis.com`.
 * **favicon**: optional https URL to the project favicon, must be hosted on `storage.googleapis.com`.
+* **monorail_project**: optional Monorail project to file bugs into.
+* **monorail_components**: a list of the Monorail component that the bug should exist under, in the hierarchical `>` separated format, e.g. `Infra>Client>ChromeOS>CI`. Required if `monorail_project` is set, otherwise must be None.
+* **bug_summary**: a text template for generating new bug's summary given a builder on whose page the user clicked the feedback link. Must be None if `monorail_project` is unset.
+* **bug_description**: a text template for generating new bug's description given a builder on whose page the user clicked the feedback link. Must be None if `monorail_project` is unset.
 
 
 
