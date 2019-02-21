@@ -50,6 +50,8 @@ message CreateVM {
   string prefix = 5;
   // The hostname of the Swarming server this VM connects to.
   string swarming = 6;
+  // The timeout of the VM in seconds.
+  int64 timeout = 7;
 }
 
 // A task to expand a config.

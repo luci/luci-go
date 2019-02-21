@@ -130,6 +130,7 @@ func createVM(c context.Context, payload proto.Message) error {
 		vm.Lifetime = task.Lifetime
 		vm.Prefix = task.Prefix
 		vm.Swarming = task.Swarming
+		vm.Timeout = task.Timeout
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
@@ -160,9 +161,10 @@ func expandConfig(c context.Context, payload proto.Message) error {
 				Attributes: cfg.Attributes,
 				Config:     task.Id,
 				Index:      i,
-				Lifetime:   cfg.GetLifetime().GetSeconds(),
+				Lifetime:   cfg.Lifetime.GetSeconds(),
 				Prefix:     cfg.Prefix,
 				Swarming:   cfg.Swarming,
+				Timeout:    cfg.Timeout.GetSeconds(),
 			},
 		}
 	}
