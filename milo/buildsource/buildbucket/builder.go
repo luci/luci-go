@@ -205,27 +205,39 @@ func backCursor(c context.Context, bid BuilderID, limit int, thisCursor, nextCur
 }
 
 // toMiloBuildsSummaries computes summary for each build in parallel.
-func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.ApiCommonBuildMessage) ([]*ui.BuildSummary, error) {
+func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.ApiCommonBuildMessage) []*ui.BuildSummary {
 	result := make([]*ui.BuildSummary, len(msgs))
 	// For each build, toMiloBuild may query Gerrit to fetch associated CL's
 	// author email. Unfortunately, as of June 2018 Gerrit is often taking >5s to
 	// report back. From UX PoV, author's email isn't the most important of
 	// builder's page, so limit waiting time.
 	c, _ = context.WithTimeout(c, 5*time.Second)
-	return result, parallel.WorkPool(50, func(work chan<- func() error) {
+	// This does not error.
+	parallel.WorkPool(50, func(work chan<- func() error) {
 		for i, m := range msgs {
 			i := i
 			m := m
 			work <- func() error {
+				// HACK(hinoka): For malformed builds (eg builder name and builder name tag don't match)
+				// We can drop them silently or display an error.  We choose the latter.
+				// Once we switch to the V2 we should be more resilient to these classes of issues.
 				mb, err := ToMiloBuild(c, m, false)
-				if err != nil {
-					return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
+				if err == nil {
+					result[i] = mb.BuildSummary()
+					return nil
 				}
-				result[i] = mb.BuildSummary()
+				msg := fmt.Sprintf("failed to convert build %d to milo build: %s", m.Id, err)
+				logging.Errorf(c, msg)
+				result[i] = &ui.BuildSummary{
+					Link:   ui.NewEmptyLink("N/A - Error"),
+					Status: model.InfraFailure,
+					Text:   []string{msg},
+				}
 				return nil
 			}
 		}
 	})
+	return result
 }
 
 // GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
@@ -256,7 +268,7 @@ func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui
 			logging.WithError(err).Errorf(c, "Could not fetch %s builds", statusFilter)
 			return
 		}
-		result, err = toMiloBuildsSummaries(c, msgs)
+		result = toMiloBuildsSummaries(c, msgs)
 		return
 	}
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
