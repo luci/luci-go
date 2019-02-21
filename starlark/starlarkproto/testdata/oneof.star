@@ -55,5 +55,5 @@ assert.true(m3.another_simple == None)
 
 # Serialization works.
 assert.eq(
-    proto.to_pbtext(testprotos.Complex(simple=testprotos.Simple(i=1))),
+    proto.to_textpb(testprotos.Complex(simple=testprotos.Simple(i=1))),
     "simple: <\n  i: 1\n>\n")

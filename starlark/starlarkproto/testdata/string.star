@@ -22,7 +22,7 @@ assert.eq(m.s, '')
 # Setter and getter works.
 m.s = 'blah'
 assert.eq(m.s, 'blah')
-assert.eq(proto.to_pbtext(m), 's: "blah"\n')
+assert.eq(proto.to_textpb(m), 's: "blah"\n')
 
 # Setting through constructor works.
 m2 = testprotos.SimpleFields(s='blah')

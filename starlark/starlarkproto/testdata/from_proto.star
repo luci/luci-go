@@ -15,7 +15,7 @@
 load("go.chromium.org/luci/starlark/starlarkproto/testprotos/test.proto", "testprotos")
 
 # Simple fields and slices of simple fields.
-m = proto.from_pbtext(testprotos.SimpleFields, """
+m = proto.from_textpb(testprotos.SimpleFields, """
 i64: -64
 i64_rep: 1
 i64_rep: 2
@@ -43,11 +43,11 @@ assert.eq(m.bs, [98, 121, 116, 101, 115])
 assert.eq(m.bs_rep, [[98, 48], [98, 49]])
 
 # Enums.
-m2 = proto.from_pbtext(testprotos.Complex, "enum_val: ENUM_VAL_1")
+m2 = proto.from_textpb(testprotos.Complex, "enum_val: ENUM_VAL_1")
 assert.eq(m2.enum_val, testprotos.Complex.ENUM_VAL_1)
 
 # Nested messages (singular and repeated).
-m3 = proto.from_pbtext(testprotos.MessageFields, """
+m3 = proto.from_textpb(testprotos.MessageFields, """
 single: <i: 123>
 rep: <i: 456>
 rep: <i: 789>
@@ -58,12 +58,12 @@ assert.eq(m3.rep[0].i, 456)
 assert.eq(m3.rep[1].i, 789)
 
 # Oneofs.
-m4 = proto.from_pbtext(testprotos.Complex, "simple: <i: 123>")
+m4 = proto.from_textpb(testprotos.Complex, "simple: <i: 123>")
 assert.eq(m4.simple.i, 123)
 assert.eq(m4.another_simple, None)
 
 # Maps with primitive values.
-m5 = proto.from_pbtext(testprotos.MapWithPrimitiveType, """
+m5 = proto.from_textpb(testprotos.MapWithPrimitiveType, """
 m {
   key: "abc"
   value: 1
@@ -76,7 +76,7 @@ m {
 assert.eq(m5.m, {'abc': 1, 'def': 2})
 
 # Maps with message values.
-m6 = proto.from_pbtext(testprotos.MapWithMessageType, """
+m6 = proto.from_textpb(testprotos.MapWithMessageType, """
 m {
   key: "abc"
   value: <i: 1>

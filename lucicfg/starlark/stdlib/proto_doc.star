@@ -17,7 +17,7 @@
 # modules.
 
 
-def _to_pbtext(msg):
+def _to_textpb(msg):
   """Serializes a protobuf message to a string using ASCII proto serialization.
 
   Args:
@@ -25,15 +25,44 @@ def _to_pbtext(msg):
   """
 
 
-def _to_jsonpb(msg):
+def _to_jsonpb(msg, emit_defaults=False):
   """Serializes a protobuf message to a string using JSONPB serialization.
 
   Args:
     msg: a proto message to serialize. Required.
+    emit_defaults: if True, do not omit fields with default values.
+  """
+
+
+def _from_textpb(ctor, text):
+  """Deserializes a protobuf message given its ASCII proto serialization.
+
+  Args:
+    ctor: a message constructor function, same one you would normally use to
+        create a new message. Required.
+    text: a string with the serialized message. Required.
+
+  Returns:
+    Deserialized message constructed via `ctor`.
+  """
+
+
+def _from_jsonpb(ctor, text):
+  """Deserializes a protobuf message given its JSONPB serialization.
+
+  Args:
+    ctor: a message constructor function, same one you would normally use to
+        create a new message. Required.
+    text: a string with the serialized message. Required.
+
+  Returns:
+    Deserialized message constructed via `ctor`.
   """
 
 
 proto = struct(
-    to_pbtext = _to_pbtext,
+    to_textpb = _to_textpb,
     to_jsonpb = _to_jsonpb,
+    from_textpb = _from_textpb,
+    from_jsonpb = _from_jsonpb,
 )

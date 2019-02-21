@@ -58,11 +58,11 @@ assert.fails(set_int, 'can\'t assign integer to a value of kind "slice"')
 # currently. This is discovered later when trying to serialize the object.
 m2.i64_rep = [1, 2, None]
 def serialize():
-  proto.to_pbtext(m2)
+  proto.to_textpb(m2)
 assert.fails(serialize, 'list item #2 - can\'t assign nil to a value of kind "int64"')
 
 # Serialization to text proto works.
-text = proto.to_pbtext(testprotos.SimpleFields(i64_rep=[1, 2, 3]))
+text = proto.to_textpb(testprotos.SimpleFields(i64_rep=[1, 2, 3]))
 assert.eq(text, """i64_rep: 1
 i64_rep: 2
 i64_rep: 3

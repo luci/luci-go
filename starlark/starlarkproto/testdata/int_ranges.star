@@ -22,7 +22,7 @@ m1 = testprotos.SimpleFields()
 # int64 max.
 m1.i64 = TWO_POW_63 - 1  # still ok
 assert.eq(m1.i64, TWO_POW_63 - 1)
-assert.eq(proto.to_pbtext(m1), "i64: 9223372036854775807\n")
+assert.eq(proto.to_textpb(m1), "i64: 9223372036854775807\n")
 def set_i64_large():
   m1.i64 = TWO_POW_63
 assert.fails(set_i64_large, "doesn't fit into int64")
@@ -30,7 +30,7 @@ assert.fails(set_i64_large, "doesn't fit into int64")
 # int64 min.
 m1.i64 = -TWO_POW_63  # still ok
 assert.eq(m1.i64, -TWO_POW_63)
-assert.eq(proto.to_pbtext(m1), "i64: -9223372036854775808\n")
+assert.eq(proto.to_textpb(m1), "i64: -9223372036854775808\n")
 def set_i64_small():
   m1.i64 = -TWO_POW_63-1
 assert.fails(set_i64_small, "doesn't fit into int64")
@@ -40,7 +40,7 @@ m2 = testprotos.SimpleFields()
 # int32 max.
 m2.i32 = TWO_POW_31 - 1  # still ok
 assert.eq(m2.i32, TWO_POW_31 - 1)
-assert.eq(proto.to_pbtext(m2), "i32: 2147483647\n")
+assert.eq(proto.to_textpb(m2), "i32: 2147483647\n")
 def set_i32_large():
   m2.i32 = TWO_POW_31
 assert.fails(set_i32_large, "doesn't fit into int32")
@@ -48,7 +48,7 @@ assert.fails(set_i32_large, "doesn't fit into int32")
 # int32 min.
 m2.i32 = -TWO_POW_31  # still ok
 assert.eq(m2.i32, -TWO_POW_31)
-assert.eq(proto.to_pbtext(m2), "i32: -2147483648\n")
+assert.eq(proto.to_textpb(m2), "i32: -2147483648\n")
 def set_i32_small():
   m2.i32 = -TWO_POW_31-1
 assert.fails(set_i32_small, "doesn't fit into int32")
@@ -58,7 +58,7 @@ m3 = testprotos.SimpleFields()
 # uint64 max.
 m3.ui64 = 2*TWO_POW_63 - 1  # still ok
 assert.eq(m3.ui64, 2*TWO_POW_63 - 1)
-assert.eq(proto.to_pbtext(m3), "ui64: 18446744073709551615\n")
+assert.eq(proto.to_textpb(m3), "ui64: 18446744073709551615\n")
 def set_ui64_large():
   m3.ui64 = 2*TWO_POW_63
 assert.fails(set_ui64_large, "doesn't fit into uint64")
@@ -73,7 +73,7 @@ m4 = testprotos.SimpleFields()
 # uint32 max.
 m4.ui32 = 2*TWO_POW_31 - 1  # still ok
 assert.eq(m4.ui32, 2*TWO_POW_31 - 1)
-assert.eq(proto.to_pbtext(m4), "ui32: 4294967295\n")
+assert.eq(proto.to_textpb(m4), "ui32: 4294967295\n")
 def set_ui32_large():
   m4.ui32 = 2*TWO_POW_31
 assert.fails(set_ui32_large, "doesn't fit into uint32")

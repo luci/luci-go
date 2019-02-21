@@ -49,11 +49,11 @@ assert.fails(set_as_msg, 'can\'t assign a testprotos.MessageFields message to a 
 # serialization.
 m.single = testprotos.Simple(many_i=[None])
 def serialize():
-  proto.to_pbtext(m)
+  proto.to_textpb(m)
 assert.fails(serialize, 'can\'t assign nil to a value of kind "int64"')
 
 # Serialization works.
-text = proto.to_pbtext(testprotos.MessageFields(single=testprotos.Simple(i=999)))
+text = proto.to_textpb(testprotos.MessageFields(single=testprotos.Simple(i=999)))
 assert.eq(text, """single: <
   i: 999
 >

@@ -19,7 +19,7 @@ m = testprotos.RefsOtherProtos()
 # Indirectly using messages imported from elsewhere works.
 m.another_msg.i = 123
 m.ts.seconds = 456
-assert.eq(proto.to_pbtext(m), """another_msg: <
+assert.eq(proto.to_textpb(m), """another_msg: <
   i: 123
 >
 ts: <
@@ -31,8 +31,8 @@ ts: <
 # first. To avoid clashing with already imported 'testprotos' symbol, import it
 # under a different name.
 load("go.chromium.org/luci/starlark/starlarkproto/testprotos/another.proto", another_pb="testprotos")
-assert.eq(proto.to_pbtext(another_pb.AnotherMessage(i=123)), "i: 123\n")
+assert.eq(proto.to_textpb(another_pb.AnotherMessage(i=123)), "i: 123\n")
 
 # When importing modules with dotted names, we must always use a short alias.
 load("google/protobuf/timestamp.proto", google_pb="google.protobuf")
-assert.eq(proto.to_pbtext(google_pb.Timestamp(seconds=456)), "seconds: 456\n")
+assert.eq(proto.to_textpb(google_pb.Timestamp(seconds=456)), "seconds: 456\n")

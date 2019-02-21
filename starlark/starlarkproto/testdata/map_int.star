@@ -46,7 +46,7 @@ msg2 = testprotos.MapWithPrimitiveType(m={'k': 2})
 assert.eq(msg2.m, {'k': 2})
 
 # Serialization to text proto works.
-text = proto.to_pbtext(testprotos.MapWithPrimitiveType(m={
+text = proto.to_textpb(testprotos.MapWithPrimitiveType(m={
   'k1': 1,
   'k2': 2,
 }))
@@ -62,7 +62,7 @@ m: <
 
 # Conversion to proto does full type checking.
 def check_fail(m, msg):
-  assert.fails(lambda: proto.to_pbtext(testprotos.MapWithPrimitiveType(m=m)), msg)
+  assert.fails(lambda: proto.to_textpb(testprotos.MapWithPrimitiveType(m=m)), msg)
 
 check_fail({0: 1}, 'bad key 0 - can\'t assign integer to a value of kind "string"')
 check_fail({'': 'zzz'}, 'bad value at key "" - can\'t assign string to a value of kind "int64"')

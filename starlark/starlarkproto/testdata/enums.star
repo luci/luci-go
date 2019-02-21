@@ -48,7 +48,7 @@ assert.eq(m.enum_val, 123)
 
 # Serialization works.
 assert.eq(
-    proto.to_pbtext(testprotos.Complex(enum_val=testprotos.Complex.ENUM_VAL_1)),
+    proto.to_textpb(testprotos.Complex(enum_val=testprotos.Complex.ENUM_VAL_1)),
     "enum_val: ENUM_VAL_1\n")
 
 # Setting to a wrong type fails.

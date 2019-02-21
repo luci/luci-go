@@ -21,15 +21,15 @@ inner = testprotos.Complex.InnerMessage(i=123)
 
 # Assignment works.
 outer.msg_val = inner
-assert.eq(proto.to_pbtext(outer), 'msg_val: <\n  i: 123\n>\n')
+assert.eq(proto.to_textpb(outer), 'msg_val: <\n  i: 123\n>\n')
 
 # Clearing works.
 outer.msg_val = None
-assert.eq(proto.to_pbtext(outer), '')
+assert.eq(proto.to_textpb(outer), '')
 
 # Auto-instantiation of default value works.
 outer.msg_val.i = 456
-assert.eq(proto.to_pbtext(outer), 'msg_val: <\n  i: 456\n>\n')
+assert.eq(proto.to_textpb(outer), 'msg_val: <\n  i: 456\n>\n')
 
 # Repeated fields also work.
 outer2 = testprotos.Complex()
@@ -37,7 +37,7 @@ outer2.msg_val_rep = [
   testprotos.Complex.InnerMessage(i=123),
   testprotos.Complex.InnerMessage(i=456)
 ]
-assert.eq(proto.to_pbtext(outer2), """msg_val_rep: <
+assert.eq(proto.to_textpb(outer2), """msg_val_rep: <
   i: 123
 >
 msg_val_rep: <
