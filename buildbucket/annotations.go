@@ -267,7 +267,10 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*b
 			}
 		case l.GetUrl() != "":
 			// Arbitrary links go into the summary.
-			summary = append(summary, fmt.Sprintf("* [%s](%s)", l.Label, l.GetUrl()))
+			s := l.GetUrl() // Backslash escape all parens.
+			s = strings.Replace(s, `(`, `\(`, -1)
+			s = strings.Replace(s, `)`, `\)`, -1)
+			summary = append(summary, fmt.Sprintf("* [%s](%s)", l.Label, s))
 		default:
 			logging.Warningf(c, "Got neither URL nor Logdog stream, skipping: %v", l)
 		}
