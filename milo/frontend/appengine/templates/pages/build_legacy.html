@@ -75,10 +75,6 @@
     {{ if .MainLink }}
       <li class="sublink">{{.MainLink.HTML}}</li>
       {{- if ne .Status.String "Success" -}}
-        {{ range .MainLink }}
-          <link rel="prerender" href="{{.URL}}">
-          <link rel="prefetch" href="{{.URL}}">
-        {{ end }}
       {{ end }}
     {{- end }}
     {{ range .SubLink }}
