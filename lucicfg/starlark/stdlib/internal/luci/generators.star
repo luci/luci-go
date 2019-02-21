@@ -463,7 +463,6 @@ def _scheduler_acls(elementary):
 ## milo.cfg.
 
 
-# TODO(vadimsh): Add headers support.
 # TODO(vadimsh): Add build_bug_template support.
 
 
@@ -557,6 +556,7 @@ def _milo_console_view(view, opts, project_name):
   return milo_pb.Console(
       id = view.props.name,
       name = view.props.title,
+      header = view.props.header,
 
       repo_url = view.props.repo,
       refs = refs,
