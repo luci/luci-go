@@ -15,6 +15,9 @@
 package starlarkproto
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
@@ -37,20 +40,49 @@ import (
 //        An str representing msg in text format.
 //      """
 //
-//    def to_jsonpb(msg):
+//    def to_jsonpb(msg, emit_defaults=False):
 //      """Serializes a protobuf message to JSONPB string.
 //
 //      Args:
 //        msg: a *Message to serialize.
+//        emit_defaults: if True, do not omit fields with default values.
 //
 //      Returns:
 //        An str representing msg in JSONPB format.
 //      """
+//
+//    def from_pbtext(ctor, text):
+//      """Deserializes a protobuf message given in text proto form.
+//
+//      Unknown fields are not allowed.
+//
+//      Args:
+//        ctor: a message constructor function.
+//        text: a string with serialized message.
+//
+//      Returns:
+//        Deserialized message constructed via `ctor`.
+//      """
+//
+//    def from_jsonpb(ctor, text):
+//      """Deserializes a protobuf message given as JBONPB string.
+//
+//      Unknown fields are silently skipped.
+//
+//      Args:
+//        ctor: a message constructor function.
+//        text: a string with serialized message.
+//
+//      Returns:
+//        Deserialized message constructed via `ctor`.
+//      """
 func ProtoLib() starlark.StringDict {
 	return starlark.StringDict{
 		"proto": starlarkstruct.FromStringDict(starlark.String("proto"), starlark.StringDict{
-			"to_pbtext": starlark.NewBuiltin("to_pbtext", toPbText),
-			"to_jsonpb": starlark.NewBuiltin("to_jsonpb", toJSONPb),
+			"to_pbtext":   starlark.NewBuiltin("to_pbtext", toPbText),
+			"to_jsonpb":   starlark.NewBuiltin("to_jsonpb", toJSONPb),
+			"from_pbtext": starlark.NewBuiltin("from_pbtext", fromPbText),
+			"from_jsonpb": starlark.NewBuiltin("from_jsonpb", fromJSONPb),
 		}),
 	}
 }
@@ -88,4 +120,57 @@ func toJSONPb(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwar
 		return nil, err
 	}
 	return starlark.String(str), nil
+}
+
+// fromPbText takes a text-serialized proto messages and returns *Message.
+func fromPbText(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var ctor starlark.Value
+	var text starlark.String
+	if err := starlark.UnpackArgs("from_pbtext", args, kwargs, "ctor", &ctor, "text", &text); err != nil {
+		return nil, err
+	}
+
+	c, ok := ctor.(*messageCtor)
+	if !ok {
+		return nil, fmt.Errorf("from_pbtext: got %s, expecting a proto message constructor", ctor.Type())
+	}
+	typ := c.typ
+
+	protoMsg := typ.NewProtoMessage().Interface().(proto.Message)
+	if err := proto.UnmarshalText(text.GoString(), protoMsg); err != nil {
+		return nil, fmt.Errorf("from_pbtext: %s", err)
+	}
+
+	msg := NewMessage(typ)
+	if err := msg.FromProto(protoMsg); err != nil {
+		return nil, fmt.Errorf("from_pbtext: %s", err)
+	}
+	return msg, nil
+}
+
+// fromJSONPb takes a JSONPB-serialized proto messages and returns *Message.
+func fromJSONPb(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var ctor starlark.Value
+	var text starlark.String
+	if err := starlark.UnpackArgs("from_jsonpb", args, kwargs, "ctor", &ctor, "text", &text); err != nil {
+		return nil, err
+	}
+
+	c, ok := ctor.(*messageCtor)
+	if !ok {
+		return nil, fmt.Errorf("from_jsonpb: got %s, expecting a proto message constructor", ctor.Type())
+	}
+	typ := c.typ
+
+	protoMsg := typ.NewProtoMessage().Interface().(proto.Message)
+	u := jsonpb.Unmarshaler{AllowUnknownFields: true}
+	if err := u.Unmarshal(strings.NewReader(text.GoString()), protoMsg); err != nil {
+		return nil, fmt.Errorf("from_jsonpb: %s", err)
+	}
+
+	msg := NewMessage(typ)
+	if err := msg.FromProto(protoMsg); err != nil {
+		return nil, fmt.Errorf("from_jsonpb: %s", err)
+	}
+	return msg, nil
 }
