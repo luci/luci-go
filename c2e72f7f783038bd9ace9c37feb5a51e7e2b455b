@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a79ef75_000ff195",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 9
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-21T08:20:17Z",
+      "side": 1,
+      "message": "nit: this code raises questions answered by the comment below. Consider replacing this with `buildbot or builder.id` in L408",
+      "range": {
+        "startLine": 398,
+        "startChar": 4,
+        "endLine": 400,
+        "endChar": 25
+      },
+      "revId": "c2e72f7f783038bd9ace9c37feb5a51e7e2b455b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

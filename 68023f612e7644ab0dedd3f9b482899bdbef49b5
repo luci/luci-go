@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f28c988d_b6a4546b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 8
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-21T08:20:17Z",
+      "side": 1,
+      "message": "nit: either both plural or both singular",
+      "range": {
+        "startLine": 334,
+        "startChar": 36,
+        "endLine": 334,
+        "endChar": 52
+      },
+      "revId": "68023f612e7644ab0dedd3f9b482899bdbef49b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b055523e_fecbcf43",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 8
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-21T08:20:17Z",
+      "side": 1,
+      "message": "consider \n\n  buildbot or builder.id\n\nright here. The comment above is really about key_name in L398-400, than\n`key \u003d keys.unique(kind, key_name)`",
+      "range": {
+        "startLine": 408,
+        "startChar": 26,
+        "endLine": 408,
+        "endChar": 34
+      },
+      "revId": "68023f612e7644ab0dedd3f9b482899bdbef49b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
