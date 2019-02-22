@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40b4ca94_6d947f97",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 11
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T00:57:03Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 338,
+        "startChar": 50,
+        "endLine": 338,
+        "endChar": 52
+      },
+      "revId": "3416a2e7570871a432f9c6793d8298f82a6e3ef6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25201bde_630abe37",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 11
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T00:57:03Z",
+      "side": 1,
+      "message": "on which builders are triggered\n(i think this is easier to understand, but i\u0027m not sure)",
+      "range": {
+        "startLine": 40,
+        "startChar": 36,
+        "endLine": 40,
+        "endChar": 64
+      },
+      "revId": "3416a2e7570871a432f9c6793d8298f82a6e3ef6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
