@@ -15,8 +15,10 @@
 package base
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -44,11 +46,42 @@ func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg
 	// Make sure the input file exists, to make the error message in this case be
 	// more humane. lucicfg.Generate will formulate this error as "no such module"
 	// which looks confusing.
-	switch _, err := os.Stat(abs); {
+	//
+	// Also check that the script starts with "#!..." line, indicating it is
+	// executable. This gives a hint in case lucicfg is mistakenly invoked with
+	// some library script. Executing such scripts directly usually causes very
+	// confusing errors.
+	switch f, err := os.Open(abs); {
 	case os.IsNotExist(err):
 		return nil, fmt.Errorf("no such file: %s", inputFile)
 	case err != nil:
 		return nil, err
+	default:
+		yes, err := startsWithShebang(f)
+		f.Close()
+		switch {
+		case err != nil:
+			return nil, err
+		case !yes:
+			fmt.Fprintf(os.Stderr,
+				`================================= WARNING =================================
+Body of the script %s doesn't start with "#!".
+
+It is likely not a correct entry point script and lucicfg execution will fail
+with cryptic errors or unexpected results. Many configs consist of more than
+one *.star file, but there's usually only one entry point script that should
+be passed to lucicfg.
+
+If it is the correct script, make sure it starts with the following line to
+indicate it is executable (and remove this warning):
+
+    #!/usr/bin/env lucicfg generate
+
+You may also optionally set +x flag on it, but this is not required.
+===========================================================================
+
+`, filepath.Base(abs))
+		}
 	}
 
 	// The directory with the input file becomes the root of the main package.
@@ -93,4 +126,16 @@ func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg
 	}
 
 	return state.Configs, nil
+}
+
+func startsWithShebang(r io.Reader) (bool, error) {
+	buf := make([]byte, 2)
+	switch _, err := io.ReadFull(r, buf); {
+	case err == io.EOF || err == io.ErrUnexpectedEOF:
+		return false, nil // the file is smaller than 2 bytes
+	case err != nil:
+		return false, err
+	default:
+		return bytes.Equal(buf, []byte("#!")), nil
+	}
 }
