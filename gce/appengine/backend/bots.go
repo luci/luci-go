@@ -33,6 +33,23 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
+// manageMissingBot manages a missing Swarming bot.
+func manageMissingBot(c context.Context, vm *model.VM) error {
+	switch {
+	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < time.Now().Unix():
+		logging.Debugf(c, "deadline %d exceeded", vm.Created+vm.Lifetime)
+		return destroyInstanceAsync(c, vm.ID, vm.URL)
+	case vm.Drained:
+		logging.Debugf(c, "VM drained")
+		return destroyInstanceAsync(c, vm.ID, vm.URL)
+	case vm.Timeout > 0 && vm.Created+vm.Timeout < time.Now().Unix():
+		logging.Debugf(c, "timeout %d exceeded", vm.Created+vm.Timeout)
+		return destroyInstanceAsync(c, vm.ID, vm.URL)
+	default:
+		return nil
+	}
+}
+
 // manageExistingBot manages an existing Swarming bot.
 func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm *model.VM) error {
 	// A bot connected to Swarming may be executing workload.
@@ -92,15 +109,12 @@ func manageBot(c context.Context, payload proto.Message) error {
 		return errors.Reason("instance does not exist: %s", vm.URL).Err()
 	}
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
-	srv := getSwarming(c, vm.Swarming).Bot
-	bot, err := srv.Get(vm.Hostname).Context(c).Do()
+	bot, err := getSwarming(c, vm.Swarming).Bot.Get(vm.Hostname).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
-				// Bot hasn't connected to Swarming yet.
-				// TODO(smut): Delete the GCE instance if it's been too long.
 				logging.Debugf(c, "bot not found")
-				return nil
+				return manageMissingBot(c, vm)
 			}
 			logErrors(c, gerr)
 			return errors.Reason("failed to fetch bot").Err()

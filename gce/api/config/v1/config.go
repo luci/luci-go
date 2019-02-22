@@ -50,5 +50,14 @@ func (cfg *Config) Validate(c *validation.Context) {
 	}
 	c.Enter("lifetime")
 	cfg.GetLifetime().Validate(c)
+	switch n, err := cfg.Lifetime.ToSeconds(); {
+	case err != nil:
+		c.Errorf("%s", err)
+	case n == 0:
+		c.Errorf("duration or seconds is required")
+	}
+	c.Exit()
+	c.Enter("timeout")
+	cfg.GetTimeout().Validate(c)
 	c.Exit()
 }

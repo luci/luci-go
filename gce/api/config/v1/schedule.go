@@ -25,6 +25,12 @@ func (s *Schedule) Validate(c *validation.Context) {
 	}
 	c.Enter("length")
 	s.GetLength().Validate(c)
+	switch n, err := s.Length.ToSeconds(); {
+	case err != nil:
+		c.Errorf("%s", err)
+	case n == 0:
+		c.Errorf("duration or seconds is required")
+	}
 	c.Exit()
 	c.Enter("start")
 	s.GetStart().Validate(c)

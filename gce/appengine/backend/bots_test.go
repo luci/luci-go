@@ -84,6 +84,7 @@ func TestDeleteBot(t *testing.T) {
 					ID:       "id",
 					Created:  1,
 					Hostname: "name",
+					Lifetime: 1,
 					URL:      "url",
 				})
 				err := deleteBot(c, &tasks.DeleteBot{
@@ -108,6 +109,7 @@ func TestDeleteBot(t *testing.T) {
 					ID:       "id",
 					Created:  1,
 					Hostname: "name",
+					Lifetime: 1,
 					URL:      "url",
 				})
 				err := deleteBot(c, &tasks.DeleteBot{
@@ -129,6 +131,7 @@ func TestDeleteBot(t *testing.T) {
 					ID:       "id",
 					Created:  1,
 					Hostname: "name",
+					Lifetime: 1,
 					URL:      "url",
 				})
 				err := deleteBot(c, &tasks.DeleteBot{
@@ -231,20 +234,95 @@ func TestManageBot(t *testing.T) {
 			})
 
 			Convey("missing", func() {
-				rt.Handler = func(_ interface{}) (int, interface{}) {
-					return http.StatusNotFound, nil
-				}
-				datastore.Put(c, &model.VM{
-					ID:  "id",
-					URL: "url",
+				Convey("deadline", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusNotFound, nil
+					}
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Created:  1,
+						Lifetime: 1,
+						URL:      "url",
+					})
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
 				})
-				err := manageBot(c, &tasks.ManageBot{
-					Id: "id",
+
+				Convey("drained", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusNotFound, nil
+					}
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Drained:  true,
+						Hostname: "name",
+						URL:      "url",
+					})
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
 				})
-				So(err, ShouldBeNil)
+
+				Convey("timeout", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusNotFound, nil
+					}
+					datastore.Put(c, &model.VM{
+						ID:      "id",
+						Created: 1,
+						Timeout: 1,
+						URL:     "url",
+					})
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+				})
+
+				Convey("wait", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusNotFound, nil
+					}
+					datastore.Put(c, &model.VM{
+						ID:  "id",
+						URL: "url",
+					})
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+				})
 			})
 
 			Convey("found", func() {
+				Convey("deleted", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
+							BotId:   "id",
+							Deleted: true,
+						}
+					}
+					datastore.Put(c, &model.VM{
+						ID:  "id",
+						URL: "url",
+					})
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+				})
+
 				Convey("dead", func() {
 					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
@@ -264,11 +342,17 @@ func TestManageBot(t *testing.T) {
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
 				})
 
-				Convey("deleted", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:   "id",
-							Deleted: true,
+				Convey("terminated", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						So(req, ShouldHaveSameTypeAs, &map[string]string{})
+						So(*(req.(*map[string]string)), ShouldBeEmpty)
+						return http.StatusOK, map[string]interface{}{
+							"BotId": "id",
+							"Items": []*swarming.SwarmingRpcsBotEvent{
+								{
+									EventType: "bot_terminate",
+								},
+							},
 						}
 					}
 					datastore.Put(c, &model.VM{

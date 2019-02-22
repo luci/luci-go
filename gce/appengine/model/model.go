@@ -101,6 +101,8 @@ type VM struct {
 	Prefix string `gae:"prefix"`
 	// Swarming is hostname of the Swarming server the GCE instance connects to.
 	Swarming string `gae:"swarming"`
+	// Timeout is the number of seconds the GCE instance has to connect to Swarming.
+	Timeout int64 `gae:"timeout"`
 	// URL is the URL of the created GCE instance.
 	URL string `gae:"url"`
 }

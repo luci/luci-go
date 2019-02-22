@@ -35,16 +35,29 @@ func (t *TimePeriod) Normalize() error {
 	return nil
 }
 
+// ToSeconds returns this time period in seconds. Clamps to math.MaxInt64.
+func (t *TimePeriod) ToSeconds() (int64, error) {
+	if t == nil {
+		return 0, nil
+	}
+	switch t := t.Time.(type) {
+	case *TimePeriod_Duration:
+		return t.ToSeconds()
+	case *TimePeriod_Seconds:
+		return t.Seconds, nil
+	default:
+		return 0, errors.Reason("unexpected type %T", t).Err()
+	}
+}
+
 // Validate validates this time period.
 func (t *TimePeriod) Validate(c *validation.Context) {
 	switch {
-	case t.GetDuration() == "" && t.GetSeconds() == 0:
-		c.Errorf("duration or seconds is required")
 	case t.GetDuration() != "":
 		c.Enter("duration")
 		t.Time.(*TimePeriod_Duration).Validate(c)
 		c.Exit()
 	case t.GetSeconds() < 0:
-		c.Errorf("seconds must be positive")
+		c.Errorf("seconds must be non-negative")
 	}
 }
