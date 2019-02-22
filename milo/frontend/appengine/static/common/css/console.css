@@ -226,7 +226,6 @@
   display: flex;
   align-items: center;
   justify-content: left;
-  white-space: nowrap;
 }
 
 .console-commit-revision {
@@ -254,25 +253,18 @@
 }
 
 .console-commit-description {
-  width: 30em;
+  width: 40em;
   z-index: 12;
-}
-
-.console-commit-description-overlay {
-  z-index: 11;
   border-top: 1px solid black;
   border-bottom: 1px solid black;
 }
 
-.console-commit-description-overlay p {
+.console-commit-description p {
   padding-left: 1em;
+  word-break: break-word;
 }
 
 .collapsed .console-commit-description {
-  display: none;
-}
-
-.collapsed .console-commit-description-overlay {
   display: none;
 }
 
@@ -400,17 +392,25 @@
 
 /* Builds */
 
-.console-build-column {
+.console-build-column, .console-build-column-stacked {
   display: flex;
   flex-grow: 1;
   flex-direction: column;
 }
 
-.console-build-column div.console-cell-container:nth-child(even) {
+.console-cell-container a {
+  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.console-build-column div.console-cell-container:nth-child(even),
+.console-build-column-stacked div.console-cell-container:nth-child(even) {
   background-color: #cccccc;
 }
 
-.console-build-column div.console-cell-container:nth-child(odd) {
+.console-build-column div.console-cell-container:nth-child(odd),
+.console-build-column-stacked div.console-cell-container:nth-child(odd){
   background-color: #eee;
 }
 
@@ -423,7 +423,7 @@
 .console-cell, .console-cell-top, .console-cell-middle, .console-cell-bottom {
   display: flex;
   min-width: 1em;
-  min-height: 2em;
+  height: 20px;
   border-radius: 0.5em;
   border-width: 1px;
   border-style: solid;
@@ -496,7 +496,7 @@
   border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 0.5em;
   min-width: 1em;
-  min-height: 2em;
+  height: 20px;
 }
 
 .collapsed .console-empty-cell {

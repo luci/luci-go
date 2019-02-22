@@ -453,9 +453,10 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		// Write current state's information.
 		must(fmt.Fprintf(buffer,
 			`<div class="console-cell-container"><a class="console-%s status-%s" href="%s" title="%s">`+
-				`</a><div class="console-cell-spacer"></div></div>`,
+				`%s</a><div class="console-cell-spacer"></div></div>`,
 			class, status, link,
-			template.HTMLEscapeString(br.BuilderName())))
+			template.HTMLEscapeString(br.BuilderName()),
+			br.ShortName))
 
 		// Update state.
 		state = nextState
@@ -471,12 +472,24 @@ func (br BuilderRef) NumLeafNodes() int {
 // RenderHTML renders the Category struct and its children as HTML into a buffer.
 // If maxDepth is negative, skip the labels to render the HTML as flat rather than nested.
 func (c Category) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
+	// Check to see if this category is a leaf.
+	// A leaf category has no other categories as it's children.
+	isLeafCategory := true
+	for _, child := range c.children {
+		if _, ok := child.(*Category); ok {
+			isLeafCategory = false
+			break
+		}
+	}
+
 	if maxDepth > 0 {
 		must(fmt.Fprintf(buffer, `<div class="console-column" style="flex: %d">`, c.NumLeafNodes()))
-		must(fmt.Fprintf(buffer, `<div class="console-top-item">%s</div>
-						<div class="console-top-row">`,
-			template.HTMLEscapeString(c.Name),
-		))
+		must(fmt.Fprintf(buffer, `<div class="console-top-item">%s</div>`, template.HTMLEscapeString(c.Name)))
+		if isLeafCategory {
+			must(fmt.Fprintf(buffer, `<div class="console-top-row console-leaf-category">`))
+		} else {
+			must(fmt.Fprintf(buffer, `<div class="console-top-row">`))
+		}
 	}
 
 	for _, child := range c.children {

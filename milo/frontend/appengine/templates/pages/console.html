@@ -206,13 +206,11 @@
             </div>
           </div>
           <div class="console-commit-description">
-            <div class="console-commit-description-overlay">
-              <p>
-                {{ range .DescLines }}
-                  {{ . }}<br>
-                {{ end }}
-              </p>
-            </div>
+            <p>
+              {{ range .DescLines }}
+                {{ . }}<br>
+              {{ end }}
+            </p>
           </div>
         </div>
       {{ end }}
@@ -238,25 +236,72 @@ $(function () {
       width += $(this).width();
     });
     const sizes = [];
-    $(".console-commit-description").each(function() {
+    var numRows = 0;
+    $(".console-commit-item").each(function() {
       sizes.push($(this).height());
+      numRows++;
+    });
+    // Stack the console.
+    $(".console-leaf-category").each(function() {
+      // Contains a matrix of cells.
+      const rows = [];
+      for (var i = 0; i < numRows; i++) {
+        rows.push([]);
+      }
+      // Use the first column to find out the number of console spaces.
+      const spaces = $(this).find(".console-builder-column").first().find(".console-space").length;
+      $(this).find(".console-builder-column").each(function() {
+        $(this).find(".console-cell-container").each(function(i) {
+          rows[i].push($(this).find("a")[0]);
+        });
+        $(this).hide();
+      });
+      const newBuilderColumn = $(document.createElement("div"));
+      newBuilderColumn.addClass("console-builder-column");
+      newBuilderColumn.addClass("stacked");
+      for (var i = 0; i < spaces; i++) {
+        // Pad with spaces.
+        newBuilderColumn.append("<div class=\"console-space\"></div>");
+      }
+      const newColumn = $(document.createElement("div"));
+      newColumn.addClass("console-build-column-stacked")
+      newBuilderColumn.append(newColumn);
+      for (const i in rows) {
+        const row = rows[i];
+        const newContainer = $(document.createElement("div"));
+        newContainer.addClass("console-cell-container");
+        newColumn.append(newContainer);
+        for (const j in row) {
+          newContainer.append(row[j]);
+        }
+        // Each cell is 20px tall, so the spacer is height - 20px * number of cells.
+        const newSpacer = $(document.createElement("div"));
+        newSpacer.addClass("console-cell-spacer");
+        const height = sizes[i] - 22 * row.length;
+        newSpacer.height(height);
+        newContainer.append(newSpacer);
+      }
+      $(this).append(newBuilderColumn);
     });
     $(".console-build-column").each(function() {
       const containers = $(this).find(".console-cell-spacer");
       for (const i in sizes) {
-        $(containers[i]).height(sizes[i]);
+        $(containers[i]).height(sizes[i] - 22);
       }
     });
-    $(".console-commit-description-overlay").width(width);
     $(".control-collapse").show();
     $(".control-expand").hide();
+    $(".console-builder-item").hide();  // Hide the builder boxes.
     Cookies.set('expand', 1);
   });
+
   $(".control-collapse").click(function(e) {
     e.preventDefault();
     $("#console").addClass("collapsed");
     $(".control-expand").show();
     $(".control-collapse").hide();
+    $(".stacked").remove();
+    $(".console-builder-item").show();  // Show the builder boxes.
     Cookies.remove('expand');
   });
   if (Cookies.get('expand')) {
