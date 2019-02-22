@@ -1385,4 +1385,27 @@ can't be read, or it is outside of the current package directory.
 
 
 
+### io.read_proto {#io.read_proto}
+
+```python
+io.read_proto(ctor, path, encoding = None)
+```
+
+
+
+Reads a serialized proto message from a file, deserializes and returns it.
+
+#### Arguments {#io.read_proto-args}
+
+* **ctor**: a constructor function that defines the message type. Required.
+* **path**: either a path relative to the currently executing Starlark script, or (if starts with `//`) an absolute path within the currently executing package. If it is a relative path, it must point somewhere inside the current package directory. Required.
+* **encoding**: either `jsonpb` or `textpb` or `auto` to detect based on the file extension. Default is `auto`.
+
+
+#### Returns  {#io.read_proto-returns}
+
+Deserialized proto message constructed via `ctor`.
+
+
+
 
