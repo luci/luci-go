@@ -22,6 +22,30 @@
       "revId": "068887c34b29af56b28cdaf4eddea340d5e6673b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1efd08d_2be1616b",
+        "filename": "lucicfg/cli/base/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T19:32:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6581b497_c720b233",
+      "range": {
+        "startLine": 72,
+        "startChar": 15,
+        "endLine": 72,
+        "endChar": 16
+      },
+      "revId": "068887c34b29af56b28cdaf4eddea340d5e6673b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
