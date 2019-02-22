@@ -47,11 +47,11 @@ func TestConfigSet(t *testing.T) {
 			return body
 		}
 
-		Convey("Reading", func() {
-			So(os.Mkdir(path("subdir"), 0700), ShouldBeNil)
-			So(ioutil.WriteFile(path("a.cfg"), []byte("a\n"), 0600), ShouldBeNil)
-			So(ioutil.WriteFile(path("subdir", "b.cfg"), []byte("b\n"), 0600), ShouldBeNil)
+		So(os.Mkdir(path("subdir"), 0700), ShouldBeNil)
+		So(ioutil.WriteFile(path("a.cfg"), []byte("a\n"), 0600), ShouldBeNil)
+		So(ioutil.WriteFile(path("subdir", "b.cfg"), []byte("b\n"), 0600), ShouldBeNil)
 
+		Convey("Reading", func() {
 			Convey("Success", func() {
 				cfg, err := ReadConfigSet(tmp)
 				So(err, ShouldBeNil)
@@ -92,6 +92,46 @@ func TestConfigSet(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(read("a"), ShouldResemble, []byte("333"))
+		})
+
+		Convey("DiscardChangesToUntracked", func() {
+			original, _ := ReadConfigSet(tmp)
+
+			generated := func() ConfigSet {
+				return ConfigSet{
+					"a.cfg":        []byte("new a\n"),
+					"subdir/b.cfg": []byte("new b\n"),
+				}
+			}
+
+			Convey("No untracked", func() {
+				cs := generated()
+				So(cs.DiscardChangesToUntracked(ctx, []string{"*"}, "-"), ShouldBeNil)
+				So(cs, ShouldResemble, generated())
+			})
+
+			Convey("Untracked files are restored from disk", func() {
+				cs := generated()
+				So(cs.DiscardChangesToUntracked(ctx, []string{"!b.cfg"}, tmp), ShouldBeNil)
+				So(cs, ShouldResemble, ConfigSet{
+					"a.cfg":        generated()["a.cfg"],
+					"subdir/b.cfg": original["subdir/b.cfg"],
+				})
+			})
+
+			Convey("Untracked files are discarded when dumping to stdout", func() {
+				cs := generated()
+				So(cs.DiscardChangesToUntracked(ctx, []string{"!b.cfg"}, "-"), ShouldBeNil)
+				So(cs, ShouldResemble, ConfigSet{
+					"a.cfg": generated()["a.cfg"],
+				})
+			})
+
+			Convey("Untracked files are discarded if don't exist on disk", func() {
+				cs := ConfigSet{"c.cfg": []byte("generated")}
+				So(cs.DiscardChangesToUntracked(ctx, []string{"!c.cfg"}, tmp), ShouldBeNil)
+				So(cs, ShouldResemble, ConfigSet{})
+			})
 		})
 	})
 

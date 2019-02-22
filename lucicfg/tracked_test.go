@@ -71,6 +71,15 @@ func TestFindTrackedFiles(t *testing.T) {
 			So(files, ShouldHaveLength, 0)
 		})
 
+		Convey("Implied *", func() {
+			files, err := FindTrackedFiles(tmp, []string{"!*-dev.cfg"})
+			So(err, ShouldBeNil)
+			So(files, ShouldResemble, []string{
+				"a.cfg",
+				"sub/a.cfg",
+			})
+		})
+
 		Convey("Missing directory", func() {
 			files, err := FindTrackedFiles(filepath.Join(tmp, "missing"), []string{"*.cfg"})
 			So(err, ShouldBeNil)
@@ -89,7 +98,7 @@ func TestFindTrackedFiles(t *testing.T) {
 		})
 
 		Convey("Bad negative pattern", func() {
-			_, err := FindTrackedFiles(tmp, []string{"!["})
+			_, err := FindTrackedFiles(tmp, []string{"*", "!["})
 			So(err, ShouldErrLike, `bad pattern "["`)
 		})
 	})

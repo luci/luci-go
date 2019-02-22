@@ -177,6 +177,50 @@ func (cs ConfigSet) DebugDump() {
 	}
 }
 
+// DiscardChangesToUntracked replaces bodies of the files that are in the config
+// set, but not in the `tracked` set (per TrackedSet semantics) with what's on
+// disk in the given `dir`.
+//
+// This allows to construct partially generated config set: some configs (the
+// ones in the tracked set) are generated, others are loaded from disk.
+//
+// If `dir` is "-" (which indicates that the config set is going to be dumped
+// to stdout rather then to disk), just removes untracked files from the config
+// set.
+func (cs ConfigSet) DiscardChangesToUntracked(ctx context.Context, tracked []string, dir string) error {
+	isTracked := TrackedSet(tracked)
+
+	for _, path := range cs.Files() {
+		yes, err := isTracked(path)
+		if err != nil {
+			return err
+		}
+		if yes {
+			continue
+		}
+
+		logging.Warningf(ctx, "Discarding changes to %s, not in the tracked set", path)
+
+		if dir == "-" {
+			// When using stdout as destination, there's nowhere to read existing
+			// files from.
+			delete(cs, path)
+			continue
+		}
+
+		switch body, err := ioutil.ReadFile(filepath.Join(dir, filepath.FromSlash(path))); {
+		case err == nil:
+			cs[path] = body
+		case os.IsNotExist(err):
+			delete(cs, path)
+		case err != nil:
+			return errors.Annotate(err, "when discarding changes to %s", path).Err()
+		}
+	}
+
+	return nil
+}
+
 // Validate sends the config set for validation to LUCI Config service.
 //
 // 'name' is a name of this config set from LUCI Config point of view, e.g.
