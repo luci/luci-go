@@ -16,10 +16,11 @@ package projectscope
 
 import (
 	"github.com/golang/protobuf/proto"
-
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
 
 const (
@@ -73,6 +74,27 @@ func validateSingleIdentityProjectAssignment(ctx *validation.Context, cfg *confi
 	}
 }
 
+// updateIdentities copies project scoped identities defined in the config into the local storage.
+func updateIdentities(ctx *validation.Context, cfg *config.ProjectsCfg) {
+	if !ctx.HasErrors() {
+		for _, project := range cfg.Projects {
+			projectIdentities := projectidentity.ProjectIdentities(ctx.Context)
+			if project.IdentityConfig != nil && project.IdentityConfig.ServiceAccountEmail != "" {
+				identity := &projectidentity.ProjectIdentity{
+					Email:   project.IdentityConfig.ServiceAccountEmail,
+					Project: project.Id,
+				}
+				_, err := projectIdentities.Update(ctx.Context, identity)
+				if err != nil {
+					logging.WithError(err).Errorf(ctx.Context, "Unable to update project identity %v", identity)
+				} else {
+					logging.Infof(ctx.Context, "Successfully updated project identity %v", identity)
+				}
+			}
+		}
+	}
+}
+
 func validateCanIssueTokenForIdentity(ctx *validation.Context, identity string) {
 	// TODO(fmatenaar): Issue a token for the identity with minimum validity to check tokenserver access.
 	/*
@@ -98,6 +120,9 @@ func (ps *ProjectIdentityValidator) SetupConfigValidation(rules *validation.Rule
 			ctx.Errorf("not a valid ProjectsCfg proto message - %s", err)
 		} else {
 			validateProjectsCfg(ctx, cfg)
+			if !ctx.HasErrors() {
+				updateIdentities(ctx, cfg)
+			}
 		}
 		return nil
 	})
