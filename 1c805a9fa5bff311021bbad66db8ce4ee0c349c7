@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1f8f2b3c_d4b23bc8",
+        "filename": "server/auth/client.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 624,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T20:56:26Z",
+      "side": 1,
+      "message": "this is unnecessary (\u0027host\u0027 is not used anywhere)",
+      "range": {
+        "startLine": 608,
+        "startChar": 0,
+        "endLine": 624,
+        "endChar": 2
+      },
+      "revId": "1c805a9fa5bff311021bbad66db8ce4ee0c349c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2083797_9f096911",
+        "filename": "server/auth/client_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T20:56:26Z",
+      "side": 1,
+      "message": "please either uncomment or delete",
+      "range": {
+        "startLine": 129,
+        "startChar": 3,
+        "endLine": 129,
+        "endChar": 98
+      },
+      "revId": "1c805a9fa5bff311021bbad66db8ce4ee0c349c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21a2aed8_a224639b",
+        "filename": "server/auth/client_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T20:56:26Z",
+      "side": 1,
+      "message": "what does this test tests? It seems no different from \"in AsProjectScoped mode, authenticated\" since for AsProjectScoped, it doesn\u0027t matter whether the inbound request has an identity associated with it or not.",
+      "range": {
+        "startLine": 263,
+        "startChar": 2,
+        "endLine": 263,
+        "endChar": 57
+      },
+      "revId": "1c805a9fa5bff311021bbad66db8ce4ee0c349c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ecd448f_41327cab",
+        "filename": "server/auth/scoped.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T20:56:26Z",
+      "side": 1,
+      "message": "1, Cloud IAM will refuse to give more",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 22
+      },
+      "revId": "1c805a9fa5bff311021bbad66db8ce4ee0c349c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a6c7205_f60c8669",
+        "filename": "server/auth/scoped.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T20:56:26Z",
+      "side": 1,
+      "message": "MaxScopedTokenTTL (which is 1h).\n\nOr just document 1h directly and get rid of MaxScopedTokenTTL, since its outside of our control.",
+      "range": {
+        "startLine": 62,
+        "startChar": 4,
+        "endLine": 62,
+        "endChar": 40
+      },
+      "revId": "1c805a9fa5bff311021bbad66db8ce4ee0c349c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8007281d_a82a1924",
+        "filename": "server/auth/scoped.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T20:56:26Z",
+      "side": 1,
+      "message": "1\n\n(it was 6 for delegation tokens because we changed format there a bunch of times and needed to flush all tokens out the cache)",
+      "range": {
+        "startLine": 78,
+        "startChar": 31,
+        "endLine": 78,
+        "endChar": 32
+      },
+      "revId": "1c805a9fa5bff311021bbad66db8ce4ee0c349c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cd3e6d3_f4613650",
+        "filename": "server/auth/scoped.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T20:56:26Z",
+      "side": 1,
+      "message": "we should probably rename this error to ErrBadTokenTTL then (should be easy, I don\u0027t think anything checks it directly, only logs them).",
+      "range": {
+        "startLine": 98,
+        "startChar": 14,
+        "endLine": 98,
+        "endChar": 38
+      },
+      "revId": "1c805a9fa5bff311021bbad66db8ce4ee0c349c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f865eff9_9eaab022",
+        "filename": "server/auth/scoped.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T20:56:26Z",
+      "side": 1,
+      "message": "this comment doesn\u0027t apply to scoped tokens",
+      "range": {
+        "startLine": 115,
+        "startChar": 74,
+        "endLine": 118,
+        "endChar": 14
+      },
+      "revId": "1c805a9fa5bff311021bbad66db8ce4ee0c349c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebd55b8a_69290f80",
+        "filename": "server/auth/scoped.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T20:56:26Z",
+      "side": 1,
+      "message": "Note that existence of this cache implies that changing \"project -\u003e service account\" association in the projets.cfg will take up to 1h to propagate everywhere fully (until all cached tokens are evicted).\n\nWe may want to document it in project.cfg proto.\n\nIf it becomes an issue, there are ways to introduce cache invalidation without sacrificing performance, but this is not trivial. Note that this cache is pretty important to avoid hammering Token Server on all RPCs, so we can\u0027t just remove it. Though we can evict tokens from the cache earlier (e.g. 15 min).",
+      "range": {
+        "startLine": 139,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 9
+      },
+      "revId": "1c805a9fa5bff311021bbad66db8ce4ee0c349c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
