@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "f9920445_36726792",
+        "filename": "starlark/starlarkproto/message.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T00:38:03Z",
+      "side": 1,
+      "message": "oh, derp. On a second reading, this makes total sense.",
+      "parentUuid": "44a63577_ceb65783",
+      "range": {
+        "startLine": 247,
+        "startChar": 17,
+        "endLine": 247,
+        "endChar": 37
+      },
+      "revId": "bfe908d6624999080479dd2bca480f35fd8f1bf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3255ad9f_ec416d1e",
         "filename": "starlark/starlarkproto/message.go",
         "patchSetId": 2
