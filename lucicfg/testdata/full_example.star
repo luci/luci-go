@@ -215,6 +215,40 @@ luci.list_view_entry(
 )
 
 
+# Console views.
+
+
+luci.console_view(
+    name = 'Console view',
+    title = 'CI Builders',
+    repo = 'https://noop.com',
+    refs = ['refs/tags/blah'],
+    refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+    exclude_ref = 'refs/heads/master',
+    include_experimental_builds = True,
+    entries = [
+        luci.console_view_entry(
+            builder = 'linux ci builder',
+            buildbot = 'master/builder',
+            category = 'a|b',
+            short_name = 'lnx',
+        ),
+        # An alias for luci.console_view_entry(**{...}).
+        {'builder': 'cron builder', 'category': 'cron'},
+    ],
+)
+
+luci.console_view_entry(
+    console_view = 'Console view',
+    builder = 'inline/triggered builder',
+)
+
+luci.console_view_entry(
+    console_view = 'Console view',
+    buildbot = 'master/very buildbot',
+)
+
+
 # Expect configs:
 #
 # === cr-buildbucket.cfg
@@ -377,6 +411,33 @@ luci.list_view_entry(
 #   >
 #   favicon_url: "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico"
 #   builder_view_only: true
+# >
+# consoles: <
+#   id: "Console view"
+#   name: "CI Builders"
+#   repo_url: "https://noop.com"
+#   refs: "refs/tags/blah"
+#   refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
+#   exclude_ref: "refs/heads/master"
+#   manifest_name: "REVISION"
+#   builders: <
+#     name: "buildbot/master/builder"
+#     name: "buildbucket/luci.infra.ci/linux ci builder"
+#     category: "a|b"
+#     short_name: "lnx"
+#   >
+#   builders: <
+#     name: "buildbucket/luci.infra.ci/cron builder"
+#     category: "cron"
+#   >
+#   builders: <
+#     name: "buildbucket/luci.infra.inline/triggered builder"
+#   >
+#   builders: <
+#     name: "buildbot/master/very buildbot"
+#   >
+#   favicon_url: "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico"
+#   include_experimental_builds: true
 # >
 # logo_url: "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png"
 # ===
