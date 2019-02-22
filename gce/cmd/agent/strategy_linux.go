@@ -16,6 +16,10 @@ package main
 
 // newStrategy returns a new Linux-specific PlatformStrategy.
 func newStrategy() PlatformStrategy {
-	// TODO(smut): Support systemd.
-	return &UpstartStrategy{}
+	// TODO(smut): Remove Upstart support.
+	// Upstart is needed for Ubuntu Trusty.
+	if canUseUpstart() {
+		return &UpstartStrategy{}
+	}
+	return &SystemdStrategy{}
 }

@@ -1,0 +1,16 @@
+# swarming-start-bot - swarming bot startup
+
+# Used to start the Swarming bot process via systemd.
+
+[Unit]
+Description=Swarming bot startup
+After=network.target
+
+[Service]
+Type=simple
+User={{.User}}
+Environment=SWARMING_EXTERNAL_BOT_SETUP=1
+ExecStart=/usr/bin/python {{.BotCode}} start_bot
+
+[Install]
+WantedBy=multi-user.target

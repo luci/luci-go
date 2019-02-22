@@ -90,6 +90,14 @@ func (s *SwarmingClient) Configure(c context.Context, dir, user string) error {
 		return errors.Annotate(err, "failed to chown: %s", dir).Err()
 	}
 	zip := filepath.Join(dir, "swarming_bot.zip")
+	switch _, err := os.Stat(zip); {
+	case os.IsNotExist(err):
+	case err != nil:
+		return errors.Annotate(err, "failed to stat: %s", zip).Err()
+	default:
+		logging.Infof(c, "already installed: %s", zip)
+		return nil
+	}
 	if err := s.fetch(c, zip, user); err != nil {
 		return err
 	}
