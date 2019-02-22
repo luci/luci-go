@@ -123,15 +123,17 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 type taskState int32
 
 const (
-	maskAlive                = 1
-	stateBotDied   taskState = 1 << 1
-	stateCancelled taskState = 1 << 2
-	stateCompleted taskState = 1 << 3
-	stateExpired   taskState = 1 << 4
-	statePending   taskState = 1<<5 | maskAlive
-	stateRunning   taskState = 1<<6 | maskAlive
-	stateTimedOut  taskState = 1 << 7
-	stateUnknown   taskState = -1
+	maskAlive                 = 1
+	stateBotDied    taskState = 1 << 1
+	stateCancelled  taskState = 1 << 2
+	stateCompleted  taskState = 1 << 3
+	stateExpired    taskState = 1 << 4
+	statePending    taskState = 1<<5 | maskAlive
+	stateRunning    taskState = 1<<6 | maskAlive
+	stateTimedOut   taskState = 1 << 7
+	stateNoResource taskState = 1 << 8
+	stateKilled     taskState = 1 << 9
+	stateUnknown    taskState = -1
 )
 
 func parseTaskState(state string) (taskState, error) {
@@ -150,6 +152,10 @@ func parseTaskState(state string) (taskState, error) {
 		return stateRunning, nil
 	case "TIMED_OUT":
 		return stateTimedOut, nil
+	case "NO_RESOURCE":
+		return stateNoResource, nil
+	case "KILLED":
+		return stateKilled, nil
 	default:
 		return stateUnknown, errors.Reason("unrecognized state: %q", state).Err()
 	}
