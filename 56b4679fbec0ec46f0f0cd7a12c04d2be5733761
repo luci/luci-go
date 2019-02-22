@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "c2543d33_b3bdaafb",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/milo.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T01:31:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b75dcfd_400a5f6d",
+      "range": {
+        "startLine": 66,
+        "startChar": 71,
+        "endLine": 66,
+        "endChar": 74
+      },
+      "revId": "56b4679fbec0ec46f0f0cd7a12c04d2be5733761",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c8fe347f_33656a06",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/milo.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T01:31:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2bd9aa8e_d6007f49",
+      "range": {
+        "startLine": 66,
+        "startChar": 61,
+        "endLine": 66,
+        "endChar": 65
+      },
+      "revId": "56b4679fbec0ec46f0f0cd7a12c04d2be5733761",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49cab43d_cbfa0616",
         "filename": "lucicfg/testdata/full_example.star",
         "patchSetId": 3
