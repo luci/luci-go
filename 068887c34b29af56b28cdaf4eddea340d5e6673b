@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6581b497_c720b233",
+        "filename": "lucicfg/cli/base/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T18:49:52Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 72,
+        "startChar": 15,
+        "endLine": 72,
+        "endChar": 16
+      },
+      "revId": "068887c34b29af56b28cdaf4eddea340d5e6673b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
