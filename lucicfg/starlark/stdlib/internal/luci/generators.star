@@ -467,17 +467,17 @@ def gen_milo_cfg(ctx):
   """Generates milo.cfg."""
   _milo_check_connections()
 
-  # Keep the order of views as they were defined, for Milo's list of consoles.
-  views = graph.children(keys.project(), kinds.MILO_VIEW, order_by=graph.DEFINITION_ORDER)
-  if not views:
-    return
-
   # Note: luci.milo(...) node is optional.
   milo_node = graph.node(keys.milo())
   opts = struct(
       logo = milo_node.props.logo if milo_node else None,
       favicon = milo_node.props.favicon if milo_node else None,
   )
+
+  # Keep the order of views as they were defined, for Milo's list of consoles.
+  views = graph.children(keys.project(), kinds.MILO_VIEW, order_by=graph.DEFINITION_ORDER)
+  if not views and not milo_node:
+    return
 
   build_bug_template = None
   if milo_node and milo_node.props.monorail_project:
@@ -488,7 +488,7 @@ def gen_milo_cfg(ctx):
         components = milo_node.props.monorail_components,
     )
 
-  milo = get_service('milo', 'using list or console views')
+  milo = get_service('milo', 'using views or setting Milo config')
   project_name = get_project().props.name
 
   ctx.config_set[milo.cfg_file] = milo_pb.Project(
