@@ -1,0 +1,152 @@
+# Copyright 2019 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/validate.star', 'validate')
+
+load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
+load('@stdlib//internal/luci/rules/console_view_entry.star', 'console_view_entry')
+
+
+# TODO(vadimsh): Add headers support.
+
+# TODO(vadimsh): Document how builders should be configured to be eligible for
+# inclusion into a console.
+
+
+def console_view(
+      name=None,
+      title=None,
+      repo=None,
+      refs=None,
+      refs_regexps=None,
+      exclude_ref=None,
+      include_experimental_builds=None,
+      favicon=None,
+      entries=None,
+  ):
+  """A Milo UI view that displays a table-like console where columns are
+  builders and rows are git commits on which builders are triggered.
+
+  A console is associated with a single git repository it uses as a source of
+  commits to display as rows. The watched ref set is defined via `refs`,
+  `refs_regexps` and `exclude_ref` fields. If neither of `refs` or
+  `refs_regexps` are set, the console defaults to watching `refs/heads/master`.
+
+  `exclude_ref` is useful when watching for commits that landed specifically
+  on a branch. For example, the config below allows to track commits from all
+  release branches, but ignore the commits from the master branch, from which
+  these release branches are branched off:
+
+      luci.console_view(
+          ...
+          refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+          exclude_ref = 'refs/heads/master',
+          ...
+      )
+
+  For best results, ensure commits on each watched ref have **committer**
+  timestamps monotonically non-decreasing. Gerrit will take care of this if you
+  require each commit to go through Gerrit by prohibiting "git push" on these
+  refs.
+
+  Builders that belong to the console can be specified either right here:
+
+      luci.console_view(
+          name = 'CI builders',
+          ...
+          entries = [
+              luci.console_view_entry(
+                  builder = 'Windows Builder',
+                  short_name = 'win',
+                  category = 'ci',
+              ),
+              # Can also pass a dict, this is equivalent to passing
+              # luci.console_view_entry(**dict).
+              {
+                  'builder': 'Linux Builder',
+                  'short_name': 'lnx',
+                  'category': 'ci',
+              },
+              ...
+          ],
+      )
+
+  Or separately one by one via luci.console_view_entry(...) declarations:
+
+      luci.console_view(name = 'CI builders')
+      luci.console_view_entry(
+          builder = 'Windows Builder',
+          console_view = 'CI builders',
+          short_name = 'win',
+          category = 'ci',
+      )
+
+  Args:
+    name: a name of this console, will show up in URLs. Note that names of
+        luci.console_view(...) and luci.list_view(...) are in the same namespace
+        i.e. defining a console view with the same name as some list view (and
+        vice versa) causes an error. Required.
+    title: a title of this console, will show up in UI. Defaults to `name`.
+    repo: URL of a git repository whose commits are displayed as rows in the
+        console. Must start with `https://`. Required.
+    refs: a list of fully qualified refs to pull commits from when displaying
+        the console, e.g. `refs/heads/master` or `refs/tags/v1.2.3`. Each ref
+        must start with `refs/`.
+    refs_regexps: a list of regular expressions that define the set of
+        refs to pull commits from when displaying the console, e.g.
+        `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular
+        expression should have a literal prefix with at least two slashes
+        present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the
+        literal prefix `refs/release-` contains only one slash. The regexp
+        should not start with `^` or end with `$` as they will be added
+        automatically.
+    exclude_ref: a single ref, commits from which are ignored even when they are
+        reachable from refs specified via `refs` and `refs_regexps`. Note that
+        force pushes to this ref are not supported. Milo uses caching assuming
+        set of commits reachable from this ref may only grow, never lose some
+        commits.
+    include_experimental_builds: if True, this console will not filter out
+        builds marked as Experimental. By default consoles only show production
+        builds.
+    favicon: optional https URL to the favicon for this console, must be hosted
+        on `storage.googleapis.com`. Defaults to `favicon` in luci.milo(...).
+    entries: a list of luci.console_view_entry(...) entities specifying builders
+        to show on the console.
+  """
+  refs = validate.list('refs', refs)
+  for r in refs:
+    validate.string('refs', r, regexp=r'refs/.+')
+  refs_regexps = validate.list('refs_regexps', refs_regexps)
+  for r in refs_regexps:
+    validate.string('refs_regexps', r)
+  if not refs and not refs_regexps:
+    refs = ['refs/heads/master']
+
+  return view.add_view(
+      key = keys.console_view(name),
+      entry_kind = kinds.CONSOLE_VIEW_ENTRY,
+      entry_ctor = console_view_entry,
+      entries = entries,
+      props = {
+          'name': name,
+          'title': validate.string('title', title, default=name, required=False),
+          'repo': validate.string('repo', repo, regexp=r'https://.+'),
+          'refs': refs,
+          'refs_regexps': refs_regexps,
+          'exclude_ref': validate.string('exclude_ref', exclude_ref, required=False),
+          'include_experimental_builds': validate.bool('include_experimental_builds', include_experimental_builds, required=False),
+          'favicon': validate.string('favicon', favicon, regexp=r'https://storage\.googleapis\.com/.+', required=False),
+      },
+  )

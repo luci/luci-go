@@ -65,7 +65,7 @@ def gitiles_poller(
     bucket: a bucket the poller is in, see luci.bucket(...) rule. Required.
     repo: URL of a git repository to poll, starting with `https://`. Required.
     refs: a list of fully qualified refs to watch, e.g. `refs/heads/master` or
-        `refs/tags/v1.2.3`.
+        `refs/tags/v1.2.3`. Each ref must start with `refs/`.
     refs_regexps: a list of regular expressions that define the watched set of
         refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The
         regular expression should have a literal prefix with at least two
@@ -85,7 +85,7 @@ def gitiles_poller(
 
   refs = validate.list('refs', refs)
   for r in refs:
-    validate.string('refs', r)
+    validate.string('refs', r, regexp=r'refs/.+')
 
   refs_regexps = validate.list('refs_regexps', refs_regexps)
   for r in refs_regexps:

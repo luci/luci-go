@@ -28,7 +28,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.project -> luci.logdog
 #   luci.project -> luci.milo
 #   luci.project -> [luci.bucket]
-#   luci.project -> [luci.list_view]
+#   luci.project -> [luci.milo_view]
 #   luci.bucket -> [luci.builder]
 #   luci.bucket -> [luci.gitiles_poller]
 #   luci.builder_ref -> luci.builder
@@ -36,8 +36,14 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.builder -> luci.recipe
 #   luci.gitiles_poller -> [luci.triggerer]
 #   luci.triggerer -> [luci.builder_ref]
+#   luci.milo_entries_root -> [luci.list_view_entry]
+#   luci.milo_entries_root -> [luci.console_view_entry]
+#   luci.milo_view -> luci.list_view
 #   luci.list_view -> [luci.list_view_entry]
 #   luci.list_view_entry -> list.builder_ref
+#   luci.milo_view -> luci.console_view
+#   luci.console_view -> [luci.console_view_entry]
+#   luci.console_view_entry -> list.builder_ref
 
 
 def _global_key(kind, attr, ref):
@@ -89,10 +95,14 @@ kinds = struct(
     MILO = 'luci.milo',
     LIST_VIEW = 'luci.list_view',
     LIST_VIEW_ENTRY = 'luci.list_view_entry',
+    CONSOLE_VIEW = 'luci.console_view',
+    CONSOLE_VIEW_ENTRY = 'luci.console_view_entry',
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = 'luci.builder_ref',
     TRIGGERER = 'luci.triggerer',
+    MILO_ENTRIES_ROOT = 'luci.milo_entries_root',
+    MILO_VIEW = 'luci.milo_view',
 )
 
 
@@ -113,17 +123,20 @@ keys = struct(
 
     milo = lambda: graph.key(kinds.MILO, '...'),  # singleton
     list_view = lambda ref: _global_key(kinds.LIST_VIEW, 'list_view', ref),
+    console_view = lambda ref: _global_key(kinds.CONSOLE_VIEW, 'console_view', ref),
 
     # Internal nodes (declared internally as dependency of other nodes).
     builder_ref = lambda ref, attr='triggers': _bucket_scoped_key(kinds.BUILDER_REF, attr, ref),
     triggerer = lambda ref, attr='triggered_by': _bucket_scoped_key(kinds.TRIGGERER, attr, ref),
+    milo_entries_root = lambda: graph.key(kinds.MILO_ENTRIES_ROOT, '...'),
+    milo_view = lambda name: graph.key(kinds.MILO_VIEW, name),
 
     # Generates a key of the given kind and name within some auto-generated
     # unique container key.
     #
-    # Used with LIST_VIEW_ENTRY helper nodes. They don't really represent any
-    # "external" entities, and their names don't really matter, other than for
-    # error messages.
+    # Used with LIST_VIEW_ENTRY and CONSOLE_VIEW_ENTRY helper nodes. They don't
+    # really represent any "external" entities, and their names don't really
+    # matter, other than for error messages.
     #
     # Note that IDs of keys whose kind stars with '_' (like '_UNIQUE' here),
     # are skipped when printing the key in error messages. Thus the meaningless
@@ -313,4 +326,97 @@ def _triggerer_targets(root):
 triggerer = struct(
     add = _triggerer_add,
     targets = _triggerer_targets,
+)
+
+
+
+################################################################################
+## Helpers for defining milo views (lists or consoles).
+
+
+def _view_add_view(key, entry_kind, entry_ctor, entries, props):
+  """Adds a *_view node, ensuring it doesn't clash with some other view.
+
+  Args:
+    key: a key of *_view node to add.
+    entry_kind: a kind of corresponding *_view_entry node.
+    entry_ctor: a corresponding *_view_entry rule.
+    entries: a list of *_view_entry, builder refs or dict.
+    props: properties for the added node.
+
+  Returns:
+    A keyset with added keys.
+  """
+  graph.add_node(key, props)
+
+  # If there's some other view of different kind with the same name this will
+  # cause an error.
+  milo_view_key = keys.milo_view(key.id)
+  graph.add_node(milo_view_key)
+
+  # project -> milo_view -> *_view. Indirection through milo_view allows to
+  # treat different kinds of views uniformly.
+  graph.add_edge(keys.project(), milo_view_key)
+  graph.add_edge(milo_view_key, key)
+
+  # 'entry' is either a *_view_entry keyset, a builder_ref (perhaps given
+  # as a string) or a dict with parameters to *_view_entry rules. In the latter
+  # two cases, we add a *_view_entry for it automatically. This allows to
+  # somewhat reduce verbosity of list definitions.
+  for entry in validate.list('entries', entries):
+    if type(entry) == 'dict':
+      entry = entry_ctor(**entry)
+    elif type(entry) == 'string' or (graph.is_keyset(entry) and entry.has(kinds.BUILDER_REF)):
+      entry = entry_ctor(builder = entry)
+    graph.add_edge(key, entry.get(entry_kind))
+
+  return graph.keyset(key, milo_view_key)
+
+
+def _view_add_entry(kind, view, builder, buildbot, props=None):
+  """Adds *_view_entry node.
+
+  Common implementation for list_view_node and console_view_node.
+
+  Args:
+    kind: a kind of the node to add (e.g. LIST_VIEW_ENTRY).
+    view: a key of the parent *_view to add the entry to, if known.
+    builder: a reference to builder (or None if unknown).
+    buildbot: a string with a reference to equivalent buildbot builder.
+    props: properties for the added node, mutated by adding 'buildbot' key.
+
+  Returns:
+    A keyset with the added key.
+  """
+  if builder != None:
+    builder = keys.builder_ref(builder, attr='builder')
+  buildbot = validate.string('buildbot', buildbot, required=False)
+
+  if builder == None and buildbot == None:
+    fail('either "builder" or "buildbot" are required')
+
+  props = props or {}
+  props['buildbot'] = buildbot
+
+  # Note: name of this node is important only for error messages. It isn't
+  # showing up in any generated files and by construction it can't accidentally
+  # collide with some other name.
+  key = keys.unique(kind, builder.id if builder else buildbot)
+  graph.add_node(key, props)
+  if view != None:
+    graph.add_edge(parent=view, child=key)
+  if builder != None:
+    graph.add_edge(parent=key, child=builder)
+
+  # This is used to detect *_view_entry nodes that aren't connected to any
+  # *_view. Such orphan nodes aren't allowed.
+  graph.add_node(keys.milo_entries_root(), idempotent=True)
+  graph.add_edge(parent=keys.milo_entries_root(), child=key)
+
+  return graph.keyset(key)
+
+
+view = struct(
+    add_view = _view_add_view,
+    add_entry = _view_add_entry,
 )

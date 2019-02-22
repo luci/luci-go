@@ -4,7 +4,6 @@ luci.project(
     milo = 'luci-milo.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
-luci.milo()
 
 luci.bucket(name = 'ci')
 
@@ -46,6 +45,6 @@ luci.list_view(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/list_view_multiparent_entry.star:28: in <toplevel>
+#   //testdata/errors/list_view_multiparent_entry.star:27: in <toplevel>
 #   ...
 # Error: luci.list_view_entry("b2") is added to multiple views: luci.list_view("View 1"), luci.list_view("View 2")

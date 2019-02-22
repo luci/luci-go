@@ -4,7 +4,6 @@ luci.project(
     milo = 'luci-milo.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
-luci.milo()
 
 luci.bucket(name = 'ci')
 
@@ -24,6 +23,6 @@ luci.list_view_entry('b')
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/list_view_orphan_entry.star:22: in <toplevel>
+#   //testdata/errors/list_view_orphan_entry.star:21: in <toplevel>
 #   ...
 # Error: luci.list_view_entry("b") is not added to any view, either remove or comment it out

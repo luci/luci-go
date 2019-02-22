@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load('@stdlib//internal/graph.star', 'graph')
-load('@stdlib//internal/validate.star', 'validate')
-
-load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
+load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
 
 
 def list_view_entry(builder=None, list_view=None, buildbot=None):
@@ -53,34 +50,9 @@ def list_view_entry(builder=None, list_view=None, buildbot=None):
         `<master>/<builder>` string. **Deprecated**. Exists only to aid in the
         migration off Buildbot.
   """
-  if builder != None:
-    builder = keys.builder_ref(builder, attr='builder')
-  if list_view != None:
-    list_view = keys.list_view(list_view)
-  buildbot = validate.string('buildbot', buildbot, required=False)
-
-  if builder == None:
-    if buildbot == None:
-      fail('either "builder" or "buildbot" are required')
-    key_name = buildbot
-  else:
-    key_name = builder.id
-
-  # Note: name of this node is important only for error messages. It isn't
-  # showing up in any generated files and by construction it can't accidentally
-  # collide with some other name.
-  key = keys.unique(kinds.LIST_VIEW_ENTRY, key_name)
-  graph.add_node(key, props = {
-      'buildbot': buildbot,
-  })
-
-  if builder != None:
-    graph.add_edge(parent=key, child=builder)
-  if list_view != None:
-    graph.add_edge(parent=list_view, child=key)
-
-  # This is used to detect list_view_entry nodes that aren't connected to any
-  # list_view. Such orphan nodes aren't allowed.
-  graph.add_edge(parent=keys.milo(), child=key)
-
-  return graph.keyset(key)
+  return view.add_entry(
+      kind = kinds.LIST_VIEW_ENTRY,
+      view = keys.list_view(list_view) if list_view else None,
+      builder = builder,
+      buildbot = buildbot,
+  )

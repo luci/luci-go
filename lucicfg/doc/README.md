@@ -612,7 +612,7 @@ watching `refs/heads/master`.
 * **name**: name of the poller, to refer to it from other rules. Required.
 * **bucket**: a bucket the poller is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
 * **repo**: URL of a git repository to poll, starting with `https://`. Required.
-* **refs**: a list of fully qualified refs to watch, e.g. `refs/heads/master` or `refs/tags/v1.2.3`.
+* **refs**: a list of fully qualified refs to watch, e.g. `refs/heads/master` or `refs/tags/v1.2.3`. Each ref must start with `refs/`.
 * **refs_regexps**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
 * **schedule**: string with a schedule that describes when to run one iteration of the poller. See [Defining cron schedules](#schedules_doc) for the expected format of this field. Note that it is rare to use custom schedules for pollers. By default, the poller will run each 30 sec.
 * **triggers**: builders to trigger whenever the poller detects a new git commit on any ref in the watched ref set.
@@ -632,7 +632,7 @@ Defines optional configuration of the Milo service for this project.
 
 Milo service is a public user interface for displaying (among other things)
 builds, builders, builder lists (see [luci.list_view(...)](#luci.list_view)) and consoles
-(see luci.console_view(...)).
+(see [luci.console_view(...)](#luci.console_view)).
 
 #### Arguments {#luci.milo-args}
 
@@ -689,7 +689,7 @@ Buildbot builder (see `buildbot` field).
 
 #### Arguments {#luci.list_view-args}
 
-* **name**: a name of this view, will show up in URLs. Required.
+* **name**: a name of this view, will show up in URLs. Note that names of [luci.list_view(...)](#luci.list_view) and [luci.console_view(...)](#luci.console_view) are in the same namespace i.e. defining a list view with the same name as some console view (and vice versa) causes an error. Required.
 * **title**: a title of this view, will show up in UI. Defaults to `name`.
 * **favicon**: optional https URL to the favicon for this view, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
 * **entries**: a list of builders or [luci.list_view_entry(...)](#luci.list_view_entry) entities to include into this view.
@@ -717,7 +717,7 @@ the list view declaration. In particular useful in functions. For example:
       luci.list_view_entry(list_view = 'Try builders', builder = name)
 
 Can also be used inline in [luci.list_view(...)](#luci.list_view) declarations, for consistency
-with corresponding luci.console_view_entry(...) usage. `list_view` argument
+with corresponding [luci.console_view_entry(...)](#luci.console_view_entry) usage. `list_view` argument
 can be omitted in this case:
 
     luci.list_view(
@@ -732,6 +732,153 @@ can be omitted in this case:
 
 * **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can be omitted for **extra deprecated** case of Buildbot-only views. `buildbot` field must be set in this case.
 * **list_view**: a list view to add the builder to. Can be omitted if `list_view_entry` is used inline inside some [luci.list_view(...)](#luci.list_view) declaration.
+* **buildbot**: a reference to an equivalent Buildbot builder, given as `<master>/<builder>` string. **Deprecated**. Exists only to aid in the migration off Buildbot.
+
+
+
+
+### luci.console_view {#luci.console_view}
+
+```python
+luci.console_view(
+    # Required arguments.
+    name,
+    repo,
+
+    # Optional arguments.
+    title = None,
+    refs = None,
+    refs_regexps = None,
+    exclude_ref = None,
+    include_experimental_builds = None,
+    favicon = None,
+    entries = None,
+)
+```
+
+
+
+A Milo UI view that displays a table-like console where columns are
+builders and rows are git commits on which builders are triggered.
+
+A console is associated with a single git repository it uses as a source of
+commits to display as rows. The watched ref set is defined via `refs`,
+`refs_regexps` and `exclude_ref` fields. If neither of `refs` or
+`refs_regexps` are set, the console defaults to watching `refs/heads/master`.
+
+`exclude_ref` is useful when watching for commits that landed specifically
+on a branch. For example, the config below allows to track commits from all
+release branches, but ignore the commits from the master branch, from which
+these release branches are branched off:
+
+    luci.console_view(
+        ...
+        refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+        exclude_ref = 'refs/heads/master',
+        ...
+    )
+
+For best results, ensure commits on each watched ref have **committer**
+timestamps monotonically non-decreasing. Gerrit will take care of this if you
+require each commit to go through Gerrit by prohibiting "git push" on these
+refs.
+
+Builders that belong to the console can be specified either right here:
+
+    luci.console_view(
+        name = 'CI builders',
+        ...
+        entries = [
+            luci.console_view_entry(
+                builder = 'Windows Builder',
+                short_name = 'win',
+                category = 'ci',
+            ),
+            # Can also pass a dict, this is equivalent to passing
+            # luci.console_view_entry(**dict).
+            {
+                'builder': 'Linux Builder',
+                'short_name': 'lnx',
+                'category': 'ci',
+            },
+            ...
+        ],
+    )
+
+Or separately one by one via [luci.console_view_entry(...)](#luci.console_view_entry) declarations:
+
+    luci.console_view(name = 'CI builders')
+    luci.console_view_entry(
+        builder = 'Windows Builder',
+        console_view = 'CI builders',
+        short_name = 'win',
+        category = 'ci',
+    )
+
+#### Arguments {#luci.console_view-args}
+
+* **name**: a name of this console, will show up in URLs. Note that names of [luci.console_view(...)](#luci.console_view) and [luci.list_view(...)](#luci.list_view) are in the same namespace i.e. defining a console view with the same name as some list view (and vice versa) causes an error. Required.
+* **title**: a title of this console, will show up in UI. Defaults to `name`.
+* **repo**: URL of a git repository whose commits are displayed as rows in the console. Must start with `https://`. Required.
+* **refs**: a list of fully qualified refs to pull commits from when displaying the console, e.g. `refs/heads/master` or `refs/tags/v1.2.3`. Each ref must start with `refs/`.
+* **refs_regexps**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
+* **exclude_ref**: a single ref, commits from which are ignored even when they are reachable from refs specified via `refs` and `refs_regexps`. Note that force pushes to this ref are not supported. Milo uses caching assuming set of commits reachable from this ref may only grow, never lose some commits.
+* **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.
+* **favicon**: optional https URL to the favicon for this console, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
+* **entries**: a list of [luci.console_view_entry(...)](#luci.console_view_entry) entities specifying builders to show on the console.
+
+
+
+
+### luci.console_view_entry {#luci.console_view_entry}
+
+```python
+luci.console_view_entry(
+    # Optional arguments.
+    builder = None,
+    short_name = None,
+    category = None,
+    console_view = None,
+    buildbot = None,
+)
+```
+
+
+
+A builder entry in some [luci.console_view(...)](#luci.console_view).
+
+Used inline in [luci.console_view(...)](#luci.console_view) declarations to provide `category` and
+`short_name` for a builder. `console_view` argument can be omitted in this
+case:
+
+    luci.console_view(
+        name = 'CI builders',
+        ...
+        entries = [
+            luci.console_view_entry(
+                builder = 'Windows Builder',
+                short_name = 'win',
+                category = 'ci',
+            ),
+            ...
+        ],
+    )
+
+Can also be used to declare that a builder belongs to a console outside of
+the console declaration. In particular useful in functions. For example:
+
+    luci.console_view(name = 'CI builders')
+
+    def ci_builder(name, ...):
+      luci.builder(name = name, ...)
+      luci.console_view_entry(console_view = 'CI builders', builder = name)
+
+#### Arguments {#luci.console_view_entry-args}
+
+* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can be omitted for **extra deprecated** case of Buildbot-only views. `buildbot` field must be set in this case.
+* **short_name**: a string with the 1-3 character abbreviation of the builder.
+* **category**: a string of the form `term1|term2|...` that describes the hierarchy of the builder columns. Neighboring builders with common ancestors will have their column headers merged.
+* **console_view**: a console view to add the builder to. Can be omitted if `console_view_entry` is used inline inside some [luci.console_view(...)](#luci.console_view) declaration.
 * **buildbot**: a reference to an equivalent Buildbot builder, given as `<master>/<builder>` string. **Deprecated**. Exists only to aid in the migration off Buildbot.
 
 

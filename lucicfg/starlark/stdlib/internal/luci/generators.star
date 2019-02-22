@@ -463,7 +463,6 @@ def _scheduler_acls(elementary):
 ## milo.cfg.
 
 
-# TODO(vadimsh): Add consoles support.
 # TODO(vadimsh): Add headers support.
 # TODO(vadimsh): Add build_bug_template support.
 
@@ -472,7 +471,8 @@ def gen_milo_cfg(ctx):
   """Generates milo.cfg."""
   _milo_check_connections()
 
-  views = graph.children(keys.project(), kinds.LIST_VIEW)
+  # Keep the order of views as they were defined, for Milo's list of consoles.
+  views = graph.children(keys.project(), kinds.MILO_VIEW, order_by=graph.DEFINITION_ORDER)
   if not views:
     return
 
@@ -489,30 +489,44 @@ def gen_milo_cfg(ctx):
   ctx.config_set[milo.cfg_file] = milo_pb.Project(
       logo_url = opts.logo,
       consoles = [
-          _milo_list_view(view, opts, project_name)
+          _milo_console_pb(view, opts, project_name)
           for view in views
       ],
   )
 
 
 def _milo_check_connections():
-  """Ensures all list_view_entry are connected to one and only one list_view."""
-  for e in graph.children(keys.milo(), kinds.LIST_VIEW_ENTRY):
-    parents = graph.parents(e.key, kinds.LIST_VIEW)
-    if len(parents) == 0:
+  """Ensures all *_view_entry are connected to one and only one *_view."""
+  root = keys.milo_entries_root()
+  for e in graph.children(root):
+    views = [p for p in graph.parents(e.key) if p.key != root]
+    if len(views) == 0:
       error('%s is not added to any view, either remove or comment it out' % e, trace=e.trace)
-    elif len(parents) > 1:
+    elif len(views) > 1:
       error(
           '%s is added to multiple views: %s' %
-          (e, ', '.join([str(v) for v in parents])),
+          (e, ', '.join([str(v) for v in views])),
           trace=e.trace)
+
+
+def _milo_console_pb(view, opts, project_name):
+  """Given MILO_VIEW node returns milo_pb.Console."""
+  ch = graph.children(view.key)
+  if len(ch) != 1:
+    fail('impossible: %s' % (ch,))
+  view = ch[0]
+  if view.key.kind == kinds.LIST_VIEW:
+    return _milo_list_view(view, opts, project_name)
+  if view.key.kind == kinds.CONSOLE_VIEW:
+    return _milo_console_view(view, opts, project_name)
+  fail('impossible: %s' % (view,))
 
 
 def _milo_list_view(view, opts, project_name):
   """Given a LIST_VIEW node produces milo_pb.Console."""
   builders = []
   seen = {}
-  for e in graph.children(view.key, kinds.LIST_VIEW_ENTRY, order_by=graph.DEFINITION_ORDER):
+  for e in graph.children(view.key, order_by=graph.DEFINITION_ORDER):
     pb = _milo_builder_pb(e, view, project_name, seen)
     if pb:
       builders.append(pb)
@@ -525,15 +539,48 @@ def _milo_list_view(view, opts, project_name):
   )
 
 
+def _milo_console_view(view, opts, project_name):
+  """Given a CONSOLE_VIEW node produces milo_pb.Console."""
+  builders = []
+  seen = {}
+  for e in graph.children(view.key, order_by=graph.DEFINITION_ORDER):
+    pb = _milo_builder_pb(e, view, project_name, seen)
+    if pb:
+      pb.short_name = e.props.short_name
+      pb.category = e.props.category
+      builders.append(pb)
+
+  refs = []
+  refs.extend(view.props.refs or [])
+  refs.extend(['regexp:' + r for r in view.props.refs_regexps or []])
+
+  return milo_pb.Console(
+      id = view.props.name,
+      name = view.props.title,
+
+      repo_url = view.props.repo,
+      refs = refs,
+      exclude_ref = view.props.exclude_ref,
+
+      # TODO(hinoka,iannucci): crbug/832893 - Support custom manifest names,
+      # such as 'UNPATCHED' / 'PATCHED'.
+      manifest_name = 'REVISION',
+
+      include_experimental_builds = view.props.include_experimental_builds,
+      favicon_url = view.props.favicon or opts.favicon,
+      builders = builders,
+  )
+
+
 def _milo_builder_pb(entry, view, project_name, seen):
-  """Returns milo_pb.Builder given LIST_VIEW_ENTRY node.
+  """Returns milo_pb.Builder given *_VIEW_ENTRY node.
 
   Args:
-    entry: a LIST_VIEW_ENTRY node.
-    view: a parent LIST_VIEW node (for error messages).
+    entry: a *_VIEW_ENTRY node.
+    view: a parent *_VIEW node (for error messages).
     project_name: LUCI project name, to expand short bucket names into
         luci.<project>.<bucket> ones.
-    seen: a dict {BUILDER key -> LIST_VIEW_ENTRY node that added it} with
+    seen: a dict {BUILDER key -> *_VIEW_ENTRY node that added it} with
         already added builders, to detect dups. Mutated.
 
   Returns:
@@ -545,7 +592,7 @@ def _milo_builder_pb(entry, view, project_name, seen):
 
   # Note: this is a one-item list for regular entries and an empty list for
   # entries that have only deprecated Buildbot references. Other cases are
-  # impossible per list_view_entry implementation.
+  # impossible per *_view_entry implementation.
   refs = graph.children(entry.key, kinds.BUILDER_REF)
   if len(refs) > 1:
     fail('impossible result %s' % (refs,))

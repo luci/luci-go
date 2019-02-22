@@ -4,7 +4,6 @@ luci.project(
     milo = 'luci-milo.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
-luci.milo()
 
 luci.bucket(name = 'ci')
 
@@ -30,9 +29,9 @@ luci.list_view(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/list_view_dup_builder.star:26: in <toplevel>
+#   //testdata/errors/list_view_dup_builder.star:25: in <toplevel>
 #   ...
 # Error: builder luci.builder("ci/b") was already added to luci.list_view("View"), previous declaration:
 # Traceback (most recent call last):
-#   //testdata/errors/list_view_dup_builder.star:22: in <toplevel>
+#   //testdata/errors/list_view_dup_builder.star:21: in <toplevel>
 #   ...
