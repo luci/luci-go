@@ -277,7 +277,7 @@ func (impl *implementation) CombinedLogs(c context.Context, host, project, exclu
 	}
 
 	// Resolve all refs and commits they are pointing at.
-	refTips, err := gitilesapi.NewRefSet(refs).Resolve(c, client, project)
+	refTips, _, err := gitilesapi.NewRefSet(refs).Resolve(c, client, project)
 	if err != nil {
 		return
 	}

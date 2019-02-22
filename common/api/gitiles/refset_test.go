@@ -32,6 +32,8 @@ func TestRefSet(t *testing.T) {
 		wr := NewRefSet([]string{
 			`refs/heads/master`,
 			`regexp:refs/branch-heads/\d+\.\d+`,
+			`regexp:refs/missing/many.+`,
+			`refs/missing/exact`,
 		})
 
 		Convey("explicit refs", func() {
@@ -58,6 +60,9 @@ func TestRefSet(t *testing.T) {
 					"refs/heads/foobar": "89abcdef",
 				}}, nil,
 			)
+			mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
+				Project: "project", RefsPath: "refs/missing",
+			}).Return(&gitiles.RefsResponse{}, nil)
 
 			Convey("normal", func() {
 				mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
@@ -70,13 +75,14 @@ func TestRefSet(t *testing.T) {
 					}}, nil,
 				)
 
-				refTips, err := wr.Resolve(ctx, mockClient, "project")
+				refTips, missing, err := wr.Resolve(ctx, mockClient, "project")
 				So(err, ShouldBeNil)
 				So(refTips, ShouldResemble, map[string]string{
 					"refs/heads/master":      "01234567",
 					"refs/branch-heads/1.9":  "cafedead",
 					"refs/branch-heads/1.10": "deadcafe",
 				})
+				So(missing, ShouldResemble, []string{`refs/missing/exact`, `regexp:refs/missing/many.+`})
 			})
 
 			Convey("failed RPCs", func() {
@@ -86,7 +92,7 @@ func TestRefSet(t *testing.T) {
 					nil, errors.New("foobar"),
 				)
 
-				_, err := wr.Resolve(ctx, mockClient, "project")
+				_, _, err := wr.Resolve(ctx, mockClient, "project")
 				So(err.Error(), ShouldContainSubstring, "foobar")
 			})
 		})

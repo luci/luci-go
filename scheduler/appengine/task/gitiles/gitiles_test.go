@@ -52,7 +52,6 @@ func TestTriggerBuild(t *testing.T) {
 		c := memory.Use(context.Background())
 		cfg := &messages.GitilesTask{
 			Repo: "https://a.googlesource.com/b.git",
-			Refs: []string{"refs/heads/master", "refs/heads/branch", "regexp:refs/branch-heads/[^/]+"},
 		}
 		jobID := "proj/gitiles"
 		parsedURL, err := url.Parse(cfg.Repo)
@@ -115,9 +114,19 @@ func TestTriggerBuild(t *testing.T) {
 			return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
 		}
 
+		Convey("each configured ref must match resolved ref", func() {
+			cfg.Refs = []string{"refs/heads/master", `regexp:refs/branch-heads/\d+`}
+			expectRefs("refs/heads", strmap{"refs/heads/not-master": "deadbeef00"})
+			expectRefs("refs/branch-heads", strmap{"refs/branch-heads/not-digits": "deadbeef00"})
+			So(m.LaunchTask(c, ctl), ShouldErrLike, "2 unresolved refs")
+			So(ctl.Triggers, ShouldHaveLength, 0)
+			So(ctl.Log[len(ctl.Log)-2], ShouldContainSubstring,
+				"following configured refs didn't match a single actual ref:")
+		})
+
 		Convey("new refs are discovered", func() {
-			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
-			expectRefs("refs/branch-heads", strmap{"refs/weird": "1234567890"})
+			cfg.Refs = []string{"refs/heads/master"}
+			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00", "refs/weird": "123456"})
 			expectLog("deadbeef00", "", 1, log("deadbeef00"))
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
@@ -163,19 +172,20 @@ func TestTriggerBuild(t *testing.T) {
 		})
 
 		Convey("do not trigger if there are no new commits", func() {
+			cfg.Refs = []string{"regexp:refs/branch-heads/[^/]+"}
 			So(saveState(c, jobID, parsedURL, strmap{
-				"refs/heads/master": "deadbeef00",
+				"refs/branch-heads/beta": "deadbeef00",
 			}), ShouldBeNil)
-			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
-			expectRefs("refs/branch-heads", strmap{"refs/weird": "1234567890"})
+			expectRefs("refs/branch-heads", strmap{"refs/branch-heads/beta": "deadbeef00"})
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
-				"refs/heads/master": "deadbeef00",
+				"refs/branch-heads/beta": "deadbeef00",
 			})
 		})
 
 		Convey("New, updated, and deleted refs", func() {
+			cfg.Refs = []string{"refs/heads/master", "regexp:refs/branch-heads/[^/]+"}
 			So(saveState(c, jobID, parsedURL, strmap{
 				"refs/heads/master":   "deadbeef03",
 				"refs/branch-heads/x": "1234567890",
@@ -211,6 +221,7 @@ func TestTriggerBuild(t *testing.T) {
 		})
 
 		Convey("do nothing at all if there are no changes", func() {
+			cfg.Refs = []string{"refs/heads/master"}
 			So(saveState(c, jobID, parsedURL, strmap{
 				"refs/heads/master": "deadbeef",
 			}), ShouldBeNil)
@@ -228,10 +239,11 @@ func TestTriggerBuild(t *testing.T) {
 		})
 
 		Convey("Avoid choking on too many refs", func() {
+			cfg.Refs = []string{"refs/heads/master", "regexp:refs/branch-heads/[^/]+"}
 			So(saveState(c, jobID, parsedURL, strmap{
 				"refs/heads/master": "deadbeef",
 			}), ShouldBeNil)
-			expectRefs("refs/heads", nil).AnyTimes()
+			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef"}).AnyTimes()
 			expectRefs("refs/branch-heads", strmap{
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
@@ -246,10 +258,11 @@ func TestTriggerBuild(t *testing.T) {
 			expectLog("cafee5", "", 1, log("cafee5"))
 			m.maxTriggersPerInvocation = 2
 			m.maxCommitsPerRefUpdate = 1
-			// First run, refs/branch-heads/{1,2} updated, refs/heads/master removed.
+			// First run, refs/branch-heads/{1,2} updated, refs/heads/master preserved.
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 2)
 			So(loadNoError(), ShouldResemble, strmap{
+				"refs/heads/master":   "deadbeef",
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 			})
@@ -259,6 +272,7 @@ func TestTriggerBuild(t *testing.T) {
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 2)
 			So(loadNoError(), ShouldResemble, strmap{
+				"refs/heads/master":   "deadbeef",
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 				"refs/branch-heads/3": "cafee3",
@@ -270,6 +284,7 @@ func TestTriggerBuild(t *testing.T) {
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 1)
 			So(loadNoError(), ShouldResemble, strmap{
+				"refs/heads/master":   "deadbeef",
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 				"refs/branch-heads/3": "cafee3",
@@ -279,7 +294,7 @@ func TestTriggerBuild(t *testing.T) {
 		})
 
 		Convey("Ensure progress", func() {
-			expectRefs("refs/heads", nil).AnyTimes()
+			cfg.Refs = []string{"regexp:refs/branch-heads/[^/]+"}
 			expectRefs("refs/branch-heads", strmap{
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
@@ -318,10 +333,10 @@ func TestTriggerBuild(t *testing.T) {
 		})
 
 		Convey("distinguish force push from transient weirdness", func() {
+			cfg.Refs = []string{"refs/heads/master"}
 			So(saveState(c, jobID, parsedURL, strmap{
 				"refs/heads/master": "001d", // old.
 			}), ShouldBeNil)
-			expectRefs("refs/branch-heads", strmap{})
 			expectRefs("refs/heads", strmap{"refs/heads/master": "1111"})
 
 			Convey("force push going backwards", func() {
@@ -359,7 +374,7 @@ func TestTriggerBuild(t *testing.T) {
 				expectLog("1111", "001d", 50, nil, grpc.Errorf(codes.NotFound, "not found"))
 				expectLog("1111", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
 				expectLog("001d", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
-				So(transient.Tag.In(m.LaunchTask(c, ctl)), ShouldBeTrue)
+				So(m.LaunchTask(c, ctl), ShouldNotBeNil)
 				So(loadNoError(), ShouldResemble, strmap{
 					"refs/heads/master": "001d",
 				})
