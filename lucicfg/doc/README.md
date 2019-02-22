@@ -785,6 +785,7 @@ luci.console_view(
     refs = None,
     refs_regexps = None,
     exclude_ref = None,
+    header = None,
     include_experimental_builds = None,
     favicon = None,
     entries = None,
@@ -818,6 +819,8 @@ timestamps monotonically non-decreasing. Gerrit will take care of this if you
 require each commit to go through Gerrit by prohibiting "git push" on these
 refs.
 
+#### Adding builders
+
 Builders that belong to the console can be specified either right here:
 
     luci.console_view(
@@ -850,6 +853,44 @@ Or separately one by one via [luci.console_view_entry(...)](#luci.console_view_e
         category = 'ci',
     )
 
+#### Console headers
+
+Consoles can have headers which are collections of links, oncall rotation
+information, and console summaries that are displayed at the top of a console,
+below the tree status information. Links and oncall information is always laid
+out to the left, while console groups are laid out to the right. Each oncall
+and links group take up a row.
+
+Header definitions are based on `Header` message in Milo's [project.proto].
+There are two way to supply this message via `header` field:
+
+  * Pass an appropriately structured dict. Useful for defining small headers
+    inline:
+
+        luci.console_view(
+            ...
+            header = {
+                'links': [
+                    {'name': '...', 'links': [...]},
+                    ...
+                ],
+            },
+            ...
+        )
+
+  * Pass a string. It is treated as a path to a file with serialized
+    `Header` message. Depending on its extension, it is loaded ether as
+    JSONPB-encoded message (`*.json` and `*.jsonpb` paths), or as
+    TextPB-encoded message (everything else):
+
+        luci.console_view(
+            ...
+            header = '//consoles/main_header.textpb',
+            ...
+        )
+
+[project.proto]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/milo/api/config/project.proto
+
 #### Arguments {#luci.console_view-args}
 
 * **name**: a name of this console, will show up in URLs. Note that names of [luci.console_view(...)](#luci.console_view) and [luci.list_view(...)](#luci.list_view) are in the same namespace i.e. defining a console view with the same name as some list view (and vice versa) causes an error. Required.
@@ -858,6 +899,7 @@ Or separately one by one via [luci.console_view_entry(...)](#luci.console_view_e
 * **refs**: a list of fully qualified refs to pull commits from when displaying the console, e.g. `refs/heads/master` or `refs/tags/v1.2.3`. Each ref must start with `refs/`.
 * **refs_regexps**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
 * **exclude_ref**: a single ref, commits from which are ignored even when they are reachable from refs specified via `refs` and `refs_regexps`. Note that force pushes to this ref are not supported. Milo uses caching assuming set of commits reachable from this ref may only grow, never lose some commits.
+* **header**: either a string with a path to the file with the header definition (see [io.read_file(...)](#io.read_file) for the acceptable path format), or a dict with the header definition.
 * **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.
 * **favicon**: optional https URL to the favicon for this console, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
 * **entries**: a list of [luci.console_view_entry(...)](#luci.console_view_entry) entities specifying builders to show on the console.

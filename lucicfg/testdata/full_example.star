@@ -225,6 +225,12 @@ luci.list_view_entry(
 luci.console_view(
     name = 'Console view',
     title = 'CI Builders',
+    header = {
+        'links': [
+            {'name': 'a', 'links': [{'text': 'a'}]},
+            {'name': 'b', 'links': [{'text': 'b'}]},
+        ],
+    },
     repo = 'https://noop.com',
     refs = ['refs/tags/blah'],
     refs_regexps = ['refs/branch-heads/\d+\.\d+'],
@@ -441,6 +447,20 @@ luci.console_view_entry(
 #     name: "buildbot/master/very buildbot"
 #   >
 #   favicon_url: "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico"
+#   header: <
+#     links: <
+#       name: "a"
+#       links: <
+#         text: "a"
+#       >
+#     >
+#     links: <
+#       name: "b"
+#       links: <
+#         text: "b"
+#       >
+#     >
+#   >
 #   include_experimental_builds: true
 # >
 # logo_url: "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png"
