@@ -135,6 +135,11 @@ func (v *Context) Exit() {
 	}
 }
 
+// HasErrors returns true iff the context contains at least one error.
+func (v *Context) HasErrors() bool {
+	return len(v.errors) != 0
+}
+
 // Finalize returns *Error if some validation errors were recorded.
 //
 // Returns nil otherwise.

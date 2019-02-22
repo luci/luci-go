@@ -15,7 +15,8 @@
 package projectscope
 
 import (
-	"context"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -31,8 +32,9 @@ func TestValidation(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		Cfg    string
-		Errors []string
+		Cfg              string
+		Errors           []string
+		ExpectIdentities []*projectidentity.ProjectIdentity
 	}{
 		{
 			// No errors, "normal looking" config.
@@ -48,6 +50,12 @@ func TestValidation(t *testing.T) {
 					}
 				}
 			`,
+			ExpectIdentities: []*projectidentity.ProjectIdentity{
+				{
+					Project: "id1",
+					Email:   "foo@bar.com",
+				},
+			},
 		},
 		{
 			// Identity double assignment, broken config.
@@ -87,13 +95,20 @@ func TestValidation(t *testing.T) {
 			err := proto.UnmarshalText(cs.Cfg, cfg)
 			So(err, ShouldBeNil)
 
-			ctx := &validation.Context{Context: context.Background()}
+			ctx := &validation.Context{Context: gaetesting.TestingContext()}
 			ctx.SetFile(projectsCfg)
 			validateSingleIdentityProjectAssignment(ctx, cfg)
 			verr := ctx.Finalize()
 
 			if len(cs.Errors) == 0 { // no errors expected
 				So(verr, ShouldBeNil)
+				updateIdentities(ctx, cfg)
+				storage := projectidentity.ProjectIdentities(ctx.Context)
+				for _, identity := range cs.ExpectIdentities {
+					foundIdentity, err := storage.LookupByProject(ctx.Context, identity.Project)
+					So(err, ShouldBeNil)
+					So(foundIdentity, ShouldResemble, identity)
+				}
 			} else {
 				verr := verr.(*validation.Error)
 				So(len(verr.Errors), ShouldEqual, len(cs.Errors))
