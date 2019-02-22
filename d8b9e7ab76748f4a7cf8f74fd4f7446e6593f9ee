@@ -22,6 +22,30 @@
       "revId": "d8b9e7ab76748f4a7cf8f74fd4f7446e6593f9ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "979002ff_43b3b31b",
+        "filename": "gce/cmd/agent/systemd.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-22T00:27:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a1c2cab_c169e323",
+      "range": {
+        "startLine": 44,
+        "startChar": 78,
+        "endLine": 45,
+        "endChar": 40
+      },
+      "revId": "d8b9e7ab76748f4a7cf8f74fd4f7446e6593f9ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
