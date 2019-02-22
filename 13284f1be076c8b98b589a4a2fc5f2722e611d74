@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "7bde3707_dd15702c",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T01:48:41Z",
+      "side": 1,
+      "message": "\u003e Ah, I see, we need association between values in \u0027refs\u0027 and hits we get, and w.byPrefix[prefix].refRegexp doesn\u0027t have it, since it\u0027s one big regexp with everything inside it.\n\u003e \n\u003e Still I think FindNotMatchedRefs is more natural as a method of RefsSet or even just as an additional return value from Resolve.\n\nYeah, but then I\u0027d need to store raw values inside refSetPrefix, or pass raw refs again to Resolve() method.\nWhich one do you prefer?",
+      "parentUuid": "75c84988_b597016c",
+      "range": {
+        "startLine": 133,
+        "startChar": 7,
+        "endLine": 133,
+        "endChar": 33
+      },
+      "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0ae056e0_4345d993",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 2
@@ -60,6 +84,30 @@
       "writtenOn": "2019-02-19T20:36:31Z",
       "side": 1,
       "message": "cool, didn\u0027t know about it",
+      "range": {
+        "startLine": 227,
+        "startChar": 37,
+        "endLine": 227,
+        "endChar": 50
+      },
+      "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a569ff6f_5972e52a",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T01:48:41Z",
+      "side": 1,
+      "message": "What\u0027s impressive to me is that it\u0027s very smart:\nLiteralPrefix of \u0027pref[i]x.+\u0027 will indeed be \u0027prefix\u0027.",
+      "parentUuid": "0ae056e0_4345d993",
       "range": {
         "startLine": 227,
         "startChar": 37,
@@ -92,6 +140,30 @@
       "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "612b7944_4a476264",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T01:48:41Z",
+      "side": 1,
+      "message": "yeah, it also panics if regexp doesn\u0027t compile. The assumption in this code was and is that passed ref is valid.",
+      "parentUuid": "11ec344f_42d2eda9",
+      "range": {
+        "startLine": 228,
+        "startChar": 11,
+        "endLine": 228,
+        "endChar": 64
+      },
+      "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
