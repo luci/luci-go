@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3970be62_859ac32c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T00:59:38Z",
+      "side": 1,
+      "message": "i\u0027m not sure \"to\" or \"on\" but be consistent.",
+      "range": {
+        "startLine": 105,
+        "startChar": 53,
+        "endLine": 105,
+        "endChar": 55
+      },
+      "revId": "ca660b8fb6f23a55dcefbe92177aef1b14a55f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
