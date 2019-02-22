@@ -16,6 +16,7 @@ package lucicfg
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -23,28 +24,21 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// FindTrackedFiles recursively discovers all regular files in the given
-// directory that match given patterns.
+// TrackedSet returns a predicate that classifies whether a slash-separated path
+// belongs to a tracked set or not.
 //
 // Each entry in `patterns` is either `<glob pattern>` (a "positive" glob) or
-// `!<glob pattern>` (a "negative" glob). A file under `dir` is considered
-// tracked if it matches any of the positive globs and none of the negative
-// globs. If `patterns` is empty, no files are considered tracked.
+// `!<glob pattern>` (a "negative" glob). A path is considered tracked if its
+// base name matches any of the positive globs and none of the negative globs.
+// If `patterns` is empty, no paths are considered tracked. If all patterns
+// are negative, single `*` positive pattern is implied as well.
 //
-// If the directory doesn't exist, returns empty slice.
-//
-// Returned file names are sorted, slash-separated and relative to `dir`.
-func FindTrackedFiles(dir string, patterns []string) ([]string, error) {
+// The predicate returns an error if some pattern is malformed.
+func TrackedSet(patterns []string) func(string) (bool, error) {
 	if len(patterns) == 0 {
-		return nil, nil
+		return func(string) (bool, error) { return false, nil }
 	}
 
-	// Missing directory is considered empty.
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return nil, nil
-	}
-
-	// Categorize patterns into "positive" and "negative"
 	var pos, neg []string
 	for _, pat := range patterns {
 		if strings.HasPrefix(pat, "!") {
@@ -54,27 +48,55 @@ func FindTrackedFiles(dir string, patterns []string) ([]string, error) {
 		}
 	}
 
+	if len(pos) == 0 {
+		pos = []string{"*"}
+	}
+
+	return func(p string) (bool, error) {
+		base := path.Base(p)
+		if isPos, err := matchesAny(base, pos); !isPos || err != nil {
+			return false, err
+		}
+		if isNeg, err := matchesAny(base, neg); isNeg || err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+}
+
+// FindTrackedFiles recursively discovers all regular files in the given
+// directory whose names match given patterns.
+//
+// See TrackedSet for the format of `patterns`. If the directory doesn't exist,
+// returns empty slice.
+//
+// Returned file names are sorted, slash-separated and relative to `dir`.
+func FindTrackedFiles(dir string, patterns []string) ([]string, error) {
+	// Avoid scanning the directory if the tracked set is known to be empty.
+	if len(patterns) == 0 {
+		return nil, nil
+	}
+
+	// Missing directory is considered empty.
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return nil, nil
+	}
+
+	isTracked := TrackedSet(patterns)
+
 	var tracked []string
 	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if err != nil || !info.Mode().IsRegular() {
 			return err
 		}
-
-		isPos, err := matchesAny(info.Name(), pos)
-		if err != nil {
-			return err
-		}
-		isNeg, err := matchesAny(info.Name(), neg)
-		if err != nil {
-			return err
-		}
-		if !isPos || isNeg {
-			return nil // not tracked
-		}
-
 		rel, err := filepath.Rel(dir, p)
-		if err == nil {
-			tracked = append(tracked, filepath.ToSlash(rel))
+		if err != nil {
+			return err
+		}
+		rel = filepath.ToSlash(rel)
+		yes, err := isTracked(rel)
+		if yes {
+			tracked = append(tracked, rel)
 		}
 		return err
 	})
@@ -88,7 +110,7 @@ func FindTrackedFiles(dir string, patterns []string) ([]string, error) {
 
 func matchesAny(name string, pats []string) (yes bool, err error) {
 	for _, pat := range pats {
-		switch match, err := filepath.Match(pat, name); {
+		switch match, err := path.Match(pat, name); {
 		case err != nil:
 			return false, errors.Annotate(err, "bad pattern %q", pat).Err()
 		case match:
