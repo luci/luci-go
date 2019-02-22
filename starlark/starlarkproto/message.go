@@ -101,6 +101,33 @@ func (m *Message) FromProto(p proto.Message) error {
 	return nil
 }
 
+// FromDict populates fields of this message based on values in starlark.Dict.
+//
+// Doesn't reset the message. Basically does this:
+//
+//   for k in d:
+//     setattr(msg, k, d[k])
+//
+// Returns an error on type mismatch.
+func (m *Message) FromDict(d *starlark.Dict) error {
+	iter := d.Iterate()
+	defer iter.Done()
+
+	var k starlark.Value
+	for iter.Next(&k) {
+		key, ok := k.(starlark.String)
+		if !ok {
+			return fmt.Errorf("got %s dict key, expecting a string", k.Type())
+		}
+		v, _, _ := d.Get(k)
+		if err := m.SetField(key.GoString(), v); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Basic starlark.Value interface.
 
 // String implements starlark.Value.
@@ -181,6 +208,16 @@ func (m *Message) SetField(name string, val starlark.Value) error {
 		return nil
 	}
 
+	// If assigning to a messaged-valued field (singular or repeated), recognize
+	// dicts and Nones and use them to instantiate values (perhaps empty) of the
+	// corresponding proto type. This allows to construct deeply nested protobuf
+	// messages just by using lists, dicts and primitive values. Python does this
+	// too.
+	val, err := maybeMakeMessages(fd.typ, val)
+	if err != nil {
+		return fmt.Errorf("when constructing %q in proto %q - %s", name, m.Type(), err)
+	}
+
 	// Do a light type check. It doesn't "recurse" into lists or tuples. So it is
 	// still possible to assign e.g. a list of strings to a "repeated int64"
 	// field. This will be discovered later in ToProto when trying to construct
@@ -197,4 +234,81 @@ func (m *Message) SetField(name string, val starlark.Value) error {
 	}
 
 	return nil
+}
+
+// maybeMakeMessages recognizes when a dict is assigned to a message field or
+// when a list or tuple of dicts or Nones is assigned to a repeated message
+// field.
+//
+// It converts dicts or Nones to *Message of corresponding type using NewMessage
+// and FromDict and returns them as Starlark values to use in place of passed
+// value.
+//
+// Returns 'val' as is in other cases. Returns an error if given a dict, but
+// it can't be used to initialize a message (e.g. has wrong schema).
+func maybeMakeMessages(typ reflect.Type, val starlark.Value) (starlark.Value, error) {
+	if dict, ok := val.(*starlark.Dict); ok && isProtoType(typ) {
+		t, err := GetMessageType(typ)
+		if err != nil {
+			return nil, err
+		}
+		msg := NewMessage(t)
+		return msg, msg.FromDict(dict)
+	}
+
+	if seq, ok := val.(starlark.Sequence); ok && typ.Kind() == reflect.Slice && isProtoType(typ.Elem()) && shouldMakeMessages(seq) {
+		t, err := GetMessageType(typ.Elem())
+		if err != nil {
+			return nil, err
+		}
+
+		iter := seq.Iterate()
+		defer iter.Done()
+
+		out := make([]starlark.Value, 0, seq.Len())
+
+		var v starlark.Value
+		for iter.Next(&v) {
+			switch val := v.(type) {
+			case starlark.NoneType:
+				out = append(out, NewMessage(t))
+			case *starlark.Dict:
+				msg := NewMessage(t)
+				if err := msg.FromDict(val); err != nil {
+					return nil, err
+				}
+				out = append(out, msg)
+			default:
+				out = append(out, v)
+			}
+		}
+
+		// Note: we return a list (and not a tuple) so that the proto object remains
+		// mutable. Callers might want to add more items there.
+		return starlark.NewList(out), nil
+	}
+
+	return val, nil
+}
+
+// isProtoType is true if typ is &Struct{}.
+func isProtoType(typ reflect.Type) bool {
+	return typ.Kind() == reflect.Ptr && typ.Elem().Kind() == reflect.Struct
+}
+
+// shouldMakeMessages returns true if seq has at least one dict or None that
+// should be converted to a proto message.
+func shouldMakeMessages(seq starlark.Sequence) bool {
+	iter := seq.Iterate()
+	defer iter.Done()
+	var v starlark.Value
+	for iter.Next(&v) {
+		if v == starlark.None {
+			return true
+		}
+		if _, ok := v.(*starlark.Dict); ok {
+			return true
+		}
+	}
+	return false
 }
