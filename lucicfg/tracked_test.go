@@ -89,7 +89,7 @@ func TestFindTrackedFiles(t *testing.T) {
 		})
 
 		Convey("Bad negative pattern", func() {
-			_, err := FindTrackedFiles(tmp, []string{"!["})
+			_, err := FindTrackedFiles(tmp, []string{"*", "!["})
 			So(err, ShouldErrLike, `bad pattern "["`)
 		})
 	})

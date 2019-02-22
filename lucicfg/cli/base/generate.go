@@ -17,9 +17,11 @@ package base
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/starlark/interpreter"
 
@@ -83,5 +85,50 @@ func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg
 	meta.PopulateFromTouchedIn(flags)
 	meta.Log(ctx)
 
+	// Discard changes to the non-tracked files by loading their original bodies
+	// (if any) from disk. We replace them to make sure the config set is still
+	// validated as a whole, it is just only partially generated in this case.
+	if len(meta.TrackedFiles) != 0 {
+		if err := discardUntracked(ctx, state.Configs, meta.TrackedFiles, meta.ConfigDir); err != nil {
+			return nil, err
+		}
+	}
+
 	return state.Configs, nil
+}
+
+// discardUntracked replaces bodies of all untracked configs in the set with
+// what's on disk.
+func discardUntracked(ctx context.Context, cs lucicfg.ConfigSet, tracked []string, configDir string) error {
+	isTracked := lucicfg.TrackedSet(tracked)
+
+	for _, path := range cs.Files() {
+		yes, err := isTracked(path)
+		if err != nil {
+			return err
+		}
+		if yes {
+			continue
+		}
+
+		logging.Warningf(ctx, "Discarding changes to %s, not in the tracked set", path)
+
+		if configDir == "-" {
+			// When using stdout as destination, there's nowhere to read existing
+			// files from.
+			delete(cs, path)
+			continue
+		}
+
+		switch body, err := ioutil.ReadFile(filepath.Join(configDir, filepath.FromSlash(path))); {
+		case err == nil:
+			cs[path] = body
+		case os.IsNotExist(err):
+			delete(cs, path)
+		case err != nil:
+			return errors.Annotate(err, "when discarding changes to %s", path).Err()
+		}
+	}
+
+	return nil
 }
