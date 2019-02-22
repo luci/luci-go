@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "08929baa_00f9a008",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T01:59:32Z",
+      "side": 1,
+      "message": "RefSet can even store original []refs inside, it doesn\u0027t matter that it will be a duplication of what\u0027s inside byPrefix: 1) everything is incapsulated anyway; 2) RefSet is immutable, so no extra code to keep two copies of refs in sync.",
+      "parentUuid": "7bde3707_dd15702c",
+      "range": {
+        "startLine": 133,
+        "startChar": 7,
+        "endLine": 133,
+        "endChar": 33
+      },
+      "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0ae056e0_4345d993",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 2
@@ -108,6 +132,30 @@
       "side": 1,
       "message": "What\u0027s impressive to me is that it\u0027s very smart:\nLiteralPrefix of \u0027pref[i]x.+\u0027 will indeed be \u0027prefix\u0027.",
       "parentUuid": "0ae056e0_4345d993",
+      "range": {
+        "startLine": 227,
+        "startChar": 37,
+        "endLine": 227,
+        "endChar": 50
+      },
+      "revId": "13284f1be076c8b98b589a4a2fc5f2722e611d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9047e930_3d7dea05",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-22T01:59:32Z",
+      "side": 1,
+      "message": "It probably traverses FSM built from the regexp until the first \"fork\".",
+      "parentUuid": "a569ff6f_5972e52a",
       "range": {
         "startLine": 227,
         "startChar": 37,
