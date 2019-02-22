@@ -83,5 +83,14 @@ func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg
 	meta.PopulateFromTouchedIn(flags)
 	meta.Log(ctx)
 
+	// Discard changes to the non-tracked files by loading their original bodies
+	// (if any) from disk. We replace them to make sure the config set is still
+	// validated as a whole, it is just only partially generated in this case.
+	if len(meta.TrackedFiles) != 0 {
+		if err := state.Configs.DiscardChangesToUntracked(ctx, meta.TrackedFiles, meta.ConfigDir); err != nil {
+			return nil, err
+		}
+	}
+
 	return state.Configs, nil
 }
