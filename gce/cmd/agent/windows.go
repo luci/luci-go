@@ -36,8 +36,8 @@ const startupTmpl = "C:\\tools\\python\\bin\\python.exe {{.BotCode}} start_bot"
 // startupTask is the name of the Swarming bot startup task.
 const startupTask = "swarming-start-bot"
 
-// autostart configures the given Swarming bot code to be executed on startup for the given user,
-// then starts the Swarming bot process.
+// autostart configures the given Swarming bot code to be executed on startup
+// for the given user, then starts the Swarming bot process.
 // Implements PlatformStrategy.
 func (*WindowsStrategy) autostart(c context.Context, path, user string) error {
 	subs := map[string]string{
