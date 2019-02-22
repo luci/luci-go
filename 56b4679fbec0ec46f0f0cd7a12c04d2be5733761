@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2bd9aa8e_d6007f49",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/milo.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T01:04:00Z",
+      "side": 1,
+      "message": "in",
+      "range": {
+        "startLine": 66,
+        "startChar": 61,
+        "endLine": 66,
+        "endChar": 65
+      },
+      "revId": "56b4679fbec0ec46f0f0cd7a12c04d2be5733761",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b75dcfd_400a5f6d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/milo.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T01:04:00Z",
+      "side": 1,
+      "message": "90% sure it\u0027s \"a user\" here and below.",
+      "range": {
+        "startLine": 66,
+        "startChar": 71,
+        "endLine": 66,
+        "endChar": 74
+      },
+      "revId": "56b4679fbec0ec46f0f0cd7a12c04d2be5733761",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49cab43d_cbfa0616",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-22T01:04:00Z",
+      "side": 1,
+      "message": "LOL",
+      "range": {
+        "startLine": 39,
+        "startChar": 24,
+        "endLine": 39,
+        "endChar": 40
+      },
+      "revId": "56b4679fbec0ec46f0f0cd7a12c04d2be5733761",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
