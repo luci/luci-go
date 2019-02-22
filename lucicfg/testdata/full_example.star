@@ -36,6 +36,10 @@ luci.logdog(gs_bucket = 'chromium-luci-logdog')
 luci.milo(
     logo = 'https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png',
     favicon = 'https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico',
+    monorail_project = 'tutu, all aboard',
+    monorail_components = ['Stuff>Hard'],
+    bug_summary = 'Bug summary',
+    bug_description = 'Everything is broken',
 )
 
 
@@ -440,6 +444,12 @@ luci.console_view_entry(
 #   include_experimental_builds: true
 # >
 # logo_url: "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png"
+# build_bug_template: <
+#   summary: "Bug summary"
+#   description: "Everything is broken"
+#   monorail_project: "tutu, all aboard"
+#   components: "Stuff>Hard"
+# >
 # ===
 #
 # === luci-scheduler.cfg

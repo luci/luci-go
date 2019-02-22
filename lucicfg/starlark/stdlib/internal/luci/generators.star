@@ -463,10 +463,6 @@ def _scheduler_acls(elementary):
 ## milo.cfg.
 
 
-# TODO(vadimsh): Add headers support.
-# TODO(vadimsh): Add build_bug_template support.
-
-
 def gen_milo_cfg(ctx):
   """Generates milo.cfg."""
   _milo_check_connections()
@@ -483,10 +479,20 @@ def gen_milo_cfg(ctx):
       favicon = milo_node.props.favicon if milo_node else None,
   )
 
+  build_bug_template = None
+  if milo_node and milo_node.props.monorail_project:
+    build_bug_template = milo_pb.BugTemplate(
+        summary = milo_node.props.bug_summary,
+        description = milo_node.props.bug_description,
+        monorail_project = milo_node.props.monorail_project,
+        components = milo_node.props.monorail_components,
+    )
+
   milo = get_service('milo', 'using list or console views')
   project_name = get_project().props.name
 
   ctx.config_set[milo.cfg_file] = milo_pb.Project(
+      build_bug_template = build_bug_template,
       logo_url = opts.logo,
       consoles = [
           _milo_console_pb(view, opts, project_name)
