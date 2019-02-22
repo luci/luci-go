@@ -22,8 +22,8 @@ import (
 
 // Validate validates these configs. Kinds must already be applied.
 func (cfgs *Configs) Validate(c *validation.Context) {
-	prefixes := make([]string, 0, len(cfgs.Vms))
-	for i, cfg := range cfgs.Vms {
+	prefixes := make([]string, 0, len(cfgs.GetVms()))
+	for i, cfg := range cfgs.GetVms() {
 		c.Enter("vms config %d", i)
 		if cfg.Prefix == "" {
 			c.Errorf("prefix is required")
