@@ -62,7 +62,16 @@ func TestAllStarlark(t *testing.T) {
 		t.Fatalf("failed to load assertion module - %s", err)
 	}
 
-	predeclared := starlark.StringDict{}
+	predeclared := starlark.StringDict{
+		"freeze": starlark.NewBuiltin("freeze", func(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+			var obj starlark.Value
+			if err := starlark.UnpackArgs("freeze", args, kwargs, "obj", &obj); err != nil {
+				return nil, err
+			}
+			obj.Freeze()
+			return starlark.None, nil
+		}),
+	}
 	importMod := func(m starlark.StringDict) {
 		for k, v := range m {
 			predeclared[k] = v
