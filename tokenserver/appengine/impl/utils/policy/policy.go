@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"go.chromium.org/luci/config"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -107,6 +108,14 @@ type ConfigFetcher interface {
 	// a concrete proto message class). May return transient error (e.g timeouts)
 	// and fatal ones (e.g bad proto file).
 	FetchTextProto(c context.Context, path string, out proto.Message) error
+
+	// FetchTextProtoFromService fetches text-serialized protobuf message at a given path
+	// from any luci service.
+	//
+	// The path is relative to the configSet provided.
+	//
+	// Otherwise behaves like FetchTextProto.
+	FetchTextProtoFromService(c context.Context, configSet config.Set, path string, out proto.Message) error
 }
 
 // ImportConfigs updates configs stored in the datastore.
