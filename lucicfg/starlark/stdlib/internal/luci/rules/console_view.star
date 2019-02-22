@@ -13,13 +13,14 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/io.star', 'io')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
 load('@stdlib//internal/luci/rules/console_view_entry.star', 'console_view_entry')
 
+load('@proto//luci/milo/project_config.proto', milo_pb='milo')
 
-# TODO(vadimsh): Add headers support.
 
 # TODO(vadimsh): Document how builders should be configured to be eligible for
 # inclusion into a console.
@@ -33,6 +34,7 @@ def console_view(
       refs_regexps=None,
       exclude_ref=None,
       include_experimental_builds=None,
+      header=None,
       favicon=None,
       entries=None,
   ):
@@ -60,6 +62,8 @@ def console_view(
   timestamps monotonically non-decreasing. Gerrit will take care of this if you
   require each commit to go through Gerrit by prohibiting "git push" on these
   refs.
+
+  #### Adding builders
 
   Builders that belong to the console can be specified either right here:
 
@@ -93,6 +97,44 @@ def console_view(
           category = 'ci',
       )
 
+  #### Console headers
+
+  Consoles can have headers which are collections of links, oncall rotation
+  information, and console summaries that are displayed at the top of a console,
+  below the tree status information. Links and oncall information is always laid
+  out to the left, while console groups are laid out to the right. Each oncall
+  and links group take up a row.
+
+  Header definitions are based on `Header` message in Milo's [project.proto].
+  There are two way to supply this message via `header` field:
+
+    * Pass an appropriately structured dict. Useful for defining small headers
+      inline:
+
+          luci.console_view(
+              ...
+              header = {
+                  'links': [
+                      {'name': '...', 'links': [...]},
+                      ...
+                  ],
+              },
+              ...
+          )
+
+    * Pass a string. It is treated as a path to a file with serialized
+      `Header` message. Depending on its extension, it is loaded ether as
+      JSONPB-encoded message (`*.json` and `*.jsonpb` paths), or as
+      TextPB-encoded message (everything else):
+
+          luci.console_view(
+              ...
+              header = '//consoles/main_header.textpb',
+              ...
+          )
+
+  [project.proto]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/milo/api/config/project.proto
+
   Args:
     name: a name of this console, will show up in URLs. Note that names of
         luci.console_view(...) and luci.list_view(...) are in the same namespace
@@ -117,6 +159,9 @@ def console_view(
         force pushes to this ref are not supported. Milo uses caching assuming
         set of commits reachable from this ref may only grow, never lose some
         commits.
+    header: either a string with a path to the file with the header definition
+        (see io.read_file(...) for the acceptable path format), or a dict with
+        the header definition.
     include_experimental_builds: if True, this console will not filter out
         builds marked as Experimental. By default consoles only show production
         builds.
@@ -134,6 +179,14 @@ def console_view(
   if not refs and not refs_regexps:
     refs = ['refs/heads/master']
 
+  if header != None:
+    if type(header) == 'dict':
+      header = milo_pb.Header(**header)
+    elif type(header) == 'string':
+      header = io.read_proto(milo_pb.Header, header)
+    else:
+      fail('bad "header": got %s, want string or dict' % type(header))
+
   return view.add_view(
       key = keys.console_view(name),
       entry_kind = kinds.CONSOLE_VIEW_ENTRY,
@@ -146,6 +199,7 @@ def console_view(
           'refs': refs,
           'refs_regexps': refs_regexps,
           'exclude_ref': validate.string('exclude_ref', exclude_ref, required=False),
+          'header': header,
           'include_experimental_builds': validate.bool('include_experimental_builds', include_experimental_builds, required=False),
           'favicon': validate.string('favicon', favicon, regexp=r'https://storage\.googleapis\.com/.+', required=False),
       },

@@ -563,6 +563,7 @@ def _milo_console_view(view, opts, project_name):
   return milo_pb.Console(
       id = view.props.name,
       name = view.props.title,
+      header = view.props.header,
 
       repo_url = view.props.repo,
       refs = refs,
