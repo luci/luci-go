@@ -219,14 +219,20 @@ type ServiceConfig struct {
 	LastUpdated time.Time
 }
 
-// ReplaceNSEWith takes an errors.MultiError returned by a datastore.Get() on a slice
-// (which is always a MultiError), filters out all datastore.ErrNoSuchEntitiy
-// or replaces it with replacement instances, and returns an error generated
-// by errors.LazyMultiError.
-func ReplaceNSEWith(err errors.MultiError, replacement error) error {
-	lme := errors.NewLazyMultiError(len(err))
-	for i, ierr := range err {
-		if ierr == datastore.ErrNoSuchEntity {
+// ReplaceErrorWith takes an error that may be a multierror and replaces all instances of
+// source with replacement.
+func ReplaceErrorWith(err, source, replacement error) error {
+	merr, ok := err.(errors.MultiError)
+	// We didn't get a MultiError, just check the single error.
+	if !ok {
+		if err == source {
+			return replacement
+		}
+		return err
+	}
+	lme := errors.NewLazyMultiError(len(merr))
+	for i, ierr := range merr {
+		if ierr == source {
 			ierr = replacement
 		}
 		lme.Assign(i, ierr)
@@ -592,14 +598,20 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 //
 // TODO-perf(iannucci,hinoka): Memcache this.
 func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
-	result := make([]*Console, len(consoles))
+	buf := make([]*Console, len(consoles))
 	for i, con := range consoles {
-		result[i] = con.SetID(c, nil)
+		buf[i] = con.SetID(c, nil)
 	}
-	if err := datastore.Get(c, result); err != nil {
-		return result, ReplaceNSEWith(err.(errors.MultiError), ErrConsoleNotFound)
+	err := datastore.Get(c, buf)
+	err = ReplaceErrorWith(err.(errors.MultiError), datastore.ErrNoSuchEntity, ErrConsoleNotFound)
+	// Condense results.
+	results := make([]*Console, 0, len(buf))
+	for _, con := range buf {
+		if con != nil {
+			results = append(results, con)
+		}
 	}
-	return result, nil
+	return results, err
 }
 
 // Config validation rules go here.

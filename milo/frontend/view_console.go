@@ -541,8 +541,9 @@ func ConsoleHandler(c *router.Context) error {
 			return err
 		}
 		headerCons, err = common.GetConsoles(c.Context, ids)
-		if err != nil {
-			return errors.Annotate(err, "error getting header consoles").Err()
+		// Ignore errors about header consoles not existing.  They will just not show up.
+		if ierr := common.ReplaceErrorWith(err, common.ErrConsoleNotFound, nil); ierr != nil {
+			return errors.Annotate(ierr, "error getting header consoles").Err()
 		}
 	}
 	if err := filterUnauthorizedBuildersFromConsoles(c.Context, append(headerCons, con)); err != nil {

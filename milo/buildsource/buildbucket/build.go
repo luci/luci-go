@@ -140,7 +140,7 @@ func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 	q := datastore.NewQuery("BuildSummary").Eq("ContextURI", uri).Limit(1)
 	switch err := datastore.GetAll(c, q, &bs); {
 	case err != nil:
-		return nil, common.ReplaceNSEWith(err.(errors.MultiError), ErrNotFound)
+		return nil, common.ReplaceErrorWith(err, datastore.ErrNoSuchEntity, ErrNotFound)
 	case len(bs) == 0:
 		return nil, ErrNotFound
 	default:
