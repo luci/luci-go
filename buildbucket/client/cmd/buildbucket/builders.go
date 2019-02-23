@@ -14,6 +14,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/maruel/subcommands"
 
@@ -71,6 +72,26 @@ func (r *convertBuildersRun) convertStreams(in io.Reader, out io.Writer) error {
 	return writeConfig(out, output)
 }
 
+func (r *convertBuildersRun) cipdPkg() string {
+	ret := r.recipeRepo
+	// trim off 'http://' and 'https://'
+	ret = strings.TrimPrefix(ret, "http://")
+	ret = strings.TrimPrefix(ret, "https://")
+
+	// trim off '.git'
+	ret = strings.TrimSuffix(ret, ".git")
+
+	// remove '/a/'
+	ret = strings.Replace(ret, "/a/", "/", 1)
+
+	if strings.Contains(ret, "-internal") {
+		ret = "infra_internal/recipe_bundles/" + ret
+	} else {
+		ret = "infra/recipe_bundles/" + ret
+	}
+	return ret
+}
+
 func (r *convertBuildersRun) convert(in *buildersFile) (*configpb.Swarming, error) {
 	if len(in.Builders) == 0 {
 		return nil, fmt.Errorf("no builders")
@@ -83,13 +104,15 @@ func (r *convertBuildersRun) convert(in *buildersFile) (*configpb.Swarming, erro
 	commonDims["pool"] = r.poolDim
 	commonProps := in.commonProperties()
 	commonProperties, commonPropertiesJ := encodeProperties(commonProps)
+
 	out := &configpb.Swarming{
 		BuilderDefaults: &configpb.Builder{
 			Recipe: &configpb.Builder_Recipe{
 				Name:        in.commonRecipe(),
 				Properties:  commonProperties,
 				PropertiesJ: commonPropertiesJ,
-				Repository:  r.recipeRepo,
+				CipdPackage: r.cipdPkg(),
+				CipdVersion: "refs/heads/master",
 			},
 			Dimensions:   mapToList(commonDims),
 			SwarmingTags: []string{"allow_milo:1"},
@@ -336,8 +359,10 @@ func writeConfig(w io.Writer, cfg *configpb.Swarming) error {
 	}
 
 	printRecipe := func(r *configpb.Builder_Recipe) {
-		pstr("repository", r.GetRepository())
 		pstr("name", r.GetName())
+
+		pstr("cipd_package", r.GetCipdPackage())
+		pstr("cipd_version", r.GetCipdVersion())
 
 		var properties []string
 		fieldName := make(map[string]string, len(r.Properties)+len(r.PropertiesJ))
@@ -364,8 +389,9 @@ func writeConfig(w io.Writer, cfg *configpb.Swarming) error {
 			p("execution_timeout_secs: %d", b.GetExecutionTimeoutSecs())
 		}
 
-		if b.Recipe.GetRepository() != "" || b.Recipe.GetName() != "" ||
-			len(b.Recipe.Properties) > 0 || len(b.Recipe.PropertiesJ) > 0 {
+		if b.Recipe.GetCipdPackage() != "" || b.Recipe.GetCipdVersion() != "" ||
+			b.Recipe.GetName() != "" || len(b.Recipe.Properties) > 0 ||
+			len(b.Recipe.PropertiesJ) > 0 {
 			p("recipe {")
 			indented.Level += 2
 			printRecipe(b.Recipe)

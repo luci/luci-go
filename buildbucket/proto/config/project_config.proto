@@ -158,15 +158,16 @@ message Builder {
 
   // Specifies a recipe to run.
   message Recipe {
-    // Repository URL of the recipe package.
-    // Value "-" is treated as unset.
-    string repository = 1;
+    // Deprecated "repository" mode used git to bootstrap recipes directly from
+    // the recipe repo. Use `cipd_package` ++ `cipd_version` below instead, as
+    // they are faster, more reliable, and more flexible (because they could be
+    // used to provide non-git, non-python recipes).
+    reserved 1; // repository
 
     // Name of the recipe to run.
     string name = 2;
 
-    // If set, will use CIPD to fetch the recipes, rather than using git. This
-    // obsoletes the `repository` parameter.
+    // The CIPD package to fetch the recipes from.
     //
     // Typically the package will look like:
     //
