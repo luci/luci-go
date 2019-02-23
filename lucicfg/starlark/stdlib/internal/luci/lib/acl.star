@@ -65,7 +65,7 @@ _entry_ctor = __native__.genstruct('acl.entry')
 _elementary_ctor = __native__.genstruct('acl.elementary')
 
 
-def _role(name, project_level_only=False, groups_only=False):
+def _role(name, *, project_level_only=False, groups_only=False):
   """Defines a role.
 
   Internal API. Only predefined roles are available publicly, see the bottom of
@@ -86,7 +86,7 @@ def _role(name, project_level_only=False, groups_only=False):
   )
 
 
-def _entry(roles, groups=None, users=None):
+def _entry(roles, *, groups=None, users=None):
   """Returns an ACL binding which assigns given role (or roles) to given
   individuals or groups.
 

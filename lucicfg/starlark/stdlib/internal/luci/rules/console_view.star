@@ -27,6 +27,7 @@ load('@proto//luci/milo/project_config.proto', milo_pb='milo')
 
 
 def console_view(
+      *,
       name=None,
       title=None,
       repo=None,
@@ -36,7 +37,7 @@ def console_view(
       include_experimental_builds=None,
       header=None,
       favicon=None,
-      entries=None,
+      entries=None
   ):
   """A Milo UI view that displays a table-like console where columns are
   builders and rows are git commits on which builders are triggered.

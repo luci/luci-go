@@ -19,7 +19,7 @@ load('@stdlib//internal/luci/common.star', 'keys')
 load('@stdlib//internal/luci/lib/acl.star', 'aclimpl')
 
 
-def bucket(name=None, acls=None):
+def bucket(*, name=None, acls=None):
   """Defines a bucket: a container for LUCI resources that share the same ACL.
 
   Args:

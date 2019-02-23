@@ -43,7 +43,7 @@ load('@stdlib//another.star', 'ext1', ext2='ext_name')
 #   With indent.
 #
 # More.
-def func1(a, b, c=None, *arg, **kwargs):
+def func1(*, a, b, c=None, **kwargs):
   """Doc string.
 
   Multiline.
@@ -132,7 +132,7 @@ func TestParseModule(t *testing.T) {
 			So(r.Filename(), ShouldEqual, "mod.star")
 
 			// Spans the entire function definition.
-			So(extractSpan(goodInput, l, r), ShouldEqual, `def func1(a, b, c=None, *arg, **kwargs):
+			So(extractSpan(goodInput, l, r), ShouldEqual, `def func1(*, a, b, c=None, **kwargs):
   """Doc string.
 
   Multiline.
