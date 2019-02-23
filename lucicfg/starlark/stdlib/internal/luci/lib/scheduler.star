@@ -19,10 +19,11 @@ load('@proto//luci/scheduler/project_config.proto', scheduler_pb='scheduler.conf
 
 
 def _policy(
+      *,
       kind,
       max_concurrent_invocations=None,
       max_batch_size=None,
-      log_base=None,
+      log_base=None
   ):
   """Policy for how LUCI Scheduler should handle incoming triggering requests.
 
@@ -86,7 +87,7 @@ def _policy(
   return policy
 
 
-def _greedy_batching(max_concurrent_invocations=None, max_batch_size=None):
+def _greedy_batching(*, max_concurrent_invocations=None, max_batch_size=None):
   """A shortcut for `scheduler.policy(scheduler.GREEDY_BATCHING_KIND, ...).`
 
   See scheduler.policy(...) for all details.
@@ -103,9 +104,10 @@ def _greedy_batching(max_concurrent_invocations=None, max_batch_size=None):
 
 
 def _logarithmic_batching(
+      *,
       log_base,
       max_concurrent_invocations=None,
-      max_batch_size=None,
+      max_batch_size=None
   ):
   """A shortcut for `scheduler.policy(scheduler.LOGARITHMIC_BATCHING_KIND, ...)`.
 

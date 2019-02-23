@@ -16,6 +16,5 @@ luci.builder(
 #
 # Traceback (most recent call last):
 #   //testdata/errors/wrong_kind.star:7: in <toplevel>
-#   @stdlib//internal/luci/rules/builder.star:165: in builder
 #   ...
 # Error: expecting luci.bucket, got luci.recipe
