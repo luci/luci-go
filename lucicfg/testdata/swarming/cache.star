@@ -8,15 +8,28 @@ def test_cache_ctor():
     assert.eq(c.wait_for_warm_cache, wait)
 
   eq(swarming.cache('path'), 'path', 'path', None)
-  eq(swarming.cache('path', 'name', 5*time.minute), 'path', 'name', 5*time.minute)
+  eq(
+      swarming.cache(
+          'path',
+          name='name',
+          wait_for_warm_cache=5*time.minute,
+      ),
+      'path', 'name', 5*time.minute,
+  )
 
-  assert.fails(lambda: swarming.cache('', 'n'), 'must not be empty')
-  assert.fails(lambda: swarming.cache('p', ''), 'must not be empty')
+  assert.fails(lambda: swarming.cache('', name='n'), 'must not be empty')
+  assert.fails(lambda: swarming.cache('p', name=''), 'must not be empty')
 
   # Duration validation.
-  assert.fails(lambda: swarming.cache('p', 'n', 300), 'got int, want duration')
-  assert.fails(lambda: swarming.cache('p', 'n', time.zero), '0s should be >= 1m0s')
-  assert.fails(lambda: swarming.cache('p', 'n', 61*time.second), 'losing precision when truncating 1m1s to 1m0s units')
+  assert.fails(
+      lambda: swarming.cache('p', name='n', wait_for_warm_cache=300),
+      'got int, want duration')
+  assert.fails(
+      lambda: swarming.cache('p', name='n', wait_for_warm_cache=time.zero),
+      '0s should be >= 1m0s')
+  assert.fails(
+      lambda: swarming.cache('p', name='n', wait_for_warm_cache=61*time.second),
+      'losing precision when truncating 1m1s to 1m0s units')
 
 
 def test_validate_caches():
