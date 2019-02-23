@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "550f9ef1_bf2d968d",
+        "filename": "buildbucket/client/cmd/buildbucket/builders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-23T02:38:13Z",
+      "side": 1,
+      "message": "(this function is o_O)",
+      "range": {
+        "startLine": 340,
+        "startChar": 5,
+        "endLine": 340,
+        "endChar": 16
+      },
+      "revId": "21c777f245a940eb73f7b16e26ed446270d26347",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
