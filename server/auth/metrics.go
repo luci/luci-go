@@ -46,6 +46,13 @@ var (
 		&types.MetricMetadata{Units: types.Microseconds},
 		distribution.DefaultBucketer,
 		field.String("result"))
+
+	mintProjectTokenDuration = metric.NewCumulativeDistribution(
+		"luci/auth/methods/mint_project_token",
+		"Distribution of 'MintProjectToken' call durations per result.",
+		&types.MetricMetadata{Units: types.Microseconds},
+		distribution.DefaultBucketer,
+		field.String("result"))
 )
 
 func durationReporter(c context.Context, m metric.CumulativeDistribution) func(error, string) {
