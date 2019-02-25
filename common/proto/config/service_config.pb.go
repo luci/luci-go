@@ -143,6 +143,10 @@ func (m *ConfigSetLocation) GetStorageType() ConfigSetLocation_StorageType {
 type IdentityConfig struct {
 	// ServiceAccountEmail is the full service account email to use when
 	// LUCI acts on behalf of the project.
+	//
+	// Note: Due to token caching, it takes ~15 minutes for a config change
+	// to become effective. Keep this in mind when migrating projects to a
+	// new identity.
 	ServiceAccountEmail  string   `protobuf:"bytes,1,opt,name=service_account_email,json=serviceAccountEmail,proto3" json:"service_account_email,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
