@@ -19,10 +19,11 @@ load('@stdlib//internal/luci/common.star', 'keys')
 
 
 def recipe(
+      *,
       name=None,
       cipd_package=None,
       cipd_version=None,
-      recipe=None,
+      recipe=None
   ):
   """Defines where to locate a particular recipe.
 

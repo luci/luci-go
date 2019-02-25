@@ -19,11 +19,12 @@ def _version():
 
 
 def _config(
+      *,
       config_service_host=None,
       config_set=None,
       config_dir=None,
       tracked_files=None,
-      fail_on_warnings=None,
+      fail_on_warnings=None
   ):
   """Sets one or more parameters for the `lucicfg` itself.
 
@@ -110,7 +111,7 @@ def _generator(impl):
   __native__.add_generator(impl)
 
 
-def _var(default=None, validator=None):
+def _var(*, default=None, validator=None):
   """Declares a variable.
 
   A variable is a slot that can hold some frozen value. Initially this slot is

@@ -19,13 +19,14 @@ load('@stdlib//internal/luci/common.star', 'keys', 'triggerer')
 
 
 def gitiles_poller(
+      *,
       name=None,
       bucket=None,
       repo=None,
       refs=None,
       refs_regexps=None,
       schedule=None,
-      triggers=None,
+      triggers=None
   ):
   """Defines a gitiles poller which can trigger builders on git commits.
 

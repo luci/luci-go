@@ -6,17 +6,17 @@ def test_dimension_ctor():
     assert.eq(dim.value, value)
     assert.eq(dim.expiration, expiration)
   eq(swarming.dimension('abc'), 'abc', None)
-  eq(swarming.dimension('abc', time.minute), 'abc', time.minute)
-  eq(swarming.dimension('abc', 5*time.minute), 'abc', 5*time.minute)
+  eq(swarming.dimension('abc', expiration=time.minute), 'abc', time.minute)
+  eq(swarming.dimension('abc', expiration=5*time.minute), 'abc', 5*time.minute)
 
   # 'value' validation.
   assert.fails(lambda: swarming.dimension(123), 'got int, want string')
   assert.fails(lambda: swarming.dimension(''), 'must not be empty')
 
   # 'expiration' validation.
-  assert.fails(lambda: swarming.dimension('a', 300), 'got int, want duration')
-  assert.fails(lambda: swarming.dimension('a', time.zero), '0s should be >= 1m0s')
-  assert.fails(lambda: swarming.dimension('a', 61*time.second), 'losing precision when truncating 1m1s to 1m0s units')
+  assert.fails(lambda: swarming.dimension('a', expiration=300), 'got int, want duration')
+  assert.fails(lambda: swarming.dimension('a', expiration=time.zero), '0s should be >= 1m0s')
+  assert.fails(lambda: swarming.dimension('a', expiration=61*time.second), 'losing precision when truncating 1m1s to 1m0s units')
 
 
 def test_validate_dimensions():

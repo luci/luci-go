@@ -18,7 +18,7 @@ load('@stdlib//internal/validate.star', 'validate')
 load('@stdlib//internal/luci/common.star', 'keys')
 
 
-def logdog(gs_bucket=None):
+def logdog(*, gs_bucket=None):
   """Defines configuration of the LogDog service for this project.
 
   Usually required for any non-trivial project.

@@ -21,6 +21,7 @@ load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
 
 
 def builder(
+      *,
       name=None,
       bucket=None,
       recipe=None,
@@ -51,7 +52,7 @@ def builder(
 
       # Relations.
       triggers=None,
-      triggered_by=None,
+      triggered_by=None
   ):
   """Defines a generic builder.
 

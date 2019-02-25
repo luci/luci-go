@@ -21,6 +21,7 @@ load('@stdlib//internal/luci/lib/service.star', 'service')
 
 
 def project(
+      *,
       name=None,
 
       buildbucket=None,
@@ -29,7 +30,7 @@ def project(
       scheduler=None,
       swarming=None,
 
-      acls=None,
+      acls=None
   ):
   """Defines a LUCI project.
 

@@ -22,12 +22,13 @@ _ALLOWED_STORAGE_RE = r'https://storage\.googleapis\.com/.+'
 
 
 def milo(
+      *,
       logo=None,
       favicon=None,
       monorail_project=None,
       monorail_components=None,
       bug_summary=None,
-      bug_description=None,
+      bug_description=None
   ):
   """Defines optional configuration of the Milo service for this project.
 

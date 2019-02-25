@@ -22,10 +22,11 @@ load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
 
 def console_view_entry(
       builder=None,
+      *,
       short_name=None,
       category=None,
       console_view=None,
-      buildbot=None,
+      buildbot=None
   ):
   """A builder entry in some luci.console_view(...).
 

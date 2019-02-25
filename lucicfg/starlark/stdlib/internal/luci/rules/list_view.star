@@ -20,10 +20,11 @@ load('@stdlib//internal/luci/rules/list_view_entry.star', 'list_view_entry')
 
 
 def list_view(
+      *,
       name=None,
       title=None,
       favicon=None,
-      entries=None,
+      entries=None
   ):
   """A Milo UI view that displays a list of builders.
 
