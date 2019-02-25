@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6cbdb078_ce08f3e5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-25T01:21:19Z",
+      "side": 1,
+      "message": "tbh, I haven\u0027t found where exactly you allow empty configs now (and why they weren\u0027t before).",
+      "range": {
+        "startLine": 7,
+        "startChar": 6,
+        "endLine": 7,
+        "endChar": 25
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ae7a0c2_c05a200b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-25T01:21:19Z",
+      "side": 1,
+      "message": "0) Isn\u0027t it better to only consider configs which are intended (ie at the same revision) as consistent?\n\nie, suppose I modified a VMs block, its corresponding kind and metadata in a single CL of infradata/config repo. I certainly don\u0027t want gce-provider to interpret only 33% or 67% of my change as it makes understanding the system harder.\n\n1) does LUCI-config guarantee that **eventually** (assuming nobody commits changes to infradata/config) revision of all configs used by gce-provider will be the same? AFAIU, the answer is yes since all config files are coming from the same configset (services/gce-provider).\n\n\n2) assuming 1), can MP wait instead till 1) is true instead?",
+      "range": {
+        "startLine": 13,
+        "startChar": 60,
+        "endLine": 18,
+        "endChar": 8
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b325f29_212c92bf",
+        "filename": "gce/api/config/v1/configs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-25T01:21:19Z",
+      "side": 1,
+      "message": "GetVMs() is useful only if cfgs\u003d\u003dnil, but it\u0027s not clear why you\u0027d allow such a case.\n\nSimilarly throughout this CL, where it seems to me most changes from .XYZ to GetXYZ() weren\u0027t necessary",
+      "range": {
+        "startLine": 25,
+        "startChar": 40,
+        "endLine": 25,
+        "endChar": 48
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f32d8b8e_bb0dd0f1",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-25T01:21:19Z",
+      "side": 1,
+      "message": "why extra indirection? It can be just\n[]*gce.Kind\nand the same for below. Then, code below won\u0027t need awkward config.Kinds.kind\n\nditto for the VMs.",
+      "range": {
+        "startLine": 48,
+        "startChar": 7,
+        "endLine": 48,
+        "endChar": 17
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "deffb5d2_ca39d208",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-25T01:21:19Z",
+      "side": 1,
+      "message": "\u0026\n\nsince you are returning it from this func.",
+      "range": {
+        "startLine": 98,
+        "startChar": 9,
+        "endLine": 98,
+        "endChar": 10
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2d25cdd_c816d31e",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-25T01:21:19Z",
+      "side": 1,
+      "message": "\u0026",
+      "range": {
+        "startLine": 111,
+        "startChar": 7,
+        "endLine": 111,
+        "endChar": 8
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24d6b083_46730d59",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-25T01:21:19Z",
+      "side": 1,
+      "message": "pretty sure this is not necessary: cfg.VMs is not nil by construction of Config in L123-126.",
+      "range": {
+        "startLine": 143,
+        "startChar": 26,
+        "endLine": 143,
+        "endChar": 35
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
