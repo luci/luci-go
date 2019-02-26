@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
 
@@ -245,10 +246,17 @@ func TestDispatcher(t *testing.T) {
 			So(rw.Code, ShouldEqual, 202) // no retry!
 			So(rw.Body.String(), ShouldEqual, "Fatal error: fatal err\n")
 
-			returnErr = transient.Tag.Apply(fmt.Errorf("transient err"))
+			// 500 for retry on transient errors.
+			returnErr = errors.New("transient err", transient.Tag)
 			rw = execute(goodBody)
-			So(rw.Code, ShouldEqual, 500) // 500 for retry
+			So(rw.Code, ShouldEqual, 500)
 			So(rw.Body.String(), ShouldEqual, "Transient error: transient err\n")
+
+			// 409 for retry on Retry-tagged errors. Retry tag trumps transient.Tag.
+			returnErr = errors.New("retry me", transient.Tag, Retry)
+			rw = execute(goodBody)
+			So(rw.Code, ShouldEqual, 409)
+			So(rw.Body.String(), ShouldEqual, "The handler asked for retry: retry me\n")
 
 			// Error conditions when routing the task.
 

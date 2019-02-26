@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -36,15 +37,26 @@ import (
 )
 
 // errUpdateConflict means Invocation is being modified by two TaskController's
-// concurrently. It should not be happening often. If it happens, task queue
-// call is retried to rerun the two-part transaction from scratch.
+// concurrently. It should not be happening often. The most likely situation
+// is when the same invocation is poked via a timer and via an external PubSub
+// event at the exact same time.
 //
-// This error is marked as transient, since it should trigger a retry on the
-// task queue level. At the same time we don't want the transaction itself to be
-// retried (it's useless to retry the second part of a two-part transaction, the
-// result will be the same), so we tag the error with abortTransaction. See
-// runTxn for more info.
-var errUpdateConflict = errors.New("concurrent modifications of single Invocation", transient.Tag, abortTransaction)
+// This error is marked as transient to indicate to the scheduler guts that this
+// is a transient condition (there's a bunch of transient.Tag.In checks which
+// are sensitive to this). At the same time we don't want to keep retrying
+// the second part of a two-part transaction: it's useless, the result will be
+// the same conflict. So the error is tagged with abortTransaction to exit the
+// inner retry loop in runTxn.
+//
+// Finally, we do want to retry the entire two-part transaction. To indicate
+// this, the error is tagged with tq.Retry. It signals to the task queue layer
+// (and to the pubsub) that the task should be redelivered later.
+var errUpdateConflict = errors.New(
+	"concurrent modifications of an Invocation",
+	transient.Tag,
+	abortTransaction,
+	tq.Retry,
+)
 
 // taskController manages execution of single invocation.
 //
@@ -233,8 +245,10 @@ func (ctl *taskController) EmitTrigger(ctx context.Context, trigger *internal.Tr
 // Save uploads updated Invocation to the datastore, updating the state of the
 // corresponding job, if necessary.
 //
-// May return transient errors. In particular returns errUpdateConflict if the
-// invocation was modified by some other task controller concurrently.
+// Returns errUpdateConflict if the invocation was modified by some other task
+// controller concurrently.
+//
+// May also return transient errors (on RPC timeouts, etc).
 func (ctl *taskController) Save(ctx context.Context) (err error) {
 	// Log the intent to trigger jobs, if any.
 	if len(ctl.triggers) != 0 && len(ctl.saved.TriggeredJobIDs) != 0 {

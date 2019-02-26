@@ -30,6 +30,7 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/appengine/tq"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -336,7 +337,7 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 		if err := m.checkBuildStatus(c, ctl); err != nil {
 			// This is either a fatal or transient error. If it is fatal, no need to
 			// schedule the timer anymore. If it is transient, HandleTimer call itself
-			// will be retried and the timer when be rescheduled then.
+			// will be retried and the timer will be rescheduled then.
 			return err
 		}
 		m.checkBuildStatusLater(c, ctl) // reschedule this check
@@ -394,7 +395,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 	// still running LaunchTask when saving the invocation, it will only make the
 	// matters worse.
 	case status == task.StatusStarting:
-		return errors.New("invocation is still starting, try again later", transient.Tag)
+		return errors.New("invocation is still starting, try again later", transient.Tag, tq.Retry)
 	case status != task.StatusRunning:
 		return fmt.Errorf("unexpected invocation status %q, expecting %q", status, task.StatusRunning)
 	}
