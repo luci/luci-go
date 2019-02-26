@@ -20,15 +20,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/rand"
-	"net/http"
 	"os"
 	"regexp"
 	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/http2"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/internal/common"
@@ -199,25 +196,6 @@ func (c *collectRun) Parse(args *[]string) error {
 	return err
 }
 
-// concurentHTTP2 implements http.RoundTripper for highly concurrent http2
-// requests using "https". When we need to do highly parallel http2 request,
-// http2 request may be blocked by maxConcurrentStreams per http2.Transport. To
-// bypass such limitation, conccurentHTTP2 can use several number of
-// http2.Transport.
-// TODO(tikuta): Remove this when crbug.com/825418 is fixed.
-type concurentHTTP2 struct {
-	transports []*http2.Transport
-}
-
-func (c concurentHTTP2) RoundTrip(req *http.Request) (*http.Response, error) {
-	if req.URL.Scheme == "https" {
-		// This is hack to prevent using http2 for localhost.
-		return c.transports[rand.Intn(len(c.transports))].RoundTrip(req)
-	}
-	return http.DefaultTransport.RoundTrip(req)
-
-}
-
 func (c *collectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if err := c.Parse(&args); err != nil {
 		printError(a, err)
@@ -231,17 +209,6 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 	if err = cl.Close(); err != nil {
 		printError(a, err)
 		return 1
-	}
-
-	if c.worker >= 10 {
-		// TODO(tikuta): Tune this parameter (c.worker/10) if necessary.
-		transports := make([]*http2.Transport, c.worker/10)
-		for i := range transports {
-			transports[i] = &http2.Transport{}
-		}
-		c.parsedAuthOpts.Transport = &concurentHTTP2{
-			transports: transports,
-		}
 	}
 
 	if err := c.main(a, args); err != nil {
