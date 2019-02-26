@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "87e62065_e78c2759",
+        "filename": "appengine/tq/tq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-26T02:46:20Z",
+      "side": 1,
+      "message": "### bikeshed start:\nI disagree. It\u0027s not only about the state of the handler. It\u0027s about degree of \"preparedness\" of my handler to a given situation.\n\nRealistic example in CQ: Gerrit RPCs it calls are known to take longish time and hence frequently time out. Since CQ is prepared for this, I think Retry tag is justified. Of course, this would also mean that CQ must be able to detect and reporting in a different metric a situation of Gerrit RPC timing out all the time, ie where retries aren\u0027t helpful.\n\n### bikeshed end.\n\n\nThe last bit gave me a thought: can we keep track a number of times the same task was retried and somehow emit different metric counting 3rd level retries, even if marked by Retry tag? (doesn\u0027t need to be part of this CL)",
+      "range": {
+        "startLine": 166,
+        "startChar": 8,
+        "endLine": 168,
+        "endChar": 47
+      },
+      "revId": "bc12ff1b0da4b50e9689bd5427abf92d3e70279f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
