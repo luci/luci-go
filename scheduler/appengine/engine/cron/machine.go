@@ -161,7 +161,7 @@ func (m *Machine) Enable() {
 			Generation: m.nextGen(),
 			LastRewind: m.Now,
 		}
-		m.scheduleTick()
+		m.scheduleTick(m.Now)
 	}
 }
 
@@ -177,11 +177,7 @@ func (m *Machine) Disable() {
 //
 // Does nothing if the cron is disabled or already ticking.
 func (m *Machine) RewindIfNecessary() {
-	if m.State.Enabled && m.State.LastTick.When.IsZero() {
-		m.State.LastRewind = m.Now
-		m.State.Generation = m.nextGen()
-		m.scheduleTick()
-	}
+	m.rewindIfNecessary(m.Now)
 }
 
 // OnScheduleChange happens when cron's schedule changes.
@@ -213,7 +209,7 @@ func (m *Machine) OnScheduleChange() {
 		// last rewind happened at moment X, current time is Now, and the new
 		// schedule is "with 10s interval", we want the tick to happen at "X+10",
 		// not "Now+10".
-		m.scheduleTick()
+		m.scheduleTick(m.Now)
 	}
 }
 
@@ -231,10 +227,20 @@ func (m *Machine) OnTimerTick(tickNonce int64) error {
 	}
 
 	// Report error (to trigger a retry) if the tick happened unexpectedly soon.
-	// Absolute schedules may report "wrong" next tick time if asked for a next
-	// tick before previous one has happened.
-	if delay := m.Now.Sub(m.State.LastTick.When); delay < 0 {
-		return fmt.Errorf("tick happened %.1f sec before it was expected", -delay.Seconds())
+	// Allow up to 50ms clock drift, but correct it to be 0. This is important for
+	// getting the correct next tick time from an absolute schedule. If we pass
+	// m.Now to the cron schedule uncorrected, we'll just get the time of the
+	// already scheduled tick (the one we are handling now, since uncorrected
+	// m.Now is before it).
+	//
+	// Note that m.Now is part of inputs and must not be mutated. We propagate
+	// the corrected time via the call stack.
+	now := m.Now
+	switch delay := now.Sub(m.State.LastTick.When); {
+	case delay < -50*time.Millisecond:
+		return fmt.Errorf("tick happened %s before it was expected", -delay)
+	case delay < 0:
+		now = m.State.LastTick.When
 	}
 
 	// The scheduled time has come!
@@ -248,7 +254,7 @@ func (m *Machine) OnTimerTick(tickNonce int64) error {
 	// keep the tick state clear for relative schedules: new tick will be set when
 	// RewindIfNecessary() is manually called by whoever handles the cron.
 	if m.Schedule.IsAbsolute() {
-		m.RewindIfNecessary()
+		m.rewindIfNecessary(now)
 	}
 
 	return nil
@@ -258,8 +264,8 @@ func (m *Machine) OnTimerTick(tickNonce int64) error {
 // time, and last time RewindIfNecessary was called.
 //
 // Does nothing if such tick has already been scheduled.
-func (m *Machine) scheduleTick() {
-	nextTickTime := m.Schedule.Next(m.Now, m.State.LastRewind)
+func (m *Machine) scheduleTick(now time.Time) {
+	nextTickTime := m.Schedule.Next(now, m.State.LastRewind)
 	if nextTickTime != m.State.LastTick.When {
 		m.State.Generation = m.nextGen()
 		m.State.LastTick = TickLaterAction{
@@ -277,4 +283,16 @@ func (m *Machine) scheduleTick() {
 // It does NOT update Generation in-place, just produces the next number.
 func (m *Machine) nextGen() int64 {
 	return m.State.Generation + 1
+}
+
+// rewindIfNecessary implements RewindIfNecessary, accepting corrected 'now'.
+//
+// This is important for OnTimerTick. Note that m.Now is part of inputs and must
+// not be mutated.
+func (m *Machine) rewindIfNecessary(now time.Time) {
+	if m.State.Enabled && m.State.LastTick.When.IsZero() {
+		m.State.LastRewind = now
+		m.State.Generation = m.nextGen()
+		m.scheduleTick(now)
+	}
 }

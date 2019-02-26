@@ -59,13 +59,14 @@ func TestMachine(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(tm.Actions, ShouldBeNil)
 
-		// Early tick is ignored with an error.
-		tm.Now = parseTime("00:59")
+		// Very early tick is ignored with an error.
+		tm.Now = parseTime("01:00").Add(-200 * time.Millisecond)
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
-		So(err.Error(), ShouldEqual, "tick happened 60.0 sec before it was expected")
+		So(err.Error(), ShouldEqual, "tick happened 200ms before it was expected")
 		So(tm.Actions, ShouldEqual, nil)
 
-		tm.Now = parseTime("01:01") // acceptable tick time (slightly late)!
+		// Slightly earlier tick (i.e. due to clock desync) is accepted.
+		tm.Now = parseTime("01:00").Add(-20 * time.Millisecond)
 
 		// A tick with wrong nonce is silently skipped.
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(123) })
