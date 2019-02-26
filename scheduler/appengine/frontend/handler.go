@@ -98,13 +98,20 @@ func (c *requestContext) fail(code int, msg string, args ...interface{}) {
 	http.Error(c.Writer, body, code)
 }
 
-// err sets status to 500 on transient errors or 202 on fatal ones. Returning
-// status code in range [200–299] is the only way to tell Task Queues to stop
-// retrying the task.
+// err sets status to 409 on tq.Retry errors, 500 on transient errors and 202 on
+// fatal ones. Returning status code in range [200–299] is the only way to tell
+// PubSub to stop redelivering the task.
 func (c *requestContext) err(e error, msg string, args ...interface{}) {
-	code := 500
-	if !transient.Tag.In(e) {
-		code = 202
+	code := 0
+	switch {
+	case e == nil:
+		panic("nil")
+	case tq.Retry.In(e):
+		code = 409
+	case transient.Tag.In(e):
+		code = 500
+	default:
+		code = 202 // fatal error, don't need a redelivery
 	}
 	args = append(args, e)
 	c.fail(code, msg+" - %s", args...)

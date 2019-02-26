@@ -194,6 +194,9 @@ type EngineInternal interface {
 	ResetAllJobsOnDevServer(c context.Context) error
 
 	// ProcessPubSubPush is called whenever incoming PubSub message is received.
+	//
+	// May return an error tagged with tq.Retry or transient.Tag. They indicate
+	// the message should be redelivered later.
 	ProcessPubSubPush(c context.Context, body []byte) error
 
 	// PullPubSubOnDevServer is called on dev server to pull messages from PubSub
@@ -678,9 +681,13 @@ func (e *engineImpl) PullPubSubOnDevServer(c context.Context, taskManagerName, p
 		logging.Infof(c, "No new PubSub messages")
 		return nil
 	}
-	err = e.handlePubSubMessage(c, msg)
-	if err == nil || !transient.Tag.In(err) {
-		ack() // ack only on success of fatal errors (to stop redelivery)
+	switch err = e.handlePubSubMessage(c, msg); {
+	case err == nil:
+		ack() // success
+	case transient.Tag.In(err) || tq.Retry.In(err):
+		// don't ack, ask for redelivery
+	default:
+		ack() // fatal error
 	}
 	return err
 }
