@@ -464,7 +464,7 @@ func (d *Dispatcher) processHTTPRequest(c *router.Context) {
 		httpReply(c, false, 500, "Failed to read request body: %s", err)
 		return
 	}
-	logging.Debugf(c.Context, "Received task (exec count %d): %s", body, headers.TaskExecutionCount)
+	logging.Debugf(c.Context, "Received task (exec count %d): %s", headers.TaskExecutionCount, body)
 
 	payload, err := deserializePayload(body)
 	if err != nil {
