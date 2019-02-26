@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "89652f9e_6b9900f4",
+        "filename": "appengine/tq/tq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-26T03:03:36Z",
+      "side": 1,
+      "message": "\u003e I didn\u0027t understand what you propose. Change the comment? Change the implementation?\n\nOmitting \"state of the handler\" in this sentence will make me content :)\n\n\u003e We can do this with Task Queues, but not with PubSub.\n\nBetter than nothing I think, right?",
+      "parentUuid": "bd878241_33c4cc1c",
+      "range": {
+        "startLine": 166,
+        "startChar": 8,
+        "endLine": 168,
+        "endChar": 47
+      },
+      "revId": "bc12ff1b0da4b50e9689bd5427abf92d3e70279f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b323cd3_19f4da49",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 2
