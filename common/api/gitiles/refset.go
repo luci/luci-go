@@ -33,6 +33,13 @@ import (
 // all refs of the repo, incl. potentially huge number of refs in refs/changes/.
 type RefSet struct {
 	byPrefix map[string]*refSetPrefix
+
+	// These two fields are used by Resolve() method to compute missing refs.
+	literalRefs []string
+	regexpRefs  []struct {
+		ref string
+		re  *regexp.Regexp
+	}
 }
 
 // NewRefSet creates an instance of the RefSet.
@@ -51,10 +58,12 @@ type RefSet struct {
 //
 // See also ValidateRefSet function.
 func NewRefSet(refs []string) RefSet {
-	w := RefSet{map[string]*refSetPrefix{}}
+	w := RefSet{
+		byPrefix: map[string]*refSetPrefix{},
+	}
 	nsRegexps := map[string][]string{}
 	for _, ref := range refs {
-		prefix, literalRef, refRegexp := parseRef(ref)
+		prefix, literalRef, refRegexp, compiledRegexp := parseRef(ref)
 		if _, exists := w.byPrefix[prefix]; !exists {
 			w.byPrefix[prefix] = &refSetPrefix{prefix: prefix}
 		}
@@ -64,8 +73,13 @@ func NewRefSet(refs []string) RefSet {
 			panic("exactly one must be defined")
 		case refRegexp != "":
 			nsRegexps[prefix] = append(nsRegexps[prefix], refRegexp)
+			w.regexpRefs = append(w.regexpRefs, struct {
+				ref string
+				re  *regexp.Regexp
+			}{ref: ref, re: compiledRegexp})
 		case literalRef != "":
 			w.byPrefix[prefix].addLiteralRef(literalRef)
+			w.literalRefs = append(w.literalRefs, literalRef)
 		}
 	}
 
@@ -89,14 +103,16 @@ func (w RefSet) Has(ref string) bool {
 	return false
 }
 
-// Resolve returns map from watched ref to its resolved tip.
+// Resolve queries gitiles to resolve watched refs to git SHA1 hash of their
+// current tips.
 //
-// Refs, which don't exist or are not visible to requester, won't be included in
-// the map.
-func (w RefSet) Resolve(c context.Context, client gitiles.GitilesClient, project string) (map[string]string, error) {
+// Returns map from individual ref to its SHA1 hash and a list of original refs,
+// incl. regular expressions, which either don't exist or are not visible to the
+// requester.
+func (w RefSet) Resolve(c context.Context, client gitiles.GitilesClient, project string) (refTips map[string]string, missingRefs []string, err error) {
 	lock := sync.Mutex{} // for concurrent writes to the map
-	refTips := map[string]string{}
-	return refTips, parallel.FanOutIn(func(work chan<- func() error) {
+	refTips = map[string]string{}
+	err = parallel.FanOutIn(func(work chan<- func() error) {
 		for prefix := range w.byPrefix {
 			prefix := prefix
 			work <- func() error {
@@ -115,6 +131,33 @@ func (w RefSet) Resolve(c context.Context, client gitiles.GitilesClient, project
 			}
 		}
 	})
+	if err != nil {
+		return
+	}
+	// Compute missingRefs as those for which no actual ref was found.
+	for _, ref := range w.literalRefs {
+		if _, ok := refTips[ref]; !ok {
+			missingRefs = append(missingRefs, ref)
+		}
+	}
+	for _, r := range w.regexpRefs {
+		found := false
+		// This loop isn't the most efficient way to perform this search, and may
+		// result in executing MatchString O(refTips) times. If necessary to
+		// optimize, store individual regexps inside relevant refSetPrefix,
+		// and then mark corresponding regexps as "found" on the fly inside a
+		// goroutine working with the refSetPrefix.
+		for resolvedRef := range refTips {
+			if r.re.MatchString(resolvedRef) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			missingRefs = append(missingRefs, r.ref)
+		}
+	}
+	return
 }
 
 // ValidateRefSet validates strings representing a set of refs.
@@ -194,14 +237,11 @@ func validateRegexpRef(c *validation.Context, ref string) {
 	}
 }
 
-func parseRef(ref string) (prefix, literalRef, refRegexp string) {
+func parseRef(ref string) (prefix, literalRef, refRegexp string, compiledRegexp *regexp.Regexp) {
 	if strings.HasPrefix(ref, "regexp:") {
 		refRegexp = strings.TrimPrefix(ref, "regexp:")
-		descendantRegexp, err := regexp.Compile(refRegexp)
-		if err != nil {
-			panic(err)
-		}
-		literalPrefix, _ := descendantRegexp.LiteralPrefix()
+		compiledRegexp = regexp.MustCompile("^" + refRegexp + "$")
+		literalPrefix, _ := compiledRegexp.LiteralPrefix()
 		prefix = literalPrefix[:strings.LastIndex(literalPrefix, "/")]
 		return
 	}
@@ -209,6 +249,5 @@ func parseRef(ref string) (prefix, literalRef, refRegexp string) {
 	// Plain ref name, just extract the ref prefix from it.
 	lastSlash := strings.LastIndex(ref, "/")
 	prefix, literalRef = ref[:lastSlash], ref
-
 	return
 }

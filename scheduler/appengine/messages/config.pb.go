@@ -764,6 +764,9 @@ type GitilesTask struct {
 	//     the literal prefix "refs/release-" contains only one slash. The regexp
 	//     should not start with ^ or end with $ as they will be added
 	//     automatically.
+	//
+	// Each tracked ref, either fully qualified or regexp, must match at least 1
+	// ref in gitiles output.
 	Refs []string `protobuf:"bytes,2,rep,name=refs,proto3" json:"refs,omitempty"`
 	// Optional path_regexps and path_regexps_exclude are lists of regular
 	// expressions limiting emitted triggers only to commits whose tree diff

@@ -277,9 +277,12 @@ func (impl *implementation) CombinedLogs(c context.Context, host, project, exclu
 	}
 
 	// Resolve all refs and commits they are pointing at.
-	refTips, err := gitilesapi.NewRefSet(refs).Resolve(c, client, project)
+	refTips, missingRefs, err := gitilesapi.NewRefSet(refs).Resolve(c, client, project)
 	if err != nil {
 		return
+	}
+	if len(missingRefs) > 0 {
+		logging.Warningf(c, "configured refs %s weren't resolved to any ref; either incorrect ACLs or redudant refs", missingRefs)
 	}
 
 	var logs [][]*gitpb.Commit
