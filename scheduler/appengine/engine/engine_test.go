@@ -31,10 +31,12 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/taskqueue"
 
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
@@ -527,6 +529,11 @@ func TestProcessPubSubPush(t *testing.T) {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
 
+		tc := clock.Get(c).(testclock.TestClock)
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			tc.Add(d)
+		})
+
 		So(datastore.Put(c, &Job{
 			JobID:     "abc/1",
 			ProjectID: "abc",
@@ -558,7 +565,7 @@ func TestProcessPubSubPush(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(token, ShouldNotEqual, "")
 
-		Convey("ProcessPubSubPush works", func() {
+		Convey("ProcessPubSubPush works and retries tq.Retry errors", func() {
 			msg := struct {
 				Message pubsub.PubsubMessage `json:"message"`
 			}{
@@ -570,14 +577,17 @@ func TestProcessPubSubPush(t *testing.T) {
 			blob, err := json.Marshal(&msg)
 			So(err, ShouldBeNil)
 
-			handled := false
+			calls := 0
 			mgr.handleNotification = func(ctx context.Context, msg *pubsub.PubsubMessage) error {
 				So(msg.Data, ShouldEqual, "blah")
-				handled = true
+				calls++
+				if calls == 1 {
+					return errors.New("should be retried", tq.Retry)
+				}
 				return nil
 			}
 			So(e.ProcessPubSubPush(c, blob), ShouldBeNil)
-			So(handled, ShouldBeTrue)
+			So(calls, ShouldEqual, 2) // executed the retry
 		})
 
 		Convey("ProcessPubSubPush handles bad token", func() {

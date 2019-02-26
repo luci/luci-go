@@ -664,6 +664,18 @@ func (e *engineImpl) ProcessPubSubPush(c context.Context, body []byte) error {
 	if err := json.Unmarshal(body, &pushBody); err != nil {
 		return err
 	}
+	// Retry once after a slight adhoc delay (to let datastore transactions land)
+	// instead of returning an error to PubSub immediately. We don't want errors
+	// tagged with tq.Retry to engage PubSub flow control, since they are
+	// semi-expected and it is also expected that an immediate retry helps. This
+	// is still best effort only and on another error we let the PubSub retry
+	// mechanism to handle it.
+	err := e.handlePubSubMessage(c, &pushBody.Message)
+	if err == nil || !tq.Retry.In(err) {
+		return err
+	}
+	logging.Warningf(c, "Attempting a quick retry after 1s: %s", err)
+	clock.Sleep(c, time.Second)
 	return e.handlePubSubMessage(c, &pushBody.Message)
 }
 
@@ -1873,7 +1885,7 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 		switch {
 		case err == nil:
 			return nil // success! save the invocation
-		case transient.Tag.In(err):
+		case transient.Tag.In(err) || tq.Retry.In(err):
 			return err // ask for redelivery on transient errors, don't touch the invocation
 		}
 		// On fatal errors, move the invocation to failed state (if not already).
