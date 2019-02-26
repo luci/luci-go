@@ -95,6 +95,30 @@
       "revId": "c4320fb4f142fff76cf6da6cf2e352c4573d867c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c241c360_d67f4353",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-26T03:37:18Z",
+      "side": 1,
+      "message": "It will help in debugging \"why is milo not displaying my stuff\".",
+      "parentUuid": "d86239f6_ba480758",
+      "range": {
+        "startLine": 280,
+        "startChar": 10,
+        "endLine": 280,
+        "endChar": 11
+      },
+      "revId": "c4320fb4f142fff76cf6da6cf2e352c4573d867c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
