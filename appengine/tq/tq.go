@@ -42,6 +42,15 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+// TODO(vadimsh): Instrument with tsmon metrics. In particular have a metric
+// for failed retries (when a task fails more than once).
+
+// Retry is an error tag used to indicate that the handler wants the task to
+// be redelivered later.
+//
+// See Handler doc for more details.
+var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
+
 // Dispatcher submits and handles task queue tasks.
 type Dispatcher struct {
 	BaseURL string // URL prefix for all URLs, "/internal/tasks/" by default
@@ -150,10 +159,28 @@ func (task *Task) Name() string {
 // via the context to avoid complicating Handler signature for a feature that
 // most callers aren't going to use.
 //
-// May return transient errors. In this case, task queue may attempt to
-// redeliver the task (depending on RetryOptions).
+// If the returned error is tagged with Retry tag, the request finishes with
+// HTTP status 409, indicating to the task queue that it should redeliver the
+// task (which it may or may not do, depending on its RetryOptions). Same
+// happens if the error is transient (i.e. tagged with transient.Tag), except
+// the request finishes with HTTP status 500. This difference allows to
+// distinguish "expected" retry requests (errors tagged with Retry) from
+// "unexpected" ones (errors tagged with transient.Tag). Retry tag should be
+// used **only** if the handler is fully aware of Task Queues semantics and it
+// **explicitly** wants the task to be retried because it can't be processed
+// right now and the handler expects that the retry will help.
 //
-// A fatal error (or success) mark the task as "done", it won't be retried.
+// For a contrived example, if the handler can process the task only after 2 PM,
+// but it is 01:55 PM now, the handler should return an error tagged with Retry
+// to indicate this. On the other hand, if the handler failed to process the
+// task due to a RPC timeout or some other exceptional transient situation, it
+// should return an error tagged with transient.Tag.
+//
+// Note that it is OK (and often desirable) to tag an error with both Retry and
+// transient.Tag. Such errors propagate through the call stack as transient,
+// until they reach Dispatcher, which treats them as retriable.
+//
+// An untagged error (or success) marks the task as "done", it won't be retried.
 type Handler func(c context.Context, payload proto.Message) error
 
 // RegisterTask tells the dispatcher that tasks of given proto type should be
@@ -431,12 +458,13 @@ func (d *Dispatcher) handler(payload proto.Message) (handler, error) {
 // It deserializes the task and invokes an appropriate callback. Finishes the
 // request with status 202 in case of a fatal error (to stop retries).
 func (d *Dispatcher) processHTTPRequest(c *router.Context) {
+	headers := taskqueue.ParseRequestHeaders(c.Request.Header)
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		httpReply(c, false, 500, "Failed to read request body: %s", err)
 		return
 	}
-	logging.Debugf(c.Context, "Received task: %s", body)
+	logging.Debugf(c.Context, "Received task (exec count %d): %s", body, headers.TaskExecutionCount)
 
 	payload, err := deserializePayload(body)
 	if err != nil {
@@ -450,10 +478,12 @@ func (d *Dispatcher) processHTTPRequest(c *router.Context) {
 		return
 	}
 
-	ctx := withRequestHeaders(c.Context, taskqueue.ParseRequestHeaders(c.Request.Header))
+	ctx := withRequestHeaders(c.Context, headers)
 	switch err = h.cb(ctx, payload); {
 	case err == nil:
 		httpReply(c, true, 200, "OK")
+	case Retry.In(err):
+		httpReply(c, false, 409, "The handler asked for retry: %s", err)
 	case transient.Tag.In(err):
 		httpReply(c, false, 500, "Transient error: %s", err)
 	default:
