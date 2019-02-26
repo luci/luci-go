@@ -46,6 +46,29 @@
       "revId": "bc12ff1b0da4b50e9689bd5427abf92d3e70279f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b323cd3_19f4da49",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 685,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-26T03:00:13Z",
+      "side": 1,
+      "message": "IMO switch is much more readable:\n\nswitch{\ncase err \u003d\u003d nil:\n  ack()\ncase transient.Tag.In(err) || tq.Retry.In(err)):\n  // don\u0027t ack, ask for redelivery.\ndefault:\n  ack() // fatal error, stop redelivery\n}",
+      "range": {
+        "startLine": 685,
+        "startChar": 18,
+        "endLine": 685,
+        "endChar": 62
+      },
+      "revId": "bc12ff1b0da4b50e9689bd5427abf92d3e70279f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
