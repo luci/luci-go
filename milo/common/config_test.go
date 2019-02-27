@@ -188,7 +188,7 @@ consoles: {
 consoles: {
 	id: "default_header"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	refs: "refs/heads/master"
+	refs: "regexp:refs/heads/also-ok"
 	manifest_name: "REVISION"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
