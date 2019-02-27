@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "bd424e85_94cd8192",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-27T03:43:22Z",
+      "side": 1,
+      "message": "If your service retries more frequently than new commits gets processed by LUCI-config, it should be highly likely that you\u0027ll get consistent revision of all relevant files. So status quo - lgtm. Please update description.",
+      "parentUuid": "a2053e8e_478c3a86",
+      "range": {
+        "startLine": 13,
+        "startChar": 60,
+        "endLine": 18,
+        "endChar": 8
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9b325f29_212c92bf",
         "filename": "gce/api/config/v1/configs.go",
         "patchSetId": 1
@@ -131,6 +155,30 @@
       "side": 1,
       "message": "It should be allowed in general, cfgs can be a nil Configs. This time I\u0027ve been careful about where I changed to Get variants. For example, .Prefix on L28 doesn\u0027t need to be GetPrefix, because if you\u0027re iterating over cfgs.GetVMs(), then you have a non-nil Config so you can safely call .Prefix.\n\nBut at the top level, you can\u0027t be sure you have a non-nil Configs. Note that this is independent of how I actually use Configs elsewhere in the code. I believe it\u0027s the right thing to do for the function.",
       "parentUuid": "9b325f29_212c92bf",
+      "range": {
+        "startLine": 25,
+        "startChar": 40,
+        "endLine": 25,
+        "endChar": 48
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a729c5f2_ff05afbc",
+        "filename": "gce/api/config/v1/configs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-27T03:43:22Z",
+      "side": 1,
+      "message": "Ok, for a public function it may be reasonable to allow nil cfgs.",
+      "parentUuid": "8c986142_744d51b1",
       "range": {
         "startLine": 25,
         "startChar": 40,
@@ -187,6 +235,30 @@
       "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0b29b864_f7938feb",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-27T03:43:22Z",
+      "side": 1,
+      "message": "but it\u0027d make code simpler now.\nAnd if and when the need arises to add another field, to either config, one can choose to either a) add this field as top level to this struct OR use the indirection.\nSo, unless you have new fields to be added in mind, I\u0027d **suggest** (not insist) to keep code cleaner.",
+      "parentUuid": "294c98af_de9b4634",
+      "range": {
+        "startLine": 48,
+        "startChar": 7,
+        "endLine": 48,
+        "endChar": 17
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -328,6 +400,30 @@
       "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "57974d60_e3d53c37",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-27T03:43:22Z",
+      "side": 1,
+      "message": "This isn\u0027t public API, it\u0027s an internal helper. All its callers are known. There is no intrinsic benefit in making internal helper more versatile than its callers need it to be. It can be done, however, because say code of the helper itself gets simpler, but in this case it\u0027s the reverse.",
+      "parentUuid": "9617c604_31ea7fa9",
+      "range": {
+        "startLine": 143,
+        "startChar": 26,
+        "endLine": 143,
+        "endChar": 35
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
