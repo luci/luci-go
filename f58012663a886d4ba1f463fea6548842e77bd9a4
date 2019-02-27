@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ac8607f3_99194fc7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 645,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-27T22:41:10Z",
+      "side": 1,
+      "message": "are there projects that don\u0027t use it? (internal perhaps?)",
+      "range": {
+        "startLine": 645,
+        "startChar": 24,
+        "endLine": 645,
+        "endChar": 54
+      },
+      "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
