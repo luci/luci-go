@@ -238,8 +238,8 @@ func parseRef(ref string) (prefix, literalRef, refRegexp string, compiledRegexp 
 	if strings.HasPrefix(ref, "regexp:") {
 		refRegexp = strings.TrimPrefix(ref, "regexp:")
 		compiledRegexp = regexp.MustCompile("^" + refRegexp + "$")
-		// TODO(tandrii): link to Go bug.
-		// Sometimes, LiteralPrefix(^regexp$) != literalPrefix(regexp).
+		// Sometimes, LiteralPrefix(^regexp$) != LiteralPrefix(regexp)
+		// See https://github.com/golang/go/issues/30425
 		literalPrefix, complete := regexp.MustCompile(refRegexp).LiteralPrefix()
 		prefix = literalPrefix[:strings.LastIndex(literalPrefix, "/")]
 		if complete {
