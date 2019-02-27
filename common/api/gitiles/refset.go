@@ -223,10 +223,7 @@ func validateRegexpRef(c *validation.Context, ref string) {
 		c.Errorf("invalid regexp: %s", err)
 		return
 	}
-	lp, complete := r.LiteralPrefix()
-	if complete {
-		c.Errorf("matches a single ref only, please use %q instead", lp)
-	}
+	lp, _ := r.LiteralPrefix()
 	if strings.Count(lp, "/") < 2 {
 		c.Errorf(`fewer than 2 slashes in literal prefix %q, e.g., `+
 			`"refs/heads/\d+" is accepted because of "refs/heads/" is the `+
@@ -241,8 +238,14 @@ func parseRef(ref string) (prefix, literalRef, refRegexp string, compiledRegexp 
 	if strings.HasPrefix(ref, "regexp:") {
 		refRegexp = strings.TrimPrefix(ref, "regexp:")
 		compiledRegexp = regexp.MustCompile("^" + refRegexp + "$")
-		literalPrefix, _ := compiledRegexp.LiteralPrefix()
+		literalPrefix, complete := compiledRegexp.LiteralPrefix()
 		prefix = literalPrefix[:strings.LastIndex(literalPrefix, "/")]
+		if complete {
+			// Trivial regexp which matches only and exactly literalPrefix.
+			literalRef = literalPrefix
+			compiledRegexp = nil
+			refRegexp = ""
+		}
 		return
 	}
 

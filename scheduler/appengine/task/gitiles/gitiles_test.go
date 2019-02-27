@@ -411,7 +411,11 @@ func TestValidateConfig(t *testing.T) {
 		Convey("refRegexp works", func() {
 			cfg := &messages.GitilesTask{
 				Repo: "https://a.googlesource.com/b.git",
-				Refs: []string{`regexp:refs/heads/\d+`},
+				Refs: []string{
+					`regexp:refs/heads/\d+`,
+					`regexp:refs/actually/exact`,
+					`refs/heads/master`,
+				},
 			}
 			Convey("valid", func() {
 				So(validate(cfg), ShouldBeNil)
