@@ -163,7 +163,7 @@ func TestRefSet(t *testing.T) {
 		l1, _ := regexp.MustCompile(r).LiteralPrefix()
 		l2, _ := regexp.MustCompile("^" + r + "$").LiteralPrefix()
 		So(l1, ShouldResemble, "refs/heads/")
-		So(l2, ShouldResemble, "") // TODO(tandrii): link to Go bug.
+		So(l2, ShouldResemble, "") // See https://github.com/golang/go/issues/30425
 		NewRefSet([]string{"regexp:" + r})
 	})
 }
