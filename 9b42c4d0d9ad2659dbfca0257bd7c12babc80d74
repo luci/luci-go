@@ -310,6 +310,30 @@
     },
     {
       "key": {
+        "uuid": "0c33e705_eb326fd8",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-27T04:27:45Z",
+      "side": 1,
+      "message": "fine.",
+      "parentUuid": "d6652a3e_d8e40e64",
+      "range": {
+        "startLine": 48,
+        "startChar": 7,
+        "endLine": 48,
+        "endChar": 17
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "deffb5d2_ca39d208",
         "filename": "gce/appengine/config/config.go",
         "patchSetId": 1
@@ -496,6 +520,30 @@
       "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdde904f_9584862b",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-27T04:27:45Z",
+      "side": 1,
+      "message": "fine, this isn\u0027t particularly harmful to my PoV, so go ahead on this CL.\n\nHowever, tbh, I am a bit frustrated as this CL spends extra chars to achieve versatility of several private functions w/o changing correctness of the code.",
+      "parentUuid": "53146916_c9e0d4e9",
+      "range": {
+        "startLine": 143,
+        "startChar": 26,
+        "endLine": 143,
+        "endChar": 35
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
