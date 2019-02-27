@@ -129,10 +129,9 @@ func TestRefSet(t *testing.T) {
 				ValidateRefSet(ctx, []string{`regexp:([{`})
 				So(ctx.Finalize().Error(), ShouldContainSubstring, `invalid regexp`)
 			})
-			Convey("matches single ref only", func() {
+			Convey("matches single ref only is fine", func() {
 				ValidateRefSet(ctx, []string{`regexp:refs/h[e]ad(s)/m[a]ster`})
-				So(ctx.Finalize().Error(), ShouldContainSubstring,
-					`matches a single ref only, please use "refs/heads/master" instead`)
+				So(ctx.Finalize(), ShouldBeNil)
 			})
 			Convey("fewer than 2 slashes in literal prefix", func() {
 				ValidateRefSet(ctx, []string{`regexp:refs/branch[-_]heads/\d+\/\d+`})
