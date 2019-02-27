@@ -73,8 +73,11 @@ luci.gitiles_poller(
     name = 'master-poller',
     bucket = 'ci',
     repo = 'https://noop.com',
-    refs = ['refs/heads/master', 'refs/tags/blah'],
-    refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+    refs = [
+        'refs/heads/master',
+        'refs/tags/blah',
+        'refs/branch-heads/\d+\.\d+',
+    ],
     schedule = 'with 10s interval',
 )
 
@@ -185,8 +188,11 @@ luci.builder(
             name = 'inline poller',
             bucket = 'inline',
             repo = 'https://noop.com',
-            refs = ['refs/heads/master', 'refs/tags/blah'],
-            refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+            refs = [
+                'refs/heads/master',
+                'refs/tags/blah',
+                'refs/branch-heads/\d+\.\d+',
+            ],
             schedule = 'with 10s interval',
         ),
     ],
@@ -232,8 +238,7 @@ luci.console_view(
         ],
     },
     repo = 'https://noop.com',
-    refs = ['refs/tags/blah'],
-    refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+    refs = ['refs/tags/blah', 'refs/branch-heads/\d+\.\d+'],
     exclude_ref = 'refs/heads/master',
     include_experimental_builds = True,
     entries = [
@@ -426,7 +431,7 @@ luci.console_view_entry(
 #   id: "Console view"
 #   name: "CI Builders"
 #   repo_url: "https://noop.com"
-#   refs: "refs/tags/blah"
+#   refs: "regexp:refs/tags/blah"
 #   refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
 #   exclude_ref: "refs/heads/master"
 #   manifest_name: "REVISION"
@@ -539,8 +544,8 @@ luci.console_view_entry(
 #   triggers: "triggerer builder"
 #   gitiles: <
 #     repo: "https://noop.com"
-#     refs: "refs/heads/master"
-#     refs: "refs/tags/blah"
+#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/tags/blah"
 #     refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
 #   >
 # >
@@ -552,8 +557,8 @@ luci.console_view_entry(
 #   triggers: "linux ci builder"
 #   gitiles: <
 #     repo: "https://noop.com"
-#     refs: "refs/heads/master"
-#     refs: "refs/tags/blah"
+#     refs: "regexp:refs/heads/master"
+#     refs: "regexp:refs/tags/blah"
 #     refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
 #   >
 # >
