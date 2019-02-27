@@ -32,7 +32,6 @@ def console_view(
       title=None,
       repo=None,
       refs=None,
-      refs_regexps=None,
       exclude_ref=None,
       include_experimental_builds=None,
       header=None,
@@ -43,9 +42,9 @@ def console_view(
   builders and rows are git commits on which builders are triggered.
 
   A console is associated with a single git repository it uses as a source of
-  commits to display as rows. The watched ref set is defined via `refs`,
-  `refs_regexps` and `exclude_ref` fields. If neither of `refs` or
-  `refs_regexps` are set, the console defaults to watching `refs/heads/master`.
+  commits to display as rows. The watched ref set is defined via `refs` and
+  optional `exclude_ref` fields. If `refs` are empty, the console defaults to
+  watching `refs/heads/master`.
 
   `exclude_ref` is useful when watching for commits that landed specifically
   on a branch. For example, the config below allows to track commits from all
@@ -54,7 +53,7 @@ def console_view(
 
       luci.console_view(
           ...
-          refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+          refs = ['refs/branch-heads/\d+\.\d+'],
           exclude_ref = 'refs/heads/master',
           ...
       )
@@ -144,17 +143,14 @@ def console_view(
     title: a title of this console, will show up in UI. Defaults to `name`.
     repo: URL of a git repository whose commits are displayed as rows in the
         console. Must start with `https://`. Required.
-    refs: a list of fully qualified refs to pull commits from when displaying
-        the console, e.g. `refs/heads/master` or `refs/tags/v1.2.3`. Each ref
-        must start with `refs/`.
-    refs_regexps: a list of regular expressions that define the set of
-        refs to pull commits from when displaying the console, e.g.
-        `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular
-        expression should have a literal prefix with at least two slashes
-        present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the
-        literal prefix `refs/release-` contains only one slash. The regexp
-        should not start with `^` or end with `$` as they will be added
-        automatically.
+    refs: a list of regular expressions that define the set of refs to pull
+        commits from when displaying the console, e.g. `refs/heads/[^/]+` or
+        `refs/branch-heads/\d+\.\d+`. The regular expression should have a
+        literal prefix with at least two slashes present, e.g.
+        `refs/release-\d+/foobar` is *not allowed*, because the literal prefix
+        `refs/release-` contains only one slash. The regexp should not start
+        with `^` or end with `$` as they will be added automatically.  If empty,
+        defaults to `['refs/heads/master']`.
     exclude_ref: a single ref, commits from which are ignored even when they are
         reachable from refs specified via `refs` and `refs_regexps`. Note that
         force pushes to this ref are not supported. Milo uses caching assuming
@@ -171,14 +167,9 @@ def console_view(
     entries: a list of luci.console_view_entry(...) entities specifying builders
         to show on the console.
   """
-  refs = validate.list('refs', refs)
+  refs = validate.list('refs', refs) or ['refs/heads/master']
   for r in refs:
-    validate.string('refs', r, regexp=r'refs/.+')
-  refs_regexps = validate.list('refs_regexps', refs_regexps)
-  for r in refs_regexps:
-    validate.string('refs_regexps', r)
-  if not refs and not refs_regexps:
-    refs = ['refs/heads/master']
+    validate.string('refs', r)
 
   if header != None:
     if type(header) == 'dict':
@@ -198,7 +189,6 @@ def console_view(
           'title': validate.string('title', title, default=name, required=False),
           'repo': validate.string('repo', repo, regexp=r'https://.+'),
           'refs': refs,
-          'refs_regexps': refs_regexps,
           'exclude_ref': validate.string('exclude_ref', exclude_ref, required=False),
           'header': header,
           'include_experimental_builds': validate.bool('include_experimental_builds', include_experimental_builds, required=False),
