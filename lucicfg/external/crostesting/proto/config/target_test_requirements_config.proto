@@ -121,9 +121,9 @@ message VmTestCfg {
 }
 
 
-// Specifies a CrOS build, either by reference design or by a specific build
+// Specifies a CrOS target, either by reference design or by a specific build
 // target.
-message BuildCriteria {
+message TargetCriteria {
   oneof target_type {
     // A CrOS reference design that may represent many different build targets.
     // This corresponds to values of `mosys platform family`, such as
@@ -137,8 +137,9 @@ message BuildCriteria {
 
 // Details which testing is needed for a single CrOS build target.
 message PerTargetTestRequirements {
-  // Specifies the builds to which these testing requirements should be applied.
-  BuildCriteria build_criteria = 1;
+  // Specifies the reference design or build target to which these testing
+  // requirements should be applied.
+  TargetCriteria target_criteria = 1;
 
   // These configure what testing is needed for these BuildCriteria.
   GceTestCfg gce_test_cfg = 2;
