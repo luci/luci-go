@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/impl/remote"
@@ -43,6 +42,13 @@ const kindsFile = "kinds.cfg"
 
 // vmsFile is the name of the VMs config file.
 const vmsFile = "vms.cfg"
+
+// Config encapsulates the service config.
+type Config struct {
+	revision string
+	Kinds    *gce.Kinds
+	VMs      *gce.Configs
+}
 
 // cfgKey is the key to a config.Interface in the context.
 var cfgKey = "cfg"
@@ -86,80 +92,95 @@ func newInterface(c context.Context) config.Interface {
 }
 
 // fetch fetches configs from the config service.
-func fetch(c context.Context) (*gce.Kinds, *gce.Configs, error) {
+func fetch(c context.Context) (*Config, error) {
 	cli := getInterface(c)
 	set := cfgclient.CurrentServiceConfigSet(c)
 
-	kinds := gce.Kinds{}
-	cfg, err := cli.GetConfig(c, set, kindsFile, false)
-	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to fetch %s", kindsFile).Err()
-	}
-	logging.Debugf(c, "found %q revision %s", kindsFile, cfg.Revision)
-	rev := cfg.Revision
-	if err := proto.UnmarshalText(cfg.Content, &kinds); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to load %q", kindsFile).Err()
+	// If VMs and kinds are both non-empty, then their revisions must match
+	// because VMs may depend on kinds. If VMs is empty but kinds is not,
+	// then kinds are declared but unused (which is fine). If kinds is empty
+	// but VMs is not, this may or may not be fine. Validation will tell us.
+	rev := ""
+
+	vms := &gce.Configs{}
+	switch vmsCfg, err := cli.GetConfig(c, set, vmsFile, false); {
+	case err == config.ErrNoConfig:
+		logging.Debugf(c, "%q not found", vmsFile)
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch %q", vmsFile).Err()
+	default:
+		rev = vmsCfg.Revision
+		logging.Debugf(c, "found %q revision %s", vmsFile, vmsCfg.Revision)
+		if err := proto.UnmarshalText(vmsCfg.Content, vms); err != nil {
+			return nil, errors.Annotate(err, "failed to load %q", vmsFile).Err()
+		}
 	}
 
-	cfgs := gce.Configs{}
-	cfg, err = cli.GetConfig(c, set, vmsFile, false)
-	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to fetch %q", vmsFile).Err()
+	kinds := &gce.Kinds{}
+	switch kindsCfg, err := cli.GetConfig(c, set, kindsFile, false); {
+	case err == config.ErrNoConfig:
+		logging.Debugf(c, "%q not found", kindsFile)
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch %s", kindsFile).Err()
+	default:
+		logging.Debugf(c, "found %q revision %s", kindsFile, kindsCfg.Revision)
+		if rev != "" && kindsCfg.Revision != rev {
+			return nil, errors.Reason("config revision mismatch").Err()
+		}
+		if err := proto.UnmarshalText(kindsCfg.Content, kinds); err != nil {
+			return nil, errors.Annotate(err, "failed to load %q", kindsFile).Err()
+		}
 	}
-	logging.Debugf(c, "found %q revision %s", vmsFile, cfg.Revision)
-	if cfg.Revision != rev {
-		// Could happen if configs are being updated.
-		return nil, nil, errors.Reason("config revision mismatch").Tag(transient.Tag).Err()
-	}
-	if err := proto.UnmarshalText(cfg.Content, &cfgs); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to load %q", vmsFile).Err()
-	}
-	return &kinds, &cfgs, nil
+	return &Config{
+		revision: rev,
+		Kinds:    kinds,
+		VMs:      vms,
+	}, nil
 }
 
 // validate validates configs.
-func validate(c context.Context, kinds *gce.Kinds, cfgs *gce.Configs) error {
+func validate(c context.Context, cfg *Config) error {
 	v := &validation.Context{Context: c}
 	v.SetFile(kindsFile)
-	kinds.Validate(v)
+	cfg.Kinds.Validate(v)
 	v.SetFile(vmsFile)
-	cfgs.Validate(v)
+	cfg.VMs.Validate(v)
 	return v.Finalize()
 }
 
 // merge merges validated configs.
 // Each config's referenced Kind is used to fill out unset values in its attributes.
-func merge(c context.Context, kinds *gce.Kinds, cfgs *gce.Configs) error {
-	kindsMap := kinds.Map()
-	for _, cfg := range cfgs.Vms {
-		if cfg.GetKind() != "" {
-			k, ok := kindsMap[cfg.Kind]
+func merge(c context.Context, cfg *Config) error {
+	kindsMap := cfg.Kinds.Map()
+	for _, v := range cfg.VMs.GetVms() {
+		if v.Kind != "" {
+			k, ok := kindsMap[v.Kind]
 			if !ok {
-				return errors.Reason("unknown kind %q", cfg.Kind).Err()
+				return errors.Reason("unknown kind %q", v.Kind).Err()
 			}
 			// Merge the config's attributes into a copy of the kind's.
 			// This ensures the config's attributes overwrite the kind's.
 			attrs := proto.Clone(k.Attributes).(*gce.VM)
 			// By default, proto.Merge concatenates repeated field values.
 			// Instead, make repeated fields in the config override the kind.
-			if len(cfg.Attributes.Disk) > 0 {
+			if len(v.Attributes.Disk) > 0 {
 				attrs.Disk = nil
 			}
-			proto.Merge(attrs, cfg.Attributes)
-			cfg.Attributes = attrs
+			proto.Merge(attrs, v.Attributes)
+			v.Attributes = attrs
 		}
 	}
 	return nil
 }
 
-// deref dereferences Metadata.FromFile by fetching the referenced file.
-func deref(c context.Context, cfgs *gce.Configs) error {
+// deref dereferences VMs metadata by fetching referenced files.
+func deref(c context.Context, cfg *Config) error {
 	// Cache fetched files.
 	fileMap := make(map[string]string)
 	cli := getInterface(c)
 	set := cfgclient.CurrentServiceConfigSet(c)
-	for _, vms := range cfgs.Vms {
-		for i, m := range vms.GetAttributes().Metadata {
+	for _, v := range cfg.VMs.GetVms() {
+		for i, m := range v.GetAttributes().Metadata {
 			if m.GetFromFile() != "" {
 				parts := strings.SplitN(m.GetFromFile(), ":", 2)
 				if len(parts) < 2 {
@@ -167,18 +188,20 @@ func deref(c context.Context, cfgs *gce.Configs) error {
 				}
 				file := parts[1]
 				if _, ok := fileMap[file]; !ok {
-					cfg, err := cli.GetConfig(c, set, file, false)
+					fileCfg, err := cli.GetConfig(c, set, file, false)
 					if err != nil {
 						return errors.Annotate(err, "failed to fetch %q", file).Err()
 					}
-					logging.Debugf(c, "found %q revision %s", file, cfg.Revision)
-					// TODO(smut): Ensure cfg.Revision is the same revision as everything else.
-					fileMap[file] = cfg.Content
+					logging.Debugf(c, "found %q revision %s", file, fileCfg.Revision)
+					if fileCfg.Revision != cfg.revision {
+						return errors.Reason("config revision mismatch %q", fileCfg.Revision).Err()
+					}
+					fileMap[file] = fileCfg.Content
 				}
 				// fileMap[file] definitely exists.
 				key := parts[0]
 				val := fileMap[file]
-				vms.Attributes.Metadata[i].Metadata = &gce.Metadata_FromText{
+				v.Attributes.Metadata[i].Metadata = &gce.Metadata_FromText{
 					FromText: fmt.Sprintf("%s:%s", key, val),
 				}
 			}
@@ -187,15 +210,15 @@ func deref(c context.Context, cfgs *gce.Configs) error {
 	return nil
 }
 
-// normalize normalizes durations by converting them to seconds.
-func normalize(c context.Context, cfgs *gce.Configs) error {
-	for _, vms := range cfgs.Vms {
-		if err := vms.Lifetime.Normalize(); err != nil {
-			return errors.Annotate(err, "failed to normalize %q", vms.Prefix).Err()
+// normalize normalizes VMs durations by converting them to seconds.
+func normalize(c context.Context, cfg *Config) error {
+	for _, v := range cfg.VMs.GetVms() {
+		if err := v.Lifetime.Normalize(); err != nil {
+			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 		}
-		for _, ch := range vms.Amount.GetChange() {
+		for _, ch := range v.Amount.GetChange() {
 			if err := ch.Length.Normalize(); err != nil {
-				return errors.Annotate(err, "failed to normalize %q", vms.Prefix).Err()
+				return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 			}
 		}
 	}
@@ -203,27 +226,27 @@ func normalize(c context.Context, cfgs *gce.Configs) error {
 }
 
 // sync synchronizes the given validated configs.
-func sync(c context.Context, cfgs *gce.Configs) error {
+func sync(c context.Context, cfg *Config) error {
 	srv := getServer(c)
 	ids := stringset.New(0)
 	rsp, err := srv.List(c, &gce.ListRequest{})
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch configs").Err()
 	}
-	for _, cfg := range rsp.Configs {
-		logging.Debugf(c, "fetched config %q", cfg.Prefix)
-		ids.Add(cfg.Prefix)
+	for _, v := range rsp.Configs {
+		logging.Debugf(c, "fetched config %q", v.Prefix)
+		ids.Add(v.Prefix)
 	}
 	ens := &gce.EnsureRequest{}
-	for _, vms := range cfgs.Vms {
+	for _, v := range cfg.VMs.GetVms() {
 		// Validation enforces prefix uniqueness, so use it as the ID.
-		ens.Id = vms.Prefix
-		ens.Config = vms
+		ens.Id = v.Prefix
+		ens.Config = v
 		if _, err := srv.Ensure(c, ens); err != nil {
 			return errors.Annotate(err, "failed to ensure config %q", ens.Id).Err()
 		}
 		logging.Debugf(c, "stored config %q", ens.Id)
-		ids.Del(vms.Prefix)
+		ids.Del(v.Prefix)
 	}
 	del := &gce.DeleteRequest{}
 	err = nil
@@ -241,30 +264,30 @@ func sync(c context.Context, cfgs *gce.Configs) error {
 
 // Import fetches and validates configs from the config service.
 func Import(c context.Context) error {
-	kinds, cfgs, err := fetch(c)
+	cfg, err := fetch(c)
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch configs").Err()
 	}
 
-	// Merge before validating. cfgs may be invalid until referenced kinds are applied.
-	if err := merge(c, kinds, cfgs); err != nil {
+	// Merge before validating. VMs may be invalid until referenced kinds are applied.
+	if err := merge(c, cfg); err != nil {
 		return errors.Annotate(err, "failed to merge kinds into configs").Err()
 	}
 
-	// Deref before validating. cfgs may be invalid until metadata from file is imported.
-	if err := deref(c, cfgs); err != nil {
+	// Deref before validating. VMs may be invalid until metadata from file is imported.
+	if err := deref(c, cfg); err != nil {
 		return errors.Annotate(err, "failed to dereference files").Err()
 	}
 
-	if err := validate(c, kinds, cfgs); err != nil {
+	if err := validate(c, cfg); err != nil {
 		return errors.Annotate(err, "invalid configs").Err()
 	}
 
-	if err := normalize(c, cfgs); err != nil {
+	if err := normalize(c, cfg); err != nil {
 		return errors.Annotate(err, "failed to normalize configs").Err()
 	}
 
-	if err := sync(c, cfgs); err != nil {
+	if err := sync(c, cfg); err != nil {
 		return errors.Annotate(err, "failed to synchronize configs").Err()
 	}
 	return nil

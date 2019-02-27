@@ -23,8 +23,8 @@ import (
 // For each name, only the last kind is included in the map.
 // Use Validate to ensure names are unique.
 func (kinds *Kinds) Map() map[string]*Kind {
-	m := make(map[string]*Kind, len(kinds.Kind))
-	for _, k := range kinds.Kind {
+	m := make(map[string]*Kind, len(kinds.GetKind()))
+	for _, k := range kinds.GetKind() {
 		m[k.Name] = k
 	}
 	return m
@@ -32,8 +32,8 @@ func (kinds *Kinds) Map() map[string]*Kind {
 
 // Names returns the names of VM kinds.
 func (kinds *Kinds) Names() []string {
-	names := make([]string, len(kinds.Kind))
-	for i, k := range kinds.Kind {
+	names := make([]string, len(kinds.GetKind()))
+	for i, k := range kinds.GetKind() {
 		names[i] = k.Name
 	}
 	return names
@@ -41,8 +41,8 @@ func (kinds *Kinds) Names() []string {
 
 // Validate validates VM kinds.
 func (kinds *Kinds) Validate(c *validation.Context) {
-	names := stringset.New(len(kinds.Kind))
-	for i, k := range kinds.Kind {
+	names := stringset.New(len(kinds.GetKind()))
+	for i, k := range kinds.GetKind() {
 		c.Enter("kind %d", i)
 		switch {
 		case k.Name == "":
