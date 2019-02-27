@@ -5,6 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User={{.User}}
+LimitNOFILE=50000
 Environment=SWARMING_EXTERNAL_BOT_SETUP=1
 ExecStart=/usr/bin/python {{.Path}} start_bot
 
