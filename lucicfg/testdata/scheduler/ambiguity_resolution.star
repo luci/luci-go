@@ -132,7 +132,7 @@ luci.builder(
 #   acl_sets: "b1"
 #   gitiles: <
 #     repo: "https://noop.com"
-#     refs: "refs/heads/master"
+#     refs: "regexp:refs/heads/master"
 #   >
 # >
 # trigger: <
@@ -141,7 +141,7 @@ luci.builder(
 #   triggers: "b2-poller-builder"
 #   gitiles: <
 #     repo: "https://noop.com"
-#     refs: "refs/heads/master"
+#     refs: "regexp:refs/heads/master"
 #   >
 # >
 # trigger: <
@@ -149,7 +149,7 @@ luci.builder(
 #   acl_sets: "b2"
 #   gitiles: <
 #     repo: "https://noop.com"
-#     refs: "refs/heads/master"
+#     refs: "regexp:refs/heads/master"
 #   >
 # >
 # trigger: <
@@ -159,7 +159,7 @@ luci.builder(
 #   triggers: "b2-builder-builder"
 #   gitiles: <
 #     repo: "https://noop.com"
-#     refs: "refs/heads/master"
+#     refs: "regexp:refs/heads/master"
 #   >
 # >
 # acl_sets: <

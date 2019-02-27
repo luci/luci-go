@@ -24,7 +24,6 @@ def gitiles_poller(
       bucket=None,
       repo=None,
       refs=None,
-      refs_regexps=None,
       schedule=None,
       triggers=None
   ):
@@ -55,25 +54,17 @@ def gitiles_poller(
     * A ref belonging to the watched set has just been created. This produces
       a single triggering request.
 
-  The watched ref set is defined via `refs` and `refs_regexps` fields. One is
-  just a simple enumeration of refs, and another allows to use regular
-  expressions to define what refs belong to the watched set. Both fields can
-  be used at the same time. If neither is set, the gitiles_poller defaults to
-  watching `refs/heads/master`.
-
   Args:
     name: name of the poller, to refer to it from other rules. Required.
     bucket: a bucket the poller is in, see luci.bucket(...) rule. Required.
     repo: URL of a git repository to poll, starting with `https://`. Required.
-    refs: a list of fully qualified refs to watch, e.g. `refs/heads/master` or
-        `refs/tags/v1.2.3`. Each ref must start with `refs/`.
-    refs_regexps: a list of regular expressions that define the watched set of
-        refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The
-        regular expression should have a literal prefix with at least two
-        slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*,
-        because the literal prefix `refs/release-` contains only one slash. The
-        regexp should not start with `^` or end with `$` as they will be added
-        automatically.
+    refs: a list of regular expressions that define the watched set of refs,
+        e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular
+        expression should have a literal prefix with at least two slashes
+        present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the
+        literal prefix `refs/release-` contains only one slash. The regexp
+        should not start with `^` or end with `$` as they will be added
+        automatically. If empty, defaults to `['refs/heads/master']`.
     schedule: string with a schedule that describes when to run one iteration
         of the poller. See [Defining cron schedules](#schedules_doc) for the
         expected format of this field. Note that it is rare to use custom
@@ -84,16 +75,9 @@ def gitiles_poller(
   name = validate.string('name', name)
   bucket_key = keys.bucket(bucket)
 
-  refs = validate.list('refs', refs)
+  refs = validate.list('refs', refs) or ['refs/heads/master']
   for r in refs:
-    validate.string('refs', r, regexp=r'refs/.+')
-
-  refs_regexps = validate.list('refs_regexps', refs_regexps)
-  for r in refs_regexps:
-    validate.string('refs_regexps', r)
-
-  if not refs and not refs_regexps:
-    refs = ['refs/heads/master']
+    validate.string('refs', r)
 
   # Node that carries the full definition of the poller.
   poller_key = keys.gitiles_poller(bucket_key.id, name)
@@ -102,7 +86,6 @@ def gitiles_poller(
       'bucket': bucket_key.id,
       'repo': validate.string('repo', repo, regexp=r'https://.+'),
       'refs': refs,
-      'refs_regexps': refs_regexps,
       'schedule': validate.string('schedule', schedule, required=False),
   })
   graph.add_edge(bucket_key, poller_key)
