@@ -35,20 +35,23 @@ func TestDeref(t *testing.T) {
 	Convey("deref", t, func() {
 		Convey("empty", func() {
 			c := withInterface(gae.Use(context.Background()), memory.New(nil))
-			cfgs := &gce.Configs{}
-			So(deref(c, cfgs), ShouldBeNil)
+			cfg := &Config{}
+			So(deref(c, cfg), ShouldBeNil)
+			So(cfg.VMs.GetVms(), ShouldHaveLength, 0)
 		})
 
 		Convey("missing", func() {
 			c := withInterface(gae.Use(context.Background()), memory.New(nil))
-			cfgs := &gce.Configs{
-				Vms: []*gce.Config{
-					{
-						Attributes: &gce.VM{
-							Metadata: []*gce.Metadata{
-								{
-									Metadata: &gce.Metadata_FromFile{
-										FromFile: "key:file",
+			cfg := &Config{
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Attributes: &gce.VM{
+								Metadata: []*gce.Metadata{
+									{
+										Metadata: &gce.Metadata_FromFile{
+											FromFile: "key:file",
+										},
 									},
 								},
 							},
@@ -56,7 +59,39 @@ func TestDeref(t *testing.T) {
 					},
 				},
 			}
-			So(deref(c, cfgs), ShouldErrLike, "failed to fetch")
+			So(deref(c, cfg), ShouldErrLike, "failed to fetch")
+		})
+
+		Convey("revision", func() {
+			c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
+				"services/gce": map[string]string{
+					"file": "val",
+				},
+			}))
+			cfg := &Config{
+				revision: "revision",
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Attributes: &gce.VM{
+								Metadata: []*gce.Metadata{
+									{
+										Metadata: &gce.Metadata_FromFile{
+											FromFile: "key:file",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			So(deref(c, cfg), ShouldErrLike, "config revision mismatch")
+			So(cfg.VMs.Vms[0].Attributes.Metadata, ShouldContain, &gce.Metadata{
+				Metadata: &gce.Metadata_FromFile{
+					FromFile: "key:file",
+				},
+			})
 		})
 
 		Convey("dereferences", func() {
@@ -65,19 +100,22 @@ func TestDeref(t *testing.T) {
 					"metadata/file": "val2",
 				},
 			}))
-			cfgs := &gce.Configs{
-				Vms: []*gce.Config{
-					{
-						Attributes: &gce.VM{
-							Metadata: []*gce.Metadata{
-								{
-									Metadata: &gce.Metadata_FromText{
-										FromText: "key:val1",
+			cfg := &Config{
+				revision: "12f8812df1e3182615a8f105db567f8d792a1440",
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Attributes: &gce.VM{
+								Metadata: []*gce.Metadata{
+									{
+										Metadata: &gce.Metadata_FromText{
+											FromText: "key:val1",
+										},
 									},
-								},
-								{
-									Metadata: &gce.Metadata_FromFile{
-										FromFile: "key:metadata/file",
+									{
+										Metadata: &gce.Metadata_FromFile{
+											FromFile: "key:metadata/file",
+										},
 									},
 								},
 							},
@@ -85,13 +123,17 @@ func TestDeref(t *testing.T) {
 					},
 				},
 			}
-			So(deref(c, cfgs), ShouldBeNil)
-			So(cfgs.Vms, ShouldHaveLength, 1)
-			So(cfgs.Vms[0].GetAttributes().Metadata, ShouldHaveLength, 2)
-			So(cfgs.Vms[0].Attributes.Metadata[0].Metadata, ShouldHaveSameTypeAs, &gce.Metadata_FromText{})
-			So(cfgs.Vms[0].Attributes.Metadata[0].Metadata.(*gce.Metadata_FromText).FromText, ShouldEqual, "key:val1")
-			So(cfgs.Vms[0].Attributes.Metadata[1].Metadata, ShouldHaveSameTypeAs, &gce.Metadata_FromText{})
-			So(cfgs.Vms[0].Attributes.Metadata[1].Metadata.(*gce.Metadata_FromText).FromText, ShouldEqual, "key:val2")
+			So(deref(c, cfg), ShouldBeNil)
+			So(cfg.VMs.Vms[0].Attributes.Metadata, ShouldContain, &gce.Metadata{
+				Metadata: &gce.Metadata_FromText{
+					FromText: "key:val1",
+				},
+			})
+			So(cfg.VMs.Vms[0].Attributes.Metadata, ShouldContain, &gce.Metadata{
+				Metadata: &gce.Metadata_FromText{
+					FromText: "key:val2",
+				},
+			})
 		})
 	})
 }
@@ -100,14 +142,6 @@ func TestFetch(t *testing.T) {
 	t.Parallel()
 
 	Convey("fetch", t, func() {
-		Convey("missing", func() {
-			c := withInterface(gae.Use(context.Background()), memory.New(nil))
-			k, v, err := fetch(c)
-			So(err, ShouldErrLike, "failed to fetch")
-			So(k, ShouldBeNil)
-			So(v, ShouldBeNil)
-		})
-
 		Convey("invalid", func() {
 			Convey("kinds", func() {
 				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
@@ -116,10 +150,8 @@ func TestFetch(t *testing.T) {
 						vmsFile:   "",
 					},
 				}))
-				k, v, err := fetch(c)
+				_, err := fetch(c)
 				So(err, ShouldErrLike, "failed to load")
-				So(k, ShouldBeNil)
-				So(v, ShouldBeNil)
 			})
 
 			Convey("vms", func() {
@@ -129,24 +161,42 @@ func TestFetch(t *testing.T) {
 						vmsFile:   "invalid",
 					},
 				}))
-				k, v, err := fetch(c)
+				_, err := fetch(c)
 				So(err, ShouldErrLike, "failed to load")
-				So(k, ShouldBeNil)
-				So(v, ShouldBeNil)
 			})
 		})
 
 		Convey("empty", func() {
-			c := withInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
-				"services/gce": {
-					kindsFile: "",
-					vmsFile:   "",
-				},
-			}))
-			k, v, err := fetch(c)
-			So(err, ShouldBeNil)
-			So(k, ShouldResemble, &gce.Kinds{})
-			So(v, ShouldResemble, &gce.Configs{})
+			Convey("missing", func() {
+				c := withInterface(gae.Use(context.Background()), memory.New(nil))
+				cfg, err := fetch(c)
+				So(err, ShouldBeNil)
+				So(cfg.Kinds, ShouldResemble, &gce.Kinds{})
+				So(cfg.VMs, ShouldResemble, &gce.Configs{})
+			})
+
+			Convey("implicit", func() {
+				c := withInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
+					"services/gce": {},
+				}))
+				cfgs, err := fetch(c)
+				So(err, ShouldBeNil)
+				So(cfgs.Kinds, ShouldResemble, &gce.Kinds{})
+				So(cfgs.VMs, ShouldResemble, &gce.Configs{})
+			})
+
+			Convey("explicit", func() {
+				c := withInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
+					"services/gce": {
+						kindsFile: "",
+						vmsFile:   "",
+					},
+				}))
+				cfgs, err := fetch(c)
+				So(err, ShouldBeNil)
+				So(cfgs.Kinds, ShouldResemble, &gce.Kinds{})
+				So(cfgs.VMs, ShouldResemble, &gce.Configs{})
+			})
 		})
 	})
 }
@@ -158,73 +208,77 @@ func TestMerge(t *testing.T) {
 		c := context.Background()
 
 		Convey("empty", func() {
-			kinds := &gce.Kinds{
-				Kind: []*gce.Kind{
-					{
-						Name: "kind",
-						Attributes: &gce.VM{
-							Project: "project",
-							Zone:    "zone",
+			cfg := &Config{
+				Kinds: &gce.Kinds{
+					Kind: []*gce.Kind{
+						{
+							Name: "kind",
+							Attributes: &gce.VM{
+								Project: "project",
+								Zone:    "zone",
+							},
 						},
 					},
 				},
 			}
-			cfgs := &gce.Configs{}
-			So(merge(c, kinds, cfgs), ShouldBeNil)
-			So(cfgs.GetVms(), ShouldHaveLength, 0)
+			So(merge(c, cfg), ShouldBeNil)
+			So(cfg.VMs.GetVms(), ShouldHaveLength, 0)
 		})
 
 		Convey("unknown kind", func() {
-			kinds := &gce.Kinds{}
-			cfgs := &gce.Configs{
-				Vms: []*gce.Config{
-					{
-						Kind: "kind",
+			cfg := &Config{
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Kind: "kind",
+						},
 					},
 				},
 			}
-			So(merge(c, kinds, cfgs), ShouldErrLike, "unknown kind")
+			So(merge(c, cfg), ShouldErrLike, "unknown kind")
 		})
 
 		Convey("merged", func() {
-			kinds := &gce.Kinds{
-				Kind: []*gce.Kind{
-					{
-						Name: "kind",
-						Attributes: &gce.VM{
-							Disk: []*gce.Disk{
-								{
-									Image: "image 1",
+			cfg := &Config{
+				Kinds: &gce.Kinds{
+					Kind: []*gce.Kind{
+						{
+							Name: "kind",
+							Attributes: &gce.VM{
+								Disk: []*gce.Disk{
+									{
+										Image: "image 1",
+									},
 								},
+								Project: "project 1",
+								Zone:    "zone",
 							},
-							Project: "project 1",
-							Zone:    "zone",
+						},
+					},
+				},
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Attributes: &gce.VM{
+								MachineType: "type",
+							},
+						},
+						{
+							Kind: "kind",
+							Attributes: &gce.VM{
+								Disk: []*gce.Disk{
+									{
+										Image: "image 2",
+									},
+								},
+								Project: "project 2",
+							},
 						},
 					},
 				},
 			}
-			cfgs := &gce.Configs{
-				Vms: []*gce.Config{
-					{
-						Attributes: &gce.VM{
-							MachineType: "type",
-						},
-					},
-					{
-						Kind: "kind",
-						Attributes: &gce.VM{
-							Disk: []*gce.Disk{
-								{
-									Image: "image 2",
-								},
-							},
-							Project: "project 2",
-						},
-					},
-				},
-			}
-			So(merge(c, kinds, cfgs), ShouldBeNil)
-			So(cfgs.GetVms(), ShouldResemble, []*gce.Config{
+			So(merge(c, cfg), ShouldBeNil)
+			So(cfg.VMs.GetVms(), ShouldResemble, []*gce.Config{
 				{
 					Attributes: &gce.VM{
 						MachineType: "type",
@@ -247,6 +301,62 @@ func TestMerge(t *testing.T) {
 	})
 }
 
+func TestNormalize(t *testing.T) {
+	t.Parallel()
+
+	Convey("normalize", t, func() {
+		c := context.Background()
+
+		Convey("empty", func() {
+			cfg := &Config{}
+			So(normalize(c, cfg), ShouldBeNil)
+			So(cfg.VMs.GetVms(), ShouldHaveLength, 0)
+		})
+
+		Convey("amount", func() {
+			cfg := &Config{
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Amount: &gce.Amount{
+								Change: []*gce.Schedule{
+									{
+										Length: &gce.TimePeriod{
+											Time: &gce.TimePeriod_Duration{
+												Duration: "1h",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			So(normalize(c, cfg), ShouldBeNil)
+			So(cfg.VMs.GetVms()[0].Amount.Change[0].Length.GetSeconds(), ShouldEqual, 3600)
+		})
+
+		Convey("lifetime", func() {
+			cfg := &Config{
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Lifetime: &gce.TimePeriod{
+								Time: &gce.TimePeriod_Duration{
+									Duration: "1h",
+								},
+							},
+						},
+					},
+				},
+			}
+			So(normalize(c, cfg), ShouldBeNil)
+			So(cfg.VMs.GetVms()[0].Lifetime.GetSeconds(), ShouldEqual, 3600)
+		})
+	})
+}
+
 func TestSync(t *testing.T) {
 	t.Parallel()
 
@@ -255,22 +365,24 @@ func TestSync(t *testing.T) {
 		c := withServer(context.Background(), srv)
 
 		Convey("none", func() {
-			cfgs := &gce.Configs{}
-			So(sync(c, cfgs), ShouldBeNil)
+			cfg := &Config{}
+			So(sync(c, cfg), ShouldBeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
 			So(err, ShouldBeNil)
 			So(rsp.Configs, ShouldBeEmpty)
 		})
 
 		Convey("creates", func() {
-			cfgs := &gce.Configs{
-				Vms: []*gce.Config{
-					{
-						Prefix: "prefix",
+			cfg := &Config{
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Prefix: "prefix",
+						},
 					},
 				},
 			}
-			So(sync(c, cfgs), ShouldBeNil)
+			So(sync(c, cfg), ShouldBeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
 			So(err, ShouldBeNil)
 			So(rsp.Configs, ShouldHaveLength, 1)
@@ -287,17 +399,19 @@ func TestSync(t *testing.T) {
 					Prefix: "prefix",
 				},
 			})
-			cfgs := &gce.Configs{
-				Vms: []*gce.Config{
-					{
-						Amount: &gce.Amount{
-							Default: 2,
+			cfg := &Config{
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Amount: &gce.Amount{
+								Default: 2,
+							},
+							Prefix: "prefix",
 						},
-						Prefix: "prefix",
 					},
 				},
 			}
-			So(sync(c, cfgs), ShouldBeNil)
+			So(sync(c, cfg), ShouldBeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
 			So(err, ShouldBeNil)
 			So(rsp.Configs, ShouldHaveLength, 1)
@@ -316,8 +430,8 @@ func TestSync(t *testing.T) {
 					Prefix: "prefix1",
 				},
 			})
-			cfgs := &gce.Configs{}
-			So(sync(c, cfgs), ShouldBeNil)
+			cfg := &Config{}
+			So(sync(c, cfg), ShouldBeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
 			So(err, ShouldBeNil)
 			So(rsp.Configs, ShouldBeEmpty)
@@ -333,29 +447,34 @@ func TestValidate(t *testing.T) {
 
 		Convey("invalid", func() {
 			Convey("kinds", func() {
-				kinds := &gce.Kinds{
-					Kind: []*gce.Kind{
-						{},
+				cfg := &Config{
+					Kinds: &gce.Kinds{
+						Kind: []*gce.Kind{
+							{},
+						},
 					},
 				}
-				err := validate(c, kinds, &gce.Configs{})
+				err := validate(c, cfg)
 				So(err, ShouldErrLike, "is required")
 			})
 
 			Convey("configs", func() {
-				cfgs := &gce.Configs{
-					Vms: []*gce.Config{
-						{},
+				cfg := &Config{
+					VMs: &gce.Configs{
+						Vms: []*gce.Config{
+							{},
+						},
 					},
 				}
-				err := validate(c, &gce.Kinds{}, cfgs)
+				err := validate(c, cfg)
 				So(err, ShouldErrLike, "is required")
 			})
 		})
 
 		Convey("valid", func() {
 			Convey("empty", func() {
-				err := validate(c, &gce.Kinds{}, &gce.Configs{})
+				cfg := &Config{}
+				err := validate(c, cfg)
 				So(err, ShouldBeNil)
 			})
 		})
