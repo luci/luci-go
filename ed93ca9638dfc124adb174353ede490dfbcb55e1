@@ -16,6 +16,24 @@
       "revId": "ed93ca9638dfc124adb174353ede490dfbcb55e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7f95dd7_a11ef35b",
+        "filename": "gce/cmd/agent/swarming-start-bot.conf.tmpl",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1117044
+      },
+      "writtenOn": "2019-02-27T07:21:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a73de52_90e8a814",
+      "revId": "ed93ca9638dfc124adb174353ede490dfbcb55e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
