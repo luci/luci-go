@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a64a9821_4957bdde",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-27T04:05:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fd14a7ea_bd02ef39",
+      "range": {
+        "startLine": 103,
+        "startChar": 8,
+        "endLine": 103,
+        "endChar": 11
+      },
+      "revId": "63ef5044a5fc04c6584749f0c692c7f19d40cf04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0ad063d8_d55c9295",
         "filename": "gce/appengine/config/config.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2019-02-27T03:43:22Z",
       "side": 1,
       "message": "hm, the exception is the other way around i think. If vms is not found, but kinds is found, then it\u0027s OK.",
+      "range": {
+        "startLine": 127,
+        "startChar": 13,
+        "endLine": 128,
+        "endChar": 62
+      },
+      "revId": "63ef5044a5fc04c6584749f0c692c7f19d40cf04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6eb30aed_da9a556e",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-27T04:05:57Z",
+      "side": 1,
+      "message": "It\u0027s as stated on L99. If VMs and kinds are both non-empty, revisions must match. All other cases are okay.\n1. Both empty. This is fine.\n2. VMs empty but kinds not empty. This won\u0027t do anything because the declared kinds aren\u0027t being used, but there\u0027s nothing strictly wrong with it.\n3. VMs non-empty but kinds empty. This may not be fine, because VMs may be referencing some kinds, but validation will catch this. On the other hand, if I don\u0027t create kinds.cfg at all because my vms.cfg references no kinds, then I\u0027d expect it to work. Therefore this unique case: vms.cfg non-empty, but kinds.cfg empty, warrants special consideration. It\u0027s a unique case that may be reasonable or may be wrong, and validation will figure it out.",
+      "parentUuid": "0ad063d8_d55c9295",
       "range": {
         "startLine": 127,
         "startChar": 13,
@@ -68,6 +116,30 @@
       "revId": "63ef5044a5fc04c6584749f0c692c7f19d40cf04",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf056562_89817289",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-27T04:05:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d780906_a84cf0b3",
+      "range": {
+        "startLine": 193,
+        "startChar": 5,
+        "endLine": 193,
+        "endChar": 8
+      },
+      "revId": "63ef5044a5fc04c6584749f0c692c7f19d40cf04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

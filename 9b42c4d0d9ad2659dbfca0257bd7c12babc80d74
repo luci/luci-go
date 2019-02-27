@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "79e315a3_1c278747",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-27T04:05:57Z",
+      "side": 1,
+      "message": "I forgot \"git cl upload\" doesn\u0027t update description. Done.",
+      "parentUuid": "bd424e85_94cd8192",
+      "range": {
+        "startLine": 13,
+        "startChar": 60,
+        "endLine": 18,
+        "endChar": 8
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b325f29_212c92bf",
         "filename": "gce/api/config/v1/configs.go",
         "patchSetId": 1
@@ -259,6 +283,30 @@
       "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6652a3e_d8e40e64",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-27T04:05:57Z",
+      "side": 1,
+      "message": "I actually think it\u0027s simpler like this because it matches top-level configs. No need to remember whether Kinds means *gce.Kinds or []*gce.Kind.",
+      "parentUuid": "0b29b864_f7938feb",
+      "range": {
+        "startLine": 48,
+        "startChar": 7,
+        "endLine": 48,
+        "endChar": 17
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -415,6 +463,30 @@
       "side": 1,
       "message": "This isn\u0027t public API, it\u0027s an internal helper. All its callers are known. There is no intrinsic benefit in making internal helper more versatile than its callers need it to be. It can be done, however, because say code of the helper itself gets simpler, but in this case it\u0027s the reverse.",
       "parentUuid": "9617c604_31ea7fa9",
+      "range": {
+        "startLine": 143,
+        "startChar": 26,
+        "endLine": 143,
+        "endChar": 35
+      },
+      "revId": "9b42c4d0d9ad2659dbfca0257bd7c12babc80d74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53146916_c9e0d4e9",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-27T04:05:57Z",
+      "side": 1,
+      "message": "If I change how it\u0027s called I don\u0027t want to have to remember that this expects a *Config whose Kinds and VMs are not nil. That seems like an odd requirement. There\u0027s no reason it shouldn\u0027t work on an empty \u0026Config{}.\n\nI don\u0027t believe adding \"Get\" in one place in each of these functions makes them so much more complicated that we should avoid it. On the other hand, I do believe it makes it less frustrating when refactoring.",
+      "parentUuid": "57974d60_e3d53c37",
       "range": {
         "startLine": 143,
         "startChar": 26,
