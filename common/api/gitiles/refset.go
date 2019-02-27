@@ -241,7 +241,9 @@ func parseRef(ref string) (prefix, literalRef, refRegexp string, compiledRegexp 
 	if strings.HasPrefix(ref, "regexp:") {
 		refRegexp = strings.TrimPrefix(ref, "regexp:")
 		compiledRegexp = regexp.MustCompile("^" + refRegexp + "$")
-		literalPrefix, _ := compiledRegexp.LiteralPrefix()
+		// TODO(tandrii): link to Go bug.
+		// Sometimes, LiteralPrefix(^regexp$) != literalPrefix(regexp).
+		literalPrefix, _ := regexp.MustCompile(refRegexp).LiteralPrefix()
 		prefix = literalPrefix[:strings.LastIndex(literalPrefix, "/")]
 		return
 	}

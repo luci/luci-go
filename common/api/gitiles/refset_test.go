@@ -16,6 +16,7 @@ package gitiles
 
 import (
 	"context"
+	"regexp"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -156,5 +157,14 @@ func TestRefSet(t *testing.T) {
 				So(ctx.Finalize(), ShouldBeNil)
 			})
 		})
+	})
+
+	Convey("smoke test of LiteralPrefix not working as expected", t, func() {
+		r := "refs/heads/\\d+\\.\\d+.\\d"
+		l1, _ := regexp.MustCompile(r).LiteralPrefix()
+		l2, _ := regexp.MustCompile("^" + r + "$").LiteralPrefix()
+		So(l1, ShouldResemble, "refs/heads/")
+		So(l2, ShouldResemble, "") // TODO(tandrii): link to Go bug.
+		NewRefSet([]string{"regexp:" + r})
 	})
 }
