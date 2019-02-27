@@ -132,7 +132,7 @@ luci.builder(
 #   triggers: "b3"
 #   gitiles: <
 #     repo: "https://noop.com"
-#     refs: "refs/heads/master"
+#     refs: "regexp:refs/heads/master"
 #   >
 # >
 # trigger: <
@@ -143,7 +143,7 @@ luci.builder(
 #   triggers: "b3"
 #   gitiles: <
 #     repo: "https://noop.com"
-#     refs: "refs/heads/master"
+#     refs: "regexp:refs/heads/master"
 #   >
 # >
 # acl_sets: <

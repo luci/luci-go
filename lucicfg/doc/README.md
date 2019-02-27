@@ -566,7 +566,6 @@ luci.gitiles_poller(
 
     # Optional arguments.
     refs = None,
-    refs_regexps = None,
     schedule = None,
     triggers = None,
 )
@@ -601,19 +600,12 @@ each iteration it triggers builders if either:
   * A ref belonging to the watched set has just been created. This produces
     a single triggering request.
 
-The watched ref set is defined via `refs` and `refs_regexps` fields. One is
-just a simple enumeration of refs, and another allows to use regular
-expressions to define what refs belong to the watched set. Both fields can
-be used at the same time. If neither is set, the gitiles_poller defaults to
-watching `refs/heads/master`.
-
 #### Arguments {#luci.gitiles_poller-args}
 
 * **name**: name of the poller, to refer to it from other rules. Required.
 * **bucket**: a bucket the poller is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
 * **repo**: URL of a git repository to poll, starting with `https://`. Required.
-* **refs**: a list of fully qualified refs to watch, e.g. `refs/heads/master` or `refs/tags/v1.2.3`. Each ref must start with `refs/`.
-* **refs_regexps**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
+* **refs**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. If empty, defaults to `['refs/heads/master']`.
 * **schedule**: string with a schedule that describes when to run one iteration of the poller. See [Defining cron schedules](#schedules_doc) for the expected format of this field. Note that it is rare to use custom schedules for pollers. By default, the poller will run each 30 sec.
 * **triggers**: builders to trigger whenever the poller detects a new git commit on any ref in the watched ref set.
 
@@ -783,7 +775,6 @@ luci.console_view(
     # Optional arguments.
     title = None,
     refs = None,
-    refs_regexps = None,
     exclude_ref = None,
     header = None,
     include_experimental_builds = None,
@@ -798,9 +789,9 @@ A Milo UI view that displays a table-like console where columns are
 builders and rows are git commits on which builders are triggered.
 
 A console is associated with a single git repository it uses as a source of
-commits to display as rows. The watched ref set is defined via `refs`,
-`refs_regexps` and `exclude_ref` fields. If neither of `refs` or
-`refs_regexps` are set, the console defaults to watching `refs/heads/master`.
+commits to display as rows. The watched ref set is defined via `refs` and
+optional `exclude_ref` fields. If `refs` are empty, the console defaults to
+watching `refs/heads/master`.
 
 `exclude_ref` is useful when watching for commits that landed specifically
 on a branch. For example, the config below allows to track commits from all
@@ -809,7 +800,7 @@ these release branches are branched off:
 
     luci.console_view(
         ...
-        refs_regexps = ['refs/branch-heads/\d+\.\d+'],
+        refs = ['refs/branch-heads/\d+\.\d+'],
         exclude_ref = 'refs/heads/master',
         ...
     )
@@ -896,8 +887,7 @@ There are two way to supply this message via `header` field:
 * **name**: a name of this console, will show up in URLs. Note that names of [luci.console_view(...)](#luci.console_view) and [luci.list_view(...)](#luci.list_view) are in the same namespace i.e. defining a console view with the same name as some list view (and vice versa) causes an error. Required.
 * **title**: a title of this console, will show up in UI. Defaults to `name`.
 * **repo**: URL of a git repository whose commits are displayed as rows in the console. Must start with `https://`. Required.
-* **refs**: a list of fully qualified refs to pull commits from when displaying the console, e.g. `refs/heads/master` or `refs/tags/v1.2.3`. Each ref must start with `refs/`.
-* **refs_regexps**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.
+* **refs**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.  If empty, defaults to `['refs/heads/master']`.
 * **exclude_ref**: a single ref, commits from which are ignored even when they are reachable from refs specified via `refs` and `refs_regexps`. Note that force pushes to this ref are not supported. Milo uses caching assuming set of commits reachable from this ref may only grow, never lose some commits.
 * **header**: either a string with a path to the file with the header definition (see [io.read_file(...)](#io.read_file) for the acceptable path format), or a dict with the header definition.
 * **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.

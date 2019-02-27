@@ -384,7 +384,7 @@ def gen_scheduler_cfg(ctx):
         schedule = poller.props.schedule,
         gitiles = scheduler_pb.GitilesTask(
             repo = poller.props.repo,
-            refs = poller.props.refs + ['regexp:'+r for r in poller.props.refs_regexps],
+            refs = ['regexp:' + r for r in poller.props.refs],
         ),
     ))
   cfg.trigger = sorted(cfg.trigger, key=lambda x: x.id)
@@ -556,17 +556,13 @@ def _milo_console_view(view, opts, project_name):
       pb.category = e.props.category
       builders.append(pb)
 
-  refs = []
-  refs.extend(view.props.refs or [])
-  refs.extend(['regexp:' + r for r in view.props.refs_regexps or []])
-
   return milo_pb.Console(
       id = view.props.name,
       name = view.props.title,
       header = view.props.header,
 
       repo_url = view.props.repo,
-      refs = refs,
+      refs = ['regexp:' + r for r in view.props.refs],
       exclude_ref = view.props.exclude_ref,
 
       # TODO(hinoka,iannucci): crbug/832893 - Support custom manifest names,

@@ -60,7 +60,7 @@ luci.builder(
 #   triggers: "builder"
 #   gitiles: <
 #     repo: "https://noop.com"
-#     refs: "refs/heads/master"
+#     refs: "regexp:refs/heads/master"
 #   >
 # >
 # acl_sets: <
