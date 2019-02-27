@@ -396,6 +396,7 @@
   margin-bottom: 2px;
   margin-right: 1px;
   margin-left: 1px;
+  white-space: nowrap;
 }
 
 /* Builds */
