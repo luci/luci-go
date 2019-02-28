@@ -972,14 +972,45 @@ projects, launches presubmit jobs (aka tryjobs) whenever a CL is marked as
 ready for CQ, and submits the CL if it passes all checks.
 
 This optional rule can be used to set global CQ parameters that apply to all
-luci.cq_group(...) defined in the project.
+[luci.cq_group(...)](#luci.cq_group) defined in the project.
 
 #### Arguments {#luci.cq-args}
 
-* **submit_max_burst**: maximum number of successful CQ attempts completed by submitting corresponding Gerrit CL(s) before waiting `submit_burst_delay`. This feature today applies to all attempts processed by CQ, across all luci.cq_group(...) instances. Optional, by default there's no limit. If used, requires `submit_burst_delay` to be set too.
+* **submit_max_burst**: maximum number of successful CQ attempts completed by submitting corresponding Gerrit CL(s) before waiting `submit_burst_delay`. This feature today applies to all attempts processed by CQ, across all [luci.cq_group(...)](#luci.cq_group) instances. Optional, by default there's no limit. If used, requires `submit_burst_delay` to be set too.
 * **submit_burst_delay**: how long to wait between bursts of submissions of CQ attempts. Required if `submit_max_burst` is used.
 * **draining_start_time**: if present, the CQ will refrain from processing any CLs, on which CQ was triggered after the specified time. This is an UTC RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z is mandatory.
 * **status_host**: hostname of the CQ status app to push updates to. Optional and deprecated.
+
+
+
+
+### luci.cq_group {#luci.cq_group}
+
+```python
+luci.cq_group(
+    # Required arguments.
+    name,
+    watch,
+
+    # Optional arguments.
+    acls = None,
+    allow_submit_with_open_deps = None,
+    tree_status_host = None,
+)
+```
+
+
+
+Defines a set of refs to be watched by the CL and a set of verifiers to run
+whenever there's a pending approved CL for a ref in the watched set.
+
+#### Arguments {#luci.cq_group-args}
+
+* **name**: a name of this group, to reference it in other rules. Doesn't show up anywhere in configs or UI. Required.
+* **watch**: either a single cq.refset(...) or a list of cq.refset(...) (one per repo), defining what set of refs the CQ should monitor for pending CLs. Required.
+* **acls**: list of [acl.entry(...)](#acl.entry) objects with ACLs specific for this CQ group. Only `acl.CQ_*` roles are significant. By default ACLs are inherited from [luci.project(...)](#luci.project) definition. At least one `acl.CQ_COMMITTER` entry should be provided somewhere (either here or in [luci.project(...)](#luci.project)).
+* **allow_submit_with_open_deps**: controls how CQ full run behaves when the current Gerrit CL has open dependencies (not yet submitted CLs on which *this* CL depends). If set to False (default), the CQ will abort a full run attempt immediately if open dependencies are detected. If set to True, then the CQ will not abort a full run, and upon passing all other verifiers, the CQ will attempt to submit the CL regardless of open dependencies and whether the CQ verified those open dependencies. In turn, if Gerrit project config allows this, Gerrit will execute submit of all dependent CLs first and then this CL.
+* **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
 
 
 
@@ -1010,6 +1041,8 @@ Similarly some roles can be assigned to individual users, other only to groups.
 | acl.SCHEDULER_READER |project, bucket |groups, users |Viewing Scheduler jobs, invocations and their debug logs. |
 | acl.SCHEDULER_TRIGGERER |project, bucket |groups, users |Same as `SCHEDULER_READER` + ability to trigger jobs. |
 | acl.SCHEDULER_OWNER |project, bucket |groups, users |Full access to Scheduler jobs, including ability to abort them. |
+| acl.CQ_COMMITTER |project, cq_group |groups |Committing approved CLs via CQ. |
+| acl.CQ_DRY_RUNNER |project, cq_group |groups |Executing presubmit tests for CLs via CQ. |
 
 
 

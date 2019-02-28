@@ -632,14 +632,21 @@ def _milo_bucket_name(bucket_name, project_name):
 ## commit-queue.cfg.
 
 
+# TODO(vadimsh): Implement Tryjob.RetryConfig.
+# TODO(vadimsh): Implement basic tryjob verifiers.
+# TODO(vadimsh): Implement triggered_by generation.
+# TODO(vadimsh): Implement equivalent_to generation.
+
+
 def gen_cq_cfg(ctx):
   """Generates commit-queue.cfg."""
-  cq_node = graph.node(keys.cq())
-
-  # TODO(vadimsh): Carry on if at least one cq_group() is defined.
-  if not cq_node:
+  cq_groups = graph.children(keys.project(), kind=kinds.CQ_GROUP)
+  if not cq_groups:
     return
 
+  # Note: commit-queue.cfg without any ConfigGroup is forbidden by CQ, but we
+  # still allow to specify luci.cq(...) in this case (it is just ignored).
+  cq_node = graph.node(keys.cq())
   cfg = cq_pb.Config(
       cq_status_host =  cq_node.props.status_host if cq_node else None,
       draining_start_time = cq_node.props.draining_start_time if cq_node else None,
@@ -654,4 +661,63 @@ def gen_cq_cfg(ctx):
         ),
     )
 
-  # TODO(vadimsh): Populate config_groups.
+  # Detect when a repo is covered by multiple cq_group nodes. Not allowed.
+  seen = {}
+  for g in cq_groups:
+    for w in g.props.watch:
+      if w.__repo_key in seen:
+        error('repo %r is already covered by another cq_group, previous declaration:\n%s' % (
+            w.__repo, seen[w.__repo_key].trace,
+        ), trace=g.trace)
+      else:
+        seen[w.__repo_key] = g
+
+  # Each luci.cq_group(...) results in a separate cq_pb.ConfigGroup.
+  project = get_project()
+  cfg.config_groups = [_cq_config_group(g, project) for g in cq_groups]
+
+
+def _cq_config_group(g, project):
+  """Given a cq_group node returns cq_pb.ConfigGroup."""
+  acls = aclimpl.normalize_acls(g.props.acls + project.props.acls)
+  gerrit_cq_ability = cq_pb.Verifiers.GerritCQAbility(
+      committer_list = [a.group for a in filter_acls(acls, [acl.CQ_COMMITTER])],
+      dry_run_access_list = [a.group for a in filter_acls(acls, [acl.CQ_DRY_RUNNER])],
+      allow_submit_with_open_deps = g.props.allow_submit_with_open_deps,
+  )
+  if not gerrit_cq_ability.committer_list:
+    error('at least one CQ_COMMITTER acl.entry must be specified (either here on in luci.project)', trace=g.trace)
+
+  tree_status = None
+  if g.props.tree_status_host:
+    tree_status = cq_pb.Verifiers.TreeStatus(url='https://'+g.props.tree_status_host)
+
+  tryjob = cq_pb.Verifiers.Tryjob(
+      builders = None,      # TODO
+      retry_config = None,  # TODO
+  )
+
+  group_by_gob_host = {}
+  for w in g.props.watch:
+    group_by_gob_host.setdefault(w.__gob_host, []).append(w)
+
+  return cq_pb.ConfigGroup(
+      gerrit = [
+          cq_pb.ConfigGroup.Gerrit(
+              url = 'https://%s-review.googlesource.com' % host,
+              projects = [
+                  cq_pb.ConfigGroup.Gerrit.Project(
+                      name = w.__gob_proj,
+                      ref_regexp = w.__refs,
+                  )
+                  for w in watches
+              ]
+          )
+          for host, watches in group_by_gob_host.items()
+      ],
+      verifiers = cq_pb.Verifiers(
+          gerrit_cq_ability = gerrit_cq_ability,
+          tree_status = tree_status,
+          tryjob = tryjob,
+      ),
+  )
