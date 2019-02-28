@@ -22,6 +22,93 @@
       "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d7aebd9_6d558c77",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 645,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-28T01:33:28Z",
+      "side": 1,
+      "message": "yes, many, mostly non-chromium projects which don\u0027t know what they are missing :)\n(internal use internal-cq-status)",
+      "parentUuid": "ac8607f3_99194fc7",
+      "range": {
+        "startLine": 645,
+        "startChar": 24,
+        "endLine": 645,
+        "endChar": 54
+      },
+      "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e29d59b6_f3e7d193",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-28T01:33:28Z",
+      "side": 1,
+      "message": "did you copy it from somewhere?\nI\u0027d rewrite as:\n\nlaunches presubmit jobs (aka tryjobs) whenever a CL is marked as ready for CQ.\n\n\u0027presubmit\u0027 often relates to PRESUBMIT.py, while tryjobs aren\u0027t\n\"ready for commit\" is actually used as a human-friend vote value in some projects, but not all.",
+      "range": {
+        "startLine": 31,
+        "startChar": 12,
+        "endLine": 31,
+        "endChar": 80
+      },
+      "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "024bd372_557e27f7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-28T01:33:28Z",
+      "side": 1,
+      "message": "submits",
+      "range": {
+        "startLine": 32,
+        "startChar": 6,
+        "endLine": 32,
+        "endChar": 13
+      },
+      "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb98245e_ca37b952",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-28T01:33:28Z",
+      "side": 1,
+      "message": "btw, do you have better ideas  for this field?",
+      "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
