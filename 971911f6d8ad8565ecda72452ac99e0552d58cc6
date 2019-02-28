@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d21b9123_fe35b6b2",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-02-28T02:46:31Z",
+      "side": 1,
+      "message": "Remove \"no\" (I assume you really mean \"if x is not specified\" not \"if no x is not specified\").",
+      "range": {
+        "startLine": 285,
+        "startChar": 12,
+        "endLine": 285,
+        "endChar": 14
+      },
+      "revId": "971911f6d8ad8565ecda72452ac99e0552d58cc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
