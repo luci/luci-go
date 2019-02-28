@@ -46,6 +46,8 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.milo_view -> luci.console_view
 #   luci.console_view -> [luci.console_view_entry]
 #   luci.console_view_entry -> list.builder_ref
+#   luci.cq_verifiers_root -> [luci.cq_tryjob_verifier]
+#   luci.cq_group -> [luci.cq_tryjob_verifier]
 
 
 def _global_key(kind, attr, ref):
@@ -101,12 +103,14 @@ kinds = struct(
     CONSOLE_VIEW_ENTRY = 'luci.console_view_entry',
     CQ = 'luci.cq',
     CQ_GROUP = 'luci.cq_group',
+    CQ_TRYJOB_VERIFIER = 'luci.cq_tryjob_verifier',
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = 'luci.builder_ref',
     TRIGGERER = 'luci.triggerer',
     MILO_ENTRIES_ROOT = 'luci.milo_entries_root',
     MILO_VIEW = 'luci.milo_view',
+    CQ_VERIFIERS_ROOT = 'luci.cq_verifiers_root',
 )
 
 
@@ -137,13 +141,14 @@ keys = struct(
     triggerer = lambda ref, attr='triggered_by': _bucket_scoped_key(kinds.TRIGGERER, attr, ref),
     milo_entries_root = lambda: graph.key(kinds.MILO_ENTRIES_ROOT, '...'),
     milo_view = lambda name: graph.key(kinds.MILO_VIEW, name),
+    cq_verifiers_root = lambda: graph.key(kinds.CQ_VERIFIERS_ROOT, '...'),
 
     # Generates a key of the given kind and name within some auto-generated
     # unique container key.
     #
-    # Used with LIST_VIEW_ENTRY and CONSOLE_VIEW_ENTRY helper nodes. They don't
-    # really represent any "external" entities, and their names don't really
-    # matter, other than for error messages.
+    # Used with LIST_VIEW_ENTRY, CONSOLE_VIEW_ENTRY and CQ_TRYJOB_VERIFIER
+    # helper nodes. They don't really represent any "external" entities, and
+    # their names don't really matter, other than for error messages.
     #
     # Note that IDs of keys whose kind stars with '_' (like '_UNIQUE' here),
     # are skipped when printing the key in error messages. Thus the meaningless
