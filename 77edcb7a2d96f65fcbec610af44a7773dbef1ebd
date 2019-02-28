@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a79d411_ef930215",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 786,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-28T06:57:11Z",
+      "side": 1,
+      "message": "is this required? E.g. is it allowed to declare multiple Tryjob.Builder with same \u0027name\u0027 but (possibly) different config inside single ConfigGroup?",
+      "range": {
+        "startLine": 786,
+        "startChar": 4,
+        "endLine": 786,
+        "endChar": 32
+      },
+      "revId": "77edcb7a2d96f65fcbec610af44a7773dbef1ebd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "447891af_5970982c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_group.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-28T06:57:11Z",
+      "side": 1,
+      "message": "this is to allow:\n\nluci.cq_group(\n   verifiers \u003d [\n      luci.builder(...),\n   ],\n)\n\n(Since by lucicfg convention, everywhere where we accept builder names we should also accept builder_refs. So this is done for consistency sake, not because I expect it to be very useful way or defining verifiers. But who knows...)",
+      "range": {
+        "startLine": 111,
+        "startChar": 33,
+        "endLine": 111,
+        "endChar": 80
+      },
+      "revId": "77edcb7a2d96f65fcbec610af44a7773dbef1ebd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
