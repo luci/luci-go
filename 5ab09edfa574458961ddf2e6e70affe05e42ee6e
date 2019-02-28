@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7595bf70_6d3abdd6",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-28T23:12:11Z",
+      "side": 1,
+      "message": "i realize that context is GCE, but in LUCI we have soo many tags, that I\u0027d be helpful to elaborate which tags these, perhaps with link to cloud docs and/or intended usage.",
+      "revId": "5ab09edfa574458961ddf2e6e70affe05e42ee6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
