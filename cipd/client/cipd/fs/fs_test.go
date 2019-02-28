@@ -304,6 +304,15 @@ func TestEnsureFileGone(t *testing.T) {
 			So(fs.isMissing("abc"), ShouldBeTrue)
 		})
 	}
+
+	Convey("crbug.com/936911: EnsureFileGone can delete files opened with OpenFile", t, func() {
+		fs := tempFileSystem()
+		fs.write("abc/file", "zzz")
+		f, err := fs.OpenFile(fs.join("abc/file"))
+		So(err, ShouldBeNil)
+		So(f.Close(), ShouldBeNil)
+		So(fs.EnsureFileGone(ctx, f.Name()), ShouldBeNil)
+	})
 }
 
 func TestEnsureDirectoryGone(t *testing.T) {

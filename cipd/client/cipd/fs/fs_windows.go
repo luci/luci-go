@@ -48,9 +48,7 @@ func longFileName(path string) string {
 // applied to the file when it is opened. This is required in order for
 // atomicRename to be able to rename a file while it is being read.
 func openFile(path string) (*os.File, error) {
-	path = longFileName(path)
-
-	lpFileName, err := syscall.UTF16PtrFromString(path)
+	lpFileName, err := syscall.UTF16PtrFromString(longFileName(path))
 	if err != nil {
 		return nil, err
 	}
