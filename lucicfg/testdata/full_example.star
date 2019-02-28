@@ -25,6 +25,7 @@ luci.project(
             roles = [
                 acl.BUILDBUCKET_OWNER,
                 acl.SCHEDULER_OWNER,
+                acl.CQ_COMMITTER,
             ],
             groups = ['admins'],
         ),
@@ -266,11 +267,26 @@ luci.console_view_entry(
 
 # CQ.
 
+
 luci.cq(
     submit_max_burst = 10,
     submit_burst_delay = 10 * time.minute,
     draining_start_time = '2017-12-23T15:47:58Z',
     status_host = 'chromium-cq-status.appspot.com',
+)
+
+luci.cq_group(
+    name = 'main-cq',
+    watch = [
+        cq.refset('https://example.googlesource.com/repo'),
+        cq.refset('https://example.googlesource.com/another/repo'),
+    ],
+    acls = [
+        acl.entry(acl.CQ_COMMITTER, groups = ['committers']),
+        acl.entry(acl.CQ_DRY_RUNNER, groups = ['dry-runners']),
+    ],
+    allow_submit_with_open_deps = True,
+    tree_status_host = 'tree-status.example.com',
 )
 
 
@@ -283,6 +299,32 @@ luci.cq(
 #   max_burst: 10
 #   burst_delay: <
 #     seconds: 600
+#   >
+# >
+# config_groups: <
+#   gerrit: <
+#     url: "https://example-review.googlesource.com"
+#     projects: <
+#       name: "repo"
+#       ref_regexp: "refs/heads/master"
+#     >
+#     projects: <
+#       name: "another/repo"
+#       ref_regexp: "refs/heads/master"
+#     >
+#   >
+#   verifiers: <
+#     gerrit_cq_ability: <
+#       committer_list: "admins"
+#       committer_list: "committers"
+#       dry_run_access_list: "dry-runners"
+#       allow_submit_with_open_deps: true
+#     >
+#     tree_status: <
+#       url: "https://tree-status.example.com"
+#     >
+#     tryjob: <
+#     >
 #   >
 # >
 # ===
