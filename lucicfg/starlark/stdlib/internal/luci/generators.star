@@ -22,10 +22,12 @@ load('@stdlib//internal/time.star', 'time')
 load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'kinds', 'triggerer')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
+load('@proto//google/protobuf/duration.proto', duration_pb='google.protobuf')
 load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
 
 load('@proto//luci/buildbucket/project_config.proto', buildbucket_pb='buildbucket')
 load('@proto//luci/config/project_config.proto', config_pb='config')
+load('@proto//luci/cq/project_config.proto', cq_pb='cq.config')
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
 load('@proto//luci/milo/project_config.proto', milo_pb='milo')
 load('@proto//luci/scheduler/project_config.proto', scheduler_pb='scheduler.config')
@@ -38,6 +40,7 @@ def register():
   lucicfg.generator(impl = gen_buildbucket_cfg)
   lucicfg.generator(impl = gen_scheduler_cfg)
   lucicfg.generator(impl = gen_milo_cfg)
+  lucicfg.generator(impl = gen_cq_cfg)
 
 
 ################################################################################
@@ -623,3 +626,32 @@ def _milo_bucket_name(bucket_name, project_name):
   """Prefixes the bucket name with `luci.<project>.` if necessary."""
   pfx = 'luci.%s.' % project_name
   return bucket_name if bucket_name.startswith(pfx) else pfx + bucket_name
+
+
+################################################################################
+## commit-queue.cfg.
+
+
+def gen_cq_cfg(ctx):
+  """Generates commit-queue.cfg."""
+  cq_node = graph.node(keys.cq())
+
+  # TODO(vadimsh): Carry on if at least one cq_group() is defined.
+  if not cq_node:
+    return
+
+  cfg = cq_pb.Config(
+      cq_status_host =  cq_node.props.status_host if cq_node else None,
+      draining_start_time = cq_node.props.draining_start_time if cq_node else None,
+  )
+  ctx.config_set['commit-queue.cfg'] = cfg
+
+  if cq_node and cq_node.props.submit_max_burst:
+    cfg.submit_options = cq_pb.SubmitOptions(
+        max_burst = cq_node.props.submit_max_burst,
+        burst_delay = duration_pb.Duration(
+            seconds = cq_node.props.submit_burst_delay/time.second,
+        ),
+    )
+
+  # TODO(vadimsh): Populate config_groups.

@@ -264,7 +264,28 @@ luci.console_view_entry(
 )
 
 
+# CQ.
+
+luci.cq(
+    submit_max_burst = 10,
+    submit_burst_delay = 10 * time.minute,
+    draining_start_time = '2017-12-23T15:47:58Z',
+    status_host = 'chromium-cq-status.appspot.com',
+)
+
+
 # Expect configs:
+#
+# === commit-queue.cfg
+# draining_start_time: "2017-12-23T15:47:58Z"
+# cq_status_host: "chromium-cq-status.appspot.com"
+# submit_options: <
+#   max_burst: 10
+#   burst_delay: <
+#     seconds: 600
+#   >
+# >
+# ===
 #
 # === cr-buildbucket.cfg
 # buckets: <

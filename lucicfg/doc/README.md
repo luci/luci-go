@@ -951,6 +951,39 @@ the console declaration. In particular useful in functions. For example:
 
 
 
+### luci.cq {#luci.cq}
+
+```python
+luci.cq(
+    # Optional arguments.
+    submit_max_burst = None,
+    submit_burst_delay = None,
+    draining_start_time = None,
+    status_host = None,
+)
+```
+
+
+
+Defines optional configuration of the CQ service for this project.
+
+CQ is a service that monitors Gerrit CLs in a configured set of Gerrit
+projects, launches presubmit jobs (aka tryjobs) whenever a CL is marked as
+ready for CQ, and submits the CL if it passes all checks.
+
+This optional rule can be used to set global CQ parameters that apply to all
+luci.cq_group(...) defined in the project.
+
+#### Arguments {#luci.cq-args}
+
+* **submit_max_burst**: maximum number of successful CQ attempts completed by submitting corresponding Gerrit CL(s) before waiting `submit_burst_delay`. This feature today applies to all attempts processed by CQ, across all luci.cq_group(...) instances. Optional, by default there's no limit. If used, requires `submit_burst_delay` to be set too.
+* **submit_burst_delay**: how long to wait between bursts of submissions of CQ attempts. Required if `submit_max_burst` is used.
+* **draining_start_time**: if present, the CQ will refrain from processing any CLs, on which CQ was triggered after the specified time. This is an UTC RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z is mandatory.
+* **status_host**: hostname of the CQ status app to push updates to. Optional and deprecated.
+
+
+
+
 
 
 ## ACLs

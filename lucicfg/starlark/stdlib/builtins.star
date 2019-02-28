@@ -22,6 +22,7 @@ load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
 load('@stdlib//internal/luci/rules/builder.star', _builder='builder')
 load('@stdlib//internal/luci/rules/console_view.star', _console_view='console_view')
 load('@stdlib//internal/luci/rules/console_view_entry.star', _console_view_entry='console_view_entry')
+load('@stdlib//internal/luci/rules/cq.star', _cq='cq')
 load('@stdlib//internal/luci/rules/gitiles_poller.star', _gitiles_poller='gitiles_poller')
 load('@stdlib//internal/luci/rules/list_view.star', _list_view='list_view')
 load('@stdlib//internal/luci/rules/list_view_entry.star', _list_view_entry='list_view_entry')
@@ -60,6 +61,7 @@ luci = struct(
     list_view_entry = _list_view_entry,
     console_view = _console_view,
     console_view_entry = _console_view_entry,
+    cq = _cq,
 )
 acl = _acl
 scheduler = _scheduler

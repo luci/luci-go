@@ -30,6 +30,7 @@ import (
 
 	_ "go.chromium.org/luci/buildbucket/proto/config"
 	_ "go.chromium.org/luci/common/proto/config"
+	_ "go.chromium.org/luci/cq/api/config/v2"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
 	_ "go.chromium.org/luci/lucicfg/external/crostesting/proto/config"
@@ -114,6 +115,14 @@ var publicProtos = map[string]struct {
 	"luci/scheduler/project_config.proto": {
 		"scheduler.config",
 		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
+	},
+
+	// Commit Queue project configs (v2).
+	//
+	// load("@proto//luci/cq/project_config.proto", cq_pb="cq.config")
+	"luci/cq/project_config.proto": {
+		"cq.config",
+		"go.chromium.org/luci/cq/api/config/v2/cq.proto",
 	},
 
 	// Swarming service configs.
