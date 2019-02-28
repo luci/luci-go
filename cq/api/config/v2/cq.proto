@@ -282,12 +282,8 @@ message Verifiers {
       //   * If a file in a CL matches any location_regexp_exclude, then this file
       //   won't be considered when matching location_regexp.
       //
-      // If no location_regexp is not specified (default),
-      // builder will be used on all CLs, even those which are not modifying any
-      // file (just commit description changes).
-      // TODO(tandrii): CQ shouldn't process such CLs https://crbug.com/892462,
-      // which would allow to change default location_regexp to '.*', ie matching
-      // any file in any Gerrit project.
+      // If location_regexp is not specified (default), builder will be used
+      // on all CLs.
       //
       // The location_regexp is matches are done against the following string:
       //   <gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
