@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b063e1c5_b20bb2e9",
+        "filename": "gce/appengine/backend/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-02-28T02:23:24Z",
+      "side": 1,
+      "message": "total or remaining? In code below, it is remaining, but reading this doc I\u0027d be thinking of total.\nHow about 2 metrics, one for usage one for total. Then, queries can plot the difference.",
+      "range": {
+        "startLine": 25,
+        "startChar": 7,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "194edb4fd22bd81cfd4bb65cc59e0a09a9a875cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
