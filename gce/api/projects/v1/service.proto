@@ -1,0 +1,56 @@
+// Copyright 2019 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package projects;
+
+import "google/protobuf/empty.proto";
+import "go.chromium.org/luci/gce/api/projects/v1/config.proto";
+
+// A request to delete a project.
+message DeleteRequest {
+  // The id of the config to project.
+  string id = 1;
+}
+
+// A request to create or update a project.
+message EnsureRequest {
+  // The id of the project to ensure.
+  string id = 1;
+  // The project.
+  Config project = 2;
+}
+
+// A request to get a project.
+message GetRequest {
+  // The id of the project to get.
+  string id = 1;
+}
+
+// A request to list all projects.
+message ListRequest {
+  // TODO(smut): Support page size and token if necessary.
+}
+
+// A response containing projects.
+message ListResponse {
+  // The projects.
+  repeated Config projects = 1;
+}
+
+// A service for manipulating projects.
+service Projects {
+  // Delete deletes an existing project.
+  // Internal API.
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+  // Ensure ensures a project exists.
+  // Creates a new project or updates an existing one as necessary.
+  // Internal API.
+  rpc Ensure(EnsureRequest) returns (Config);
+  // Get returns an existing project.
+  rpc Get(GetRequest) returns (Config);
+  // List returns all existing projects.
+  rpc List(ListRequest) returns (ListResponse);
+}
