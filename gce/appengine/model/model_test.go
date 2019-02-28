@@ -480,13 +480,50 @@ func TestVM(t *testing.T) {
 
 	})
 
+	Convey("getTags", t, func() {
+		Convey("zero", func() {
+			Convey("nil", func() {
+				v := &VM{}
+				t := v.getTags()
+				So(t, ShouldBeNil)
+			})
+
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Tag: []string{},
+					},
+				}
+				t := v.getTags()
+				So(t, ShouldBeNil)
+			})
+		})
+
+		Convey("non-zero", func() {
+			v := &VM{
+				Attributes: config.VM{
+					Tag: []string{
+						"tag",
+					},
+				},
+			}
+			t := v.getTags()
+			So(t.Items, ShouldHaveLength, 1)
+			So(t.Items[0], ShouldEqual, "tag")
+		})
+	})
+
 	Convey("GetInstance", t, func() {
 		Convey("empty", func() {
 			v := &VM{}
 			i := v.GetInstance()
 			So(i.Disks, ShouldHaveLength, 0)
+			So(i.MachineType, ShouldEqual, "")
 			So(i.Metadata, ShouldBeNil)
+			So(i.MinCpuPlatform, ShouldEqual, "")
 			So(i.NetworkInterfaces, ShouldHaveLength, 0)
+			So(i.ServiceAccounts, ShouldBeNil)
+			So(i.Tags, ShouldBeNil)
 		})
 
 		Convey("non-empty", func() {
@@ -498,7 +535,8 @@ func TestVM(t *testing.T) {
 							Size:  100,
 						},
 					},
-					MachineType: "type",
+					MachineType:    "type",
+					MinCpuPlatform: "plat",
 					NetworkInterface: []*config.NetworkInterface{
 						{
 							AccessConfig: []*config.AccessConfig{
@@ -513,8 +551,10 @@ func TestVM(t *testing.T) {
 			So(i.Disks, ShouldHaveLength, 1)
 			So(i.MachineType, ShouldEqual, "type")
 			So(i.Metadata, ShouldBeNil)
+			So(i.MinCpuPlatform, ShouldEqual, "plat")
 			So(i.NetworkInterfaces, ShouldHaveLength, 1)
 			So(i.ServiceAccounts, ShouldBeNil)
+			So(i.Tags, ShouldBeNil)
 		})
 	})
 }

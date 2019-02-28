@@ -94,9 +94,12 @@ message VM {
   // The service accounts to make available to this VM.
   repeated ServiceAccount service_account = 7;
 
+  // The tags to attach to this VM.
+  repeated string tag = 8;
+
   // The name of a zone to create this VM in.
   // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
-  string zone = 8;
+  string zone = 9;
 }
 
 // A kind of VM.

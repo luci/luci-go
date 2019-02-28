@@ -196,6 +196,20 @@ func (vm *VM) getServiceAccounts() []*compute.ServiceAccount {
 	return accts
 }
 
+// getTags returns a *compute.Tags representation of this VM's tags.
+func (vm *VM) getTags() *compute.Tags {
+	if len(vm.Attributes.GetTag()) == 0 {
+		return nil
+	}
+	tags := &compute.Tags{
+		Items: make([]string, len(vm.Attributes.Tag)),
+	}
+	for i, tag := range vm.Attributes.Tag {
+		tags.Items[i] = tag
+	}
+	return tags
+}
+
 // GetInstance returns a *compute.Instance representation of this VM.
 func (vm *VM) GetInstance() *compute.Instance {
 	inst := &compute.Instance{
@@ -206,6 +220,7 @@ func (vm *VM) GetInstance() *compute.Instance {
 		MinCpuPlatform:    vm.Attributes.GetMinCpuPlatform(),
 		NetworkInterfaces: vm.getNetworkInterfaces(),
 		ServiceAccounts:   vm.getServiceAccounts(),
+		Tags:              vm.getTags(),
 	}
 	return inst
 }
