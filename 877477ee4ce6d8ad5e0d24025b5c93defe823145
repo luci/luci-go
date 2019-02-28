@@ -1,0 +1,250 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66e9e7db_d9d04a3c",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "this file uses a mix of \" and \u0027\nlet\u0027s choose one\n\ni\u0027ve noticed that other js files do this too",
+      "range": {
+        "startLine": 10,
+        "startChar": 13,
+        "endLine": 10,
+        "endChar": 14
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "805bc175_39a23e32",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "these are builders, right?\nthey aren\u0027t columns in expanded mode",
+      "range": {
+        "startLine": 69,
+        "startChar": 10,
+        "endLine": 69,
+        "endChar": 17
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86f59071_bf9e08eb",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "nit: let",
+      "range": {
+        "startLine": 78,
+        "startChar": 9,
+        "endLine": 78,
+        "endChar": 12
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11df667d_09f6ec58",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "let/const?",
+      "range": {
+        "startLine": 107,
+        "startChar": 9,
+        "endLine": 107,
+        "endChar": 12
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4aebeadc_b042a81e",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "if we used \u0027, we wouldn\u0027t have to escape this",
+      "range": {
+        "startLine": 109,
+        "startChar": 42,
+        "endLine": 109,
+        "endChar": 43
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a1648db_563578a8",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "would this work in showy? currently this file uses a mix of array.each(func) and this. Let\u0027s make it consistent.",
+      "range": {
+        "startLine": 116,
+        "startChar": 4,
+        "endLine": 116,
+        "endChar": 7
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17664cba_d81965b2",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "for (const row of data.rows)\nhttps://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...of",
+      "range": {
+        "startLine": 116,
+        "startChar": 4,
+        "endLine": 117,
+        "endChar": 31
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8011de7_5f437e50",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "for..of",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88460e8b_ebbb630e",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "interesting that we have two mutually exclusive classes to represent two states. Why not have one class, where its presence implies one state, and absence means another state? Would that work well in CSS rules?",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70f37a54_24c45314",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "can this be controlled by presence of collapsed/expanded CSS class?",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5dd9deb_18962090",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "i spend some time reading other files and playing around with the preview and still don\u0027t understand why this div is needed. Please add a comment.",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e71c146f_d93643bf",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-02-28T20:54:13Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
