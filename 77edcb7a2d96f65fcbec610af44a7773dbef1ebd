@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "72535999_4d358d20",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 1018,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-28T18:15:46Z",
+      "side": 1,
+      "message": "The advantage is reducing repetitive typing in case many verifiers are declared inline, e.g.\n\nluci.cq_group(\n   verifiers \u003d [\n       luci.cq_tryjob_verifier(builder \u003d \u0027B1\u0027),\n       luci.cq_tryjob_verifier(builder \u003d \u0027B2\u0027),\n       luci.cq_tryjob_verifier(builder \u003d \u0027B3\u0027),\n       luci.cq_tryjob_verifier(builder \u003d \u0027B4\u0027),\n   ]\n)\n\nbecomes:\n\nluci.cq_group(\n   verifiers \u003d [\n       {\u0027builder\u0027: \u0027B1\u0027},\n       {\u0027builder\u0027: \u0027B2\u0027},\n       {\u0027builder\u0027: \u0027B3\u0027},\n       {\u0027builder\u0027: \u0027B4\u0027},\n   ]\n)\n\nIn case you asking \"why not just allow string alias, but forbid dict alias\" the answer is: to be consistent with luci.console_view which is structurally similar and it allows dict, because there they are more important to reduce \n\nluci.console_view(\n    entries \u003d [\n        luci.console_view_entry(\n            builder \u003d \u0027B1\u0027,\n            short_name \u003d \u0027b1\u0027,\n            category \u003d \u0027b|b1\u0027,\n        ),\n        luci.console_view_entry(\n            builder \u003d \u0027B2\u0027,\n            short_name \u003d \u0027b2\u0027,\n            category \u003d \u0027b|b2\u0027,\n        ),\n        luci.console_view_entry(\n            builder \u003d \u0027B3\u0027,\n            short_name \u003d \u0027b3\u0027,\n            category \u003d \u0027b|b3\u0027,\n        ),\n        luci.console_view_entry(\n            builder \u003d \u0027B3\u0027,\n            short_name \u003d \u0027b3\u0027,\n            category \u003d \u0027b|b3\u0027,\n        ),\n    ],\n)\n\nto \n\nluci.console_view(\n    entries \u003d [\n        {\u0027builder\u0027: \u0027B1\u0027, \u0027short_name\u0027: \u0027b1\u0027, \u0027category\u0027: \u0027b|b1\u0027},\n        {\u0027builder\u0027: \u0027B2\u0027, \u0027short_name\u0027: \u0027b2\u0027, \u0027category\u0027: \u0027b|b2\u0027},\n        {\u0027builder\u0027: \u0027B3\u0027, \u0027short_name\u0027: \u0027b3\u0027, \u0027category\u0027: \u0027b|b3\u0027},\n        {\u0027builder\u0027: \u0027B4\u0027, \u0027short_name\u0027: \u0027b4\u0027, \u0027category\u0027: \u0027b|b4\u0027},\n    ],\n)\n\nWhy do you think it will be confusing? It is like assigning dicts to proto messages fields in python (it auto-instantiates corresponding messages from them).",
+      "parentUuid": "5e376bec_53d3a743",
+      "range": {
+        "startLine": 1018,
+        "startChar": 251,
+        "endLine": 1018,
+        "endChar": 260
+      },
+      "revId": "77edcb7a2d96f65fcbec610af44a7773dbef1ebd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9a79d411_ef930215",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
