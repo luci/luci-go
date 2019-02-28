@@ -193,21 +193,23 @@ func reportQuota(c context.Context, payload proto.Message) error {
 	if err := datastore.Get(c, p); err != nil {
 		return errors.Annotate(err, "failed to fetch project").Err()
 	}
-	metrics := stringset.NewFromSlice(p.Metrics...)
-	regions := stringset.NewFromSlice(p.Regions...)
-	rsp, err := getCompute(c).Regions.List(p.Project).Context(c).Do()
+	mets := stringset.NewFromSlice(p.Config.Metric...)
+	regs := stringset.NewFromSlice(p.Config.Region...)
+	rsp, err := getCompute(c).Regions.List(p.Config.Project).Context(c).Do()
 	if err != nil {
-		gerr := err.(*googleapi.Error)
-		logErrors(c, gerr)
-		return errors.Reason("failed to fetch quota").Err()
+		if gerr, ok := err.(*googleapi.Error); ok {
+			logErrors(c, gerr)
+			return errors.Reason("failed to fetch quota").Err()
+		}
+		return errors.Annotate(err, "failed to fetch quota").Err()
 	}
-	for _, reg := range rsp.Items {
-		if regions.Has(reg.Name) {
-			logging.Infof(c, "found region %q", reg.Name)
-			for _, q := range reg.Quotas {
-				if metrics.Has(q.Metric) {
-					logging.Infof(c, "metric %q: %f/%f", q.Metric, q.Usage, q.Limit)
-					// TODO(smut): Export metrics.
+	for _, r := range rsp.Items {
+		if regs.Has(r.Name) {
+			for _, q := range r.Quotas {
+				if mets.Has(q.Metric) {
+					quotaLimit.Set(c, q.Limit, q.Metric, p.Config.Project, r.Name)
+					quotaRemaining.Set(c, q.Limit-q.Usage, q.Metric, p.Config.Project, r.Name)
+					quotaUsage.Set(c, q.Usage, q.Metric, p.Config.Project, r.Name)
 				}
 			}
 		}
