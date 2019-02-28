@@ -150,20 +150,18 @@ message Verifiers {
 
 
   message GerritCQAbility {
-    // Required. Name of the chrome-infra-auth group, which contains the list of
-    // identities authorized to trigger CQ runs on any CLs in projects specified
-    // in the config group.
+    // Required. List of chrome-infra-auth groups, whose members are authorized
+    // to trigger full CQ runs.
     //
     // Typically, such groups are named "project-<name>-committers".
-    string committer_list = 1;
+    repeated string committer_list = 1;
 
-    // Optional, but strongly recommended. Name of the chrome-infra-auth group,
-    // which contains the list of identities authorized to trigger CQ dry run
-    // on Gerrit CLs they own (not to be confused with OWNER files) even if CL
-    // hasn't been approved.
+    // Optional, but strongly recommended. List of chrome-infra-auth groups,
+    // whose members are authorized to trigger CQ dry run on Gerrit CLs they own
+    // (not to be confused with OWNER files) even if CL hasn't been approved.
     //
     // Typically, such groups are named "project-<name>-tryjob-access".
-    string dry_run_access_list = 2;
+    repeated string dry_run_access_list = 2;
 
     // Optional. allow_submit_with_open_deps controls how CQ full run behaves
     // when current Gerrit CL has open dependencies (not yet submitted CLs on
