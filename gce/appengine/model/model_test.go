@@ -20,7 +20,9 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
+
 	"go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/api/projects/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -80,28 +82,29 @@ func TestProject(t *testing.T) {
 
 		err = datastore.Put(c, &Project{
 			ID: "id",
-			Metrics: []string{
-				"metric-1",
-				"metric-2",
-			},
-			Project: "project",
-			Regions: []string{
-				"region-1",
-				"region-2",
+			Config: projects.Config{
+				Metric: []string{
+					"metric-1",
+					"metric-2",
+				},
+				Project: "project",
+				Region: []string{
+					"region-1",
+					"region-2",
+				},
 			},
 		})
 		So(err, ShouldBeNil)
 
 		err = datastore.Get(c, p)
 		So(err, ShouldBeNil)
-		So(p, ShouldResemble, &Project{
-			ID: "id",
-			Metrics: []string{
+		So(p.Config, ShouldResemble, projects.Config{
+			Metric: []string{
 				"metric-1",
 				"metric-2",
 			},
 			Project: "project",
-			Regions: []string{
+			Region: []string{
 				"region-1",
 				"region-2",
 			},
