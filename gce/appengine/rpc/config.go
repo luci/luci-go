@@ -17,7 +17,6 @@ package rpc
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"google.golang.org/grpc/codes"
@@ -25,9 +24,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -99,26 +95,8 @@ func (*Config) List(c context.Context, req *config.ListRequest) (*config.ListRes
 	return rsp, nil
 }
 
-// authPrelude ensures the user is authorized to use the config API.
-func authPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	groups := []string{"administrators"}
-	switch is, err := auth.IsMember(c, groups...); {
-	case err != nil:
-		return c, err
-	case !is:
-		return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
-	}
-	logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
-	return c, nil
-}
-
-// gRPCifyAndLogErr ensures any error being returned is a gRPC error, logging Internal and Unknown errors.
-func gRPCifyAndLogErr(c context.Context, methodName string, rsp proto.Message, err error) error {
-	return grpcutil.GRPCifyAndLogErr(c, err)
-}
-
-// New returns a new configuration erver.
-func New() config.ConfigurationServer {
+// NewConfigurationServer returns a new configuration server.
+func NewConfigurationServer() config.ConfigurationServer {
 	return &config.DecoratedConfiguration{
 		Prelude:  authPrelude,
 		Service:  &Config{},
