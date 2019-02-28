@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "6002a9a1_22406779",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 645,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-28T01:46:12Z",
+      "side": 1,
+      "message": "So I\u0027ll have to make it configurable then... :(",
+      "parentUuid": "6d7aebd9_6d558c77",
+      "range": {
+        "startLine": 645,
+        "startChar": 24,
+        "endLine": 645,
+        "endChar": 54
+      },
+      "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e29d59b6_f3e7d193",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
         "patchSetId": 1
@@ -69,6 +93,30 @@
       "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee383d40_ea599bd1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-28T01:46:12Z",
+      "side": 1,
+      "message": "I wrote this. Done.",
+      "parentUuid": "e29d59b6_f3e7d193",
+      "range": {
+        "startLine": 31,
+        "startChar": 12,
+        "endLine": 31,
+        "endChar": 80
+      },
+      "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "61f8d558_7f80ebd2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-28T01:46:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "024bd372_557e27f7",
+      "range": {
+        "startLine": 32,
+        "startChar": 6,
+        "endLine": 32,
+        "endChar": 13
+      },
+      "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb98245e_ca37b952",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
         "patchSetId": 1
@@ -106,6 +178,24 @@
       "writtenOn": "2019-02-28T01:33:28Z",
       "side": 1,
       "message": "btw, do you have better ideas  for this field?",
+      "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b7b0c15_88d5adfe",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-02-28T01:46:12Z",
+      "side": 1,
+      "message": "No and I tend not to care considering it is very seldomly used.",
+      "parentUuid": "eb98245e_ca37b952",
       "revId": "f58012663a886d4ba1f463fea6548842e77bd9a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
