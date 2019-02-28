@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package model contains datastore model definitions.
 package model
 
 import (
@@ -22,6 +23,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/api/projects/v1"
 )
 
 // ConfigKind is a config entity's kind in the datastore.
@@ -58,12 +60,9 @@ type Project struct {
 	_kind string `gae:"$kind,Project"`
 	// ID is the unique identifier for this project.
 	ID string `gae:"$id"`
-	// Metrics is a slice of names of GCE quota metrics to report.
-	Metrics []string `gae:"metrics"`
-	// Project is the name of the GCP project to report quota for.
-	Project string `gae:"project"`
-	// Regions is a slice of names of GCE regions to report quota for.
-	Regions []string `gae:"regions"`
+	// Config is the projects.Config representation of this entity.
+	// noindex is not respected here. See projects.Config.ToProperty.
+	Config projects.Config `gae:"config,noindex"`
 }
 
 // VMKind is a VM entity's kind in the datastore.
