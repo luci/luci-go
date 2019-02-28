@@ -328,9 +328,19 @@ func TestValidation(t *testing.T) {
 					So(vctx.Finalize(), ShouldErrLike, "gerrit_cq_ability verifier is required")
 				})
 				Convey("needs committer_list", func() {
-					v.GerritCqAbility.CommitterList = ""
+					v.GerritCqAbility.CommitterList = nil
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "committer_list is required")
+				})
+				Convey("no empty committer_list", func() {
+					v.GerritCqAbility.CommitterList = []string{""}
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "must not be empty")
+				})
+				Convey("no empty dry_run_access_list", func() {
+					v.GerritCqAbility.DryRunAccessList = []string{""}
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "must not be empty")
 				})
 			})
 		})

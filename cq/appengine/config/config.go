@@ -307,8 +307,23 @@ func validateVerifiers(ctx *validation.Context, v *v2.Verifiers) {
 		ctx.Errorf("gerrit_cq_ability verifier is required")
 	} else {
 		ctx.Enter("gerrit_cq_ability")
-		if v.GerritCqAbility.CommitterList == "" {
+		if len(v.GerritCqAbility.CommitterList) == 0 {
 			ctx.Errorf("committer_list is required")
+		} else {
+			for i, l := range v.GerritCqAbility.CommitterList {
+				if l == "" {
+					ctx.Enter("committer_list #%d", i+1)
+					ctx.Errorf("must not be empty string")
+					ctx.Exit()
+				}
+			}
+		}
+		for i, l := range v.GerritCqAbility.DryRunAccessList {
+			if l == "" {
+				ctx.Enter("dry_run_access_list #%d", i+1)
+				ctx.Errorf("must not be empty string")
+				ctx.Exit()
+			}
 		}
 		ctx.Exit()
 	}
