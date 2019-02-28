@@ -997,6 +997,7 @@ luci.cq_group(
     acls = None,
     allow_submit_with_open_deps = None,
     tree_status_host = None,
+    retry_config = None,
 )
 ```
 
@@ -1012,6 +1013,7 @@ whenever there's a pending approved CL for a ref in the watched set.
 * **acls**: list of [acl.entry(...)](#acl.entry) objects with ACLs specific for this CQ group. Only `acl.CQ_*` roles are allowed here. By default ACLs are inherited from [luci.project(...)](#luci.project) definition. At least one `acl.CQ_COMMITTER` entry should be provided somewhere (either here or in [luci.project(...)](#luci.project)).
 * **allow_submit_with_open_deps**: controls how a CQ full run behaves when the current Gerrit CL has open dependencies (not yet submitted CLs on which *this* CL depends). If set to False (default), the CQ will abort a full run attempt immediately if open dependencies are detected. If set to True, then the CQ will not abort a full run, and upon passing all other verifiers, the CQ will attempt to submit the CL regardless of open dependencies and whether the CQ verified those open dependencies. In turn, if the Gerrit project config allows this, Gerrit will submit all dependent CLs first and then this CL.
 * **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
+* **retry_config**: a [cq.retry_config(...)](#cq.retry_config) struct with parameters for deciding whether to retry a single build. See [cq.retry_config(...)](#cq.retry_config) for details. Defaults to `cq.RETRY_TRANSIENT_FAILURES` if omitted. Pass `cq.RETRY_NONE` to completely disable retries.
 
 
 
@@ -1415,6 +1417,59 @@ forever.
 #### Returns  {#cq.refset-returns}
 
 An opaque struct to be passed to `watch` field of [luci.cq_group(...)](#luci.cq_group).
+
+
+
+### cq.retry_config {#cq.retry_config}
+
+```python
+cq.retry_config(
+    # Optional arguments.
+    single_quota = None,
+    global_quota = None,
+    failure_weight = None,
+    transient_failure_weight = None,
+    timeout_weight = None,
+)
+```
+
+
+
+Collection of parameters for deciding whether to retry a single build.
+
+All parameters are integers, with default value of 0. The returned struct
+can be passed as `retry_config` field to [luci.cq_group(...)](#luci.cq_group).
+
+Some common presets are assembled into `cq.RETRY_*` constants:
+
+```
+RETRY_TRANSIENT_FAILURES = _retry_config(
+    single_quota = 1,
+    global_quota = 2,
+    failure_weight = 1,
+    transient_failure_weight = 1,
+    timeout_weight = 2,
+)
+
+RETRY_NONE = cq.retry_config()
+```
+
+In particular, `cq.RETRY_TRANSIENT_FAILURES` is used by default in
+[luci.cq_group(...)](#luci.cq_group) unless something else is passed explicitly via
+`retry_config` field.
+
+#### Arguments {#cq.retry_config-args}
+
+* **single_quota**: retry quota for a single tryjob.
+* **global_quota**: retry quota for all tryjobs in a CL.
+* **failure_weight**: the weight assigned to each tryjob failure.
+* **transient_failure_weight**: the weight assigned to each transient (aka "infra") failure.
+* **timeout_weight**: weight assigned to tryjob timeouts.
+
+
+#### Returns  {#cq.retry_config-returns}
+
+cq.retry_config struct.
 
 
 
