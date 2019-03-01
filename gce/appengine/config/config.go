@@ -166,6 +166,12 @@ func merge(c context.Context, cfg *Config) error {
 			if len(v.Attributes.Disk) > 0 {
 				attrs.Disk = nil
 			}
+			if len(v.Attributes.Metadata) > 0 {
+				attrs.Metadata = nil
+			}
+			if len(v.Attributes.Tag) > 0 {
+				attrs.Tag = nil
+			}
 			proto.Merge(attrs, v.Attributes)
 			v.Attributes = attrs
 		}

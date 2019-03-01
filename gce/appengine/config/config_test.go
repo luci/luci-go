@@ -250,8 +250,18 @@ func TestMerge(t *testing.T) {
 										Image: "image 1",
 									},
 								},
+								Metadata: []*gce.Metadata{
+									{
+										Metadata: &gce.Metadata_FromText{
+											FromText: "metadata 1",
+										},
+									},
+								},
 								Project: "project 1",
-								Zone:    "zone",
+								Tag: []string{
+									"tag 1",
+								},
+								Zone: "zone",
 							},
 						},
 					},
@@ -271,7 +281,17 @@ func TestMerge(t *testing.T) {
 										Image: "image 2",
 									},
 								},
+								Metadata: []*gce.Metadata{
+									{
+										Metadata: &gce.Metadata_FromFile{
+											FromFile: "metadata 2",
+										},
+									},
+								},
 								Project: "project 2",
+								Tag: []string{
+									"tag 2",
+								},
 							},
 						},
 					},
@@ -292,8 +312,18 @@ func TestMerge(t *testing.T) {
 								Image: "image 2",
 							},
 						},
+						Metadata: []*gce.Metadata{
+							{
+								Metadata: &gce.Metadata_FromFile{
+									FromFile: "metadata 2",
+								},
+							},
+						},
 						Project: "project 2",
-						Zone:    "zone",
+						Tag: []string{
+							"tag 2",
+						},
+						Zone: "zone",
 					},
 				},
 			})
