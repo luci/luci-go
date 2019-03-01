@@ -257,6 +257,11 @@ func TestMerge(t *testing.T) {
 										},
 									},
 								},
+								NetworkInterface: []*gce.NetworkInterface{
+									{
+										Network: "network 1",
+									},
+								},
 								Project: "project 1",
 								Tag: []string{
 									"tag 1",
@@ -288,6 +293,11 @@ func TestMerge(t *testing.T) {
 										},
 									},
 								},
+								NetworkInterface: []*gce.NetworkInterface{
+									{
+										Network: "network 2",
+									},
+								},
 								Project: "project 2",
 								Tag: []string{
 									"tag 2",
@@ -317,6 +327,11 @@ func TestMerge(t *testing.T) {
 								Metadata: &gce.Metadata_FromFile{
 									FromFile: "metadata 2",
 								},
+							},
+						},
+						NetworkInterface: []*gce.NetworkInterface{
+							{
+								Network: "network 2",
 							},
 						},
 						Project: "project 2",
