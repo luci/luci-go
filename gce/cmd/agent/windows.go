@@ -54,7 +54,7 @@ func (*WindowsStrategy) autostart(c context.Context, path, user string) error {
 	if err := exec.Command("setx", "/m", "SWARMING_EXTERNAL_BOT_SETUP", "1").Run(); err != nil {
 		return errors.Annotate(err, "failed to setx environment variable").Err()
 	}
-	if err := exec.Command("schtasks", "/create", "/f", "/rl", "HIGHEST", "/ru", user, "/sc", "onstart", "/tn", startupTask, "/tr", s).Run(); err != nil {
+	if err := exec.Command("schtasks", "/create", "/f", "/it", "/rl", "HIGHEST", "/ru", user, "/sc", "onlogon", "/tn", startupTask, "/tr", s).Run(); err != nil {
 		return errors.Annotate(err, "failed to create task %q", startupTask).Err()
 	}
 
