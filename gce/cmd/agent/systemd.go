@@ -61,6 +61,13 @@ func (*SystemdStrategy) autostart(c context.Context, path, user string) error {
 		return errors.Annotate(err, "failed to write: %s", systemdCfg).Err()
 	}
 
+	// Enable the service so it starts on next boot.
+	logging.Infof(c, "enabling %q", systemdSrv)
+	if err := exec.Command("systemctl", "enable", systemdSrv).Run(); err != nil {
+		return errors.Annotate(err, "failed to enable service %q", systemdSrv).Err()
+	}
+
+	// Start the service right now.
 	logging.Infof(c, "starting %q", systemdSrv)
 	if err := exec.Command("systemctl", "start", systemdSrv).Run(); err != nil {
 		return errors.Annotate(err, "failed to start service %q", systemdSrv).Err()
