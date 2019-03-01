@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef31cab9_015c1e72",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 669,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-01T02:08:37Z",
+      "side": 1,
+      "message": "should also include refs.",
+      "range": {
+        "startLine": 669,
+        "startChar": 19,
+        "endLine": 669,
+        "endChar": 23
+      },
+      "revId": "ab9cc6a183d5c51cbf29f2d171a9f26a2cb66028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b86c7843_1e8aa668",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 673,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-01T02:08:37Z",
+      "side": 1,
+      "message": "must also include refs. Example:\nconfig_group{same_repo, refs/heads/infra/config}\nconfig_group{same_repo, refs/heads/master}",
+      "range": {
+        "startLine": 673,
+        "startChar": 13,
+        "endLine": 673,
+        "endChar": 25
+      },
+      "revId": "ab9cc6a183d5c51cbf29f2d171a9f26a2cb66028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d651dda7_62227b25",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 688,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-01T02:08:37Z",
+      "side": 1,
+      "message": "or",
+      "range": {
+        "startLine": 688,
+        "startChar": 78,
+        "endLine": 688,
+        "endChar": 80
+      },
+      "revId": "ab9cc6a183d5c51cbf29f2d171a9f26a2cb66028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a13da9a7_859c40c1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_group.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-01T02:08:37Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 64,
+        "startChar": 3,
+        "endLine": 64,
+        "endChar": 4
+      },
+      "revId": "ab9cc6a183d5c51cbf29f2d171a9f26a2cb66028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "873307b1_bfedef75",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_group.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-01T02:08:37Z",
+      "side": 1,
+      "message": "either i don\u0027t understand, or not sufficient. See my comment in generators.star.",
+      "range": {
+        "startLine": 68,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 47
+      },
+      "revId": "ab9cc6a183d5c51cbf29f2d171a9f26a2cb66028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "407667fe_952fe78d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_group.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-01T02:08:37Z",
+      "side": 1,
+      "message": "this is fine.",
+      "range": {
+        "startLine": 72,
+        "startChar": 2,
+        "endLine": 77,
+        "endChar": 32
+      },
+      "revId": "ab9cc6a183d5c51cbf29f2d171a9f26a2cb66028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
