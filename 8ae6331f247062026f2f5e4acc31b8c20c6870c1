@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2989c765_603cb880",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-02T00:54:31Z",
+      "side": 1,
+      "message": "... on windows",
+      "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1de1294f_39bb7fac",
+        "filename": "gce/cmd/agent/strategy_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-02T00:54:31Z",
+      "side": 1,
+      "message": "this is called only from windows strategy. Why create polymorphism where it\u0027s not needed?\nie can it be inlined in windows.go file? Or, alternatively, why does windows trategy need to be in windows.go and not entirely here?",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 30,
+        "endChar": 1
+      },
+      "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c11d9e8f_32e420a0",
+        "filename": "gce/cmd/agent/windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-02T00:54:31Z",
+      "side": 1,
+      "message": "does this apply to windows? :)",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 2
+      },
+      "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
