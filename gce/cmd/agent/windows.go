@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"os/exec"
 
 	"go.chromium.org/luci/common/errors"
@@ -30,8 +31,11 @@ var _ PlatformStrategy = &WindowsStrategy{}
 type WindowsStrategy struct {
 }
 
-// startupTmpl is the Swarming bot startup task command template.
-const startupTmpl = "C:\\tools\\python\\bin\\python.exe {{.BotCode}} start_bot"
+// startupCfg is the path to write the Swarming bot startup task.
+const startupCfg = "C:\\Users\\{{.User}}\\Start Menu\\Programs\\Startup\\swarming-start-bot.bat"
+
+// startupTmpl is the name of the Swarming bot startup task template asset.
+const startupTmpl = "swarming-start-bot.bat.tmpl"
 
 // startupTask is the name of the Swarming bot startup task.
 const startupTask = "swarming-start-bot"
@@ -44,22 +48,26 @@ func (*WindowsStrategy) autostart(c context.Context, path, user string) error {
 		"BotCode": path,
 		"User":    user,
 	}
-	s, err := substitute(c, startupTmpl, subs)
+	s, err := substitute(c, string(GetAsset(startupTmpl)), subs)
 	if err != nil {
-		return errors.Annotate(err, "failed to prepare template: %s", startupTmpl).Err()
+		return errors.Annotate(err, "failed to prepare template %q", startupTmpl).Err()
+	}
+	p, err := substitute(c, startupCfg, subs)
+	if err != nil {
+		return errors.Annotate(err, "failed to prepare path: %s", startupCfg).Err()
 	}
 
-	logging.Infof(c, "installing %q", startupTask)
-	// Prevent the Swarming bot process from configuring its own autostart.
-	if err := exec.Command("setx", "/m", "SWARMING_EXTERNAL_BOT_SETUP", "1").Run(); err != nil {
-		return errors.Annotate(err, "failed to setx environment variable").Err()
-	}
-	if err := exec.Command("schtasks", "/create", "/f", "/it", "/rl", "HIGHEST", "/ru", user, "/sc", "onlogon", "/tn", startupTask, "/tr", s).Run(); err != nil {
-		return errors.Annotate(err, "failed to create task %q", startupTask).Err()
+	logging.Infof(c, "installing: %s", startupCfg)
+	// 0644 allows the startup task to be read by all users.
+	// Useful when SSHing to the instance.
+	if err := ioutil.WriteFile(p, []byte(s), 0644); err != nil {
+		return errors.Annotate(err, "failed to write: %s", p).Err()
 	}
 
 	logging.Infof(c, "starting %q", startupTask)
-	if err := exec.Command("schtasks", "/run", "/tn", startupTask).Run(); err != nil {
+	cmd := exec.Command(p)
+	setFlags(cmd)
+	if err := cmd.Start(); err != nil {
 		return errors.Annotate(err, "failed to start task %q", startupTask).Err()
 	}
 	return nil
