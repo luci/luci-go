@@ -108,6 +108,30 @@
     },
     {
       "key": {
+        "uuid": "da9604ef_8ad52413",
+        "filename": "gce/cmd/agent/strategy_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-02T01:31:42Z",
+      "side": 1,
+      "message": "I want the signal within 5 seconds when I develop locally, not after I upload the patch and wait 5 minutes for Windows results. For now, this is within my bar for readability.",
+      "parentUuid": "0ef6dfbf_08dafd6c",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 30,
+        "endChar": 1
+      },
+      "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c11d9e8f_32e420a0",
         "filename": "gce/cmd/agent/windows.go",
         "patchSetId": 2
