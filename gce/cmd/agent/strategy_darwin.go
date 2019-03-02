@@ -14,6 +14,12 @@
 
 package main
 
+import "os/exec"
+
+// setFlags has no effect on Mac.
+func setFlags(c *exec.Cmd) {
+}
+
 // newStrategy returns a new Mac-specific PlatformStrategy.
 func newStrategy() PlatformStrategy {
 	panic("unsupported platform")
