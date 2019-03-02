@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "53c84cca_a2532bfe",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-02T01:03:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2989c765_603cb880",
+      "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1de1294f_39bb7fac",
         "filename": "gce/cmd/agent/strategy_windows.go",
         "patchSetId": 2
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "d30da420_b997c702",
+        "filename": "gce/cmd/agent/strategy_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-02T01:03:41Z",
+      "side": 1,
+      "message": "Only the Windows build of the syscall package has CreationFlags in its SysProcAttr. I\u0027m deliberately trying to keep the least amount of code possible in strategy_\u003cplatform\u003e.go files, because those are only compiled if you\u0027re on that platform (or if you remember to set GOOS env var).\n\nBy limiting the amount of code in strategy_windows.go, we ensure as much code as possible is always compiled, which helps prevent errors (e.g. if you make a change that breaks WindowsStrategy but the entire WindowsStrategy is defined in strategy_windows.go you might not realize until the Windows try bot runs because a simple \"go build\" without GOOS won\u0027t even compile it, but if you always compile WindowsStrategy you\u0027ll realize it locally).",
+      "parentUuid": "1de1294f_39bb7fac",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 30,
+        "endChar": 1
+      },
+      "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c11d9e8f_32e420a0",
         "filename": "gce/cmd/agent/windows.go",
         "patchSetId": 2
@@ -53,6 +95,30 @@
       "writtenOn": "2019-03-02T00:54:31Z",
       "side": 1,
       "message": "does this apply to windows? :)",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 2
+      },
+      "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4d86c29_51b0d40e",
+        "filename": "gce/cmd/agent/windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-02T01:03:41Z",
+      "side": 1,
+      "message": "I don\u0027t know what the mode bits do on Windows but in the MP implementation I\u0027m setting the same mode as on Linux.",
+      "parentUuid": "c11d9e8f_32e420a0",
       "range": {
         "startLine": 61,
         "startChar": 1,
