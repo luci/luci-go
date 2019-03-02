@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "0ef6dfbf_08dafd6c",
+        "filename": "gce/cmd/agent/strategy_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-02T01:23:08Z",
+      "side": 1,
+      "message": "I\u0027m not particularly convinced: we build CIPD packages on CI running on Windows machines. We have CQ which includes Windows builder, so CQ dry run would provide signal before. So, it seems you are optimizing for active development of windows.go file itself, but at the cost of code readability. I\u0027d have made a different trade off as I think this code will remain static for a while after a few weeks, so readability will be more important.\nUp to you.",
+      "parentUuid": "d30da420_b997c702",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 30,
+        "endChar": 1
+      },
+      "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c11d9e8f_32e420a0",
         "filename": "gce/cmd/agent/windows.go",
         "patchSetId": 2
@@ -128,6 +152,30 @@
       "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f10ca27_dc82f79c",
+        "filename": "gce/cmd/agent/windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-02T01:23:08Z",
+      "side": 1,
+      "message": "copy-pasta argument of whatever works. fine.",
+      "parentUuid": "f4d86c29_51b0d40e",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 2
+      },
+      "revId": "8ae6331f247062026f2f5e4acc31b8c20c6870c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
