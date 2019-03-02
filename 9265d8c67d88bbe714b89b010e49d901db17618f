@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a7c492ff_eed0bb75",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-02T00:43:14Z",
+      "side": 1,
+      "message": "oops, yes, of course. TBH, I spent like 10 minutes rewriting these nested conditions in different ways for better readability, i hope it was easy to see the mistake for you.\n\nOTH, clearly this needs tests.",
+      "parentUuid": "ca364004_86d1aca3",
+      "range": {
+        "startLine": 298,
+        "startChar": 14,
+        "endLine": 298,
+        "endChar": 55
+      },
+      "revId": "9265d8c67d88bbe714b89b010e49d901db17618f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0b0ad80e_31be881e",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 1
