@@ -75,7 +75,7 @@ be passed to lucicfg.
 If it is the correct script, make sure it starts with the following line to
 indicate it is executable (and remove this warning):
 
-    #!/usr/bin/env lucicfg generate
+    #!/usr/bin/env lucicfg
 
 You may also optionally set +x flag on it, but this is not required.
 ===========================================================================
