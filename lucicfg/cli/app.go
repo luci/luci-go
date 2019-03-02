@@ -42,6 +42,14 @@ func Main(params base.Parameters, args []string) int {
 	resolve.AllowFloat = true
 	resolve.AllowSet = true
 
+	// A hack to allow '#!/usr/bin/env lucicfg'. On Linux the shebang line can
+	// have at most two arguments, so we can't use '#!/usr/bin/env lucicfg gen'.
+	if len(args) == 1 {
+		if _, err := os.Stat(args[0]); err == nil {
+			args = []string{"generate", args[0]}
+		}
+	}
+
 	return subcommands.Run(GetApplication(params), fixflagpos.FixSubcommands(args))
 }
 
