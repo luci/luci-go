@@ -14,6 +14,12 @@
 
 package main
 
+import "os/exec"
+
+// setFlags has no effect on Linux.
+func setFlags(c *exec.Cmd) {
+}
+
 // newStrategy returns a new Linux-specific PlatformStrategy.
 func newStrategy() PlatformStrategy {
 	// TODO(smut): Remove Upstart support.

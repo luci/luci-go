@@ -14,6 +14,21 @@
 
 package main
 
+import (
+	"os/exec"
+	"syscall"
+)
+
+// setFlags sets flags which ensure the process starts detached in its own process group.
+func setFlags(c *exec.Cmd) {
+	c.SysProcAttr = &syscall.SysProcAttr{
+		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms684863.aspx
+		// CREATE_NEW_PROCESS_GROUP: 0x200
+		// DETACHED_PROCESS:         0x008
+		CreationFlags: 0x200 | 0x8,
+	}
+}
+
 // newStrategy returns a new Windows-specific PlatformStrategy.
 func newStrategy() PlatformStrategy {
 	return &WindowsStrategy{}
