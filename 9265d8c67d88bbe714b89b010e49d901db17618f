@@ -1,0 +1,74 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ca364004_86d1aca3",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-02T00:27:00Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be !pathFilter.isInteresting(commit.TreeDiff) ?..",
+      "range": {
+        "startLine": 298,
+        "startChar": 14,
+        "endLine": 298,
+        "endChar": 55
+      },
+      "revId": "9265d8c67d88bbe714b89b010e49d901db17618f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b0ad80e_31be881e",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-02T00:27:00Z",
+      "side": 1,
+      "message": "lets log all filtered out commits (hashes)",
+      "range": {
+        "startLine": 299,
+        "startChar": 5,
+        "endLine": 299,
+        "endChar": 13
+      },
+      "revId": "9265d8c67d88bbe714b89b010e49d901db17618f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad572152_fa9d1ef5",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 519,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-02T00:27:00Z",
+      "side": 1,
+      "message": "\u003e \"whcih\" is a possible misspelling of \"which\".\n\nPlease Fix",
+      "parentUuid": "a3427b8b_62f60aed",
+      "range": {
+        "startLine": 519,
+        "startChar": 12,
+        "endLine": 519,
+        "endChar": 17
+      },
+      "revId": "9265d8c67d88bbe714b89b010e49d901db17618f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
