@@ -154,14 +154,13 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 		EndTime:    timestampToV2(msg.CompletedTs),
 		UpdateTime: timestampToV2(msg.UpdatedTs),
 
-		Status: status,
+		Status:          status,
+		SummaryMarkdown: resultDetails.UI.Info,
 
 		Input: &buildbucketpb.Build_Input{
 			Experimental: msg.Experimental,
 		},
-		Output: &buildbucketpb.Build_Output{
-			SummaryMarkdown: resultDetails.UI.Info,
-		},
+		Output: &buildbucketpb.Build_Output{},
 
 		Infra: &buildbucketpb.BuildInfra{
 			Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{

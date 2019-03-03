@@ -98,8 +98,6 @@
         }
     },
     {
-        "output": {
-            "summaryMarkdown": "everything failed"
-        }
+        "summaryMarkdown": "everything failed"
     }
 ]
