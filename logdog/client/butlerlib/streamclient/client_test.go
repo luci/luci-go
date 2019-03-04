@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -54,7 +55,7 @@ func TestClient(t *testing.T) {
 		tswc := (*testStreamWriteCloser)(nil)
 
 		reg := Registry{}
-		reg.Register("test", func(addr string) (Client, error) {
+		reg.Register("test", func(addr string, ns types.StreamName) (Client, error) {
 			return &clientImpl{
 				factory: func() (io.WriteCloser, error) {
 					tswc = &testStreamWriteCloser{
@@ -63,6 +64,7 @@ func TestClient(t *testing.T) {
 					}
 					return tswc, nil
 				},
+				ns: ns,
 			}, nil
 		})
 
@@ -77,12 +79,12 @@ func TestClient(t *testing.T) {
 		})
 
 		Convey(`Will fail to instantiate a Client with an invalid protocol.`, func() {
-			_, err := reg.NewClient("fake:foo")
+			_, err := reg.NewClient("fake:foo", "")
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey(`Can instantiate a new client.`, func() {
-			client, err := reg.NewClient("test:foo")
+			client, err := reg.NewClient("test:foo", "namespace")
 			So(err, ShouldBeNil)
 			So(client, ShouldHaveSameTypeAs, &clientImpl{})
 
@@ -93,9 +95,9 @@ func TestClient(t *testing.T) {
 
 				si := stream.(*BaseStream)
 				So(si.WriteCloser, ShouldHaveSameTypeAs, &testStreamWriteCloser{})
+				So(si.P.Name, ShouldEqual, "namespace/test")
 
 				tswc := si.WriteCloser.(*testStreamWriteCloser)
-				So(tswc.addr, ShouldEqual, "foo")
 
 				Convey(`The stream should have the stream header written to it.`, func() {
 					So(tswc.Next(len(streamproto.ProtocolFrameHeaderMagic)), ShouldResemble,
@@ -104,7 +106,7 @@ func TestClient(t *testing.T) {
 					r := recordio.NewReader(tswc, -1)
 					f, err := r.ReadFrameAll()
 					So(err, ShouldBeNil)
-					So(string(f), ShouldResemble, `{"name":"test","timestamp":"0001-02-03T04:05:06.000000007Z"}`)
+					So(string(f), ShouldResemble, `{"name":"namespace/test","timestamp":"0001-02-03T04:05:06.000000007Z"}`)
 				})
 			})
 
@@ -117,5 +119,16 @@ func TestClient(t *testing.T) {
 				So(tswc.closed, ShouldBeTrue)
 			})
 		})
+
+		Convey(`Can instantiate a new client without namespace.`, func() {
+			client, err := reg.NewClient("test:foo", "")
+			stream, err := client.NewStream(flags)
+			So(err, ShouldBeNil)
+			So(stream, ShouldHaveSameTypeAs, &BaseStream{})
+
+			si := stream.(*BaseStream)
+			So(si.P.Name, ShouldEqual, "test")
+		})
+
 	})
 }
