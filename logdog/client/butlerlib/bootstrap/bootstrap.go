@@ -45,6 +45,8 @@ type Bootstrap struct {
 	Project types.ProjectName
 	// Prefix is the Butler instance prefix.
 	Prefix types.StreamName
+	// Prefix is the Butler instance prefix.
+	Namespace types.StreamName
 
 	// Client is the streamclient for this instance, or nil if the Butler has no
 	// streamserver.
@@ -61,6 +63,7 @@ func getFromEnv(env environ.Env, reg *streamclient.Registry) (*Bootstrap, error)
 	bs := &Bootstrap{
 		CoordinatorHost: env.GetEmpty(EnvCoordinatorHost),
 		Prefix:          types.StreamName(prefix),
+		Namespace:       types.StreamName(env.GetEmpty(EnvNamespace)),
 		Project:         types.ProjectName(env.GetEmpty(EnvStreamProject)),
 	}
 	if err := bs.Prefix.Validate(); err != nil {
@@ -68,6 +71,11 @@ func getFromEnv(env environ.Env, reg *streamclient.Registry) (*Bootstrap, error)
 	}
 	if err := bs.Project.Validate(); err != nil {
 		return nil, fmt.Errorf("bootstrap: failed to validate project %q: %s", bs.Project, err)
+	}
+	if len(bs.Namespace) > 0 {
+		if err := bs.Namespace.Validate(); err != nil {
+			return nil, fmt.Errorf("bootstrap: failed to validate namespace %q: %s", bs.Namespace, err)
+		}
 	}
 
 	// If we have a stream server attached; instantiate a stream Client.
@@ -81,7 +89,7 @@ func getFromEnv(env environ.Env, reg *streamclient.Registry) (*Bootstrap, error)
 }
 
 func (bs *Bootstrap) initializeClient(v string, reg *streamclient.Registry) error {
-	c, err := reg.NewClient(v)
+	c, err := reg.NewClient(v, bs.Namespace)
 	if err != nil {
 		return errors.Annotate(err, "bootstrap: failed to create stream client [%s]", v).Err()
 	}

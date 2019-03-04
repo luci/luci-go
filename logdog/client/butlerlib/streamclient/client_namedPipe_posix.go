@@ -21,6 +21,8 @@ import (
 	"io"
 	"net"
 	"os"
+
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 func registerPlatformProtocols(r *Registry) {
@@ -31,7 +33,7 @@ func registerPlatformProtocols(r *Registry) {
 // server.
 //
 // newNPipeClient currently only works on POSIX (non-Windows) systems.
-func newUnixSocketClient(path string) (Client, error) {
+func newUnixSocketClient(path string, ns types.StreamName) (Client, error) {
 	// Ensure that the supplied path exists and is a named pipe.
 	info, err := os.Lstat(path)
 	if err != nil {
@@ -45,5 +47,6 @@ func newUnixSocketClient(path string) (Client, error) {
 		factory: func() (io.WriteCloser, error) {
 			return net.Dial("unix", path)
 		},
+		ns: ns,
 	}, nil
 }

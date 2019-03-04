@@ -256,7 +256,7 @@ func TestTCPServer(t *testing.T) {
 			So(svr.Listen(), ShouldBeNil)
 			defer svr.Close()
 
-			client, err := streamclient.New(svr.Address())
+			client, err := streamclient.New(svr.Address(), "")
 			So(err, ShouldBeNil)
 
 			testClientServer(t, svr, client)
