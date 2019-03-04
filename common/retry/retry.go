@@ -79,19 +79,20 @@ func Retry(ctx context.Context, f Factory, fn func() error, callback Callback) (
 	defer timer.Stop()
 
 	for {
-		// If we've been cancelled, don't try/retry.
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-			break
+		// If we've been cancelled, don't call fn.
+		if err := ctx.Err(); err != nil {
+			return err
 		}
 
 		// Execute the function.
 		err = fn()
 		if err == nil || it == nil {
 			return
+		}
+
+		// If we've been cancelled, don't call Next or callback.
+		if ctx.Err() != nil {
+			return err
 		}
 
 		delay := it.Next(ctx, err)
