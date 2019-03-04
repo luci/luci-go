@@ -138,6 +138,14 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 	// Make sure there is no successful attempt to raise the token validity over maximum.
 	req = r.normalizeValidityDuration(c, req)
 
+	_, err = r.ProjectIdentities(c).Create(c,
+		&projectidentity.ProjectIdentity{
+			Project: "infra-experimental",
+			Email:   "infra-experimental@luci-project-accounts-dev.iam.gserviceaccount.com"})
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Unable to create project")
+	}
+
 	projectIdentity, err := r.ProjectIdentities(c).LookupByProject(c, req.LuciProject)
 	if err != nil {
 		switch {

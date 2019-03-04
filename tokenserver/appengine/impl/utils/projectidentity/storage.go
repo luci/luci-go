@@ -17,7 +17,7 @@ package projectidentity
 import (
 	"context"
 	"errors"
-
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -32,7 +32,7 @@ var (
 var projectIdentities = &persistentStorage{}
 
 // ProjectIdentities returns the global scoped identity storage.
-func ProjectIdentities(ctx context.Context) Storage {
+func ProjectIdentities(_ context.Context) Storage {
 	return projectIdentities
 }
 
@@ -66,6 +66,7 @@ type persistentStorage struct {
 // lookup reads an identity from the storage based on what fields are set in the identity struct.
 func (s *persistentStorage) lookup(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
 	tmp := *identity
+	logging.Infof(c, "performing lookup on identity %v", tmp)
 	if err := ds.Get(c, &tmp); err != nil {
 		switch {
 		case err == ds.ErrNoSuchEntity:
