@@ -33,6 +33,7 @@ import (
 	_ "go.chromium.org/luci/cq/api/config/v2"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
+	_ "go.chromium.org/luci/lucicfg/external/cros/proto/config"
 	_ "go.chromium.org/luci/lucicfg/external/crostesting/proto/config"
 	_ "go.chromium.org/luci/milo/api/config"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
