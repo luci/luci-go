@@ -525,21 +525,20 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 }
 
 func GetProject(c context.Context, project string) (*Project, error) {
-	allowed, err := IsAllowed(c, project)
-	if err != nil {
+	switch allowed, err := IsAllowed(c, project); {
+	case err != nil:
 		return nil, err
-	}
-	if !allowed {
-		return nil, cfgclientAccess.ErrNoAccess
+	case !allowed:
+		return nil, errors.Annotate(cfgclientAccess.ErrNoAccess, "no access to project").Err()
 	}
 	proj := Project{
 		ID: project,
 	}
-	err = datastore.Get(c, &proj)
+	err := datastore.Get(c, &proj)
 	if err == datastore.ErrNoSuchEntity {
 		err = nil
 	}
-	return &proj, err
+	return &proj, errors.Annotate(err, "getting project %q", project).Err()
 }
 
 // GetAllProjects returns all projects the current user has access to.
@@ -548,7 +547,7 @@ func GetAllProjects(c context.Context) ([]Project, error) {
 	projs := []Project{}
 
 	if err := datastore.GetAll(c, q, &projs); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "getting projects").Err()
 	}
 	result := []Project{}
 	for _, proj := range projs {
@@ -571,7 +570,7 @@ func GetProjectConsoles(c context.Context, projectID string) ([]*Console, error)
 	con := []*Console{}
 	err := datastore.GetAll(c, q, &con)
 	sort.Slice(con, func(i, j int) bool { return con[i].Ordinal < con[j].Ordinal })
-	return con, err
+	return con, errors.Annotate(err, "getting project %q consoles", projectID).Err()
 }
 
 // GetConsole returns the requested console.
@@ -588,7 +587,7 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 	case nil:
 		return &con, nil
 	default:
-		return nil, err
+		return nil, errors.Annotate(err, "getting project %q console %q", proj, id).Err()
 	}
 }
 
@@ -601,7 +600,8 @@ func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
 		result[i] = con.SetID(c, nil)
 	}
 	if err := datastore.Get(c, result); err != nil {
-		return result, ReplaceNSEWith(err.(errors.MultiError), ErrConsoleNotFound)
+		err = ReplaceNSEWith(err.(errors.MultiError), ErrConsoleNotFound)
+		return result, errors.Annotate(err, "getting %s consoles", consoles).Err()
 	}
 	return result, nil
 }

@@ -515,11 +515,10 @@ func ConsoleHandler(c *router.Context) error {
 
 	// Get console from datastore and filter out builders from the definition.
 	con, err := common.GetConsole(c.Context, project, group)
-	if err != nil {
-		return errors.Annotate(err, "error getting console").Err()
-	}
-
-	if con.Def.BuilderViewOnly {
+	switch {
+	case err != nil:
+		return err
+	case con.Def.BuilderViewOnly:
 		redirect("/p/:project/g/:group/builders", http.StatusFound)(c)
 		return nil
 	}
