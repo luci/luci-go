@@ -46,6 +46,30 @@
       "revId": "9871f9544a6e5534418a5d0cce6c394f8e53a7f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df63c32f_40c8207b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-04T22:31:11Z",
+      "side": 1,
+      "message": "I prefer (c) because I perceive this feature as obscure (and I don\u0027t really understand meaning of this config) and don\u0027t want to be blocked on it.\n\nAs (d) we can completely hardcode some default config for now and then later you can add whatever API seems most appropriate.",
+      "parentUuid": "17b11fb8_8e12e9d1",
+      "range": {
+        "startLine": 164,
+        "startChar": 0,
+        "endLine": 168,
+        "endChar": 27
+      },
+      "revId": "9871f9544a6e5534418a5d0cce6c394f8e53a7f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
