@@ -250,7 +250,7 @@ func (bp *BuildPage) BuildID() *Link {
 	b := bp.Build.Builder
 	return NewLink(
 		fmt.Sprintf("%d", num),
-		fmt.Sprintf("/p/%s/builder/%s/%s/%d", b.Project, b.Bucket, b.Builder, num),
+		fmt.Sprintf("/p/%s/builders/%s/%s/%d", b.Project, b.Bucket, b.Builder, num),
 		fmt.Sprintf("Build %d", num))
 }
 
