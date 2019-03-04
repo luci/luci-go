@@ -70,6 +70,30 @@
       "revId": "9871f9544a6e5534418a5d0cce6c394f8e53a7f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d56d0c7_95d1a0eb",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-04T22:35:44Z",
+      "side": 1,
+      "message": "hm, how about (e):\nuse enum for retry_configs with only two values of retry transient (default) and None.\n\nAnd then once somebody complains, later me will add better API.",
+      "parentUuid": "df63c32f_40c8207b",
+      "range": {
+        "startLine": 164,
+        "startChar": 0,
+        "endLine": 168,
+        "endChar": 27
+      },
+      "revId": "9871f9544a6e5534418a5d0cce6c394f8e53a7f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
