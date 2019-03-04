@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa6bd4ad_16ce2210",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-04T18:56:39Z",
+      "side": 1,
+      "message": "moved as is",
+      "revId": "acd482e56bcd263927f3bdad4f0a7b72d0267b10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
