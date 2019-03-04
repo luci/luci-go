@@ -168,18 +168,15 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 		ctx,
 		transient.Only(options.Retry),
 		func() error {
-			ctx := ctx
-
-			// If there is a deadline on our Context, set the timeout header on the
-			// request.
 			now := clock.Now(ctx)
+
+			// Does our parent Context have a deadline?
+			rpcCtx := ctx
 			var requestDeadline time.Time
 			if options.PerRPCTimeout > 0 {
 				requestDeadline = now.Add(options.PerRPCTimeout)
 			}
-
-			// Does our parent Context have a deadline?
-			if deadline, ok := ctx.Deadline(); ok && (requestDeadline.IsZero() || deadline.Before(requestDeadline)) {
+			if deadline, ok := rpcCtx.Deadline(); ok && (requestDeadline.IsZero() || deadline.Before(requestDeadline)) {
 				// Outer Context has a shorter deadline than our per-RPC deadline, so
 				// use it.
 				requestDeadline = deadline
@@ -187,7 +184,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 				// We have a shorter request deadline. Create a derivative Context for
 				// this request round.
 				var cancelFunc context.CancelFunc
-				ctx, cancelFunc = clock.WithDeadline(ctx, requestDeadline)
+				rpcCtx, cancelFunc = clock.WithDeadline(rpcCtx, requestDeadline)
 				defer cancelFunc()
 			}
 
@@ -208,16 +205,20 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 
 			// Send the request.
 			req.Body = ioutil.NopCloser(bytes.NewReader(in))
-			res, err := ctxhttp.Do(ctx, c.getHTTPClient(), req)
+			res, err := ctxhttp.Do(rpcCtx, c.getHTTPClient(), req)
 			if res != nil && res.Body != nil {
 				defer res.Body.Close()
 			}
 			if c.testPostHTTP != nil {
-				err = c.testPostHTTP(ctx, err)
+				err = c.testPostHTTP(rpcCtx, err)
 			}
 			if err != nil {
-				// Treat all errors here as transient.
-				return errors.Annotate(err, "failed to send request").Tag(transient.Tag).Err()
+				ann := errors.Annotate(err, "failed to send request")
+				// If the outer context is not done, it is a transient error.
+				if ctx.Err() == nil {
+					ann.Tag(transient.Tag)
+				}
+				return ann.Err()
 			}
 
 			if options.resHeaderMetadata != nil {

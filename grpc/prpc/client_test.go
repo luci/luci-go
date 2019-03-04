@@ -222,34 +222,51 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("With a deadline in the future and a per-RPC deadline, applies the per-RPC deadline", func(c C) {
-				retries := 5
-
-				// Set an overall deadline.
-				overallDeadline := time.Duration(10*time.Second)*time.Duration(retries) - 1
-				ctx, cancelFunc := clock.WithTimeout(ctx, overallDeadline)
-				defer cancelFunc()
-
-				client, server := setUp(advanceClockAndErr(tc, 10*time.Second))
+				client, server := setUp(advanceClockAndErr(tc, time.Second))
 				defer server.Close()
 
+				// Set an overall deadline to 2s and per-RPC deadline to 1s.
+				ctx, cancelFunc := clock.WithTimeout(ctx, 2*time.Second)
+				defer cancelFunc()
+				client.Options.PerRPCTimeout = time.Second
+
+				calls := 0
 				// All of our HTTP requests should terminate >= timeout. Synchronize
 				// around this to ensure that our Context is always the functional
 				// client error.
 				client.testPostHTTP = func(c context.Context, err error) error {
+					calls++
 					<-c.Done()
 					return c.Err()
 				}
 
-				client.Options.PerRPCTimeout = 10 * time.Second
-				client.Options.Retry = func() retry.Iterator {
-					return &countingRetryIterator{
-						retries: &retries,
-					}
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
+				So(calls, ShouldEqual, 2)
+			})
+
+			Convey("With a canceled context, does not retry", func(c C) {
+				client, server := setUp(advanceClockAndErr(tc, time.Second))
+				defer server.Close()
+
+				ctx, cancelFunc := clock.WithTimeout(ctx, time.Second)
+				defer cancelFunc()
+
+				calls := 0
+				// All of our HTTP requests should terminate >= timeout. Synchronize
+				// around this to ensure that our Context is always the functional
+				// client error.
+				client.testPostHTTP = func(c context.Context, err error) error {
+					calls++
+					<-c.Done()
+					return c.Err()
 				}
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
-				So(retries, ShouldEqual, 0)
+
+				// Deadline errors are permanent.
+				So(calls, ShouldEqual, 1)
 			})
 
 			Convey(`With a maximum content length smaller than the response, returns "ErrResponseTooBig".`, func(c C) {
@@ -385,16 +402,4 @@ func TestClient(t *testing.T) {
 			})
 		})
 	})
-}
-
-type countingRetryIterator struct {
-	retries *int
-}
-
-func (it *countingRetryIterator) Next(c context.Context, err error) time.Duration {
-	*(it.retries)--
-	if *it.retries <= 0 {
-		return retry.Stop
-	}
-	return 0
 }
