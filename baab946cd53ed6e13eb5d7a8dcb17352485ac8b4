@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dfd89391_5fae0479",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-04T18:00:54Z",
+      "side": 1,
+      "message": "The retry loop shouldn\u0027t be retrying if \u0027ctx\u0027 is already canceled (even if the error is transient), so I\u0027m not sure why this CL works. Can you explain?",
+      "range": {
+        "startLine": 168,
+        "startChar": 2,
+        "endLine": 168,
+        "endChar": 5
+      },
+      "revId": "baab946cd53ed6e13eb5d7a8dcb17352485ac8b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

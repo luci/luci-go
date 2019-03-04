@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7a72742_06410117",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-04T18:00:54Z",
+      "side": 0,
+      "message": "this comment was actually helpful, if anything \"Does our parent Context have a deadline?\" is less helpful and can be deleted",
+      "range": {
+        "startLine": 173,
+        "startChar": 6,
+        "endLine": 174,
+        "endChar": 14
+      },
+      "revId": "d67049638818887b4c402fdb000d9d9205568a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
