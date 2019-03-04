@@ -22,6 +22,30 @@
       "revId": "1e68071056e7ddd3a7cb1a959b7d77307a07681b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68544852_7d53403b",
+        "filename": "logdog/client/cmd/logdog_annotee/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-04T22:17:23Z",
+      "side": 0,
+      "message": "doc\u0027d",
+      "parentUuid": "a2d1f911_3b577532",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 70,
+        "endChar": 19
+      },
+      "revId": "1e68071056e7ddd3a7cb1a959b7d77307a07681b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
