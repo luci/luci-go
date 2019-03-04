@@ -105,6 +105,22 @@ func TestRetry(t *testing.T) {
 				So(callbacks, ShouldEqual, 1)
 				So(sleeps, ShouldEqual, 1)
 			})
+
+			Convey(`Does not retry if context is done.`, func() {
+				ctx, cancel := context.WithCancel(ctx)
+				var count, callbacks int
+				err := Retry(ctx, g, func() error {
+					cancel()
+					count++
+					return failure
+				}, func(error, time.Duration) {
+					callbacks++
+				})
+				So(err, ShouldEqual, failure)
+				So(count, ShouldEqual, 1)
+				So(callbacks, ShouldEqual, 0)
+				So(sleeps, ShouldEqual, 0)
+			})
 		})
 
 		Convey(`Does not retry if callback is not set.`, func() {
