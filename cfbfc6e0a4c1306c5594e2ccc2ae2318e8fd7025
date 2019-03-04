@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a45415f1_3bca0dca",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-04T23:10:13Z",
+      "side": 1,
+      "message": "i think this comment was fine before. Nothing in BugTemplate talks about same-or-separate link. It COULD BE used for the general feedback link.",
+      "revId": "cfbfc6e0a4c1306c5594e2ccc2ae2318e8fd7025",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
