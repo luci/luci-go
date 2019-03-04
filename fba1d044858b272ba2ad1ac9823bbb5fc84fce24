@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3d9eeb4_757863aa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-04T18:27:00Z",
+      "side": 1,
+      "message": "imagine\n\nhttps://www.youtube.com/watch?v\u003dVOgFZfRVaww",
+      "range": {
+        "startLine": 16,
+        "startChar": 16,
+        "endLine": 16,
+        "endChar": 21
+      },
+      "revId": "fba1d044858b272ba2ad1ac9823bbb5fc84fce24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
