@@ -49,7 +49,7 @@ func TestBootstrap(t *testing.T) {
 		reg := &streamclient.Registry{}
 		regSpec := ""
 		regErr := error(nil)
-		reg.Register("test", func(spec string) (streamclient.Client, error) {
+		reg.Register("test", func(spec string, ns types.StreamName) (streamclient.Client, error) {
 			regSpec = spec
 			return &sentinelClient{}, regErr
 		})
@@ -80,6 +80,7 @@ func TestBootstrap(t *testing.T) {
 			Convey(`And the remaining environment parameters`, func() {
 				env.Set(EnvStreamServerPath, "test:client:params")
 				env.Set(EnvCoordinatorHost, "example.appspot.com")
+				env.Set(EnvNamespace, "some/namespace")
 
 				Convey(`Yields a fully-populated Bootstrap.`, func() {
 					bs, err := getFromEnv(env, reg)
@@ -94,6 +95,7 @@ func TestBootstrap(t *testing.T) {
 						CoordinatorHost: "example.appspot.com",
 						Project:         "test-project",
 						Prefix:          "butler/prefix",
+						Namespace:       "some/namespace",
 					})
 					So(regSpec, ShouldEqual, "client:params")
 				})
@@ -111,10 +113,16 @@ func TestBootstrap(t *testing.T) {
 				So(err, ShouldErrLike, "failed to validate prefix")
 			})
 
-			Convey(`With an missing Butler project, will fail.`, func() {
+			Convey(`With a missing Butler project, will fail.`, func() {
 				env.Remove(EnvStreamProject)
 				_, err := getFromEnv(env, reg)
 				So(err, ShouldErrLike, "failed to validate project")
+			})
+
+			Convey(`With an invalid Namespace, will fail.`, func() {
+				env.Set(EnvNamespace, "!!! invalid")
+				_, err := getFromEnv(env, reg)
+				So(err, ShouldErrLike, "failed to validate namespace")
 			})
 
 			Convey(`With an invalid Butler project, will fail.`, func() {
@@ -171,7 +179,7 @@ func TestBootstrapURLGeneration(t *testing.T) {
 
 		Convey(`With a stream client configured`, func() {
 			reg := streamclient.Registry{}
-			reg.Register("test", func(spec string) (streamclient.Client, error) {
+			reg.Register("test", func(spec string, ns types.StreamName) (streamclient.Client, error) {
 				return &sentinelClient{}, nil
 			})
 
