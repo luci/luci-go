@@ -31,10 +31,12 @@ type Project struct {
 	// This field is optional. The logo URL must have a host of
 	// storage.googleapis.com.
 	LogoUrl string `protobuf:"bytes,4,opt,name=logo_url,json=logoUrl,proto3" json:"logo_url,omitempty"`
-	// BuildBugTemplate is the template for making a custom feedback link for
-	// the build page. This field is optional. Supported interpolations
-	// for the "summary" and "description" fields in this context are the
-	// fields of the standard build proto such as:
+	// BuildBugTemplate is the template for making a custom bug link for
+	// filing a bug against a build that displays on the build page. This
+	// is a separate link from the general Milo feedback link that is
+	// displayed in the lower right hand corner. This field is optional.
+	// Supported interpolations for the "summary" and "description" fields
+	// in this context are the fields of the standard build proto such as:
 	//
 	// {{.Build.Builder.Project}}
 	// {{.Build.Builder.Bucket}}
@@ -45,8 +47,8 @@ type Project struct {
 	// {{.MiloBuildUrl}}
 	// {{.MiloBuilderUrl}}
 	//
-	// If any specified placeholder cannot be satisfied then no URL
-	// is rendered for the build page feedback link.
+	// If any specified placeholder cannot be satisfied then the link is
+	// not displayed.
 	BuildBugTemplate     *BugTemplate `protobuf:"bytes,5,opt,name=build_bug_template,json=buildBugTemplate,proto3" json:"build_bug_template,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
