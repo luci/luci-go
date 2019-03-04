@@ -23,8 +23,6 @@ func ErrorHandler(c *router.Context, err error) {
 
 	code := common.ErrorCodeIn(err)
 	switch code {
-	case common.CodeUnknown:
-		errors.Log(c.Context, err)
 	case common.CodeUnauthorized:
 		loginURL, err := auth.LoginURL(c.Context, c.Request.URL.RequestURI())
 		if err == nil {
@@ -33,6 +31,10 @@ func ErrorHandler(c *router.Context, err error) {
 		}
 		errors.Log(
 			c.Context, errors.Annotate(err, "Failed to retrieve login URL").Err())
+	case common.CodeOK:
+		// All good.
+	default:
+		errors.Log(c.Context, err)
 	}
 
 	status := code.HTTPStatus()
