@@ -18,6 +18,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"go.chromium.org/luci/common/logging"
 	"net/http"
 	"net/url"
 	"sync"
@@ -47,7 +48,10 @@ type Backend struct {
 var _ backend.B = (*Backend)(nil)
 
 // ServiceURL implements backend.B.
-func (be *Backend) ServiceURL(c context.Context) url.URL { return be.Provider.GetServiceURL() }
+func (be *Backend) ServiceURL(c context.Context) url.URL {
+	logging.Warningf(c, "GetServiceURL returns %s", be.Provider.GetServiceURL())
+	return be.Provider.GetServiceURL()
+}
 
 // Get implements backend.B.
 func (be *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
