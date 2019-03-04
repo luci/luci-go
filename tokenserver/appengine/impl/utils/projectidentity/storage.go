@@ -32,7 +32,7 @@ var (
 var projectIdentities = &persistentStorage{}
 
 // ProjectIdentities returns the global scoped identity storage.
-func ProjectIdentities(ctx context.Context) Storage {
+func ProjectIdentities(_ context.Context) Storage {
 	return projectIdentities
 }
 

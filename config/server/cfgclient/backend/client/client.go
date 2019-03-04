@@ -22,6 +22,8 @@ import (
 	"net/url"
 	"sync"
 
+	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/remote"
@@ -47,7 +49,10 @@ type Backend struct {
 var _ backend.B = (*Backend)(nil)
 
 // ServiceURL implements backend.B.
-func (be *Backend) ServiceURL(c context.Context) url.URL { return be.Provider.GetServiceURL() }
+func (be *Backend) ServiceURL(c context.Context) url.URL {
+	logging.Warningf(c, "GetServiceURL returns %s", be.Provider.GetServiceURL())
+	return be.Provider.GetServiceURL()
+}
 
 // Get implements backend.B.
 func (be *Backend) Get(c context.Context, configSet config.Set, path string, p backend.Params) (*config.Config, error) {
