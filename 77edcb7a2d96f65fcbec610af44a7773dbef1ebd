@@ -49,6 +49,29 @@
     },
     {
       "key": {
+        "uuid": "52865593_9970936d",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 1125,
+      "author": {
+        "id": 1179484
+      },
+      "writtenOn": "2019-03-04T16:20:25Z",
+      "side": 1,
+      "message": "Typo -\u003e disable_reuse",
+      "range": {
+        "startLine": 1125,
+        "startChar": 16,
+        "endLine": 1125,
+        "endChar": 30
+      },
+      "revId": "77edcb7a2d96f65fcbec610af44a7773dbef1ebd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9a79d411_ef930215",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
