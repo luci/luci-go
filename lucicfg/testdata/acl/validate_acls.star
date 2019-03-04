@@ -29,5 +29,12 @@ def test_works():
       lambda: aclimpl.validate_acls(acls),
       'role PROJECT_CONFIGS_READER can only be set at the project level')
 
+  # Checks allowed_roles.
+  acls = [acl.entry(acl.BUILDBUCKET_READER)]
+  assert.eq(aclimpl.validate_acls(acls, allowed_roles=[acl.BUILDBUCKET_READER]), acls)
+  assert.fails(
+      lambda: aclimpl.validate_acls(acls, allowed_roles=[acl.BUILDBUCKET_OWNER]),
+      'role BUILDBUCKET_READER is not allowed in this context')
+
 
 test_works()

@@ -30,6 +30,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.project -> luci.cq
 #   luci.project -> [luci.bucket]
 #   luci.project -> [luci.milo_view]
+#   luci.project -> [luci.cq_group]
 #   luci.bucket -> [luci.builder]
 #   luci.bucket -> [luci.gitiles_poller]
 #   luci.builder_ref -> luci.builder
@@ -99,6 +100,7 @@ kinds = struct(
     CONSOLE_VIEW = 'luci.console_view',
     CONSOLE_VIEW_ENTRY = 'luci.console_view_entry',
     CQ = 'luci.cq',
+    CQ_GROUP = 'luci.cq_group',
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = 'luci.builder_ref',
@@ -128,6 +130,7 @@ keys = struct(
     console_view = lambda ref: _global_key(kinds.CONSOLE_VIEW, 'console_view', ref),
 
     cq = lambda: graph.key(kinds.CQ, '...'),  # singleton
+    cq_group = lambda ref: _global_key(kinds.CQ_GROUP, 'cq_group', ref),
 
     # Internal nodes (declared internally as dependency of other nodes).
     builder_ref = lambda ref, attr='triggers': _bucket_scoped_key(kinds.BUILDER_REF, attr, ref),

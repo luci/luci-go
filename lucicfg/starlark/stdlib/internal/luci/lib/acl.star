@@ -153,7 +153,7 @@ def _entry(roles, *, groups=None, users=None):
   )
 
 
-def _validate_acls(acls, project_level=False):
+def _validate_acls(acls, *, project_level=False, allowed_roles=None):
   """Validates the given list of acl.entry structs.
 
   Checks that project level roles are set only on the project level.
@@ -161,6 +161,7 @@ def _validate_acls(acls, project_level=False):
   Args:
     acls: an iterable of acl.entry structs to validate, or None.
     project_level: True to accept project_level_only=True roles.
+    allowed_roles: an optional whitelist of roles to accept.
 
   Returns:
     A list of validated acl.entry structs or [], never None.
@@ -171,6 +172,8 @@ def _validate_acls(acls, project_level=False):
     for r in e.roles:
       if r.project_level_only and not project_level:
         fail('bad "acls": role %s can only be set at the project level' % r.name)
+      if allowed_roles and r not in allowed_roles:
+        fail('bad "acls": role %s is not allowed in this context' % r.name)
   return acls
 
 
@@ -226,7 +229,7 @@ acl = struct(
     # Writing logs under project's logdog prefix.
     #
     # DocTags:
-    #   project_level_only, groups_only
+    #   project_level_only, groups_only.
     LOGDOG_WRITER = _role('LOGDOG_WRITER', project_level_only=True, groups_only=True),
 
     # Fetching info about a build, searching for builds in a bucket.
@@ -242,6 +245,18 @@ acl = struct(
     SCHEDULER_TRIGGERER = _role('SCHEDULER_TRIGGERER'),
     # Full access to Scheduler jobs, including ability to abort them.
     SCHEDULER_OWNER = _role('SCHEDULER_OWNER'),
+
+    # Committing approved CLs via CQ.
+    #
+    # DocTags:
+    #  cq_role, groups_only.
+    CQ_COMMITTER = _role('CQ_COMMITTER', groups_only=True),
+
+    # Executing presubmit tests for CLs via CQ.
+    #
+    # DocTags:
+    #  cq_role, groups_only.
+    CQ_DRY_RUNNER = _role('CQ_DRY_RUNNER', groups_only=True),
 )
 
 

@@ -54,6 +54,7 @@ TODO: To be written.
 {{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
 {{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
 {{ $scheduler := Symbol "@stdlib//builtins.star" "scheduler" }}
+{{ $cq := Symbol "@stdlib//builtins.star" "cq" }}
 {{ $native := Symbol "@stdlib//native_doc.star" "" }}
 {{ $proto := Symbol "@stdlib//proto_doc.star" "proto" }}
 
@@ -95,7 +96,8 @@ Below is the table with role constants that can be passed as `roles` in
 
 Due to some inconsistencies in how LUCI service are currently implemented, some
 roles can be assigned only in {{LinkifySymbols "luci.project(...)"}} rule, but
-some also in individual {{LinkifySymbols "luci.bucket(...)"}} rules.
+some also in individual {{LinkifySymbols "luci.bucket(...)"}} or
+{{LinkifySymbols "luci.cq_group(...)"}} rules.
 
 Similarly some roles can be assigned to individual users, other only to groups.
 
@@ -103,7 +105,7 @@ Similarly some roles can be assigned to individual users, other only to groups.
 |-------|-------|------------|--------|
 {{- range $sym := $acl.Symbols "var"}}
 | {{.FullName}} |
-{{- if .HasDocTag "project_level_only"}}project only{{else}}project, bucket{{end}} |
+{{- if .HasDocTag "project_level_only"}}project only{{else if .HasDocTag "cq_role"}}project, cq_group{{else}}project, bucket{{end}} |
 {{- if .HasDocTag "groups_only"}}groups{{else}}groups, users{{end}} |
 {{- .Doc.Description | LinkifySymbols}} |
 {{- end}}
@@ -115,6 +117,9 @@ Similarly some roles can be assigned to individual users, other only to groups.
 
 ## Scheduler
 {{template "gen-funcs-doc" $scheduler}}
+
+## CQ
+{{template "gen-funcs-doc" $cq}}
 
 ## Built-in constants and functions
 
