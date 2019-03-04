@@ -22,6 +22,30 @@
       "revId": "d67049638818887b4c402fdb000d9d9205568a59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07be426b_21f8d031",
+        "filename": "common/retry/retry.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-04T18:41:31Z",
+      "side": 0,
+      "message": "Hm, Err() has the lock. Dunno then.",
+      "parentUuid": "3e0dd482_acc96bda",
+      "range": {
+        "startLine": 83,
+        "startChar": 2,
+        "endLine": 89,
+        "endChar": 3
+      },
+      "revId": "d67049638818887b4c402fdb000d9d9205568a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
