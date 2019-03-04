@@ -22,6 +22,30 @@
       "revId": "9871f9544a6e5534418a5d0cce6c394f8e53a7f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "17b11fb8_8e12e9d1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-04T22:25:22Z",
+      "side": 1,
+      "message": "so, I\u0027m open towards next-gen RetryConfig. I\u0027d probably drop timeout_weight, as I don\u0027t see it being useful, as for others the idea is:\n  * limiting retries across all builders and per individual builder\n  * allowing different # of retries depending on the failure kind (infra vs non-infra)\n\u003d\u003e\na) do you have better fields names/meanings?\nb) or better docs for existing fields?\n\nor c) land as is, postpone a) or b)",
+      "parentUuid": "7e6b3b5b_2f9e3c20",
+      "range": {
+        "startLine": 164,
+        "startChar": 0,
+        "endLine": 168,
+        "endChar": 27
+      },
+      "revId": "9871f9544a6e5534418a5d0cce6c394f8e53a7f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

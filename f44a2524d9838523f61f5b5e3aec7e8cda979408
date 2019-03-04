@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fcc3e3af_c6e2b98b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-04T22:25:22Z",
+      "side": 1,
+      "message": "100",
+      "range": {
+        "startLine": 119,
+        "startChar": 23,
+        "endLine": 119,
+        "endChar": 24
+      },
+      "revId": "f44a2524d9838523f61f5b5e3aec7e8cda979408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "135fb7ff_7d9ded3d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-04T22:25:22Z",
+      "side": 1,
+      "message": "100",
+      "range": {
+        "startLine": 121,
+        "startChar": 23,
+        "endLine": 121,
+        "endChar": 24
+      },
+      "revId": "f44a2524d9838523f61f5b5e3aec7e8cda979408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e02210f9_12bb9376",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-04T22:25:22Z",
+      "side": 1,
+      "message": "can you add doc for these consts? RETRY_TRANSIENT_FAILURES will actually retry at most 2 failures, of which at most 1 per builder.",
+      "range": {
+        "startLine": 163,
+        "startChar": 4,
+        "endLine": 163,
+        "endChar": 28
+      },
+      "revId": "f44a2524d9838523f61f5b5e3aec7e8cda979408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
