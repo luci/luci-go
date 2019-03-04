@@ -22,6 +22,30 @@
       "revId": "d67049638818887b4c402fdb000d9d9205568a59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3d4acad_894e65d9",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-04T18:23:28Z",
+      "side": 0,
+      "message": "i think a comment should describe the code. The comment talks about headers, but code doesn\u0027t change headers. Isn\u0027t that confusing?\n\nthe actual code that sets the header starts in L192 and there is a comment about that (again)\n\n--\n\nupdated the unhelpful comment. PTAL",
+      "parentUuid": "f7a72742_06410117",
+      "range": {
+        "startLine": 173,
+        "startChar": 6,
+        "endLine": 174,
+        "endChar": 14
+      },
+      "revId": "d67049638818887b4c402fdb000d9d9205568a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
