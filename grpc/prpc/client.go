@@ -168,17 +168,15 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 		ctx,
 		transient.Only(options.Retry),
 		func() error {
-			ctx := ctx
-
-			// If there is a deadline on our Context, set the timeout header on the
-			// request.
 			now := clock.Now(ctx)
+
+			// Does our parent Context have a deadline?
+			parentCtx := ctx
+			ctx := ctx
 			var requestDeadline time.Time
 			if options.PerRPCTimeout > 0 {
 				requestDeadline = now.Add(options.PerRPCTimeout)
 			}
-
-			// Does our parent Context have a deadline?
 			if deadline, ok := ctx.Deadline(); ok && (requestDeadline.IsZero() || deadline.Before(requestDeadline)) {
 				// Outer Context has a shorter deadline than our per-RPC deadline, so
 				// use it.
@@ -216,8 +214,11 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 				err = c.testPostHTTP(ctx, err)
 			}
 			if err != nil {
-				// Treat all errors here as transient.
-				return errors.Annotate(err, "failed to send request").Tag(transient.Tag).Err()
+				ann := errors.Annotate(err, "failed to send request")
+				if parentCtx.Err() == nil {
+					ann.Tag(transient.Tag)
+				}
+				return ann.Err()
 			}
 
 			if options.resHeaderMetadata != nil {
