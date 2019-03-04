@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2d1f911_3b577532",
+        "filename": "logdog/client/cmd/logdog_annotee/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-04T22:03:13Z",
+      "side": 0,
+      "message": "ought to doc this removal in CL description OR a separate CL",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 70,
+        "endChar": 19
+      },
+      "revId": "1e68071056e7ddd3a7cb1a959b7d77307a07681b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
