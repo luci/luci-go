@@ -59,9 +59,9 @@ var (
 	// TargetHost parameter.
 	ErrBadTargetHost = fmt.Errorf("auth: invalid TargetHost (doesn't look like a hostname:port pair)")
 
-	// ErrBadDelegationTokenTTL is returned by MintDelegationToken if requested
+	// ErrBadTokenTTL is returned by MintDelegationToken and MintProjectToken if requested
 	// token lifetime is outside of the allowed range.
-	ErrBadDelegationTokenTTL = fmt.Errorf("auth: requested delegation token TTL is invalid")
+	ErrBadTokenTTL = fmt.Errorf("auth: requested token TTL is invalid")
 
 	// ErrBadDelegationTag is returned by MintDelegationToken if some of the
 	// passed tags are malformed.
@@ -123,11 +123,11 @@ type DelegationTokenParams struct {
 	// rpcClient is token server RPC client to use.
 	//
 	// Mocked in tests.
-	rpcClient tokenMinterClient
+	rpcClient delegationTokenMinterClient
 }
 
-// tokenMinterClient is subset of minter.TokenMinterClient we use.
-type tokenMinterClient interface {
+// delegationTokenMinterClient is subset of minter.TokenMinterClient we use.
+type delegationTokenMinterClient interface {
 	MintDelegationToken(context.Context, *minter.MintDelegationTokenRequest, ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error)
 }
 
@@ -176,8 +176,8 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 		p.MinTTL = 10 * time.Minute
 	}
 	if p.MinTTL < 30*time.Second || p.MinTTL > MaxDelegationTokenTTL {
-		report(ErrBadDelegationTokenTTL, "ERROR_BAD_TTL")
-		return nil, ErrBadDelegationTokenTTL
+		report(ErrBadTokenTTL, "ERROR_BAD_TTL")
+		return nil, ErrBadTokenTTL
 	}
 
 	// Validate tags are sane, sort them. Don't be very pedantic with validation,
