@@ -27,10 +27,12 @@ message Project {
   // storage.googleapis.com.
   string logo_url = 4;
 
-  // BuildBugTemplate is the template for making a custom feedback link for
-  // the build page. This field is optional. Supported interpolations
-  // for the "summary" and "description" fields in this context are the
-  // fields of the standard build proto such as:
+  // BuildBugTemplate is the template for making a custom bug link for
+  // filing a bug against a build that displays on the build page. This
+  // is a separate link from the general Milo feedback link that is
+  // displayed in the lower right hand corner. This field is optional.
+  // Supported interpolations for the "summary" and "description" fields
+  // in this context are the fields of the standard build proto such as:
   //
   // {{.Build.Builder.Project}}
   // {{.Build.Builder.Bucket}}
@@ -41,8 +43,8 @@ message Project {
   // {{.MiloBuildUrl}}
   // {{.MiloBuilderUrl}}
   //
-  // If any specified placeholder cannot be satisfied then no URL
-  // is rendered for the build page feedback link.
+  // If any specified placeholder cannot be satisfied then the link is
+  // not displayed.
   BugTemplate build_bug_template = 5;
 }
 
