@@ -535,7 +535,11 @@ func GetProject(c context.Context, project string) (*Project, error) {
 	proj := Project{
 		ID: project,
 	}
-	return &proj, datastore.Get(c, &proj)
+	err := datastore.Get(c, &proj)
+	if datastore.IsNoSuchEntity(err) {
+		err = nil
+	}
+	return &proj, err
 }
 
 // GetAllProjects returns all projects the current user has access to.
