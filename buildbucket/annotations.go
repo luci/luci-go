@@ -219,7 +219,7 @@ var statusPrecedence = map[buildbucketpb.Status]int{
 	buildbucketpb.Status_SUCCESS:       3,
 }
 
-func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*buildbucketpb.Step_Log, []string) {
+func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*buildbucketpb.Log, []string) {
 	aLinks := make([]*annotpb.Link, 0, len(ann.OtherLinks)+2)
 
 	// Get stdout, stderr Logdog links.
@@ -247,7 +247,7 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*b
 	aLinks = append(aLinks, ann.OtherLinks...)
 
 	// Convert each link to a Buildbucket v2 log.
-	bbLogs := make([]*buildbucketpb.Step_Log, 0, len(aLinks))
+	bbLogs := make([]*buildbucketpb.Log, 0, len(aLinks))
 	summary := make([]string, 0, len(aLinks))
 	logNames := stringset.New(len(aLinks))
 	for _, l := range aLinks {
@@ -258,7 +258,7 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*b
 			} else {
 				logNames.Add(l.Label)
 				bbLogs = append(bbLogs,
-					&buildbucketpb.Step_Log{
+					&buildbucketpb.Log{
 						Name:    l.Label,
 						ViewUrl: p.convertLogdogLink(l.GetLogdogStream(), true),
 						Url:     p.convertLogdogLink(l.GetLogdogStream(), false),
