@@ -43,8 +43,7 @@ func (f *luciConfigFetcher) Revision() string {
 	return f.rev
 }
 
-func (f *luciConfigFetcher) FetchTextProto(c context.Context, path string, out proto.Message) error {
-	configSet := cfgclient.CurrentServiceConfigSet(c)
+func (f *luciConfigFetcher) FetchTextProtoFromService(c context.Context, configSet config.Set, path string, out proto.Message) error {
 	logging.Infof(c, "Reading %q from config set %q", path, configSet)
 	c, cancel := context.WithTimeout(c, 40*time.Second) // URL fetch deadline
 	defer cancel()
@@ -71,4 +70,8 @@ func (f *luciConfigFetcher) FetchTextProto(c context.Context, path string, out p
 	}
 
 	return nil
+}
+
+func (f *luciConfigFetcher) FetchTextProto(c context.Context, path string, out proto.Message) error {
+	return f.FetchTextProtoFromService(c, cfgclient.CurrentServiceConfigSet(c), path, out)
 }
