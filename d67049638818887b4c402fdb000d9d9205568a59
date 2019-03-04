@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e0dd482_acc96bda",
+        "filename": "common/retry/retry.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-04T18:38:38Z",
+      "side": 0,
+      "message": "This was actually more correct\n\nI can\u0027t find it now, but the \"idiomatic\" way to check for a canceled context is to use Done() (I guess it is related to thread safety somehow since I imagine Err() is not protected by a lock and relying on its value alone is racy).",
+      "range": {
+        "startLine": 83,
+        "startChar": 2,
+        "endLine": 89,
+        "endChar": 3
+      },
+      "revId": "d67049638818887b4c402fdb000d9d9205568a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
