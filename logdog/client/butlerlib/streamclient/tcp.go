@@ -19,10 +19,11 @@ import (
 	"net"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 func tcpProtocolClientFactory(netType string) ClientFactory {
-	return func(spec string) (Client, error) {
+	return func(spec string, ns types.StreamName) (Client, error) {
 		raddr, err := net.ResolveTCPAddr(netType, spec)
 		if err != nil {
 			return nil, errors.Annotate(err, "could not resolve %q address from %q", netType, spec).Err()
@@ -44,6 +45,7 @@ func tcpProtocolClientFactory(netType string) ClientFactory {
 				}
 				return conn, nil
 			},
+			ns: ns,
 		}, nil
 	}
 }

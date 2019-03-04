@@ -67,7 +67,6 @@ type application struct {
 
 	resultPath         string
 	jsonArgsPath       string
-	butlerStreamServer string
 	tee                teeFlag
 	printSummary       bool
 	testingDir         string
@@ -89,9 +88,6 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 	fs.StringVar(&a.jsonArgsPath, "json-args-path", "",
 		"If specified, this is a JSON file containing the full command to run as an "+
 			"array of strings.")
-	fs.StringVar(&a.butlerStreamServer, "butler-stream-server", "",
-		"The Butler stream server location. If empty, Annotee will check for Butler "+
-			"bootstrapping and extract the stream server from that.")
 	fs.Var(&a.tee, "tee",
 		"Comma-delimited list of content to tee to the bootstrapped process. Valid values are: "+teeFlagOptions)
 	fs.BoolVar(&a.printSummary, "print-summary", true,
@@ -126,10 +122,6 @@ func (a *application) loadJSONArgs() ([]string, error) {
 func (a *application) getStreamClient() (streamclient.Client, error) {
 	if a.testingDir != "" {
 		return newFilesystemClient(a.testingDir)
-	}
-
-	if a.butlerStreamServer != "" {
-		return streamclient.New(a.butlerStreamServer)
 	}
 
 	// Check our bootstrap.

@@ -35,4 +35,8 @@ const (
 	// EnvCoordinatorHost is the environment variable set to the host name of
 	// the upstream Coordinator service.
 	EnvCoordinatorHost = "LOGDOG_COORDINATOR_HOST"
+
+	// EnvNamespace is the environment variable set to the stream namespace that
+	// all streams should be created within.
+	EnvNamespace = "LOGDOG_NAMESPACE"
 )

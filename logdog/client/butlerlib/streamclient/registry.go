@@ -18,11 +18,13 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // ClientFactory is a generator function that is invoked by the Registry when a
 // new Client is requested for its protocol.
-type ClientFactory func(string) (Client, error)
+type ClientFactory func(string, types.StreamName) (Client, error)
 
 // Registry maps protocol prefix strings to their Client generator functions.
 //
@@ -56,7 +58,7 @@ func (r *Registry) Register(name string, f ClientFactory) {
 
 // NewClient invokes the protocol ClientFactory generator for the
 // supplied protocol/address string, returning the generated Client.
-func (r *Registry) NewClient(path string) (Client, error) {
+func (r *Registry) NewClient(path string, namespace types.StreamName) (Client, error) {
 	parts := strings.SplitN(path, ":", 2)
 	value := ""
 	if len(parts) == 2 {
@@ -67,7 +69,7 @@ func (r *Registry) NewClient(path string) (Client, error) {
 	defer r.lock.Unlock()
 
 	if f, ok := r.protocols[parts[0]]; ok {
-		return f(value)
+		return f(value, namespace)
 	}
 	return nil, fmt.Errorf("streamclient: no protocol registered for [%s]", parts[0])
 }

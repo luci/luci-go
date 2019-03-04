@@ -20,6 +20,7 @@ import (
 	"io"
 
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // Client is a client to a LogDog Butler StreamServer. A Client will connect
@@ -39,6 +40,9 @@ type streamFactory func() (io.WriteCloser, error)
 type clientImpl struct {
 	// network is the connection path to the stream server.
 	factory streamFactory
+
+	// namespace for all streams created in this client
+	ns types.StreamName
 }
 
 // New instantiates a new Client instance. This type of instance will be parsed
@@ -52,11 +56,13 @@ type clientImpl struct {
 // Windows-only:
 //   - net.pipe:name describes a stream server listening on Windows named pipe
 //     "\\.\pipe\name".
-func New(path string) (Client, error) {
-	return GetDefaultRegistry().NewClient(path)
+func New(path string, ns types.StreamName) (Client, error) {
+	return GetDefaultRegistry().NewClient(path, ns)
 }
 
 func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
+	f.Name = streamproto.StreamNameFlag(c.ns.Concat(types.StreamName(f.Name)))
+
 	p := f.Properties()
 	if err := p.Validate(); err != nil {
 		return nil, fmt.Errorf("streamclient: invalid stream properties: %s", err)

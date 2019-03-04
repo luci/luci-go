@@ -19,6 +19,7 @@ import (
 	"io"
 
 	"github.com/Microsoft/go-winio"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 func registerPlatformProtocols(r *Registry) {
@@ -27,7 +28,7 @@ func registerPlatformProtocols(r *Registry) {
 
 // newNamedPipeClient creates a new Client instance bound to a named pipe stream
 // server.
-func newNamedPipeClient(path string) (Client, error) {
+func newNamedPipeClient(path string, ns types.StreamName) (Client, error) {
 	if path == "" {
 		return nil, errors.New("streamclient: cannot have empty named pipe path")
 	}
@@ -36,6 +37,7 @@ func newNamedPipeClient(path string) (Client, error) {
 		factory: func() (io.WriteCloser, error) {
 			return winio.DialPipe(LocalNamedPipePath(path), nil)
 		},
+		ns: ns,
 	}, nil
 }
 
