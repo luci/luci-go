@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c52bf9d_de1c7364",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-03-05T17:05:41Z",
+      "side": 1,
+      "message": "Will a single string always be sufficient to identify a builder? If there\u0027s any chance that you\u0027ll need an additional piece as the identifier, then you should consider changing this to a repeated of messages (unfortunately messages can\u0027t be keys in maps :/).",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 49
+      },
+      "revId": "536fd8aeda1475eb2403ba4b4b7317268c1ae0fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
