@@ -632,7 +632,6 @@ def _milo_bucket_name(bucket_name, project_name):
 ## commit-queue.cfg.
 
 
-# TODO(vadimsh): Implement Tryjob.RetryConfig.
 # TODO(vadimsh): Implement basic tryjob verifiers.
 # TODO(vadimsh): Implement triggered_by generation.
 # TODO(vadimsh): Implement equivalent_to generation.
@@ -697,8 +696,8 @@ def _cq_config_group(cq_group):
     tree_status = cq_pb.Verifiers.TreeStatus(url='https://'+cq_group.props.tree_status_host)
 
   tryjob = cq_pb.Verifiers.Tryjob(
-      builders = None,      # TODO
-      retry_config = None,  # TODO
+      builders = None,  # TODO
+      retry_config = _cq_retry_config(cq_group.props.retry_config),
   )
 
   group_by_gob_host = {}
@@ -726,4 +725,17 @@ def _cq_config_group(cq_group):
           tree_status = tree_status,
           tryjob = tryjob,
       ),
+  )
+
+
+def _cq_retry_config(retry_config):
+  """cq._retry_config(...) => cq_pb.Verifiers.Tryjob.RetryConfig."""
+  if not retry_config:
+    return None
+  return cq_pb.Verifiers.Tryjob.RetryConfig(
+      single_quota = retry_config.single_quota,
+      global_quota = retry_config.global_quota,
+      failure_weight = retry_config.failure_weight,
+      transient_failure_weight = retry_config.transient_failure_weight,
+      timeout_weight = retry_config.timeout_weight,
   )

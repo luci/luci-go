@@ -31,6 +31,10 @@ load('@stdlib//internal/validate.star', 'validate')
 _refset_ctor = __native__.genstruct('cq.refset')
 
 
+# A struct returned by cq.retry_config(...).
+_retry_config_ctor = __native__.genstruct('cq.retry_config')
+
+
 def _refset(repo=None, *, refs=None):
   """Defines a repository and a subset of its refs.
 
@@ -89,14 +93,91 @@ def _refset(repo=None, *, refs=None):
 
 
 def _validate_refset(attr, val, default=None, required=True):
-  """Validates that `refset` was constructed via cq.refset(...)."""
+  """Validates that `val` was constructed via cq.refset(...)."""
   return validate.struct(attr, val, _refset_ctor, default=default, required=required)
 
 
+def _retry_config(
+      *,
+      single_quota=None,
+      global_quota=None,
+      failure_weight=None,
+      transient_failure_weight=None,
+      timeout_weight=None
+  ):
+  """Collection of parameters for deciding whether to retry a single build.
+
+  All parameters are integers, with default value of 0. The returned struct
+  can be passed as `retry_config` field to luci.cq_group(...).
+
+  Some commonly used presents are available as `cq.RETRY_*` constants. See
+  [CQ](#cq_doc) for more info.
+
+  Args:
+    single_quota: retry quota for a single tryjob.
+    global_quota: retry quota for all tryjobs in a CL.
+    failure_weight: the weight assigned to each tryjob failure.
+    transient_failure_weight: the weight assigned to each transient (aka
+        "infra") failure.
+    timeout_weight: weight assigned to tryjob timeouts.
+
+  Returns:
+    cq.retry_config struct.
+  """
+  val_int = lambda attr, val: validate.int(attr, val, min=0, default=0, required=False)
+  return _retry_config_ctor(
+      single_quota = val_int('single_quota', single_quota),
+      global_quota = val_int('global_quota', global_quota),
+      failure_weight = val_int('failure_weight', failure_weight),
+      transient_failure_weight = val_int('transient_failure_weight', transient_failure_weight),
+      timeout_weight = val_int('timeout_weight', timeout_weight),
+  )
+
+
+def _validate_retry_config(attr, val, default=None, required=True):
+  """Validates that `val` was constructed via cq.retry_config(...)."""
+  return validate.struct(attr, val, _retry_config_ctor, default=default, required=required)
+
+
+# CQ module exposes structs and enums useful when defining luci.cq_group(...)
+# entities.
+#
+# `cq.RETRY_*` constants define some commonly used values for `retry_config`
+# field of luci.cq_group(...):
+#
+#   * **cq.RETRY_NONE**: never retry any failures.
+#   * **cq.RETRY_TRANSIENT_FAILURES**: retry only transient (aka "infra")
+#     failures. Do at most 2 retries across all builders. Each individual
+#     builder is retried at most once. This is the default.
+#   * **cq.RETRY_ALL_FAILURES**: retry all failures: transient (aka "infra")
+#     failures, real test breakages, and timeouts due to lack of available bots.
+#     For non-timeout failures, do at most 2 retries across all builders. Each
+#     individual builder is retried at most once. Timeout failures are
+#     considered "twice as heavy" as non-timeout failures (e.g. one retried
+#     timeout failure immediately exhausts all retry quota for the CQ attempt).
+#     This is to avoid adding more requests to an already overloaded system.
 cq = struct(
     refset = _refset,
+    retry_config = _retry_config,
+
+    RETRY_NONE = _retry_config(),
+    RETRY_TRANSIENT_FAILURES = _retry_config(
+        single_quota = 1,
+        global_quota = 2,
+        failure_weight = 100,  # +inf
+        transient_failure_weight = 1,
+        timeout_weight = 100,  # +inf
+    ),
+    RETRY_ALL_FAILURES = _retry_config(
+        single_quota = 1,
+        global_quota = 2,
+        failure_weight = 1,
+        transient_failure_weight = 1,
+        timeout_weight = 2,
+    ),
 )
 
 cqimpl = struct(
     validate_refset = _validate_refset,
+    validate_retry_config = _validate_retry_config,
 )
