@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d18c4865_337d85f2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 635,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T08:06:09Z",
+      "side": 1,
+      "message": "I decided to postpone this since I couldn\u0027t find anyone actually using it now. So once this CL lands, I consider first version of lucicfg is done and will start trying to use it for infra.git configs.",
+      "range": {
+        "startLine": 635,
+        "startChar": 17,
+        "endLine": 635,
+        "endChar": 52
+      },
+      "revId": "dc6ab70b924129b0f09d7e13b2f23b1f679d4493",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
