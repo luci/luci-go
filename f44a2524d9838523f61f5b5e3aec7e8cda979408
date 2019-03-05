@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "69b8e23d_338f02a5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T01:45:12Z",
+      "side": 1,
+      "message": "Same question: why all existing configs use failure_weight \u003d 1? E.g. https://chromium.googlesource.com/chromium/src/+/refs/heads/master/infra/config/commit-queue.cfg#331\n\nI don\u0027t want to change it to avoid raising even more questions during the migration.",
+      "parentUuid": "d6f97412_3a3669e0",
+      "range": {
+        "startLine": 119,
+        "startChar": 23,
+        "endLine": 119,
+        "endChar": 24
+      },
+      "revId": "f44a2524d9838523f61f5b5e3aec7e8cda979408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "135fb7ff_7d9ded3d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
         "patchSetId": 2
@@ -164,6 +188,30 @@
       "revId": "f44a2524d9838523f61f5b5e3aec7e8cda979408",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac6cf1ae_3df6d813",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T01:45:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c4f505d_da20f71b",
+      "range": {
+        "startLine": 163,
+        "startChar": 4,
+        "endLine": 163,
+        "endChar": 28
+      },
+      "revId": "f44a2524d9838523f61f5b5e3aec7e8cda979408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
