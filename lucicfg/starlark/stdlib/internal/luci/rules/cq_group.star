@@ -15,12 +15,11 @@
 load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/validate.star', 'validate')
 
-load('@stdlib//internal/luci/common.star', 'keys')
+load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 load('@stdlib//internal/luci/lib/cq.star', 'cq', 'cqimpl')
 
-
-# TODO(vadimsh): Add verifiers.
+load('@stdlib//internal/luci/rules/cq_tryjob_verifier.star', 'cq_tryjob_verifier')
 
 
 def cq_group(
@@ -30,7 +29,8 @@ def cq_group(
       acls=None,
       allow_submit_with_open_deps=None,
       tree_status_host=None,
-      retry_config=None
+      retry_config=None,
+      verifiers=None
   ):
   """Defines a set of refs to be watched by the CQ and a set of verifiers to run
   whenever there's a pending approved CL for a ref in the watched set.
@@ -59,6 +59,11 @@ def cq_group(
         tree is closed, then the CQ will wait until it is reopened.
     retry_config: one of `cq.RETRY_*` enum values that defines how CQ should
         retry failed builds. Default is `cq.RETRY_TRANSIENT_FAILURES`.
+    verifiers: a list of luci.cq_tryjob_verifier(...) specifying what checks to
+        run on a pending CL. See luci.cq_tryjob_verifier(...) for all details.
+        As a shortcut, each entry can also either be a dict or a string. A dict
+        entry is an alias for `luci.cq_tryjob_verifier(**entry)` and a string
+        entry is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
   """
   key = keys.cq_group(validate.string('name', name))
 
@@ -86,4 +91,14 @@ def cq_group(
       ),
   })
   graph.add_edge(keys.project(), key)
+
+  # Add all verifiers, possibly instantiating them from dicts or direct builder
+  # references (given either as strings or BUILDER_REF keysets).
+  for v in validate.list('verifiers', verifiers):
+    if type(v) == 'dict':
+      v = cq_tryjob_verifier(**v)
+    elif type(v) == 'string' or (graph.is_keyset(v) and v.has(kinds.BUILDER_REF)):
+      v = cq_tryjob_verifier(builder = v)
+    graph.add_edge(key, v.get(kinds.CQ_TRYJOB_VERIFIER))
+
   return graph.keyset(key)
