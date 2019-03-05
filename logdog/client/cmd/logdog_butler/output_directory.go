@@ -19,33 +19,31 @@ import (
 
 	"go.chromium.org/luci/common/flag/multiflag"
 	"go.chromium.org/luci/logdog/client/butler/output"
-	fileOutput "go.chromium.org/luci/logdog/client/butler/output/file"
+	dirOutput "go.chromium.org/luci/logdog/client/butler/output/directory"
 )
 
 func init() {
-	registerOutputFactory(&fileOutputFactory{})
+	registerOutputFactory(&dirOutputFactory{})
 }
 
-type fileOutputFactory struct {
-	fileOutput.Options
+type dirOutputFactory struct {
+	dirOutput.Options
 }
 
-func (f *fileOutputFactory) option() multiflag.Option {
-	opt := newOutputOption("file", "Debug output that writes stream data to a single protobuf file.", f)
+func (d *dirOutputFactory) option() multiflag.Option {
+	opt := newOutputOption("directory", "Debug output that writes stream data to multiple files.", d)
 
 	flags := opt.Flags()
-	flags.StringVar(&f.Path, "path", "", "Stream output text protobuf path.")
-	flags.BoolVar(&f.Track, "track", false,
-		"Track each sent message and dump at the end. This adds CPU/memory overhead.")
+	flags.StringVar(&d.Path, "path", "", "Base directory for all output files.")
 
 	return opt
 }
 
-func (f *fileOutputFactory) configOutput(a *application) (output.Output, error) {
-	if f.Path == "" {
+func (d *dirOutputFactory) configOutput(a *application) (output.Output, error) {
+	if d.Path == "" {
 		return nil, errors.New("missing required output path")
 	}
-	return f.New(a), nil
+	return d.New(a), nil
 }
 
-func (f *fileOutputFactory) scopes() []string { return nil }
+func (d *dirOutputFactory) scopes() []string { return nil }
