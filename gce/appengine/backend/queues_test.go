@@ -18,7 +18,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"google.golang.org/api/compute/v1"
 
@@ -26,7 +25,6 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
-	"go.chromium.org/luci/common/tsmon"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
@@ -49,8 +47,7 @@ func TestQueues(t *testing.T) {
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
-		c = withCompute(withConfig(withDispatcher(c, dsp), srv), gce)
+		c := withCompute(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), gce)
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
@@ -426,11 +423,6 @@ func TestQueues(t *testing.T) {
 					Id: "id",
 				})
 				So(err, ShouldBeNil)
-				fields := []interface{}{"metric", "project", "region"}
-				s := tsmon.Store(c)
-				So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 100.0)
-				So(s.Get(c, quotaRemaining, time.Time{}, fields).(float64), ShouldEqual, 75.0)
-				So(s.Get(c, quotaUsage, time.Time{}, fields).(float64), ShouldEqual, 25.0)
 			})
 		})
 	})

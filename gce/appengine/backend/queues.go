@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
+	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
@@ -207,9 +208,7 @@ func reportQuota(c context.Context, payload proto.Message) error {
 		if regs.Has(r.Name) {
 			for _, q := range r.Quotas {
 				if mets.Has(q.Metric) {
-					quotaLimit.Set(c, q.Limit, q.Metric, p.Config.Project, r.Name)
-					quotaRemaining.Set(c, q.Limit-q.Usage, q.Metric, p.Config.Project, r.Name)
-					quotaUsage.Set(c, q.Usage, q.Metric, p.Config.Project, r.Name)
+					metrics.UpdateQuota(c, q.Limit, q.Usage, q.Metric, p.Config.Project, r.Name)
 				}
 			}
 		}
