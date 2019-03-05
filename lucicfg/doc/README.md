@@ -998,6 +998,7 @@ luci.cq_group(
     allow_submit_with_open_deps = None,
     tree_status_host = None,
     retry_config = None,
+    verifiers = None,
 )
 ```
 
@@ -1014,6 +1015,138 @@ whenever there's a pending approved CL for a ref in the watched set.
 * **allow_submit_with_open_deps**: controls how a CQ full run behaves when the current Gerrit CL has open dependencies (not yet submitted CLs on which *this* CL depends). If set to False (default), the CQ will abort a full run attempt immediately if open dependencies are detected. If set to True, then the CQ will not abort a full run, and upon passing all other verifiers, the CQ will attempt to submit the CL regardless of open dependencies and whether the CQ verified those open dependencies. In turn, if the Gerrit project config allows this, Gerrit will submit all dependent CLs first and then this CL.
 * **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
 * **retry_config**: a new [cq.retry_config(...)](#cq.retry_config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
+* **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict entry is an alias for `luci.cq_tryjob_verifier(**entry)` and a string entry is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
+
+
+
+
+### luci.cq_tryjob_verifier {#luci.cq_tryjob_verifier}
+
+```python
+luci.cq_tryjob_verifier(
+    # Required arguments.
+    builder,
+
+    # Optional arguments.
+    cq_group = None,
+    disable_reuse = None,
+    experiment_percentage = None,
+    location_regexp = None,
+    location_regexp_exclude = None,
+)
+```
+
+
+
+A verifier in a [luci.cq_group(...)](#luci.cq_group) that triggers tryjobs for verifying CLs.
+
+When processing a CL, the CQ examines a list of registered verifiers and
+launches new corresponding builds (called "tryjobs") if it decides this is
+necessary (per the configuration of the verifier and the previous history
+of this CL).
+
+The CQ automatically retries failed tryjobs (per configured `retry_config` in
+[luci.cq_group(...)](#luci.cq_group)) and only allows CL to land if each builder has succeeded
+in the latest retry. If a given tryjob result is too old (>1 day) it is
+ignored.
+
+#### Filtering based on files touched by a CL
+
+The CQ can examine a set of files touched by the CL and decide to skip this
+verifier. Touching a file means either adding, modifying or removing it.
+
+This is controlled by `location_regexp` and `location_regexp_exclude` fields:
+
+  * If `location_regexp` is specified and no file in a CL matches any of the
+    `location_regexp`, then the CQ will not care about this verifier.
+  * If a file in a CL matches any `location_regexp_exclude`, then this file
+    won't be considered when matching `location_regexp`.
+  * If `location_regexp_exclude` is specified, but `location_regexp` is not,
+    `location_regexp` is implied to be `.*`.
+  * If neither `location_regexp` nor `location_regexp_exclude` are specified
+    (default), the verifier will be used on all CLs.
+
+The matches are done against the following string:
+
+    <gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
+
+The file path is relative to the repo root, and it uses Unix `/` directory
+separator.
+
+The comparison is a full match. The pattern is implicitly anchored with `^`
+and `$`, so there is no need add them.
+
+This filtering currently cannot be used in any of the following cases:
+
+  * For experimental verifiers (when `experiment_percentage` is non-zero).
+  * For verifiers in CQ groups with `allow_submit_with_open_deps = True`.
+
+Please talk to CQ owners if these restrictions are limiting you.
+
+##### Examples
+
+Enable the verifier for all CLs touching any file in `third_party/WebKit`
+directory of the `chromium/src` repo, but not directory itself:
+
+    luci.cq_tryjob_verifier(
+        location_regexp = [
+            'https://chromium-review.googlesource.com/chromium/src/[+]/third_party/WebKit/.+',
+        ],
+    )
+
+Match a CL which touches at least one file other than `one.txt` inside `all/`
+directory of the Gerrit project `repo`:
+
+    luci.cq_tryjob_verifier(
+        location_regexp = ['https://example.com/repo/[+]/.+'],
+        location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
+    )
+
+Match a CL which touches at least one file other than `one.txt` in any
+repository **or** belongs to any other Gerrit server. Note, in this case
+`location_regexp` defaults to `.*`:
+
+    luci.cq_tryjob_verifier(
+        location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
+    )
+
+#### Declaring verifiers
+
+`cq_tryjob_verifier` is used inline in [luci.cq_group(...)](#luci.cq_group) declarations to
+provide per-builder verifier parameters. `cq_group` argument can be omitted in
+this case:
+
+    luci.cq_group(
+        name = 'Main CQ',
+        ...
+        verifiers = [
+            luci.cq_tryjob_verifier(
+                builder = 'Presubmit',
+                disable_reuse = True,
+            ),
+            ...
+        ],
+    )
+
+
+It can also be associated with a [luci.cq_group(...)](#luci.cq_group) outside of
+[luci.cq_group(...)](#luci.cq_group) declaration. This is in particular useful in functions.
+For example:
+
+    luci.cq_group(name = 'Main CQ')
+
+    def try_builder(name, ...):
+      luci.builder(name = name, ...)
+      luci.cq_tryjob_verifier(builder = name, cq_group = 'Main CQ')
+
+#### Arguments {#luci.cq_tryjob_verifier-args}
+
+* **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). As an **experimental** and **unstable** extension, can also be a string that starts with `external/`. It indicates that this builder is defined elsewhere, and its name should be passed to the CQ as is. In particular, to reference a builder in another LUCI project, use `external/<project>/<bucket>/<builder>` (filling in concrete values). To reference a Buildbot builder use `external/*/<master>/<builder>`, e.g. `external/*/master.tryserver.chromium.android/android_tester`. Required.
+* **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration.
+* **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
+* **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
+* **location_regexp**: a list of regexps that define a set of files whose modification trigger this verifier. See the explanation above for all details.
+* **location_regexp_exclude**: a list of regexps that define a set of files to completely skip when evaluating whether the verifier should be applied to a CL or not. See the explanation above for all details.
 
 
 
