@@ -22,6 +22,29 @@
       "revId": "536fd8aeda1475eb2403ba4b4b7317268c1ae0fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c371f37_be9efa08",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-03-05T17:06:29Z",
+      "side": 1,
+      "message": "you also need a block like this",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 0
+      },
+      "revId": "536fd8aeda1475eb2403ba4b4b7317268c1ae0fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
