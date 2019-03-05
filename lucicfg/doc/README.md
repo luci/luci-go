@@ -997,6 +997,7 @@ luci.cq_group(
     acls = None,
     allow_submit_with_open_deps = None,
     tree_status_host = None,
+    retry_config = None,
 )
 ```
 
@@ -1012,6 +1013,7 @@ whenever there's a pending approved CL for a ref in the watched set.
 * **acls**: list of [acl.entry(...)](#acl.entry) objects with ACLs specific for this CQ group. Only `acl.CQ_*` roles are allowed here. By default ACLs are inherited from [luci.project(...)](#luci.project) definition. At least one `acl.CQ_COMMITTER` entry should be provided somewhere (either here or in [luci.project(...)](#luci.project)).
 * **allow_submit_with_open_deps**: controls how a CQ full run behaves when the current Gerrit CL has open dependencies (not yet submitted CLs on which *this* CL depends). If set to False (default), the CQ will abort a full run attempt immediately if open dependencies are detected. If set to True, then the CQ will not abort a full run, and upon passing all other verifiers, the CQ will attempt to submit the CL regardless of open dependencies and whether the CQ verified those open dependencies. In turn, if the Gerrit project config allows this, Gerrit will submit all dependent CLs first and then this CL.
 * **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
+* **retry_config**: one of `cq.RETRY_*` enum values that defines how CQ should retry failed builds. Default is `cq.RETRY_TRANSIENT_FAILURES`.
 
 
 
@@ -1384,7 +1386,16 @@ See [scheduler.policy(...)](#scheduler.policy) for all details.
 
 ## CQ
 
+CQ module exposes structs and enums useful when defining [luci.cq_group(...)](#luci.cq_group)
+entities.
 
+`cq.RETRY_*` enum defines possible values for `retry_config` field of
+[luci.cq_group(...)](#luci.cq_group):
+
+  * **cq.RETRY_NONE**: never retry any failures.
+  * **cq.RETRY_TRANSIENT_FAILURES**: retry transient failures. Do at most 2
+    retries across all builders, and each individual builder can be retried at
+    most once. This is the default.
 
 
 ### cq.refset {#cq.refset}
