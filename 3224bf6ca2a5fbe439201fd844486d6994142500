@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3bda5b1d_5d5a5614",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 9
+      },
+      "lineNbr": 1404,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T19:27:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "218816e5_813e5ebd",
+      "range": {
+        "startLine": 1402,
+        "startChar": 48,
+        "endLine": 1404,
+        "endChar": 77
+      },
+      "revId": "3224bf6ca2a5fbe439201fd844486d6994142500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a87ac347_bdaccd81",
         "filename": "lucicfg/doc/README.md",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "3224bf6ca2a5fbe439201fd844486d6994142500",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7be37f00_2131b5e9",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 9
+      },
+      "lineNbr": 1455,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T19:27:21Z",
+      "side": 1,
+      "message": "In lucicfg codebase None default argument means \"use default value\". To simplify propagating defaults through call chains.",
+      "parentUuid": "a87ac347_bdaccd81",
+      "range": {
+        "startLine": 1455,
+        "startChar": 34,
+        "endLine": 1455,
+        "endChar": 52
+      },
+      "revId": "3224bf6ca2a5fbe439201fd844486d6994142500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
