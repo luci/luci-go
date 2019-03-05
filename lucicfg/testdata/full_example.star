@@ -324,6 +324,13 @@ luci.cq_group(
 #       url: "https://tree-status.example.com"
 #     >
 #     tryjob: <
+#       retry_config: <
+#         single_quota: 1
+#         global_quota: 2
+#         failure_weight: 100
+#         transient_failure_weight: 1
+#         timeout_weight: 100
+#       >
 #     >
 #   >
 # >
