@@ -632,13 +632,14 @@ def _milo_bucket_name(bucket_name, project_name):
 ## commit-queue.cfg.
 
 
-# TODO(vadimsh): Implement basic tryjob verifiers.
 # TODO(vadimsh): Implement triggered_by generation.
 # TODO(vadimsh): Implement equivalent_to generation.
 
 
 def gen_cq_cfg(ctx):
   """Generates commit-queue.cfg."""
+  _cq_check_connections()
+
   cq_groups = graph.children(keys.project(), kind=kinds.CQ_GROUP)
   if not cq_groups:
     return
@@ -677,12 +678,26 @@ def gen_cq_cfg(ctx):
           seen[key] = g
 
   # Each luci.cq_group(...) results in a separate cq_pb.ConfigGroup.
-  cfg.config_groups = [_cq_config_group(g) for g in cq_groups]
+  project = get_project()
+  cfg.config_groups = [_cq_config_group(g, project) for g in cq_groups]
 
 
-def _cq_config_group(cq_group):
+def _cq_check_connections():
+  """Ensures all cq_tryjob_verifier are connected to one and only one group."""
+  for v in graph.children(keys.cq_verifiers_root()):
+    groups = graph.parents(v.key, kind=kinds.CQ_GROUP)
+    if len(groups) == 0:
+      error('%s is not added to any cq_group, either remove or comment it out' % v, trace=v.trace)
+    elif len(groups) > 1:
+      error(
+          '%s is added to multiple cq_groups: %s' %
+          (v, ', '.join([str(g) for g in groups])),
+          trace=v.trace)
+
+
+def _cq_config_group(cq_group, project):
   """Given a cq_group node returns cq_pb.ConfigGroup."""
-  acls = aclimpl.normalize_acls(cq_group.props.acls + get_project().props.acls)
+  acls = aclimpl.normalize_acls(cq_group.props.acls + project.props.acls)
   gerrit_cq_ability = cq_pb.Verifiers.GerritCQAbility(
       committer_list = [a.group for a in filter_acls(acls, [acl.CQ_COMMITTER])],
       dry_run_access_list = [a.group for a in filter_acls(acls, [acl.CQ_DRY_RUNNER])],
@@ -695,9 +710,16 @@ def _cq_config_group(cq_group):
   if cq_group.props.tree_status_host:
     tree_status = cq_pb.Verifiers.TreeStatus(url='https://'+cq_group.props.tree_status_host)
 
+  # Note: CQ_TRYJOB_VERIFIER nodes are by default lexicographically sorted
+  # according to auto-generated unique keys (that do not show up in the output).
+  # We prefer to sort by user-visible 'name' instead.
+  seen_builders = {}
   tryjob = cq_pb.Verifiers.Tryjob(
-      builders = None,  # TODO
       retry_config = _cq_retry_config(cq_group.props.retry_config),
+      builders = sorted([
+          _cq_tryjob_builder(v, cq_group, project, seen_builders)
+          for v in graph.children(cq_group.key, kind=kinds.CQ_TRYJOB_VERIFIER)
+      ], key=lambda b: b.name),
   )
 
   group_by_gob_host = {}
@@ -738,4 +760,50 @@ def _cq_retry_config(retry_config):
       failure_weight = retry_config.failure_weight,
       transient_failure_weight = retry_config.transient_failure_weight,
       timeout_weight = retry_config.timeout_weight,
+  )
+
+
+def _cq_tryjob_builder(verifier, cq_group, project, seen):
+  """cq.cq_tryjob_verifier(...) => cq_pb.Verifiers.Tryjob.Builder.
+
+  Args:
+    verifier: luci.cq_tryjob_verifier node.
+    cq_group: luci.cq_group node (for error messages).
+    project: luci.project node (for project name).
+    seen: map[builder name as in *.cfg => cq.cq_tryjob_verifier that added it].
+  """
+  if verifier.props.external:
+    # Either has an externally supplied name.
+    name = verifier.props.external
+    builder = None
+  else:
+    # Or must have single builder_ref child, which we resolve to a concrete
+    # luci.builder(...) node.
+    refs = graph.children(verifier.key, kinds.BUILDER_REF)
+    if len(refs) != 1:
+      fail('impossible result %s' % (refs,))
+    builder = builder_ref.follow(refs[0], context_node=verifier)
+    # Currently all BUILDER nodes belong to same single project since lucicfg
+    # doesn't support more than one project.
+    name = '%s/%s/%s' % (
+        project.props.name,
+        builder.props.bucket,
+        builder.props.name,
+    )
+
+  # Make sure there are no dups.
+  if name in seen:
+    error(
+        'verifier that references %s was already added to %s, previous declaration:\n%s' %
+        (builder or name, cq_group, seen[name].trace),
+        trace=verifier.trace)
+    return None
+  seen[name] = verifier
+
+  return cq_pb.Verifiers.Tryjob.Builder(
+      name = name,
+      disable_reuse = verifier.props.disable_reuse,
+      experiment_percentage = verifier.props.experiment_percentage,
+      location_regexp = verifier.props.location_regexp,
+      location_regexp_exclude = verifier.props.location_regexp_exclude,
   )
