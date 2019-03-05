@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "218816e5_813e5ebd",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 9
+      },
+      "lineNbr": 1404,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-03-05T12:46:09Z",
+      "side": 1,
+      "message": "Maybe add rationale here, e.g. something along the lines of \n\n  to avoid adding more requests to an already overloaded system.",
+      "range": {
+        "startLine": 1402,
+        "startChar": 48,
+        "endLine": 1404,
+        "endChar": 77
+      },
+      "revId": "3224bf6ca2a5fbe439201fd844486d6994142500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a87ac347_bdaccd81",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 9
+      },
+      "lineNbr": 1455,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-03-05T12:46:09Z",
+      "side": 1,
+      "message": "That doesn\u0027t seem to be consistent with example above.",
+      "range": {
+        "startLine": 1455,
+        "startChar": 34,
+        "endLine": 1455,
+        "endChar": 52
+      },
+      "revId": "3224bf6ca2a5fbe439201fd844486d6994142500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
