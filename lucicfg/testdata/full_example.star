@@ -287,6 +287,24 @@ luci.cq_group(
     ],
     allow_submit_with_open_deps = True,
     tree_status_host = 'tree-status.example.com',
+
+    verifiers = [
+        luci.cq_tryjob_verifier(
+            builder = 'linux try builder',
+            location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
+        ),
+        # An alias for luci.cq_tryjob_verifier(**{...}).
+        {'builder': 'try/generically named builder', 'disable_reuse': True},
+        # An alias for luci.cq_tryjob_verifier(<builder>).
+        'external/*/master.buildbot/tester',
+        'external/another-project/try/zzz',
+    ],
+)
+
+luci.cq_tryjob_verifier(
+    builder = 'triggerer builder',
+    cq_group = 'main-cq',
+    experiment_percentage = 50.0,
 )
 
 
@@ -324,6 +342,25 @@ luci.cq_group(
 #       url: "https://tree-status.example.com"
 #     >
 #     tryjob: <
+#       builders: <
+#         name: "*/master.buildbot/tester"
+#       >
+#       builders: <
+#         name: "another-project/try/zzz"
+#       >
+#       builders: <
+#         name: "infra/inline/triggerer builder"
+#         experiment_percentage: 50
+#       >
+#       builders: <
+#         name: "infra/try/generically named builder"
+#         disable_reuse: true
+#       >
+#       builders: <
+#         name: "infra/try/linux try builder"
+#         location_regexp: ".*"
+#         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
+#       >
 #       retry_config: <
 #         single_quota: 1
 #         global_quota: 2
