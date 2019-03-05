@@ -1,0 +1,143 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c820a4a_08486310",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 686,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-05T02:49:39Z",
+      "side": 1,
+      "message": "one",
+      "range": {
+        "startLine": 686,
+        "startChar": 65,
+        "endLine": 686,
+        "endChar": 66
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f1665e2_4912baa7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 776,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-05T02:49:39Z",
+      "side": 1,
+      "message": "has",
+      "range": {
+        "startLine": 776,
+        "startChar": 13,
+        "endLine": 776,
+        "endChar": 17
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3a9359b_5882035e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-05T02:49:39Z",
+      "side": 1,
+      "message": "2 * \u0027as\u0027",
+      "range": {
+        "startLine": 149,
+        "startChar": 77,
+        "endLine": 149,
+        "endChar": 79
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b10b15f_99a795eb",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-05T02:49:39Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 176,
+        "startChar": 0,
+        "endLine": 178,
+        "endChar": 28
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f25fa8b1_5df9586e",
+        "filename": "lucicfg/testdata/misc/many_cq_milo_entries.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-05T02:49:39Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 13
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b175bddd_9ab97696",
+        "filename": "lucicfg/testdata/misc/many_cq_milo_entries.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-05T02:49:39Z",
+      "side": 1,
+      "message": "are empty lines important for the test?",
+      "parentUuid": "e7a877c2_9dec587f",
+      "range": {
+        "startLine": 281,
+        "startChar": 0,
+        "endLine": 282,
+        "endChar": 0
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
