@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "a890e81e_38455eae",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T06:57:00Z",
+      "side": 1,
+      "message": "Named it RETRY_ALL_FAILURES with details in the doc. RETRY_TRANSIENT_FAILURES also retries twice, so \u00272\u0027 is not the distinguishing property of (1,2,1,1,2) config.",
+      "parentUuid": "e68137a9_1a5c702e",
+      "range": {
+        "startLine": 119,
+        "startChar": 23,
+        "endLine": 119,
+        "endChar": 24
+      },
+      "revId": "f44a2524d9838523f61f5b5e3aec7e8cda979408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "135fb7ff_7d9ded3d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
         "patchSetId": 2
@@ -165,6 +189,30 @@
       "revId": "f44a2524d9838523f61f5b5e3aec7e8cda979408",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7f67a47_62f92e7f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T06:57:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "af83215c_abbaa6ef",
+      "range": {
+        "startLine": 121,
+        "startChar": 23,
+        "endLine": 121,
+        "endChar": 24
+      },
+      "revId": "f44a2524d9838523f61f5b5e3aec7e8cda979408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
