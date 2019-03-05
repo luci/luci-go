@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c3c89b48_fee2f5b3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 686,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T07:04:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c820a4a_08486310",
+      "range": {
+        "startLine": 686,
+        "startChar": 65,
+        "endLine": 686,
+        "endChar": 66
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f1665e2_4912baa7",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "1707e82b_d6bf7da8",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 776,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T07:04:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f1665e2_4912baa7",
+      "range": {
+        "startLine": 776,
+        "startChar": 13,
+        "endLine": 776,
+        "endChar": 17
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3a9359b_5882035e",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "128ac952_d5f82f4b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T07:04:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3a9359b_5882035e",
+      "range": {
+        "startLine": 149,
+        "startChar": 77,
+        "endLine": 149,
+        "endChar": 79
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "a7a50309_4ec96727",
+        "filename": "lucicfg/testdata/misc/many_cq_milo_entries.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T07:04:57Z",
+      "side": 1,
+      "message": "Credit goes to Oleh for discovering this bug.",
+      "parentUuid": "f25fa8b1_5df9586e",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 13
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b175bddd_9ab97696",
         "filename": "lucicfg/testdata/misc/many_cq_milo_entries.star",
         "patchSetId": 2
@@ -129,6 +225,30 @@
       "side": 1,
       "message": "are empty lines important for the test?",
       "parentUuid": "e7a877c2_9dec587f",
+      "range": {
+        "startLine": 281,
+        "startChar": 0,
+        "endLine": 282,
+        "endChar": 0
+      },
+      "revId": "86d333cd5fbaf7fc39555f58ba76a20fe3463ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a296bd15_174ce5ad",
+        "filename": "lucicfg/testdata/misc/many_cq_milo_entries.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-05T07:04:57Z",
+      "side": 1,
+      "message": "No.",
+      "parentUuid": "b175bddd_9ab97696",
       "range": {
         "startLine": 281,
         "startChar": 0,
