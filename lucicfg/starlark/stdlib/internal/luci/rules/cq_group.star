@@ -17,10 +17,9 @@ load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
-load('@stdlib//internal/luci/lib/cq.star', 'cqimpl')
+load('@stdlib//internal/luci/lib/cq.star', 'cq', 'cqimpl')
 
 
-# TODO(vadimsh): Add retry_config.
 # TODO(vadimsh): Add verifiers.
 
 
@@ -30,7 +29,8 @@ def cq_group(
       watch=None,
       acls=None,
       allow_submit_with_open_deps=None,
-      tree_status_host=None
+      tree_status_host=None,
+      retry_config=None
   ):
   """Defines a set of refs to be watched by the CQ and a set of verifiers to run
   whenever there's a pending approved CL for a ref in the watched set.
@@ -57,6 +57,8 @@ def cq_group(
     tree_status_host: a hostname of the project tree status app (if any). It is
         used by the CQ to check the tree status before committing a CL. If the
         tree is closed, then the CQ will wait until it is reopened.
+    retry_config: one of `cq.RETRY_*` enum values that defines how CQ should
+        retry failed builds. Default is `cq.RETRY_TRANSIENT_FAILURES`.
   """
   key = keys.cq_group(validate.string('name', name))
 
@@ -76,6 +78,12 @@ def cq_group(
           required=False,
       ),
       'tree_status_host': validate.string('tree_status_host', tree_status_host, required=False),
+      'retry_config': cqimpl.validate_retry_config(
+          'retry_config',
+          retry_config,
+          default=cq.RETRY_TRANSIENT_FAILURES,
+          required=False,
+      ),
   })
   graph.add_edge(keys.project(), key)
   return graph.keyset(key)
