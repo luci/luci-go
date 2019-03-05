@@ -307,6 +307,11 @@ luci.cq_tryjob_verifier(
     experiment_percentage = 50.0,
 )
 
+luci.cq_tryjob_verifier(
+    builder = 'triggered builder',
+    cq_group = 'main-cq',
+)
+
 
 # Expect configs:
 #
@@ -347,6 +352,10 @@ luci.cq_tryjob_verifier(
 #       >
 #       builders: <
 #         name: "another-project/try/zzz"
+#       >
+#       builders: <
+#         name: "infra/inline/triggered builder"
+#         triggered_by: "infra/inline/triggerer builder"
 #       >
 #       builders: <
 #         name: "infra/inline/triggerer builder"
