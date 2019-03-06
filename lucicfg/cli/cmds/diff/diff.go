@@ -16,11 +16,13 @@
 package diff
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -28,7 +30,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
-	buildbucket_pb "go.chromium.org/luci/buildbucket/proto/config"
 	config_pb "go.chromium.org/luci/common/proto/config"
 	cq_pb "go.chromium.org/luci/cq/api/config/v2"
 	logdog_pb "go.chromium.org/luci/logdog/api/config/svcconfig"
@@ -134,7 +135,8 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 		for _, desc := range knownTypes {
 			if strings.HasPrefix(pair.name, desc.prefix) {
 				pair.typ = proto.MessageType(desc.proto)
-				pair.normalizer = desc.normalizer
+				pair.protoNormalizer = desc.protoNormalizer
+				pair.rawNormalizer = desc.rawNormalizer
 				break
 			}
 		}
@@ -149,7 +151,7 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 
 	logging.Infof(ctx, "Normalizing configs...")
 	for _, pair := range pairs {
-		if err := pair.normalize(); err != nil {
+		if err := pair.normalize(ctx); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to normalize %q: %s\n", pair.name, err)
 			fail = true
 		}
@@ -218,91 +220,163 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// normalizer takes a proto message and converts it to normalized form, e.g.
-// sorts entries, flattens mixins, etc.
-type normalizer func(proto.Message) proto.Message
+// protoNormalizer takes a proto message and converts it to normalized form,
+// e.g. sorts entries, flattens mixins, etc.
+type protoNormalizer func(context.Context, proto.Message) (proto.Message, error)
+
+// rawNormalizer takes a byte blob with a config and normalizes it.
+type rawNormalizer func(context.Context, []byte) ([]byte, error)
 
 // A pair of config files of the same type to compare.
 type configPair struct {
-	name       string       // e.g. "cr-buildbucket.cfg"
-	typ        reflect.Type // e.g. &Config{}
-	normalizer normalizer   // callback to normalize the protos
-	original   []byte       // body of the original file
-	generated  []byte       // body of the generated file
+	name            string          // e.g. "cr-buildbucket.cfg"
+	typ             reflect.Type    // e.g. &Config{}
+	protoNormalizer protoNormalizer // callback to normalize the protos
+	rawNormalizer   rawNormalizer   // callback to normalize raw []byte
+	original        []byte          // body of the original file
+	generated       []byte          // body of the generated file
 }
 
 // normalize normalizes both original and generated protos (in-place).
-func (p *configPair) normalize() error {
+func (p *configPair) normalize(ctx context.Context) error {
 	var err error
-	p.original, err = normalize(p.original, p.typ, p.normalizer)
+	p.original, err = normalizeOne(ctx, p.original, p)
 	if err != nil {
 		return fmt.Errorf("failed to normalize the original config - %s", err)
 	}
-	p.generated, err = normalize(p.generated, p.typ, p.normalizer)
+	p.generated, err = normalizeOne(ctx, p.generated, p)
 	if err != nil {
 		return fmt.Errorf("failed to normalize the generated config - %s", err)
 	}
 	return nil
 }
 
-// normalize deserializes the proto, passes it through normalizer, serializes it
-// back.
-func normalize(in []byte, typ reflect.Type, n normalizer) (out []byte, err error) {
-	msg := reflect.New(typ.Elem()).Interface().(proto.Message)
+// normalizeOne deserializes the proto, passes it through normalizer, serializes
+// it back.
+func normalizeOne(ctx context.Context, in []byte, p *configPair) (out []byte, err error) {
+	if p.rawNormalizer != nil {
+		return p.rawNormalizer(ctx, in)
+	}
+	msg := reflect.New(p.typ.Elem()).Interface().(proto.Message)
 	if err = proto.UnmarshalText(string(in), msg); err != nil {
 		return
 	}
-	return []byte(proto.MarshalTextString(n(msg))), nil
+	if msg, err = p.protoNormalizer(ctx, msg); err != nil {
+		return
+	}
+	return []byte(proto.MarshalTextString(msg)), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // TODO(vadimsh): Hardcoded prefixes is a hack.
 var knownTypes = []struct {
-	prefix     string
-	proto      string
-	normalizer normalizer
+	prefix          string
+	proto           string
+	protoNormalizer protoNormalizer
+	rawNormalizer   rawNormalizer
 }{
-	{"commit-queue", "cq.config.Config", normCommitQueueCfg},
-	{"cr-buildbucket", "buildbucket.BuildbucketCfg", normBuildbucketCfg},
-	{"luci-logdog", "svcconfig.ProjectConfig", normLogdogCfg},
-	{"luci-milo", "milo.Project", normMiloCfg},
-	{"luci-scheduler", "scheduler.config.ProjectConfig", normSchedulerCfg},
-	{"project", "config.ProjectCfg", normProjectCfg},
+	{"commit-queue", "cq.config.Config", normCommitQueueCfg, nil},
+	{"cr-buildbucket", "buildbucket.BuildbucketCfg", nil, normBuildbucketCfg},
+	{"luci-logdog", "svcconfig.ProjectConfig", normLogdogCfg, nil},
+	{"luci-milo", "milo.Project", normMiloCfg, nil},
+	{"luci-scheduler", "scheduler.config.ProjectConfig", normSchedulerCfg, nil},
+	{"project", "config.ProjectCfg", normProjectCfg, nil},
 }
 
-func normCommitQueueCfg(m proto.Message) proto.Message {
+func normCommitQueueCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
 	pb := m.(*cq_pb.Config)
 	// TODO
-	return pb
+	return pb, nil
 }
 
-func normBuildbucketCfg(m proto.Message) proto.Message {
-	pb := m.(*buildbucket_pb.BuildbucketCfg)
-	// TODO
-	return pb
+func normBuildbucketCfg(ctx context.Context, in []byte) (out []byte, err error) {
+	// Install or update 'flatten_buildbucket_cfg' tool.
+	bin, err := installFlattenBuildbucketCfg(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to install buildbucket config flattener: %s", err)
+	}
+
+	// 'flatten_buildbucket_cfg' wants a real file as input.
+	f, err := ioutil.TempFile("", "lucicfg")
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		f.Close()
+		os.Remove(f.Name())
+	}()
+	if _, err := f.Write(in); err != nil {
+		return nil, err
+	}
+	if err := f.Close(); err != nil {
+		return nil, err
+	}
+
+	buf := bytes.Buffer{}
+
+	cmd := exec.Command(bin, f.Name())
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = &buf
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("failed to flatten the config - %s", err)
+	}
+
+	return buf.Bytes(), nil
 }
 
-func normLogdogCfg(m proto.Message) proto.Message {
+func normLogdogCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
 	pb := m.(*logdog_pb.ProjectConfig)
 	// TODO
-	return pb
+	return pb, nil
 }
 
-func normMiloCfg(m proto.Message) proto.Message {
+func normMiloCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
 	pb := m.(*milo_pb.Project)
 	// TODO
-	return pb
+	return pb, nil
 }
 
-func normSchedulerCfg(m proto.Message) proto.Message {
+func normSchedulerCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
 	pb := m.(*scheduler_pb.ProjectConfig)
 	// TODO
-	return pb
+	return pb, nil
 }
 
-func normProjectCfg(m proto.Message) proto.Message {
+func normProjectCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
 	pb := m.(*config_pb.ProjectCfg)
 	// TODO
-	return pb
+	return pb, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+var flattenerPath = ""
+
+func installFlattenBuildbucketCfg(ctx context.Context) (bin string, err error) {
+	// Do not install twice, just a waste of time resolving 'latest'.
+	if flattenerPath != "" {
+		return flattenerPath, nil
+	}
+
+	// Install into ~/.flatten_buildbucket_cfg because where else to keep random
+	// garbage?
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	dest := filepath.Join(usr.HomeDir, ".flatten_buildbucket_cfg")
+	logging.Infof(ctx, "Installing infra/tools/flatten_buildbucket_cfg into %s", dest)
+
+	cmd := exec.Command("cipd", "ensure", "-root", dest, "-ensure-file", "-")
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = strings.NewReader("infra/tools/flatten_buildbucket_cfg latest")
+	if err = cmd.Run(); err != nil {
+		return
+	}
+
+	flattenerPath = filepath.Join(dest, "flatten_buildbucket_cfg")
+	return flattenerPath, nil
 }
