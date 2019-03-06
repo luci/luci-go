@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "dfdbf7fb_65b04c75",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-03-06T20:50:46Z",
+      "side": 1,
+      "message": "Since this appears to be at least name + branch changed to a repeated as advised.",
+      "parentUuid": "0c52bf9d_de1c7364",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 49
+      },
+      "revId": "536fd8aeda1475eb2403ba4b4b7317268c1ae0fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1c371f37_be9efa08",
         "filename": "lucicfg/protos.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "536fd8aeda1475eb2403ba4b4b7317268c1ae0fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d21930b_0b667909",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-03-06T20:50:46Z",
+      "side": 1,
+      "message": "Thanks. Done.",
+      "parentUuid": "1c371f37_be9efa08",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 0
+      },
+      "revId": "536fd8aeda1475eb2403ba4b4b7317268c1ae0fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
