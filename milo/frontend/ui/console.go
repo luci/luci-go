@@ -71,6 +71,24 @@ type Console struct {
 	FaviconURL string
 }
 
+// HasCategory returns true if there is at least a single category defined in the console.
+func (c *Console) HasCategory() bool {
+	if len(c.Table.children) != 1 {
+		return true
+	}
+	root := c.Table.children[0]
+	rootCat, ok := root.(*Category)
+	if !ok {
+		return false // This shouldn't happen.
+	}
+	for _, child := range rootCat.children {
+		if _, ok := child.(*Category); ok {
+			return true
+		}
+	}
+	return false
+}
+
 // BuilderSummaryGroup represents the summary of a console, including its name and the latest
 // status of each of its builders.
 type BuilderSummaryGroup struct {
@@ -453,9 +471,10 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		// Write current state's information.
 		must(fmt.Fprintf(buffer,
 			`<div class="console-cell-container"><a class="console-%s status-%s" href="%s" title="%s">`+
-				`</a><div class="console-cell-spacer"></div></div>`,
+				`<span class="console-cell-text">%s</span></a><div class="console-cell-spacer"></div></div>`,
 			class, status, link,
-			template.HTMLEscapeString(br.BuilderName())))
+			template.HTMLEscapeString(br.BuilderName()),
+			br.ShortName))
 
 		// Update state.
 		state = nextState
@@ -471,12 +490,24 @@ func (br BuilderRef) NumLeafNodes() int {
 // RenderHTML renders the Category struct and its children as HTML into a buffer.
 // If maxDepth is negative, skip the labels to render the HTML as flat rather than nested.
 func (c Category) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
+	// Check to see if this category is a leaf.
+	// A leaf category has no other categories as it's children.
+	isLeafCategory := true
+	for _, child := range c.children {
+		if _, ok := child.(*Category); ok {
+			isLeafCategory = false
+			break
+		}
+	}
+
 	if maxDepth > 0 {
 		must(fmt.Fprintf(buffer, `<div class="console-column" style="flex: %d">`, c.NumLeafNodes()))
-		must(fmt.Fprintf(buffer, `<div class="console-top-item">%s</div>
-						<div class="console-top-row">`,
-			template.HTMLEscapeString(c.Name),
-		))
+		must(fmt.Fprintf(buffer, `<div class="console-top-item">%s</div>`, template.HTMLEscapeString(c.Name)))
+		if isLeafCategory {
+			must(fmt.Fprintf(buffer, `<div class="console-top-row console-leaf-category">`))
+		} else {
+			must(fmt.Fprintf(buffer, `<div class="console-top-row">`))
+		}
 	}
 
 	for _, child := range c.children {
