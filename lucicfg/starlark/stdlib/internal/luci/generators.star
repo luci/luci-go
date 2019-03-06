@@ -632,7 +632,6 @@ def _milo_bucket_name(bucket_name, project_name):
 ## commit-queue.cfg.
 
 
-# TODO(vadimsh): Implement triggered_by generation.
 # TODO(vadimsh): Implement equivalent_to generation.
 
 
@@ -679,7 +678,10 @@ def gen_cq_cfg(ctx):
 
   # Each luci.cq_group(...) results in a separate cq_pb.ConfigGroup.
   project = get_project()
-  cfg.config_groups = [_cq_config_group(g, project) for g in cq_groups]
+  triggering_map = _cq_triggering_map(project)
+  cfg.config_groups = [
+      _cq_config_group(g, project, triggering_map) for g in cq_groups
+  ]
 
 
 def _cq_check_connections():
@@ -695,7 +697,7 @@ def _cq_check_connections():
           trace=v.trace)
 
 
-def _cq_config_group(cq_group, project):
+def _cq_config_group(cq_group, project, triggering_map):
   """Given a cq_group node returns cq_pb.ConfigGroup."""
   acls = aclimpl.normalize_acls(cq_group.props.acls + project.props.acls)
   gerrit_cq_ability = cq_pb.Verifiers.GerritCQAbility(
@@ -713,14 +715,29 @@ def _cq_config_group(cq_group, project):
   # Note: CQ_TRYJOB_VERIFIER nodes are by default lexicographically sorted
   # according to auto-generated unique keys (that do not show up in the output).
   # We prefer to sort by user-visible 'name' instead.
-  seen_builders = {}
+  seen = {}  # _cq_builder_name(...) -> verifier node that added it
   tryjob = cq_pb.Verifiers.Tryjob(
       retry_config = _cq_retry_config(cq_group.props.retry_config),
       builders = sorted([
-          _cq_tryjob_builder(v, cq_group, project, seen_builders)
+          _cq_tryjob_builder(v, cq_group, project, seen)
           for v in graph.children(cq_group.key, kind=kinds.CQ_TRYJOB_VERIFIER)
       ], key=lambda b: b.name),
   )
+
+  # Populate 'triggered_by' in a separate pass now that we know all builders
+  # that belong to the CQ group and can filter 'triggering_map' accordingly.
+  for b in tryjob.builders:
+    # List ALL builders that trigger 'b', across all CQ groups and buckets.
+    all_triggerrers = triggering_map.get(b.name) or []
+    # Narrow it down only to the ones in the current CQ group.
+    local_triggerrers = [t for t in all_triggerrers if t in seen]
+    # CQ can handle at most one currently.
+    if len(local_triggerrers) > 1:
+      error(
+          'this builder is triggered by multiple builders in its CQ group ' +
+          'which confuses CQ config generator', trace=seen[b.name].trace)
+    elif local_triggerrers:
+      b.triggered_by = local_triggerrers[0]
 
   group_by_gob_host = {}
   for w in cq_group.props.watch:
@@ -785,11 +802,7 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
     builder = builder_ref.follow(refs[0], context_node=verifier)
     # Currently all BUILDER nodes belong to same single project since lucicfg
     # doesn't support more than one project.
-    name = '%s/%s/%s' % (
-        project.props.name,
-        builder.props.bucket,
-        builder.props.name,
-    )
+    name = _cq_builder_name(builder, project)
 
   # Make sure there are no dups.
   if name in seen:
@@ -806,4 +819,27 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
       experiment_percentage = verifier.props.experiment_percentage,
       location_regexp = verifier.props.location_regexp,
       location_regexp_exclude = verifier.props.location_regexp_exclude,
+  )
+
+
+def _cq_triggering_map(project):
+  """Returns a map {builder name => [list of builders that trigger it]}.
+
+  All names are in CQ format, e.g. "project/bucket/builder".
+  """
+  out = {}
+  for bucket in get_buckets():
+    for builder in graph.children(bucket.key, kinds.BUILDER):
+      for target in triggerer.targets(builder):
+        triggered_by = out.setdefault(_cq_builder_name(target, project), [])
+        triggered_by.append(_cq_builder_name(builder, project))
+  return out
+
+
+def _cq_builder_name(builder, project):
+  """Given Builder node returns a string reference to it for CQ config."""
+  return '%s/%s/%s' % (
+      project.props.name,
+      builder.props.bucket,
+      builder.props.name,
   )
