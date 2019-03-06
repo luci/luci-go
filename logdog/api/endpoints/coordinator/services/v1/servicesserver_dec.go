@@ -143,3 +143,37 @@ func (s *DecoratedServices) Batch(c context.Context, req *BatchRequest) (rsp *Ba
 	}
 	return
 }
+
+func (s *DecoratedServices) LeaseArchiveTasks(c context.Context, req *LeaseRequest) (rsp *LeaseResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(c, "LeaseArchiveTasks", req)
+		if err == nil {
+			c = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.LeaseArchiveTasks(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "LeaseArchiveTasks", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedServices) DeleteArchiveTasks(c context.Context, req *DeleteRequest) (rsp *empty.Empty, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(c, "DeleteArchiveTasks", req)
+		if err == nil {
+			c = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.DeleteArchiveTasks(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "DeleteArchiveTasks", rsp, err)
+	}
+	return
+}
