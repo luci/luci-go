@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "705ebf1a_90bae372",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-06T03:17:58Z",
+      "side": 1,
+      "message": "Added a check for SWARMING_HEADLESS.",
+      "parentUuid": "1d3db634_61b78e80",
+      "revId": "5fc5d5bcf134331c28f6faa92a1e5345c9b07977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e402d7e_e2d88a39",
         "filename": "lucicfg/cli/cmds/diff/diff.go",
         "patchSetId": 1
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "4e93a1f4_ee82cd34",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-06T03:17:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e402d7e_e2d88a39",
+      "range": {
+        "startLine": 71,
+        "startChar": 87,
+        "endLine": 71,
+        "endChar": 108
+      },
+      "revId": "5fc5d5bcf134331c28f6faa92a1e5345c9b07977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6607d20_850783b4",
         "filename": "lucicfg/cli/cmds/diff/diff.go",
         "patchSetId": 1
@@ -62,6 +104,30 @@
       "revId": "5fc5d5bcf134331c28f6faa92a1e5345c9b07977",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc4b8e93_ebc73e48",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-06T03:17:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6607d20_850783b4",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 14
+      },
+      "revId": "5fc5d5bcf134331c28f6faa92a1e5345c9b07977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
