@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee3d52d4_e1bc0888",
+        "filename": "logdog/client/butler/output/directory/output.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:27:50Z",
+      "side": 1,
+      "message": "dir name is \"directory\", so should this match too?",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 12
+      },
+      "revId": "8db6ccbaa294d3a8267fb84eb64822f9918614bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a64697f_bfc74003",
+        "filename": "logdog/client/butler/output/directory/output.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:27:50Z",
+      "side": 1,
+      "message": "dirOutput",
+      "revId": "8db6ccbaa294d3a8267fb84eb64822f9918614bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "759c7362_26459416",
+        "filename": "logdog/client/butler/output/directory/output.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:27:50Z",
+      "side": 1,
+      "message": "nit: space",
+      "range": {
+        "startLine": 49,
+        "startChar": 60,
+        "endLine": 49,
+        "endChar": 61
+      },
+      "revId": "8db6ccbaa294d3a8267fb84eb64822f9918614bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0597a6bf_885c2f15",
+        "filename": "logdog/client/butler/output/directory/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:27:50Z",
+      "side": 1,
+      "message": "nit: I\u0027m not sure what the return values are from reading this.  Maybe use named return values (done bool, err error)",
+      "revId": "8db6ccbaa294d3a8267fb84eb64822f9918614bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e46d0906_d89d58f5",
+        "filename": "logdog/client/cmd/logdog_butler/output_directory.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:27:50Z",
+      "side": 1,
+      "message": "2019 #thefutureisnow",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "8db6ccbaa294d3a8267fb84eb64822f9918614bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
