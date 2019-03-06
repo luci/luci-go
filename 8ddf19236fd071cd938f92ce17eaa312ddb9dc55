@@ -117,6 +117,30 @@
       "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b99833c_94af35b2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-06T23:01:21Z",
+      "side": 1,
+      "message": "Where do these titles show up and when would we want to use a title !\u003d name? I think they are redundant. I wasn\u0027t planning to add a separate \u0027title\u0027 field to luci.project(...).",
+      "parentUuid": "6b523921_229477b0",
+      "range": {
+        "startLine": 416,
+        "startChar": 60,
+        "endLine": 416,
+        "endChar": 72
+      },
+      "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
