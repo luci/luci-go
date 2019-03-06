@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8172f535_1cd90103",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-06T22:33:47Z",
+      "side": 1,
+      "message": "can we instead disallow buckets that start with \"luci.\"? otherwise it is a lost opportunity to migrate configs to short bucket names. Please.",
+      "range": {
+        "startLine": 106,
+        "startChar": 20,
+        "endLine": 106,
+        "endChar": 51
+      },
+      "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de3d03a7_073dff75",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-06T22:33:47Z",
+      "side": 1,
+      "message": "this passes project name as project id.\ntwo different things",
+      "range": {
+        "startLine": 416,
+        "startChar": 60,
+        "endLine": 416,
+        "endChar": 72
+      },
+      "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
