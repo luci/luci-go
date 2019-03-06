@@ -16,6 +16,24 @@
       "revId": "683ee82486a2f586a3b3a13b3917aafedb99e44b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff4168d7_c5f335da",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-06T03:33:44Z",
+      "side": 1,
+      "message": "It already has some stuff in it (at the top level). I think stuffing flatten_buildbucket_cfg there may confuse things.",
+      "parentUuid": "e635c313_088d3f91",
+      "revId": "683ee82486a2f586a3b3a13b3917aafedb99e44b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
