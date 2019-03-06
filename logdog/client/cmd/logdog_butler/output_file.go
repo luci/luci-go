@@ -31,7 +31,7 @@ type fileOutputFactory struct {
 }
 
 func (f *fileOutputFactory) option() multiflag.Option {
-	opt := newOutputOption("file", "Debug output that writes stream data to files.", f)
+	opt := newOutputOption("file", "Debug output that writes stream data to a single protobuf file.", f)
 
 	flags := opt.Flags()
 	flags.StringVar(&f.Path, "path", "", "Stream output text protobuf path.")
