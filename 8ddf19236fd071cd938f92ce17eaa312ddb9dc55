@@ -141,6 +141,30 @@
       "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "168810db_90c0ccfe",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-06T23:03:26Z",
+      "side": 1,
+      "message": "let\u0027s delete it. crbug.com/939107",
+      "parentUuid": "5b99833c_94af35b2",
+      "range": {
+        "startLine": 416,
+        "startChar": 60,
+        "endLine": 416,
+        "endChar": 72
+      },
+      "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
