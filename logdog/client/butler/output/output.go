@@ -35,7 +35,7 @@ type Output interface {
 	SendBundle(*logpb.ButlerLogBundle) error
 
 	// MaxSize returns the maximum number of bytes that this Output can process
-	// with a single send. A return value <=0 indicates that there si no fixed
+	// with a single send. A return value <=0 indicates that there is no fixed
 	// maximum size for this Output.
 	//
 	// Since it is impossible for callers to know the actual size of the message
