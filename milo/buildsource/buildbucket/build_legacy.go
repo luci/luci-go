@@ -344,25 +344,20 @@ func ToMiloBuild(c context.Context, b *bbv1.ApiCommonBuildMessage, fetchFull boo
 		}
 	}
 
-	// Add blame information.  If this fails, just add in a placeholder with an error.
-	if blame, err := getBlameLegacy(c, b); err == nil {
-		mb.Blame = blame
-	} else {
-		logging.WithError(err).Warningf(c, "failed to fetch blame information")
-		mb.Blame = []*ui.Commit{{
-			Description: fmt.Sprintf("Failed to fetch blame information\n%s", err.Error()),
-		}}
-	}
+	// Add blame information.  If this fails, this add in a placeholder with an error.
+	mb.Blame = getBlameLegacy(c, b)
 
 	return mb, nil
 }
 
 // getBlameLegacy fetches blame information from Gitiles.  This requires the
 // BuildSummary to be indexed in Milo.
-func getBlameLegacy(c context.Context, msg *bbv1.ApiCommonBuildMessage) ([]*ui.Commit, error) {
+func getBlameLegacy(c context.Context, msg *bbv1.ApiCommonBuildMessage) []*ui.Commit {
 	host, err := getHost(c)
 	if err != nil {
-		return nil, err
+		return []*ui.Commit{{
+			Description: fmt.Sprintf("Failed to fetch blame information\n%s", err.Error()),
+		}}
 	}
 	tags := strpair.ParseMap(msg.Tags)
 	bSet, _ := tags["buildset"]
