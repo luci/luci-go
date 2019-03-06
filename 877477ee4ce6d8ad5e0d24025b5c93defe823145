@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7b5271a4_5ccdcf41",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "I\u0027ll use \u0027, which is our style in python.  I\u0027ll fix the other .js files separately.",
+      "parentUuid": "66e9e7db_d9d04a3c",
+      "range": {
+        "startLine": 10,
+        "startChar": 13,
+        "endLine": 10,
+        "endChar": 14
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "805bc175_39a23e32",
         "filename": "milo/frontend/appengine/static/common/js/console.js",
         "patchSetId": 8
@@ -45,6 +69,30 @@
       "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09fb01e4_8af7bec4",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "805bc175_39a23e32",
+      "range": {
+        "startLine": 69,
+        "startChar": 10,
+        "endLine": 69,
+        "endChar": 17
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "93898b6a_59c3fb56",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86f59071_bf9e08eb",
+      "range": {
+        "startLine": 78,
+        "startChar": 9,
+        "endLine": 78,
+        "endChar": 12
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "11df667d_09f6ec58",
         "filename": "milo/frontend/appengine/static/common/js/console.js",
         "patchSetId": 8
@@ -91,6 +163,30 @@
       "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "884d7940_d55ae6cd",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11df667d_09f6ec58",
+      "range": {
+        "startLine": 107,
+        "startChar": 9,
+        "endLine": 107,
+        "endChar": 12
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "7ea7531c_83438d52",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4aebeadc_b042a81e",
+      "range": {
+        "startLine": 109,
+        "startChar": 42,
+        "endLine": 109,
+        "endChar": 43
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a1648db_563578a8",
         "filename": "milo/frontend/appengine/static/common/js/console.js",
         "patchSetId": 8
@@ -137,6 +257,30 @@
       "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "291403df_42841942",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "rows isn\u0027t a jQuery array-like object (it\u0027s a native array) so it makes less sense to use jQuery\u0027s $.each() function.  Could use data.rows.forEach() however.\n\nI like for x of y.",
+      "parentUuid": "9a1648db_563578a8",
+      "range": {
+        "startLine": 116,
+        "startChar": 4,
+        "endLine": 116,
+        "endChar": 7
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "74fa6c9b_30276542",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17664cba_d81965b2",
+      "range": {
+        "startLine": 116,
+        "startChar": 4,
+        "endLine": 117,
+        "endChar": 31
+      },
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e8011de7_5f437e50",
         "filename": "milo/frontend/appengine/static/common/js/console.js",
         "patchSetId": 8
@@ -177,6 +345,24 @@
       "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae89daea_b50d376e",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8011de7_5f437e50",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -197,6 +383,24 @@
     },
     {
       "key": {
+        "uuid": "36968cc8_6d43ebf7",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "It\u0027s possible, but it was easier to do this.  I\u0027ll add a TODO to clean this up.",
+      "parentUuid": "88460e8b_ebbb630e",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70f37a54_24c45314",
         "filename": "milo/frontend/appengine/static/common/js/console.js",
         "patchSetId": 8
@@ -211,6 +415,24 @@
       "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01c803c2_5a99ee5a",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70f37a54_24c45314",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -231,6 +453,24 @@
     },
     {
       "key": {
+        "uuid": "9156680d_792ecf70",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5dd9deb_18962090",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e71c146f_d93643bf",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 8
@@ -245,6 +485,24 @@
       "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8947c9b_9ce74e82",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-06T01:48:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e71c146f_d93643bf",
+      "revId": "877477ee4ce6d8ad5e0d24025b5c93defe823145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
