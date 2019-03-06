@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "1d3db634_61b78e80",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-06T03:09:08Z",
+      "side": 1,
+      "message": "fun: check env var CHROME_HEADLESS and if set, refuse to run.",
+      "revId": "5fc5d5bcf134331c28f6faa92a1e5345c9b07977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e402d7e_e2d88a39",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-06T03:09:08Z",
+      "side": 1,
+      "message": "where to put norm configs if you want them preserved after this command completes.\n\n(FTR, at first I wondered \"do you mean $TMP dir or newly crated temp dir *here*?\")",
+      "range": {
+        "startLine": 71,
+        "startChar": 87,
+        "endLine": 71,
+        "endChar": 108
+      },
+      "revId": "5fc5d5bcf134331c28f6faa92a1e5345c9b07977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6607d20_850783b4",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-06T03:09:08Z",
+      "side": 1,
+      "message": "nit: fail :\u003d false is better since you really mean to initialize it as false.",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 14
+      },
+      "revId": "5fc5d5bcf134331c28f6faa92a1e5345c9b07977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bcc583ce_109044fa",
         "filename": "lucicfg/cli/cmds/diff/diff.go",
         "patchSetId": 1
