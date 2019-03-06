@@ -176,6 +176,16 @@
   font-weight: bold;
 }
 
+/* Controls */
+
+.expanded .control-expand {
+  display: none;
+}
+
+.collapsed .control-collapse {
+  display: none;
+}
+
 /* Commits */
 
 .console-controls {
@@ -188,29 +198,71 @@
   justify-content: flex-end;
 }
 
-.console-commit-column div.console-commit-item:nth-child(even) {
+.console-commit-column div.console-commit-item:nth-child(even),
+.console-commit-column div.console-commit-item:nth-child(even) p {
   background-color: #cccccc;
 }
 
-.console-commit-column div.console-commit-item:nth-child(odd) {
+.console-commit-column div.console-commit-item:nth-child(odd),
+.console-commit-column div.console-commit-item:nth-child(odd) p {
   background-color: #eee;
 }
 
-.console-commit-column div.console-commit-item:nth-child(even) .console-commit-description-overlay {
-  background-color: #cccccc;
+.console-commit-column div.console-commit-item:nth-child(even).bottom-hidden .console-commit-description-overlay {
+  background-image: linear-gradient(rgba(204, 204, 204, 0) 0%, rgba(204, 204, 204, 0.9) 95%);
 }
 
-.console-commit-column div.console-commit-item:nth-child(odd) .console-commit-description-overlay {
-  background-color: #eee;
+.console-commit-column div.console-commit-item:nth-child(odd).bottom-hidden .console-commit-description-overlay {
+  background-image: linear-gradient(rgba(238, 238, 238, 0) 0%, rgba(238, 238, 238, 0.9) 95%);
+}
+
+.console-commit-description {
+  position: relative;
+  overflow: hidden;
+}
+
+.console-commit-description:hover {
+  overflow: visible;
+  z-index: 18;
+}
+
+.bottom-hidden .console-commit-description p {
+  border-bottom: 1px solid black;
+}
+
+.console-commit-description-overlay {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 80px;
+}
+
+.console-commit-description:hover .console-commit-description-overlay {
+  background-image: none !important;
 }
 
 .console-commit-item {
   display: flex;
+  align-items: center;
+  justify-content: left;
   flex-direction: column;
+  position: relative;
 }
 
 .collapsed .console-commit-item {
   margin-bottom: 2px;
+}
+
+.console-commit-item-overlay {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  z-index: 16;
+  border-top: 1px solid black;
+}
+
+.collapsed .console-commit-item-overlay {
+  display: none;
 }
 
 .console-commit-summary {
@@ -222,11 +274,8 @@
   padding: 1px 1em;
 }
 
-.console-commit-item {
-  display: flex;
-  align-items: center;
-  justify-content: left;
-  white-space: nowrap;
+.expanded .console-commit-item  {
+  border-top: 1px solid black;
 }
 
 .console-commit-revision {
@@ -241,7 +290,6 @@
 }
 
 .console-commit-author {
-  width: 15em;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
@@ -249,30 +297,30 @@
   align-items: center;
 }
 
+.collapsed .console-commit-author  {
+  width: 15em;
+}
+
+.expanded .console-commit-author {
+  width: 25em;
+}
+
 .commit {
   font-weight: bold;
 }
 
 .console-commit-description {
-  width: 30em;
+  width: 40em;
   z-index: 12;
-}
-
-.console-commit-description-overlay {
-  z-index: 11;
   border-top: 1px solid black;
-  border-bottom: 1px solid black;
 }
 
-.console-commit-description-overlay p {
+.console-commit-description p {
   padding-left: 1em;
+  word-break: break-word;
 }
 
 .collapsed .console-commit-description {
-  display: none;
-}
-
-.collapsed .console-commit-description-overlay {
   display: none;
 }
 
@@ -305,11 +353,26 @@
   white-space: nowrap;
 }
 
+.no-category .console-top-item {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 2px solid transparent;
+}
+
+.expanded .console-top-item {
+  padding-bottom: 1em;
+}
+
 .console-space {
   display: flex;
   border: 1px solid transparent;
   min-width: 1em;
   min-height: 2em;
+}
+
+.expanded .console-space {
+  min-height: 3em;
 }
 
 /* Builders */
@@ -399,23 +462,46 @@
   white-space: nowrap;
 }
 
+.console-cell-text {
+  white-space: nowrap;
+}
+
 /* Builds */
 
-.console-build-column {
+.console-build-column, .console-build-column-stacked {
   display: flex;
   flex-grow: 1;
   flex-direction: column;
 }
 
-.console-build-column div.console-cell-container:nth-child(even) {
+.expanded .console-cell-container-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: flex-start;
+}
+
+.console-cell-container a {
+  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.console-build-column div.console-cell-container:nth-child(even),
+.console-build-column-stacked div.console-cell-container:nth-child(even) {
   background-color: #cccccc;
 }
 
-.console-build-column div.console-cell-container:nth-child(odd) {
+.console-build-column div.console-cell-container:nth-child(odd),
+.console-build-column-stacked div.console-cell-container:nth-child(odd){
   background-color: #eee;
 }
 
 .collapsed .console-cell-spacer {
+  display: none;
+}
+
+.collapsed .console-cell-text {
   display: none;
 }
 
@@ -424,7 +510,7 @@
 .console-cell, .console-cell-top, .console-cell-middle, .console-cell-bottom {
   display: flex;
   min-width: 1em;
-  min-height: 2em;
+  height: 20px;
   border-radius: 0.5em;
   border-width: 1px;
   border-style: solid;
@@ -492,16 +578,26 @@
   padding-top: 1px;
 }
 
+.expanded .console-empty-cell,
+.expanded .console-cell-middle,
+.expanded .console-cell-top,
+.expanded .console-cell-bottom {
+  flex-grow: 1;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
 .console-empty-cell {
   display: flex;
   border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 0.5em;
+  height: 20px;
   min-width: 1em;
-  min-height: 2em;
 }
 
 .collapsed .console-empty-cell {
   border: 1px solid transparent;
+  min-width: 1em;
 }
 
 .console-empty-cell:hover {

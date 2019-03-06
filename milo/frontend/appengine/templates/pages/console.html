@@ -26,7 +26,7 @@
 )
 [
   <a href="#" class="control-expand">expand</a>
-  <a href="#" class="control-collapse" style="display: none;">collapse</a>
+  <a href="#" class="control-collapse">collapse</a>
 ]
 {{ end }}
 
@@ -183,7 +183,7 @@
 <div class="clear"></div>
 
 <!-- Container -->
-<div id="console" class="console-row collapsed">
+<div id="console" class="console-row collapsed {{ if not $console.HasCategory }}no-category{{ end }}">
   <!-- Commits -->
   <div class="console-column console-commits-column">
     <div class="console-controls">
@@ -193,6 +193,10 @@
       <div class="console-commit-column">
       {{ range $console.Commit }}
         <div class="console-commit-item">
+          <!--- This overlay is positioned relative to its parent and used for
+                creating the horizontal solid divider line.
+                The size and position of the overlay does not affect its siblings.-->
+          <div class="console-commit-item-overlay"></div>
           <div class="console-commit-summary">
             <div class="console-commit-revision">
               <a href="{{.Revision.URL}}" aria-label="revision {{ .Revision.Label | prefix 8 }}">
@@ -206,13 +210,13 @@
             </div>
           </div>
           <div class="console-commit-description">
-            <div class="console-commit-description-overlay">
-              <p>
-                {{ range .DescLines }}
-                  {{ . }}<br>
-                {{ end }}
-              </p>
-            </div>
+            <p>
+              {{ range .DescLines }}
+                {{ . }}<br>
+              {{ end }}
+            </p>
+            <!--- Overlay on top of the commit message for rendering the fadeout -->
+            <div class="console-commit-description-overlay"></div>
           </div>
         </div>
       {{ end }}
@@ -227,42 +231,6 @@
 <div class="epiloge" style="margin-top: 1em">
   {{ template "controls" }}
 </div>
-<script>
-$(function () {
-  'use strict';
-  $(".control-expand").click(function(e) {
-    e.preventDefault();
-    $("#console").removeClass("collapsed");
-    let width = 0;
-    $("#console > div").each(function() {
-      width += $(this).width();
-    });
-    const sizes = [];
-    $(".console-commit-description").each(function() {
-      sizes.push($(this).height());
-    });
-    $(".console-build-column").each(function() {
-      const containers = $(this).find(".console-cell-spacer");
-      for (const i in sizes) {
-        $(containers[i]).height(sizes[i]);
-      }
-    });
-    $(".console-commit-description-overlay").width(width);
-    $(".control-collapse").show();
-    $(".control-expand").hide();
-    Cookies.set('expand', 1);
-  });
-  $(".control-collapse").click(function(e) {
-    e.preventDefault();
-    $("#console").addClass("collapsed");
-    $(".control-expand").show();
-    $(".control-collapse").hide();
-    Cookies.remove('expand');
-  });
-  if (Cookies.get('expand')) {
-    $(".control-expand").first().click();
-  }
-});
-</script>
+<script src="/static/common/js/console.js"></script>
 
 {{end}} <!-- Body -->

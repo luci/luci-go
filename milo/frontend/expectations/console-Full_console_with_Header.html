@@ -215,7 +215,7 @@
 <div class="clear"></div>
 
 
-<div id="console" class="console-row collapsed">
+<div id="console" class="console-row collapsed ">
   
   <div class="console-column console-commits-column">
     <div class="console-controls">
@@ -229,7 +229,7 @@
 )
 [
   <a href="#" class="control-expand">expand</a>
-  <a href="#" class="control-collapse" style="display: none;">collapse</a>
+  <a href="#" class="control-collapse">collapse</a>
 ]
 
     </div>
@@ -237,6 +237,8 @@
       <div class="console-commit-column">
       
         <div class="console-commit-item">
+          
+          <div class="console-commit-item-overlay"></div>
           <div class="console-commit-summary">
             <div class="console-commit-revision">
               <a href="blah%20blah%20blah" aria-label="revision 12031802">
@@ -250,17 +252,19 @@
             </div>
           </div>
           <div class="console-commit-description">
-            <div class="console-commit-description-overlay">
-              <p>
-                
-                  Me too.<br>
-                
-              </p>
-            </div>
+            <p>
+              
+                Me too.<br>
+              
+            </p>
+            
+            <div class="console-commit-description-overlay"></div>
           </div>
         </div>
       
         <div class="console-commit-item">
+          
+          <div class="console-commit-item-overlay"></div>
           <div class="console-commit-summary">
             <div class="console-commit-revision">
               <a href="blah%20blah%20blah%201" aria-label="revision 12093182">
@@ -274,13 +278,13 @@
             </div>
           </div>
           <div class="console-commit-description">
-            <div class="console-commit-description-overlay">
-              <p>
-                
-                  I did something.<br>
-                
-              </p>
-            </div>
+            <p>
+              
+                I did something.<br>
+              
+            </p>
+            
+            <div class="console-commit-description-overlay"></div>
           </div>
         </div>
       
@@ -289,9 +293,7 @@
   </div>
 
   
-  <div class="console-column" style="flex: 1"><div class="console-top-item">cat1</div>
-						<div class="console-top-row"><div class="console-column" style="flex: 1"><div class="console-top-item">cat2</div>
-						<div class="console-top-row"><div class="console-builder-column"><div><span class="console-InfraFailure"><a class="console-builder-item" href="/p/project-foo/builders/luci.project-foo.try/builder-bar" title="builder-bar">tst</a></span></div><div class="console-build-column"><div class="console-cell-container"><a class="console-cell-top status-Success" href="#invalid-build-id" title="builder-bar"></a><div class="console-cell-spacer"></div></div><div class="console-cell-container"><a class="console-cell-middle status-Success" href="#invalid-build-id" title="builder-bar"></a><div class="console-cell-spacer"></div></div></div></div></div></div></div></div>
+  <div class="console-column" style="flex: 1"><div class="console-top-item">cat1</div><div class="console-top-row"><div class="console-column" style="flex: 1"><div class="console-top-item">cat2</div><div class="console-top-row console-leaf-category"><div class="console-builder-column"><div><span class="console-InfraFailure"><a class="console-builder-item" href="/p/project-foo/builders/luci.project-foo.try/builder-bar" title="builder-bar">tst</a></span></div><div class="console-build-column"><div class="console-cell-container"><a class="console-cell-top status-Success" href="#invalid-build-id" title="builder-bar"><span class="console-cell-text">tst</span></a><div class="console-cell-spacer"></div></div><div class="console-cell-container"><a class="console-cell-middle status-Success" href="#invalid-build-id" title="builder-bar"><span class="console-cell-text">tst</span></a><div class="console-cell-spacer"></div></div></div></div></div></div></div></div>
 </div>
 
 <div class="epiloge" style="margin-top: 1em">
@@ -305,47 +307,11 @@
 )
 [
   <a href="#" class="control-expand">expand</a>
-  <a href="#" class="control-collapse" style="display: none;">collapse</a>
+  <a href="#" class="control-collapse">collapse</a>
 ]
 
 </div>
-<script>
-$(function () {
-  'use strict';
-  $(".control-expand").click(function(e) {
-    e.preventDefault();
-    $("#console").removeClass("collapsed");
-    let width = 0;
-    $("#console > div").each(function() {
-      width += $(this).width();
-    });
-    const sizes = [];
-    $(".console-commit-description").each(function() {
-      sizes.push($(this).height());
-    });
-    $(".console-build-column").each(function() {
-      const containers = $(this).find(".console-cell-spacer");
-      for (const i in sizes) {
-        $(containers[i]).height(sizes[i]);
-      }
-    });
-    $(".console-commit-description-overlay").width(width);
-    $(".control-collapse").show();
-    $(".control-expand").hide();
-    Cookies.set('expand', 1);
-  });
-  $(".control-collapse").click(function(e) {
-    e.preventDefault();
-    $("#console").addClass("collapsed");
-    $(".control-expand").show();
-    $(".control-collapse").hide();
-    Cookies.remove('expand');
-  });
-  if (Cookies.get('expand')) {
-    $(".control-expand").first().click();
-  }
-});
-</script>
+<script src="/static/common/js/console.js"></script>
 
 
   <footer>
