@@ -28,6 +28,7 @@ message ArchiveTask {
   // The hash ID of the log stream to archive.
   string id = 2;
 
+  // TODO(hinoka): Remove everythign below here after crbug.com/923557
   // The archival key of the log stream. If this key doesn't match the key in
   // the log stream state, the request is superfluous and should be deleted.
   bytes key = 3;

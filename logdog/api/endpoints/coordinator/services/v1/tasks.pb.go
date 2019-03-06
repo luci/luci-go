@@ -81,6 +81,7 @@ type ArchiveTask struct {
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The hash ID of the log stream to archive.
 	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	// TODO(hinoka): Remove everythign below here after crbug.com/923557
 	// The archival key of the log stream. If this key doesn't match the key in
 	// the log stream state, the request is superfluous and should be deleted.
 	Key []byte `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`

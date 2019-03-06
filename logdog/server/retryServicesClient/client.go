@@ -123,6 +123,28 @@ func (c *client) Batch(ctx context.Context, in *s.BatchRequest, opts ...grpc.Cal
 	return
 }
 
+func (c *client) LeaseArchiveTasks(ctx context.Context, in *s.LeaseRequest, opts ...grpc.CallOption) (
+	r *s.LeaseResponse, err error) {
+
+	err = retry.Retry(ctx, c.f, func() (err error) {
+		r, err = c.c.LeaseArchiveTasks(ctx, in, opts...)
+		err = grpcutil.WrapIfTransient(err)
+		return
+	}, callback(ctx, "lease archive task"))
+	return
+}
+
+func (c *client) DeleteArchiveTasks(ctx context.Context, in *s.DeleteRequest, opts ...grpc.CallOption) (
+	r *empty.Empty, err error) {
+
+	err = retry.Retry(ctx, c.f, func() (err error) {
+		r, err = c.c.DeleteArchiveTasks(ctx, in, opts...)
+		err = grpcutil.WrapIfTransient(err)
+		return
+	}, callback(ctx, "lease archive task"))
+	return
+}
+
 func callback(ctx context.Context, op string) retry.Callback {
 	return func(err error, d time.Duration) {
 		log.Fields{
