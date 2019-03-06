@@ -395,7 +395,7 @@ func (bci *boundCacheInst) checkExpired(c context.Context, e *entry, now time.Ti
 	if now.Sub(e.LastRefreshed) >= (expireFactor * bci.h.RefreshInterval(e.Key)) {
 		log.Fields{
 			"lastRefreshed": e.LastRefreshed,
-		}.Warningf(c, "Stale cache entry is past its refresh interval.")
+		}.Infof(c, "Stale cache entry is past its refresh interval.")
 		return true
 	}
 	return false
