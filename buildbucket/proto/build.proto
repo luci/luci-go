@@ -252,7 +252,7 @@ message BuildInfra {
     string task_service_account = 3;
 
     // Priority of the task. The lower the more important.
-    // Valid values are [1..255].
+    // Valid values are [20..255].
     int32 priority = 4;
 
     // Swarming dimensions for the task.
