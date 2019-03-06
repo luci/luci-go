@@ -27,6 +27,9 @@ def bucket(*, name=None, acls=None):
     acls: list of acl.entry(...) objects.
   """
   name = validate.string('name', name)
+  if name.startswith('luci.'):
+    fail('long bucket names aren\'t allowed, please use e.g. "try" instead of "luci.project.try"')
+
   key = keys.bucket(name)
   graph.add_node(key, props = {
       'name': name,

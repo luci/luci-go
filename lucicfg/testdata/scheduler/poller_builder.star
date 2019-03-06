@@ -50,7 +50,7 @@ luci.builder(
 #   acl_sets: "ci"
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "ci"
+#     bucket: "luci.project.ci"
 #     builder: "builder"
 #   >
 # >

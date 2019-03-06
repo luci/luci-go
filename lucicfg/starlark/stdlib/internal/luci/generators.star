@@ -100,6 +100,13 @@ def filter_acls(acls, roles):
   return [a for a in acls if a.role in roles]
 
 
+def lagacy_bucket_name(bucket_name, project_name):
+  """Prefixes the bucket name with `luci.<project>.`."""
+  if bucket_name.startswith('luci.'):
+    fail('seeing long bucket name %r, shouldn\'t be possible' % bucket_name)
+  return 'luci.%s.%s' % (project_name, bucket_name)
+
+
 def optional_sec(duration):
   """duration|None => number of seconds | None."""
   return None if duration == None else duration/time.second
@@ -354,6 +361,7 @@ def gen_scheduler_cfg(ctx):
 
   scheduler = get_service('scheduler', 'using triggering or pollers')
   buildbucket = get_service('buildbucket', 'using triggering')
+  project_name = get_project().props.name
 
   cfg = scheduler_pb.ProjectConfig()
   ctx.config_set[scheduler.cfg_file] = cfg
@@ -406,7 +414,7 @@ def gen_scheduler_cfg(ctx):
         triggering_policy = builder.props.triggering_policy,
         buildbucket = scheduler_pb.BuildbucketTask(
             server = buildbucket.host,
-            bucket = builder.props.bucket,
+            bucket = lagacy_bucket_name(builder.props.bucket, project_name),
             builder = builder.props.name,
         ),
     ))
@@ -616,16 +624,10 @@ def _milo_builder_pb(entry, view, project_name, seen):
   seen[builder.key] = entry
 
   builder_pb.name.append('buildbucket/%s/%s' % (
-      _milo_bucket_name(builder.props.bucket, project_name),
+      lagacy_bucket_name(builder.props.bucket, project_name),
       builder.props.name,
   ))
   return builder_pb
-
-
-def _milo_bucket_name(bucket_name, project_name):
-  """Prefixes the bucket name with `luci.<project>.` if necessary."""
-  pfx = 'luci.%s.' % project_name
-  return bucket_name if bucket_name.startswith(pfx) else pfx + bucket_name
 
 
 ################################################################################

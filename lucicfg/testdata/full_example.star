@@ -600,7 +600,7 @@ luci.cq_tryjob_verifier(
 #   acl_sets: "ci"
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "ci"
+#     bucket: "luci.infra.ci"
 #     builder: "cron builder"
 #   >
 # >
@@ -613,7 +613,7 @@ luci.cq_tryjob_verifier(
 #   acl_sets: "ci"
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "ci"
+#     bucket: "luci.infra.ci"
 #     builder: "generically named builder"
 #   >
 # >
@@ -627,7 +627,7 @@ luci.cq_tryjob_verifier(
 #   >
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "ci"
+#     bucket: "luci.infra.ci"
 #     builder: "linux ci builder"
 #   >
 # >
@@ -640,7 +640,7 @@ luci.cq_tryjob_verifier(
 #   acl_sets: "inline"
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "inline"
+#     bucket: "luci.infra.inline"
 #     builder: "triggered builder"
 #   >
 # >
@@ -649,7 +649,7 @@ luci.cq_tryjob_verifier(
 #   acl_sets: "inline"
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "inline"
+#     bucket: "luci.infra.inline"
 #     builder: "triggerer builder"
 #   >
 # >

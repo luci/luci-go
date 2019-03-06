@@ -105,7 +105,7 @@ luci.builder(
 #   acl_sets: "b1"
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "b1"
+#     bucket: "luci.project.b1"
 #     builder: "builder-builder"
 #   >
 # >
@@ -114,7 +114,7 @@ luci.builder(
 #   acl_sets: "b2"
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "b2"
+#     bucket: "luci.project.b2"
 #     builder: "builder-builder"
 #   >
 # >
@@ -123,7 +123,7 @@ luci.builder(
 #   acl_sets: "b2"
 #   buildbucket: <
 #     server: "cr-buildbucket.appspot.com"
-#     bucket: "b2"
+#     bucket: "luci.project.b2"
 #     builder: "poller-builder"
 #   >
 # >
