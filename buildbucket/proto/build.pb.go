@@ -690,7 +690,7 @@ type BuildInfra_Swarming struct {
 	// build.
 	TaskServiceAccount string `protobuf:"bytes,3,opt,name=task_service_account,json=taskServiceAccount,proto3" json:"task_service_account,omitempty"`
 	// Priority of the task. The lower the more important.
-	// Valid values are [1..255].
+	// Valid values are [20..255].
 	Priority int32 `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
 	// Swarming dimensions for the task.
 	TaskDimensions []*RequestedDimension `protobuf:"bytes,5,rep,name=task_dimensions,json=taskDimensions,proto3" json:"task_dimensions,omitempty"`
