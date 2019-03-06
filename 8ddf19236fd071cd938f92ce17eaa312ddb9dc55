@@ -93,6 +93,30 @@
       "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b523921_229477b0",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-06T22:56:31Z",
+      "side": 1,
+      "message": "this is a bit confusing because luci-config uses name for something else https://chromium.googlesource.com/chromium/src/+/master/infra/config/project.cfg#4\nperhaps we should rename the proto field to title too then. \"title\" is better.\n\ni assume title is to be added to\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/lucicfg/starlark/stdlib/internal/luci/rules/project.star?type\u003dcs\u0026q\u003dproject+f:starlark\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d23",
+      "parentUuid": "65ac04ec_ac5bebfc",
+      "range": {
+        "startLine": 416,
+        "startChar": 60,
+        "endLine": 416,
+        "endChar": 72
+      },
+      "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
