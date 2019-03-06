@@ -1,0 +1,52 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bcc583ce_109044fa",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-06T02:06:09Z",
+      "side": 1,
+      "message": "Have you heard about umasks?!",
+      "parentUuid": "bf42305a_6b56a2c7",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 170,
+        "endChar": 1
+      },
+      "revId": "5fc5d5bcf134331c28f6faa92a1e5345c9b07977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3dbcc6f1_6eb3a78b",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-06T02:06:09Z",
+      "side": 1,
+      "message": "No shit.",
+      "parentUuid": "fb2586f5_4ad895ee",
+      "range": {
+        "startLine": 198,
+        "startChar": 0,
+        "endLine": 198,
+        "endChar": 1
+      },
+      "revId": "5fc5d5bcf134331c28f6faa92a1e5345c9b07977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
