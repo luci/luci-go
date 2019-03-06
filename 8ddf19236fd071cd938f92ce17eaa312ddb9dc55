@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "eb54db1e_39c4c006",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-06T22:44:58Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "8172f535_1cd90103",
+      "range": {
+        "startLine": 106,
+        "startChar": 20,
+        "endLine": 106,
+        "endChar": 51
+      },
+      "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de3d03a7_073dff75",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2019-03-06T22:33:47Z",
       "side": 1,
       "message": "this passes project name as project id.\ntwo different things",
+      "range": {
+        "startLine": 416,
+        "startChar": 60,
+        "endLine": 416,
+        "endChar": 72
+      },
+      "revId": "8ddf19236fd071cd938f92ce17eaa312ddb9dc55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65ac04ec_ac5bebfc",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-06T22:44:58Z",
+      "side": 1,
+      "message": "In lucicfg code \u0027name\u0027 means ID and user-friendly name is usually represented by \u0027title\u0027.\n\nluci.project(...) field has only \u0027name\u0027 (i.e. ID), it is same ID as used by luci-config to represent the project, so it is correct to use it here.",
+      "parentUuid": "de3d03a7_073dff75",
       "range": {
         "startLine": 416,
         "startChar": 60,
