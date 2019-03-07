@@ -75,7 +75,7 @@ type LogStreamState struct {
 	Schema string `gae:",noindex"`
 
 	// Created is the last time that this state has been created.
-	Created time.Time `gae:",noindex"`
+	Created time.Time
 	// Updated is the last time that this state has been updated.
 	Updated time.Time `gae:",noindex"`
 
@@ -100,7 +100,7 @@ type LogStreamState struct {
 	// ArchivedTime is the Coordinator's record of when this log stream was
 	// archived. If this is non-zero, it means that the log entry has been
 	// archived.
-	ArchivedTime time.Time `gae:",noindex"`
+	ArchivedTime time.Time
 	// ArchiveLogEntryCount is the number of LogEntry records that were archived
 	// for this log stream.
 	//

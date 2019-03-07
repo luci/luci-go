@@ -29,3 +29,10 @@ cron:
   url: "/internal/tumble/fire_all_tasks"
   schedule: "every 10 minutes"
   target: backend
+
+
+# Update critical stats.
+- description: "Stats updater"
+  url: "/admin/cron/stats"
+  schedule: "every 30 minutes"
+  target: default
