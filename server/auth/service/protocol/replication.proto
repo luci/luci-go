@@ -1,20 +1,16 @@
-// Copyright 2014 The Swarming Authors. All rights reserved.
-// Use of this source code is governed by the Apache v2.0 license that can be
+// Copyright 2014 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
-
-// This file is copied from luci-py.git:
-// appengine/components/components/auth/proto/replication.proto
-// Commit: def5fc8357e1334184e34d08750c8a8ab17d3141
-//
-// Changes: renamed package to 'protocol'.
 
 // Messages for Primary <-> Replica auth DB replication protocol.
 // Used from both Primary side (i.e. auth_service) and Replica side (any service
 // that uses auth component).
 
-syntax = "proto2";
+syntax = "proto3";
 
-package protocol;
+package components.auth;
+
+option go_package = "go.chromium.org/luci/server/auth/service/protocol;protocol";
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,16 +35,16 @@ package protocol;
 message ServiceLinkTicket {
   // GAE application ID of Primary that generated this ticket. Replica will send
   // ServiceLinkRequest to this service when it processes the ticket.
-  required string primary_id = 1;
+  string primary_id = 1;
   // URL to the root page of a primary service, i.e. https://<...>.appspot.com.
   // Useful when testing on dev appserver and on non-default version.
-  required string primary_url = 2;
+  string primary_url = 2;
   // Identity of a user that generated this ticket.
-  required string generated_by = 3;
+  string generated_by = 3;
   // Opaque blob passed back to Primary in ServiceLinkRequest. Its exact
   // structure is an implementation detail of Primary. It contains app_id of
   // a replica this ticket is intended for, timestamp and HMAC tag.
-  required bytes ticket = 4;
+  bytes ticket = 4;
 }
 
 
@@ -56,11 +52,11 @@ message ServiceLinkTicket {
 // replicas app_id would be available via X-Appengine-Inbound-Appid header.
 message ServiceLinkRequest {
   // Same ticket that was passed to Replica via ServiceLinkTicket.
-  required bytes ticket = 1;
+  bytes ticket = 1;
   // URL to use when making requests to Replica from Primary.
-  required string replica_url = 2;
+  string replica_url = 2;
   // Identity of a user that accepted the ticket and initiated this request.
-  required string initiated_by = 3;
+  string initiated_by = 3;
 }
 
 
@@ -77,7 +73,7 @@ message ServiceLinkResponse {
     // Linking ticket was generated for another app, not the calling one.
     AUTH_ERROR = 3;
   }
-  required Status status = 1;
+  Status status = 1;
 }
 
 
@@ -88,7 +84,7 @@ message ServiceLinkResponse {
 // Some user group. Corresponds to AuthGroup entity in model.py.
 message AuthGroup {
   // Name of the group.
-  required string name = 1;
+  string name = 1;
 
   // List of members that are explicitly in this group.
   repeated string members = 2;
@@ -98,20 +94,20 @@ message AuthGroup {
   repeated string nested = 4;
 
   // Human readable description.
-  required string description = 5;
+  string description = 5;
 
   // When the group was created. Microseconds since epoch.
-  required int64 created_ts = 6;
+  int64 created_ts = 6;
   // Who created the group.
-  required string created_by = 7;
+  string created_by = 7;
 
   // When the group was modified last time. Microseconds since epoch.
-  required int64 modified_ts = 8;
+  int64 modified_ts = 8;
   // Who modified the group last time.
-  required string modified_by = 9;
+  string modified_by = 9;
 
   // A name of the group that can modify or delete this group.
-  optional string owners = 10;
+  string owners = 10;
 }
 
 
@@ -119,23 +115,23 @@ message AuthGroup {
 // entity in model.py.
 message AuthIPWhitelist {
   // Name of the IP whitelist.
-  required string name = 1;
+  string name = 1;
 
   // The list of IP subnets.
   repeated string subnets = 2;
 
   // Human readable description.
-  required string description = 3;
+  string description = 3;
 
   // When the list was created. Microseconds since epoch.
-  required int64 created_ts = 4;
+  int64 created_ts = 4;
   // Who created the list.
-  required string created_by = 5;
+  string created_by = 5;
 
   // When the list was modified. Microseconds since epoch.
-  required int64 modified_ts = 6;
+  int64 modified_ts = 6;
   // Who modified the list the last time.
-  required string modified_by = 7;
+  string modified_by = 7;
 }
 
 
@@ -143,15 +139,15 @@ message AuthIPWhitelist {
 // AuthIPWhitelistAssignments.Assignment model in model.py.
 message AuthIPWhitelistAssignment {
   // Identity name to limit by IP whitelist.
-  required string identity = 1;
+  string identity = 1;
   // Name of IP whitelist to use (see AuthIPWhitelist).
-  required string ip_whitelist = 2;
+  string ip_whitelist = 2;
   // Why the assignment was created.
-  required string comment = 3;
+  string comment = 3;
   // When the assignment was created. Microseconds since epoch.
-  required int64 created_ts = 4;
+  int64 created_ts = 4;
   // Who created the assignment.
-  required string created_by = 5;
+  string created_by = 5;
 }
 
 
@@ -160,30 +156,44 @@ message AuthDB {
   reserved 5; // used to be 'secrets', no longer used
 
   // OAuth2 client_id to use to mint new OAuth2 tokens.
-  required string oauth_client_id = 1;
+  string oauth_client_id = 1;
   // OAuth2 client secret. Not so secret really, since it's passed to clients.
-  required string oauth_client_secret = 2;
+  string oauth_client_secret = 2;
   // Additional OAuth2 client_ids allowed to access the services.
   repeated string oauth_additional_client_ids = 3;
+
   // All groups.
   repeated AuthGroup groups = 4;
   // All IP whitelists.
   repeated AuthIPWhitelist ip_whitelists = 6;
   // Mapping 'account -> IP whitlist to use for that account'.
   repeated AuthIPWhitelistAssignment ip_whitelist_assignments = 7;
+
   // URL of a token server to use to generate delegation tokens.
-  optional string token_server_url = 8;
+  string token_server_url = 8;
+
+  // Serialized security_config.SecurityConfig proto with security-related
+  // configuration to distribute across all services.
+  //
+  // It is distributed in a serialized form to make sure old services ingest it
+  // fully, even if they don't understand some SecurityConfig proto fields
+  // (yet). As soon as their code is updated, they SHOULD start using all
+  // SecurityConfig fields, without waiting for another push from Auth Service.
+  //
+  // If we use SecurityConfig directly here, old services would just drop fields
+  // they don't understand when accepting an AuthDB push.
+  bytes security_config = 9;
 }
 
 
 // Information about some particular revision of auth DB.
 message AuthDBRevision {
   // GAE App ID of a service holding primary copy of Auth DB.
-  required string primary_id = 1;
+  string primary_id = 1;
   // Revision of Auth DB being pushed.
-  required int64 auth_db_rev = 2;
+  int64 auth_db_rev = 2;
   // Timestamp of that revision by Primary's clock, microseconds since epoch.
-  required int64 modified_ts = 3;
+  int64 modified_ts = 3;
 }
 
 
@@ -194,7 +204,7 @@ message AuthDBRevision {
 //  X-AuthDB-SigVal-v1: <base64 encoded RSA-SHA256(blob) signature>
 message ChangeNotification {
   // New revision of the AuthDB.
-  optional AuthDBRevision revision = 1;
+  AuthDBRevision revision = 1;
 }
 
 
@@ -205,11 +215,11 @@ message ChangeNotification {
 //  X-AuthDB-SigVal-v1: <base64 encoded RSA-SHA256(SHA512(blob)) signature>
 message ReplicationPushRequest {
   // Revision that is being pushed.
-  optional AuthDBRevision revision = 1;
+  AuthDBRevision revision = 1;
   // An entire database of auth configuration for specific revision.
-  optional AuthDB auth_db = 2;
+  AuthDB auth_db = 2;
   // Version of 'auth' component on Primary, see components/auth/version.py.
-  optional string auth_code_version = 3;
+  string auth_code_version = 3;
 }
 
 
@@ -229,6 +239,8 @@ message ReplicationPushResponse {
 
   // Error codes, for TRANSIENT_ERROR and FATAL_ERROR statuses.
   enum ErrorCode {
+    // Some unrecognized error.
+    ERROR_UNKNOWN = 0;
     // Trying to push an update to service that is not a replica.
     NOT_A_REPLICA = 1;
     // Replica doesn't know about the service that pushing the update.
@@ -242,11 +254,11 @@ message ReplicationPushResponse {
   }
 
   // Overall status of the operation.
-  required Status status = 1;
+  Status status = 1;
   // Revision known by Replica (set for APPLIED and SKIPPED statuses).
-  optional AuthDBRevision current_revision = 2;
+  AuthDBRevision current_revision = 2;
   // Present for TRANSIENT_ERROR and FATAL_ERROR statuses.
-  optional ErrorCode error_code = 3;
+  ErrorCode error_code = 3;
   // Version of 'auth' component on Replica, see components/auth/version.py.
-  optional string auth_code_version = 4;
+  string auth_code_version = 4;
 }
