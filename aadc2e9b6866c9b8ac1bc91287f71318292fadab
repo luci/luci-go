@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73029e2d_a8fd514e",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-07T23:02:01Z",
+      "side": 1,
+      "message": "note if there are errors in the loop, then %d will be wrong here. I think it would be better to:\n\n   leased \u003d 0\n   for {\n     check is OK?\n     log \"Leasing \u003cinfo\u003e\"\n     leased++\n   }\n   log \"Leased %d\" % leased",
+      "range": {
+        "startLine": 84,
+        "startChar": 29,
+        "endLine": 84,
+        "endChar": 30
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f8c30f8_ce5fcbfb",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-07T23:02:01Z",
+      "side": 1,
+      "message": "Should we check to see if the task refers to something which is already archived, and if not immediately delete it? I think the check should be quick and it would avoid the `lease -\u003e archivist -\u003e delete` round-trip. Presumably the first thing the archivist does is make an RPC back to us to see if the task is worth doing?",
+      "range": {
+        "startLine": 86,
+        "startChar": 13,
+        "endLine": 86,
+        "endChar": 24
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9496a96_8a3068e4",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-07T23:02:01Z",
+      "side": 1,
+      "message": "It seems to me that this is a super-duper abnormal case; IIUC these tasks will NEVER be successfully leased, and so will just be dropped? How do we minimize/escalate this? Should there be a metric here to count these errors?\n\nIdeally nothing after line 83 could actually cause an error, right?",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 50
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2014ece1_541926cd",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-07T23:02:01Z",
+      "side": 1,
+      "message": "why buffer this message in memory instead of just logging on line 84/here?",
+      "range": {
+        "startLine": 92,
+        "startChar": 2,
+        "endLine": 92,
+        "endChar": 5
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7e3af0b_61e13574",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-07T23:02:01Z",
+      "side": 1,
+      "message": "I assume re-leasing a completed task just turns into an immediate delete request?",
+      "range": {
+        "startLine": 101,
+        "startChar": 25,
+        "endLine": 101,
+        "endChar": 32
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72d76260_39ea0619",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-07T23:02:01Z",
+      "side": 1,
+      "message": "same q re: buffered message",
+      "range": {
+        "startLine": 105,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 4
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
