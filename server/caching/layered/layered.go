@@ -157,6 +157,7 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 			if !item.isAcceptableTTL(now, o.minTTL) {
 				// If 'fn' is incapable of generating an item with sufficient TTL there's
 				// nothing else we can do.
+				logging.Warningf(ctx, "Generated token with insufficient TTL, MinTTL: %v, Now: %v, Expiry: %v ", o.minTTL, now, item.exp)
 				return nil, 0, ErrCantSatisfyMinTTL
 			}
 		}
