@@ -27,12 +27,15 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -157,6 +160,15 @@ var logCounter = metric.NewCounter(
 	field.String("project"),
 	field.String("ref"))
 
+var latencyMetric = metric.NewCumulativeDistribution(
+	"luci/milo/git/log/latency",
+	"Gitiles response latency",
+	&types.MetricMetadata{Units: types.Milliseconds},
+	distribution.DefaultBucketer,
+	field.Bool("treeDiff"),
+	field.String("host"),
+	field.String("project"))
+
 var gitHash = regexp.MustCompile("^[0-9a-fA-F]{40}$")
 
 // logReq is the implementation of Log().
@@ -235,7 +247,11 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 	if err != nil {
 		return nil, err
 	}
+	start := clock.Now(c)
 	res, err := client.Log(c, req)
+	latency := float64(clock.Now(c).Sub(start).Nanoseconds()) / 1000000.0
+	logging.Debugf(c, "gitiles took %fms", latency)
+	latencyMetric.Add(c, latency, l.withFiles, l.host, l.project)
 	if err != nil {
 		return nil, errors.Annotate(err, "gitiles.Log").Err()
 	}
