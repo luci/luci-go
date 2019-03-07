@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e3fde8f3_c73f4ca5",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-07T18:43:29Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "817681d7_c2d844cd",
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e521e44e_dc0fc264",
         "filename": "milo/git/log.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2ba0e02_42a2fe15",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-07T18:43:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e521e44e_dc0fc264",
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "acc94a48_00d0a5ce",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-07T18:43:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5fedc68_7cb8bc38",
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6b47537f_0f314e7e",
         "filename": "milo/git/log.go",
         "patchSetId": 2
@@ -67,6 +121,24 @@
       "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8e11ba1_59b86764",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-07T18:43:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b47537f_0f314e7e",
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -93,6 +165,30 @@
     },
     {
       "key": {
+        "uuid": "4fd414f1_48d25f2f",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-07T18:43:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a726a0e_14a3c8ba",
+      "range": {
+        "startLine": 241,
+        "startChar": 2,
+        "endLine": 241,
+        "endChar": 26
+      },
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "040010f9_d96ca20c",
         "filename": "milo/git/log.go",
         "patchSetId": 2
@@ -104,6 +200,30 @@
       "writtenOn": "2019-03-07T18:28:54Z",
       "side": 1,
       "message": "this isn\u0027t actually included in request, it\u0027s used by logic of this func only",
+      "range": {
+        "startLine": 255,
+        "startChar": 61,
+        "endLine": 255,
+        "endChar": 68
+      },
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "962a2e26_099a86c5",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-07T18:43:29Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "040010f9_d96ca20c",
       "range": {
         "startLine": 255,
         "startChar": 61,
