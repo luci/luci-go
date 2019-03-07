@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "d16dae6f_0ca582c0",
+        "filename": "gce/appengine/backend/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-07T23:18:19Z",
+      "side": 1,
+      "message": "Since you said you need to take another look at the CL anyways, I\u0027ve done it now.",
+      "parentUuid": "c7c923dc_e5bbbe4b",
+      "revId": "4d3c4f7840be8bfacf0568b1b7e9db4dff11f10b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "284b80c7_22373b5c",
         "filename": "gce/appengine/backend/metrics.go",
         "patchSetId": 3
@@ -30,6 +48,30 @@
       "writtenOn": "2019-03-07T07:12:03Z",
       "side": 1,
       "message": "perf-nit: in this case, there is no reason unlocking after map assignment would be faster. You can make critical section even shorter by creating \u0026inst{} first, then locking map and assigning just the pointer, reducing contention probability.\n\nBut, on GAE, this is premature optimization, since you aren\u0027t going to have 100s goroutines competing for this lock.",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 24
+      },
+      "revId": "4d3c4f7840be8bfacf0568b1b7e9db4dff11f10b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "99d3baf0_0355aa93",
+        "filename": "gce/appengine/backend/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-07T23:18:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "284b80c7_22373b5c",
       "range": {
         "startLine": 88,
         "startChar": 1,
