@@ -35,6 +35,8 @@ import (
 
 // manageMissingBot manages a missing Swarming bot.
 func manageMissingBot(c context.Context, vm *model.VM) error {
+	// Set that the bot has not yet connected to Swarming.
+	setConnected(c, false, vm)
 	switch {
 	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < time.Now().Unix():
 		logging.Debugf(c, "deadline %d exceeded", vm.Created+vm.Lifetime)
@@ -52,6 +54,10 @@ func manageMissingBot(c context.Context, vm *model.VM) error {
 
 // manageExistingBot manages an existing Swarming bot.
 func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm *model.VM) error {
+	// Set that the bot was at one point connected to Swarming. If this function determines
+	// the bot is no longer connected, it will eventually delete the VM and the metric will
+	// stop being set at all.
+	setConnected(c, true, vm)
 	// A bot connected to Swarming may be executing workload.
 	// To destroy the instance, terminate the bot first to avoid interruptions.
 	// Termination can be skipped if the bot is deleted, dead, or already terminated.
