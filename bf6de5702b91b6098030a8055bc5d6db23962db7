@@ -1,0 +1,118 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "817681d7_c2d844cd",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T18:28:54Z",
+      "side": 1,
+      "message": "i wonder why this hasn\u0027t exploded yet.",
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e521e44e_dc0fc264",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T18:28:54Z",
+      "side": 1,
+      "message": "add boolean treeDiff",
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5fedc68_7cb8bc38",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T18:28:54Z",
+      "side": 1,
+      "message": "we are gonna have HUGE number of refs for v8, and it\u0027s not really important for us, I think.",
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b47537f_0f314e7e",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T18:28:54Z",
+      "side": 1,
+      "message": "remove.",
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a726a0e_14a3c8ba",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T18:28:54Z",
+      "side": 1,
+      "message": "this param will affect latency.",
+      "range": {
+        "startLine": 241,
+        "startChar": 2,
+        "endLine": 241,
+        "endChar": 26
+      },
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "040010f9_d96ca20c",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T18:28:54Z",
+      "side": 1,
+      "message": "this isn\u0027t actually included in request, it\u0027s used by logic of this func only",
+      "range": {
+        "startLine": 255,
+        "startChar": 61,
+        "endLine": 255,
+        "endChar": 68
+      },
+      "revId": "bf6de5702b91b6098030a8055bc5d6db23962db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
