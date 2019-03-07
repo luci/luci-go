@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e015d31b_7245ca7b",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-07T21:49:03Z",
+      "side": 1,
+      "message": "I think if you just annotate the errors, you only need one log in the cron handler (using errors.Log from https://godoc.org/go.chromium.org/luci/common/errors#Log).",
+      "range": {
+        "startLine": 66,
+        "startChar": 14,
+        "endLine": 66,
+        "endChar": 17
+      },
+      "revId": "a8d2b8abd6b212c3f23191d74fe592561173b199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1f04dee_0e5ad683",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-07T21:49:03Z",
+      "side": 1,
+      "message": "report error in case the query can\u0027t complete; we\u0027ll be looking at partial stats otherwise",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 3
+      },
+      "revId": "a8d2b8abd6b212c3f23191d74fe592561173b199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4acb0535_e44c5371",
+        "filename": "logdog/appengine/coordinator/logStreamState.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-07T21:49:03Z",
+      "side": 1,
+      "message": "looks like this one isn\u0027t used; future CL?",
+      "revId": "a8d2b8abd6b212c3f23191d74fe592561173b199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
