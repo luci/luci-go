@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -33,6 +35,13 @@ import (
 
 func TestSnapshotDB(t *testing.T) {
 	c := context.Background()
+
+	securityConfig, _ := proto.Marshal(&protocol.SecurityConfig{
+		InternalServiceRegexp: []string{
+			`(.*-dot-)?i1\.example\.com`,
+			`(.*-dot-)?i2\.example\.com`,
+		},
+	})
 
 	db, err := NewSnapshotDB(&protocol.AuthDB{
 		OauthClientId: "primary-client-id",
@@ -81,6 +90,7 @@ func TestSnapshotDB(t *testing.T) {
 				Name: "empty",
 			},
 		},
+		SecurityConfig: securityConfig,
 	}, "http://auth-service", 1234)
 	if err != nil {
 		panic(err)
@@ -99,6 +109,21 @@ func TestSnapshotDB(t *testing.T) {
 		So(call("dude@example.com", "primary-client-id"), ShouldBeTrue)
 		So(call("dude@example.com", "additional-client-id-2"), ShouldBeTrue)
 		So(call("dude@example.com", "unknown-client-id"), ShouldBeFalse)
+	})
+
+	Convey("IsInternalService works", t, func() {
+		call := func(hostname string) bool {
+			res, err := db.IsInternalService(c, hostname)
+			So(err, ShouldBeNil)
+			return res
+		}
+
+		So(call("i1.example.com"), ShouldBeTrue)
+		So(call("i2.example.com"), ShouldBeTrue)
+		So(call("abc-dot-i1.example.com"), ShouldBeTrue)
+		So(call("external.example.com"), ShouldBeFalse)
+		So(call("something-i1.example.com"), ShouldBeFalse)
+		So(call("i1.example.com-something"), ShouldBeFalse)
 	})
 
 	Convey("IsMember works", t, func() {

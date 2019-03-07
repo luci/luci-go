@@ -18,8 +18,11 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"regexp"
 	"strings"
 	"time"
+
+	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
@@ -46,6 +49,8 @@ type SnapshotDB struct {
 
 	assignments map[identity.Identity]string // IP whitelist assignements
 	whitelists  map[string][]net.IPNet       // IP whitelists
+
+	internalServices *regexp.Regexp // assembled from SecurityConfig, may be nil
 
 	// Certs are loaded lazily in GetCertificates since they are used only when
 	// checking delegation tokens, which is relatively rare.
@@ -158,6 +163,31 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 		db.whitelists[w.Name] = nets
 	}
 
+	// SecurityConfig is stored in the serialized form.
+	securityConf := protocol.SecurityConfig{}
+	if len(authDB.SecurityConfig) != 0 {
+		if err := proto.Unmarshal(authDB.SecurityConfig, &securityConf); err != nil {
+			return nil, fmt.Errorf("auth: failed to deserialize SecurityConfig - %s", err)
+		}
+	}
+
+	// Assemble a single regexp from a bunch of 'internal_service_regexp'.
+	if len(securityConf.InternalServiceRegexp) > 0 {
+		sb := strings.Builder{}
+		for idx, re := range securityConf.InternalServiceRegexp {
+			if idx != 0 {
+				sb.WriteRune('|')
+			}
+			sb.WriteString("(^")
+			sb.WriteString(re)
+			sb.WriteString("$)")
+		}
+		var err error
+		if db.internalServices, err = regexp.Compile(sb.String()); err != nil {
+			return nil, fmt.Errorf("auth: failed to compile internal_service_regexp - %s", err)
+		}
+	}
+
 	return db, nil
 }
 
@@ -185,8 +215,10 @@ func (db *SnapshotDB) IsAllowedOAuthClientID(c context.Context, email, clientID 
 // What hosts are internal is controlled by 'internal_service_regexp' setting
 // in security.cfg in the Auth Service configs.
 func (db *SnapshotDB) IsInternalService(c context.Context, hostname string) (bool, error) {
-	// TODO(vadimsh): Implement.
-	return false, nil
+	if db.internalServices == nil {
+		return false, nil
+	}
+	return db.internalServices.MatchString(hostname), nil
 }
 
 // IsMember returns true if the given identity belongs to any of the groups.
