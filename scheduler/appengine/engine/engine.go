@@ -1181,7 +1181,7 @@ func (e *engineImpl) abortInvocation(c context.Context, jobID string, invID int6
 const (
 	// invocationRetryLimit is how many times to retry an invocation before giving
 	// up and resuming the job's schedule.
-	invocationRetryLimit = 5
+	invocationRetryLimit = 50
 )
 
 var (

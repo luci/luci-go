@@ -14,6 +14,10 @@ queue:
 
 - name: launches
   rate: 500/s
+  bucket_size: 100
+  retry_parameters:
+    min_backoff_seconds: 5
+    max_backoff_seconds: 600
 
 - name: completions
   rate: 500/s
