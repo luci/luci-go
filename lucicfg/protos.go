@@ -33,6 +33,7 @@ import (
 	_ "go.chromium.org/luci/cq/api/config/v2"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
+	_ "go.chromium.org/luci/lucicfg/external/cros/proto/config"
 	_ "go.chromium.org/luci/lucicfg/external/crostesting/proto/config"
 	_ "go.chromium.org/luci/milo/api/config"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
@@ -66,6 +67,16 @@ var publicProtos = map[string]struct {
 	"luci/config/project_config.proto": {
 		"config",
 		"go.chromium.org/luci/common/proto/config/project_config.proto",
+	},
+
+	// CrOS builder config.
+	//
+	// load(
+	//     "@proto//external/cros/builder_config.proto",
+	//     builder_config_pb="cros")
+	"external/cros/builder_config.proto": {
+		"cros",
+		"go.chromium.org/luci/lucicfg/external/cros/proto/config/builder_config.proto",
 	},
 
 	// CrOS testing project config.
