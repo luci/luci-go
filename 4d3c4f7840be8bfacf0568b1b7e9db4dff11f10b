@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c7c923dc_e5bbbe4b",
+        "filename": "gce/appengine/backend/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T07:12:03Z",
+      "side": 1,
+      "message": "this file has a bunch of generically named global vars, which can easily be confused with local vars in functions of the same package.\n\nWDYT about encapsulating these metric-related stuff in new backend/internal/metrics package with public interface of\nSetConnected\nUpdateQuotaMetrics(fields, usage, limit) \n\nCan be done as a follow up.",
+      "revId": "4d3c4f7840be8bfacf0568b1b7e9db4dff11f10b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "284b80c7_22373b5c",
+        "filename": "gce/appengine/backend/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T07:12:03Z",
+      "side": 1,
+      "message": "perf-nit: in this case, there is no reason unlocking after map assignment would be faster. You can make critical section even shorter by creating \u0026inst{} first, then locking map and assigning just the pointer, reducing contention probability.\n\nBut, on GAE, this is premature optimization, since you aren\u0027t going to have 100s goroutines competing for this lock.",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 24
+      },
+      "revId": "4d3c4f7840be8bfacf0568b1b7e9db4dff11f10b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
