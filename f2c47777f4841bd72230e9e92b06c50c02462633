@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a19dfcf4_9586c64d",
+        "filename": "logdog/server/retryServicesClient/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-07T20:35:24Z",
+      "side": 1,
+      "message": "Code here doesn\u0027t matter, it will be removed later (the grpc client does native retries, so there\u0027s no reason for the retryServicesClient to exist).  It\u0027s just added to make compile work.",
+      "revId": "f2c47777f4841bd72230e9e92b06c50c02462633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
