@@ -96,6 +96,10 @@ func (devServerDB) IsAllowedOAuthClientID(c context.Context, email, clientID str
 	return true, nil
 }
 
+func (devServerDB) IsInternalService(c context.Context, hostname string) (bool, error) {
+	return false, nil
+}
+
 func (devServerDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
 	if !info.IsDevAppServer(c) {
 		return false, errNotConfigured

@@ -31,6 +31,13 @@ type DB interface {
 	// to authenticate access for given email.
 	IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error)
 
+	// IsInternalService returns true if the given hostname belongs to a service
+	// that is a part of the current LUCI deployment.
+	//
+	// What hosts are internal is controlled by 'internal_service_regexp' setting
+	// in security.cfg in the Auth Service configs.
+	IsInternalService(c context.Context, hostname string) (bool, error)
+
 	// IsMember returns true if the given identity belongs to any of the groups.
 	//
 	// Unknown groups are considered empty. May return errors if underlying

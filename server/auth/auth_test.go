@@ -263,12 +263,17 @@ func injectTestDB(c context.Context, d authdb.DB) context.Context {
 // fakeDB implements DB.
 type fakeDB struct {
 	allowedClientID string
+	internalService string
 	authServiceURL  string
 	tokenServiceURL string
 }
 
 func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
 	return clientID == db.allowedClientID, nil
+}
+
+func (db *fakeDB) IsInternalService(c context.Context, hostname string) (bool, error) {
+	return hostname == db.internalService, nil
 }
 
 func (db *fakeDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
