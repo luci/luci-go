@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b4642d66_df459ab8",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-07T20:33:37Z",
+      "side": 1,
+      "message": "This is abuse of policy.Policy API. \u0027Prepare\u0027 takes a local copy of configs from the datastore and coverts them to some runtime object that can be used by RPCs. It is called lazily from RPC handlers to prepare policies stored in the datastore to be used for querying. The fact that it is called during ImportConfigs is just a \"coincidence\" and relying on it is brittle.\n\nIn general, considering the config imported from projects.cfg is placed into projectidentity.ProjectIdentity entities, using policy.Policy makes little sense. Most of its machinery is left unused and may become harmful (for example, policy.Policy stores a copy of project.cfg behind the curtains, but we never ever use it; if project.cfg grows to be very big it may cause unnecessary problems). \n\nIt would be better to do either of:\n1. Switch to using policy.Policy correctly (see below).\n2. Or get rid of policy.Policy usage here and just use cfgclient.Get(...) directly. I prefer this approach.\n\nTo switch to using policy.Policy:\n\n1. Do not touch any entities in Prepare callback.\n2. Add map[projectId]serviceAccountEmail to Rules struct.\n3. Build this map Prepare callback.\n4. Add a method to Rules \"GetAccountEmailForProject\" that does a lookup in this map.\n5. Add following to RulesCache:\n\n// Rules returns in-memory copy of project-scoped accounts mapping.\nfunc (rc *RulesCache) Rules(c context.Context) (*Rules, error) {\n\tq, err :\u003d rc.policy.Queryable(c)\n\tif err !\u003d nil {\n\t\treturn nil, err\n\t}\n\treturn q.(*Rules), nil\n}\n\n6. In RPCs use rules.Rules(c).GetAccountEmailForProject().",
+      "range": {
+        "startLine": 68,
+        "startChar": 3,
+        "endLine": 68,
+        "endChar": 29
+      },
+      "revId": "293a5918abd8a977aa64c228da2a888368e9be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33e8f787_bc43466f",
+        "filename": "tokenserver/appengine/impl/utils/policy/config_fetcher.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-07T20:33:37Z",
+      "side": 1,
+      "message": "this should be a map \"configSet \u003d\u003e revision\" now, otherwise the checks in FetchTextProtoFromService will compare revisions from different config sets which makes no sense",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 11
+      },
+      "revId": "293a5918abd8a977aa64c228da2a888368e9be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "907271be_de965efe",
+        "filename": "tokenserver/appengine/impl/utils/policy/policy.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-07T20:33:37Z",
+      "side": 1,
+      "message": "config set",
+      "range": {
+        "startLine": 113,
+        "startChar": 13,
+        "endLine": 113,
+        "endChar": 25
+      },
+      "revId": "293a5918abd8a977aa64c228da2a888368e9be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
