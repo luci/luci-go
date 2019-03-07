@@ -18,13 +18,16 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/tsmon"
 
+	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
@@ -195,7 +198,8 @@ func TestManageBot(t *testing.T) {
 		rt := &roundtripper.JSONRoundTripper{}
 		swr, err := swarming.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c := withSwarming(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), swr)
+		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
+		c = withSwarming(withConfig(withDispatcher(c, dsp), srv), swr)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -239,9 +243,16 @@ func TestManageBot(t *testing.T) {
 						return http.StatusNotFound, nil
 					}
 					datastore.Put(c, &model.VM{
-						ID:       "id",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
 						Created:  1,
+						Hostname: "name",
 						Lifetime: 1,
+						Prefix:   "prefix",
+						Swarming: "swarming",
 						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
@@ -250,6 +261,8 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, false)
 				})
 
 				Convey("drained", func() {
@@ -257,9 +270,15 @@ func TestManageBot(t *testing.T) {
 						return http.StatusNotFound, nil
 					}
 					datastore.Put(c, &model.VM{
-						ID:       "id",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
 						Drained:  true,
 						Hostname: "name",
+						Prefix:   "prefix",
+						Swarming: "swarming",
 						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
@@ -268,6 +287,8 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, false)
 				})
 
 				Convey("timeout", func() {
@@ -275,10 +296,17 @@ func TestManageBot(t *testing.T) {
 						return http.StatusNotFound, nil
 					}
 					datastore.Put(c, &model.VM{
-						ID:      "id",
-						Created: 1,
-						Timeout: 1,
-						URL:     "url",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
+						Created:  1,
+						Hostname: "name",
+						Prefix:   "prefix",
+						Swarming: "swarming",
+						Timeout:  1,
+						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -286,6 +314,8 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, false)
 				})
 
 				Convey("wait", func() {
@@ -293,13 +323,22 @@ func TestManageBot(t *testing.T) {
 						return http.StatusNotFound, nil
 					}
 					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
+						Hostname: "name",
+						Prefix:   "prefix",
+						Swarming: "swarming",
+						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, false)
 				})
 			})
 
@@ -312,8 +351,15 @@ func TestManageBot(t *testing.T) {
 						}
 					}
 					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
+						Hostname: "name",
+						Prefix:   "prefix",
+						Swarming: "swarming",
+						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -321,6 +367,8 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, true)
 				})
 
 				Convey("dead", func() {
@@ -331,8 +379,15 @@ func TestManageBot(t *testing.T) {
 						}
 					}
 					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
+						Hostname: "name",
+						Prefix:   "prefix",
+						Swarming: "swarming",
+						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -340,6 +395,8 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, true)
 				})
 
 				Convey("terminated", func() {
@@ -356,8 +413,15 @@ func TestManageBot(t *testing.T) {
 						}
 					}
 					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
+						Hostname: "name",
+						Prefix:   "prefix",
+						Swarming: "swarming",
+						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -365,6 +429,8 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, true)
 				})
 
 				Convey("deadline", func() {
@@ -374,9 +440,16 @@ func TestManageBot(t *testing.T) {
 						}
 					}
 					datastore.Put(c, &model.VM{
-						ID:       "id",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
 						Created:  1,
 						Lifetime: 1,
+						Hostname: "name",
+						Prefix:   "prefix",
+						Swarming: "swarming",
 						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
@@ -385,6 +458,8 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.TerminateBot{})
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, true)
 				})
 
 				Convey("drained", func() {
@@ -394,9 +469,15 @@ func TestManageBot(t *testing.T) {
 						}
 					}
 					datastore.Put(c, &model.VM{
-						ID:       "id",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
 						Drained:  true,
 						Hostname: "name",
+						Prefix:   "prefix",
+						Swarming: "swarming",
 						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
@@ -405,6 +486,8 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.TerminateBot{})
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, true)
 				})
 
 				Convey("alive", func() {
@@ -414,14 +497,23 @@ func TestManageBot(t *testing.T) {
 						}
 					}
 					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
+						ID: "id",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
+						Hostname: "name",
+						Prefix:   "prefix",
+						Swarming: "swarming",
+						URL:      "url",
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					fields := []interface{}{autogen("name"), "prefix", "project", "swarming", "zone"}
+					So(tsmon.Store(c).Get(c, connected, time.Time{}, fields).(bool), ShouldEqual, true)
 				})
 			})
 		})

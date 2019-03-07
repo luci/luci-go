@@ -33,8 +33,14 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
+// reportConnected reports the connected metric for the given VM.
+func reportConnected(c context.Context, is bool, vm *model.VM) {
+	connected.Set(c, is, autogen(vm.Hostname), vm.Prefix, vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
+}
+
 // manageMissingBot manages a missing Swarming bot.
 func manageMissingBot(c context.Context, vm *model.VM) error {
+	reportConnected(c, false, vm)
 	switch {
 	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < time.Now().Unix():
 		logging.Debugf(c, "deadline %d exceeded", vm.Created+vm.Lifetime)
@@ -52,6 +58,7 @@ func manageMissingBot(c context.Context, vm *model.VM) error {
 
 // manageExistingBot manages an existing Swarming bot.
 func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm *model.VM) error {
+	reportConnected(c, true, vm)
 	// A bot connected to Swarming may be executing workload.
 	// To destroy the instance, terminate the bot first to avoid interruptions.
 	// Termination can be skipped if the bot is deleted, dead, or already terminated.
