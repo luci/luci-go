@@ -383,6 +383,97 @@ func TestTriggerBuild(t *testing.T) {
 	})
 }
 
+func TestPathFilterHelpers(t *testing.T) {
+	t.Parallel()
+
+	Convey("PathFilter helpers work", t, func() {
+		Convey("disjunctiveOfRegexps works", func() {
+			So(disjunctiveOfRegexps([]string{`.+\.cpp`}), ShouldEqual, `^((.+\.cpp))$`)
+			So(disjunctiveOfRegexps([]string{`.+\.cpp`, `?a`}), ShouldEqual, `^((.+\.cpp)|(?a))$`)
+		})
+		Convey("pathFilter works", func() {
+			Convey("simple", func() {
+				empty, err := newPathFilter(&messages.GitilesTask{})
+				So(err, ShouldBeNil)
+				So(empty.active(), ShouldBeFalse)
+				_, err = newPathFilter(&messages.GitilesTask{PathRegexps: []string{`\K`}})
+				So(err, ShouldNotBeNil)
+				_, err = newPathFilter(&messages.GitilesTask{PathRegexps: []string{`a?`}, PathRegexpsExclude: []string{`\K`}})
+				So(err, ShouldNotBeNil)
+
+			})
+			Convey("just negative ignored", func() {
+				v, err := newPathFilter(&messages.GitilesTask{PathRegexpsExclude: []string{`.+\.cpp`}})
+				So(err, ShouldBeNil)
+				So(v.active(), ShouldBeFalse)
+			})
+
+			Convey("just positive", func() {
+				v, err := newPathFilter(&messages.GitilesTask{PathRegexps: []string{`.+`}})
+				So(err, ShouldBeNil)
+				So(v.active(), ShouldBeTrue)
+				Convey("empty commit is not interesting", func() {
+					So(v.isInteresting([]*git.Commit_TreeDiff{}), ShouldBeFalse)
+				})
+				Convey("new or old paths are taken into account", func() {
+					So(v.isInteresting([]*git.Commit_TreeDiff{{OldPath: "old"}}), ShouldBeTrue)
+					So(v.isInteresting([]*git.Commit_TreeDiff{{NewPath: "new"}}), ShouldBeTrue)
+				})
+			})
+
+			genDiff := func(files ...string) []*git.Commit_TreeDiff {
+				r := make([]*git.Commit_TreeDiff, len(files))
+				for i, f := range files {
+					if i&1 == 0 {
+						r[i] = &git.Commit_TreeDiff{OldPath: f}
+					} else {
+						r[i] = &git.Commit_TreeDiff{NewPath: f}
+					}
+				}
+				return r
+			}
+
+			Convey("many positives", func() {
+				v, err := newPathFilter(&messages.GitilesTask{PathRegexps: []string{`.+\.cpp`, "exact"}})
+				So(err, ShouldBeNil)
+				So(v.isInteresting(genDiff("not.matched")), ShouldBeFalse)
+
+				So(v.isInteresting(genDiff("matched.cpp")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("exact")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("at least", "one", "matched.cpp")), ShouldBeTrue)
+			})
+
+			Convey("many negatives", func() {
+				v, err := newPathFilter(&messages.GitilesTask{
+					PathRegexps:        []string{`.+`},
+					PathRegexpsExclude: []string{`.+\.cpp`, `excluded`},
+				})
+				So(err, ShouldBeNil)
+				So(v.isInteresting(genDiff("not excluded")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("excluded/is/a/dir/not/a/file")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("excluded", "also.excluded.cpp", "but this file isn't")), ShouldBeTrue)
+
+				So(v.isInteresting(genDiff("excluded.cpp")), ShouldBeFalse)
+				So(v.isInteresting(genDiff("excluded")), ShouldBeFalse)
+				So(v.isInteresting(genDiff()), ShouldBeFalse)
+			})
+
+			Convey("smoke test for complexity", func() {
+				v, err := newPathFilter(&messages.GitilesTask{
+					PathRegexps:        []string{`.+/\d\.py`, `included/.+`},
+					PathRegexpsExclude: []string{`.+\.cpp`, `excluded/.*`},
+				})
+				So(err, ShouldBeNil)
+				So(v.isInteresting(genDiff("excluded/1", "also.cpp", "included/one-is-enough")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("included/but-also-excluded.cpp", "one-still-enough/1.py")), ShouldBeTrue)
+
+				So(v.isInteresting(genDiff("included/but-also-excluded.cpp", "excluded/2.py")), ShouldBeFalse)
+				So(v.isInteresting(genDiff("matches nothing")), ShouldBeFalse)
+			})
+		})
+	})
+}
+
 func TestValidateConfig(t *testing.T) {
 	t.Parallel()
 	c := context.Background()
