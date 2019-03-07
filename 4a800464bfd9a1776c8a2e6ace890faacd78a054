@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6c859fbd_3237ee2a",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T02:38:16Z",
+      "side": 1,
+      "message": "The way I interpret \"Existing\" in the name of a func is that bot used to be connected at some point, but it is not necessarily connected now, as switch block above illustrates.\n\n\nWDYT about moving this switch into manageBot func and renaming manageExistingBot and manageMissingBot into manageConnectedBot and manageDisconnectedBot instead?",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 2
+      },
+      "revId": "4a800464bfd9a1776c8a2e6ace890faacd78a054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf2c50f0_a8c5e745",
+        "filename": "gce/appengine/backend/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-07T02:38:16Z",
+      "side": 1,
+      "message": "cool tricks. Didn\u0027t know about them.",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 1
+      },
+      "revId": "4a800464bfd9a1776c8a2e6ace890faacd78a054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
