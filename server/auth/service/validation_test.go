@@ -28,10 +28,10 @@ func TestValidateAuthDB(t *testing.T) {
 		So(validateAuthDB(&protocol.AuthDB{}), ShouldBeNil)
 		So(validateAuthDB(&protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
-				{Name: strPtr("group")},
+				{Name: "group"},
 			},
 			IpWhitelists: []*protocol.AuthIPWhitelist{
-				{Name: strPtr("IP whitelist")},
+				{Name: "IP whitelist"},
 			},
 		}), ShouldBeNil)
 	})
@@ -40,7 +40,7 @@ func TestValidateAuthDB(t *testing.T) {
 		So(validateAuthDB(&protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
 				{
-					Name:    strPtr("group"),
+					Name:    "group",
 					Members: []string{"bad identity"},
 				},
 			},
@@ -51,7 +51,7 @@ func TestValidateAuthDB(t *testing.T) {
 		So(validateAuthDB(&protocol.AuthDB{
 			IpWhitelists: []*protocol.AuthIPWhitelist{
 				{
-					Name:    strPtr("IP whitelist"),
+					Name:    "IP whitelist",
 					Subnets: []string{"not a subnet"},
 				},
 			},
@@ -63,13 +63,13 @@ func TestValidateAuthGroup(t *testing.T) {
 	Convey("validateAuthGroup works", t, func() {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
-				Name:    strPtr("group1"),
+				Name:    "group1",
 				Members: []string{"user:abc@example.com"},
 				Globs:   []string{"service:*"},
 				Nested:  []string{"group2"},
 			},
 			"group2": {
-				Name: strPtr("group2"),
+				Name: "group2",
 			},
 		}
 		So(validateAuthGroup("group1", groups), ShouldBeNil)
@@ -78,7 +78,7 @@ func TestValidateAuthGroup(t *testing.T) {
 	Convey("validateAuthGroup bad identity", t, func() {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
-				Name:    strPtr("group1"),
+				Name:    "group1",
 				Members: []string{"blah"},
 			},
 		}
@@ -88,7 +88,7 @@ func TestValidateAuthGroup(t *testing.T) {
 	Convey("validateAuthGroup bad glob", t, func() {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
-				Name:  strPtr("group1"),
+				Name:  "group1",
 				Globs: []string{"blah"},
 			},
 		}
@@ -98,7 +98,7 @@ func TestValidateAuthGroup(t *testing.T) {
 	Convey("validateAuthGroup missing nested group", t, func() {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
-				Name:   strPtr("group1"),
+				Name:   "group1",
 				Nested: []string{"missing"},
 			},
 		}
@@ -108,7 +108,7 @@ func TestValidateAuthGroup(t *testing.T) {
 	Convey("validateAuthGroup dependency cycle", t, func() {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
-				Name:   strPtr("group1"),
+				Name:   "group1",
 				Nested: []string{"group1"},
 			},
 		}
@@ -123,7 +123,7 @@ func TestFindGroupCycle(t *testing.T) {
 		asProto := make(map[string]*protocol.AuthGroup)
 		for k, v := range groups {
 			asProto[k] = &protocol.AuthGroup{
-				Name:   strPtr(k),
+				Name:   k,
 				Nested: v,
 			}
 		}
@@ -181,10 +181,4 @@ func TestFindGroupCycle(t *testing.T) {
 			"B":     []string{"start"},
 		}), ShouldResemble, []string{"start", "A1", "B"})
 	})
-}
-
-///
-
-func strPtr(s string) *string {
-	return &s
 }

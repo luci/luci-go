@@ -85,50 +85,50 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 		AuthServiceURL: authServiceURL,
 		Rev:            rev,
 
-		tokenServiceURL: authDB.GetTokenServerUrl(),
+		tokenServiceURL: authDB.TokenServerUrl,
 	}
 
 	// Set of all allowed clientIDs.
-	db.clientIDs = make(map[string]struct{}, 2+len(authDB.GetOauthAdditionalClientIds()))
+	db.clientIDs = make(map[string]struct{}, 2+len(authDB.OauthAdditionalClientIds))
 	db.clientIDs[googleAPIExplorerClientID] = struct{}{}
-	if authDB.GetOauthClientId() != "" {
-		db.clientIDs[authDB.GetOauthClientId()] = struct{}{}
+	if authDB.OauthClientId != "" {
+		db.clientIDs[authDB.OauthClientId] = struct{}{}
 	}
-	for _, cid := range authDB.GetOauthAdditionalClientIds() {
+	for _, cid := range authDB.OauthAdditionalClientIds {
 		if cid != "" {
 			db.clientIDs[cid] = struct{}{}
 		}
 	}
 
 	// First pass: build all `group` nodes.
-	db.groups = make(map[string]*group, len(authDB.GetGroups()))
-	for _, g := range authDB.GetGroups() {
-		if db.groups[g.GetName()] != nil {
-			return nil, fmt.Errorf("auth: bad AuthDB, group %q is listed twice", g.GetName())
+	db.groups = make(map[string]*group, len(authDB.Groups))
+	for _, g := range authDB.Groups {
+		if db.groups[g.Name] != nil {
+			return nil, fmt.Errorf("auth: bad AuthDB, group %q is listed twice", g.Name)
 		}
 		gr := &group{}
-		if len(g.GetMembers()) != 0 {
-			gr.members = make(map[identity.Identity]struct{}, len(g.GetMembers()))
-			for _, ident := range g.GetMembers() {
+		if len(g.Members) != 0 {
+			gr.members = make(map[identity.Identity]struct{}, len(g.Members))
+			for _, ident := range g.Members {
 				gr.members[identity.Identity(ident)] = struct{}{}
 			}
 		}
-		if len(g.GetGlobs()) != 0 {
-			gr.globs = make([]identity.Glob, len(g.GetGlobs()))
-			for i, glob := range g.GetGlobs() {
+		if len(g.Globs) != 0 {
+			gr.globs = make([]identity.Glob, len(g.Globs))
+			for i, glob := range g.Globs {
 				gr.globs[i] = identity.Glob(glob)
 			}
 		}
-		if len(g.GetNested()) != 0 {
-			gr.nested = make([]*group, 0, len(g.GetNested()))
+		if len(g.Nested) != 0 {
+			gr.nested = make([]*group, 0, len(g.Nested))
 		}
-		db.groups[g.GetName()] = gr
+		db.groups[g.Name] = gr
 	}
 
 	// Second pass: fill in `nested` with pointers, now that we have them.
-	for _, g := range authDB.GetGroups() {
-		gr := db.groups[g.GetName()]
-		for _, nestedName := range g.GetNested() {
+	for _, g := range authDB.Groups {
+		gr := db.groups[g.Name]
+		for _, nestedName := range g.Nested {
 			if nestedGroup := db.groups[nestedName]; nestedGroup != nil {
 				gr.nested = append(gr.nested, nestedGroup)
 			}
@@ -136,26 +136,26 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 	}
 
 	// Build map of IP whitelist assignments.
-	db.assignments = make(map[identity.Identity]string, len(authDB.GetIpWhitelistAssignments()))
-	for _, a := range authDB.GetIpWhitelistAssignments() {
-		db.assignments[identity.Identity(a.GetIdentity())] = a.GetIpWhitelist()
+	db.assignments = make(map[identity.Identity]string, len(authDB.IpWhitelistAssignments))
+	for _, a := range authDB.IpWhitelistAssignments {
+		db.assignments[identity.Identity(a.Identity)] = a.IpWhitelist
 	}
 
 	// Parse all subnets into IPNet objects.
-	db.whitelists = make(map[string][]net.IPNet, len(authDB.GetIpWhitelists()))
-	for _, w := range authDB.GetIpWhitelists() {
-		if len(w.GetSubnets()) == 0 {
+	db.whitelists = make(map[string][]net.IPNet, len(authDB.IpWhitelists))
+	for _, w := range authDB.IpWhitelists {
+		if len(w.Subnets) == 0 {
 			continue
 		}
-		nets := make([]net.IPNet, len(w.GetSubnets()))
-		for i, subnet := range w.GetSubnets() {
+		nets := make([]net.IPNet, len(w.Subnets))
+		for i, subnet := range w.Subnets {
 			_, ipnet, err := net.ParseCIDR(subnet)
 			if err != nil {
-				return nil, fmt.Errorf("auth: bad subnet %q in IP list %q - %s", subnet, w.GetName(), err)
+				return nil, fmt.Errorf("auth: bad subnet %q in IP list %q - %s", subnet, w.Name, err)
 			}
 			nets[i] = *ipnet
 		}
-		db.whitelists[w.GetName()] = nets
+		db.whitelists[w.Name] = nets
 	}
 
 	return db, nil

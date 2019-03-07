@@ -35,50 +35,50 @@ func TestSnapshotDB(t *testing.T) {
 	c := context.Background()
 
 	db, err := NewSnapshotDB(&protocol.AuthDB{
-		OauthClientId: strPtr("primary-client-id"),
+		OauthClientId: "primary-client-id",
 		OauthAdditionalClientIds: []string{
 			"additional-client-id-1",
 			"additional-client-id-2",
 		},
-		TokenServerUrl: strPtr("http://token-server"),
+		TokenServerUrl: "http://token-server",
 		Groups: []*protocol.AuthGroup{
 			{
-				Name:    strPtr("direct"),
+				Name:    "direct",
 				Members: []string{"user:abc@example.com"},
 			},
 			{
-				Name:  strPtr("via glob"),
+				Name:  "via glob",
 				Globs: []string{"user:*@example.com"},
 			},
 			{
-				Name:   strPtr("via nested"),
+				Name:   "via nested",
 				Nested: []string{"direct"},
 			},
 			{
-				Name:   strPtr("cycle"),
+				Name:   "cycle",
 				Nested: []string{"cycle"},
 			},
 			{
-				Name:   strPtr("unknown nested"),
+				Name:   "unknown nested",
 				Nested: []string{"unknown"},
 			},
 		},
 		IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
 			{
-				Identity:    strPtr("user:abc@example.com"),
-				IpWhitelist: strPtr("whitelist"),
+				Identity:    "user:abc@example.com",
+				IpWhitelist: "whitelist",
 			},
 		},
 		IpWhitelists: []*protocol.AuthIPWhitelist{
 			{
-				Name: strPtr("whitelist"),
+				Name: "whitelist",
 				Subnets: []string{
 					"1.2.3.4/32",
 					"10.0.0.0/8",
 				},
 			},
 			{
-				Name: strPtr("empty"),
+				Name: "empty",
 			},
 		},
 	}, "http://auth-service", 1234)
@@ -221,43 +221,41 @@ func TestSnapshotDB(t *testing.T) {
 	})
 }
 
-func strPtr(s string) *string { return &s }
-
 func BenchmarkIsMember(b *testing.B) {
 	c := context.Background()
 	db, _ := NewSnapshotDB(&protocol.AuthDB{
 		Groups: []*protocol.AuthGroup{
 			{
-				Name:   strPtr("outer"),
+				Name:   "outer",
 				Nested: []string{"A", "B"},
 			},
 			{
-				Name:   strPtr("A"),
+				Name:   "A",
 				Nested: []string{"A_A", "A_B"},
 			},
 			{
-				Name:   strPtr("B"),
+				Name:   "B",
 				Nested: []string{"B_A", "B_B"},
 			},
 			{
-				Name:   strPtr("A_A"),
+				Name:   "A_A",
 				Nested: []string{"A_A_A"},
 			},
 			{
-				Name:   strPtr("A_A_A"),
+				Name:   "A_A_A",
 				Nested: []string{"A_A_A_A"},
 			},
 			{
-				Name: strPtr("A_A_A_A"),
+				Name: "A_A_A_A",
 			},
 			{
-				Name: strPtr("A_B"),
+				Name: "A_B",
 			},
 			{
-				Name: strPtr("B_A"),
+				Name: "B_A",
 			},
 			{
-				Name: strPtr("B_B"),
+				Name: "B_B",
 			},
 		},
 	}, "http://auth-service", 1234)
