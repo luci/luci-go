@@ -6,6 +6,7 @@ description "swarming bot startup"
 
 start on (filesystem and net-device-up IFACE!=lo)
 stop on shutdown
+limit nofile 50000 50000
 
 script
   /usr/bin/sudo -H -u {{.User}} SWARMING_EXTERNAL_BOT_SETUP=1 /usr/bin/python {{.BotCode}} start_bot
