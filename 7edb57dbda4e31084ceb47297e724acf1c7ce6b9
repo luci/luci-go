@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e799ce0_545a6eab",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-07T23:26:27Z",
+      "side": 1,
+      "message": "nit: Making this safe from injections would be nice but as I understand the regexes are going to be trusted.",
+      "revId": "7edb57dbda4e31084ceb47297e724acf1c7ce6b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
