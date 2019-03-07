@@ -16,6 +16,24 @@
       "revId": "7edb57dbda4e31084ceb47297e724acf1c7ce6b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3416ee5e_737c1058",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-07T23:57:58Z",
+      "side": 1,
+      "message": "Yeah, we trust AuthDB proto pushed by the auth service. And auth service checks regexps when reading them from configs. We can harden the check, but I\u0027m not sure how exactly (nor think it\u0027s important, considering configs are authored by us and require LGTM from us).",
+      "parentUuid": "1e799ce0_545a6eab",
+      "revId": "7edb57dbda4e31084ceb47297e724acf1c7ce6b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
