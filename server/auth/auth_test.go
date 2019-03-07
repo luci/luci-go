@@ -105,13 +105,13 @@ func TestAuthenticate(t *testing.T) {
 		db, err := authdb.NewSnapshotDB(&protocol.AuthDB{
 			IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
 				{
-					Identity:    strPtr("user:abc@example.com"),
-					IpWhitelist: strPtr("whitelist"),
+					Identity:    "user:abc@example.com",
+					IpWhitelist: "whitelist",
 				},
 			},
 			IpWhitelists: []*protocol.AuthIPWhitelist{
 				{
-					Name: strPtr("whitelist"),
+					Name: "whitelist",
 					Subnets: []string{
 						"1.2.3.4/32",
 					},
@@ -257,8 +257,6 @@ func injectTestDB(c context.Context, d authdb.DB) context.Context {
 		return cfg
 	})
 }
-
-func strPtr(s string) *string { return &s }
 
 ///
 

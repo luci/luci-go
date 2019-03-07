@@ -225,12 +225,8 @@ func TestGetSnapshot(t *testing.T) {
 		snap, err := srv.GetSnapshot(ctx, 123)
 		So(err, ShouldBeNil)
 
-		empty := ""
 		So(snap, ShouldResemble, &Snapshot{
-			AuthDB: &protocol.AuthDB{
-				OauthClientId:     &empty,
-				OauthClientSecret: &empty,
-			},
+			AuthDB:         &protocol.AuthDB{},
 			AuthServiceURL: ts.URL,
 			Rev:            123,
 			Created:        time.Unix(0, 1446599918304238000),
@@ -241,8 +237,8 @@ func TestGetSnapshot(t *testing.T) {
 func TestDeflateInflate(t *testing.T) {
 	Convey("Deflate then Inflate works", t, func() {
 		initial := &protocol.AuthDB{
-			OauthClientId:     strPtr("abc"),
-			OauthClientSecret: strPtr("def"),
+			OauthClientId:     "abc",
+			OauthClientSecret: "def",
 		}
 		blob, err := DeflateAuthDB(initial)
 		So(err, ShouldBeNil)
@@ -255,20 +251,13 @@ func TestDeflateInflate(t *testing.T) {
 ///
 
 func generateSnapshot(rev int64) (body string, digest string) {
-	primaryID := "primaryId"
-	ts := int64(1446599918304238)
-	empty := ""
-
 	blob, err := proto.Marshal(&protocol.ReplicationPushRequest{
 		Revision: &protocol.AuthDBRevision{
-			AuthDbRev:  &rev,
-			PrimaryId:  &primaryID,
-			ModifiedTs: &ts,
+			AuthDbRev:  rev,
+			PrimaryId:  "primaryId",
+			ModifiedTs: 1446599918304238,
 		},
-		AuthDb: &protocol.AuthDB{
-			OauthClientId:     &empty,
-			OauthClientSecret: &empty,
-		},
+		AuthDb: &protocol.AuthDB{},
 	})
 	if err != nil {
 		panic(err)
@@ -289,13 +278,11 @@ func generateSnapshot(rev int64) (body string, digest string) {
 }
 
 func fakePubSubMessage(c context.Context, ackID string, rev int64, signer signing.Signer) string {
-	primaryID := "primaryId"
-	ts := int64(1000)
 	msg := protocol.ChangeNotification{
 		Revision: &protocol.AuthDBRevision{
-			AuthDbRev:  &rev,
-			PrimaryId:  &primaryID,
-			ModifiedTs: &ts,
+			AuthDbRev:  rev,
+			PrimaryId:  "primaryId",
+			ModifiedTs: 1000,
 		},
 	}
 	blob, _ := proto.Marshal(&msg)

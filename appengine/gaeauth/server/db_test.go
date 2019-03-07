@@ -60,14 +60,10 @@ func TestGetAuthDB(t *testing.T) {
 
 ///
 
-func strPtr(s string) *string {
-	return &s
-}
-
 func bumpAuthDB(c context.Context, rev int64) {
 	blob, err := service.DeflateAuthDB(&protocol.AuthDB{
-		OauthClientId:     strPtr(fmt.Sprintf("client-id-for-rev-%d", rev)),
-		OauthClientSecret: strPtr("secret"),
+		OauthClientId:     fmt.Sprintf("client-id-for-rev-%d", rev),
+		OauthClientSecret: "secret",
 	})
 	if err != nil {
 		panic(err)

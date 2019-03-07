@@ -51,8 +51,8 @@ func TestConfigureAuthService(t *testing.T) {
 		snap, err := GetAuthDBSnapshot(c, info.GetSnapshotID())
 		So(err, ShouldBeNil)
 		So(snap, ShouldResemble, &protocol.AuthDB{
-			OauthClientId:     strPtr("client-id-for-rev-123"),
-			OauthClientSecret: strPtr("secret"),
+			OauthClientId:     "client-id-for-rev-123",
+			OauthClientSecret: "secret",
 		})
 
 		// Same config call again triggers resubsciption.
@@ -138,10 +138,6 @@ func TestSyncAuthDB(t *testing.T) {
 
 ///
 
-func strPtr(s string) *string {
-	return &s
-}
-
 type fakeAuthService struct {
 	LatestRev    int64
 	Calls        []string
@@ -178,8 +174,8 @@ func (f *fakeAuthService) GetSnapshot(c context.Context, rev int64) (*service.Sn
 	}
 	return &service.Snapshot{
 		AuthDB: &protocol.AuthDB{
-			OauthClientId:     strPtr(fmt.Sprintf("client-id-for-rev-%d", f.LatestRev)),
-			OauthClientSecret: strPtr("secret"),
+			OauthClientId:     fmt.Sprintf("client-id-for-rev-%d", f.LatestRev),
+			OauthClientSecret: "secret",
 		},
 		Rev:     f.LatestRev,
 		Created: clock.Now(c),

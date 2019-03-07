@@ -16,8 +16,9 @@
 
 package protocol
 
-import (
-	"github.com/golang/protobuf/proto"
-)
-
-var _ = proto.Marshal
+// Files copied from https://chromium.googlesource.com/infra/luci/luci-py:
+//   appengine/components/components/auth/proto/replication.proto
+//   appengine/components/components/auth/proto/security_config.proto
+//
+// Commit: 0d8a2ff1e719514f918704581d79090ac6c8a178
+// Modifications: None
