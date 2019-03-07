@@ -74,6 +74,11 @@ func (db FakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID strin
 	panic("FakeDB.IsAllowedOAuthClientID must not be called")
 }
 
+// IsInternalService is part of authdb.DB interface. Panics.
+func (db FakeDB) IsInternalService(c context.Context, hostname string) (bool, error) {
+	panic("FakeDB.IsInternalService must not be called")
+}
+
 // GetCertificates is part of authdb.DB interface. Panics.
 func (db FakeDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	panic("FakeDB.GetCertificates must not be called")

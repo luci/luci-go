@@ -35,6 +35,12 @@ func (db ErroringDB) IsAllowedOAuthClientID(c context.Context, email, clientID s
 	return false, db.Error
 }
 
+// IsInternalService returns true if the given hostname belongs to a service
+// that is a part of the current LUCI deployment.
+func (db ErroringDB) IsInternalService(c context.Context, hostname string) (bool, error) {
+	return false, db.Error
+}
+
 // IsMember returns true if the given identity belongs to any of the groups.
 func (db ErroringDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
 	logging.Errorf(c, "%s", db.Error)

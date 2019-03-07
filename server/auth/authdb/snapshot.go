@@ -179,6 +179,16 @@ func (db *SnapshotDB) IsAllowedOAuthClientID(c context.Context, email, clientID 
 	return ok, nil
 }
 
+// IsInternalService returns true if the given hostname belongs to a service
+// that is a part of the current LUCI deployment.
+//
+// What hosts are internal is controlled by 'internal_service_regexp' setting
+// in security.cfg in the Auth Service configs.
+func (db *SnapshotDB) IsInternalService(c context.Context, hostname string) (bool, error) {
+	// TODO(vadimsh): Implement.
+	return false, nil
+}
+
 // IsMember returns true if the given identity belongs to any of the groups.
 //
 // Unknown groups are considered empty. May return errors if underlying
