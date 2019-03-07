@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b0a15940_8ec3fefe",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-07T19:27:00Z",
+      "side": 1,
+      "message": "copypasta from tumble.",
+      "revId": "660c0829d808038c7089ee237610e7b0c027f5da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
