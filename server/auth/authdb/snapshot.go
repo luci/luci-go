@@ -173,17 +173,15 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 
 	// Assemble a single regexp from a bunch of 'internal_service_regexp'.
 	if len(securityConf.InternalServiceRegexp) > 0 {
-		sb := strings.Builder{}
+		exp := ""
 		for idx, re := range securityConf.InternalServiceRegexp {
 			if idx != 0 {
-				sb.WriteRune('|')
+				exp += "|"
 			}
-			sb.WriteString("(^")
-			sb.WriteString(re)
-			sb.WriteString("$)")
+			exp += "(^" + re + "$)"
 		}
 		var err error
-		if db.internalServices, err = regexp.Compile(sb.String()); err != nil {
+		if db.internalServices, err = regexp.Compile(exp); err != nil {
 			return nil, fmt.Errorf("auth: failed to compile internal_service_regexp - %s", err)
 		}
 	}
