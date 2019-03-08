@@ -47,6 +47,30 @@
       "revId": "cadb0c3a2e9416d0ab984e72fbba31894142209c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b672a9c4_17c545a8",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-08T22:06:03Z",
+      "side": 1,
+      "message": "I think tests would be still be valid even in new implementation. So, I\u0027d lean to land this earlier, optimize later and if necessary.",
+      "parentUuid": "81a16711_dca23a04",
+      "range": {
+        "startLine": 275,
+        "startChar": 5,
+        "endLine": 275,
+        "endChar": 71
+      },
+      "revId": "cadb0c3a2e9416d0ab984e72fbba31894142209c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
