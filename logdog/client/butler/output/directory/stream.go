@@ -27,7 +27,7 @@ import (
 
 // stream is the stateful output for a single log stream.
 type stream struct {
-	curFile *os.File
+	curFile *os.File // nil if no file open
 
 	basePath      string
 	fname         string
@@ -57,30 +57,39 @@ func newStream(basePath string, desc *logpb.LogStreamDescriptor) (*stream, error
 	ret := stream{basePath: basePath, fname: fname}
 	if desc.StreamType == logpb.StreamType_DATAGRAM {
 		ret.isDatagram = true
-		err = ret.startNextDatagram()
 	} else {
 		ret.curFile, err = os.Create(filepath.Join(basePath, fname))
 	}
 	return &ret, err
 }
 
-func (s *stream) startNextDatagram() error {
-	if !s.isDatagram {
-		return errors.New("cannot call startNextDatagram on non-datagram stream")
+func (s *stream) getCurFile() (*os.File, error) {
+	if s.curFile != nil {
+		return s.curFile, nil
 	}
 
-	if s.curFile != nil {
-		s.curFile.Close()
+	if !s.isDatagram {
+		return nil, errors.New(
+			"cannot call getCurFile for a non-datagram with a closed file")
 	}
+
 	var err error
-	s.curFile, err = os.Create(filepath.Join(s.basePath, fmt.Sprintf(".%d.%s", s.datagramCount, s.fname)))
+	s.curFile, err = os.Create(
+		filepath.Join(s.basePath, fmt.Sprintf("_%d.%s", s.datagramCount, s.fname)))
 	if err != nil {
-		return errors.Annotate(err, "could not open %d'th datagram of %s",
+		return nil, errors.Annotate(err, "could not open %d'th datagram of %s",
 			s.datagramCount, filepath.Join(s.basePath, s.fname)).Err()
 	}
 	s.datagramCount++
 
-	return nil
+	return s.curFile, nil
+}
+
+func (s *stream) closeCurFile() {
+	if s.curFile != nil {
+		s.curFile.Close()
+		s.curFile = nil
+	}
 }
 
 // ingestBundleEntry writes the data from `be` to disk
@@ -88,24 +97,29 @@ func (s *stream) startNextDatagram() error {
 // Returns closed == true if `be` was terminal and the stream can be closed now.
 func (s *stream) ingestBundleEntry(be *logpb.ButlerLogBundle_Entry) (closed bool, err error) {
 	for _, le := range be.GetLogs() {
+		curFile, err := s.getCurFile()
+		if err != nil {
+			return false, err
+		}
+
 		switch x := le.Content.(type) {
 		case *logpb.LogEntry_Datagram:
 			dg := x.Datagram
 			_, err = s.curFile.Write(dg.Data)
 			if err == nil {
 				if dg.Partial == nil || dg.Partial.Last {
-					err = s.startNextDatagram()
+					s.closeCurFile()
 				}
 			}
 		case *logpb.LogEntry_Text:
 			for _, line := range x.Text.Lines {
-				_, err = s.curFile.Write(line.Value)
+				_, err = curFile.Write(line.Value)
 				if err == nil {
-					_, err = s.curFile.WriteString("\n")
+					_, err = curFile.WriteString("\n")
 				}
 			}
 		case *logpb.LogEntry_Binary:
-			_, err = s.curFile.Write(x.Binary.Data)
+			_, err = curFile.Write(x.Binary.Data)
 		}
 
 		if err != nil {
@@ -120,8 +134,5 @@ func (s *stream) ingestBundleEntry(be *logpb.ButlerLogBundle_Entry) (closed bool
 }
 
 func (s *stream) Close() {
-	if s.curFile != nil {
-		s.curFile.Close()
-		s.curFile = nil
-	}
+	s.closeCurFile()
 }
