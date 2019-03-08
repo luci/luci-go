@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "302c454e_0b78de8a",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T01:34:28Z",
+      "side": 1,
+      "message": "I think this breaks appengine deployments because appengine is still on 1.9 :(",
+      "revId": "2f33a139be9013bd64d2c774a4c4fe4d91424598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
