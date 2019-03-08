@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f22efd0a_0f83e1af",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T01:58:24Z",
+      "side": 1,
+      "message": "I chose (2), please see edits as I had to make a few things public. I think the issue here is the coupling of policy and config fetching which we should refactor but I\u0027d like to do this separately and when we run into this issue again.",
+      "parentUuid": "b4642d66_df459ab8",
+      "range": {
+        "startLine": 68,
+        "startChar": 3,
+        "endLine": 68,
+        "endChar": 29
+      },
+      "revId": "293a5918abd8a977aa64c228da2a888368e9be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33e8f787_bc43466f",
         "filename": "tokenserver/appengine/impl/utils/policy/config_fetcher.go",
         "patchSetId": 14
@@ -45,6 +69,30 @@
       "revId": "293a5918abd8a977aa64c228da2a888368e9be5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e34fc1ae_b52f6f2a",
+        "filename": "tokenserver/appengine/impl/utils/policy/config_fetcher.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T01:58:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33e8f787_bc43466f",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 11
+      },
+      "revId": "293a5918abd8a977aa64c228da2a888368e9be5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
