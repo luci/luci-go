@@ -152,3 +152,25 @@ steps: <
     url: "logdog://logdog.example.com/project/prefix/+/steps/duplicate_log_name/0/stderr"
   >
 >
+
+steps: <
+  name: "dup step name"
+  status: STARTED
+  start_time: < seconds: 1500000000 >
+>
+steps: <
+  name: "dup step name (2)"
+  status: STARTED
+  start_time: < seconds: 1500000000 >
+>
+
+steps: <
+  name: "parent_prefix"
+  status: STARTED
+  start_time: < seconds: 1500000000 >
+>
+steps: <
+  name: "parent_prefix|child"
+  status: STARTED
+  start_time: < seconds: 1500000000 >
+>

@@ -34,6 +34,7 @@ import (
 // This code converts annotation steps to Buildbucket v2 steps.
 // See //buildbucket/proto/step.proto, //common/proto/milo/annotations.proto
 
+// StepSep separates parent and child steps.
 const StepSep = "|"
 
 // ConvertBuildSteps converts a build given the root step's substeps, which must
@@ -53,6 +54,7 @@ func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, annA
 	sc := &stepConverter{
 		defaultLogdogHost:   annAddr.Host,
 		defaultLogdogPrefix: fmt.Sprintf("%s/%s", annAddr.Project, prefix),
+		steps:               map[string]*buildbucketpb.Step{},
 	}
 
 	var bbSteps []*buildbucketpb.Step
@@ -64,6 +66,8 @@ func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, annA
 
 type stepConverter struct {
 	defaultLogdogHost, defaultLogdogPrefix string
+
+	steps map[string]*buildbucketpb.Step
 }
 
 // convertSubsteps converts substeps, which we expect to be Steps, not Logdog
@@ -88,13 +92,23 @@ func (p *stepConverter) convertSubsteps(c context.Context, bbSteps *[]*buildbuck
 }
 
 // convertSteps converts [non-root] steps.
+// Mutates p.steps.
 func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketpb.Step, ann *annotpb.Step, stepPrefix string) (*buildbucketpb.Step, error) {
 	// Set up Buildbucket v2 step.
 	bb := &buildbucketpb.Step{
-		Name:      stepPrefix + ann.Name,
 		StartTime: ann.Started,
 		EndTime:   ann.Ended,
 	}
+
+	// Unlike annotation step names, buildbucket step names must be unique.
+	// Choose a name.
+	stripPrefix := strings.TrimSuffix(stepPrefix, StepSep) + "."
+	baseName := stepPrefix + strings.TrimPrefix(ann.Name, stripPrefix)
+	bb.Name = baseName
+	for i := 2; p.steps[bb.Name] != nil; i++ {
+		bb.Name = fmt.Sprintf("%s (%d)", baseName, i)
+	}
+	p.steps[bb.Name] = bb
 
 	// summary stores a slice of paragraphs, not individual lines.
 	var summary []string
