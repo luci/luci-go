@@ -38,8 +38,7 @@ type HistoryFunc func(c context.Context, host, project, oldRevision, newRevision
 // gitilesHistory is an implementation of a HistoryFunc intended to be used
 // in production (not for testing).
 func gitilesHistory(c context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
-	c, cancel := context.WithTimeout(c, 30*time.Second)
-	defer cancel()
+	c, _ = context.WithTimeout(c, 30*time.Second)
 
 	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {

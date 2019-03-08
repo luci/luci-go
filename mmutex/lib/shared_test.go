@@ -61,8 +61,7 @@ func TestShared(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
-			defer cancel()
+			ctx, _ = context.WithTimeout(ctx, time.Millisecond)
 			So(RunShared(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 			So(ctx.Err(), ShouldErrLike, context.DeadlineExceeded)
 		})
@@ -125,8 +124,7 @@ func TestShared(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer os.Remove(drainFilePath)
 
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Millisecond)
-			defer cancel()
+			ctx, _ = context.WithTimeout(ctx, 5*time.Millisecond)
 			runSharedErr := make(chan error)
 			go func() {
 				runSharedErr <- RunShared(ctx, env, fnThatReturns(nil))

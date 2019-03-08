@@ -44,8 +44,7 @@ func AtomicWriteFile(c context.Context, path string, body []byte, perm os.FileMo
 	// Try to replace the target file a bunch of times, retrying "Access denied"
 	// errors. They happen on Windows if file is locked by some other process.
 	// We assume other processes do not lock token file for too long.
-	c, cancel := context.WithTimeout(c, 10*time.Second)
-	defer cancel()
+	c, _ = context.WithTimeout(c, 10*time.Second)
 	var err error
 
 loop:

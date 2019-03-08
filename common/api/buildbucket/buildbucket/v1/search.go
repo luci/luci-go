@@ -107,10 +107,8 @@ outer:
 		err = retry.Retry(ctx, ret,
 			func() error {
 				var err error
-				var cancel func()
 				// Set a timeout for this particular RPC.
-				c.ctx_, cancel = context.WithTimeout(ctx, time.Minute)
-				defer cancel()
+				c.ctx_, _ = context.WithTimeout(ctx, time.Minute)
 				res, err = c.Do()
 				c.ctx_ = origCtx // for code clarity only
 

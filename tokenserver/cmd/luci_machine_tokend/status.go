@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 
-	tokenserver "go.chromium.org/luci/tokenserver/api"
+	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/client"
 )
 
@@ -209,8 +209,7 @@ var (
 //
 // It dumps all relevant metrics to tsmon.
 func (s *StatusReport) SendMetrics(c context.Context) error {
-	c, cancel := context.WithTimeout(c, 10*time.Second)
-	defer cancel()
+	c, _ = context.WithTimeout(c, 10*time.Second)
 	rep := s.Report()
 
 	metricVersion.Set(c, rep.TokendVersion)
