@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "f2f3d82d_5e4f7712",
+        "filename": "milo/buildsource/buildbucket/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T18:32:32Z",
+      "side": 1,
+      "message": "Yes, individual requests should also be made with this restricted context.",
+      "parentUuid": "249cc65a_4f903f8f",
+      "revId": "b5d98071234730e85c739344ed1a9913ff933f39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d4a6eb96_e478b1cf",
         "filename": "milo/buildsource/buildbucket/common.go",
         "patchSetId": 2
