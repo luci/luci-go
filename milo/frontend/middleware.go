@@ -73,6 +73,7 @@ var funcMap = template.FuncMap{
 	"sub":              sub,
 	"toLower":          strings.ToLower,
 	"toTime":           toTime,
+	"join":             strings.Join,
 }
 
 // localTime returns a <span> element with t in human format
