@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ed8f2ab_65fe4bec",
+        "filename": "milo/buildsource/buildbucket/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-08T17:35:31Z",
+      "side": 1,
+      "message": "this is where mistake was. The context is saved somehow inside auth.GetRPCTransport inside goroutine to set headers:\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/server/auth/client.go?q\u003dGetRPCTransport\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d275",
+      "revId": "b5d98071234730e85c739344ed1a9913ff933f39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4a6eb96_e478b1cf",
+        "filename": "milo/buildsource/buildbucket/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-08T17:35:31Z",
+      "side": 1,
+      "message": "and here",
+      "revId": "b5d98071234730e85c739344ed1a9913ff933f39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38a8d5c5_51617c66",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-08T17:35:31Z",
+      "side": 1,
+      "message": "and here",
+      "revId": "b5d98071234730e85c739344ed1a9913ff933f39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
