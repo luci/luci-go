@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "58975454_1024847e",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-08T20:03:18Z",
+      "side": 1,
+      "message": "It MAY NOT modify its behavior based on anything outside of Input.\n\n(\"MAY NOT depend on\" implies \"is not allowed to observe/read\" to me, which I think is OK?)",
+      "range": {
+        "startLine": 43,
+        "startChar": 16,
+        "endLine": 43,
+        "endChar": 26
+      },
+      "revId": "3cccc9de56af402195bacb35eb69b76492787095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7133333f_235e0cac",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-08T20:03:18Z",
+      "side": 1,
+      "message": "MAY read non-Input fields to display for debugging or to pass-through to triggered builds. For example the \"tags\" field may be passed to triggered builds, or the \"infra\" field may be printed for debugging purposes.",
+      "range": {
+        "startLine": 44,
+        "startChar": 18,
+        "endLine": 44,
+        "endChar": 21
+      },
+      "revId": "3cccc9de56af402195bacb35eb69b76492787095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "864f8418_bd24a41c",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-08T20:03:18Z",
+      "side": 1,
+      "message": "should we call out which fields are expected to be modified by the user code vs. which ones are controlled by kitchen too?\n\nWould it make sense to split Output into:\n\n   UserOutput      // Data output from the task for the use of other tasks\n   ControlOutput   // Data output from the task for the control plane (e.g. critical)\n   UIOutput        // Data output from the task for the purposes of display/debugging\n\n?",
+      "revId": "3cccc9de56af402195bacb35eb69b76492787095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
