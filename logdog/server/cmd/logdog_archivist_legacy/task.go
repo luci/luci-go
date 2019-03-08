@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
 	gcps "cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"

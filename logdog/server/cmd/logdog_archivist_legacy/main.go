@@ -18,39 +18,43 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
-	"go.chromium.org/luci/common/logging"
+	gcps "go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	montypes "go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/archivist"
 	"go.chromium.org/luci/logdog/server/bundleServicesClient"
 	"go.chromium.org/luci/logdog/server/service"
 
+	"cloud.google.com/go/pubsub"
+
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var (
 	errInvalidConfig = errors.New("invalid configuration")
-
-	errNoWorkToDo = errors.New("no work to do")
 
 	// tsTaskProcessingTime measures the amount of time spent processing a single
 	// task.
 	//
 	// The "consumed" field is true if the underlying task was consumed and
 	// false if it was not.
-	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/archivist/task_processing_time_ms_ng",
-		"The amount of time (in milliseconds) that a single task takes to process in the new pipeline.",
+	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/archivist/task_processing_time_ms",
+		"The amount of time (in milliseconds) that a single task takes to process.",
 		&montypes.MetricMetadata{Units: montypes.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Bool("consumed"))
@@ -61,22 +65,15 @@ type application struct {
 	service.Service
 }
 
-// TODO(hinoka): Remove after crbug.com/923557.
-// taskWrapper implements archivist.Task.
-// It's purely here for compatability with legacy archivist.
-type taskWrapper struct {
-	*logdog.ArchiveTask
-}
-
-func (t *taskWrapper) Task() *logdog.ArchiveTask {
-	return t.ArchiveTask
-}
-
-func (t *taskWrapper) Consume() {} // noop.
-
 // run is the main execution function.
 func (a *application) runArchivist(c context.Context) error {
 	cfg := a.ServiceConfig()
+
+	// Starting a webserver for pprof.
+	// TODO(hinoka): Checking for memory leaks, Remove me when 795156 is fixed.
+	go func() {
+		log.WithError(http.ListenAndServe("localhost:6060", nil)).Errorf(c, "failed to start webserver")
+	}()
 
 	coordCfg, acfg := cfg.GetCoordinator(), cfg.GetArchivist()
 	switch {
@@ -87,6 +84,39 @@ func (a *application) runArchivist(c context.Context) error {
 		return errors.New("missing required config: archivist")
 	case acfg.GsStagingBucket == "":
 		return errors.New("missing required config: archivist.gs_staging_bucket")
+	}
+
+	// Initialize Pub/Sub client.
+	//
+	// We will initialize both an authenticated Client instance and an
+	// authenticated Context, since we need the latter for raw ACK deadline
+	// updates.
+	taskSub := gcps.Subscription(acfg.Subscription)
+	if err := taskSub.Validate(); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"value":      taskSub,
+		}.Errorf(c, "Task subscription did not validate.")
+		return errors.New("invalid task subscription name")
+	}
+	psProject, psSubscriptionName := taskSub.Split()
+
+	// New PubSub instance with the authenticated client.
+	psClient, err := a.Service.PubSubSubscriberClient(c, psProject)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
+		return err
+	}
+	sub := psClient.Subscription(psSubscriptionName)
+	sub.ReceiveSettings = pubsub.ReceiveSettings{
+		// These must be -1 (unlimited), otherwise the flow controller will saturate.
+		// PubSub performs poorly as a Task Queue otherwise.
+		// https://github.com/GoogleCloudPlatform/google-cloud-go/issues/919#issuecomment-372403175
+		MaxExtension:        -1,
+		MaxOutstandingBytes: -1,
+
+		MaxOutstandingMessages: 16,
+		NumGoroutines:          8,
 	}
 
 	// Initialize our Storage.
@@ -128,63 +158,103 @@ func (a *application) runArchivist(c context.Context) error {
 	c, cancelFunc := context.WithCancel(c)
 	defer cancelFunc()
 
-	// Application shutdown will now operate by cancelling the Archivist's
+	// Application shutdown will now operate by cancelling the Collector's
 	// shutdown Context.
 	a.SetShutdownFunc(cancelFunc)
 
-	// Forever loop.
-	for {
-		if err := func() error {
-			leaseTime := time.Minute * 10
-			leaseTimeProto := ptypes.DurationProto(leaseTime)
-			nc, _ := context.WithTimeout(c, leaseTime)
+	// Execute our main subscription pull loop. It will run until the supplied
+	// Context is cancelled.
+	log.Fields{
+		"subscription": taskSub,
+	}.Infof(c, "Pulling tasks from Pub/Sub subscription.")
 
-			tasks, err := coordClient.LeaseArchiveTasks(c, &logdog.LeaseRequest{
-				MaxTasks:  10,
-				LeaseTime: leaseTimeProto,
-			})
-			if err != nil {
-				return err
-			}
-			if len(tasks.Tasks) == 0 {
-				return errNoWorkToDo
-			}
-			merr := errors.NewLazyMultiError(10)
-			ackTasks := make([]*logdog.ArchiveTask, 0, len(tasks.Tasks))
-			for i, task := range tasks.Tasks {
-				nc = log.SetFields(nc, log.Fields{
-					"Project": task.Project,
-					"ID":      task.Id,
-				})
-				deleteTask := true
-				startTime := clock.Now(c)
-				if err := ar.ArchiveTask(nc, &taskWrapper{task}); err != nil {
-					merr.Assign(i, err)
-					deleteTask = false
-				} else {
-					ackTasks = append(ackTasks, task)
-				}
-				duration := clock.Now(c).Sub(startTime)
-				tsTaskProcessingTime.Add(c, float64(duration.Nanoseconds())/1000000, deleteTask)
-			}
-			// Ack the successful tasks.  We ignore the error here since theres nothing we can do.
-			if len(ackTasks) > 0 {
-				c := log.SetFields(c, log.Fields{"Tasks": ackTasks})
-				if _, err := coordClient.DeleteArchiveTasks(c, &logdog.DeleteRequest{Tasks: ackTasks}); err != nil {
-					log.WithError(err).Errorf(c, "error while acking tasks (%s)", ackTasks)
-				}
-			}
-			return merr.Get()
-		}(); err != nil {
-			switch err {
-			case errNoWorkToDo:
-				logging.Infof(c, "no work to do, sleeping for a bit")
-			default:
-				logging.WithError(err).Errorf(c, "got error in loop")
-			}
-			clock.Sleep(c, 2*time.Second)
+	retryForever := func() retry.Iterator {
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   200 * time.Millisecond,
+				Retries: -1, // Unlimited.
+			},
+			MaxDelay:   10 * time.Second,
+			Multiplier: 2,
 		}
 	}
+
+	err = retry.Retry(c, transient.Only(retryForever), func() error {
+		return grpcutil.WrapIfTransient(sub.Receive(c, func(c context.Context, msg *pubsub.Message) {
+			c = log.SetFields(c, log.Fields{
+				"messageID": msg.ID,
+			})
+
+			// ACK or NACK the message based on whether our task was consumed.
+			deleteTask := false
+			defer func() {
+				// ACK the message if it is completed. If not, NACK it.
+				if deleteTask {
+					msg.Ack()
+				} else {
+					msg.Nack()
+				}
+			}()
+
+			// Time how long task processing takes for metrics.
+			startTime := clock.Now(c)
+			defer func() {
+				duration := clock.Now(c).Sub(startTime)
+
+				if deleteTask {
+					log.Fields{
+						"duration": duration,
+					}.Infof(c, "Task successfully processed; deleting.")
+				} else {
+					log.Fields{
+						"duration": duration,
+					}.Infof(c, "Task processing incomplete. Not deleting.")
+				}
+
+				// Add to our processing time metric.
+				tsTaskProcessingTime.Add(c, duration.Seconds()*1000, deleteTask)
+			}()
+
+			task, err := makePubSubArchivistTask(c, psSubscriptionName, msg)
+			c = log.SetFields(c, log.Fields{
+				"consumed":         task.consumed,
+				"subscriptionName": task.subscriptionName,
+				"taskTimestamp":    task.timestamp.Format(time.RFC3339Nano),
+				"archiveTask":      task.at,
+			})
+			if task.msg != nil {
+				// Log all fields except data.
+				c = log.SetFields(c, log.Fields{
+					"message": map[string]interface{}{
+						"id":          task.msg.ID,
+						"attributes":  task.msg.Attributes,
+						"publishTime": task.msg.PublishTime.Format(time.RFC3339Nano),
+					},
+				})
+			}
+			if err != nil {
+				log.WithError(err).Errorf(c, "Failed to unmarshal archive task from message.")
+				deleteTask = true
+				return
+			}
+
+			ar.ArchiveTask(c, task)
+			deleteTask = task.consumed
+		}))
+	}, func(err error, d time.Duration) {
+		log.Fields{
+			log.ErrorKey: err,
+			"delay":      d,
+		}.Warningf(c, "Transient error during subscription Receive loop; retrying...")
+	})
+
+	if err := errors.Unwrap(err); err != nil && err != context.Canceled {
+		log.WithError(err).Errorf(c, "Failed during Pub/Sub Receive.")
+		return err
+	}
+
+	log.Debugf(c, "Archivist finished.")
+	return nil
 }
 
 // GetSettingsLoader is an archivist.SettingsLoader implementation that merges
