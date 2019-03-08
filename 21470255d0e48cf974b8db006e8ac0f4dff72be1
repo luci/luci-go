@@ -1,0 +1,364 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1341ae8f_a0bd9928",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "👍🏼",
+      "range": {
+        "startLine": 9,
+        "startChar": 31,
+        "endLine": 9,
+        "endChar": 66
+      },
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c42b793d_5cf20af3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "unclear. buildsets are tags",
+      "range": {
+        "startLine": 14,
+        "startChar": 17,
+        "endLine": 14,
+        "endChar": 32
+      },
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f292dba_8a4dabd9",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "how many clients do we create in a single milo request? we pass host anyway. Can we pass pre-configured clients instead of hosts?",
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43ac6b7a_e34843b8",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "it seems we would have less code if this loop was inside FanOutIn.\ne.g. we wouldn\u0027t need sbrs variable",
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4ccba3f_67a6fe82",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "either\n\n  if seenIDs[rb.Id] {\n\nor let\u0027s use map[int64]struct{}\n\notherwise a lost opportunity to simplify code",
+      "range": {
+        "startLine": 286,
+        "startChar": 6,
+        "endLine": 286,
+        "endChar": 33
+      },
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fca5c42e_532da8d2",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "currently result order is arbitrary. Let\u0027s sort by build id",
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "630d43d7_bb77f213",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "maybe add // copy request\n\nsame above",
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f073536_24b72eed",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "why do we need another FanOutIn. we already have one above. Can we do `ch \u003c-` to the same ch?",
+      "range": {
+        "startLine": 370,
+        "startChar": 3,
+        "endLine": 370,
+        "endChar": 28
+      },
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76d43eb5_d0cbb3ba",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 227,
+        "startChar": 25,
+        "endLine": 227,
+        "endChar": 26
+      },
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b77e53c_dc6350e9",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "so this lies about git buildset, i.e. milo has its own opinion on tags.\n\nwe should either delete the buildset, or display it. +Andrii\n\noptimization in fetching code is ok though",
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f13f0a80_bd5b3b98",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "i remember we were talking about checkboxes and js to hide/show builds. Is this still planned?",
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e100ca86_d194b6ad",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "unused. Consider adding in the CL that starts using it",
+      "range": {
+        "startLine": 246,
+        "startChar": 12,
+        "endLine": 246,
+        "endChar": 26
+      },
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78a351b0_0de62158",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "note that this is being changed by https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1498167\nwhich i land today",
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68b73982_4dc20399",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "this means Build message creation requires copying the build message. We always wrap an existing build message with ui.Build, so perhaps this should be *buildbucketpb.Build?",
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7638781a_add78f18",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "this is potentially much more than number of buildsets\n\nin practice there are 1-3 buildsets",
+      "range": {
+        "startLine": 131,
+        "startChar": 29,
+        "endLine": 131,
+        "endChar": 40
+      },
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c2034c4_8e80c407",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "this hack is not documented in Buildsets() comment. Why do you need it here? if the goal is an optimization in getRelatedBuilds, then this logic should be there",
+      "range": {
+        "startLine": 133,
+        "startChar": 5,
+        "endLine": 133,
+        "endChar": 9
+      },
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78a234b8_269bf23e",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "unnecessary? we are iterating a slice, not a map",
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "45b8bbd6_125d4160",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T19:46:48Z",
+      "side": 1,
+      "message": "BuildLink, or just Link, accordingly?",
+      "range": {
+        "startLine": 268,
+        "startChar": 16,
+        "endLine": 268,
+        "endChar": 23
+      },
+      "revId": "21470255d0e48cf974b8db006e8ac0f4dff72be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
