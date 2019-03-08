@@ -149,7 +149,8 @@ func TestClockContext(t *testing.T) {
 		})
 
 		Convey(`A context with a deadline wrapping a parent with a shorter deadline`, func() {
-			cctx, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
+			cctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+			defer cancel()
 			ctx, cf := WithTimeout(cctx, 1*time.Hour)
 
 			Convey(`Will successfully time out.`, func() {

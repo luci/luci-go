@@ -61,7 +61,8 @@ func TestExclusive(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			ctx, _ = context.WithTimeout(ctx, time.Millisecond)
+			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
+			defer cancel()
 			So(RunExclusive(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 		})
 
@@ -70,7 +71,8 @@ func TestExclusive(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			ctx, _ = context.WithTimeout(ctx, time.Millisecond)
+			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
+			defer cancel()
 			So(RunExclusive(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
 		})
 
@@ -88,7 +90,8 @@ func TestExclusive(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer handle.Unlock()
 
-			ctx, _ = context.WithTimeout(ctx, time.Millisecond)
+			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
+			defer cancel()
 			RunExclusive(ctx, env, fnThatReturns(nil))
 			So(ctx.Err(), ShouldErrLike, context.DeadlineExceeded)
 		})

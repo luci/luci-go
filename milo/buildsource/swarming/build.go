@@ -91,7 +91,8 @@ const (
 )
 
 func getSwarmingClient(c context.Context, host string) (*swarming.Service, error) {
-	c, _ = context.WithTimeout(c, 60*time.Second)
+	c, cancel := context.WithTimeout(c, 60*time.Second)
+	defer cancel()
 	t, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		return nil, err
