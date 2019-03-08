@@ -62,8 +62,9 @@ func init() {
 
 	// Pub/Sub endpoint.
 	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
-		c.Context, _ = context.WithTimeout(c.Context, 50*time.Second)
-		ctx := c.Context
+		ctx, cancel := context.WithTimeout(c.Context, 50*time.Second)
+		defer cancel()
+		c.Context = ctx
 
 		status := ""
 		switch err := notify.BuildbucketPubSubHandler(c, &taskDispatcher); {

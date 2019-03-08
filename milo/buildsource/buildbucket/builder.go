@@ -74,7 +74,8 @@ func (b BuilderID) String() string {
 func fetchBuilds(c context.Context, client *bbv1.Service, bid BuilderID,
 	status string, limit int, cursor string) ([]*bbv1.ApiCommonBuildMessage, string, error) {
 
-	c, _ = context.WithTimeout(c, bbRPCTimeout)
+	c, cancel := context.WithTimeout(c, bbRPCTimeout)
+	defer cancel()
 	search := client.Search()
 	search.Context(c)
 	search.Bucket(bid.V1Bucket())
@@ -211,7 +212,8 @@ func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.ApiCommonBuildMessage
 	// author email. Unfortunately, as of June 2018 Gerrit is often taking >5s to
 	// report back. From UX PoV, author's email isn't the most important of
 	// builder's page, so limit waiting time.
-	c, _ = context.WithTimeout(c, 5*time.Second)
+	c, cancel := context.WithTimeout(c, 5*time.Second)
+	defer cancel()
 	// This does not error.
 	parallel.WorkPool(50, func(work chan<- func() error) {
 		for i, m := range msgs {
