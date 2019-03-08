@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8a5882b8_63307d2e",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T01:40:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e015d31b_7245ca7b",
+      "range": {
+        "startLine": 66,
+        "startChar": 14,
+        "endLine": 66,
+        "endChar": 17
+      },
+      "revId": "a8d2b8abd6b212c3f23191d74fe592561173b199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c1f04dee_0e5ad683",
         "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "ab69babb_b4c39ef1",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T01:40:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c1f04dee_0e5ad683",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 3
+      },
+      "revId": "a8d2b8abd6b212c3f23191d74fe592561173b199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4acb0535_e44c5371",
         "filename": "logdog/appengine/coordinator/logStreamState.go",
         "patchSetId": 2
@@ -62,6 +110,24 @@
       "revId": "a8d2b8abd6b212c3f23191d74fe592561173b199",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70e78426_16b7986e",
+        "filename": "logdog/appengine/coordinator/logStreamState.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T01:40:09Z",
+      "side": 1,
+      "message": "Yeah this seemed useful.  GAE doesn\u0027t index things if this is there, and won\u0027t backfill indicies for existing entities even if you remove it, so it\u0027s better to remove it early just incase it\u0027s useful in the future.",
+      "parentUuid": "4acb0535_e44c5371",
+      "revId": "a8d2b8abd6b212c3f23191d74fe592561173b199",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
