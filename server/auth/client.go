@@ -272,6 +272,13 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 	}
 
 	return auth.NewModifyingTransport(baseTransport, func(req *http.Request) error {
+		// If request's own context has earlier deadline than transport (our)
+		// context, fork transport's context to use the request's deadline.
+		if d, ok := req.Context().Deadline(); ok {
+			var cancel func()
+			c, cancel = context.WithDeadline(c, d)
+			defer cancel()
+		}
 		tok, extra, err := options.getRPCHeaders(c, req.URL.String(), options)
 		if err != nil {
 			return err
