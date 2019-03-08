@@ -32,32 +32,32 @@ import (
 // to know themselves what concrete proto types correspond to what paths.
 type ConfigBundle map[string]proto.Message
 
-// blobWithType is underlying type of a slice we gob-serialize in serialize().
-type blobWithType struct {
+// BlobWithType is underlying type of a slice we gob-serialize in serialize().
+type BlobWithType struct {
 	Path string // the path the config was fetched from
 	Kind string // proto message kind, to know how to deserialize
 	Blob []byte // proto message, binary serialization
 }
 
-// serializeBundle deterministically converts ConfigBundle into a byte blob.
+// SerializeBundle deterministically converts ConfigBundle into a byte blob.
 //
 // The byte blob references proto message names to know how to deserialize them
 // later.
-func serializeBundle(b ConfigBundle) ([]byte, error) {
+func SerializeBundle(b ConfigBundle) ([]byte, error) {
 	keys := make([]string, 0, len(b))
 	for k := range b {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
-	items := make([]blobWithType, 0, len(b))
+	items := make([]BlobWithType, 0, len(b))
 	for _, k := range keys {
 		v := b[k]
 		blob, err := proto.Marshal(v)
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, blobWithType{
+		items = append(items, BlobWithType{
 			Path: k,
 			Kind: proto.MessageName(v),
 			Blob: blob,
@@ -71,14 +71,14 @@ func serializeBundle(b ConfigBundle) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-// deserialize parses the serialized ConfigBundle.
+// DeserializeBundle parses the serialized ConfigBundle.
 //
 // It skips configs with proto types no longer registered in the proto lib
 // registry. It returns them unparsed in 'unknown' slice.
 //
 // Returns an error if some known proto message can't be deserialized.
-func deserializeBundle(blob []byte) (b ConfigBundle, unknown []blobWithType, err error) {
-	items := []blobWithType{}
+func DeserializeBundle(blob []byte) (b ConfigBundle, unknown []BlobWithType, err error) {
+	items := []BlobWithType{}
 	if err := gob.NewDecoder(bytes.NewReader(blob)).Decode(&items); err != nil {
 		return nil, nil, err
 	}

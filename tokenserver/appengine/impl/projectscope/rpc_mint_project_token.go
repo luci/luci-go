@@ -37,7 +37,7 @@ import (
 
 const (
 	// maxTokenValiditySeconds specifies the maximum project identity token validity period.
-	maxTokenValiditySeconds = 3600
+	maxTokenValiditySeconds = 1800
 
 	// projectActorsGroup is a group of identities and subgroups authorized to obtain project tokens.
 	projectActorsGroup = "auth-project-actors"
