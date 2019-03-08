@@ -155,7 +155,7 @@
         {{ with .Swarming }}
         <li>
           Swarming Task:
-          <a href="https://{{ .Hostname }}/task?id={{ .TaskId }}&show_raw=1&wide_logs=true">
+          <a href="https://{{ .Hostname }}/task?id={{ .TaskId }}&o=true&w=true">
             {{ .TaskId }}
           </a>
         </li>
