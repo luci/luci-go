@@ -157,7 +157,7 @@ func buildbucketBuildTestData() []common.TestBundle {
 		}
 		bundles = append(bundles, common.TestBundle{
 			Description: fmt.Sprintf("Test page: %s", tc),
-			Data:        templates.Args{"BuildPage": &ui.BuildPage{Build: *build}},
+			Data:        templates.Args{"BuildPage": &ui.BuildPage{Build: ui.Build{build}}},
 		})
 	}
 	return bundles
