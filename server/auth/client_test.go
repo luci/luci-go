@@ -62,7 +62,7 @@ func TestGetRPCTransport(t *testing.T) {
 
 			So(mock.calls[0], ShouldResemble, []string{"A", "B"})
 			So(mock.reqs[0].Header, ShouldResemble, http.Header{
-				"Authorization": {"Bearer blah:A,B"},
+				"Authorization": {"Bearer as-self-token:A,B"},
 			})
 		})
 
@@ -74,7 +74,7 @@ func TestGetRPCTransport(t *testing.T) {
 
 			So(mock.calls[0], ShouldResemble, []string{"https://www.googleapis.com/auth/userinfo.email"})
 			So(mock.reqs[0].Header, ShouldResemble, http.Header{
-				"Authorization": {"Bearer blah:https://www.googleapis.com/auth/userinfo.email"},
+				"Authorization": {"Bearer as-self-token:https://www.googleapis.com/auth/userinfo.email"},
 			})
 		})
 
@@ -99,35 +99,48 @@ func TestGetRPCTransport(t *testing.T) {
 
 			So(mock.calls[0], ShouldResemble, []string{"https://www.googleapis.com/auth/userinfo.email"})
 			So(mock.reqs[0].Header, ShouldResemble, http.Header{
-				"Authorization":         {"Bearer blah:https://www.googleapis.com/auth/userinfo.email"},
+				"Authorization":         {"Bearer as-self-token:https://www.googleapis.com/auth/userinfo.email"},
 				"X-Delegation-Token-V1": {"deleg_tok"},
 			})
 		})
 
-		Convey("in AsProjectScoped mode, authenticated", func(c C) {
-			ctx := WithState(ctx, &state{
-				user: &User{Identity: "user:abc@example.com"},
+		Convey("in AsProject mode", func(c C) {
+			callExampleCom := func(ctx context.Context) {
+				t, err := GetRPCTransport(ctx, AsProject, WithProject("infra"), &rpcMocks{
+					MintProjectToken: func(ic context.Context, p ProjectTokenParams) (*oauth2.Token, error) {
+						c.So(p, ShouldResemble, ProjectTokenParams{
+							MinTTL:      2 * time.Minute,
+							LuciProject: "infra",
+							OAuthScopes: defaultOAuthScopes,
+						})
+						return &oauth2.Token{
+							AccessToken: "scoped tok",
+							TokenType:   "Bearer",
+						}, nil
+					},
+				})
+				So(err, ShouldBeNil)
+				_, err = t.RoundTrip(makeReq("https://example.com/some-path/sd"))
+				So(err, ShouldBeNil)
+			}
+
+			Convey("external service", func() {
+				callExampleCom(WithState(ctx, &state{
+					db: &fakeDB{internalService: "not-example.com"},
+				}))
+				So(mock.reqs[0].Header, ShouldResemble, http.Header{
+					"Authorization": {"Bearer scoped tok"},
+				})
 			})
 
-			t, err := GetRPCTransport(ctx, AsProjectScoped, WithProject("infra"), &rpcMocks{
-				MintProjectToken: func(ic context.Context, p ProjectTokenParams) (*oauth2.Token, error) {
-					c.So(p, ShouldResemble, ProjectTokenParams{
-						MinTTL:      2 * time.Minute,
-						LuciProject: "infra",
-						OAuthScopes: defaultOAuthScopes,
-					})
-					return &oauth2.Token{
-						AccessToken: "scoped tok",
-						TokenType:   "Bearer",
-					}, nil
-				},
-			})
-			So(err, ShouldBeNil)
-			_, err = t.RoundTrip(makeReq("https://example.com/some-path/sd"))
-			So(err, ShouldBeNil)
-
-			So(mock.reqs[0].Header, ShouldResemble, http.Header{
-				"Authorization": {"Bearer scoped tok"},
+			Convey("internal service", func() {
+				callExampleCom(WithState(ctx, &state{
+					db: &fakeDB{internalService: "example.com"},
+				}))
+				So(mock.reqs[0].Header, ShouldResemble, http.Header{
+					"Authorization":  {"Bearer as-self-token:https://www.googleapis.com/auth/userinfo.email"},
+					"X-Luci-Project": {"infra"},
+				})
 			})
 		})
 
@@ -163,7 +176,7 @@ func TestGetRPCTransport(t *testing.T) {
 
 			So(mock.calls[0], ShouldResemble, []string{"https://www.googleapis.com/auth/userinfo.email"})
 			So(mock.reqs[0].Header, ShouldResemble, http.Header{
-				"Authorization":         {"Bearer blah:https://www.googleapis.com/auth/userinfo.email"},
+				"Authorization":         {"Bearer as-self-token:https://www.googleapis.com/auth/userinfo.email"},
 				"X-Delegation-Token-V1": {"deleg_tok"},
 			})
 		})
@@ -259,8 +272,8 @@ func TestGetRPCTransport(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		})
 
-		Convey("in AsProjectScoped mode without project, error", func(C C) {
-			_, err := GetRPCTransport(ctx, AsProjectScoped)
+		Convey("in AsProject mode without project, error", func(C C) {
+			_, err := GetRPCTransport(ctx, AsProject)
 			So(err, ShouldNotBeNil)
 		})
 	})
@@ -284,7 +297,7 @@ func TestTokenSource(t *testing.T) {
 			tok, err := ts.Token()
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &oauth2.Token{
-				AccessToken: "blah:https://www.googleapis.com/auth/userinfo.email",
+				AccessToken: "as-self-token:https://www.googleapis.com/auth/userinfo.email",
 				TokenType:   "Bearer",
 			})
 		})
@@ -295,7 +308,7 @@ func TestTokenSource(t *testing.T) {
 			tok, err := ts.Token()
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &oauth2.Token{
-				AccessToken: "blah:foo,bar,baz",
+				AccessToken: "as-self-token:foo,bar,baz",
 				TokenType:   "Bearer",
 			})
 		})
@@ -332,7 +345,7 @@ type clientRPCTransportMock struct {
 func (m *clientRPCTransportMock) getAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
 	m.calls = append(m.calls, scopes)
 	return &oauth2.Token{
-		AccessToken: "blah:" + strings.Join(scopes, ","),
+		AccessToken: "as-self-token:" + strings.Join(scopes, ","),
 		TokenType:   "Bearer",
 	}, nil
 }
