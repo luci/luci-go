@@ -27,6 +27,9 @@ service Admin {
   // ImportServiceAccountsConfigs makes the server read 'service_accounts.cfg'.
   rpc ImportServiceAccountsConfigs(google.protobuf.Empty) returns (ImportedConfigs);
 
+  // ImportProjectIdentityConfigs makes the server read 'projects.cfg'.
+  rpc ImportProjectIdentityConfigs(google.protobuf.Empty) returns (ImportedConfigs);
+
   // InspectMachineToken decodes a machine token and verifies it is valid.
   //
   // It verifies the token was signed by a private key of the token server and
