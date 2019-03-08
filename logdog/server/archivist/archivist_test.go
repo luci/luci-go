@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/memory"
@@ -61,14 +61,6 @@ func (t *testTask) Task() *logdog.ArchiveTask {
 
 func (t *testTask) Consume() {
 	t.consumed = true
-}
-
-func (t *testTask) AssertLease(context.Context) error {
-	if err := t.assertLeaseErr; err != nil {
-		return err
-	}
-	t.assertCount++
-	return nil
 }
 
 // testServicesClient implements logdog.ServicesClient sufficient for testing
@@ -367,7 +359,7 @@ func TestHandleArchive(t *testing.T) {
 		Convey(`Will consume task and refrain from archiving if the stream is already archived.`, func() {
 			stream.State.Archived = true
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is archived")
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 			So(task.consumed, ShouldBeTrue)
 			So(archiveRequest, ShouldBeNil)
 		})
@@ -375,7 +367,7 @@ func TestHandleArchive(t *testing.T) {
 		Convey(`Will consume task and refrain from archiving if the stream is purged.`, func() {
 			stream.State.Purged = true
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is purged")
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 			So(task.consumed, ShouldBeTrue)
 			So(archiveRequest, ShouldBeNil)
 		})
@@ -402,7 +394,7 @@ func TestHandleArchive(t *testing.T) {
 			stream.Age = google.NewDuration(expired)
 			stream.ArchivalKey = []byte("non-matching archival key")
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "superfluous archival request")
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 			So(task.consumed, ShouldBeTrue)
 			So(archiveRequest, ShouldBeNil)
 		})
@@ -629,14 +621,14 @@ func TestHandleArchive(t *testing.T) {
 		Convey(`With an empty project name, will fail and consume the task.`, func() {
 			archiveTask.Project = ""
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "invalid project name")
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 			So(task.consumed, ShouldBeTrue)
 		})
 
 		Convey(`With an invalid project name, will fail and consume the task.`, func() {
 			archiveTask.Project = "!!! invalid project name !!!"
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "invalid project name")
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 			So(task.consumed, ShouldBeTrue)
 		})
 
