@@ -29,10 +29,10 @@ import (
 func TestConfigBundle(t *testing.T) {
 	Convey("Empty map", t, func() {
 		var b ConfigBundle
-		blob, err := serializeBundle(b)
+		blob, err := SerializeBundle(b)
 		So(err, ShouldBeNil)
 
-		b, unknown, err := deserializeBundle(blob)
+		b, unknown, err := DeserializeBundle(blob)
 		So(err, ShouldBeNil)
 		So(unknown, ShouldEqual, nil)
 		So(len(b), ShouldEqual, 0)
@@ -46,10 +46,10 @@ func TestConfigBundle(t *testing.T) {
 			"a": &timestamp.Timestamp{Seconds: 1},
 			"b": &duration.Duration{Seconds: 2},
 		}
-		blob, err := serializeBundle(b1)
+		blob, err := SerializeBundle(b1)
 		So(err, ShouldBeNil)
 
-		b2, unknown, err := deserializeBundle(blob)
+		b2, unknown, err := DeserializeBundle(blob)
 		So(err, ShouldBeNil)
 		So(unknown, ShouldEqual, nil)
 		So(b2, ShouldHaveLength, len(b1))
@@ -59,20 +59,20 @@ func TestConfigBundle(t *testing.T) {
 	})
 
 	Convey("Unknown proto", t, func() {
-		items := []blobWithType{
+		items := []BlobWithType{
 			{"abc", "unknown.type", []byte("zzz")},
 		}
 		out := bytes.Buffer{}
 		So(gob.NewEncoder(&out).Encode(items), ShouldBeNil)
 
-		b, unknown, err := deserializeBundle(out.Bytes())
+		b, unknown, err := DeserializeBundle(out.Bytes())
 		So(err, ShouldBeNil)
 		So(unknown, ShouldResemble, items)
 		So(len(b), ShouldEqual, 0)
 	})
 
 	Convey("Rejects nil", t, func() {
-		_, err := serializeBundle(ConfigBundle{"abc": nil})
+		_, err := SerializeBundle(ConfigBundle{"abc": nil})
 		So(err, ShouldNotBeNil)
 	})
 }
