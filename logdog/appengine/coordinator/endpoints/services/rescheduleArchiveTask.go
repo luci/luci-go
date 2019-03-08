@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(hinoka): Remove after crbug.com/923557
+
 package services
 
 import (
