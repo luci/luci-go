@@ -53,7 +53,12 @@ func TestAnnotations(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		c := context.Background()
-		p := stepConverter{"logdog.example.com", "project/prefix"}
+		p := stepConverter{
+			defaultLogdogHost:   "logdog.example.com",
+			defaultLogdogPrefix: "project/prefix",
+
+			steps: map[string]*buildbucketpb.Step{},
+		}
 		var got []*buildbucketpb.Step
 		_, err = p.convertSubsteps(c, &got, ann.Substep, "")
 		So(err, ShouldBeNil)
