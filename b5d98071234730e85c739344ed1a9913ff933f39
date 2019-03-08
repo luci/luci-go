@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "ef6bb906_866b3fd6",
+        "filename": "milo/buildsource/buildbucket/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-08T21:12:48Z",
+      "side": 1,
+      "message": "after discussing with vadim in im, here is the result: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1512386 \nThen lots of code here can be simplified.",
+      "parentUuid": "f2f3d82d_5e4f7712",
+      "revId": "b5d98071234730e85c739344ed1a9913ff933f39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d4a6eb96_e478b1cf",
         "filename": "milo/buildsource/buildbucket/common.go",
         "patchSetId": 2
