@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "323d067b_f1dd1a71",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T23:39:35Z",
+      "side": 1,
+      "message": "I wanted to be consistent with the patterns in other config.go files so it would be easier to read for developers. No strong opinion on this one though, I removed it.",
+      "parentUuid": "996a7cf5_b4cdcda9",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 1
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "24ec659b_6a61fd2f",
         "filename": "tokenserver/appengine/impl/projectscope/config.go",
         "patchSetId": 16
@@ -91,6 +115,30 @@
       "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb0256b3_2cb758c8",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T23:39:35Z",
+      "side": 1,
+      "message": "Only under the assumption that this code doesn\u0027t use LuciConfigFetcher (see below).",
+      "parentUuid": "24ec659b_6a61fd2f",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 2
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +165,30 @@
     },
     {
       "key": {
+        "uuid": "5ea0b61e_f6a77dc6",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T23:39:35Z",
+      "side": 1,
+      "message": "Yes this is intentional and is an intermediate state. I think eventually we want to make this update transactional but then I\u0027d like to have validation routines which compare to previous revisions and warn/require confirmation when an identityconfig is removed so it doesn\u0027t cause an outage accidentally.\n\nI\u0027ll add a TODO.",
+      "parentUuid": "ea5e9adb_1e7c93c1",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 44
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "966cfb84_a98a63cb",
         "filename": "tokenserver/appengine/impl/projectscope/config.go",
         "patchSetId": 16
@@ -140,6 +212,30 @@
     },
     {
       "key": {
+        "uuid": "f51a7e26_7e981393",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T23:39:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "966cfb84_a98a63cb",
+      "range": {
+        "startLine": 75,
+        "startChar": 3,
+        "endLine": 75,
+        "endChar": 30
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff37b73b_d046b240",
         "filename": "tokenserver/appengine/impl/projectscope/config.go",
         "patchSetId": 16
@@ -154,6 +250,24 @@
       "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a1e17e9_54a7084b",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T23:39:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff37b73b_d046b240",
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +294,30 @@
     },
     {
       "key": {
+        "uuid": "140f780d_b8abf01f",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T23:39:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "809b1787_73975727",
+      "range": {
+        "startLine": 98,
+        "startChar": 8,
+        "endLine": 98,
+        "endChar": 46
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c0b52c50_ede1e71e",
         "filename": "tokenserver/appengine/impl/projectscope/config.go",
         "patchSetId": 16
@@ -191,6 +329,30 @@
       "writtenOn": "2019-03-08T02:45:08Z",
       "side": 1,
       "message": "why do this instead of just directly using cfgclient API in fetchConfigs?\n\nif err :\u003d cfgclient.Get(c, cfgclient.AsService, configSet, projectsCfg, textproto.Message(cfg), nil); err !\u003d nil {\n  return err\n}\n\nIt is not significantly more code.\n\nCoupling with policy.Policy is absolutely unnecessary here. This package should not use \u0027policy\u0027 package at all. \u0027policy\u0027 implements a logic of ingesting a policy document, and keeping it hot in memory to quickly answer questions. Project scoped accounts do not need that, they use datastore to answer questions. \u0027policy\u0027 is wrong tool here, and it should not be bended into solving the problem is wasn\u0027t supposed to be solving.",
+      "range": {
+        "startLine": 105,
+        "startChar": 19,
+        "endLine": 105,
+        "endChar": 39
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09b55e57_6e597435",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T23:39:35Z",
+      "side": 1,
+      "message": "I don\u0027t see a dependency on policy.Policy. The intention is to use LuciConfigFetcher as an abstraction to fetch LUCI configs. It\u0027s currently located under the policy package which I think we should refactor but this is a separate issue.\n\nHence I\u0027d like to use LuciConfigFetcher here and rather not call cfgclient.Get directly from multiple places.",
+      "parentUuid": "c0b52c50_ede1e71e",
       "range": {
         "startLine": 105,
         "startChar": 19,
@@ -223,6 +385,30 @@
       "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2c4c07c_1a7f900d",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-08T23:39:35Z",
+      "side": 1,
+      "message": "I think this happened along with testing, it\u0027s intended to be 3600. However, when the feature works end to end I\u0027m going to do a general cleanup/refactoring at the end. So the reason we have these intermediate steps in here is merely a result of working with small CLs.",
+      "parentUuid": "c639bbef_91d74ca0",
+      "range": {
+        "startLine": 40,
+        "startChar": 27,
+        "endLine": 40,
+        "endChar": 31
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
