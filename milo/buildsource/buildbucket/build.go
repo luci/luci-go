@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common"
@@ -196,35 +198,6 @@ func buildbucketClient(c context.Context, host string) (buildbucketpb.BuildsClie
 	}), nil
 }
 
-// GetBuild returns the buildbucketpb.Build from a build request.
-func GetBuild(c context.Context, host string, bid buildbucketpb.GetBuildRequest) (*buildbucketpb.Build, error) {
-	client, err := buildbucketClient(c, host)
-	if err != nil {
-		return nil, err
-	}
-	return client.GetBuild(c, &bid)
-}
-
-var fullBuildMask = &field_mask.FieldMask{
-	// TODO(hinoka): Add statusReason here.
-	Paths: []string{
-		"id",
-		"builder",
-		"number",
-		"created_by",
-		"create_time",
-		"start_time",
-		"end_time",
-		"update_time",
-		"status",
-		"input",
-		"output",
-		"steps",
-		"infra",
-		"tags",
-	},
-}
-
 // getBugLink attempts to formulate and return the build page bug link
 // for the given build.
 func getBugLink(c *router.Context, b *buildbucketpb.Build) (string, error) {
@@ -250,28 +223,174 @@ func getBugLink(c *router.Context, b *buildbucketpb.Build) (string, error) {
 	})
 }
 
+// searchBuildsRequest creates a searchBuildsRequest that looks for a buildset tag.
+func searchBuildsRequest(buildset string) *buildbucketpb.SearchBuildsRequest {
+	return &buildbucketpb.SearchBuildsRequest{
+		Predicate: &buildbucketpb.BuildPredicate{
+			Tags: []*buildbucketpb.StringPair{{Key: "buildset", Value: buildset}},
+		},
+		Fields:   summaryBuildMask,
+		PageSize: 1000,
+	}
+}
+
+// getRelatedBuilds fetches build summaries of builds with the same buildset as b.
+func getRelatedBuilds(c context.Context, client buildbucketpb.BuildsClient, b *buildbucketpb.Build) ([]*ui.Build, error) {
+	var bs []string
+	for _, buildset := range b.Buildsets() {
+		// HACK(hinoka): Remove the commit/git/ buildsets because we know they're redundant
+		// with the commit/gitiles/ buildsets, and we don't need to ask Buildbucket twice.
+		if strings.HasPrefix(buildset, "commit/git/") {
+			continue
+		}
+		bs = append(bs, buildset)
+	}
+	if len(bs) == 0 {
+		// No buildset? No builds.
+		return nil, nil
+	}
+
+	// Do the search request.
+	// Use multiple requests instead of a single batch request.
+	// A single large request is CPU bound to a single GAE instance on the buildbucket side.
+	// Multiple requests allows the use of multiple GAE instances, therefore more parallelism.
+	resps := make([]*buildbucketpb.SearchBuildsResponse, len(bs))
+	if err := parallel.FanOutIn(func(ch chan<- func() error) {
+		for i, buildset := range bs {
+			i := i
+			buildset := buildset
+			ch <- func() (err error) {
+				logging.Debugf(c, "Searching for %s (%d)", buildset, i)
+				resps[i], err = client.SearchBuilds(c, searchBuildsRequest(buildset))
+				return
+			}
+		}
+	}); err != nil {
+		return nil, err
+	}
+
+	// Dedupe builds.
+	// It's possible since we've made multiple requests that we got back the same builds
+	// multiple times.
+	seen := map[int64]bool{} // set of build IDs.
+	result := []*ui.Build{}
+	for _, resp := range resps {
+		for _, rb := range resp.GetBuilds() {
+			if seen[rb.Id] {
+				continue
+			}
+			seen[rb.Id] = true
+			result = append(result, &ui.Build{rb})
+		}
+	}
+
+	// Sort builds by ID.
+	sort.Slice(result, func(i, j int) bool { return result[i].Id < result[j].Id })
+
+	return result, nil
+}
+
+var (
+	fullBuildMask = &field_mask.FieldMask{
+		// TODO(hinoka): Add statusReason here.
+		Paths: []string{
+			"id",
+			"builder",
+			"number",
+			"created_by",
+			"create_time",
+			"start_time",
+			"end_time",
+			"update_time",
+			"status",
+			"input",
+			"output",
+			"steps",
+			"infra",
+			"tags",
+		},
+	}
+	tagsAndGitilesMask = &field_mask.FieldMask{
+		Paths: []string{
+			"id",
+			"number",
+			"builder",
+			"input.gitiles_commit",
+			"tags",
+		},
+	}
+	summaryBuildMask = &field_mask.FieldMask{
+		Paths: []string{
+			"builds.*.id",
+			"builds.*.builder",
+			"builds.*.number",
+			"builds.*.create_time",
+			"builds.*.start_time",
+			"builds.*.end_time",
+			"builds.*.update_time",
+			"builds.*.status",
+			"builds.*.output.summary_markdown",
+		},
+	}
+)
+
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
-func GetBuildPage(c *router.Context, br buildbucketpb.GetBuildRequest) (*ui.BuildPage, error) {
-	br.Fields = fullBuildMask
-	host, err := getHost(c.Context)
+func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, related bool) (*ui.BuildPage, error) {
+	c := ctx.Context
+	host, err := getHost(c)
 	if err != nil {
 		return nil, err
 	}
-	b, err := GetBuild(c.Context, host, br)
+	client, err := buildbucketClient(c, host)
 	if err != nil {
 		return nil, err
 	}
-	link, err := getBugLink(c, b)
 
-	// Construct the build page struct from the build proto.
-	bp := ui.NewBuildPage(c.Context, b)
+	var b *buildbucketpb.Build
+	var relatedBuilds []*ui.Build
+	var blame []*ui.Commit
+	if err = parallel.FanOutIn(func(ch chan<- func() error) {
+		ch <- func() (err error) {
+			fullbr := br // Copy request
+			fullbr.Fields = fullBuildMask
+			b, err = client.GetBuild(c, &fullbr)
+			return
+		}
 
-	// We wait at most 4s to grab a blamelist.
-	nc, cancel := context.WithTimeout(c.Context, 4*time.Second)
-	defer cancel()
-	bp.Blame = getBlame(nc, host, b)
-
-	bp.BuildBugLink = link
-	return bp, err
+		// Fetch a small build with just a tiny bit of information.
+		// We use this to get the Gitiles tag so that we can fetch
+		// related builds and blamelist in parallel.
+		smallbr := br // Copy request
+		smallbr.Fields = tagsAndGitilesMask
+		sb, err := client.GetBuild(c, &smallbr)
+		if err != nil {
+			return
+		}
+		if related {
+			logging.Infof(c, "Getting related builds")
+			ch <- func() (err error) {
+				relatedBuilds, err = getRelatedBuilds(c, client, sb)
+				return
+			}
+		}
+		ch <- func() error {
+			// We wait at most 4s to grab a blamelist.
+			nc, cancel := context.WithTimeout(c, 4*time.Second)
+			defer cancel()
+			blame = getBlame(nc, host, sb)
+			return nil
+		}
+	}); err != nil {
+		return nil, err
+	}
+	link, err := getBugLink(ctx, b)
+	logging.Infof(c, "Got all the things")
+	return &ui.BuildPage{
+		Build:         ui.Build{b},
+		Blame:         blame,
+		RelatedBuilds: relatedBuilds,
+		Related:       related,
+		BuildBugLink:  link,
+	}, err
 }

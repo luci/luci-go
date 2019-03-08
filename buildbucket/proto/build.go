@@ -52,3 +52,14 @@ func (b *Build) ParseTags() strpair.Map {
 	}
 	return m
 }
+
+// Buildsets returns all of the buildsets of the build.
+func (b *Build) Buildsets() []string {
+	result := []string{}
+	for _, tag := range b.Tags {
+		if tag.Key == "buildset" {
+			result = append(result, tag.Value)
+		}
+	}
+	return result
+}

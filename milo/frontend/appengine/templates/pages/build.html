@@ -77,10 +77,10 @@
 {{define "body"}}
   <div class="content">
     <h1>
-    {{ with .BuildPage.Builder }}
+    {{ with .BuildPage.BuilderLink }}
       Builder {{ .HTML }}
     {{ end }}
-    Build {{ .BuildPage.BuildID.HTML }}
+    Build {{ .BuildPage.Link.HTML }}
     {{ with .BuildPage.BuildBugLink }}
       [ <a href="{{ . }}">File a bug</a> ]
     {{ end }}
@@ -92,6 +92,9 @@
     <div id="tabs">
       <ul>
         <li><a href="#overview-tab">Overview</a></li>
+        {{ if .BuildPage.Related }}
+          <li><a href="#related-tab">Related Builds</a></li>
+        {{ end }}
         <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
       <div id="overview-tab">
@@ -100,6 +103,9 @@
         {{ template "changes" . }}
       </div>
       <div id="timeline-tab" style="display: none;">{{ template "timeline_tab" . }}</div>
+      {{ if .BuildPage.Related }}
+        <div id="related-tab" style="display: none;">{{ template "related_tab" .BuildPage }}</div>
+      {{ end }}
     </div>
   </div>
 {{end}}
@@ -214,10 +220,50 @@
   </div>
 {{end}}
 
+{{define "related_tab"}}
+  {{ $now := .Now }}
+  <h2>Related Builds</h2>
+  {{ if .Buildsets }}
+    <h3>Other builds with the same buildsets:</h3>
+    {{ range .Buildsets }}
+      <li>{{ . }}</li>
+    {{ end }}
+
+    <table class="info">
+      <tr>
+        <th>Project</th>
+        <th>Bucket</th>
+        <th>Builder</th>
+        <th>Build</th>
+        <th>Status</th>
+        <th>Create Time</th>
+        <th>Pending</th>
+        <th>Duration</th>
+        <th>Summary</th>
+      </tr>
+
+      {{ range .RelatedBuilds }}
+        <tr>
+          <td>{{ .Builder.Project }}</td>
+          <td>{{ .Builder.Bucket }}</td>
+          <td>{{ .BuilderLink.HTML }}</td>
+          <td>{{ .Link.HTML }}</td>
+          <td class="status {{ .Status }}">{{ .HumanStatus }}</td>
+          <td>{{ .CreateTime | toTime | localTime "N/A" }}</td>
+          <td>{{ duration .CreateTime .StartTime $now }}</td>
+          <td>{{ duration .StartTime .EndTime $now }}</td>
+          <td>{{ with .Output }}{{ .SummaryMarkdown | renderMarkdown }}{{ end }}</td>
+        </tr>
+      {{ end }}
+    </table>
+  {{ else }}
+    <h3>No buildsets found</h3>
+  {{ end }}
+{{end}}
 
 {{define "attributes"}}
 <div id="attributes" class="column">
-  <h2>Tags</h2>{{ template "tags_table" .BuildPage.Build.GetTags }}
+  <h2>Tags</h2>{{ template "tags_table" .BuildPage.GetTags }}
   <h2>Input Properties</h2>{{ template "properties_table" .BuildPage.InputProperties }}
   <h2>Output Properties</h2>{{ template "properties_table" .BuildPage.OutputProperties }}
 </div>
