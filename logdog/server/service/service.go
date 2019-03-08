@@ -55,7 +55,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/logdog/server/retryServicesClient"
 	"go.chromium.org/luci/logdog/server/service/config"
 	serverAuth "go.chromium.org/luci/server/auth"
 	serverCaching "go.chromium.org/luci/server/caching"
@@ -379,10 +378,7 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 	if s.coordinatorInsecure {
 		prpcClient.Options.Insecure = true
 	}
-	sc := logdog.NewServicesPRPCClient(&prpcClient)
-
-	// Wrap the resulting client in a retry harness.
-	return retryServicesClient.New(sc, nil), nil
+	return logdog.NewServicesPRPCClient(&prpcClient), nil
 }
 
 func (s *Service) initConfig(c *context.Context) error {

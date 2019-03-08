@@ -36,4 +36,15 @@ an inexpensive rename operation.
 
 ## Incomplete Logs
 
-It is possible for log streams to be missing data at the time of archival.
+It is possible for log streams to be missing data at the time of archival. Each
+archival request includes a completeness threshold. If the archival request is
+younger than that threshold and the archival fails due to error or
+incompleteness, the request will be returned to the queue for future processing.
+
+If, however, the archival request is older than that threshold, a best-effort
+archival where missing logs are not considered errors will be executed. This
+will gracefully skip over any missing log entries, resulting in an incomplete
+log stream.
+
+This threshold is configured using the `archive_settle_delay` option in the
+`Coordinator` configuration message.
