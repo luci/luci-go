@@ -1,0 +1,228 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d195aa9_939b2f38",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 16
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "this is no longer correct",
+      "range": {
+        "startLine": 7,
+        "startChar": 20,
+        "endLine": 7,
+        "endChar": 73
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b10a9f59_096667b5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 16
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "nor this",
+      "range": {
+        "startLine": 10,
+        "startChar": 26,
+        "endLine": 11,
+        "endChar": 5
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "996a7cf5_b4cdcda9",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "what the point of having this instead of just two global functions \"SetupConfigValidation\" and \"ImportConfigs\"? Struct are useful if they implement some interface and this interface is then implemented by some mock, but this is not the case here.",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 1
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24ec659b_6a61fd2f",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "this is unnecessary, this function can accept *ProjectsCfg directly, and it doesn\u0027t use \u0027revision\u0027",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 2
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea5e9adb_1e7c93c1",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "This doesn\u0027t cleanup accounts of deleted projects. If this is intentional, please add a comment to acknowledge this.",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 44
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "966cfb84_a98a63cb",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "check the error, at least log it",
+      "range": {
+        "startLine": 75,
+        "startChar": 3,
+        "endLine": 75,
+        "endChar": 30
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff37b73b_d046b240",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "configset.ServiceSet(configServiceAppID)",
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "809b1787_73975727",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "this is unnecessary, just return cfg directly",
+      "range": {
+        "startLine": 98,
+        "startChar": 8,
+        "endLine": 98,
+        "endChar": 46
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0b52c50_ede1e71e",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "why do this instead of just directly using cfgclient API in fetchConfigs?\n\nif err :\u003d cfgclient.Get(c, cfgclient.AsService, configSet, projectsCfg, textproto.Message(cfg), nil); err !\u003d nil {\n  return err\n}\n\nIt is not significantly more code.\n\nCoupling with policy.Policy is absolutely unnecessary here. This package should not use \u0027policy\u0027 package at all. \u0027policy\u0027 implements a logic of ingesting a policy document, and keeping it hot in memory to quickly answer questions. Project scoped accounts do not need that, they use datastore to answer questions. \u0027policy\u0027 is wrong tool here, and it should not be bended into solving the problem is wasn\u0027t supposed to be solving.",
+      "range": {
+        "startLine": 105,
+        "startChar": 19,
+        "endLine": 105,
+        "endChar": 39
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c639bbef_91d74ca0",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T02:45:08Z",
+      "side": 1,
+      "message": "what\u0027s the purpose of this change? What\u0027s wrong with keeping 3600, Cloud IAM is quite happy to provide 1h tokens.",
+      "range": {
+        "startLine": 40,
+        "startChar": 27,
+        "endLine": 40,
+        "endChar": 31
+      },
+      "revId": "d5b6d82e5ad82bef55036c06b2094a0e6685f698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
