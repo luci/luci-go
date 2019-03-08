@@ -150,7 +150,8 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 		}
 	}
 
-	isoCtx, _ := context.WithTimeout(d, 30*time.Second)
+	isoCtx, cancelIsoCtx := context.WithTimeout(d, 30*time.Second)
+	defer cancelIsoCtx()
 	iso, err := prepIsolate(isoCtx, d.sCfg.Isolate.Url, desc, prev, params)
 	if err != nil {
 		err = errors.Annotate(err, "prepping Isolated").Err()
@@ -203,7 +204,8 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 
 	rslt := (*swarm.SwarmingRpcsTaskRequestMetadata)(nil)
 	err = retry.Retry(d, retry.Default, func() (err error) {
-		rpcCtx, _ := context.WithTimeout(d, 10*time.Second)
+		rpcCtx, cancel := context.WithTimeout(d, 10*time.Second)
+		defer cancel()
 		rslt, err = newSwarmClient(rpcCtx, d.sCfg).Tasks.New(&swarm.SwarmingRpcsNewTaskRequest{
 			ExpirationSecs: toIntSeconds(desc.Meta.Timeouts.Start),
 			Name:           fmt.Sprintf("%s%s|%d|%d", prefix, id.Quest, id.Attempt, id.Id),
@@ -239,7 +241,8 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 
 func (d *swarmingDist) Cancel(q *dm.Quest_Desc, tok distributor.Token) error {
 	return retry.Retry(d, retry.Default, func() (err error) {
-		ctx, _ := context.WithTimeout(d, 10*time.Second)
+		ctx, cancel := context.WithTimeout(d, 10*time.Second)
+		defer cancel()
 		cr := &swarm.SwarmingRpcsTaskCancelRequest{KillRunning: true}
 		_, err = newSwarmClient(ctx, d.sCfg).Task.Cancel(string(tok), cr).Context(ctx).Do()
 		return
@@ -268,7 +271,8 @@ func (d *swarmingDist) GetStatus(q *dm.Quest_Desc, tok distributor.Token) (*dm.R
 	rslt := (*swarm.SwarmingRpcsTaskResult)(nil)
 
 	err := retry.Retry(d, retry.Default, func() (err error) {
-		ctx, _ := context.WithTimeout(d, 10*time.Second)
+		ctx, cancel := context.WithTimeout(d, 10*time.Second)
+		defer cancel()
 		rslt, err = newSwarmClient(ctx, d.sCfg).Task.Result(string(tok)).Context(ctx).Do()
 		return
 	}, retry.LogCallback(d, fmt.Sprintf("swarm.Task.Result(%s)", tok)))

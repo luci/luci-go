@@ -249,7 +249,8 @@ func readConfigCron(c *router.Context) {
 	projectsToVisit := map[string]bool{}
 
 	// Visit all projects in the catalog.
-	ctx, _ := context.WithTimeout(rc.Context, 150*time.Second)
+	ctx, cancel := context.WithTimeout(rc.Context, 150*time.Second)
+	defer cancel()
 	projects, err := globalCatalog.GetAllProjects(ctx)
 	if err != nil {
 		rc.err(err, "Failed to grab a list of project IDs from catalog")
