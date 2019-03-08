@@ -63,6 +63,8 @@ func init() {
 	base := standard.Base().Extend(ps.Base)
 	svr.InstallHandlers(r, base)
 
+	r.GET("/admin/cron/stats", base, cronStatsHandler)
+
 	// Redirect "/" to "/app/".
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/app/", http.StatusFound)
