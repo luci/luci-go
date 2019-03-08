@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8a747d27_ad54a9e6",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T21:51:38Z",
+      "side": 1,
+      "message": "This is very hot codepath.\n\nCan we actually DO this comparison to avoid calling WithDeadline (and spawning goroutine it launches) ON EVERY SINGLE REQUEST EVER if it is not actually necessary?\n\nEven better would be to propagate the deadline as time.Time into getRCPHeaders (and all its implementations), and let them build the subcontext only when they actually need to refresh the token.\n\n(I can do this in a separate CL).",
+      "range": {
+        "startLine": 275,
+        "startChar": 5,
+        "endLine": 275,
+        "endChar": 71
+      },
+      "revId": "cadb0c3a2e9416d0ab984e72fbba31894142209c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
