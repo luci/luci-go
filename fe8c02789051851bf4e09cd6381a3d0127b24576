@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "65531def_0bf578c7",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T22:38:30Z",
+      "side": 1,
+      "message": "do we need ids separately from result?\nwhy not append directly to a []*ui.Build and then\n\n  sort.Slice(result, func(i, j int) bool { return result[i].id \u003c result.ids[j] })\n\nthen we don\u0027t need L290-292, and we can go back to map[int64]bool or map[int64]struct{}",
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40f86656_d9938e7d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T22:38:30Z",
+      "side": 1,
+      "message": "this still need to happen inside a worker\nmy point was that a worker can add more work to ch",
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3625b7da_4efb0fdc",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 12
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T22:38:30Z",
+      "side": 1,
+      "message": "sorry, meant \"with same buildsets\"",
+      "range": {
+        "startLine": 227,
+        "startChar": 22,
+        "endLine": 227,
+        "endChar": 36
+      },
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "561d1832_50d9be63",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T22:38:30Z",
+      "side": 1,
+      "message": "this code is generic and generally useful\nconsider adding this to buildbucket package",
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
