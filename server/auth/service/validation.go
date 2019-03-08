@@ -19,6 +19,7 @@ import (
 	"net"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
@@ -38,7 +39,12 @@ func validateAuthDB(db *protocol.AuthDB) error {
 			return fmt.Errorf("auth: bad IP whitlist %q - %s", wl.GetName(), err)
 		}
 	}
-	return nil
+
+	// Make sure NewSnapshotDB is able to process it as well, since this is where
+	// this proto usually ends up. Note that NewSnapshotDB relies on absence of
+	// cycles in the groups, so the checks above are also important.
+	_, err := authdb.NewSnapshotDB(db, "", 0)
+	return err
 }
 
 // validateAuthGroup returns nil if AuthGroup looks correct.

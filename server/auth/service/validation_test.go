@@ -57,6 +57,12 @@ func TestValidateAuthDB(t *testing.T) {
 			},
 		}), ShouldErrLike, "bad IP whitlist")
 	})
+
+	Convey("validateAuthDB bad SecurityConfig", t, func() {
+		So(validateAuthDB(&protocol.AuthDB{
+			SecurityConfig: []byte("not a serialized proto"),
+		}), ShouldErrLike, "failed to deserialize SecurityConfig")
+	})
 }
 
 func TestValidateAuthGroup(t *testing.T) {
