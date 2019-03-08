@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "249cc65a_4f903f8f",
+        "filename": "milo/buildsource/buildbucket/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-08T17:39:52Z",
+      "side": 1,
+      "message": "actually, this appears to be the only use of this newly created context. Which would mean that the context doesn\u0027t ensure that requests don\u0027t take longer than the timeout. The timeout effectively only affects authentication header generation it.",
+      "parentUuid": "9ed8f2ab_65fe4bec",
+      "revId": "b5d98071234730e85c739344ed1a9913ff933f39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d4a6eb96_e478b1cf",
         "filename": "milo/buildsource/buildbucket/common.go",
         "patchSetId": 2
