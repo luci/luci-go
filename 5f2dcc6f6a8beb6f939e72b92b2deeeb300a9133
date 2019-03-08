@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cb059c33_ef2bb259",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T00:38:33Z",
+      "side": 1,
+      "message": "It would be, but afaict it\u0027s an unexported appengine API error, so we don\u0027t have access to it :(\n\nErrors exported by urlfetch: https://godoc.org/google.golang.org/appengine/urlfetch#pkg-variables",
+      "parentUuid": "d889ff9e_98072678",
+      "range": {
+        "startLine": 81,
+        "startChar": 4,
+        "endLine": 81,
+        "endChar": 83
+      },
+      "revId": "5f2dcc6f6a8beb6f939e72b92b2deeeb300a9133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b60901d9_cc223d6d",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "5f2dcc6f6a8beb6f939e72b92b2deeeb300a9133",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa4793ab_36785a40",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T00:38:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b60901d9_cc223d6d",
+      "range": {
+        "startLine": 271,
+        "startChar": 5,
+        "endLine": 271,
+        "endChar": 6
+      },
+      "revId": "5f2dcc6f6a8beb6f939e72b92b2deeeb300a9133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
