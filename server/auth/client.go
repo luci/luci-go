@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -49,6 +50,11 @@ const (
 	//
 	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
 	// Can be customized with WithScopes() options.
+	//
+	// AsSelf should be used very sparingly, only for "maintenance" RPCs that
+	// happen outside of the context of any LUCI project or any end-user request.
+	// Using AsSelf to authorize RPCs that touch user data leads to "confused
+	// deputy" problems. Strongly prefer to use AsProject or AsUser instead.
 	AsSelf
 
 	// AsUser is used for outbound RPCs that inherit the authority of a user
@@ -96,16 +102,30 @@ const (
 	// Can be customized with WithScopes() options.
 	AsActor
 
-	// AsProjectScoped is used to obtain an OAuth2 token associated with a LUCI
-	// project.
+	// AsProject is used for outbounds RPCs sent with the authority of some LUCI
+	// project (specified via WithProject option).
 	//
-	// RPC requests done in this mode will have 'Authorization' header set to the
-	// OAuth2 access token of the project specific service account.
+	// When used to call external services (anything that is not a part of the
+	// current LUCI deployment), uses 'Authorization' header with OAuth2 access
+	// token associated with the project-specific service account (specified with
+	// the LUCI project definition in 'project.cfg' deployment configuration
+	// file).
 	//
-	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
-	// Can be customized with WithScopes() options.
-	AsProjectScoped
+	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope
+	// in this case. Can be customized with WithScopes() options.
+	//
+	// When used to call LUCI services belonging the same LUCI deployment (per
+	// 'internal_service_regexp' setting in 'security.cfg' deployment
+	// configuration file) uses the current service's OAuth2 access token plus
+	// 'X-Luci-Project' header with the project name. Such calls are authenticated
+	// by the peer as coming from 'project:<name>' identity. Any custom OAuth
+	// scopes supplied via WithScopes() option are ignored in this case.
+	AsProject
 )
+
+// XLUCIProjectHeader is a header with the current project for internal LUCI
+// RPCs done via AsProject authority.
+const XLUCIProjectHeader = "X-Luci-Project"
 
 // RPCOption is an option for GetRPCTransport or GetPerRPCCredentials functions.
 type RPCOption interface {
@@ -315,8 +335,8 @@ func (creds perRPCCreds) RequireTransportSecurity() bool {
 // While GetPerRPCCredentials is preferred, this can be used by packages that
 // cannot or do not properly handle this gRPC option.
 func GetTokenSource(c context.Context, kind RPCAuthorityKind, opts ...RPCOption) (oauth2.TokenSource, error) {
-	if kind != AsSelf && kind != AsProjectScoped && kind != AsCredentialsForwarder && kind != AsActor {
-		return nil, fmt.Errorf("auth: GetTokenSource can only be used with AsSelf, AsProjectScoped, AsCredentialsForwarder or AsActor authorization kind")
+	if kind != AsSelf && kind != AsCredentialsForwarder && kind != AsActor {
+		return nil, fmt.Errorf("auth: GetTokenSource can only be used with AsSelf, AsCredentialsForwarder or AsActor authorization kind")
 	}
 	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
@@ -402,12 +422,11 @@ type headersGetter func(c context.Context, uri string, opts *rpcOptions) (*oauth
 
 type rpcOptions struct {
 	kind             RPCAuthorityKind
-	project          string   // for AsProjectScoped
-	scopes           []string // for AsSelf, AsProjectScoped and AsActor
+	project          string   // for AsProject
+	scopes           []string // for AsSelf, AsProject and AsActor
 	serviceAccount   string   // for AsActor
 	delegationToken  string   // for AsUser
 	delegationTags   []string // for AsUser
-	scopedTags       []string // for AsProjectScoped
 	monitoringClient string
 	checkCtx         func(c context.Context) error // optional, may be skipped
 	getRPCHeaders    headersGetter
@@ -422,7 +441,7 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	}
 
 	// Set default scopes.
-	asSelfOrActorOrProject := options.kind == AsSelf || options.kind == AsActor || options.kind == AsProjectScoped
+	asSelfOrActorOrProject := options.kind == AsSelf || options.kind == AsActor || options.kind == AsProject
 	if asSelfOrActorOrProject && len(options.scopes) == 0 {
 		options.scopes = defaultOAuthScopes
 	}
@@ -446,8 +465,8 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	if len(options.delegationTags) != 0 && options.delegationToken != "" {
 		return nil, fmt.Errorf("auth: WithDelegationTags and WithDelegationToken cannot be used together")
 	}
-	if options.project == "" && options.kind == AsProjectScoped {
-		return nil, fmt.Errorf("auth: AsProjectScoped authorization kind requires WithProject option")
+	if options.project == "" && options.kind == AsProject {
+		return nil, fmt.Errorf("auth: AsProject authorization kind requires WithProject option")
 	}
 
 	// Validate 'kind' and pick correct implementation of getRPCHeaders.
@@ -469,7 +488,7 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		}
 	case AsActor:
 		options.getRPCHeaders = asActorHeaders
-	case AsProjectScoped:
+	case AsProject:
 		options.getRPCHeaders = asProjectHeaders
 	default:
 		return nil, fmt.Errorf("auth: unknown RPCAuthorityKind %d", options.kind)
@@ -600,11 +619,25 @@ func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.To
 //
 // This will be called by the transport layer on each request.
 func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+	internal, err := isInternalURI(c, uri)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// For calls within a single LUCI deployment use the service's own OAuth2
+	// token and 'X-Luci-Project' header to convey the project identity to the
+	// peer.
+	if internal {
+		tok, _, err := asSelfHeaders(c, uri, opts)
+		return tok, map[string]string{XLUCIProjectHeader: opts.project}, err
+	}
+
+	// For calls to external (non-LUCI) services get an OAuth2 token of a project
+	// scoped service account.
 	mintTokenCall := MintProjectToken
 	if opts.rpcMocks != nil && opts.rpcMocks.MintProjectToken != nil {
 		mintTokenCall = opts.rpcMocks.MintProjectToken
 	}
-
 	mintParams := ProjectTokenParams{
 		MinTTL:      2 * time.Minute,
 		LuciProject: opts.project,
@@ -612,4 +645,24 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 	}
 	tok, err := mintTokenCall(c, mintParams)
 	return tok, nil, err
+}
+
+// isInternalURI returns true if the URI points to a LUCI microservice belonging
+// to the same LUCI deployment as us.
+//
+// Returns an error if the URI can't be parsed, not https:// or there were
+// errors accessing AuthDB to compare the URI against the whitelist.
+func isInternalURI(c context.Context, uri string) (bool, error) {
+	switch u, err := url.Parse(uri); {
+	case err != nil:
+		return false, fmt.Errorf("auth: could not parse URI %q - %s", uri, err)
+	case u.Scheme != "https":
+		return false, fmt.Errorf("auth: AsProject can be used only with https:// targets, got %q", uri)
+	default:
+		state := GetState(c)
+		if state == nil {
+			return false, ErrNotConfigured
+		}
+		return state.DB().IsInternalService(c, u.Host)
+	}
 }
