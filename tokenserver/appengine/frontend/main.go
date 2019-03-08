@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
-	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/adminsrv"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/minter/tokenminter"
@@ -68,8 +67,7 @@ func init() {
 	adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
 	adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
 	adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
-	// TODO(fmatenaar): Merge this with MintProjectTokenRPC implementation.
-	projectscope.Validator.SetupConfigValidation(&validation.Rules)
+	adminSrv.ImportProjectIdentityConfigsRPC.SetupConfigValidation(&validation.Rules)
 
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
