@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "130c2cb0_ad0b6795",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T03:52:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73029e2d_a8fd514e",
+      "range": {
+        "startLine": 84,
+        "startChar": 29,
+        "endLine": 84,
+        "endChar": 30
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3f8c30f8_ce5fcbfb",
         "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "411c22a6_cfbc4d8f",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T03:52:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f8c30f8_ce5fcbfb",
+      "range": {
+        "startLine": 86,
+        "startChar": 13,
+        "endLine": 86,
+        "endChar": 24
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ea505427_81eb02fe",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T03:52:51Z",
+      "side": 1,
+      "message": "The main alert for the health of this pipeline will be number of messages in the task queue.  When that fires, a natural place to check for issues is in the logs here.  I think because of that, logging an error is good enough visibility for this super abnormal case.",
+      "parentUuid": "d9496a96_8a3068e4",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 50
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2014ece1_541926cd",
         "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
         "patchSetId": 7
@@ -91,6 +163,30 @@
       "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1856e325_05208040",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T03:52:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2014ece1_541926cd",
+      "range": {
+        "startLine": 92,
+        "startChar": 2,
+        "endLine": 92,
+        "endChar": 5
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "9955d03c_868bdc3e",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T03:52:51Z",
+      "side": 1,
+      "message": "Yep basically (Even more immediately with the auto delete added)",
+      "parentUuid": "e7e3af0b_61e13574",
+      "range": {
+        "startLine": 101,
+        "startChar": 25,
+        "endLine": 101,
+        "endChar": 32
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "72d76260_39ea0619",
         "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
         "patchSetId": 7
@@ -137,6 +257,30 @@
       "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a34bf9c_1f900e90",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T03:52:51Z",
+      "side": 1,
+      "message": "Buffered message so that show up as a single multi-line log entry in the logs.  I think it looks better (And GAE will break apart your request into multiple chunks if there are a ton of log entries).  I\u0027m not super set on it.",
+      "parentUuid": "72d76260_39ea0619",
+      "range": {
+        "startLine": 105,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 4
+      },
+      "revId": "aadc2e9b6866c9b8ac1bc91287f71318292fadab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
