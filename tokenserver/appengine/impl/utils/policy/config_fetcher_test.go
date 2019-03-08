@@ -40,24 +40,24 @@ func TestConfigFetcher(t *testing.T) {
 			"def.cfg": "seconds: 67890",
 		})
 
-		f := luciConfigFetcher{}
+		f := NewLuciConfigFetcher()
 		ts := timestamp.Timestamp{} // using timestamp as guinea pig proto message
 
 		So(f.FetchTextProto(c, "missing", &ts), ShouldEqual, config.ErrNoConfig)
-		So(f.Revision(), ShouldEqual, "")
+		So(f.Revision(c), ShouldEqual, "")
 
 		So(f.FetchTextProto(c, "abc.cfg", &ts), ShouldBeNil)
 		So(ts.Seconds, ShouldEqual, 12345)
 		So(f.FetchTextProto(c, "def.cfg", &ts), ShouldBeNil)
 		So(ts.Seconds, ShouldEqual, 67890)
 
-		So(f.Revision(), ShouldEqual, "20a03c9df37ce4413c01b580a8ae48a0aafce038")
+		So(f.Revision(c), ShouldEqual, "20a03c9df37ce4413c01b580a8ae48a0aafce038")
 	})
 
 	Convey("Revision changes midway", t, func() {
 		base := gaetesting.TestingContext()
 
-		f := luciConfigFetcher{}
+		f := NewLuciConfigFetcher()
 		ts := timestamp.Timestamp{}
 
 		c1 := prepareServiceConfig(base, map[string]string{

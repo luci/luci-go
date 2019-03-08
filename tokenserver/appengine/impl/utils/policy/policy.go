@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 )
 
@@ -107,6 +108,14 @@ type ConfigFetcher interface {
 	// a concrete proto message class). May return transient error (e.g timeouts)
 	// and fatal ones (e.g bad proto file).
 	FetchTextProto(c context.Context, path string, out proto.Message) error
+
+	// FetchTextProtoFromService fetches text-serialized protobuf message at a given path
+	// from any config set.
+	//
+	// The path is relative to the configSet provided.
+	//
+	// Otherwise behaves like FetchTextProto.
+	FetchTextProtoFromService(c context.Context, configSet config.Set, path string, out proto.Message) error
 }
 
 // ImportConfigs updates configs stored in the datastore.
@@ -124,20 +133,20 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 
 	// Fetch and parse text protos stored in LUCI config. The fetcher will also
 	// record the revision of the fetched files.
-	fetcher := luciConfigFetcher{}
-	bundle, err := p.Fetch(c, &fetcher)
+	fetcher := NewLuciConfigFetcher()
+	bundle, err := p.Fetch(c, fetcher)
 	if err == nil && len(bundle) == 0 {
 		err = errors.New("no configs fetched by the callback")
 	}
 	if err != nil {
 		return "", errors.Annotate(err, "failed to fetch policy configs").Err()
 	}
-	rev = fetcher.Revision()
+	rev = fetcher.Revision(c)
 
 	// Convert configs into a form appropriate for the datastore. We'll skip the
 	// rest of the import if this exact blob is already in the datastore (based on
 	// SHA256 digest).
-	cfgBlob, err := serializeBundle(bundle)
+	cfgBlob, err := SerializeBundle(bundle)
 	if err != nil {
 		return "", errors.Annotate(err, "failed to serialize the configs").Err()
 	}
@@ -248,7 +257,7 @@ func (p *Policy) grabQueryable(c context.Context, prevQ Queryable) (Queryable, e
 	// updated. Presumably, it is better than silently using no longer valid
 	// config.
 	logging.Infof(c, "Using configs at rev %s", body.Revision)
-	configs, unknown, err := deserializeBundle(body.Data)
+	configs, unknown, err := DeserializeBundle(body.Data)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to deserialize cached configs").Err()
 	}
