@@ -34,8 +34,16 @@ import "go.chromium.org/luci/buildbucket/proto/step.proto";
 // A BigQuery row is inserted soon after build ends, i.e. a row represents a state of
 // a build at completion time and does not change after that.
 // All fields are included.
+//
+// Next id: 21.
 message Build {
   // Defines what to build/test.
+  //
+  // Behavior of a build script (recipe) MAY depend on Input.
+  // It MAY NOT modify its behavior based on anything outside of Input.
+  // It MAY read non-Input fields to display for debugging or to pass-through to
+  // triggered builds. For example the "tags" field may be passed to triggered
+  // builds, or the "infra" field may be printed for debugging purposes.
   message Input {
     // Arbitrary JSON object. Available at build run time.
     //
@@ -70,20 +78,17 @@ message Build {
     bool experimental = 5;
   }
 
-  // Output of the build script / recipe.
+  // Result of the build script (recipe).
   message Output {
+    reserved 2; // summary_markdown, was moved to Build.
+    reserved 4; // critical, was moved to Build.
+
     // Arbitrary JSON object produced by the build.
     //
     // V1 equivalent: corresponds to "properties" key in
     // "result_details_json".
     // In V1 output properties are not populated until build ends.
     google.protobuf.Struct properties = 1;
-
-    // Human-readable summary of the build provided by the build itself,
-    // in Markdown format (https://spec.commonmark.org/0.28/).
-    //
-    // BigQuery: excluded from rows.
-    string summary_markdown = 2;
 
     // Build checked out and executed on this commit.
     //
@@ -93,12 +98,6 @@ message Build {
     //
     // V1 equivalent: this supersedes all got_revision output property.
     GitilesCommit gitiles_commit = 3;
-
-    // If NO, then the build status SHOULD NOT be used to assess correctness of
-    // the input gitiles_commit or gerrit_changes.
-    // For example, if a pre-submit build has failed, CQ MAY still land the CL.
-    // For example, if a post-submit build has failed, CLs MAY continue landing.
-    Trinary critical = 4;
   }
 
   reserved 5; // view_url
@@ -156,6 +155,19 @@ message Build {
   //
   // BigQuery: Final status of the build. Cannot be SCHEDULED or STARTED.
   Status status = 12;
+
+  // Human-readable summary of the build in Markdown format
+  // (https://spec.commonmark.org/0.28/).
+  // Explains status.
+  //
+  // BigQuery: excluded from rows.
+  string summary_markdown = 20;
+
+  // If NO, then the build status SHOULD NOT be used to assess correctness of
+  // the input gitiles_commit or gerrit_changes.
+  // For example, if a pre-submit build has failed, CQ MAY still land the CL.
+  // For example, if a post-submit build has failed, CLs MAY continue landing.
+  Trinary critical = 21;
 
   // Machine-readable explanation of the current status.
   // Human-readable reason is available in summary_markdown.
