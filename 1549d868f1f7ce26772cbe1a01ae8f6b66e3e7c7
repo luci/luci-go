@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc1f1399_615b8087",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 22
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T23:51:13Z",
+      "side": 1,
+      "message": "please do not use this package here, it is inappropriate\n\nluciConfigFetcher{} is part of policy.Policy implementation, it should not be used on its own. It hides LUCI Config API from policy.Policy _callbacks_, so callbacks can be tested with e.g. mocks. If we don\u0027t use policy.Policy we must not use luciConfigFetcher{} or any other part of \u0027policy\u0027 package.\n\nI strongly against extending the API of \u0027policy\u0027 package now just to avoid calling cfgclient.Get() from this code. If you really want to insert a layer of abstraction at some point, please still use cfgclient.Get() and add a \"TODO: extract shared code to access LUCI Config from policy package.\"",
+      "range": {
+        "startLine": 29,
+        "startChar": 56,
+        "endLine": 29,
+        "endChar": 62
+      },
+      "revId": "1549d868f1f7ce26772cbe1a01ae8f6b66e3e7c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
