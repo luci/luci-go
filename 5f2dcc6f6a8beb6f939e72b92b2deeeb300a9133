@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d889ff9e_98072678",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-08T00:26:47Z",
+      "side": 1,
+      "message": "isn\u0027t it more robust to compare error to either instead of string-based matching?",
+      "range": {
+        "startLine": 81,
+        "startChar": 4,
+        "endLine": 81,
+        "endChar": 83
+      },
+      "revId": "5f2dcc6f6a8beb6f939e72b92b2deeeb300a9133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b60901d9_cc223d6d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-08T00:26:47Z",
+      "side": 1,
+      "message": "i think you should call defer cancel() -- at least doc says so.",
+      "range": {
+        "startLine": 271,
+        "startChar": 5,
+        "endLine": 271,
+        "endChar": 6
+      },
+      "revId": "5f2dcc6f6a8beb6f939e72b92b2deeeb300a9133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
