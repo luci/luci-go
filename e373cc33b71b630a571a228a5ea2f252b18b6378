@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b88ce3e4_271c1e85",
+        "filename": "gce/appengine/backend/internal/metrics/metrics_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-08T00:07:16Z",
+      "side": 1,
+      "message": "Good guess about parallel. I think you should remove this, which will ensure that no other test runs in parallel to this one.",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 13
+      },
+      "revId": "e373cc33b71b630a571a228a5ea2f252b18b6378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
