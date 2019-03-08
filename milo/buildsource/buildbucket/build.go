@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -67,23 +69,41 @@ func BuildAddress(build *buildbucketpb.Build) string {
 //     the SourceManifest objects inside of them). Currently getRespBuild defers
 //     to swarming's implementation of buildsource.ID.Get(), which only returns
 //     the resp object.
-func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Commit, error) {
+func simplisticBlamelist(c context.Context, build *model.BuildSummary) (result []*ui.Commit) {
+	var err error
+	defer func() {
+		if err != nil {
+			msg := "Failed to fetch blame information\n"
+			logging.WithError(err).Warningf(c, msg)
+			if strings.Contains(err.Error(), "DEADLINE_EXCEEDED") || c.Err() != nil {
+				// When the context deadline is reached, the error that is returned is
+				// a bit racy.
+				// Either the actual context error itself is returned, or the urlfetch variant.
+				msg += "Gitiles was taking too long"
+			} else {
+				msg += err.Error()
+			}
+			result = append(result, &ui.Commit{Description: msg})
+		}
+	}()
 	bs := build.GitilesCommit()
 	if bs == nil {
-		return nil, nil
+		return
 	}
 
 	builds, commits, err := build.PreviousByGitilesCommit(c)
 	switch {
 	case err == nil || err == model.ErrUnknownPreviousBuild:
+		// continue
 	case status.Code(err) == codes.PermissionDenied:
-		return nil, common.CodeUnauthorized.Tag().Apply(err)
+		err = common.CodeUnauthorized.Tag().Apply(err)
+		return
 	default:
-		return nil, err
+		return
 	}
 
 	repoURL := bs.RepoURL()
-	result := make([]*ui.Commit, 0, len(commits)+1)
+	result = make([]*ui.Commit, 0, len(commits)+1)
 	for _, commit := range commits {
 		result = append(result, uiCommit(commit, repoURL))
 	}
@@ -98,7 +118,7 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 		})
 	}
 
-	return result, nil
+	return
 }
 
 func uiCommit(commit *gitpb.Commit, repoURL string) *ui.Commit {
@@ -150,11 +170,11 @@ func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 
 // getBlame fetches blame information from Gitiles.
 // This requires the BuildSummary to be indexed in Milo.
-func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Commit, error) {
+func getBlame(c context.Context, host string, b *buildbucketpb.Build) []*ui.Commit {
 	commit := b.GetInput().GetGitilesCommit()
 	// No commit? No blamelist.
 	if commit == nil {
-		return nil, nil
+		return nil
 	}
 	// TODO(hinoka): This converts a buildbucketpb.Commit into a string
 	// and back into a buildbucketpb.Commit.  That's a bit silly.
@@ -242,14 +262,16 @@ func GetBuildPage(c *router.Context, br buildbucketpb.GetBuildRequest) (*ui.Buil
 	if err != nil {
 		return nil, err
 	}
-	blame, err := getBlame(c.Context, host, b)
-	if err != nil {
-		return nil, err
-	}
 	link, err := getBugLink(c, b)
 
+	// Construct the build page struct from the build proto.
 	bp := ui.NewBuildPage(c.Context, b)
-	bp.Blame = blame
+
+	// We wait at most 4s to grab a blamelist.
+	nc, cancel := context.WithTimeout(c.Context, 4*time.Second)
+	defer cancel()
+	bp.Blame = getBlame(nc, host, b)
+
 	bp.BuildBugLink = link
 	return bp, err
 }
