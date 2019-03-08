@@ -54,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "7f5f784b_22efe66b",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T22:49:07Z",
+      "side": 1,
+      "message": "it works in this case because this is the last async op to do in this func.\n\nit wouldn\u0027t work in a more general case:\n\n w1 -\u003e {w2, w3}\n w4 -\u003e {w5, w6}",
+      "parentUuid": "3f32419e_73d9d1af",
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3625b7da_4efb0fdc",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 12
