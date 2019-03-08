@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "796a7f59_29c3a453",
+        "filename": "server/auth/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T00:02:40Z",
+      "side": 0,
+      "message": "oauth2.TokenSource is not appropriate for AsProject anymore because we can\u0027t just produce a token in Token() without knowing the target URI.",
+      "range": {
+        "startLine": 318,
+        "startChar": 30,
+        "endLine": 318,
+        "endChar": 45
+      },
+      "revId": "7edb57dbda4e31084ceb47297e724acf1c7ce6b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
