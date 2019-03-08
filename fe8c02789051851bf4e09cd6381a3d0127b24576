@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "3f32419e_73d9d1af",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-08T22:45:52Z",
+      "side": 1,
+      "message": "No it can\u0027t, the task channel is closed as soon as the generator function ends.\n\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/common/sync/parallel/runner.go#237\n\nWhat\u0027s wrong with putting this in the generator?  I like this over 2 nested parallel.FanOutIns.",
+      "parentUuid": "40f86656_d9938e7d",
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3625b7da_4efb0fdc",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 12
