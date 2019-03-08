@@ -193,3 +193,18 @@ substep: <
     >
   >
 >
+
+substep: <
+  step: <
+    name: "dup step name"
+    status: RUNNING
+    started: < seconds: 1500000000 >
+  >
+>
+substep: <
+  step: <
+    name: "dup step name"
+    status: RUNNING
+    started: < seconds: 1500000000 >
+  >
+>
