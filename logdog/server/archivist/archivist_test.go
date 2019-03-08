@@ -63,14 +63,6 @@ func (t *testTask) Consume() {
 	t.consumed = true
 }
 
-func (t *testTask) AssertLease(context.Context) error {
-	if err := t.assertLeaseErr; err != nil {
-		return err
-	}
-	t.assertCount++
-	return nil
-}
-
 // testServicesClient implements logdog.ServicesClient sufficient for testing
 // and instrumentation.
 type testServicesClient struct {
