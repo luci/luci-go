@@ -185,6 +185,21 @@ message BatchResponse {
   repeated Entry resp = 1;
 }
 
+message LeaseRequest {
+  int64 max_tasks = 1;
+  google.protobuf.Duration lease_time = 2;
+}
+
+message LeaseResponse {
+  // Tasks are tasks leased to the caller.  Only Project and Id are filled.
+  repeated ArchiveTask tasks = 1;
+}
+
+message DeleteRequest {
+  // Tasks are tasks the caller wants to delete.  Only Project and Id are required.
+  repeated ArchiveTask tasks = 1;
+}
+
 // Services service is a LogDog Coordinator endpoint that interfaces with
 // LogDog processing services.
 service Services {
@@ -215,4 +230,12 @@ service Services {
   // BatchResponse containing the same number of entries, with each entry index
   // corresponding to its request index.
   rpc Batch(BatchRequest) returns (BatchResponse);
+
+  // TaskQueueLease is a passthrough to appengine's taskqueue.Lease.
+  // TODO(hinoka): Remove this when https://cloud.google.com/tasks/ is out of Beta.
+  rpc LeaseArchiveTasks(LeaseRequest) returns (LeaseResponse);
+
+  // TaskQueueDeleteMulti is a passthrough to appengine's taskqueue.DeleteMulti
+  // TODO(hinoka): Remove this when https://cloud.google.com/tasks/ is out of Beta.
+  rpc DeleteArchiveTasks(DeleteRequest) returns (google.protobuf.Empty);
 }
