@@ -27,7 +27,11 @@ message ArchiveTask {
   string project = 1;
   // The hash ID of the log stream to archive.
   string id = 2;
+  // The TaskQueue Name of this task, used in the taskqueue pipeline.
+  // This is required for ACKing.
+  string task_name = 7;
 
+  // TODO(hinoka): Remove everything below here after crbug.com/923557
   // The archival key of the log stream. If this key doesn't match the key in
   // the log stream state, the request is superfluous and should be deleted.
   bytes key = 3;
