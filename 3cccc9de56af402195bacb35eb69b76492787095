@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3c26c66c_33a7a913",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T20:19:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "58975454_1024847e",
+      "range": {
+        "startLine": 43,
+        "startChar": 16,
+        "endLine": 43,
+        "endChar": 26
+      },
+      "revId": "3cccc9de56af402195bacb35eb69b76492787095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7133333f_235e0cac",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "fb2f0138_1193e877",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T20:19:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7133333f_235e0cac",
+      "range": {
+        "startLine": 44,
+        "startChar": 18,
+        "endLine": 44,
+        "endChar": 21
+      },
+      "revId": "3cccc9de56af402195bacb35eb69b76492787095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "864f8418_bd24a41c",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 7
@@ -62,6 +110,24 @@
       "revId": "3cccc9de56af402195bacb35eb69b76492787095",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98f83ac7_0020893d",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-08T20:19:51Z",
+      "side": 1,
+      "message": "regardless of whether i agree or disagree with the proposal, this is infeasible at this point: quite a breaking change",
+      "parentUuid": "864f8418_bd24a41c",
+      "revId": "3cccc9de56af402195bacb35eb69b76492787095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
