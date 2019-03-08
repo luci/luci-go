@@ -16,6 +16,24 @@
       "revId": "2f33a139be9013bd64d2c774a4c4fe4d91424598",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c9b2c13_b39fcebc",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-08T01:36:03Z",
+      "side": 1,
+      "message": "Well, crap.\n\nWill fix ASAP in a separate CL. Please don\u0027t rollback :)",
+      "parentUuid": "302c454e_0b78de8a",
+      "revId": "2f33a139be9013bd64d2c774a4c4fe4d91424598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
