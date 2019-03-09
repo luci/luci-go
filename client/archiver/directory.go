@@ -106,13 +106,14 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 				}
 				if strings.HasPrefix(l, dir) {
 					c <- &walkItem{fullPath: l[len(dir)+1:], relPath: relPath, info: info, inTreeSymlink: true}
+					return nil
+				}
+
+				if info.IsDir() {
+					linkedView := view.NewSymlinkedView(relPath, l)
+					return filepath.Walk(l, walkWithLinks(l, linkedView))
 				} else {
-					if info.IsDir() {
-						linkedView := view.WithNewRoot(l)
-						return filepath.Walk(l, walkWithLinks(l, linkedView))
-					} else {
-						c <- &walkItem{fullPath: l, relPath: relPath, info: info}
-					}
+					c <- &walkItem{fullPath: l, relPath: relPath, info: info}
 				}
 				return nil
 			}
