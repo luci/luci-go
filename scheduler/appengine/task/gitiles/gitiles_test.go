@@ -16,8 +16,10 @@ package gitiles
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -88,7 +90,7 @@ func TestTriggerBuild(t *testing.T) {
 			}
 			return gitilesMock.EXPECT().Refs(gomock.Any(), req).Return(res, nil)
 		}
-		// log is for readability of expectLog calls.
+		// expCommits is for readability of expectLog calls.
 		log := func(ids ...string) []string { return ids }
 		var epoch = time.Unix(1442270520, 0).UTC()
 		expectLog := func(new, old string, pageSize int, ids []string, errs ...error) *gomock.Call {
@@ -114,6 +116,40 @@ func TestTriggerBuild(t *testing.T) {
 			return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
 		}
 
+		// expectLogWithDiff mocks Log call with result containing Tree Diff.
+		// commitsWithFiles must be in the form of "sha1:comma,separated,files" and
+		// if several must go backwards in time, just like git log.
+		expectLogWithDiff := func(new, old string, pageSize int, commitsWithFiles ...string) *gomock.Call {
+			req := &gitilespb.LogRequest{
+				Project:            "b",
+				Committish:         new,
+				ExcludeAncestorsOf: old,
+				PageSize:           int32(pageSize),
+				TreeDiff:           true,
+			}
+			res := &gitilespb.LogResponse{}
+			committedAt := epoch
+			for _, cfs := range commitsWithFiles {
+				parts := strings.SplitN(cfs, ":", 2)
+				if len(parts) != 2 {
+					panic(fmt.Errorf(`commitWithFiles must be in the form of "sha1:comma,separated,files", but given %q`, cfs))
+				}
+				id := parts[0]
+				fileNames := strings.Split(parts[1], ",")
+				diff := make([]*git.Commit_TreeDiff, len(fileNames))
+				for i, f := range fileNames {
+					diff[i] = &git.Commit_TreeDiff{NewPath: f}
+				}
+				committedAt = committedAt.Add(-time.Minute)
+				res.Log = append(res.Log, &git.Commit{
+					Id:        id,
+					Committer: &git.Commit_User{Time: google.NewTimestamp(committedAt)},
+					TreeDiff:  diff,
+				})
+			}
+			return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
+		}
+
 		Convey("each configured ref must match resolved ref", func() {
 			cfg.Refs = []string{"refs/heads/master", `regexp:refs/branch-heads/\d+`}
 			expectRefs("refs/heads", strmap{"refs/heads/not-master": "deadbeef00"})
@@ -128,6 +164,24 @@ func TestTriggerBuild(t *testing.T) {
 			cfg.Refs = []string{"refs/heads/master"}
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00", "refs/weird": "123456"})
 			expectLog("deadbeef00", "", 1, log("deadbeef00"))
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
+			So(loadNoError(), ShouldResemble, strmap{
+				"refs/heads/master": "deadbeef00",
+			})
+			So(ctl.Triggers, ShouldHaveLength, 1)
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
+			So(ctl.Triggers[0].GetGitiles(), ShouldResemble, &api.GitilesTrigger{
+				Repo:     "https://a.googlesource.com/b.git",
+				Ref:      "refs/heads/master",
+				Revision: "deadbeef00",
+			})
+		})
+
+		Convey("newly discovered ref ignores pathFilter", func() {
+			cfg.Refs = []string{"refs/heads/master"}
+			cfg.PathRegexps = []string{"only.this.file"}
+			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
+			expectLogWithDiff("deadbeef00", "", 1, "deadbeef00:some,files")
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
 				"refs/heads/master": "deadbeef00",
@@ -218,6 +272,59 @@ func TestTriggerBuild(t *testing.T) {
 			So(google.TimeFromProto(ctl.Triggers[1].Created), ShouldEqual, epoch.Add(-3*time.Minute)) // oldest on master
 			So(google.TimeFromProto(ctl.Triggers[2].Created), ShouldEqual, epoch.Add(-2*time.Minute))
 			So(google.TimeFromProto(ctl.Triggers[3].Created), ShouldEqual, epoch.Add(-1*time.Minute)) // newest on master
+		})
+
+		Convey("Updated ref with pathfilters", func() {
+			cfg.Refs = []string{"refs/heads/master"}
+			cfg.PathRegexps = []string{`.+\.emit`}
+			cfg.PathRegexpsExclude = []string{`skip/.+`}
+			So(saveState(c, jobID, parsedURL, strmap{"refs/heads/master": "deadbeef04"}), ShouldBeNil)
+			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
+			expectLogWithDiff("deadbeef00", "deadbeef04", 50,
+				"deadbeef00:skip/commit",
+				"deadbeef01:yup.emit",
+				"deadbeef02:skip/this-file,not-matched-file,but-still.emit",
+				"deadbeef03:nothing-matched-means-skipped")
+
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
+			So(loadNoError(), ShouldResemble, strmap{
+				"refs/heads/master": "deadbeef00",
+			})
+			So(ctl.Triggers, ShouldHaveLength, 2)
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef02")
+			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef01")
+		})
+
+		Convey("Updated ref without matched commits", func() {
+			cfg.Refs = []string{"refs/heads/master"}
+			cfg.PathRegexps = []string{`must-match`}
+			So(saveState(c, jobID, parsedURL, strmap{"refs/heads/master": "deadbeef04"}), ShouldBeNil)
+			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
+
+			Convey("results in no emitted triggers if we examine each commit", func() {
+				expectLogWithDiff("deadbeef00", "deadbeef04", 50,
+					"deadbeef00:nope0",
+					"deadbeef01:nope1",
+					"deadbeef02:nope2",
+					"deadbeef03:nope3")
+				So(m.LaunchTask(c, ctl), ShouldBeNil)
+				So(loadNoError(), ShouldResemble, strmap{
+					"refs/heads/master": "deadbeef00",
+				})
+				So(ctl.Triggers, ShouldHaveLength, 0)
+			})
+			Convey("results in last commit emitted if we don't examine all commits", func() {
+				m.maxCommitsPerRefUpdate = 2
+				expectLogWithDiff("deadbeef00", "deadbeef04", 2,
+					"deadbeef00:nope",
+					"deadbeef01:nope1") // note deadbeef02 and 03 weren't examined.
+				So(m.LaunchTask(c, ctl), ShouldBeNil)
+				So(loadNoError(), ShouldResemble, strmap{
+					"refs/heads/master": "deadbeef00",
+				})
+				So(ctl.Triggers, ShouldHaveLength, 1)
+				So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
+			})
 		})
 
 		Convey("do nothing at all if there are no changes", func() {
@@ -378,6 +485,97 @@ func TestTriggerBuild(t *testing.T) {
 				So(loadNoError(), ShouldResemble, strmap{
 					"refs/heads/master": "001d",
 				})
+			})
+		})
+	})
+}
+
+func TestPathFilterHelpers(t *testing.T) {
+	t.Parallel()
+
+	Convey("PathFilter helpers work", t, func() {
+		Convey("disjunctiveOfRegexps works", func() {
+			So(disjunctiveOfRegexps([]string{`.+\.cpp`}), ShouldEqual, `^((.+\.cpp))$`)
+			So(disjunctiveOfRegexps([]string{`.+\.cpp`, `?a`}), ShouldEqual, `^((.+\.cpp)|(?a))$`)
+		})
+		Convey("pathFilter works", func() {
+			Convey("simple", func() {
+				empty, err := newPathFilter(&messages.GitilesTask{})
+				So(err, ShouldBeNil)
+				So(empty.active(), ShouldBeFalse)
+				_, err = newPathFilter(&messages.GitilesTask{PathRegexps: []string{`\K`}})
+				So(err, ShouldNotBeNil)
+				_, err = newPathFilter(&messages.GitilesTask{PathRegexps: []string{`a?`}, PathRegexpsExclude: []string{`\K`}})
+				So(err, ShouldNotBeNil)
+
+			})
+			Convey("just negative ignored", func() {
+				v, err := newPathFilter(&messages.GitilesTask{PathRegexpsExclude: []string{`.+\.cpp`}})
+				So(err, ShouldBeNil)
+				So(v.active(), ShouldBeFalse)
+			})
+
+			Convey("just positive", func() {
+				v, err := newPathFilter(&messages.GitilesTask{PathRegexps: []string{`.+`}})
+				So(err, ShouldBeNil)
+				So(v.active(), ShouldBeTrue)
+				Convey("empty commit is not interesting", func() {
+					So(v.isInteresting([]*git.Commit_TreeDiff{}), ShouldBeFalse)
+				})
+				Convey("new or old paths are taken into account", func() {
+					So(v.isInteresting([]*git.Commit_TreeDiff{{OldPath: "old"}}), ShouldBeTrue)
+					So(v.isInteresting([]*git.Commit_TreeDiff{{NewPath: "new"}}), ShouldBeTrue)
+				})
+			})
+
+			genDiff := func(files ...string) []*git.Commit_TreeDiff {
+				r := make([]*git.Commit_TreeDiff, len(files))
+				for i, f := range files {
+					if i&1 == 0 {
+						r[i] = &git.Commit_TreeDiff{OldPath: f}
+					} else {
+						r[i] = &git.Commit_TreeDiff{NewPath: f}
+					}
+				}
+				return r
+			}
+
+			Convey("many positives", func() {
+				v, err := newPathFilter(&messages.GitilesTask{PathRegexps: []string{`.+\.cpp`, "exact"}})
+				So(err, ShouldBeNil)
+				So(v.isInteresting(genDiff("not.matched")), ShouldBeFalse)
+
+				So(v.isInteresting(genDiff("matched.cpp")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("exact")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("at least", "one", "matched.cpp")), ShouldBeTrue)
+			})
+
+			Convey("many negatives", func() {
+				v, err := newPathFilter(&messages.GitilesTask{
+					PathRegexps:        []string{`.+`},
+					PathRegexpsExclude: []string{`.+\.cpp`, `excluded`},
+				})
+				So(err, ShouldBeNil)
+				So(v.isInteresting(genDiff("not excluded")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("excluded/is/a/dir/not/a/file")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("excluded", "also.excluded.cpp", "but this file isn't")), ShouldBeTrue)
+
+				So(v.isInteresting(genDiff("excluded.cpp")), ShouldBeFalse)
+				So(v.isInteresting(genDiff("excluded")), ShouldBeFalse)
+				So(v.isInteresting(genDiff()), ShouldBeFalse)
+			})
+
+			Convey("smoke test for complexity", func() {
+				v, err := newPathFilter(&messages.GitilesTask{
+					PathRegexps:        []string{`.+/\d\.py`, `included/.+`},
+					PathRegexpsExclude: []string{`.+\.cpp`, `excluded/.*`},
+				})
+				So(err, ShouldBeNil)
+				So(v.isInteresting(genDiff("excluded/1", "also.cpp", "included/one-is-enough")), ShouldBeTrue)
+				So(v.isInteresting(genDiff("included/but-also-excluded.cpp", "one-still-enough/1.py")), ShouldBeTrue)
+
+				So(v.isInteresting(genDiff("included/but-also-excluded.cpp", "excluded/2.py")), ShouldBeFalse)
+				So(v.isInteresting(genDiff("matches nothing")), ShouldBeFalse)
 			})
 		})
 	})

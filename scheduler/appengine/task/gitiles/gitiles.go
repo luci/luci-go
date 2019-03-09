@@ -162,7 +162,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	}
 
 	refs.pruneKnown(ctl)
-	leftToProcess, err := m.emitTriggersRefAtATime(c, ctl, g, cfg.Repo, refs)
+	leftToProcess, err := m.emitTriggersRefAtATime(c, ctl, g, cfg, refs)
 
 	if err != nil {
 		switch {
@@ -250,10 +250,13 @@ func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg 
 }
 
 // emitTriggersRefAtATime processes refs one a time and emits triggers if ref
-// changed. Limits number of triggers emitted and so may stop early.
+// changed. Limits number of triggers emitted and so may stop early, but
+// processes each ref atomically: either all triggers for it are emittted or
+// none.
 //
 // Returns how many refs were not examined.
-func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controller, g *gitilesClient, repo string, refs *refsState) (int, error) {
+func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controller, g *gitilesClient,
+	cfg *messages.GitilesTask, refs *refsState) (int, error) {
 	// Safeguard against too many changes such as the first run after config
 	// change to watch many more refs than before.
 	maxTriggersPerInvocation := m.maxTriggersPerInvocation
@@ -268,25 +271,53 @@ func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controll
 	// Note, that refs.current contain only watched refs (see getRefsTips).
 	// For determinism, sort refs by name.
 	sortedRefs := refs.sortedCurrentRefNames()
+	pathFilter, err := newPathFilter(cfg)
+	if err != nil {
+		return 0, err
+	}
 	for i, ref := range sortedRefs {
-		commits, err := refs.newCommits(c, ctl, g, ref, maxCommitsPerRefUpdate)
+		commits, newRef, err := refs.newCommits(c, ctl, g, ref, maxCommitsPerRefUpdate, pathFilter)
 		if err != nil {
 			// This ref counts as not yet examined.
 			return len(sortedRefs) - i, err
 		}
+		emitted := false
 		for i := range commits {
 			// commit[0] is latest, so emit triggers in reverse order of commits.
 			commit := commits[len(commits)-i-1]
+
+			if pathFilter.active() {
+				// Special case of path filtering if no triggers were emitted so far.
+				if !emitted &&
+					// and this is the last commit
+					i == len(commits)-1 &&
+					// and either this is a new ref or
+					// not all new commits were checked due to maxCommitsPerRefUpdate cap.
+					(newRef || len(commits) >= maxCommitsPerRefUpdate) {
+					reason := "new ref"
+					if !newRef {
+						reason = "not all commits were examined"
+					}
+					ctl.DebugLog("NOTE: emitting trigger %q on tip of %q even though didn't match path filters because %s",
+						commit.Id, ref, reason)
+					// then just ignore path filtering and emit trigger for ref's tip.
+				} else if !pathFilter.isInteresting(commit.TreeDiff) {
+					ctl.DebugLog("skipping commit %q on %q because didn't match path filters", commit.Id, ref)
+					continue
+				}
+			}
+
 			ctl.EmitTrigger(c, &internal.Trigger{
-				Id:           fmt.Sprintf("%s/+/%s@%s", repo, ref, commit.Id),
+				Id:           fmt.Sprintf("%s/+/%s@%s", cfg.Repo, ref, commit.Id),
 				Created:      commit.Committer.Time,
 				OrderInBatch: int64(emittedTriggers),
 				Title:        commit.Id,
-				Url:          fmt.Sprintf("%s/+/%s", repo, commit.Id),
+				Url:          fmt.Sprintf("%s/+/%s", cfg.Repo, commit.Id),
 				Payload: &internal.Trigger_Gitiles{
-					Gitiles: &api.GitilesTrigger{Repo: repo, Ref: ref, Revision: commit.Id},
+					Gitiles: &api.GitilesTrigger{Repo: cfg.Repo, Ref: ref, Revision: commit.Id},
 				},
 			})
+			emitted = true
 			emittedTriggers++
 		}
 		// Stop early if next iteration can't emit maxCommitsPerRefUpdate triggers.
@@ -366,27 +397,30 @@ func (s *refsState) sortedCurrentRefNames() []string {
 //
 // If ref is new, returns only ref's HEAD,
 // For updated refs, at most maxCommits of gitiles.Log(new..old)
-func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitilesClient, ref string, maxCommits int) ([]*git.Commit, error) {
+func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitilesClient, ref string, maxCommits int, pathFilter pathFilter) (
+	commits []*git.Commit, newRef bool, err error) {
 	newHead := s.current[ref]
 	oldHead, existed := s.known[ref]
 	switch {
 	case !existed:
 		ctl.DebugLog("Ref %s is new: %s", ref, newHead)
 		maxCommits = 1
+		newRef = true
 	case oldHead != newHead:
 		ctl.DebugLog("Ref %s updated: %s => %s", ref, oldHead, newHead)
 	default:
-		return nil, nil // no change
+		return // no change
 	}
 
 	c, cancel := clock.WithTimeout(c, gitilesRPCTimeout)
 	defer cancel()
 
-	commits, err := gitiles.PagingLog(c, g, gitilespb.LogRequest{
+	commits, err = gitiles.PagingLog(c, g, gitilespb.LogRequest{
 		Project:            g.project,
 		Committish:         newHead,
 		ExcludeAncestorsOf: oldHead, // empty if ref is new, but then maxCommits is 1.
 		PageSize:           int32(maxCommits),
+		TreeDiff:           pathFilter.active(),
 	}, maxCommits)
 	switch status.Code(err) {
 	case codes.OK:
@@ -396,14 +430,15 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 		// newHead commit if there is a compelling use case.
 		s.known[ref] = newHead
 		s.changed++
-		return commits, nil
+		return
 	case codes.NotFound:
 		// handled below.
 		break
 	default:
 		// Any other error is presumably transient, so we'll retry.
 		ctl.DebugLog("Ref %s: failed to fetch log between old %s and new %s revs", ref, oldHead, newHead)
-		return nil, transient.Tag.Apply(err)
+		err = transient.Tag.Apply(err)
+		return
 	}
 	// Either:
 	//  (1) oldHead is no longer known in gitiles (force push),
@@ -415,23 +450,27 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 	if !existed {
 		// There was no oldHead, so definitely not (1). Retry later.
 		ctl.DebugLog("Ref %s: log of first rev %s not found", ref, newHead)
-		return nil, transient.Tag.Apply(err)
+		err = transient.Tag.Apply(err)
+		return
 	}
 	ctl.DebugLog("Ref %s: log old..new is not found, investigating further...", ref)
 
 	// Fetch log of newHead only.
-	commits, newErr := gitiles.PagingLog(c, g, gitilespb.LogRequest{
+	var newErr error
+	commits, newErr = gitiles.PagingLog(c, g, gitilespb.LogRequest{
 		Project:    g.project,
 		Committish: newHead,
 	}, 1)
 	if newErr != nil {
 		ctl.DebugLog("Ref %s: failed to fetch even log of just new rev %s %s", ref, newHead, err)
-		return nil, transient.Tag.Apply(newErr)
+		err = transient.Tag.Apply(newErr)
+		return
 	}
 	// Fetch log of oldHead only.
 	_, errOld := gitiles.PagingLog(c, g, gitilespb.LogRequest{
 		Project:    g.project,
 		Committish: oldHead,
+		TreeDiff:   pathFilter.active(),
 	}, 1)
 	switch status.Code(errOld) {
 	case codes.NotFound:
@@ -440,14 +479,79 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 		ctl.DebugLog("Ref %s: force push detected; emitting trigger for new head", ref)
 		s.known[ref] = newHead
 		s.changed++
-		return commits, nil
+		newRef = true
+		err = nil
+		return
 	case codes.OK:
 		ctl.DebugLog("Ref %s: weirdly, log(%s) and log(%s) work, but not log(%s..%s)",
 			ref, oldHead, newHead, oldHead, newHead)
-		return nil, transient.Tag.Apply(err)
+		err = transient.Tag.Apply(err)
+		return
 	default:
 		// Any other error is presumably transient, so we'll retry.
 		ctl.DebugLog("Ref %s: failed to fetch log of just old rev %s: %s", ref, oldHead, errOld)
-		return nil, transient.Tag.Apply(err)
+		err = transient.Tag.Apply(err)
+		return
 	}
+}
+
+// pathFilter implements path_regexps[_exclude] filtering of commits.
+type pathFilter struct {
+	pathInclude *regexp.Regexp
+	pathExclude *regexp.Regexp // must only be set iff pathInclude is. See also ValidateProtoMessage.
+}
+
+func newPathFilter(cfg *messages.GitilesTask) (p pathFilter, err error) {
+	if len(cfg.PathRegexps) == 0 {
+		return // PathRegexpsExclude are ignored in this case. See also ValidateProtoMessage.
+	}
+	if p.pathInclude, err = regexp.Compile(disjunctiveOfRegexps(cfg.PathRegexps)); err != nil {
+		err = errors.Annotate(err, "invalid path_regexps %q", cfg.PathRegexps).Err()
+		return
+	}
+	if len(cfg.PathRegexpsExclude) > 0 {
+		if p.pathExclude, err = regexp.Compile(disjunctiveOfRegexps(cfg.PathRegexpsExclude)); err != nil {
+			err = errors.Annotate(err, "invalid exclude_path_regexps %q", cfg.PathRegexpsExclude).Err()
+			return
+		}
+	}
+	return
+}
+
+func (p *pathFilter) active() bool {
+	return p.pathInclude != nil
+}
+
+// isInteresting decides whether commit is interesting according to pathFilter
+// based on which files were touched in commits.
+func (p *pathFilter) isInteresting(diff []*git.Commit_TreeDiff) (skip bool) {
+	isInterestingPath := func(path string) bool {
+		switch {
+		case path == "":
+			return false
+		case p.pathExclude != nil && p.pathExclude.MatchString(path):
+			return false
+		default:
+			return p.pathInclude.MatchString(path)
+		}
+	}
+
+	for _, d := range diff {
+		if isInterestingPath(d.GetOldPath()) || isInterestingPath(d.GetNewPath()) {
+			return true
+		}
+	}
+	return false
+}
+
+func disjunctiveOfRegexps(rs []string) string {
+	s := "^("
+	for i, r := range rs {
+		if i > 0 {
+			s += "|"
+		}
+		s += "(" + r + ")"
+	}
+	s += ")$"
+	return s
 }
