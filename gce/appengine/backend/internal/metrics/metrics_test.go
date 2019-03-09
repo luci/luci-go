@@ -29,20 +29,31 @@ import (
 )
 
 func TestMetrics(t *testing.T) {
-	Convey("setCached", t, func() {
+	t.Parallel()
+
+	Convey("UpdateFailures", t, func() {
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
 
-		cache["name"] = &connInst{
-			connected: true,
-			prefix:    "prefix",
-			project:   "project",
-			server:    "server",
-			zone:      "zone",
-		}
-		setCached(c)
-		fields := []interface{}{"autogen:name", "prefix", "project", "server", "zone"}
-		So(tsmon.Store(c).Get(c, instanceConnected, time.Time{}, fields).(bool), ShouldEqual, true)
-		So(cache, ShouldBeEmpty)
+		UpdateFailures(c, 1, &model.VM{
+			Attributes: config.VM{
+				Project: "project",
+				Zone:    "zone",
+			},
+			Hostname: "name-1",
+			Prefix:   "prefix",
+		})
+		fields := []interface{}{"prefix", "project", "zone"}
+		s := tsmon.Store(c)
+		So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 1)
+		UpdateFailures(c, 1, &model.VM{
+			Attributes: config.VM{
+				Project: "project",
+				Zone:    "zone",
+			},
+			Hostname: "name-1",
+			Prefix:   "prefix",
+		})
+		So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 2)
 	})
 
 	Convey("UpdateQuota", t, func() {
@@ -54,43 +65,5 @@ func TestMetrics(t *testing.T) {
 		So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 100.0)
 		So(s.Get(c, quotaRemaining, time.Time{}, fields).(float64), ShouldEqual, 75.0)
 		So(s.Get(c, quotaUsage, time.Time{}, fields).(float64), ShouldEqual, 25.0)
-	})
-
-	Convey("UpdateInstance", t, func() {
-		c := context.Background()
-
-		UpdateInstance(c, true, &model.VM{
-			Attributes: config.VM{
-				Project: "project 1",
-				Zone:    "zone 1",
-			},
-			Hostname: "name",
-			Prefix:   "prefix 1",
-			Swarming: "server 1",
-		})
-		inst, ok := cache["name"]
-		So(ok, ShouldBeTrue)
-		So(inst.connected, ShouldBeTrue)
-		So(inst.prefix, ShouldEqual, "prefix 1")
-		So(inst.project, ShouldEqual, "project 1")
-		So(inst.server, ShouldEqual, "server 1")
-		So(inst.zone, ShouldEqual, "zone 1")
-
-		UpdateInstance(c, false, &model.VM{
-			Attributes: config.VM{
-				Project: "project 2",
-				Zone:    "zone 2",
-			},
-			Hostname: "name",
-			Prefix:   "prefix 2",
-			Swarming: "server 2",
-		})
-		inst, ok = cache["name"]
-		So(ok, ShouldBeTrue)
-		So(inst.connected, ShouldBeFalse)
-		So(inst.prefix, ShouldEqual, "prefix 2")
-		So(inst.project, ShouldEqual, "project 2")
-		So(inst.server, ShouldEqual, "server 2")
-		So(inst.zone, ShouldEqual, "zone 2")
 	})
 }
