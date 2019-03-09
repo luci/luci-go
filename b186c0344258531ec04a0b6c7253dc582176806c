@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92a5b3c7_b1b184cf",
+        "filename": "server/auth/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-09T01:04:02Z",
+      "side": 1,
+      "message": "i\u0027d give a hint here that auth states are provided through passed contexts:\n\n... auth states (passed via context), this is not allowed",
+      "range": {
+        "startLine": 293,
+        "startChar": 60,
+        "endLine": 293,
+        "endChar": 61
+      },
+      "revId": "b186c0344258531ec04a0b6c7253dc582176806c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
