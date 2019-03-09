@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b134b32a_09d7ac79",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-03-09T16:02:26Z",
+      "side": 1,
+      "message": "Sorry, yes - the reverse. I\u0027ve updated the example for clarity.",
+      "parentUuid": "0c8e72d8_ef08da56",
+      "revId": "15e6e59000b1653716aedf0da453fba5ed19d34c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3d225b9e_25f018af",
         "filename": "client/internal/common/filesystem_view.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "15e6e59000b1653716aedf0da453fba5ed19d34c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62d51243_9a3060d3",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-03-09T16:02:26Z",
+      "side": 1,
+      "message": "Cleaner - done.",
+      "parentUuid": "3d225b9e_25f018af",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 7
+      },
+      "revId": "15e6e59000b1653716aedf0da453fba5ed19d34c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
