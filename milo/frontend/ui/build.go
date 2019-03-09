@@ -55,13 +55,24 @@ func (s *Step) ShortName() string {
 	return parts[len(parts)-1]
 }
 
+// Build wraps a buildbucketpb.Build to provide useful templating functions.
+type Build struct {
+	*buildbucketpb.Build
+}
+
 // BuildPage represents a build page on Milo.
 // The core of the build page is the underlying build proto, but can contain
 // extra information depending on the context, for example a blamelist,
 // and the user's display preferences.
 type BuildPage struct {
 	// Build is the underlying build proto for the build page.
-	buildbucketpb.Build
+	Build
+
+	// RelatedBuilds are build summaries with the same buildset.
+	RelatedBuilds []*Build
+
+	// Related is a flag for turning on the related builds tab.
+	Related bool
 
 	// Blame is a list of people and commits that likely caused the build result.
 	// It is usually used as the list of commits between the previous run of the
@@ -86,20 +97,20 @@ type BuildPage struct {
 	steps []*Step
 
 	// Now is the current time, used for generating step intervals.
-	now time.Time
+	Now time.Time
 }
 
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
 	return &BuildPage{
-		Build: *b,
-		now:   clock.Now(c),
+		Build: Build{b},
+		Now:   clock.Now(c),
 	}
 }
 
 // Summary returns a summary of failures in the build.
 // TODO(hinoka): Remove after recipe engine emits SummaryMarkdown natively.
-func (bp *BuildPage) Summary() (result []string) {
-	for _, step := range bp.Build.Steps {
+func (b *Build) Summary() (result []string) {
+	for _, step := range b.Steps {
 		parts := strings.Split(step.Name, "|")
 		name := parts[len(parts)-1]
 		if name == "Failure reason" {
@@ -129,7 +140,7 @@ func (bp *BuildPage) Steps() []*Step {
 	stepMap := map[string]*Step{}
 	for _, step := range bp.Build.Steps {
 		i := common.ToInterval(step.GetStartTime(), step.GetEndTime())
-		i.Now = bp.now
+		i.Now = bp.Now
 		s := &Step{
 			Step:      step,
 			Collapsed: collapseGreen && step.Status == buildbucketpb.Status_SUCCESS,
@@ -155,8 +166,8 @@ func (bp *BuildPage) Steps() []*Step {
 }
 
 // Status returns a human friendly string for the status.
-func (bp *BuildPage) HumanStatus() string {
-	switch bp.Build.Status {
+func (b *Build) HumanStatus() string {
+	switch b.Status {
 	case buildbucketpb.Status_SCHEDULED:
 		return "Pending"
 	case buildbucketpb.Status_STARTED:
@@ -228,29 +239,31 @@ func (bp *BuildPage) OutputProperties() []property {
 	return properties(bp.GetOutput().GetProperties())
 }
 
-func (bp *BuildPage) Builder() *Link {
-	if bp.Build.Builder == nil {
+// BuilderLink returns a link to the builder in b.
+func (b *Build) BuilderLink() *Link {
+	if b.Builder == nil {
 		panic("Invalid build")
 	}
-	b := bp.Build.Builder
+	builder := b.Builder
 	return NewLink(
-		b.Builder,
-		fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, b.Bucket, b.Builder),
-		fmt.Sprintf("Builder %s in bucket %s", b.Builder, b.Bucket))
+		builder.Builder,
+		fmt.Sprintf("/p/%s/builders/%s/%s", builder.Project, builder.Bucket, builder.Builder),
+		fmt.Sprintf("Builder %s in bucket %s", builder.Builder, builder.Bucket))
 }
 
-func (bp *BuildPage) BuildID() *Link {
-	if bp.Build.Builder == nil {
+// Link is a self link to the build.
+func (b *Build) Link() *Link {
+	if b.Builder == nil {
 		panic("invalid build")
 	}
-	num := bp.Build.Id
-	if bp.Build.Number != 0 {
-		num = int64(bp.Build.Number)
+	num := b.Id
+	if b.Number != 0 {
+		num = int64(b.Number)
 	}
-	b := bp.Build.Builder
+	builder := b.Builder
 	return NewLink(
 		fmt.Sprintf("%d", num),
-		fmt.Sprintf("/p/%s/builders/%s/%s/%d", b.Project, b.Bucket, b.Builder, num),
+		fmt.Sprintf("/p/%s/builders/%s/%s/%d", builder.Project, builder.Bucket, builder.Builder, num),
 		fmt.Sprintf("Build %d", num))
 }
 
@@ -258,12 +271,12 @@ func (bp *BuildPage) BuildID() *Link {
 // Currently displayed:
 // * OS, as determined by swarming dimensions.
 // TODO(hinoka): For device builders, display device type, and number of devices.
-func (bp *BuildPage) Banners() (result []Logo) {
+func (b *Build) Banners() (result []Logo) {
 	var os, ver string
 	// A swarming dimension may have multiple values.  Eg.
 	// Linux, Ubuntu, Ubuntu-14.04.  We want the most specific one.
 	// The most specific one always comes last.
-	for _, dim := range bp.GetInfra().GetSwarming().GetBotDimensions() {
+	for _, dim := range b.GetInfra().GetSwarming().GetBotDimensions() {
 		if dim.Key != "os" {
 			continue
 		}
@@ -423,7 +436,7 @@ func (bp *BuildPage) Timeline() string {
 		statusClassName := fmt.Sprintf("status-%s", step.Status)
 		data := stepData{
 			Label:           html.EscapeString(step.Name),
-			Duration:        common.Duration(step.StartTime, step.EndTime, bp.now),
+			Duration:        common.Duration(step.StartTime, step.EndTime, bp.Now),
 			LogURL:          logURL,
 			StatusClassName: statusClassName,
 		}
