@@ -182,6 +182,11 @@ type backgroundState struct {
 	ctx context.Context
 }
 
+func isBackgroundState(s State) bool {
+	_, yes := s.(backgroundState)
+	return yes
+}
+
 func (s backgroundState) DB() authdb.DB {
 	db, err := GetDB(s.ctx)
 	if err != nil {

@@ -242,7 +242,7 @@ func TestGetRPCTransport(t *testing.T) {
 			So(err, ShouldEqual, ErrNoForwardableCreds)
 		})
 
-		Convey("in AsActor mode with account", func(C C) {
+		Convey("in AsActor mode with account", func(c C) {
 			mocks := &rpcMocks{
 				MintAccessTokenForServiceAccount: func(ic context.Context, p MintAccessTokenParams) (*oauth2.Token, error) {
 					So(p, ShouldResemble, MintAccessTokenParams{
@@ -267,71 +267,84 @@ func TestGetRPCTransport(t *testing.T) {
 			})
 		})
 
-		Convey("in AsActor mode without account, error", func(C C) {
+		Convey("in AsActor mode without account, error", func(c C) {
 			_, err := GetRPCTransport(ctx, AsActor)
 			So(err, ShouldNotBeNil)
 		})
 
-		Convey("in AsProject mode without project, error", func(C C) {
+		Convey("in AsProject mode without project, error", func(c C) {
 			_, err := GetRPCTransport(ctx, AsProject)
 			So(err, ShouldNotBeNil)
 		})
 
-		Convey("when headers are needed, Request context deadline is obeyed", func() {
+		Convey("when headers are needed, Request context is used", func() {
+			root := ctx
+
+			// Contexts with different auth state.
+			ctx1 := WithState(root, &state{user: &User{Identity: "user:abc@example.com"}})
+			ctx2 := WithState(root, &state{user: &User{Identity: "user:abc@example.com"}})
+
 			// Use a mode which actually uses transport context to compute headers.
-			run := func(C C, reqCtx, transCtx context.Context) (usedDeadline time.Time, set bool) {
+			run := func(c C, reqCtx, transCtx context.Context) (usedCtx context.Context) {
 				mocks := &rpcMocks{
 					MintAccessTokenForServiceAccount: func(ic context.Context, _ MintAccessTokenParams) (*oauth2.Token, error) {
-						usedDeadline, set = ic.Deadline()
+						usedCtx = ic
 						return &oauth2.Token{TokenType: "Bearer", AccessToken: "blah"}, nil
 					},
 				}
 				t, err := GetRPCTransport(transCtx, AsActor, WithServiceAccount("abc@example.com"), mocks)
-				C.So(err, ShouldBeNil)
+				c.So(err, ShouldBeNil)
 				req := makeReq("https://example.com")
 				if reqCtx != nil {
 					req = req.WithContext(reqCtx)
 				}
 				_, err = t.RoundTrip(req)
-				C.So(err, ShouldBeNil)
+				c.So(err, ShouldBeNil)
 				return
 			}
 
-			Convey("no request context", func(C C) {
-				_, set := run(C, nil, ctx)
-				So(set, ShouldBeFalse)
+			Convey("no request context", func(c C) {
+				So(run(c, nil, ctx1), ShouldEqual, ctx1)
 			})
 
-			Convey("no deadlines", func(C C) {
-				_, set := run(C, ctx, ctx)
-				So(set, ShouldBeFalse)
+			Convey("same context", func(c C) {
+				So(run(c, ctx1, ctx1), ShouldEqual, ctx1)
 			})
 
-			Convey("must be before request deadline", func() {
-				reqCtx, reqCtxCancel := context.WithTimeout(ctx, time.Minute)
+			Convey("uses request context", func(c C) {
+				reqCtx, reqCtxCancel := context.WithTimeout(ctx1, time.Minute)
 				defer reqCtxCancel()
-				reqDeadline, _ := reqCtx.Deadline()
+				transCtx, transCtxCancel := context.WithTimeout(ctx1, time.Hour)
+				defer transCtxCancel()
+				So(run(c, reqCtx, transCtx), ShouldEqual, reqCtx)
+			})
 
-				Convey("no transport deadline", func(C C) {
-					usedDeadline, set := run(C, reqCtx, ctx)
-					So(set, ShouldBeTrue)
-					So(usedDeadline, ShouldEqual, reqDeadline)
-				})
-				Convey("later transport deadline", func(C C) {
-					transCtx, transCtxCancel := context.WithTimeout(ctx, time.Hour)
+			Convey("OK on two background contexts", func(c C) {
+				reqCtx, reqCtxCancel := context.WithTimeout(root, time.Minute)
+				defer reqCtxCancel()
+				transCtx, transCtxCancel := context.WithTimeout(root, time.Hour)
+				defer transCtxCancel()
+				So(run(c, reqCtx, transCtx), ShouldEqual, reqCtx)
+			})
+
+			Convey("panics on contexts with different auth state", func(c C) {
+				So(func() {
+					reqCtx, reqCtxCancel := context.WithTimeout(ctx1, time.Minute)
+					defer reqCtxCancel()
+					transCtx, transCtxCancel := context.WithTimeout(ctx2, time.Hour)
 					defer transCtxCancel()
-					usedDeadline, set := run(C, reqCtx, transCtx)
-					So(set, ShouldBeTrue)
-					So(usedDeadline, ShouldEqual, reqDeadline)
-				})
-				Convey("earlier transport deadline used as is", func(C C) {
-					transCtx, transCtxCancel := context.WithTimeout(ctx, time.Second)
+					run(c, reqCtx, transCtx)
+				}, ShouldPanic)
+			})
+
+			Convey("panics if one is background and another is not", func(c C) {
+				So(func() {
+					reqCtx, reqCtxCancel := context.WithTimeout(ctx1, time.Minute)
+					defer reqCtxCancel()
+					transCtx, transCtxCancel := context.WithTimeout(root, time.Hour)
 					defer transCtxCancel()
-					transDeadline, _ := transCtx.Deadline()
-					usedDeadline, set := run(C, reqCtx, transCtx)
-					So(set, ShouldBeTrue)
-					So(usedDeadline, ShouldEqual, transDeadline)
-				})
+					run(c, reqCtx, transCtx)
+				}, ShouldPanic)
 			})
 		})
 	})
