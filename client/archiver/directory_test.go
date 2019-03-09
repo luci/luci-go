@@ -284,7 +284,7 @@ func TestPushDirectory(t *testing.T) {
 				name: "Can push with a symlinked directory out-of-tree",
 				nodes: []fileNode{
 					{
-						relPath:      filepath.Join("of", "tree"),
+						relPath:      filepath.Join("d", "of", "tree"),
 						contents:     outOfTreeContents,
 						expectedFile: basicFile(outOfTreeContents),
 						symlink: &symlinkData{
@@ -299,7 +299,7 @@ func TestPushDirectory(t *testing.T) {
 				name: "Can push with a symlinked directory out-of-tree and a blacklist",
 				nodes: []fileNode{
 					{
-						relPath:       filepath.Join("of", "tree"),
+						relPath:       filepath.Join("d", "of", "tree"),
 						expectIgnored: true,
 						symlink: &symlinkData{
 							src:    filepath.Join(otherDir, "out"),
