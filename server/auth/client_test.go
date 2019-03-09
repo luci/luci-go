@@ -17,6 +17,8 @@ package auth
 import (
 	"bytes"
 	"context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -128,6 +130,30 @@ func TestGetRPCTransport(t *testing.T) {
 
 			So(mock.reqs[0].Header, ShouldResemble, http.Header{
 				"Authorization": {"Bearer scoped tok"},
+			})
+		})
+
+		Convey("in AsProjectScoped mode, fallback implementation", func(c C) {
+			ctx := WithState(ctx, &state{
+				user: &User{Identity: "user:abc@example.com"},
+			})
+
+			t, err := GetRPCTransport(ctx, AsProjectScoped, WithProject("infra"), &rpcMocks{
+				MintProjectToken: func(ic context.Context, p ProjectTokenParams) (*oauth2.Token, error) {
+					c.So(p, ShouldResemble, ProjectTokenParams{
+						MinTTL:      2 * time.Minute,
+						LuciProject: "infra",
+						OAuthScopes: defaultOAuthScopes,
+					})
+					return nil, status.Error(codes.NotFound, "project not found")
+				},
+			})
+			So(err, ShouldBeNil)
+			_, err = t.RoundTrip(makeReq("https://example.com/some-path/sd"))
+			So(err, ShouldBeNil)
+
+			So(mock.reqs[0].Header, ShouldResemble, http.Header{
+				"Authorization": {"Bearer blah:https://www.googleapis.com/auth/userinfo.email"},
 			})
 		})
 

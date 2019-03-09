@@ -19,6 +19,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"net/http"
 	"strings"
 	"time"
@@ -610,6 +612,11 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 		LuciProject: opts.project,
 		OAuthScopes: opts.scopes,
 	}
+
 	tok, err := mintTokenCall(c, mintParams)
+	// TODO(fmatenaar): This is only during migration and needs to be removed eventually.
+	if err != nil && status.Code(err) == codes.NotFound {
+		return asSelfHeaders(c, uri, opts)
+	}
 	return tok, nil, err
 }
