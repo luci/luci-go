@@ -70,6 +70,30 @@
       "revId": "1340110db202f6e0036140352be53da0ec84b621",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6698de15_b927c0f8",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 548,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-09T00:03:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "730e3eb6_aab664d5",
+      "range": {
+        "startLine": 546,
+        "startChar": 2,
+        "endLine": 548,
+        "endChar": 10
+      },
+      "revId": "1340110db202f6e0036140352be53da0ec84b621",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
