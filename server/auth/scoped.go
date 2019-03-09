@@ -17,6 +17,8 @@ package auth
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"net/http"
 	"strings"
 	"time"
@@ -173,6 +175,21 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (*oauth2.Token,
 				OauthScope:          p.OAuthScopes,
 				MinValidityDuration: int64(MaxScopedTokenTTL.Seconds()),
 			})
+
+			now := clock.Now(ctx).UTC()
+
+			// TODO(fmatenaar): This is only during migration and needs to be removed eventually.
+			// Cache the "NotFound" response and indicate it in the cached token.
+			if err != nil && status.Code(err) == codes.NotFound {
+				exp := now.Add(5 * time.Minute).UTC()
+				return &cachedToken{
+					Created:              jsontime.Time{now},
+					Expiry:               jsontime.Time{exp},
+					ProjectScopeFallback: true,
+					OAuth2Token:          nil,
+				}, nil, "SUCCESS_CACHE_MISS"
+			}
+
 			if err != nil {
 				err = grpcutil.WrapIfTransient(err)
 				if transient.Tag.In(err) {
@@ -197,7 +214,6 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (*oauth2.Token,
 				return nil, ErrBrokenTokenService, "ERROR_BROKEN_TOKEN_SERVICE"
 			}
 
-			now := clock.Now(ctx).UTC()
 			exp := time.Unix(resp.Expiry.Seconds, 0).UTC()
 
 			// Log details about the new token.
