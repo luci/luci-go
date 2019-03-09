@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
+	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
@@ -125,6 +126,7 @@ func conflictingInstance(c context.Context, vm *model.VM) error {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
 				// Instance doesn't exist in this zone.
+				metrics.UpdateFailures(c, 1, vm)
 				if err := deleteVM(c, vm.ID, vm.Hostname); err != nil {
 					return errors.Annotate(err, "instance exists in another zone").Err()
 				}
@@ -175,6 +177,7 @@ func createInstance(c context.Context, payload proto.Message) error {
 			if gerr.Code == http.StatusConflict {
 				return conflictingInstance(c, vm)
 			}
+			metrics.UpdateFailures(c, 1, vm)
 			if err := deleteVM(c, task.Id, vm.Hostname); err != nil {
 				return errors.Annotate(err, "failed to create instance").Err()
 			}
@@ -187,6 +190,7 @@ func createInstance(c context.Context, payload proto.Message) error {
 		for _, err := range op.Error.Errors {
 			logging.Errorf(c, "%s: %s", err.Code, err.Message)
 		}
+		metrics.UpdateFailures(c, 1, vm)
 		if err := deleteVM(c, task.Id, vm.Hostname); err != nil {
 			return errors.Annotate(err, "failed to create instance").Err()
 		}
