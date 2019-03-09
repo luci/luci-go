@@ -153,7 +153,8 @@ $(function () {
     $(window).resize(resizeHeight);
 
     $('.console-builder-item').hide();  // Hide the builder boxes.
-    Cookies.set('expand', 1);
+    Cookies.set('expand', 1, {path: ''});
+    Cookies.remove('collapse', {path: ''});
   });
 
   // Expanded Mode -> Collapsed Mode.
@@ -167,11 +168,14 @@ $(function () {
     $('.console-builder-column').show();  // Show the collapsed console.
     $('.console-cell-container').height('auto');
     $('.console-commit-item').height('auto');
-    Cookies.remove('expand');
+    Cookies.remove('expand', {path: ''});
+    Cookies.set('collapse', 1, {path: ''});
   });
 
   // Once we load, if we see an expand cookie, switch to expand mode.
-  if (Cookies.get('expand')) {
+  // Or if the project is defaulted to expand and we didn't see a collapse
+  // cookie.
+  if (Cookies.get('expand') || (defaultExpand && !Cookies.get('collapse'))) {
     $('.control-expand').first().click();
   }
 });
