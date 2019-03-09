@@ -271,20 +271,29 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 		return baseTransport, nil
 	}
 
+	rootState := GetState(c)
+
 	return auth.NewModifyingTransport(baseTransport, func(req *http.Request) error {
-		if reqD, ok := req.Context().Deadline(); ok {
-			// If request's own context has earlier deadline than transport (our)
-			// context, fork transport's context to use the request's deadline.
-			if transD, ok := c.Deadline(); !ok || transD.After(reqD) {
-				// TODO(tandrii,vadimsh): instead of creating new context, pass deadline
-				// explicitly to getRPCHeaders and let it construct new context only
-				// when needed.
-				var cancel func()
-				c, cancel = context.WithDeadline(c, reqD)
-				defer cancel()
+		// Prefer to use the request context to get authentication headers, if it is
+		// set, to inherit its deadline and cancellation. Assert the request context
+		// carries the same auth state (perhaps the background one) as the transport
+		// context, otherwise there can be very weird side effects. Constructing
+		// the transport with one auth state and then using it with another is not
+		// allowed.
+		ctx := req.Context()
+		if ctx == context.Background() {
+			ctx = c
+		} else {
+			switch reqState := GetState(ctx); {
+			case reqState == rootState:
+				// good, exact same state
+			case isBackgroundState(reqState) && isBackgroundState(rootState):
+				// good, both are background states
+			default:
+				panic("transport is shared between different auth states, this is not allowed")
 			}
 		}
-		tok, extra, err := options.getRPCHeaders(c, req.URL.String(), options)
+		tok, extra, err := options.getRPCHeaders(ctx, req.URL.String(), options)
 		if err != nil {
 			return err
 		}
