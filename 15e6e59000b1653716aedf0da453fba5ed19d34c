@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c8e72d8_ef08da56",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-03-09T15:30:23Z",
+      "side": 1,
+      "message": "you mean the reverse? I think it\u0027d be clearer to write something like:\n\nWith a tree like:\n A/\n   B/\n     C/\n       d (file)\n E/ link to \"A/B\" \n\n\nbut even this doesn\u0027t work, C/d is right.",
+      "revId": "15e6e59000b1653716aedf0da453fba5ed19d34c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d225b9e_25f018af",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-03-09T15:30:23Z",
+      "side": 1,
+      "message": "you could do instead:\n\nprefix :\u003d source\nif ff.sourcePrefix !\u003d \"\" {\n  prefix \u003d filepath.Join(ff.sourcePrefix, source)\n}",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 7
+      },
+      "revId": "15e6e59000b1653716aedf0da453fba5ed19d34c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
