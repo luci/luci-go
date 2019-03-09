@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "678a5d21_4c131243",
+        "filename": "milo/api/config/console.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-09T01:28:56Z",
+      "side": 1,
+      "message": "This is new, and below.",
+      "revId": "e2ae426c51a1836d4d98e244d1783d805937fb9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
