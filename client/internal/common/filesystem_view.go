@@ -26,6 +26,9 @@ import (
 type FilesystemView struct {
 	root      string
 	blacklist []string
+	// The path prefix representing the relative path in another view which has this one
+	// obtained through a sequence of symlinked nodes.
+	sourcePrefix string
 }
 
 // NewFilesystemView returns a FilesystemView based on the supplied root and blacklist, or
@@ -55,6 +58,8 @@ func (ff FilesystemView) RelativePath(path string) (string, error) {
 	}
 	if ff.skipRelPath(relPath) {
 		relPath = ""
+	} else if ff.sourcePrefix != "" {
+		relPath = filepath.Join(ff.sourcePrefix, relPath)
 	}
 	return relPath, nil
 }
@@ -75,9 +80,13 @@ func (ff FilesystemView) skipRelPath(relPath string) bool {
 	return false
 }
 
-// WithNewRoot returns a FilesystemView with an identical blacklist and new root.
-func (ff FilesystemView) WithNewRoot(root string) FilesystemView {
-	return FilesystemView{root: root, blacklist: ff.blacklist}
+// NewSymlinkedView returns a filesystem view from a symlinked directory within itself.
+func (ff FilesystemView) NewSymlinkedView(source, linkname string) FilesystemView {
+	prefix := source
+	if ff.sourcePrefix != "" {
+		prefix = filepath.Join(ff.sourcePrefix, source)
+	}
+	return FilesystemView{root: linkname, blacklist: ff.blacklist, sourcePrefix: prefix}
 }
 
 // match is equivalent to filepath.Match, but assumes that pattern is valid.
