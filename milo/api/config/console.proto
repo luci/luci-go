@@ -1,0 +1,212 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package milo;
+
+option go_package = "config";
+
+// Oncall contains information about who is currently scheduled as the
+// oncall (Sheriff, trooper, etc) for certain rotations.
+message Oncall {
+  // Name is the name of the oncall rotation being displayed.
+  string name = 1;
+
+  // Url is an URL to a json endpoint with the following format:
+  // {
+  //   "updated_unix_timestamp": <int>,
+  //   "emails": [
+  //     "email@somewhere.com",
+  //     "email@nowhere.com
+  //   ]
+  // }
+  string url = 2;
+}
+
+// Link is a link to an internet resource, which will be rendered out as
+// an anchor tag <a href="url" alt="alt">text</a>.
+message Link {
+  // Text is displayed as the text between the anchor tags.
+  string text = 1;
+
+  // Url is the URL to link to.
+  string url = 2;
+
+  // Alt is the alt text displayed when hovering over the text.
+  string alt = 3;
+}
+
+// LinkGroup is a list of links, optionally given a name.
+message LinkGroup {
+  // Name is the name of this list of links. This is optional.
+  string name = 1;
+
+  // Links is a list of links to display.
+  repeated Link links = 2;
+}
+
+// ConsoleSummaryGroup is a list of consoles to be displayed as console summaries
+// (aka the little bubbles at the top of the console).  This can optionally
+// have a group name if specified in the group_link.
+// (e.g. "Tree closers", "Experimental", etc)
+message ConsoleSummaryGroup {
+  // Title is a name or label for this group of consoles.  This is optional.
+  Link title = 1;
+
+  // ConsoleIds is a list of console ids to display in this console group.
+  // Each console id must be prepended with its related project (e.g.
+  // chromium/main) because console ids are project-local.
+  // Only consoles from the same project are supported.
+  // TODO(hinoka): Allow cross-project consoles.
+  repeated string console_ids = 2;
+}
+
+// Header is a collection of links, rotation information, and console summaries
+// that are displayed at the top of a console, below the tree status information.
+// Links and oncall information is always laid out to the left, while
+// console groups are laid out on the right.  Each oncall and links group
+// take up a row.
+message Header {
+  // Oncalls are a reference to oncall rotations, which is a URL to a json
+  // endpoint with the following format:
+  // {
+  //   "updated_unix_timestamp": <int>,
+  //   "emails": [
+  //     "email@somewhere.com",
+  //     "email@nowhere.com
+  //   ]
+  // }
+  repeated Oncall oncalls = 1;
+
+  // Links is a list of named groups of web links.
+  repeated LinkGroup links = 2;
+
+  // ConsoleGroups are groups of console summaries, each optionally named.
+  repeated ConsoleSummaryGroup console_groups = 3;
+
+  // TreeStatusHost is the hostname of the chromium-status instance where
+  // the tree status of this console is hosted.  If provided, this will appear
+  // as the bar at the very top of the page.
+  string tree_status_host = 4;
+
+  // Id is a reference to the header.
+  string id = 5;
+}
+
+// Console is a waterfall definition consisting of one or more builders.
+message Console {
+  reserved 8;
+  reserved 4;
+  reserved "ref";
+
+  // Id is the reference to the console, and will be the address to make the
+  // console reachable from /console/<Project>/<ID>.
+  string id = 1;
+
+  // Name is the longform name of the waterfall, and will be used to be
+  // displayed in the title.
+  string name = 2;
+
+  // RepoUrl is the URL of the git repository to display as the rows of the console.
+  string repo_url = 3;
+
+  // Refs are the refs to pull commits from when displaying the console.
+  //
+  // Users can specify a regular expression to match several refs using
+  // "regexp:" prefix, but the regular expression must have:
+  //   * a literal prefix with at least two slashes present, e.g.
+  //     "refs/release-\d+/foobar" is not allowed, because the literal prefix
+  //     "refs/release-" only contains one slash, and
+  //   * must not start with ^ or end with $ as they are added automatically.
+  //
+  // For best results, ensure each ref's has commit's **committer** timestamp
+  // monotonically non-decreasing. Gerrit will take care of this if you require
+  // each commmit to go through Gerrit by prohibiting "git push" on these refs.
+  //
+  // Eg. refs/heads/master, regexp:refs/branch-heads/\d+\.\d+
+  repeated string refs = 14;
+
+  // ExcludeRef is a ref, commits from which are ignored even when they are
+  // reachable from the ref specified above. This must be specified as a single
+  // fully-qualified ref, i.e. regexp syntax from above is not supported.
+  //
+  // Note: force pushes to this ref are not supported. Milo uses caching
+  // assuming set of commits reachable from this ref may only grow, never lose
+  // some commits.
+  //
+  // E.g. the config below allows to track commits from all release branches,
+  // but ignore the commits from the master branch, from which these release
+  // branches are branched off:
+  //   ref: "regexp:refs/branch-heads/\d+\.\d+"
+  //   exlude_ref: "refs/heads/master"
+  string exclude_ref = 13;
+
+  // ManifestName the name of the manifest the waterfall looks at.
+  // This should always be "REVISION".
+  // In the future, other manifest names can be supported.
+  // TODO(hinoka,iannucci): crbug/832893 - Support custom manifest names, such as "UNPATCHED" / "PATCHED".
+  string manifest_name = 5;
+
+  // Builders is a list of builder configurations to display as the columns of the console.
+  repeated Builder builders = 6;
+
+  // FaviconUrl is the URL to the favicon for this console page.
+  // This field is optional. The favicon URL must have a host of
+  // storage.googleapis.com.
+  string favicon_url = 7;
+
+  // Header is a collection of links, rotation information, and console summaries
+  // displayed under the tree status but above the main console content.
+  Header header = 9;
+
+  // HeaderId is a reference to a header.  Only one of Header or HeaderId should
+  // be specified.
+  string header_id = 10;
+
+  // If true, this console will not filter out builds marked as Experimental.
+  // This field is optional. By default Consoles only show production builds.
+  bool include_experimental_builds = 11;
+
+  // If true, only builders view will be available. Console view (i.e. git log
+  // based view) will be disabled and users redirected to builder view.
+  // Defaults to false.
+  bool builder_view_only = 12;
+
+  // If set, will change the default number of commits to query on a single page.
+  int32 default_commit_limit = 15;
+
+  // If set, will default the console page to expanded view.
+  bool default_expand = 16;
+}
+
+// Builder is a reference to a Milo builder.
+message Builder {
+  // Name is the BuilderID of the builders you wish to display for this column
+  // in the console. e.g.
+  //   * "buildbot/chromium.linux/Linux Tests"
+  //   * "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
+  //
+  // If multiple names are specified, the console will show the union of the
+  // builders.
+  repeated string name = 1;
+
+  // Category describes the hierarchy of the builder on the header of the
+  // console as a "|" delimited list.  Neighboring builders with common ancestors
+  // will be have their headers merged.
+  string category = 2;
+
+  // ShortName is the 1-3 character abbreviation of the builder.
+  string short_name = 3;
+}
