@@ -1,0 +1,177 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "302981c6_3069c24c",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-09T08:45:45Z",
+      "side": 1,
+      "message": "what\u0027s the significance of this?",
+      "range": {
+        "startLine": 316,
+        "startChar": 1,
+        "endLine": 316,
+        "endChar": 4
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5efaac15_a78fb8fd",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-09T08:45:45Z",
+      "side": 1,
+      "message": "should this be len(tasks.Tasks)? It\u0027s unlikely but possible we could get \u003c 10 tasks, right?",
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e0732ff_de80c580",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-09T08:45:45Z",
+      "side": 1,
+      "message": "imo I would have the default be false and then flip it to true when we know for certain that it\u0027s safe to do; otherwise other coded added may not hit line 117 and we lose the task",
+      "range": {
+        "startLine": 113,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 14
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30e052a8_0c57fb6e",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-09T08:45:45Z",
+      "side": 1,
+      "message": "s/ignore/log",
+      "range": {
+        "startLine": 124,
+        "startChar": 36,
+        "endLine": 124,
+        "endChar": 42
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c0b5438_055a34f7",
+        "filename": "logdog/server/cmd/logdog_archivist_legacy/Dockerfile",
+        "patchSetId": 17
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-09T08:45:45Z",
+      "side": 1,
+      "message": "wut? why need these?",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 35
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54d6ac8d_1f37a26e",
+        "filename": "logdog/server/cmd/logdog_archivist_legacy/README.md",
+        "patchSetId": 17
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-09T08:45:45Z",
+      "side": 1,
+      "message": "\u003e \"scaleable\" is a possible misspelling of \"scalable\".\n\nPlease Fix",
+      "parentUuid": "956d626e_ecfb13c9",
+      "range": {
+        "startLine": 23,
+        "startChar": 2,
+        "endLine": 23,
+        "endChar": 11
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22307ac6_448005ef",
+        "filename": "logdog/server/cmd/logdog_archivist_legacy/run.sh",
+        "patchSetId": 17
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-09T08:45:45Z",
+      "side": 1,
+      "message": "this seems pretty hacky?",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 79
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f606afc_979c78d2",
+        "filename": "logdog/server/cmd/logdog_archivist_legacy/run.sh",
+        "patchSetId": 17
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-09T08:45:45Z",
+      "side": 1,
+      "message": "why do all this in bash instead of in the go binary itself?",
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
