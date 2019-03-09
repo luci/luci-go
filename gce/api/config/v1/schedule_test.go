@@ -60,9 +60,7 @@ func TestSchedule(t *testing.T) {
 					},
 				},
 				Start: &TimeOfDay{
-					Day: []dayofweek.DayOfWeek{
-						dayofweek.DayOfWeek_MONDAY,
-					},
+					Day:  dayofweek.DayOfWeek_MONDAY,
 					Time: "1:23",
 				},
 			}

@@ -54,15 +54,8 @@ func (t *TimeOfDay) ToTime() (time.Time, error) {
 
 // Validate validates this time of day.
 func (t *TimeOfDay) Validate(c *validation.Context) {
-	if len(t.GetDay()) == 0 {
-		c.Errorf("at least one day is required")
-	}
-	for i, d := range t.GetDay() {
-		c.Enter("day %d", i)
-		if d == dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED {
-			c.Errorf("day must be specified")
-		}
-		c.Exit()
+	if t.GetDay() == dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED {
+		c.Errorf("day must be specified")
 	}
 	_, err := t.ToTime()
 	if err != nil {
