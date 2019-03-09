@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "28175fc7_9018b189",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-09T00:01:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "65531def_0bf578c7",
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40f86656_d9938e7d",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 12
@@ -72,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "b9adb4d9_3f73d630",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-09T00:01:04Z",
+      "side": 1,
+      "message": "Yeah parallel fanoutin isn\u0027t great for processing dependent parallel operations, we would need an implementation that can wait on all leaf operations to finish before closing the task channel, which is a somewhat more generic problem than fanoutin was designed to solve.\n\nActually at that point you\u0027re better off using plain goroutines.",
+      "parentUuid": "7f5f784b_22efe66b",
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3625b7da_4efb0fdc",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 12
@@ -95,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "7751fe43_261139b0",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 12
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-09T00:01:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3625b7da_4efb0fdc",
+      "range": {
+        "startLine": 227,
+        "startChar": 22,
+        "endLine": 227,
+        "endChar": 36
+      },
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "561d1832_50d9be63",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 12
@@ -109,6 +169,24 @@
       "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c37ada56_73e64868",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-09T00:01:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "561d1832_50d9be63",
+      "revId": "fe8c02789051851bf4e09cd6381a3d0127b24576",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
