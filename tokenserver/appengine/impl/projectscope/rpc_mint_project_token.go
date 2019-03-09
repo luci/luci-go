@@ -39,6 +39,10 @@ const (
 	// maxTokenValiditySeconds specifies the maximum project identity token validity period.
 	maxTokenValiditySeconds = 3600
 
+	// minTokenValiditySeconds specifies the minimum TTL required when obtaining a project identity
+	// token.
+	minTokenValiditySeconds = 300
+
 	// projectActorsGroup is a group of identities and subgroups authorized to obtain project tokens.
 	projectActorsGroup = "auth-project-actors"
 )
@@ -64,7 +68,7 @@ type MintProjectTokenRPC struct {
 
 // normalizeValidityDuration ensures that the requested MinValidityDuration is within configuration bounds.
 func (r *MintProjectTokenRPC) normalizeValidityDuration(ctx context.Context, req *minter.MintProjectTokenRequest) *minter.MintProjectTokenRequest {
-	if req.MinValidityDuration <= 0 || req.MinValidityDuration > maxTokenValiditySeconds {
+	if req.MinValidityDuration <= minTokenValiditySeconds || req.MinValidityDuration > maxTokenValiditySeconds {
 		logging.Debugf(ctx, "Normalized validity duration, was: %d, set to: %d", req.MinValidityDuration, maxTokenValiditySeconds)
 		req.MinValidityDuration = maxTokenValiditySeconds
 	}
@@ -155,7 +159,7 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 	accessTok, err := r.MintAccessToken(c, auth.MintAccessTokenParams{
 		ServiceAccount: projectIdentity.Email,
 		Scopes:         req.OauthScope,
-		MinTTL:         time.Second * time.Duration(req.MinValidityDuration),
+		MinTTL:         time.Second * time.Duration(minTokenValiditySeconds),
 	})
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to mint project scoped oauth token for caller %q in project %q for identity %q",
