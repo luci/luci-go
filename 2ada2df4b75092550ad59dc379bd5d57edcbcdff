@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3177beb7_0f48387f",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-09T06:48:07Z",
+      "side": 1,
+      "message": "sort.Slice is good fit here\nhttps://golang.org/pkg/sort/#Slice",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 76,
+        "endChar": 10
+      },
+      "revId": "2ada2df4b75092550ad59dc379bd5d57edcbcdff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e92b3498_8a23fb2a",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-09T06:48:07Z",
+      "side": 1,
+      "message": "s/t/prevEnd",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 2
+      },
+      "revId": "2ada2df4b75092550ad59dc379bd5d57edcbcdff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29ab8a53_40b844ac",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-09T06:48:07Z",
+      "side": 1,
+      "message": "start or curStart",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 4
+      },
+      "revId": "2ada2df4b75092550ad59dc379bd5d57edcbcdff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01fe81e6_6eb0399c",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-09T06:48:07Z",
+      "side": 1,
+      "message": "move right after L87, and I thnk is c.Errorf(...) is missing",
+      "range": {
+        "startLine": 97,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 11
+      },
+      "revId": "2ada2df4b75092550ad59dc379bd5d57edcbcdff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a11da433_d1845c23",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-09T06:48:07Z",
+      "side": 1,
+      "message": "del, the same thing is right above",
+      "range": {
+        "startLine": 101,
+        "startChar": 6,
+        "endLine": 101,
+        "endChar": 27
+      },
+      "revId": "2ada2df4b75092550ad59dc379bd5d57edcbcdff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "281c23d4_d1707ef5",
+        "filename": "gce/api/config/v1/amount_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-09T06:48:07Z",
+      "side": 1,
+      "message": "this makes me said :( 1 end to end test is less to read, less to modify in the future and gives the same signal:\nsort(Tue 4pm\nMon 10am\nSat # defaulting to 0 am\nFriday 6pm PST (ie 3am Sat UTC)\nTue 5am)\n\u003d\u003e Mon,Tue10am,Tue4pm,Sat0am,Friday6pmPST\n\nAlterntaively, if you adopt SortSlice suggestion, test just the Less function here.",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 3
+      },
+      "revId": "2ada2df4b75092550ad59dc379bd5d57edcbcdff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
