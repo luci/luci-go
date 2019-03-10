@@ -194,18 +194,30 @@ def _var(*, default=None, validator=None):
 def _rule(*, impl):
   """Declares a new rule.
 
-  A rule is a callable that adds nodes and edges to an entity graph.
+  A rule is a callable that adds nodes and edges to an entity graph. It wraps
+  the given `impl` callback by passing one additional argument `ctx` to it (as
+  the first positional argument).
+
+  `ctx` is a struct with the following fields:
+
+    * _TODO: add some_
+
+  The callback is expected to return a graph.keyset(...) with the set of graph
+  keys that represent the added node (or nodes). Other rules use such keysets
+  as inputs.
 
   DocTags:
     Advanced. RuleCtor.
 
   Args:
-    impl: a callback that actually implements the rule. Required.
+    impl: a callback that actually implements the rule. Its first argument
+        should be `ctx`. The rest of the arguments define the API of the rule.
+        Required.
 
   Returns:
     A special callable.
   """
-  return impl
+  return __native__.declare_rule(impl)
 
 
 # Public API.

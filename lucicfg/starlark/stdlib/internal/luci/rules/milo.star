@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys')
@@ -21,7 +22,8 @@ load('@stdlib//internal/luci/common.star', 'keys')
 _ALLOWED_STORAGE_RE = r'https://storage\.googleapis\.com/.+'
 
 
-def milo(
+def _milo(
+      ctx,
       *,
       logo=None,
       favicon=None,
@@ -107,3 +109,6 @@ def milo(
   graph.add_edge(keys.project(), key)
 
   return graph.keyset(key)
+
+
+milo = lucicfg.rule(impl = _milo)

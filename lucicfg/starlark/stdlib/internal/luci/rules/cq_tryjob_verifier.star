@@ -13,12 +13,14 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
 
 
-def cq_tryjob_verifier(
+def _cq_tryjob_verifier(
+      ctx,
       builder=None,
       *,
       cq_group=None,
@@ -205,3 +207,6 @@ def cq_tryjob_verifier(
   graph.add_edge(parent=keys.cq_verifiers_root(), child=key)
 
   return graph.keyset(key)
+
+
+cq_tryjob_verifier = lucicfg.rule(impl = _cq_tryjob_verifier)
