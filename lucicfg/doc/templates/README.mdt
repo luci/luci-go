@@ -103,7 +103,7 @@ Similarly some roles can be assigned to individual users, other only to groups.
 
 | Role  | Scope | Principals | Allows |
 |-------|-------|------------|--------|
-{{- range $sym := $acl.Symbols "var"}}
+{{- range $sym := $acl.Symbols "inv"}}
 | {{.FullName}} |
 {{- if .HasDocTag "project_level_only"}}project only{{else if .HasDocTag "cq_role"}}project, cq_group{{else}}project, bucket{{end}} |
 {{- if .HasDocTag "groups_only"}}groups{{else}}groups, users{{end}} |

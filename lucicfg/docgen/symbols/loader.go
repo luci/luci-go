@@ -134,7 +134,7 @@ func (l *Loader) Load(module string) (syms *Struct, err error) {
 //
 // Only symbols defined at the module scope (e.g. variables) can be referenced
 // from inside struct definitions.
-func (l *Loader) resolveRefs(ns *ast.Namespace, top *Struct) (*Struct, error) {
+func (l *Loader) resolveRefs(ns ast.EnumerableNode, top *Struct) (*Struct, error) {
 	cur := newStruct(ns.Name(), ns)
 	defer cur.freeze()
 
@@ -144,11 +144,11 @@ func (l *Loader) resolveRefs(ns *ast.Namespace, top *Struct) (*Struct, error) {
 		top = cur
 	}
 
-	for _, n := range ns.Nodes {
+	for _, n := range ns.EnumNodes() {
 		switch val := n.(type) {
 		case *ast.Reference:
 			// A reference to a symbol defined elsewhere. Follow it.
-			cur.addSymbol(newAlias(val.Name(), Lookup(top, val.Path...)))
+			cur.addSymbol(NewAlias(val.Name(), Lookup(top, val.Path...)))
 
 		case *ast.ExternalReference:
 			// A reference to a symbol in another module. Load the module and follow
@@ -157,7 +157,7 @@ func (l *Loader) resolveRefs(ns *ast.Namespace, top *Struct) (*Struct, error) {
 			if err != nil {
 				return nil, err
 			}
-			cur.addSymbol(newAlias(val.Name(), Lookup(external, val.ExternalName)))
+			cur.addSymbol(NewAlias(val.Name(), Lookup(external, val.ExternalName)))
 
 		case *ast.Namespace:
 			// A struct(...) definition. Recursively resolve what's inside it. Allow
@@ -169,6 +169,16 @@ func (l *Loader) resolveRefs(ns *ast.Namespace, top *Struct) (*Struct, error) {
 				return nil, err
 			}
 			cur.addSymbol(inner)
+
+		case *ast.Invocation:
+			// A statement like `var = ns1.func(arg1=...)`. Resolve the function
+			// symbol first, then recursively resolve the struct with the arguments.
+			fn := Lookup(top, val.Func...)
+			args, err := l.resolveRefs(val, top)
+			if err != nil {
+				return nil, err
+			}
+			cur.addSymbol(newInvocation(val.Name(), val, fn, args.Symbols()))
 
 		default:
 			// Something defined right in this namespace.
