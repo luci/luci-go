@@ -228,6 +228,34 @@ A struct with two methods: `set(value)` and `get(): value`.
 
 
 
+### lucicfg.rule {#lucicfg.rule}
+
+```python
+lucicfg.rule(name, impl)
+```
+
+
+*** note
+**Advanced function.** It is not used for common use cases.
+***
+
+
+Declares a new rule.
+
+A rule is a callable that adds nodes and edges to an entity graph.
+
+#### Arguments {#lucicfg.rule-args}
+
+* **name**: name to assigned to rule callable, for stack traces. Required.
+* **impl**: a callback that actually implements the rule. Required.
+
+
+#### Returns  {#lucicfg.rule-returns}
+
+A special callable.
+
+
+
 
 
 ## Working with time
