@@ -78,6 +78,36 @@ func escapeMD(s string) string {
 	return strings.Replace(s, "*", "\\*", -1)
 }
 
+func (g *Generator) load(module string) (*symbols.Struct, error) {
+	mod, err := g.loader.Load(module)
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform lucicfg.rule(...) definitions to pick up docstrings and arguments
+	// of the rule implementation. We replace `var = lucicfg.rule(impl = f)` with
+	// `var = f`.
+	return mod.Transform(func(s symbols.Symbol) (symbols.Symbol, error) {
+		inv, ok := s.(*symbols.Invocation)
+		if !ok {
+			return s, nil
+		}
+		// Rule constructor symbols are marked with RuleCtor tag.
+		targetTags := inv.Func().Doc().RemarkBlock("DocTags").Body
+		if !strings.Contains(targetTags, "RuleCtor") {
+			return s, nil
+		}
+		// Find a symbol assigned to 'impl' kwarg and return it, so that it is
+		// used instead of lucicfg.rule(...) invocation. Give it the name of 's'.
+		for _, arg := range inv.Args() {
+			if arg.Name() == "impl" {
+				return symbols.NewAlias(s.Name(), arg), nil
+			}
+		}
+		return nil, fmt.Errorf("cannot resolve rule constructor call in %s, no `impl` kwarg", s)
+	})
+}
+
 // symbol returns a symbol from the given module.
 //
 // lookup is a field path, e.g. "a.b.c". "a" will be searched for in the
@@ -85,7 +115,7 @@ func escapeMD(s string) string {
 //
 // If the requested symbol can't be found, returns a broken symbol.
 func (g *Generator) symbol(module, lookup string) (*symbol, error) {
-	mod, err := g.loader.Load(module)
+	mod, err := g.load(module)
 	if err != nil {
 		return nil, err
 	}
@@ -154,6 +184,8 @@ func (s *symbol) Flavor() string {
 		default:
 			return "unknown"
 		}
+	case *symbols.Invocation:
+		return "inv"
 	case *symbols.Struct:
 		return "struct"
 	default:
@@ -178,7 +210,7 @@ func (s *symbol) HasDocTag(tag string) bool {
 // Symbols returns nested symbols.
 //
 // If `flavors` is not empty, it specifies what kinds of symbols to keep.
-// Possible variants: "func", "var", "struct".
+// Possible variants: "func", "var", "inv", "struct".
 func (s *symbol) Symbols(flavors ...string) (out []*symbol, err error) {
 	strct, _ := s.Symbol.(*symbols.Struct)
 	if strct == nil {
