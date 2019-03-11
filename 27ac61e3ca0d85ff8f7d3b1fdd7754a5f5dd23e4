@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e38dc73c_61b4043d",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1210164
+      },
+      "writtenOn": "2019-03-11T18:04:27Z",
+      "side": 1,
+      "message": "+1. It doesn\u0027t always seem to make sense to have an UNSPECIFIED up front, but it can cause all kinds of pain to omit it.",
+      "parentUuid": "2f76e5d1_8266d82f",
+      "range": {
+        "startLine": 31,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 5
+      },
+      "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c54c3515_ea67166b",
         "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
         "patchSetId": 2
@@ -113,6 +137,23 @@
         "endLine": 45,
         "endChar": 22
       },
+      "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3aab7300_58dbe5f7",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1210164
+      },
+      "writtenOn": "2019-03-11T18:04:27Z",
+      "side": 1,
+      "message": "Why the extra nested message?",
       "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
