@@ -17,13 +17,14 @@ package services
 import (
 	"context"
 	"crypto/subtle"
+	"time"
 
 	ds "go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
@@ -208,6 +209,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				return nil, grpcutil.Internal
 			}
 
+			// Legacy pipline
 			// Add a named delayed mutation to archive this stream if it's not archived
 			// yet.
 			//
@@ -251,7 +253,10 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				return nil, grpcutil.Internal
 			}
 
-			return nil, nil
+			// TODO(hinoka): This should be set to 48hr / params.CompletePeriod, once the pipeline is migrated.
+			// In all honesty this should just be a hardcoded value instead of a luci-config value.
+			// No sane person is going to muck with this setting.
+			return nil, TaskArchival(c, lst, 47*time.Hour, coordinator.GetSettings(c).PessimisticArchivalPercent)
 		})
 		if err != nil {
 			log.Fields{
