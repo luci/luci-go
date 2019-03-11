@@ -13,12 +13,14 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys')
 
 
-def cq(
+def _cq(
+      ctx,
       *,
       submit_max_burst=None,
       submit_burst_delay=None,
@@ -68,3 +70,6 @@ def cq(
   graph.add_edge(keys.project(), key)
 
   return graph.keyset(key)
+
+
+cq = lucicfg.rule(impl = _cq)
