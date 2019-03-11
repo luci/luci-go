@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "645dbf6e_4b710d50",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T16:31:50Z",
+      "side": 1,
+      "message": "comment says:\n\nincorporates a unique ID into the staging name to differentiate it from other staging paths for the same path/name.\nTho the staging name also has the project, so that means it\u0027s to differentiate it from other attempts of archiving the same stream.\nI think this ultimately isn\u0027t needed, but I kept it in to minimize functional changes in code.",
+      "parentUuid": "302981c6_3069c24c",
+      "range": {
+        "startLine": 316,
+        "startChar": 1,
+        "endLine": 316,
+        "endChar": 4
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5efaac15_a78fb8fd",
         "filename": "logdog/server/cmd/logdog_archivist/main.go",
         "patchSetId": 17
@@ -39,6 +63,24 @@
       "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f5aa774_cf9284b2",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T16:31:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5efaac15_a78fb8fd",
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "32039c76_d821929b",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T16:31:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e0732ff_de80c580",
+      "range": {
+        "startLine": 113,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 14
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30e052a8_0c57fb6e",
         "filename": "logdog/server/cmd/logdog_archivist/main.go",
         "patchSetId": 17
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "c5023106_77410e9d",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T16:31:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30e052a8_0c57fb6e",
+      "range": {
+        "startLine": 124,
+        "startChar": 36,
+        "endLine": 124,
+        "endChar": 42
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c0b5438_055a34f7",
         "filename": "logdog/server/cmd/logdog_archivist_legacy/Dockerfile",
         "patchSetId": 17
@@ -108,6 +198,30 @@
       "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb1b679b_00ebe51d",
+        "filename": "logdog/server/cmd/logdog_archivist_legacy/Dockerfile",
+        "patchSetId": 17
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T16:31:50Z",
+      "side": 1,
+      "message": "Probably to use bash and curl below (the alpine image doesn\u0027t include frivolous stuff like these)\n\nActually I\u0027m gonna just remove the whole fork alltogether.  This is why we have git history.",
+      "parentUuid": "9c0b5438_055a34f7",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 35
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -135,6 +249,30 @@
     },
     {
       "key": {
+        "uuid": "3325656d_acb1b7d6",
+        "filename": "logdog/server/cmd/logdog_archivist_legacy/README.md",
+        "patchSetId": 17
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T16:31:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54d6ac8d_1f37a26e",
+      "range": {
+        "startLine": 23,
+        "startChar": 2,
+        "endLine": 23,
+        "endChar": 11
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "22307ac6_448005ef",
         "filename": "logdog/server/cmd/logdog_archivist_legacy/run.sh",
         "patchSetId": 17
@@ -158,6 +296,30 @@
     },
     {
       "key": {
+        "uuid": "84fc8870_16806581",
+        "filename": "logdog/server/cmd/logdog_archivist_legacy/run.sh",
+        "patchSetId": 17
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T16:31:50Z",
+      "side": 1,
+      "message": "GCE is pretty hacky.  Unfortunately we can\u0027t rely on DNS for resolving internal addresses :/",
+      "parentUuid": "22307ac6_448005ef",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 79
+      },
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0f606afc_979c78d2",
         "filename": "logdog/server/cmd/logdog_archivist_legacy/run.sh",
         "patchSetId": 17
@@ -172,6 +334,24 @@
       "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae2c1f58_435762b1",
+        "filename": "logdog/server/cmd/logdog_archivist_legacy/run.sh",
+        "patchSetId": 17
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T16:31:50Z",
+      "side": 1,
+      "message": "Probably to detach the archivist binary from needed to understanding it\u0027s environment (GKE), so that an external script decomposes the required environment into command line arguments.\n\nI think personally I would\u0027ve put all this in the go binary, just to avoid bash.  But this was what was already there.",
+      "parentUuid": "0f606afc_979c78d2",
+      "revId": "cc383db08a15bba42ff6672d358d2184ba157fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
