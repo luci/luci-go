@@ -20,7 +20,7 @@ archival. After archival is complete, the **Archivist** notifies the
 **Coordinator** and the log stream's state is updated.
 
 **Archivist** microservices are designed to operate cooperatively as part of
-a scaleable cluster. Deploying additional **Archivist** instances will linearly
+a scalable cluster. Deploying additional **Archivist** instances will linearly
 increase the archival throughput.
 
 **Archivist** instances load the global LogDog configuration, and are
@@ -36,15 +36,4 @@ an inexpensive rename operation.
 
 ## Incomplete Logs
 
-It is possible for log streams to be missing data at the time of archival. Each
-archival request includes a completeness threshold. If the archival request is
-younger than that threshold and the archival fails due to error or
-incompleteness, the request will be returned to the queue for future processing.
-
-If, however, the archival request is older than that threshold, a best-effort
-archival where missing logs are not considered errors will be executed. This
-will gracefully skip over any missing log entries, resulting in an incomplete
-log stream.
-
-This threshold is configured using the `archive_settle_delay` option in the
-`Coordinator` configuration message.
+It is possible for log streams to be missing data at the time of archival.
