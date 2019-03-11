@@ -15,8 +15,6 @@
 package projectscope
 
 import (
-	"github.com/golang/protobuf/proto"
-
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config/validation"
@@ -25,15 +23,6 @@ import (
 const (
 	projectsCfg = "projects.cfg"
 )
-
-var (
-	// Validator validates the project identity configuration in projects.cfg
-	Validator = &ProjectIdentityValidator{}
-)
-
-// ProjectIdentityValidator is implements project identity validation in projects.cfg
-type ProjectIdentityValidator struct {
-}
 
 func validateHasIdentityConfig(ctx *validation.Context, project *config.Project) (*config.IdentityConfig, bool) {
 	if project.IdentityConfig != nil && project.IdentityConfig.ServiceAccountEmail != "" {
@@ -87,18 +76,4 @@ func validateCanIssueTokenForIdentity(ctx *validation.Context, identity string) 
 			config may eventually be correct if some other system's state change,
 			=> accept config, but tell user about problems.
 	*/
-}
-
-// SetupConfigValidation registers the tokenserver custom projects.cfg validator.
-func (ps *ProjectIdentityValidator) SetupConfigValidation(rules *validation.RuleSet) {
-	rules.Add("services/${config_service_appid}", projectsCfg, func(ctx *validation.Context, configSet, path string, content []byte) error {
-		ctx.SetFile(projectsCfg)
-		cfg := &config.ProjectsCfg{}
-		if err := proto.UnmarshalText(string(content), cfg); err != nil {
-			ctx.Errorf("not a valid ProjectsCfg proto message - %s", err)
-		} else {
-			validateProjectsCfg(ctx, cfg)
-		}
-		return nil
-	})
 }

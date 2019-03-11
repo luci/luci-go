@@ -36,8 +36,13 @@ import (
 )
 
 const (
-	// maxTokenValiditySeconds specifies the maximum project identity token validity period.
-	maxTokenValiditySeconds = 3600
+	// maxAllowedMinValidityDuration specifies the maximum project identity token validity period
+	// that a client may ask for.
+	maxAllowedMinValidityDuration = 30 * time.Minute
+
+	// A value for minimal returned token lifetime if 'min_validity_duration'
+	// field is not specified in the request.
+	defaultMinValidityDuration = 5 * time.Minute
 
 	// projectActorsGroup is a group of identities and subgroups authorized to obtain project tokens.
 	projectActorsGroup = "auth-project-actors"
@@ -62,15 +67,6 @@ type MintProjectTokenRPC struct {
 	ProjectIdentities func(context.Context) projectidentity.Storage
 }
 
-// normalizeValidityDuration ensures that the requested MinValidityDuration is within configuration bounds.
-func (r *MintProjectTokenRPC) normalizeValidityDuration(ctx context.Context, req *minter.MintProjectTokenRequest) *minter.MintProjectTokenRequest {
-	if req.MinValidityDuration <= 0 || req.MinValidityDuration > maxTokenValiditySeconds {
-		logging.Debugf(ctx, "Normalized validity duration, was: %d, set to: %d", req.MinValidityDuration, maxTokenValiditySeconds)
-		req.MinValidityDuration = maxTokenValiditySeconds
-	}
-	return req
-}
-
 // logRequest logs the body of the request.
 func (r *MintProjectTokenRPC) logRequest(c context.Context, req *minter.MintProjectTokenRequest, caller identity.Identity) {
 	if !logging.IsLogging(c, logging.Debug) {
@@ -87,13 +83,16 @@ func (r *MintProjectTokenRPC) logRequest(c context.Context, req *minter.MintProj
 
 // validateRequest validates the request fields.
 func (r *MintProjectTokenRPC) validateRequest(c context.Context, req *minter.MintProjectTokenRequest) error {
+	minDur := time.Duration(req.MinValidityDuration) * time.Second
 	switch {
 	case req.LuciProject == "":
-		return fmt.Errorf("luci project must not be empty")
-	case req.MinValidityDuration < 0:
-		return fmt.Errorf("minimum validity duration is 0")
+		return fmt.Errorf("luci_project is empty")
 	case len(req.OauthScope) <= 0:
-		return fmt.Errorf("at least one oauth scope must be specified")
+		return fmt.Errorf("oauth_scope is required")
+	case minDur < 0:
+		return fmt.Errorf("min_validity_duration must be positive")
+	case minDur > maxAllowedMinValidityDuration:
+		return fmt.Errorf("min_validity_duration must not exceed %d", maxAllowedMinValidityDuration/time.Second)
 	}
 	return nil
 }
@@ -135,8 +134,11 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 		return nil, status.Errorf(codes.PermissionDenied, "access denied")
 	}
 
-	// Make sure there is no successful attempt to raise the token validity over maximum.
-	req = r.normalizeValidityDuration(c, req)
+	// Perform bounds checking on the requested token validity lifetime.
+	minValidityDuration := time.Duration(req.MinValidityDuration) * time.Second
+	if minValidityDuration == 0 {
+		minValidityDuration = defaultMinValidityDuration
+	}
 
 	projectIdentity, err := r.ProjectIdentities(c).LookupByProject(c, req.LuciProject)
 	if err != nil {
@@ -155,7 +157,7 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 	accessTok, err := r.MintAccessToken(c, auth.MintAccessTokenParams{
 		ServiceAccount: projectIdentity.Email,
 		Scopes:         req.OauthScope,
-		MinTTL:         time.Second * time.Duration(req.MinValidityDuration),
+		MinTTL:         minValidityDuration,
 	})
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to mint project scoped oauth token for caller %q in project %q for identity %q",
