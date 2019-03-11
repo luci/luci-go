@@ -71,6 +71,12 @@ func (s *symbol) Doc() *docstring.Parsed {
 	return s.doc
 }
 
+func (s *symbol) String() string {
+	node := s.Def()
+	pos, _ := node.Span()
+	return fmt.Sprintf("%s = %s %T at %s", s.name, node.Name(), node, pos)
+}
+
 // BrokenSymbol is a symbol that refers to something we can't resolve.
 //
 // For example, if "b" is undefined in "a = b", then "a" becomes BrokenSymbol.
@@ -88,7 +94,7 @@ func newBrokenSymbol(name string) *BrokenSymbol {
 }
 
 // Term is a symbol that represents some single terminal definition, not a
-// struct.
+// struct nor a function invocation.
 type Term struct {
 	symbol
 }
@@ -102,6 +108,35 @@ func newTerm(name string, def ast.Node) *Term {
 		},
 	}
 }
+
+// Invocation is a symbol assigned a return value of some function call.
+//
+// The name of the function, as well as value of all keyword arguments, are
+// represented by symbols too.
+type Invocation struct {
+	symbol
+
+	fn   Symbol
+	args []Symbol
+}
+
+// newInvocation returns a new Invocation symbol.
+func newInvocation(name string, def ast.Node, fn Symbol, args []Symbol) *Invocation {
+	return &Invocation{
+		symbol: symbol{
+			name: name,
+			def:  def,
+		},
+		fn:   fn,
+		args: args,
+	}
+}
+
+// Func is a symbol that represents the function being invoked.
+func (inv *Invocation) Func() Symbol { return inv.fn }
+
+// Args is keyword arguments passed to the function.
+func (inv *Invocation) Args() []Symbol { return inv.args }
 
 // Struct is a symbol that represents a struct (or equivalent) that has more
 // symbols inside it.
@@ -155,6 +190,35 @@ func (s *Struct) Symbols() []Symbol {
 	return s.symbols
 }
 
+// Transform returns a new struct made by applying a transformation to the
+// receiver struct, recursively.
+func (s *Struct) Transform(tr func(Symbol) (Symbol, error)) (*Struct, error) {
+	out := &Struct{
+		symbol:  s.symbol,
+		symbols: make([]Symbol, 0, len(s.symbols)),
+	}
+	for _, sym := range s.symbols {
+		// Recursive branch.
+		if strct, ok := sym.(*Struct); ok {
+			t, err := strct.Transform(tr)
+			if err != nil {
+				return nil, err
+			}
+			out.symbols = append(out.symbols, t)
+			continue
+		}
+		// Leafs.
+		switch t, err := tr(sym); {
+		case err != nil:
+			return nil, err
+		case t != nil:
+			out.symbols = append(out.symbols, t)
+		}
+	}
+	out.frozen = true
+	return out, nil
+}
+
 // Lookup essentially does "ns.p0.p1.p2" operation.
 //
 // Returns a broken symbol if this lookup is not possible, e.g. some field path
@@ -179,16 +243,18 @@ func Lookup(ns Symbol, path ...string) Symbol {
 	return cur
 }
 
-// newAlias handles definitions like "a = <symbol>".
+// NewAlias handles definitions like "a = <symbol>".
 //
 // It returns a new symbol of the same type as the RHS and new name ('a'). It
 // points to the same definition the symbol on the RHS points to.
-func newAlias(name string, symbol Symbol) Symbol {
+func NewAlias(name string, symbol Symbol) Symbol {
 	switch s := symbol.(type) {
 	case *BrokenSymbol:
 		return newBrokenSymbol(name)
 	case *Term:
 		return newTerm(name, s.Def())
+	case *Invocation:
+		return newInvocation(name, s.Def(), s.fn, s.args)
 	case *Struct:
 		// Structs are copied by value too, but we check they are frozen at this
 		// point, so it should be fine. It is possible the struct is not frozen yet

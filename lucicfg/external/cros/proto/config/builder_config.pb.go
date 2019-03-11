@@ -52,7 +52,7 @@ func (m *BuilderConfig) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BuilderConfig proto.InternalMessageInfo
 
-// List of builder configs intended to be serialized to / from disk.
+// List of builder configs. Intended to be serialized to / from disk.
 type BuilderConfigs struct {
 	BuilderConfigs       []*BuilderConfig `protobuf:"bytes,1,rep,name=builder_configs,json=builderConfigs,proto3" json:"builder_configs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
