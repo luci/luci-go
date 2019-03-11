@@ -43,6 +43,13 @@ def pub3():
   pass
 
 pub4 = _third.deeper.deep
+
+pub5 = _mod.deeper.deep(
+    arg1 = 123,
+    arg2 = pub4,
+)
+
+pub6 = pub5
 `,
 
 	"another.star": `
@@ -91,6 +98,14 @@ const expectedInitStar = `init.star = *ast.Namespace at init.star:2:1 {
   }
   pub3 = *ast.Function pub3 at init.star:16:1
   pub4 = *ast.Function _func at another.star:2:1
+  pub5 = *ast.Invocation of *symbols.Term deep at init.star:21:1 {
+    arg1 = *ast.Var arg1 at init.star:22:5
+    arg2 = *ast.Function _func at another.star:2:1
+  }
+  pub6 = *ast.Invocation of *symbols.Term deep at init.star:21:1 {
+    arg1 = *ast.Var arg1 at init.star:22:5
+    arg2 = *ast.Function _func at another.star:2:1
+  }
 }
 `
 
@@ -167,6 +182,15 @@ func dumpTree(s Symbol, w io.Writer, indent string) {
 		node := sym.Def()
 		pos, _ := node.Span()
 		fmt.Fprintf(w, "%s%s = %T %s at %s\n", indent, s.Name(), node, node.Name(), pos)
+	case *Invocation:
+		node := sym.Def()
+		pos, _ := node.Span()
+		fmt.Fprintf(w, "%s%s = %T of %T %s at %s {\n",
+			indent, s.Name(), node, sym.fn, sym.fn.Name(), pos)
+		for _, s := range sym.args {
+			dumpTree(s, w, indent+"  ")
+		}
+		fmt.Fprintf(w, "%s}\n", indent)
 	case *Struct:
 		node := sym.Def()
 		pos, _ := node.Span()

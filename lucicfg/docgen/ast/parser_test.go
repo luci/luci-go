@@ -61,12 +61,19 @@ def func3():
 const_int = 123
 const_str = 'str'
 
-ellipsis1 = some_unrecognized_call()
-ellipsis2 = 1 + 2
-ellipsis3 = a.b(c)
+ellipsis = 1 + 2
 
 alias1 = func1
 alias2 = ext2.deeper.deep
+
+decl = namespace.declare(
+    skipped,
+    arg1 = 123,
+    arg2 = 1 + 1,
+    arg3 = func1,
+    arg4 = ext2.deeper.deep,
+    arg5 = nested(nested_arg = 1),
+)
 
 # Struct comment.
 struct_stuff = struct(
@@ -93,11 +100,16 @@ const expectedDumpOutput = `mod.star = module
   func3 = func
   const_int = 123
   const_str = str
-  ellipsis1 = ...
-  ellipsis2 = ...
-  ellipsis3 = ...
+  ellipsis = ...
   alias1 = func1
   alias2 = ext2.deeper.deep
+  decl = namespace.declare(...)
+    arg1 = 123
+    arg2 = ...
+    arg3 = func1
+    arg4 = ext2.deeper.deep
+    arg5 = nested(...)
+      nested_arg = 1
   struct_stuff = namespace
     const = 123
     stuff = ...
@@ -121,13 +133,13 @@ func TestParseModule(t *testing.T) {
 		Convey("Docstrings extraction", func() {
 			So(mod.Doc(), ShouldEqual, "Module doc string.\n\nMultiline.\n")
 			So(
-				mod.NodeByName("func1").Doc(), ShouldEqual,
+				nodeByName(mod, "func1").Doc(), ShouldEqual,
 				"Doc string.\n\n  Multiline.\n  ",
 			)
 		})
 
 		Convey("Spans extraction", func() {
-			l, r := mod.NodeByName("func1").Span()
+			l, r := nodeByName(mod, "func1").Span()
 			So(l.Filename(), ShouldEqual, "mod.star")
 			So(r.Filename(), ShouldEqual, "mod.star")
 
@@ -141,24 +153,24 @@ func TestParseModule(t *testing.T) {
 		})
 
 		Convey("Comments extraction", func() {
-			So(mod.NodeByName("func1").Comments(), ShouldEqual, `Function comment.
+			So(nodeByName(mod, "func1").Comments(), ShouldEqual, `Function comment.
 
   With indent.
 
 More.`)
 
-			strct := mod.NodeByName("struct_stuff").(*Namespace)
+			strct := nodeByName(mod, "struct_stuff").(*Namespace)
 			So(strct.Comments(), ShouldEqual, "Struct comment.")
 
 			// Individual struct entries are annotated with comments too.
-			So(strct.NodeByName("key1").Comments(), ShouldEqual, "Key comment 1.")
+			So(nodeByName(strct, "key1").Comments(), ShouldEqual, "Key comment 1.")
 
 			// Nested structs are also annotated.
-			nested := strct.NodeByName("nested").(*Namespace)
+			nested := nodeByName(strct, "nested").(*Namespace)
 			So(nested.Comments(), ShouldEqual, "Nested namespace.")
 
 			// Keys do not pick up comments not intended for them.
-			So(nested.NodeByName("key1").Comments(), ShouldEqual, "")
+			So(nodeByName(nested, "key1").Comments(), ShouldEqual, "")
 
 			// Top module comment is not extracted currently, it is relatively hard
 			// to do. We have a docstring though, so it's not a big deal.
@@ -169,10 +181,9 @@ More.`)
 
 func dumpTree(nd Node, w io.Writer, indent string) {
 	// recurseInto is used to visit Namespace and Module.
-	recurseInto := func(kind string, n *Namespace) {
-		fmt.Fprintf(w, "%s%s = %s\n", indent, n.name, kind)
-		if len(n.Nodes) != 0 {
-			for _, n := range n.Nodes {
+	recurseInto := func(nodes []Node) {
+		if len(nodes) != 0 {
+			for _, n := range nodes {
 				dumpTree(n, w, indent+"  ")
 			}
 		} else {
@@ -189,13 +200,27 @@ func dumpTree(nd Node, w io.Writer, indent string) {
 		fmt.Fprintf(w, "%s%s = %s\n", indent, n.name, strings.Join(n.Path, "."))
 	case *ExternalReference:
 		fmt.Fprintf(w, "%s%s -> %s in %s\n", indent, n.name, n.ExternalName, n.Module)
+	case *Invocation:
+		fmt.Fprintf(w, "%s%s = %s(...)\n", indent, n.name, strings.Join(n.Func, "."))
+		recurseInto(n.Args)
 	case *Namespace:
-		recurseInto("namespace", n)
+		fmt.Fprintf(w, "%s%s = namespace\n", indent, n.name)
+		recurseInto(n.Nodes)
 	case *Module:
-		recurseInto("module", &n.Namespace)
+		fmt.Fprintf(w, "%s%s = module\n", indent, n.name)
+		recurseInto(n.Nodes)
 	default:
 		panic(fmt.Sprintf("unknown node kind %T", nd))
 	}
+}
+
+func nodeByName(n EnumerableNode, name string) Node {
+	for _, node := range n.EnumNodes() {
+		if node.Name() == name {
+			return node
+		}
+	}
+	return nil
 }
 
 func extractSpan(body string, start, end syntax.Position) string {

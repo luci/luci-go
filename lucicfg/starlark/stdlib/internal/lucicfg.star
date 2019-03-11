@@ -191,6 +191,23 @@ def _var(*, default=None, validator=None):
   )
 
 
+def _rule(*, impl):
+  """Declares a new rule.
+
+  A rule is a callable that adds nodes and edges to an entity graph.
+
+  DocTags:
+    Advanced. RuleCtor.
+
+  Args:
+    impl: a callback that actually implements the rule. Required.
+
+  Returns:
+    A special callable.
+  """
+  return impl
+
+
 # Public API.
 
 lucicfg = struct(
@@ -198,4 +215,5 @@ lucicfg = struct(
     config = _config,
     generator = _generator,
     var = _var,
+    rule = _rule,
 )
