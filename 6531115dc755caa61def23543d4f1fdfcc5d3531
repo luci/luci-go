@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "653c67aa_962ec1a0",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 30
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-11T20:15:09Z",
+      "side": 1,
+      "message": "I still don\u0027t like that we are handling MinValidityDuration differently here and in https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant.go#96.\n\nThese RPCs are very similar and MinValidityDuration is even named identically. It should be handled in exact same way in both RPCs.\n\nCan we please do what MintOAuthTokenViaGrant does? Namely:\n1. Reject negative min_validity_duration with an error.\n2. Reject min_validity_duration \u003e\u003d 1800 with an error.\n3. If min_validity_duration \u003d\u003d 0, use defaultMinValidityDuration which is 5 min.\n\nAnd let the client request 2 min tokens.\n\nIf you insist on automatically enforcing a lower bound on MinValidityDuration, then:\n1. It should be done in both RPCs.\n2. I think 10 min is too much, it reduces efficiency of the token cache (because tokens that expire sooner than in 10 min will never be reused). I propose 4 min instead.\n\nAnd I believe we should never silently change req.MinValidityDuration \u003e maxTokenValiditySeconds to maxTokenValiditySeconds. Such RPC should result in an error. Otherwise the clients are misguided:\n1. A client requests a token with MinValidityDuration 2h.\n2. The token server replies with success. \n3. The client assumes the token is now valid for 2h. Proceed to using it and everything breaks after 30 min.\n\nBetter to the client to see an error right away and adjust their code (and expectation about the lifetime of the token) accordingly.",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 1
+      },
+      "revId": "6531115dc755caa61def23543d4f1fdfcc5d3531",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
