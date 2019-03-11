@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e240e874_3c93a74d",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-03-11T20:22:14Z",
+      "side": 1,
+      "message": "I believe this works as recipe gets spun up from luci-scheduler.cfg schedule / trigger -\u003e cr-buildbucket.cfg builder -\u003e recipe looks through for matching config and uses it. So this name needs to match a builder name from cr-buildbucket.cfg.\n\nDoes that sound right? Does this seem sufficient?",
+      "parentUuid": "9ef10b25_92d8ef21",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 20
+      },
+      "revId": "96faceb1d2a0de485a522be499a2c2ed8494cb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4b5be511_21db2d09",
         "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "96faceb1d2a0de485a522be499a2c2ed8494cb0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9df82442_06782e3d",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-03-11T20:22:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b5be511_21db2d09",
+      "range": {
+        "startLine": 34,
+        "startChar": 6,
+        "endLine": 34,
+        "endChar": 17
+      },
+      "revId": "96faceb1d2a0de485a522be499a2c2ed8494cb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
