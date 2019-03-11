@@ -53,6 +53,9 @@ func (as ArchivalState) Archived() bool {
 	}
 }
 
+// ArchivalStateKey is the name of the index key for the archival state.
+var ArchivalStateKey = "_ArchivalState"
+
 // LogStreamState contains the current state of a LogStream.
 //
 // This structure has additional datastore fields imposed by the
@@ -154,7 +157,7 @@ func (lst *LogStreamState) ID() HashID {
 func (lst *LogStreamState) Load(pmap ds.PropertyMap) error {
 	// Discard derived properties.
 	delete(pmap, "_Terminated")
-	delete(pmap, "_ArchivalState")
+	delete(pmap, ArchivalStateKey)
 
 	return ds.GetPLS(lst).Load(pmap)
 }
@@ -170,7 +173,7 @@ func (lst *LogStreamState) Save(withMeta bool) (ds.PropertyMap, error) {
 	}
 
 	pmap["_Terminated"] = ds.MkProperty(lst.Terminated())
-	pmap["_ArchivalState"] = ds.MkProperty(lst.ArchivalState())
+	pmap[ArchivalStateKey] = ds.MkProperty(lst.ArchivalState())
 
 	return pmap, nil
 }
