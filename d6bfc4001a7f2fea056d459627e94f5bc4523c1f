@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "81520b61_48fed983",
+        "filename": "logdog/appengine/coordinator/endpoints/services/registerStream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-11T22:26:31Z",
+      "side": 1,
+      "message": "47 is magic?",
+      "revId": "d6bfc4001a7f2fea056d459627e94f5bc4523c1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24893eda_b88fe66e",
+        "filename": "logdog/appengine/coordinator/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-11T22:26:31Z",
+      "side": 1,
+      "message": "why Sprintf here and Itoa above?",
+      "range": {
+        "startLine": 119,
+        "startChar": 42,
+        "endLine": 119,
+        "endChar": 53
+      },
+      "revId": "d6bfc4001a7f2fea056d459627e94f5bc4523c1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
