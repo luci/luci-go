@@ -45,6 +45,30 @@
       "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f76e5d1_8266d82f",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-03-11T16:33:53Z",
+      "side": 1,
+      "message": "Reference: https://cloud.google.com/apis/design/naming_convention#enum_names",
+      "parentUuid": "39381848_cf8fafe1",
+      "range": {
+        "startLine": 31,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 5
+      },
+      "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
