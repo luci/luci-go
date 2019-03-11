@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "959c6483_1f4a4db0",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-11T18:46:15Z",
+      "side": 1,
+      "message": "Add comment that this has potential to lease 10 tasks, and so we could end up with a deep-ish pipeline. If this becomes an issue we may want to separate lease/ack into it\u0027s own (single) goroutine and then have numGoroutines runner tasks which pull from the lease/ack goroutine. This should have the same throughput, but at the cost of higher code complexity and the benefit of only leasing out a maximum of ~10 tasks on average (instead of 10*numGoroutines).\n\nAlso note that if we change archive to archive the whole prefix instead of per-stream this becomes moot anyway because we only want an archivist to lease one prefix at a time.",
+      "range": {
+        "startLine": 209,
+        "startChar": 14,
+        "endLine": 209,
+        "endChar": 21
+      },
+      "revId": "79fabf1f6be6ae28af22df0839b520045f8141f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
