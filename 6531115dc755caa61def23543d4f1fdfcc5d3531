@@ -22,6 +22,30 @@
       "revId": "6531115dc755caa61def23543d4f1fdfcc5d3531",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2da4930c_27cc5168",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 30
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-11T20:35:13Z",
+      "side": 1,
+      "message": "Made it consistent with ..._via_grant - Potential follow-up would be to refactor these methods/checks into something that can be used across RPCs to assert consistency.",
+      "parentUuid": "653c67aa_962ec1a0",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 1
+      },
+      "revId": "6531115dc755caa61def23543d4f1fdfcc5d3531",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
