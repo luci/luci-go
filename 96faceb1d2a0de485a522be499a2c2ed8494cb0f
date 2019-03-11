@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ef10b25_92d8ef21",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1325055
+      },
+      "writtenOn": "2019-03-11T19:29:37Z",
+      "side": 1,
+      "message": "Is this name going to be used to lookup some Buildbucket config? Or just to give this BuilderConfig a name (to display on UIs, error messages, etc). Just asking b/c it says this Id is unique, but I don\u0027t think it would be guaranteed to be unique if it didn\u0027t have a bucket name?",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 20
+      },
+      "revId": "96faceb1d2a0de485a522be499a2c2ed8494cb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
