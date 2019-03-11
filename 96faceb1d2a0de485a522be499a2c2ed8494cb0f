@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "fc845927_e6baec7b",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1325055
+      },
+      "writtenOn": "2019-03-11T20:42:03Z",
+      "side": 1,
+      "message": "If I understand what you\u0027re saying, I think it would be OK as long as the builder names are unique between postsubmit / CQ / release. I was just saying that there could be multiple builders with the same name, e.g. \"annealing/Annealing\" and \"prototype/Annealing\". I wasn\u0027t entirely sure how this proto was going to be used.",
+      "parentUuid": "e240e874_3c93a74d",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 20
+      },
+      "revId": "96faceb1d2a0de485a522be499a2c2ed8494cb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4b5be511_21db2d09",
         "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
         "patchSetId": 3
