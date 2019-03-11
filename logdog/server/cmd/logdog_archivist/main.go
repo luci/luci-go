@@ -137,9 +137,9 @@ func runForever(c context.Context, index int, ar archivist.Archivist) error {
 			}
 			switch err {
 			case errNoWorkToDo:
-				logging.Infof(c, "no work to do, sleeping for %d seconds", sleepTime)
+				logging.Infof(c, "no work to do, sleeping for %d seconds")
 			default:
-				logging.WithError(err).Errorf(c, "got error in loop, sleeping for %d seconds", sleepTime)
+				logging.WithError(err).Errorf(c, "got error in loop, sleeping for %d seconds")
 			}
 			clock.Sleep(c, time.Duration(sleepTime)*time.Second)
 		} else {
