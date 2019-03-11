@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8fcf23c3_88b0a441",
+        "filename": "logdog/appengine/coordinator/endpoints/services/registerStream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T22:59:25Z",
+      "side": 1,
+      "message": "It\u0027s magic\n\nWell, it\u0027s 1hr before 48hr, so if both the old and new kick off a job, the new should always get to it before the old.\n\nAdded comment.",
+      "parentUuid": "81520b61_48fed983",
+      "revId": "d6bfc4001a7f2fea056d459627e94f5bc4523c1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "24893eda_b88fe66e",
         "filename": "logdog/appengine/coordinator/settings.go",
         "patchSetId": 7
@@ -39,6 +57,30 @@
       "revId": "d6bfc4001a7f2fea056d459627e94f5bc4523c1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f664db64_dab244ba",
+        "filename": "logdog/appengine/coordinator/settings.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T22:59:25Z",
+      "side": 1,
+      "message": "Sprintf was more lenient about types.\n\nBut above should be just \"0\", Itoa is overkill.",
+      "parentUuid": "24893eda_b88fe66e",
+      "range": {
+        "startLine": 119,
+        "startChar": 42,
+        "endLine": 119,
+        "endChar": 53
+      },
+      "revId": "d6bfc4001a7f2fea056d459627e94f5bc4523c1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
