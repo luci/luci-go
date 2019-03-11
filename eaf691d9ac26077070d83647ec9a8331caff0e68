@@ -16,6 +16,24 @@
       "revId": "eaf691d9ac26077070d83647ec9a8331caff0e68",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82513f5f_91b436d5",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-11T23:59:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5e918c8_2b460547",
+      "revId": "eaf691d9ac26077070d83647ec9a8331caff0e68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
