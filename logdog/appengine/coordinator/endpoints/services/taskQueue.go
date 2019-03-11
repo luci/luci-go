@@ -17,16 +17,22 @@ package services
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 )
@@ -44,6 +50,44 @@ var (
 		"Number of delete task request for the archive queue, as seen by the coordinator",
 		nil)
 )
+
+// TaskArchival tasks an archival of a stream with the given delay at a given experiment rate.
+func TaskArchival(c context.Context, state *coordinator.LogStreamState, delay time.Duration, experimentPercent uint32) error {
+	// See if we want to task to the new pipeline or now.
+	// Choose a number between 0-100.  This is good enough for our purposes.
+	randNum := uint32(rand.Uint64() % 100)
+	log.Debugf(c, "rolled a die, got %d", randNum)
+	if randNum >= experimentPercent {
+		log.Debugf(c, "%d >= %d, bypassing new pipeline", randNum, experimentPercent)
+		return nil
+	}
+	log.Debugf(c, "%d < %d, using new pipeline with %s delay", randNum, experimentPercent, delay)
+
+	// Now task the archival.
+	state.Updated = clock.Now(c).UTC()
+	state.ArchivalKey = []byte{'1'} // Use a fake key just to signal that we've tasked the archival.
+	if err := ds.Put(c, state); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+		}.Errorf(c, "Failed to Put() LogStream.")
+		return grpcutil.Internal
+	}
+
+	project := string(coordinator.ProjectFromNamespace(state.Parent.Namespace()))
+	id := string(state.ID())
+	t, err := tqTask(&logdog.ArchiveTask{Project: project, Id: id})
+	if err != nil {
+		log.WithError(err).Errorf(c, "could not create archival task")
+		return grpcutil.Internal
+	}
+	t.Delay = delay
+	if err := taskqueue.Add(c, archiveQueueName, t); err != nil {
+		log.WithError(err).Errorf(c, "could not task archival")
+		return grpcutil.Internal
+	}
+	return nil
+
+}
 
 // tqTask returns a taskqueue task for an archive task.
 func tqTask(task *logdog.ArchiveTask) (*taskqueue.Task, error) {
