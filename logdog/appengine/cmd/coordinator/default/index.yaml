@@ -74,6 +74,11 @@ indexes:
   - name: Created
     direction: desc
 
+- kind: LogStreamState
+  properties:
+  - name: Created
+  - name: _ArchivalState
+
 ##
 # Tumble Indexes
 ##
