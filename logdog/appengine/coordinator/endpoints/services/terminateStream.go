@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
@@ -98,8 +98,10 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				}.Errorf(c, "Failed to Put() LogStream.")
 				return grpcutil.Internal
 			}
-			return nil
 		}
+
+		set := coordinator.GetSettings(c)
+		return TaskArchival(c, lst, set.OptimisticArchivalDelay, set.OptimisticalArchivalPercent)
 	}, nil)
 	if err != nil {
 		log.Fields{
