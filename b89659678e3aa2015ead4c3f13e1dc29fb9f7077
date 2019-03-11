@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4f7412db_1636b323",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-11T19:53:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c148533e_d09bd8fd",
+      "range": {
+        "startLine": 65,
+        "startChar": 39,
+        "endLine": 65,
+        "endChar": 50
+      },
+      "revId": "b89659678e3aa2015ead4c3f13e1dc29fb9f7077",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3e8c082c_b5d473be",
         "filename": "tokenserver/appengine/impl/projectscope/config.go",
         "patchSetId": 26
@@ -45,6 +69,30 @@
       "revId": "b89659678e3aa2015ead4c3f13e1dc29fb9f7077",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fcd8cd3_70b9e61e",
+        "filename": "tokenserver/appengine/impl/projectscope/config.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-11T19:53:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e8c082c_b5d473be",
+      "range": {
+        "startLine": 95,
+        "startChar": 20,
+        "endLine": 95,
+        "endChar": 21
+      },
+      "revId": "b89659678e3aa2015ead4c3f13e1dc29fb9f7077",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ae2c7d29_55f957a3",
+        "filename": "tokenserver/appengine/impl/projectscope/config_test.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-11T19:53:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e4d670a_008c8e1a",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 66,
+        "endChar": 71
+      },
+      "revId": "b89659678e3aa2015ead4c3f13e1dc29fb9f7077",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4bc45f61_aec118fc",
         "filename": "tokenserver/appengine/impl/projectscope/config_test.go",
         "patchSetId": 26
@@ -82,6 +154,30 @@
       "writtenOn": "2019-03-09T00:59:38Z",
       "side": 1,
       "message": "note: if you want to also cover the usage of cfgclient.Get, you can mock LUCI Config client instead similar to how it is done e.g. here https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/tokenserver/appengine/impl/certconfig/rpc_import_ca_configs_test.go?type\u003dcs\u0026q\u003d%22prepareCfg(%22\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d332\n\nSomething like:\n\nfunc prepareCfg(c context.Context, configFile string) context.Context {\n\treturn testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{\n\t\tconfig.Set(\"services/fake-luci-config\"): {\"projects.cfg\": configFile},\n\t}))\n}\n\nExcept we\u0027d also need to provide a fake value for gaeconfig.GetConfigServiceAppID(c) somehow...",
+      "range": {
+        "startLine": 93,
+        "startChar": 5,
+        "endLine": 93,
+        "endChar": 15
+      },
+      "revId": "b89659678e3aa2015ead4c3f13e1dc29fb9f7077",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0657f84_8c2d7523",
+        "filename": "tokenserver/appengine/impl/projectscope/config_test.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-11T19:53:19Z",
+      "side": 1,
+      "message": "thanks for the hint, calling gaeconfig.GetConfigServiceAppID(c) directly works in the test though. Any issues with that?",
+      "parentUuid": "4bc45f61_aec118fc",
       "range": {
         "startLine": 93,
         "startChar": 5,
@@ -111,6 +207,24 @@
     },
     {
       "key": {
+        "uuid": "962dc920_c3c817f4",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-11T19:53:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cb3ebbf_6b750714",
+      "revId": "b89659678e3aa2015ead4c3f13e1dc29fb9f7077",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01e62286_444c470e",
         "filename": "tokenserver/appengine/impl/projectscope/rpc_import_project_identity_configs_test.go",
         "patchSetId": 26
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "fb9396ac_3cbe9f35",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_import_project_identity_configs_test.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-11T19:53:19Z",
+      "side": 1,
+      "message": "removed file.",
+      "parentUuid": "01e62286_444c470e",
+      "range": {
+        "startLine": 19,
+        "startChar": 0,
+        "endLine": 19,
+        "endChar": 53
+      },
+      "revId": "b89659678e3aa2015ead4c3f13e1dc29fb9f7077",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "89c447e2_4b4798b3",
         "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
         "patchSetId": 26
@@ -154,6 +292,30 @@
       "revId": "b89659678e3aa2015ead4c3f13e1dc29fb9f7077",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5ce4356_7f16ba7c",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-11T19:53:19Z",
+      "side": 1,
+      "message": "reduced max/min values as per discussion.",
+      "parentUuid": "89c447e2_4b4798b3",
+      "range": {
+        "startLine": 162,
+        "startChar": 46,
+        "endLine": 162,
+        "endChar": 69
+      },
+      "revId": "b89659678e3aa2015ead4c3f13e1dc29fb9f7077",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
