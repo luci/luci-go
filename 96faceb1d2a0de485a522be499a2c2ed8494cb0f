@@ -22,6 +22,29 @@
       "revId": "96faceb1d2a0de485a522be499a2c2ed8494cb0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b5be511_21db2d09",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1210164
+      },
+      "writtenOn": "2019-03-11T19:57:05Z",
+      "side": 1,
+      "message": "Should be TYPE_UNSPECIFIED. Some target languages (like python) don\u0027t scope these values to their enum type, so this one in particular would be just \"BuilderConfig.Id.UNSPECIFIED\".",
+      "range": {
+        "startLine": 34,
+        "startChar": 6,
+        "endLine": 34,
+        "endChar": 17
+      },
+      "revId": "96faceb1d2a0de485a522be499a2c2ed8494cb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
