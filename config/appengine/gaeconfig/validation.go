@@ -47,7 +47,7 @@ func RegisterValidationVars(rules *validation.RuleSet) {
 	rules.RegisterVar("appid", func(c context.Context) (string, error) {
 		return info.TrimmedAppID(c), nil
 	})
-	rules.RegisterVar("config_service_appid", getConfigServiceAppID)
+	rules.RegisterVar("config_service_appid", GetConfigServiceAppID)
 }
 
 // InstallValidationHandlers installs handlers for config validation.
@@ -122,12 +122,12 @@ func isAuthorizedCall(c context.Context, s *Settings) (bool, error) {
 	return false, nil
 }
 
-// getConfigServiceAppID looks up the app ID of the LUCI Config service, as set
+// GetConfigServiceAppID looks up the app ID of the LUCI Config service, as set
 // in the app's settings.
 //
 // Returns an empty string if the LUCI Config integration is not configured for
 // the app.
-func getConfigServiceAppID(c context.Context) (string, error) {
+func GetConfigServiceAppID(c context.Context) (string, error) {
 	s, err := FetchCachedSettings(c)
 	switch {
 	case err != nil:

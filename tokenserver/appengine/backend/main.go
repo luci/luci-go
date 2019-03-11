@@ -70,7 +70,7 @@ func readConfigCron(c *router.Context) {
 	}
 
 	wg := sync.WaitGroup{}
-	var errs [3]error
+	var errs [4]error
 
 	wg.Add(1)
 	go func() {
@@ -96,6 +96,15 @@ func readConfigCron(c *router.Context) {
 		_, errs[2] = adminServer.ImportServiceAccountsConfigs(c.Context, nil)
 		if errs[2] != nil {
 			logging.Errorf(c.Context, "ImportServiceAccountsConfigs failed - %s", errs[2])
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_, errs[3] = adminServer.ImportProjectIdentityConfigs(c.Context, nil)
+		if errs[3] != nil {
+			logging.Errorf(c.Context, "ImportProjectIdentityConfigs failed - %s", errs[3])
 		}
 	}()
 

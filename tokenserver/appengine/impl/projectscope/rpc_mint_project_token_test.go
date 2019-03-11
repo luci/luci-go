@@ -104,7 +104,7 @@ func TestMintProjectToken(t *testing.T) {
 					MinValidityDuration: 1800,
 				}
 				err := rpc.validateRequest(ctx, req)
-				So(err, assertions.ShouldErrLike, `luci project must not be empty`)
+				So(err, assertions.ShouldErrLike, `luci_project is empty`)
 			})
 
 			Convey("empty scopes", func() {
@@ -115,7 +115,7 @@ func TestMintProjectToken(t *testing.T) {
 					MinValidityDuration: 1800,
 				}
 				err := rpc.validateRequest(ctx, req)
-				So(err, assertions.ShouldErrLike, `at least one oauth scope must be specified`)
+				So(err, assertions.ShouldErrLike, `oauth_scope is required`)
 			})
 
 			Convey("returns nil for valid request", func() {
@@ -125,7 +125,7 @@ func TestMintProjectToken(t *testing.T) {
 					MinValidityDuration: 3600,
 				}
 				err := rpc.validateRequest(ctx, req)
-				So(err, ShouldBeNil)
+				So(err, assertions.ShouldErrLike, "min_validity_duration must not exceed 1800")
 			})
 		})
 
