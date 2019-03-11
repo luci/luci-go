@@ -97,6 +97,13 @@ $(document).ready(function() {
       if (ui.newPanel.attr('id') === 'timeline-tab' && timeline === null) {
         timeline = createTimeline();
       }
+      if (ui.newPanel.attr('id') === 'related-tab' && !related) {
+        // Reload the page if the user navigates to related.
+        let l = window.location;
+        let params = (new URL(l)).searchParams;
+        params.set("related", "1");
+        document.location = `${l.protocol}//${l.host}${l.pathname}?${params.toString()}#related-tab`;
+      }
     },
   }).show();
 });
