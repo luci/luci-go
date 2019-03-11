@@ -37,7 +37,11 @@ import (
 
 const (
 	// maxTokenValiditySeconds specifies the maximum project identity token validity period.
-	maxTokenValiditySeconds = 3600
+	maxTokenValiditySeconds = 1800
+
+	// minTokenValiditySeconds specifies the minimum TTL required when obtaining a project identity
+	// token.
+	minTokenValiditySeconds = 600
 
 	// projectActorsGroup is a group of identities and subgroups authorized to obtain project tokens.
 	projectActorsGroup = "auth-project-actors"
@@ -64,7 +68,7 @@ type MintProjectTokenRPC struct {
 
 // normalizeValidityDuration ensures that the requested MinValidityDuration is within configuration bounds.
 func (r *MintProjectTokenRPC) normalizeValidityDuration(ctx context.Context, req *minter.MintProjectTokenRequest) *minter.MintProjectTokenRequest {
-	if req.MinValidityDuration <= 0 || req.MinValidityDuration > maxTokenValiditySeconds {
+	if req.MinValidityDuration <= minTokenValiditySeconds || req.MinValidityDuration > maxTokenValiditySeconds {
 		logging.Debugf(ctx, "Normalized validity duration, was: %d, set to: %d", req.MinValidityDuration, maxTokenValiditySeconds)
 		req.MinValidityDuration = maxTokenValiditySeconds
 	}
