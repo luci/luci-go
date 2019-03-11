@@ -60,16 +60,6 @@ type Node interface {
 	populateFromAST(name string, n syntax.Node)
 }
 
-// EnumerableNode is a node that has a variable number of subnodes.
-//
-// Used to represents structs, modules and invocations.
-type EnumerableNode interface {
-	Node
-
-	// EnumNodes returns a list of subnodes. It should not be mutated.
-	EnumNodes() []Node
-}
-
 // base is embedded by all node types and implements some Node methods for them.
 //
 // It carries name of the node, where it is defined, and surrounding comments.
@@ -167,18 +157,6 @@ type ExternalReference struct {
 	Module       string // path of the loaded module
 }
 
-// Invocation represents `<name> = ns1.ns2.func(arg1=..., arg2=...)` call. Only
-// keyword arguments are recognized.
-type Invocation struct {
-	base
-
-	Func []string // e.g. ["ns1, "ns2", "func"]
-	Args []Node   // keyword arguments in order of their definition
-}
-
-// EnumNodes returns list of nodes that represent arguments.
-func (inv *Invocation) EnumNodes() []Node { return inv.Args }
-
 // Namespace is a node that contains a bunch of definitions grouped together.
 //
 // Examples of namespaces are top-level module dicts and structs.
@@ -188,8 +166,15 @@ type Namespace struct {
 	Nodes []Node // nodes defined in the namespace, in order they were defined
 }
 
-// EnumNodes returns list of nodes that represent definitions in the namespace.
-func (ns *Namespace) EnumNodes() []Node { return ns.Nodes }
+// NodeByName finds a contained node given its name or returns nil.
+func (n *Namespace) NodeByName(name string) Node {
+	for _, node := range n.Nodes {
+		if node.Name() == name {
+			return node
+		}
+	}
+	return nil
+}
 
 // Module is a parsed Starlark file.
 type Module struct {
@@ -278,8 +263,8 @@ func parseAssignmentRHS(rhs syntax.Expr) Node {
 		return &Reference{Path: path}
 	}
 
-	// <var> = <fn>(...).
-	if fn, args := matchSimpleCall(rhs); len(fn) != 0 {
+	// <var> = struct(...).
+	if fn, args := matchSimpleCall(rhs); fn == "struct" {
 		// Pick all 'k=v' pairs from args and parse them as assignments.
 		var nodes []Node
 		for _, arg := range args {
@@ -290,14 +275,7 @@ func parseAssignmentRHS(rhs syntax.Expr) Node {
 				}
 			}
 		}
-
-		// <var> = struct(...).
-		if len(fn) == 1 && fn[0] == "struct" {
-			return &Namespace{Nodes: nodes}
-		}
-
-		// <var> = ns.ns.func(arg1=..., arg2=...).
-		return &Invocation{Func: fn, Args: nodes}
+		return &Namespace{Nodes: nodes}
 	}
 
 	// <var> = <expr>.
@@ -363,15 +341,14 @@ loop:
 	return
 }
 
-// matchSimpleCall matches an <Expr> to <Ident>(.<Ident>)*(<Expr>*), returning
-// them.
-func matchSimpleCall(expr syntax.Expr) (fn []string, args []syntax.Expr) {
+// matchSimpleCall matches an <Expr> to <Ident>(<Expr>*), returning them.
+func matchSimpleCall(expr syntax.Expr) (fn string, args []syntax.Expr) {
 	call, ok := expr.(*syntax.CallExpr)
 	if !ok {
-		return nil, nil
+		return "", nil
 	}
-	if fn = matchRefPath(call.Fn); len(fn) == 0 {
-		return nil, nil
+	if fn = matchSingleIdent(call.Fn); fn == "" {
+		return "", nil
 	}
 	return fn, call.Args
 }

@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
@@ -77,7 +77,10 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				log.Fields{
 					"terminalIndex": lst.TerminalIndex,
 				}.Infof(c, "Log stream is already terminated.")
-				return nil
+				if lst.ArchivalState().Archived() {
+					return nil // All okay.
+				}
+				break
 			}
 
 			log.Fields{
@@ -87,19 +90,14 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 
 		default:
 			// Everything looks good, let's proceed...
-			now := clock.Now(c).UTC()
-			lst.Updated = now
 			lst.TerminalIndex = req.TerminalIndex
-			lst.TerminatedTime = now
-
-			if err := ds.Put(c, lst); err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-				}.Errorf(c, "Failed to Put() LogStream.")
-				return grpcutil.Internal
-			}
-			return nil
+			lst.TerminatedTime = clock.Now(c).UTC()
 		}
+
+		// New archival tasking pipeline, maybe.
+		set := coordinator.GetSettings(c)
+		return TaskArchival(c, lst, set.OptimisticArchivalDelay, set.OptimisticalArchivalPercent)
+
 	}, nil)
 	if err != nil {
 		log.Fields{
