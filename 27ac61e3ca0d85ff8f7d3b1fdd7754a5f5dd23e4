@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5e9b5a57_f6b30574",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-03-11T19:08:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c617c6c_7ef76b98",
+      "range": {
+        "startLine": 26,
+        "startChar": 4,
+        "endLine": 29,
+        "endChar": 22
+      },
+      "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "39381848_cf8fafe1",
         "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
         "patchSetId": 2
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "0a3861ae_711822ba",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-03-11T19:08:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e38dc73c_61b4043d",
+      "range": {
+        "startLine": 31,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 5
+      },
+      "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c54c3515_ea67166b",
         "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
         "patchSetId": 2
@@ -143,6 +191,30 @@
     },
     {
       "key": {
+        "uuid": "e25f6efb_f6159c03",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-03-11T19:08:50Z",
+      "side": 1,
+      "message": "Imported and used Trinary to match. PTAL.",
+      "parentUuid": "4a865e4c_9c0347a6",
+      "range": {
+        "startLine": 45,
+        "startChar": 4,
+        "endLine": 45,
+        "endChar": 22
+      },
+      "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3aab7300_58dbe5f7",
         "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
         "patchSetId": 2
@@ -157,6 +229,24 @@
       "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbb755ac_58e08aff",
+        "filename": "lucicfg/external/cros/proto/config/builder_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-03-11T19:08:50Z",
+      "side": 1,
+      "message": "This is an attempt to separate out models and keep this from becoming one big flat bag of values. There is more on the models ideas expressed here:\n\nhttps://docs.google.com/document/d/1VEgaezhoL8Kmy3w62eYP-2S-rtrdxTjtQjHSvi9MmYo/edit?usp\u003dsharing\n\nThis would just be a start for General.",
+      "parentUuid": "3aab7300_58dbe5f7",
+      "revId": "27ac61e3ca0d85ff8f7d3b1fdd7754a5f5dd23e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
