@@ -20,8 +20,31 @@ option go_package = "go.chromium.org/luci/lucicfg/external/cros/proto/config;con
 
 // Configuration used by a builder during execution.
 message BuilderConfig {
-  // TODO(dburger): flesh out this protocol buffer with relevant config models. For now
-  // this is just a placeholder to allow iterating on builder config generation approaches.
+
+  // Unique identifier of the builder configuration.
+  message Id {
+    // The name of the configuration.
+    string name = 1;
+    // Branch the configuration applies to.
+    string branch = 2;
+    // Type of build.
+    enum Type {
+      // Commit queue build.
+      CQ = 0;
+      // Postsubmit build.
+      POSTSUBMIT = 1;
+    }
+    Type type = 3;
+  }
+  Id id = 1;
+
+  // General configuration for the builder.
+  message General {
+    // Whether or not the build is considered critical. A failure in a critical
+    // build for a CQ builder may, for example, prevent submission of the CL.
+    bool critical = 1;
+  }
+  General general = 2;
 }
 
 // List of builder configs. Intended to be serialized to / from disk.
