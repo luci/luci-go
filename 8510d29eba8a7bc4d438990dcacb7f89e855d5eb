@@ -16,6 +16,24 @@
       "revId": "8510d29eba8a7bc4d438990dcacb7f89e855d5eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4319441_a4da23fb",
+        "filename": "server/auth/scoped_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-12T00:31:03Z",
+      "side": 1,
+      "message": "Thanks for the suggestion, added expiration simulation along with returning a valid token which tests the case where an identity config is eventually introduced.",
+      "parentUuid": "453e152d_edd3e68b",
+      "revId": "8510d29eba8a7bc4d438990dcacb7f89e855d5eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
