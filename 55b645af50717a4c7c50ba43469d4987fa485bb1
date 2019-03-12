@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "28d4881c_afd2f600",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-12T17:46:51Z",
+      "side": 1,
+      "message": "ok, one cookie that a value that represents a state? since this is a JS, that would mean a string cookie (because enums in JS are strings)",
+      "parentUuid": "a3f70cce_1f999dac",
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8324ffd1_68de2845",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 7
