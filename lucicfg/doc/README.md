@@ -808,6 +808,8 @@ luci.console_view(
     include_experimental_builds = None,
     favicon = None,
     entries = None,
+    default_commit_list = None,
+    default_expand = None,
 )
 ```
 
@@ -921,6 +923,8 @@ There are two way to supply this message via `header` field:
 * **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.
 * **favicon**: optional https URL to the favicon for this console, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
 * **entries**: a list of [luci.console_view_entry(...)](#luci.console_view_entry) entities specifying builders to show on the console.
+* **default_commit_list**: if set, will change the default number of commits to query on a single page.
+* **default_expand**: if set, will default the console page to expanded view.
 
 
 

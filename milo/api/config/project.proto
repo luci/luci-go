@@ -229,6 +229,12 @@ message Console {
   // based view) will be disabled and users redirected to builder view.
   // Defaults to false.
   bool builder_view_only = 12;
+
+  // If set, will change the default number of commits to query on a single page.
+  int32 default_commit_limit = 15;
+
+  // If set, will default the console page to expanded view.
+  bool default_expand = 16;
 }
 
 // Builder is a reference to a Milo builder.
