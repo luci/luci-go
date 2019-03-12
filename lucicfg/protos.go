@@ -28,13 +28,13 @@ import (
 	_ "github.com/golang/protobuf/ptypes/timestamp"
 	_ "github.com/golang/protobuf/ptypes/wrappers"
 
+	_ "go.chromium.org/chromiumos/infra/proto/go/testplans"
 	_ "go.chromium.org/luci/buildbucket/proto/config"
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/cq/api/config/v2"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
 	_ "go.chromium.org/luci/lucicfg/external/cros/proto/config"
-	_ "go.chromium.org/luci/lucicfg/external/crostesting/proto/config"
 	_ "go.chromium.org/luci/milo/api/config"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
 	_ "go.chromium.org/luci/swarming/proto/config"
@@ -83,17 +83,17 @@ var publicProtos = map[string]struct {
 	//
 	// load(
 	//     "@proto//external/crostesting/source_tree_test_config.proto",
-	//     source_tree_test_config_pb="crostesting")
+	//     source_tree_test_config_pb="testplans")
 	// load(
 	//     "@proto//external/crostesting/target_test_requirements_config.proto",
-	//     target_test_requirements_config_pb="crostesting")
+	//     target_test_requirements_config_pb="testplans")
 	"external/crostesting/source_tree_test_config.proto": {
-		"crostesting",
-		"go.chromium.org/luci/lucicfg/external/crostesting/proto/config/source_tree_test_config.proto",
+		"testplans",
+		"testplans/source_tree_test_config.proto",
 	},
 	"external/crostesting/target_test_requirements_config.proto": {
-		"crostesting",
-		"go.chromium.org/luci/lucicfg/external/crostesting/proto/config/target_test_requirements_config.proto",
+		"testplans",
+		"testplans/target_test_requirements_config.proto",
 	},
 
 	// LogDog project config.
