@@ -329,7 +329,7 @@ var (
 			"builds.*.end_time",
 			"builds.*.update_time",
 			"builds.*.status",
-			"builds.*.output.summary_markdown",
+			"builds.*.summary_markdown",
 		},
 	}
 )
