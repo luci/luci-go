@@ -28,13 +28,13 @@ import (
 	_ "github.com/golang/protobuf/ptypes/timestamp"
 	_ "github.com/golang/protobuf/ptypes/wrappers"
 
+	_ "go.chromium.org/chromiumos/infra/proto/go/chromiumos"
 	_ "go.chromium.org/chromiumos/infra/proto/go/testplans"
 	_ "go.chromium.org/luci/buildbucket/proto/config"
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/cq/api/config/v2"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
-	_ "go.chromium.org/luci/lucicfg/external/cros/proto/config"
 	_ "go.chromium.org/luci/milo/api/config"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
 	_ "go.chromium.org/luci/swarming/proto/config"
@@ -73,10 +73,10 @@ var publicProtos = map[string]struct {
 	//
 	// load(
 	//     "@proto//external/cros/builder_config.proto",
-	//     builder_config_pb="cros")
+	//     builder_config_pb="chromiumos")
 	"external/cros/builder_config.proto": {
-		"cros",
-		"go.chromium.org/luci/lucicfg/external/cros/proto/config/builder_config.proto",
+		"chromiumos",
+		"chromiumos/builder_config.proto",
 	},
 
 	// CrOS testing project config.
