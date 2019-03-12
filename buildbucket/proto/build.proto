@@ -159,6 +159,7 @@ message Build {
   // Human-readable summary of the build in Markdown format
   // (https://spec.commonmark.org/0.28/).
   // Explains status.
+  // Up to 1Kb.
   //
   // BigQuery: excluded from rows.
   string summary_markdown = 20;

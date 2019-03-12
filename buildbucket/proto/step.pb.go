@@ -66,6 +66,7 @@ type Step struct {
 	Logs []*Step_Log `protobuf:"bytes,5,rep,name=logs,proto3" json:"logs,omitempty"`
 	// Human-readable summary of the step provided by the step itself,
 	// in Markdown format (https://spec.commonmark.org/0.28/).
+	// Up to 1Kb.
 	//
 	// V1 equivalent: combines and supersedes Buildbot's step_text and step links and also supports
 	// other formatted text.
