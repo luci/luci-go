@@ -234,6 +234,30 @@
       "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ebede95b_1140fd31",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T19:44:38Z",
+      "side": 1,
+      "message": "i\u0027d have been fine with a TODO. CQ validates these already.",
+      "parentUuid": "af63b061_4c8731ab",
+      "range": {
+        "startLine": 207,
+        "startChar": 0,
+        "endLine": 218,
+        "endChar": 3
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
