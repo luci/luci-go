@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "75a10d5f_e2c307f3",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-12T14:27:49Z",
+      "side": 1,
+      "message": "what if not set? if the default (of default) is 50, let\u0027s mention it",
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6055dd57_bd91b28e",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-12T14:27:49Z",
+      "side": 1,
+      "message": "do we really need two cookies? can we have one boolean cookie?",
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8324ffd1_68de2845",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-12T14:27:49Z",
+      "side": 1,
+      "message": "{{.Expand}}\n\nhttps://play.golang.org/p/Rod2kMzICrz",
+      "range": {
+        "startLine": 18,
+        "startChar": 24,
+        "endLine": 18,
+        "endChar": 72
+      },
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dcb71e3_983282e4",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 527,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-12T14:27:49Z",
+      "side": 1,
+      "message": "\u003e",
+      "range": {
+        "startLine": 527,
+        "startChar": 31,
+        "endLine": 527,
+        "endChar": 33
+      },
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
