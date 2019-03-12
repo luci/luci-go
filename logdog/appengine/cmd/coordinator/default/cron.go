@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -75,77 +76,98 @@ func getDatastoreNamespaces(c context.Context) ([]string, error) {
 	return namespaces, nil
 }
 
+type queryStat struct {
+	start     time.Duration
+	end       time.Duration
+	metric    metric.Int
+	namespace string
+}
+
+func doQueryStat(c context.Context, ns string, stat queryStat) error {
+	now := clock.Now(c)
+	start := now.Add(stat.start)
+	end := now.Add(stat.end)
+	// Make a projection query, it is cheaper.
+	q := datastore.NewQuery("LogStreamState").Gt("Created", start).Lt("Created", end)
+	q = q.Project(coordinator.ArchivalStateKey)
+
+	notArchived := int64(0)
+	archiveTasked := int64(0)
+	archivedPartial := int64(0)
+	archivedComplete := int64(0)
+
+	// Gather stats for this namespace.
+	if err := datastore.RunBatch(c, 128, q, func(state *datastore.PropertyMap) error {
+		asRaws := state.Slice(coordinator.ArchivalStateKey)
+		if len(asRaws) != 1 {
+			logging.Errorf(c, "%v for %v has the wrong size", asRaws, state)
+		}
+		asRawProp := asRaws[0]
+		asRawInt, ok := asRawProp.Value().(int64)
+		if !ok {
+			logging.Errorf(c, "%v and %v are not archival states (ints)", asRawProp, asRawProp.Value())
+			return datastore.Stop
+		}
+		as := coordinator.ArchivalState(asRawInt)
+
+		switch as {
+		case coordinator.NotArchived:
+			notArchived++
+		case coordinator.ArchiveTasked:
+			archiveTasked++
+		case coordinator.ArchivedPartial:
+			archivedPartial++
+		case coordinator.ArchivedComplete:
+			archivedComplete++
+		default:
+			panic("impossible")
+		}
+		return nil
+	}); err != nil {
+		logging.WithError(err).Errorf(c, "did not complete datastore query for %s", ns)
+		return err
+	}
+
+	// Report
+	stat.metric.Set(c, notArchived, ns, "not_archived")
+	stat.metric.Set(c, archiveTasked, ns, "archive_tasked")
+	stat.metric.Set(c, archivedPartial, ns, "archived_partial")
+	stat.metric.Set(c, archivedComplete, ns, "archived_complete")
+	logging.Infof(c, "Stat %s Project %s stat: NA %d, Tasked %d, Partial %d, Complete %d",
+		stat.metric.Info().Name, ns, notArchived, archiveTasked, archivedPartial, archivedComplete)
+	return nil
+}
+
 // cronStatsHandler gathers metrics about the state of LogDog
 // and sends it to tsmon.
 //
 // This gathers the following stats:
 // * Number of unarchived streams between 48-72hr old (after creation).
 func cronStatsHandler(ctx *router.Context) {
-	// Defer our error handler, which just logs the error and returns 500.
-	var merr errors.MultiError
-	defer func() {
-		if len(merr) > 0 {
-			logging.WithError(merr).Errorf(ctx.Context, "error while running cron handler")
-			ctx.Writer.WriteHeader(http.StatusInternalServerError)
-		}
-	}()
-
 	namespaces, err := getDatastoreNamespaces(ctx.Context)
 	if err != nil {
-		merr = append(merr, err)
-		return
+		logging.WithError(err).Errorf(ctx.Context, "error while running cron handler")
+		ctx.Writer.WriteHeader(http.StatusInternalServerError)
 	}
 
-	queryStats := []struct {
-		start  time.Duration
-		end    time.Duration
-		metric metric.Int
-	}{
-		{-72 * time.Hour, -49 * time.Hour, numStreams72hrs},
-		{-24 * time.Hour, 0 * time.Hour, numStreams24hrs},
+	queryStats := []queryStat{
+		{-72 * time.Hour, -49 * time.Hour, numStreams72hrs, ""},
+		{-24 * time.Hour, 0 * time.Hour, numStreams24hrs, ""},
 	}
 
-	for _, stats := range queryStats {
-		// Do one query per namespace.
-		for _, ns := range namespaces {
-			c := info.MustNamespace(ctx.Context, ns)
-			now := clock.Now(c)
-			start := now.Add(stats.start)
-			end := now.Add(stats.end)
-			q := datastore.NewQuery("LogStreamState").Gt("Created", start).Lt("Created", end)
-
-			notArchived := int64(0)
-			archiveTasked := int64(0)
-			archivedPartial := int64(0)
-			archivedComplete := int64(0)
-
-			// Gather stats for this namespace.
-			if err := datastore.RunBatch(c, 128, q, func(state *coordinator.LogStreamState) error {
-				switch state.ArchivalState() {
-				case coordinator.NotArchived:
-					notArchived++
-				case coordinator.ArchiveTasked:
-					archiveTasked++
-				case coordinator.ArchivedPartial:
-					archivedPartial++
-				case coordinator.ArchivedComplete:
-					archivedComplete++
-				default:
-					panic("impossible")
+	if err := parallel.FanOutIn(func(ch chan<- func() error) {
+		for _, stat := range queryStats {
+			// Do one query per namespace.
+			for _, ns := range namespaces {
+				c := info.MustNamespace(ctx.Context, ns)
+				stat := stat
+				ch <- func() error {
+					return doQueryStat(c, ns, stat)
 				}
-				return nil
-			}); err != nil {
-				merr = append(merr, err)
-				logging.WithError(err).Errorf(c, "did not complete datastore query for %s", ns)
 			}
-
-			// Report
-			stats.metric.Set(c, notArchived, ns, "not_archived")
-			stats.metric.Set(c, archiveTasked, ns, "archive_tasked")
-			stats.metric.Set(c, archivedPartial, ns, "archived_partial")
-			stats.metric.Set(c, archivedComplete, ns, "archived_complete")
-			logging.Infof(c, "Stats %s Project %s stats: NA %d, Tasked %d, Partial %d, Complete %d",
-				stats.metric.Info().Name, ns, notArchived, archiveTasked, archivedPartial, archivedComplete)
 		}
+	}); err != nil {
+		logging.WithError(err).Errorf(ctx.Context, "error while running cron handler")
+		ctx.Writer.WriteHeader(http.StatusInternalServerError)
 	}
 }
