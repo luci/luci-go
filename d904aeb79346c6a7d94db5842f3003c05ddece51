@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a75e0f3f_350f7173",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 794,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T07:50:08Z",
+      "side": 1,
+      "message": "builder_node",
+      "range": {
+        "startLine": 794,
+        "startChar": 58,
+        "endLine": 794,
+        "endChar": 65
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "395fe352_56ea20a9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 838,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T07:50:08Z",
+      "side": 1,
+      "message": "nit: the",
+      "range": {
+        "startLine": 838,
+        "startChar": 41,
+        "endLine": 838,
+        "endChar": 42
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98ee554b_88f371f5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T07:50:08Z",
+      "side": 1,
+      "message": "e.g. \u0027external/other/try/tester\u0027\n\n(i think this is more useful)",
+      "range": {
+        "startLine": 171,
+        "startChar": 49,
+        "endLine": 171,
+        "endChar": 75
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d675d672_024b04da",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T07:50:08Z",
+      "side": 1,
+      "message": "del \"of\"\n(mind also fixing source where you copied it from https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/cq/api/config/v2/cq.proto?q\u003dcq.proto\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d341 ?)",
+      "range": {
+        "startLine": 182,
+        "startChar": 70,
+        "endLine": 182,
+        "endChar": 71
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca36f930_9b638406",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T07:50:08Z",
+      "side": 1,
+      "message": "intentionally skipping failing if these are specified, but not eqiv builder iteslf?",
+      "range": {
+        "startLine": 207,
+        "startChar": 0,
+        "endLine": 218,
+        "endChar": 3
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
