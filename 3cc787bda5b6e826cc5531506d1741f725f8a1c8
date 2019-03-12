@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "beb6a66a_9ea43764",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T23:37:59Z",
+      "side": 1,
+      "message": "this is weird.\nHave you considered requiring that GetStart doesn\u0027t error out (and panicing if it does) and instead avoiding sorting IFF any invdividual schedule isn\u0027t valid?",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 60
+      },
+      "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "428fbb2d_bb750436",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T23:37:59Z",
+      "side": 1,
+      "message": "to continue on my above suggestion: if this returned True/False, you could then add only individually valid schedules into schs slice. Then, it\u0027s easier to follow that less function is actually correct AND code below will be simpler, too since L72 will be just:\n  start, _ \u003d s.Schedule.Start.ToTime()",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 16
+      },
+      "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6fa401e_22a0119b",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T23:37:59Z",
+      "side": 1,
+      "message": "... and this block doesn\u0027t change prevTime, so the following check won\u0027t be very useful anyway.",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 3
+      },
+      "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

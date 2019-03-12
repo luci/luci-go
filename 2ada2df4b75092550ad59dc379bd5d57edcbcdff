@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "7b1a7e56_c0fe9eb7",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T23:37:59Z",
+      "side": 1,
+      "message": "i see now. Thanks for comment.",
+      "parentUuid": "60a7fce9_397198b1",
+      "range": {
+        "startLine": 97,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 11
+      },
+      "revId": "2ada2df4b75092550ad59dc379bd5d57edcbcdff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a11da433_d1845c23",
         "filename": "gce/api/config/v1/amount.go",
         "patchSetId": 1
@@ -281,6 +305,30 @@
       "revId": "2ada2df4b75092550ad59dc379bd5d57edcbcdff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3af3943_e7db8624",
+        "filename": "gce/api/config/v1/amount_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-12T23:37:59Z",
+      "side": 1,
+      "message": "Our common goal, I hope, is to reduce maintenance cost of this code.\nThus, as a general guideline for unittests, i agree with you: when func is changed, we want to have easy to debug tests, the smaller the test, the easiest to debug.\nHowever, the downside is that test setup boilerplate is also maintenance burden.\nSo, in practice, we need to balance the two. Agree?\n\nnote, that I think it\u0027s OK if we don\u0027t agree on specific balancing act, so long as we agree on the rest.",
+      "parentUuid": "ebbf6891_e36a0aa5",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 3
+      },
+      "revId": "2ada2df4b75092550ad59dc379bd5d57edcbcdff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
