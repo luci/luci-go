@@ -252,6 +252,8 @@ luci.console_view(
         # An alias for luci.console_view_entry(**{...}).
         {'builder': 'cron builder', 'category': 'cron'},
     ],
+    default_commit_limit = 3,
+    default_expand = True,
 )
 
 luci.console_view_entry(
@@ -583,6 +585,8 @@ luci.cq_tryjob_verifier(
 #     >
 #   >
 #   include_experimental_builds: true
+#   default_commit_limit: 3
+#   default_expand: true
 # >
 # logo_url: "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png"
 # build_bug_template: <
