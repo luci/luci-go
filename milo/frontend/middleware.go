@@ -499,7 +499,8 @@ func projectACLMiddleware(c *router.Context, next router.Handler) {
 			ErrorHandler(c, errors.New("no access to project", common.CodeNoAccess))
 		}
 	default:
-		c.Context = git.WithProject(c.Context, c.Params.ByName("project"))
+		luciProject := c.Params.ByName("project")
+		c.Context = git.WithProject(c.Context, luciProject)
 		next(c)
 	}
 }

@@ -27,7 +27,7 @@ func WithProject(ctx context.Context, project string) context.Context {
 // ProjectFromContext is the opposite of WithProject, is extracts the
 // LUCI project which the current call stack is handling a request for.
 func ProjectFromContext(ctx context.Context) string {
-	project, ok := ctx.Value(luciProjectKey).(string)
+	project, ok := ctx.Value(&luciProjectKey).(string)
 	if !ok || project == "" {
 		panic("LUCI project not available in context")
 	}
