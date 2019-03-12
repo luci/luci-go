@@ -128,29 +128,16 @@ func TestTimeOfDay(t *testing.T) {
 				t.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "time must match regex")
-				So(errs, ShouldContainErr, "at least one day is required")
+				So(errs, ShouldContainErr, "day must be specified")
 			})
 
 			Convey("day", func() {
-				Convey("empty", func() {
-					t := &TimeOfDay{
-						Day: []dayofweek.DayOfWeek{},
-					}
-					t.Validate(c)
-					errs := c.Finalize().(*validation.Error).Errors
-					So(errs, ShouldContainErr, "at least one day is required")
-				})
-
-				Convey("unspecified", func() {
-					t := &TimeOfDay{
-						Day: []dayofweek.DayOfWeek{
-							dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED,
-						},
-					}
-					t.Validate(c)
-					errs := c.Finalize().(*validation.Error).Errors
-					So(errs, ShouldContainErr, "day must be specified")
-				})
+				t := &TimeOfDay{
+					Day: dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED,
+				}
+				t.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "day must be specified")
 			})
 
 			Convey("location", func() {
@@ -165,9 +152,7 @@ func TestTimeOfDay(t *testing.T) {
 
 		Convey("valid", func() {
 			t := &TimeOfDay{
-				Day: []dayofweek.DayOfWeek{
-					dayofweek.DayOfWeek_MONDAY,
-				},
+				Day:  dayofweek.DayOfWeek_MONDAY,
 				Time: "1:23",
 			}
 			t.Validate(c)
