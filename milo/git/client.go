@@ -143,7 +143,11 @@ func (p *implementation) transport(c context.Context) (transport http.RoundTripp
 	//   skipped.
 	// TODO(tandrii): instead of auth.Self, use service accounts configured per
 	//   LUCI project ( != Git/Gerrit project ).
-	return auth.GetRPCTransport(c, auth.AsProject, auth.WithProject(ProjectFromContext(c)), auth.WithScopes(gitiles.OAuthScope))
+	opts := []auth.RPCOption{
+		auth.WithProject(ProjectFromContext(c)),
+		auth.WithScopes(gitiles.OAuthScope),
+	}
+	return auth.GetRPCTransport(c, auth.AsProject, opts...)
 }
 
 func (p *implementation) gitilesClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
