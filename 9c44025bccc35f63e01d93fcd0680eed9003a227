@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9d64da7_a34220e1",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 502,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-12T23:49:17Z",
+      "side": 1,
+      "message": "nit: I think it makes sense to do it right at the start of projectACLMiddleware, so we can reuse this var in IsAllowed(...) check as well.",
+      "range": {
+        "startLine": 502,
+        "startChar": 2,
+        "endLine": 502,
+        "endChar": 43
+      },
+      "revId": "9c44025bccc35f63e01d93fcd0680eed9003a227",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
