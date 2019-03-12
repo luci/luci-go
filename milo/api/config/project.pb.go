@@ -108,7 +108,7 @@ func (m *Project) GetBuildBugTemplate() *BugTemplate {
 	return nil
 }
 
-// BugTemplate defines how to make custom feedback links to file Monorail
+// BugTemplate defines how to make custom bug links to file Monorail
 // bugs. The intention is for this to be used to insert a bug into a triage
 // queue. The "summary" and "description" fields are templates for generating
 // summary and description text, respectively. The template fields are
@@ -706,8 +706,13 @@ type Builder struct {
 	// Category describes the hierarchy of the builder on the header of the
 	// console as a "|" delimited list.  Neighboring builders with common ancestors
 	// will be have their headers merged.
+	// In expanded view, each leaf category OR builder under a non-leaf category
+	// will have it's own column.  The recommendation for maximum densification
+	// is not to mix subcategories and builders for children of each category.
 	Category string `protobuf:"bytes,2,opt,name=category,proto3" json:"category,omitempty"`
-	// ShortName is the 1-3 character abbreviation of the builder.
+	// ShortName is shorter name of the builder.
+	// The recommendation is to keep this name as short as reasonable,
+	// as longer names take up more horizontal space.
 	ShortName            string   `protobuf:"bytes,3,opt,name=short_name,json=shortName,proto3" json:"short_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
