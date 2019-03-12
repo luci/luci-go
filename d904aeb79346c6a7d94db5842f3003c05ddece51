@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c277cad2_8e6ffec2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 794,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-12T19:30:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a75e0f3f_350f7173",
+      "range": {
+        "startLine": 794,
+        "startChar": 58,
+        "endLine": 794,
+        "endChar": 65
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "395fe352_56ea20a9",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29c44de5_19538a48",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 838,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-12T19:30:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "395fe352_56ea20a9",
+      "range": {
+        "startLine": 838,
+        "startChar": 41,
+        "endLine": 838,
+        "endChar": 42
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "c313077f_ab50857b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-12T19:30:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98ee554b_88f371f5",
+      "range": {
+        "startLine": 171,
+        "startChar": 49,
+        "endLine": 171,
+        "endChar": 75
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d675d672_024b04da",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "3a450861_a7a98f3b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-12T19:30:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d675d672_024b04da",
+      "range": {
+        "startLine": 182,
+        "startChar": 70,
+        "endLine": 182,
+        "endChar": 71
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca36f930_9b638406",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af63b061_4c8731ab",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-12T19:30:46Z",
+      "side": 1,
+      "message": "Yes, I was lazy.\n\nAdded the check. Still lazy to write a test case for it.",
+      "parentUuid": "ca36f930_9b638406",
+      "range": {
+        "startLine": 207,
+        "startChar": 0,
+        "endLine": 218,
+        "endChar": 3
+      },
+      "revId": "d904aeb79346c6a7d94db5842f3003c05ddece51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
