@@ -92,9 +92,7 @@
     <div id="tabs">
       <ul>
         <li><a href="#overview-tab">Overview</a></li>
-        {{ if .BuildPage.Related }}
-          <li><a href="#related-tab">Related Builds</a></li>
-        {{ end }}
+        <li><a href="#related-tab">Related Builds</a></li>
         <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
       <div id="overview-tab">
@@ -103,9 +101,7 @@
         {{ template "changes" . }}
       </div>
       <div id="timeline-tab" style="display: none;">{{ template "timeline_tab" . }}</div>
-      {{ if .BuildPage.Related }}
-        <div id="related-tab" style="display: none;">{{ template "related_tab" .BuildPage }}</div>
-      {{ end }}
+      <div id="related-tab" style="display: none;">{{ template "related_tab" .BuildPage }}</div>
     </div>
   </div>
 {{end}}
