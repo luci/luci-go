@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/tumble"
 
@@ -209,54 +208,8 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				return nil, grpcutil.Internal
 			}
 
-			// Legacy pipline
-			// Add a named delayed mutation to archive this stream if it's not archived
-			// yet.
-			//
-			// If the registration did not include a terminal index, this will be our
-			// pessimistic archival request, scheduled on registration to catch streams
-			// that don't expire. This mutation will be replaced by the optimistic
-			// archival mutation when/if the stream is terminated via TerminateStream.
-			//
-			// If the registration included a terminal index, apply our standard
-			// parameters to the archival. Since TerminateStream will not be called,
-			// this will be our formal optimistic archival task.
-			params := standardArchivalParams(cfg, pcfg)
-			cat := mutations.CreateArchiveTask{
-				ID: ls.ID,
-			}
-			if req.TerminalIndex < 0 {
-				// No terminal index, schedule pessimistic cleanup archival.
-				cat.Expiration = now.Add(params.CompletePeriod)
-
-				log.Fields{
-					"deadline": cat.Expiration,
-				}.Debugf(c, "Scheduling cleanup archival mutation.")
-			} else {
-				// Terminal index, schedule optimistic archival (mirrors TerminateStream).
-				cat.SettleDelay = params.SettleDelay
-				cat.CompletePeriod = params.CompletePeriod
-
-				// Schedule this mutation to execute after our settle delay.
-				cat.Expiration = now.Add(params.SettleDelay)
-
-				log.Fields{
-					"settleDelay":    cat.SettleDelay,
-					"completePeriod": cat.CompletePeriod,
-					"scheduledAt":    cat.Expiration,
-				}.Debugf(c, "Scheduling archival mutation.")
-			}
-
-			aeName := cat.TaskName(c)
-			if err := tumble.PutNamedMutations(c, lstKey, map[string]tumble.Mutation{aeName: &cat}); err != nil {
-				log.WithError(err).Errorf(c, "Failed to write named mutations.")
-				return nil, grpcutil.Internal
-			}
-
-			// TODO(hinoka): This should be set to 48hr / params.CompletePeriod, once the pipeline is migrated.
-			// In all honesty this should just be a hardcoded value instead of a luci-config value.
-			// No sane person is going to muck with this setting.
-			return nil, TaskArchival(c, lst, 47*time.Hour, coordinator.GetSettings(c).PessimisticArchivalPercent)
+			// Task the archival
+			return nil, TaskArchival(c, lst, 48*time.Hour, coordinator.GetSettings(c).PessimisticArchivalPercent)
 		})
 		if err != nil {
 			log.Fields{

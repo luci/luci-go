@@ -187,7 +187,7 @@ func (a *Archivist) ArchiveTask(c context.Context, task Task) error {
 
 	err := a.archiveTaskImpl(c, task)
 
-	failure := isFailure(err)
+	failure := err != nil
 	log.Fields{
 		log.ErrorKey: err,
 		"failure":    failure,
@@ -240,35 +240,6 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		task.Consume()
 		return nil
 
-	case len(at.Key) > 0 && !bytes.Equal(ls.ArchivalKey, at.Key):
-		// TODO(hinoka): Remove this condition after crbug.com/923557.
-		if len(ls.ArchivalKey) == 0 {
-			// The log stream is not registering as "archive pending" state.
-			//
-			// This can happen if the eventually-consistent datastore hasn't updated
-			// its log stream state by the time this Pub/Sub task is received. In
-			// this case, we will continue retrying the task until datastore registers
-			// that some key is associated with it.
-			log.Infof(c, "Archival request received before log stream has its key.")
-			// If this was dispatched:
-			// Less than 5 minutes ago: try again later.
-			// More than 5 minutes ago: drop it.
-			if dt, err := ptypes.Timestamp(at.DispatchedAt); err == nil && clock.Now(c).Before(dt.Add(5*time.Minute)) {
-				return statusErr(errors.New("premature archival request"))
-			}
-		}
-
-		// This can happen if a Pub/Sub message is dispatched during a transaction,
-		// but that specific transaction failed. In this case, the Pub/Sub message
-		// will have a key that doesn't match the key that was transactionally
-		// encoded, and can be discarded.
-		log.Fields{
-			"logStreamArchivalKey": hex.EncodeToString(ls.ArchivalKey),
-			"requestArchivalKey":   hex.EncodeToString(at.Key),
-		}.Infof(c, "Superfluous archival request (keys do not match). Discarding.")
-		task.Consume()
-		return nil
-
 	case ls.State.ProtoVersion != logpb.Version:
 		log.Fields{
 			"protoVersion":    ls.State.ProtoVersion,
@@ -279,20 +250,6 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	case ls.Desc == nil:
 		log.Errorf(c, "Log stream did not include a descriptor.")
 		return errors.New("log stream did not include a descriptor")
-	}
-
-	// TODO(hinoka): Remove this condition after crbug.com/923557.
-	age := google.DurationFromProto(ls.Age)
-	if at.SettleDelay != nil {
-		// If the archival request is younger than the settle delay, kick it back to
-		// retry later.
-		if settle := google.DurationFromProto(at.SettleDelay); age < settle {
-			log.Fields{
-				"age":         age,
-				"settleDelay": settle,
-			}.Infof(c, "Log stream is younger than the settle delay. Returning task to queue.")
-			return statusErr(errors.New("log stream is within settle delay"))
-		}
 	}
 
 	// Load archival settings for this project.
@@ -318,19 +275,6 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
 		return err
-	}
-
-	// TODO(hinoka): Remove this condition after crbug.com/923557.
-	// Are we required to archive a complete log stream?
-	if at.CompletePeriod != nil {
-		if age <= google.DurationFromProto(at.CompletePeriod) {
-			// If we're requiring completeness, perform a keys-only scan of intermediate
-			// storage to ensure that we have all of the records before we bother
-			// streaming to storage only to find that we are missing data.
-			if err := staged.checkComplete(c); err != nil {
-				return err
-			}
-		}
 	}
 
 	// Archive to staging.
