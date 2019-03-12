@@ -336,7 +336,7 @@ var (
 
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
-func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, related bool) (*ui.BuildPage, error) {
+func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest) (*ui.BuildPage, error) {
 	c := ctx.Context
 	host, err := getHost(c)
 	if err != nil {
@@ -367,12 +367,9 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, related
 		if err != nil {
 			return
 		}
-		if related {
-			logging.Infof(c, "Getting related builds")
-			ch <- func() (err error) {
-				relatedBuilds, err = getRelatedBuilds(c, client, sb)
-				return
-			}
+		ch <- func() (err error) {
+			relatedBuilds, err = getRelatedBuilds(c, client, sb)
+			return
 		}
 		ch <- func() error {
 			// We wait at most 4s to grab a blamelist.
@@ -390,7 +387,6 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, related
 		Build:         ui.Build{b},
 		Blame:         blame,
 		RelatedBuilds: relatedBuilds,
-		Related:       related,
 		BuildBugLink:  link,
 	}, err
 }
