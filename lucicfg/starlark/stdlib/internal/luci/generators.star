@@ -583,6 +583,9 @@ def _milo_console_view(view, opts, project_name):
       include_experimental_builds = view.props.include_experimental_builds,
       favicon_url = view.props.favicon or opts.favicon,
       builders = builders,
+
+      default_commit_limit = view.props.default_commit_limit,
+      default_expand = view.props.default_expand,
   )
 
 

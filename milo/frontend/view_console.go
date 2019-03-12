@@ -523,7 +523,10 @@ func ConsoleHandler(c *router.Context) error {
 		return nil
 	}
 
-	const defaultLimit = 50
+	defaultLimit := 50
+	if con.Def.DefaultCommitLimit > 0 {
+		defaultLimit = int(con.Def.DefaultCommitLimit)
+	}
 	const maxLimit = 1000
 	limit := defaultLimit
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
@@ -562,6 +565,7 @@ func ConsoleHandler(c *router.Context) error {
 	templates.MustRender(c.Context, c.Writer, "pages/console.html", templates.Args{
 		"Console": consoleRenderer{result},
 		"Reload":  reload,
+		"Expand":  con.Def.DefaultExpand,
 	})
 	return nil
 }
@@ -644,6 +648,7 @@ func consoleTestData() []common.TestBundle {
 		{
 			Description: "Full console with Header",
 			Data: templates.Args{
+				"Expand": false,
 				"Console": consoleRenderer{&ui.Console{
 					Name:    "Test",
 					Project: "Testing",
