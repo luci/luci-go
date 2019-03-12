@@ -21,6 +21,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 
@@ -173,6 +176,22 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (*oauth2.Token,
 				OauthScope:          p.OAuthScopes,
 				MinValidityDuration: int64(MaxScopedTokenTTL.Seconds()),
 			})
+
+			now := clock.Now(ctx).UTC()
+			// TODO(fmatenaar): This is valid during scoped-account migration
+			// and should be removed eventually after migration is finished for all projects.
+			// Cache the "NotFound" response and indicate it in the cached token.
+			if err != nil && status.Code(err) == codes.NotFound {
+				logging.Warningf(ctx, "received NOT_FOUND from token-server, caching")
+				exp := now.Add(5 * time.Minute).UTC()
+				return &cachedToken{
+					Created:              jsontime.Time{now},
+					Expiry:               jsontime.Time{exp},
+					ProjectScopeFallback: true,
+					OAuth2Token:          nil,
+				}, nil, "FALLBACK_PROJECT_NOT_FOUND"
+			}
+
 			if err != nil {
 				err = grpcutil.WrapIfTransient(err)
 				if transient.Tag.In(err) {
@@ -197,7 +216,6 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (*oauth2.Token,
 				return nil, ErrBrokenTokenService, "ERROR_BROKEN_TOKEN_SERVICE"
 			}
 
-			now := clock.Now(ctx).UTC()
 			exp := time.Unix(resp.Expiry.Seconds, 0).UTC()
 
 			// Log details about the new token.
@@ -222,6 +240,10 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (*oauth2.Token,
 	report(err, label)
 	if err != nil {
 		return nil, err
+	}
+	// TODO(fmatenaar): Remove this when scoped service accounts have been migrated.
+	if cached.OAuth2Token == nil {
+		return nil, nil
 	}
 	return cached.OAuth2Token.toToken(), nil
 }

@@ -92,6 +92,10 @@ type cachedToken struct {
 	// Expire is when the token expires, required, UTC.
 	Expiry jsontime.Time `json:"expiry,omitempty"`
 
+	// TODO(fmatenaar): Remove this after migrating projects to scoped accounts.
+	// ProjectScopeFallback indicates a project scoped token migration fallback case.
+	ProjectScopeFallback bool `json:"fallback,omitempty"`
+
 	// OAuth2Token is set when caching an OAuth2 tokens, otherwise nil.
 	OAuth2Token *cachedOAuth2Token `json:"oauth2_token,omitempty"`
 	// DelegationToken is set when caching a delegation token, otherwise nil.

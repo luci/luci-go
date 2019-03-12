@@ -669,7 +669,13 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 		LuciProject: opts.project,
 		OAuthScopes: opts.scopes,
 	}
+
 	tok, err := mintTokenCall(c, mintParams)
+	// TODO(fmatenaar): This is only during migration and needs to be removed eventually.
+	if tok == nil && err == nil {
+		logging.Infof(c, "project %s not found, fallback to service identity", opts.project)
+		return asSelfHeaders(c, uri, opts)
+	}
 	return tok, nil, err
 }
 
