@@ -18,10 +18,37 @@ package cros;
 
 option go_package = "go.chromium.org/luci/lucicfg/external/cros/proto/config;config";
 
+
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
 // Configuration used by a builder during execution.
 message BuilderConfig {
-  // TODO(dburger): flesh out this protocol buffer with relevant config models. For now
-  // this is just a placeholder to allow iterating on builder config generation approaches.
+
+  // Unique identifier of the builder configuration.
+  message Id {
+    // The name of the configuration such as "arm-generic-postsubmit".
+    string name = 1;
+    // Branch the configuration applies to such as "release-R73-11647.B".
+    string branch = 2;
+    // Type of build.
+    enum Type {
+      TYPE_UNSPECIFIED = 0;
+      // Commit queue build.
+      CQ = 1;
+      // Postsubmit build.
+      POSTSUBMIT = 2;
+    }
+    Type type = 3;
+  }
+  Id id = 1;
+
+  // General configuration for the builder.
+  message General {
+    // Whether or not the build is considered critical. A failure in a critical
+    // build for a CQ builder may, for example, prevent submission of the CL.
+    buildbucket.v2.Trinary critical = 1;
+  }
+  General general = 2;
 }
 
 // List of builder configs. Intended to be serialized to / from disk.
