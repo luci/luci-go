@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5656c88a_667140e9",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-12T17:28:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75a10d5f_e2c307f3",
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6055dd57_bd91b28e",
         "filename": "milo/frontend/appengine/static/common/js/console.js",
         "patchSetId": 7
@@ -33,6 +51,24 @@
       "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3f70cce_1f999dac",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-12T17:28:24Z",
+      "side": 1,
+      "message": "We essentially need to express 3 states:\n* User wants expand\n* User wants collapse\n* User has no opinion\n\nWhich really reduces this down to 2 states:\n* User wants non-default\n* User wants default\n\nNaming is going to be awkward, but we can have a \"non-default\" cookie basically.",
+      "parentUuid": "6055dd57_bd91b28e",
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "bc3469c1_ab52e579",
+        "filename": "milo/frontend/appengine/templates/pages/console.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-12T17:28:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8324ffd1_68de2845",
+      "range": {
+        "startLine": 18,
+        "startChar": 24,
+        "endLine": 18,
+        "endChar": 72
+      },
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8dcb71e3_983282e4",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 7
@@ -79,6 +139,30 @@
       "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d89fee3_9e8bc0e1",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 527,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-12T17:28:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8dcb71e3_983282e4",
+      "range": {
+        "startLine": 527,
+        "startChar": 31,
+        "endLine": 527,
+        "endChar": 33
+      },
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
