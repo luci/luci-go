@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "48991de5_82838eb0",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-12T00:18:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "79d61465_c3642042",
+      "range": {
+        "startLine": 171,
+        "startChar": 25,
+        "endLine": 171,
+        "endChar": 26
+      },
+      "revId": "6cca26d1325e355aaa372922d7e3f1d2f11861cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78c6c81e_e28e3b25",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "6cca26d1325e355aaa372922d7e3f1d2f11861cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90962f20_f0bb6170",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-12T00:18:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78c6c81e_e28e3b25",
+      "range": {
+        "startLine": 202,
+        "startChar": 28,
+        "endLine": 202,
+        "endChar": 42
+      },
+      "revId": "6cca26d1325e355aaa372922d7e3f1d2f11861cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
