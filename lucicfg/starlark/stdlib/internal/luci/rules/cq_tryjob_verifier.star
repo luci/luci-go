@@ -25,7 +25,10 @@ def cq_tryjob_verifier(
       disable_reuse=None,
       experiment_percentage=None,
       location_regexp=None,
-      location_regexp_exclude=None
+      location_regexp_exclude=None,
+      equivalent_builder=None,
+      equivalent_builder_percentage=None,
+      equivalent_builder_whitelist=None
   ):
   """A verifier in a luci.cq_group(...) that triggers tryjobs for verifying CLs.
 
@@ -134,9 +137,10 @@ def cq_tryjob_verifier(
         that starts with `external/`. It indicates that this builder is defined
         elsewhere, and its name should be passed to the CQ as is. In particular,
         to reference a builder in another LUCI project, use
-        `external/<project>/<bucket>/<builder>` (filling in concrete values). To
-        reference a Buildbot builder use `external/*/<master>/<builder>`, e.g.
-        `external/*/master.tryserver.chromium.android/android_tester`. Required.
+        `external/<project>/<bucket>/<builder>` (e.g. `external/other/try/tester`).
+        To reference a Buildbot builder use `external/*/<master>/<builder>`,
+        e.g. `external/*/master.tryserver.chromium.android/android_tester`.
+        Required.
     cq_group: a CQ group to add the verifier to. Can be omitted if
         `cq_tryjob_verifier` is used inline inside some luci.cq_group(...)
         declaration.
@@ -157,14 +161,34 @@ def cq_tryjob_verifier(
     location_regexp_exclude: a list of regexps that define a set of files to
         completely skip when evaluating whether the verifier should be applied
         to a CL or not. See the explanation above for all details.
+    equivalent_builder: an optional alternative builder for the CQ to choose
+        instead. If provided, the CQ will choose only one of the equivalent
+        builders as required based purely on the given CL and CL's owner and
+        **regardless** of the possibly already completed try jobs. As an
+        **experimental** and **unstable** extension, can also be a string that
+        starts with `external/`. It indicates that this builder is defined
+        elsewhere, and its name should be passed to the CQ as is. In particular,
+        to reference a builder in another LUCI project, use
+        `external/<project>/<bucket>/<builder>` (e.g. 'external/other/try/tester').
+        To reference a Buildbot builder use `external/*/<master>/<builder>`,
+        e.g. `external/*/master.tryserver.chromium.android/android_tester`.
+    equivalent_builder_percentage: a percentage expressing probability of the CQ
+        triggering `equivalent_builder` instead of `builder`. A choice itself is
+        made deterministically based on CL alone, hereby all CQ attempts on all
+        patchsets of a given CL will trigger the same builder, assuming CQ
+        config doesn't change in the mean time. Note that if
+        `equivalent_builder_whitelist` is also specified, the choice over which
+        of the two builders to trigger will be made only for CLs owned by the
+        accounts in the whitelisted group. Defaults to 0, meaning the equivalent
+        builder is never triggered by the CQ, but an existing build can be
+        re-used.
+    equivalent_builder_whitelist: a group name with accounts to enable the
+        equivalent builder substitution for. If set, only CLs that are owned by
+        someone from this group have a chance to be verified by the equivalent
+        builder. All other CLs are verified via the main builder.
   """
   # Either one of 'external' or 'builder' will be set, but never both.
-  if type(builder) == 'string' and builder.startswith('external/'):
-    external = builder[len('external/'):]
-    builder = None
-  else:
-    external = None
-    builder = keys.builder_ref(builder, attr='builder')
+  external, builder = _parse_builder_name('builder', builder)
 
   location_regexp = validate.list('location_regexp', location_regexp)
   for r in location_regexp:
@@ -176,6 +200,29 @@ def cq_tryjob_verifier(
   # Note: CQ does this itself implicitly, but we want configs to be explicit.
   if location_regexp_exclude and not location_regexp:
     location_regexp = ['.*']
+
+  # 'equivalent_builder' has same format as 'builder', except it is optional.
+  equiv_ext, equiv_builder = None, None
+  if equivalent_builder:
+    equiv_ext, equiv_builder = _parse_builder_name('equivalent_builder', equivalent_builder)
+  equivalent_builder_percentage = validate.float(
+      'equivalent_builder_percentage',
+      equivalent_builder_percentage,
+      min=0.0,
+      max=100.0,
+      required=False,
+  )
+  equivalent_builder_whitelist = validate.string(
+      'equivalent_builder_whitelist',
+      equivalent_builder_whitelist,
+      required=False,
+  )
+
+  if not equivalent_builder:
+    if equivalent_builder_percentage != None:
+      fail('"equivalent_builder_percentage" can be used only together with "equivalent_builder"')
+    if equivalent_builder_whitelist != None:
+      fail('"equivalent_builder_whitelist" can be used only together with "equivalent_builder"')
 
   # Note: name of this node is important only for error messages. It isn't
   # showing up in any generated files and by construction it can't accidentally
@@ -199,9 +246,35 @@ def cq_tryjob_verifier(
   if builder:
     graph.add_edge(parent=key, child=builder)
 
+  # Need to setup a node to represent 'equivalent_builder' so that lucicfg can
+  # verify (via the graph integrity check) that such builder was actually
+  # defined somewhere. Note that we can't add 'equivalent_builder' as another
+  # child of 'cq_tryjob_verifier' node, since then it would be ambiguous which
+  # child builder_ref node is the "main one" and which is the equivalent.
+  if equiv_ext or equiv_builder:
+    # Note: this key is totally invisible.
+    eq_key = keys.unique(
+        kind = kinds.CQ_EQUIVALENT_BUILDER,
+        name = equiv_builder.id if equiv_builder else equiv_ext,
+    )
+    graph.add_node(eq_key, props = {
+        'external': equiv_ext,
+        'percentage': equivalent_builder_percentage,
+        'whitelist': equivalent_builder_whitelist,
+    })
+    graph.add_edge(parent=key, child=eq_key)
+    if equiv_builder:
+      graph.add_edge(parent=eq_key, child=equiv_builder)
+
   # This is used to detect cq_tryjob_verifier nodes that aren't connected to any
   # cq_group. Such orphan nodes aren't allowed.
   graph.add_node(keys.cq_verifiers_root(), idempotent=True)
   graph.add_edge(parent=keys.cq_verifiers_root(), child=key)
 
   return graph.keyset(key)
+
+
+def _parse_builder_name(attr, builder):
+  if type(builder) == 'string' and builder.startswith('external/'):
+    return builder[len('external/'):], None
+  return None, keys.builder_ref(builder, attr=attr)

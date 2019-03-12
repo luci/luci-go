@@ -338,7 +338,7 @@ message Verifiers {
       // whitelisted group.
       //
       // If not specified, defaults to 0, meaning this builder is never
-      // triggered by CQ, but an existing build of can be re-used by CQ.
+      // triggered by CQ, but an existing build can be re-used by CQ.
       //
       // To illustrate, suppose percentage=10. Then,
       //   Without owner_whitelist_group,

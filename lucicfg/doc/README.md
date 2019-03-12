@@ -1064,6 +1064,9 @@ luci.cq_tryjob_verifier(
     experiment_percentage = None,
     location_regexp = None,
     location_regexp_exclude = None,
+    equivalent_builder = None,
+    equivalent_builder_percentage = None,
+    equivalent_builder_whitelist = None,
 )
 ```
 
@@ -1172,12 +1175,15 @@ For example:
 
 #### Arguments {#luci.cq_tryjob_verifier-args}
 
-* **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). As an **experimental** and **unstable** extension, can also be a string that starts with `external/`. It indicates that this builder is defined elsewhere, and its name should be passed to the CQ as is. In particular, to reference a builder in another LUCI project, use `external/<project>/<bucket>/<builder>` (filling in concrete values). To reference a Buildbot builder use `external/*/<master>/<builder>`, e.g. `external/*/master.tryserver.chromium.android/android_tester`. Required.
+* **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). As an **experimental** and **unstable** extension, can also be a string that starts with `external/`. It indicates that this builder is defined elsewhere, and its name should be passed to the CQ as is. In particular, to reference a builder in another LUCI project, use `external/<project>/<bucket>/<builder>` (e.g. `external/other/try/tester`). To reference a Buildbot builder use `external/*/<master>/<builder>`, e.g. `external/*/master.tryserver.chromium.android/android_tester`. Required.
 * **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
 * **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
 * **location_regexp**: a list of regexps that define a set of files whose modification trigger this verifier. See the explanation above for all details.
 * **location_regexp_exclude**: a list of regexps that define a set of files to completely skip when evaluating whether the verifier should be applied to a CL or not. See the explanation above for all details.
+* **equivalent_builder**: an optional alternative builder for the CQ to choose instead. If provided, the CQ will choose only one of the equivalent builders as required based purely on the given CL and CL's owner and **regardless** of the possibly already completed try jobs. As an **experimental** and **unstable** extension, can also be a string that starts with `external/`. It indicates that this builder is defined elsewhere, and its name should be passed to the CQ as is. In particular, to reference a builder in another LUCI project, use `external/<project>/<bucket>/<builder>` (e.g. 'external/other/try/tester'). To reference a Buildbot builder use `external/*/<master>/<builder>`, e.g. `external/*/master.tryserver.chromium.android/android_tester`.
+* **equivalent_builder_percentage**: a percentage expressing probability of the CQ triggering `equivalent_builder` instead of `builder`. A choice itself is made deterministically based on CL alone, hereby all CQ attempts on all patchsets of a given CL will trigger the same builder, assuming CQ config doesn't change in the mean time. Note that if `equivalent_builder_whitelist` is also specified, the choice over which of the two builders to trigger will be made only for CLs owned by the accounts in the whitelisted group. Defaults to 0, meaning the equivalent builder is never triggered by the CQ, but an existing build can be re-used.
+* **equivalent_builder_whitelist**: a group name with accounts to enable the equivalent builder substitution for. If set, only CLs that are owned by someone from this group have a chance to be verified by the equivalent builder. All other CLs are verified via the main builder.
 
 
 
