@@ -90,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "5a1b74ed_8055ff18",
+        "filename": "milo/frontend/appengine/static/common/js/console.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-12T17:49:19Z",
+      "side": 1,
+      "message": "I got boolean to work :D\n\nTakes a bit of boolean logic but it works.",
+      "parentUuid": "28d4881c_afd2f600",
+      "revId": "55b645af50717a4c7c50ba43469d4987fa485bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8324ffd1_68de2845",
         "filename": "milo/frontend/appengine/templates/pages/console.html",
         "patchSetId": 7
