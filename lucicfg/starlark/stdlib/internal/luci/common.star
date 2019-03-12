@@ -48,6 +48,9 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.console_view_entry -> list.builder_ref
 #   luci.cq_verifiers_root -> [luci.cq_tryjob_verifier]
 #   luci.cq_group -> [luci.cq_tryjob_verifier]
+#   luci.cq_tryjob_verifier -> luci.builder_ref
+#   luci.cq_tryjob_verifier -> luci.cq_equivalent_builder
+#   luci.cq_equivalent_builder -> luci.builder_ref
 
 
 def _global_key(kind, attr, ref):
@@ -111,6 +114,7 @@ kinds = struct(
     MILO_ENTRIES_ROOT = 'luci.milo_entries_root',
     MILO_VIEW = 'luci.milo_view',
     CQ_VERIFIERS_ROOT = 'luci.cq_verifiers_root',
+    CQ_EQUIVALENT_BUILDER = 'luci.cq_equivalent_builder',
 )
 
 

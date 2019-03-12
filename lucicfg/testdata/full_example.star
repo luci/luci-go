@@ -314,6 +314,21 @@ luci.cq_tryjob_verifier(
     cq_group = 'main-cq',
 )
 
+luci.cq_tryjob_verifier(
+    builder = luci.builder(
+        name = 'main cq builder',
+        bucket = 'try',
+        recipe = 'main/recipe',
+    ),
+    equivalent_builder = luci.builder(
+        name = 'equivalent cq builder',
+        bucket = 'try',
+        recipe = 'main/recipe',
+    ),
+    equivalent_builder_percentage = 60,
+    equivalent_builder_whitelist = 'owners',
+    cq_group = 'main-cq',
+)
 
 # Expect configs:
 #
@@ -371,6 +386,14 @@ luci.cq_tryjob_verifier(
 #         name: "infra/try/linux try builder"
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
+#       >
+#       builders: <
+#         name: "infra/try/main cq builder"
+#         equivalent_to: <
+#           name: "infra/try/equivalent cq builder"
+#           percentage: 60
+#           owner_whitelist_group: "owners"
+#         >
 #       >
 #       retry_config: <
 #         single_quota: 1
@@ -496,6 +519,15 @@ luci.cq_tryjob_verifier(
 #   >
 #   swarming: <
 #     builders: <
+#       name: "equivalent cq builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
+#     builders: <
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
@@ -506,6 +538,15 @@ luci.cq_tryjob_verifier(
 #     >
 #     builders: <
 #       name: "linux try builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
+#     builders: <
+#       name: "main cq builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
 #         name: "main/recipe"
