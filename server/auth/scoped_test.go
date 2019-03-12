@@ -20,14 +20,18 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/caching"
+
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -52,7 +56,7 @@ func TestMintServiceOAuthToken(t *testing.T) {
 
 	Convey("MintProjectToken works", t, func() {
 		ctx := context.Background()
-		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = Initialize(ctx, &Config{})
@@ -116,6 +120,66 @@ func TestMintServiceOAuthToken(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(tok.AccessToken, ShouldResemble, "another token") // new one
+		})
+
+		Convey("Project scoped fallback works (including caching)", func(c C) {
+			mockedClient = &scopedTokenMinterMock{
+				response: minter.MintProjectTokenResponse{},
+				err:      status.Errorf(codes.NotFound, "unable to find project identity for project"),
+			}
+
+			tok, err := MintProjectToken(ctx, ProjectTokenParams{
+				MinTTL:      4 * time.Minute,
+				rpcClient:   mockedClient,
+				LuciProject: "infra",
+				OAuthScopes: defaultOAuthScopes,
+			})
+			So(err, ShouldBeNil)
+			So(tok, ShouldBeNil)
+
+			// On subsequence request the cached token is used.
+			mockedClient.response = minter.MintProjectTokenResponse{
+				ServiceAccountEmail: "foobarserviceaccount",
+				AccessToken:         "tok",
+				Expiry:              google.NewTimestamp(clock.Now(ctx).Add(MaxScopedTokenTTL)),
+			}
+			mockedClient.err = nil
+			tok, err = MintProjectToken(ctx, ProjectTokenParams{
+				MinTTL:      4 * time.Minute,
+				rpcClient:   mockedClient,
+				LuciProject: "infra",
+				OAuthScopes: defaultOAuthScopes,
+			})
+			So(err, ShouldBeNil)
+			So(tok, ShouldBeNil)
+
+			// However requesting for another project produces a different result
+			mockedClient.response = minter.MintProjectTokenResponse{
+				ServiceAccountEmail: "foobarserviceaccount",
+				AccessToken:         "tok",
+				Expiry:              google.NewTimestamp(clock.Now(ctx).Add(MaxScopedTokenTTL)),
+			}
+			mockedClient.err = nil
+			tok, err = MintProjectToken(ctx, ProjectTokenParams{
+				MinTTL:      4 * time.Minute,
+				rpcClient:   mockedClient,
+				LuciProject: "infra-experimental",
+				OAuthScopes: defaultOAuthScopes,
+			})
+
+			So(err, ShouldBeNil)
+			So(tok, ShouldNotBeNil)
+
+			// Simulate cache expiry, check that a new token attempt is sent out
+			tc.Add(5 * time.Minute)
+			tok, err = MintProjectToken(ctx, ProjectTokenParams{
+				MinTTL:      4 * time.Minute,
+				rpcClient:   mockedClient,
+				LuciProject: "infra",
+				OAuthScopes: defaultOAuthScopes,
+			})
+			So(err, ShouldBeNil)
+			So(tok.AccessToken, ShouldResemble, "tok")
 		})
 
 	})
