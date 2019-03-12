@@ -267,6 +267,12 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		bytes.Equal(e.TaskData, other.TaskData))
 }
 
+// GetProjectID parses the ProjectID from the JobID and returns it.
+func (e *Invocation) GetProjectID() string {
+	parts := strings.Split(e.JobID, "/")
+	return parts[0]
+}
+
 // debugLog appends a line to DebugLog field.
 func (e *Invocation) debugLog(c context.Context, format string, args ...interface{}) {
 	debugLog(c, &e.DebugLog, format, args...)
@@ -394,7 +400,7 @@ func (e *Invocation) reportOverrunMetrics(c context.Context) {
 // Should be called after transaction to save this invocation is completed.
 func (e *Invocation) reportCompletionMetrics(c context.Context) {
 	if !e.Status.Final() || e.Finished.IsZero() {
-		panic(fmt.Errorf("reportCompletionMetrics on incomplete invocation: %q", e))
+		panic(fmt.Errorf("reportCompletionMetrics on incomplete invocation: %v", e))
 	}
 	duration := e.Finished.Sub(e.Started)
 	metricInvocationsDurations.Add(c, duration.Seconds(), e.JobID, string(e.Status))
