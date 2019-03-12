@@ -28,9 +28,13 @@ const (
 	// is always 'anonymous'.
 	Anonymous Kind = "anonymous"
 
-	// Bot is used for bots authenticated via IP whitelist. Identity value is
-	// bot's IP address (IPv4 or IPv6).
+	// Bot is used for bots authenticated via IP whitelist. Used primarily by
+	// Swarming. Identity value encodes bot ID.
 	Bot Kind = "bot"
+
+	// Project is used to convey that the request from one LUCI project to another
+	// is being made on behalf of some LUCI project. Identity value is project ID.
+	Project Kind = "project"
 
 	// Service is used for GAE apps using X-Appengine-Inbound-Appid header for
 	// authentication. Identity value is GAE app id.
@@ -46,6 +50,7 @@ const (
 var knownKinds = map[Kind]*regexp.Regexp{
 	Anonymous: regexp.MustCompile(`^anonymous$`),
 	Bot:       regexp.MustCompile(`^[0-9a-zA-Z_\-\.@]+$`),
+	Project:   regexp.MustCompile(`^[a-z0-9\-_]+$`),
 	Service:   regexp.MustCompile(`^[0-9a-zA-Z_\-\:\.]+$`),
 	User:      regexp.MustCompile(`^[0-9a-zA-Z_\-\.\+]+@[0-9a-z_\-\.]+$`),
 }

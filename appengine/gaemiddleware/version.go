@@ -26,7 +26,7 @@ import (
 //
 // It allows to track what GAE apps use what version of the library, so it's
 // easier to detect stale code running in production.
-const Version = "1.0.0"
+const Version = "1.1.0"
 
 func init() {
 	versions.Register("go.chromium.org/luci/appengine/gaemiddleware", Version)
