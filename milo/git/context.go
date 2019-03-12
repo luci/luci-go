@@ -28,7 +28,7 @@ func WithProject(ctx context.Context, project string) context.Context {
 // LUCI project which the current call stack is handling a request for.
 func ProjectFromContext(ctx context.Context) string {
 	project, ok := ctx.Value(luciProjectKey).(string)
-	if !ok {
+	if !ok || project == "" {
 		panic("LUCI project not available in context")
 	}
 	return project
