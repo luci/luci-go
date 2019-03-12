@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0312faf6_6d2027ab",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-12T23:56:57Z",
+      "side": 1,
+      "message": "If I allowed less to panic, it\u0027d be difficult to ensure that it didn\u0027t (see response to next comment).",
+      "parentUuid": "beb6a66a_9ea43764",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 60
+      },
+      "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "428fbb2d_bb750436",
         "filename": "gce/api/config/v1/amount.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "cdf39294_1bfc6e13",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-12T23:56:57Z",
+      "side": 1,
+      "message": "None of the validation functions return anything, and I\u0027m not aware of any way to check the validation context for errors without finalizing it. To change it here I\u0027d have to change TimeOfDay.Validate and pass it through Schedule.Validate so it\u0027s actually returned by ch.Validate. Plus it would be inconsistent with all other instances of Validate.",
+      "parentUuid": "428fbb2d_bb750436",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 16
+      },
+      "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c6fa401e_22a0119b",
         "filename": "gce/api/config/v1/amount.go",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2019-03-12T23:37:59Z",
       "side": 1,
       "message": "... and this block doesn\u0027t change prevTime, so the following check won\u0027t be very useful anyway.",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 3
+      },
+      "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "482e2d78_41275431",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-12T23:56:57Z",
+      "side": 1,
+      "message": "This block is to stop checking if anything is invalid. It\u0027s the early abort that I don\u0027t have on L60. I don\u0027t follow what it has do with prevEnd.",
+      "parentUuid": "c6fa401e_22a0119b",
       "range": {
         "startLine": 73,
         "startChar": 0,
