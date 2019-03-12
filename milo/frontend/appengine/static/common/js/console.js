@@ -129,6 +129,23 @@ $(function () {
     return newBuilderColumn;
   }
 
+  /**
+   * Overrides the default expand/collapse state of the console in the cookie.
+   *
+   * @param {bool} overrideDefault whether or not the user wants the default state.
+   * If default is expand, and the user requested expand, this should be false.
+   * If default is expand, and the user requested collapse, this should be true.
+   * If default is collapse, and the user requested expand, this should be true.
+   * If default is collapse, and the user requested collapse, this should be false.
+   */
+  function setCookie(overrideDefault) {
+    if (overrideDefault) {
+      Cookies.set('non-default', 1, {path: ''})
+    } else {
+      Cookies.remove('non-default', {path: ''})
+    }
+  }
+
   // Collapsed Mode -> Expanded Mode.
   $('.control-expand').click(function(e) {
     e.preventDefault();
@@ -153,7 +170,10 @@ $(function () {
     $(window).resize(resizeHeight);
 
     $('.console-builder-item').hide();  // Hide the builder boxes.
-    Cookies.set('expand', 1);
+
+    // Default expand, requested expand - False
+    // Default collapse, requested expand - True
+    setCookie(!defaultExpand);
   });
 
   // Expanded Mode -> Collapsed Mode.
@@ -167,11 +187,17 @@ $(function () {
     $('.console-builder-column').show();  // Show the collapsed console.
     $('.console-cell-container').height('auto');
     $('.console-commit-item').height('auto');
-    Cookies.remove('expand');
+
+    // Default expand, requested collapse - True
+    // Default expand, requested expand - False
+    setCookie(defaultExpand);
   });
 
-  // Once we load, if we see an expand cookie, switch to expand mode.
-  if (Cookies.get('expand')) {
+  // We click on expand if:
+  // Default is expand, and we don't see a cookie
+  // Default is collapse, and we do see a cookie
+  // Essentially we want to XOR the cookie bit with the default bit.
+  if (Cookies.get('non-default') ? !defaultExpand : defaultExpand) {
     $('.control-expand').first().click();
   }
 });
