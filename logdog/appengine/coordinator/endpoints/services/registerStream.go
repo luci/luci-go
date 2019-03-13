@@ -43,7 +43,8 @@ var (
 		"logdog/endpoints/register_stream",
 		"Requests to register stream",
 		nil,
-		field.String("project"))
+		field.String("project"),
+		field.Bool("terminate"))
 )
 
 func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamState) *logdog.LogStreamState {
@@ -158,6 +159,9 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	// (non-transactional).
 	ls := &coordinator.LogStream{ID: logStreamID}
 	lst := ls.State(c)
+	// If true, the stream was terminated and is scheduled for an optimistic archival.
+	// Semantically, it's as if "TerminateStream" was called on this stream.
+	preTerminated := false
 
 	if err := ds.Get(c, ls, lst); err != nil {
 		if !anyNoSuchEntity(err) {
@@ -231,7 +235,6 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			// If the registration included a terminal index, apply our standard
 			// parameters to the archival. Since TerminateStream will not be called,
 			// this will be our formal optimistic archival task.
-			optimistic := false
 			params := standardArchivalParams(cfg, pcfg)
 			cat := mutations.CreateArchiveTask{
 				ID: ls.ID,
@@ -245,7 +248,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				}.Debugf(c, "Scheduling cleanup archival mutation.")
 			} else {
 				// Terminal index, schedule optimistic archival (mirrors TerminateStream).
-				optimistic = true
+				preTerminated = true
 				cat.SettleDelay = params.SettleDelay
 				cat.CompletePeriod = params.CompletePeriod
 
@@ -271,7 +274,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			// In all honesty this should just be a hardcoded value instead of a luci-config value.
 			// No sane person is going to muck with this setting.
 			delay := 47 * time.Hour
-			if optimistic {
+			if preTerminated {
 				percent = set.OptimisticalArchivalPercent
 				delay = set.OptimisticArchivalDelay
 			}
@@ -285,7 +288,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		}
 	}
 
-	registerStreamMetric.Add(c, 1, req.Project)
+	registerStreamMetric.Add(c, 1, req.Project, preTerminated)
 	return &logdog.RegisterStreamResponse{
 		Id:    string(ls.ID),
 		State: buildLogStreamState(ls, lst),
