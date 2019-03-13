@@ -408,6 +408,7 @@
         "cache_dir": "/b/swarming/w/ir/cache",
         "temp_dir": "/b/swarming/w/ir/tmp/rt"
       },
+      "null_field": null,
       "got_revision_cp": "refs/heads/master@{#616534}",
       "branch": "refs/heads/master",
       "revision": "62c93f6041326a2c4781680583e433bbfad93884",
@@ -455,6 +456,7 @@
       },
       "repository": "https://chromium.googlesource.com/chromium/src.git",
       "buildername": "linux-rel",
+      "null_field": null,
       "mastername": "chromium",
       "buildnumber": 13052.0,
       "buildbucket": {

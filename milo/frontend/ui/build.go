@@ -199,16 +199,19 @@ func properties(props *structpb.Struct) []property {
 	if props == nil {
 		return nil
 	}
-	// Render the fields to JSON.
-	m := jsonpb.Marshaler{}
-	buf := bytes.NewBuffer(nil)
-	if err := m.Marshal(buf, props); err != nil {
-		panic(err) // This shouldn't happen.
-	}
-	d := json.NewDecoder(buf)
 	jsonProps := map[string]json.RawMessage{}
-	if err := d.Decode(&jsonProps); err != nil {
-		panic(err) // This shouldn't happen.
+	// Render the fields to JSON.
+	for k, v := range props.Fields {
+		if v.Kind == nil {
+			jsonProps[k] = []byte("null")
+			continue
+		}
+		m := jsonpb.Marshaler{}
+		buf := bytes.NewBuffer(nil)
+		if err := m.Marshal(buf, v); err != nil {
+			panic(err) // Should not happen
+		}
+		jsonProps[k] = buf.Bytes()
 	}
 
 	// Sort the names.
@@ -221,7 +224,7 @@ func properties(props *structpb.Struct) []property {
 	// Rearrange the fields into a slice.
 	results := make([]property, len(jsonProps))
 	for i, n := range names {
-		buf.Reset()
+		buf := bytes.NewBuffer(nil)
 		json.Indent(buf, jsonProps[n], "", "  ")
 		results[i] = property{
 			Name:  n,
