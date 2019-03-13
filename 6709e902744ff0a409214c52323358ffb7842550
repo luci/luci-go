@@ -22,6 +22,30 @@
       "revId": "6709e902744ff0a409214c52323358ffb7842550",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d58d88a7_d9af8e95",
+        "filename": "logdog/appengine/coordinator/endpoints/services/registerStream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-13T00:55:36Z",
+      "side": 1,
+      "message": "derp",
+      "parentUuid": "dda66e6b_4d54c2c6",
+      "range": {
+        "startLine": 279,
+        "startChar": 1,
+        "endLine": 279,
+        "endChar": 22
+      },
+      "revId": "6709e902744ff0a409214c52323358ffb7842550",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
