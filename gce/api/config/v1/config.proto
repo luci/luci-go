@@ -134,8 +134,8 @@ message TimePeriod {
 
 // A time of day.
 message TimeOfDay {
-  // The days of the week the time applies to.
-  repeated google.type.DayOfWeek day = 1;
+  // The day of the week the time applies to.
+  google.type.DayOfWeek day = 1;
 
   // The location the time should be interpreted in.
   // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.
@@ -151,6 +151,8 @@ message Schedule {
   int32 amount = 1;
 
   // The length of time the amount is in effect.
+  // With start, this creates a half-open interval.
+  // During [start, start+length) the amount will apply.
   TimePeriod length = 2;
 
   // The start times when this amount goes into effect.
