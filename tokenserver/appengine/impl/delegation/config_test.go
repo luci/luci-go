@@ -101,6 +101,7 @@ func TestFindMatchingRule(t *testing.T) {
 			"user:requestor-group-member@example.com":  []string{"requestor-group"},
 			"user:delegators-group-member@example.com": []string{"delegators-group"},
 			"user:audience-group-member@example.com":   []string{"audience-group"},
+			"user:luci-service@example.com":            []string{"auth-luci-services"},
 		},
 	})
 
@@ -263,6 +264,18 @@ func TestFindMatchingRule(t *testing.T) {
 			})
 			So(err, ShouldErrLike, `ambiguous request, multiple delegation rules match ("rule 4", "rule 5")`)
 			So(res, ShouldBeNil)
+		})
+
+		Convey("implicit project:* rule works", func() {
+			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
+				Requestor: "user:luci-service@example.com",
+				Delegator: "project:some-project",
+				Audience:  makeSet("user:luci-service@example.com"),
+				Services:  makeSet("service:some-target-service"),
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldNotBeNil)
+			So(res.Name, ShouldEqual, "allow-project-identities")
 		})
 	})
 }

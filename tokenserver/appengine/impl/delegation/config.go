@@ -35,11 +35,19 @@ import (
 // very carefully.
 const delegationCfg = "delegation.cfg"
 
-// Requestor is magical token that may be used in the config and requests as
-// a substitute for caller's ID.
-//
-// See config.proto for more info.
-const Requestor = "REQUESTOR"
+const (
+	// Requestor is magical token that may be used in the config and requests as
+	// a substitute for caller's ID.
+	//
+	// See config.proto for more info.
+	Requestor = "REQUESTOR"
+
+	// Projects is a magical token that can be used in allowed_to_impersonate to
+	// indicate that the caller can impersonate "project:*" identities.
+	//
+	// TODO(vadimsh): Get rid of it.
+	Projects = "PROJECTS"
+)
 
 // Rules is queryable representation of delegation.cfg rules.
 type Rules struct {
@@ -71,6 +79,7 @@ type delegationRule struct {
 
 	addRequestorAsDelegator bool // if true, add RulesQuery.Requestor to 'delegators' set
 	addRequestorToAudience  bool // if true, add RulesQuery.Requestor to 'audience' set
+	addProjectsAsDelegators bool // if true, add 'project:*' to 'delegators' set
 }
 
 // RulesCache is a stateful object with parsed delegation.cfg rules.
@@ -150,16 +159,38 @@ func prepareRules(c context.Context, cfg policy.ConfigBundle, revision string) (
 		return nil, fmt.Errorf("wrong type of delegation.cfg - %T", cfg[delegationCfg])
 	}
 
-	rules := make([]*delegationRule, len(parsed.Rules))
-	requestors := make([]*identityset.Set, len(parsed.Rules))
-
-	for i, msg := range parsed.Rules {
+	rules := make([]*delegationRule, 0, len(parsed.Rules)+1)
+	for _, msg := range parsed.Rules {
 		rule, err := makeDelegationRule(c, msg)
 		if err != nil {
 			return nil, err
 		}
-		rules[i] = rule
-		requestors[i] = rule.requestors
+		rules = append(rules, rule)
+	}
+
+	// Add an implicit rule that allows trusted LUCI microservices to grab
+	// delegation tokens for 'project:*' identities. "auth-luci-services" is a
+	// magical group also mentioned in luci-py's components.auth.
+	//
+	// TODO(vadimsh): Currently relied on by Buildbucket. Buildbucket should
+	// switch to using 'project:...' identities directly without going through
+	// the token server.
+	rule, err := makeDelegationRule(c, &admin.DelegationRule{
+		Name:                 "allow-project-identities",
+		Requestor:            []string{"group:auth-luci-services"},
+		AllowedToImpersonate: []string{Projects},
+		AllowedAudience:      []string{Requestor},
+		TargetService:        []string{"*"},
+		MaxValidityDuration:  86400,
+	})
+	if err != nil {
+		panic(err) // should be impossible, this is a hardcoded rule
+	}
+	rules = append(rules, rule)
+
+	requestors := make([]*identityset.Set, len(rules))
+	for i, r := range rules {
+		requestors[i] = r.requestors
 	}
 
 	return &Rules{
@@ -187,7 +218,7 @@ func makeDelegationRule(c context.Context, rule *admin.DelegationRule) (*delegat
 	if err != nil {
 		panic(err)
 	}
-	delegators, err := identityset.FromStrings(rule.AllowedToImpersonate, skipRequestor)
+	delegators, err := identityset.FromStrings(rule.AllowedToImpersonate, skipRequestorOrProjects)
 	if err != nil {
 		panic(err)
 	}
@@ -208,11 +239,16 @@ func makeDelegationRule(c context.Context, rule *admin.DelegationRule) (*delegat
 		services:                services,
 		addRequestorAsDelegator: sliceHasString(rule.AllowedToImpersonate, Requestor),
 		addRequestorToAudience:  sliceHasString(rule.AllowedAudience, Requestor),
+		addProjectsAsDelegators: sliceHasString(rule.AllowedToImpersonate, Projects),
 	}, nil
 }
 
 func skipRequestor(s string) bool {
 	return s == Requestor
+}
+
+func skipRequestorOrProjects(s string) bool {
+	return s == Requestor || s == Projects
 }
 
 func sliceHasString(slice []string, str string) bool {
@@ -283,14 +319,10 @@ func (rule *delegationRule) matchesQuery(c context.Context, q *RulesQuery) (bool
 	}
 
 	// Rule's 'delegators' set contains the identity being delegated/impersonated?
-	allowedDelegators := rule.delegators
-	if rule.addRequestorAsDelegator {
-		allowedDelegators = identityset.Extend(allowedDelegators, q.Requestor)
-	}
-	switch found, err := allowedDelegators.IsMember(c, q.Delegator); {
+	switch yes, err := rule.matchesDelegator(c, q); {
 	case err != nil:
 		return false, err
-	case !found:
+	case !yes:
 		return false, nil
 	}
 
@@ -309,4 +341,16 @@ func (rule *delegationRule) matchesQuery(c context.Context, q *RulesQuery) (bool
 	}
 
 	return true, nil
+}
+
+// matchesDelegator is true if 'q.Delegator' is in 'delegators' set (logically).
+func (rule *delegationRule) matchesDelegator(c context.Context, q *RulesQuery) (bool, error) {
+	if rule.addProjectsAsDelegators && q.Delegator.Kind() == identity.Project {
+		return true, nil
+	}
+	allowedDelegators := rule.delegators
+	if rule.addRequestorAsDelegator {
+		allowedDelegators = identityset.Extend(allowedDelegators, q.Requestor)
+	}
+	return allowedDelegators.IsMember(c, q.Delegator)
 }

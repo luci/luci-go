@@ -73,7 +73,7 @@ func validateRule(ctx *validation.Context, title string, r *admin.DelegationRule
 	v = identitySetValidator{
 		Field:              "allowed_to_impersonate",
 		Context:            ctx,
-		AllowReservedWords: []string{Requestor}, // '*' is not allowed here though
+		AllowReservedWords: []string{Requestor, Projects}, // '*' is not allowed here though
 		AllowGroups:        true,
 	}
 	v.validate(r.AllowedToImpersonate)
