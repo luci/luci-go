@@ -199,16 +199,25 @@ func properties(props *structpb.Struct) []property {
 	if props == nil {
 		return nil
 	}
-	// Render the fields to JSON.
-	m := jsonpb.Marshaler{}
-	buf := bytes.NewBuffer(nil)
-	if err := m.Marshal(buf, props); err != nil {
-		panic(err) // This shouldn't happen.
-	}
-	d := json.NewDecoder(buf)
 	jsonProps := map[string]json.RawMessage{}
-	if err := d.Decode(&jsonProps); err != nil {
-		panic(err) // This shouldn't happen.
+	// Render the fields to JSON.
+	for k, v := range props.Fields {
+		m := jsonpb.Marshaler{}
+		buf := bytes.NewBuffer(nil)
+		if err := m.Marshal(buf, v); err != nil {
+			if err.Error() == "nil Value" {
+				// HACK(hinoka): "null" was not valid JSON text until RFC 7159 in 2014.
+				// Until then, most parsers, including the jsonpb parse, did not support
+				// "null" as a JSON text value.
+				// We'll just hack it in here.
+				// Unfortunately the error is not returned as a singleton,
+				// so we'll need to parse it out of the error message.
+				buf.WriteString("null")
+			} else {
+				buf.WriteString(fmt.Sprintf("\"MILO PARSING ERROR: %s\"", err))
+			}
+		}
+		jsonProps[k] = buf.Bytes()
 	}
 
 	// Sort the names.
@@ -221,7 +230,7 @@ func properties(props *structpb.Struct) []property {
 	// Rearrange the fields into a slice.
 	results := make([]property, len(jsonProps))
 	for i, n := range names {
-		buf.Reset()
+		buf := bytes.NewBuffer(nil)
 		json.Indent(buf, jsonProps[n], "", "  ")
 		results[i] = property{
 			Name:  n,
