@@ -13,12 +13,14 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys')
 
 
-def recipe(
+def _recipe(
+      ctx,
       *,
       name=None,
       cipd_package=None,
@@ -75,3 +77,6 @@ def recipe(
       ),
   })
   return graph.keyset(key)
+
+
+recipe = lucicfg.rule(impl = _recipe)

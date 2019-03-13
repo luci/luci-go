@@ -13,12 +13,14 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'triggerer')
 
 
-def gitiles_poller(
+def _gitiles_poller(
+      ctx,
       *,
       name=None,
       bucket=None,
@@ -103,3 +105,6 @@ def gitiles_poller(
     )
 
   return graph.keyset(poller_key, triggerer_key)
+
+
+gitiles_poller = lucicfg.rule(impl = _gitiles_poller)

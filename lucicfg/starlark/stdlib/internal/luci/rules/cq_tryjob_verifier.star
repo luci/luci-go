@@ -13,12 +13,14 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
 
 
-def cq_tryjob_verifier(
+def _cq_tryjob_verifier(
+      ctx,
       builder=None,
       *,
       cq_group=None,
@@ -278,3 +280,6 @@ def _parse_builder_name(attr, builder):
   if type(builder) == 'string' and builder.startswith('external/'):
     return builder[len('external/'):], None
   return None, keys.builder_ref(builder, attr=attr)
+
+
+cq_tryjob_verifier = lucicfg.rule(impl = _cq_tryjob_verifier)

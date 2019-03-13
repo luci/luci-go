@@ -13,13 +13,15 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
 load('@stdlib//internal/luci/rules/list_view_entry.star', 'list_view_entry')
 
 
-def list_view(
+def _list_view(
+      ctx,
       *,
       name=None,
       title=None,
@@ -77,3 +79,6 @@ def list_view(
           'favicon': validate.string('favicon', favicon, regexp=r'https://storage\.googleapis\.com/.+', required=False),
       },
   )
+
+
+list_view = lucicfg.rule(impl = _list_view)

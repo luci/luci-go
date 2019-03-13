@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'triggerer')
@@ -20,8 +21,10 @@ load('@stdlib//internal/luci/lib/scheduler.star', 'schedulerimpl')
 load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
 
 
-def builder(
+def _builder(
+      ctx,
       *,
+
       name=None,
       bucket=None,
       recipe=None,
@@ -215,3 +218,6 @@ def builder(
     )
 
   return graph.keyset(builder_key, builder_ref_key, triggerer_key)
+
+
+builder = lucicfg.rule(impl = _builder)

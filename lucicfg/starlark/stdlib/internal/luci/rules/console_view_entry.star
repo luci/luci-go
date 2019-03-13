@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
@@ -20,7 +21,8 @@ load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
 # TODO(vadimsh): Support builders from different projects.
 
 
-def console_view_entry(
+def _console_view_entry(
+      ctx,
       builder=None,
       *,
       short_name=None,
@@ -81,3 +83,6 @@ def console_view_entry(
           'category': validate.string('category', category, required=False),
       },
   )
+
+
+console_view_entry = lucicfg.rule(impl = _console_view_entry)

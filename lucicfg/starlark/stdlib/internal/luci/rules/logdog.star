@@ -13,12 +13,13 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys')
 
 
-def logdog(*, gs_bucket=None):
+def _logdog(ctx, *, gs_bucket=None):
   """Defines configuration of the LogDog service for this project.
 
   Usually required for any non-trivial project.
@@ -33,3 +34,6 @@ def logdog(*, gs_bucket=None):
   })
   graph.add_edge(keys.project(), key)
   return graph.keyset(key)
+
+
+logdog = lucicfg.rule(impl = _logdog)
