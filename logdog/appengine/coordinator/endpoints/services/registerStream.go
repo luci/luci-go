@@ -231,6 +231,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			// If the registration included a terminal index, apply our standard
 			// parameters to the archival. Since TerminateStream will not be called,
 			// this will be our formal optimistic archival task.
+			optimistic := false
 			params := standardArchivalParams(cfg, pcfg)
 			cat := mutations.CreateArchiveTask{
 				ID: ls.ID,
@@ -244,6 +245,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				}.Debugf(c, "Scheduling cleanup archival mutation.")
 			} else {
 				// Terminal index, schedule optimistic archival (mirrors TerminateStream).
+				optimistic = true
 				cat.SettleDelay = params.SettleDelay
 				cat.CompletePeriod = params.CompletePeriod
 
@@ -263,10 +265,17 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				return nil, grpcutil.Internal
 			}
 
+			set := coordinator.GetSettings(c)
+			percent := set.PessimisticArchivalPercent
 			// TODO(hinoka): This should be set to 48hr / params.CompletePeriod, once the pipeline is migrated.
 			// In all honesty this should just be a hardcoded value instead of a luci-config value.
 			// No sane person is going to muck with this setting.
-			return nil, TaskArchival(c, lst, 47*time.Hour, coordinator.GetSettings(c).PessimisticArchivalPercent)
+			delay := 47 * time.Hour
+			if optimistic {
+				percent = set.OptimisticalArchivalPercent
+				delay = set.OptimisticArchivalDelay
+			}
+			return nil, TaskArchival(c, lst, delay, percent)
 		})
 		if err != nil {
 			log.Fields{
