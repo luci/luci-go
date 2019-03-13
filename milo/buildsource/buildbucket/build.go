@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -388,5 +389,6 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest) (*ui.Bu
 		Blame:         blame,
 		RelatedBuilds: relatedBuilds,
 		BuildBugLink:  link,
+		Now:           clock.Now(c),
 	}, err
 }
