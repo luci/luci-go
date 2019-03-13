@@ -68,14 +68,6 @@ func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls
 	}
 
 	id := lst.ID()
-	if len(lst.ArchivalKey) > 0 {
-		// This is a rescheduled task. Check to see if the key matches.
-		if !bytes.Equal(p.PreviousKey, lst.ArchivalKey) {
-			logging.Warningf(c, "Key does not match, this is probably a duplicate request, discarding.")
-			return nil
-		}
-		lst.ArchiveRetryCount++
-	}
 	msg := logdog.ArchiveTask{
 		Project:      string(Project(c)),
 		Id:           string(id),
