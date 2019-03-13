@@ -31,39 +31,56 @@ import (
 func TestMetrics(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateFailures", t, func() {
+	Convey("Metrics", t, func() {
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
-
-		UpdateFailures(c, 1, &model.VM{
-			Attributes: config.VM{
-				Project: "project",
-				Zone:    "zone",
-			},
-			Hostname: "name-1",
-			Prefix:   "prefix",
-		})
-		fields := []interface{}{"prefix", "project", "zone"}
 		s := tsmon.Store(c)
-		So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 1)
-		UpdateFailures(c, 1, &model.VM{
-			Attributes: config.VM{
-				Project: "project",
-				Zone:    "zone",
-			},
-			Hostname: "name-1",
-			Prefix:   "prefix",
+
+		Convey("UpdateFailures", func() {
+			fields := []interface{}{"prefix", "project", "zone"}
+
+			UpdateFailures(c, 1, &model.VM{
+				Attributes: config.VM{
+					Project: "project",
+					Zone:    "zone",
+				},
+				Hostname: "name-1",
+				Prefix:   "prefix",
+			})
+			So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 1)
+
+			UpdateFailures(c, 1, &model.VM{
+				Attributes: config.VM{
+					Project: "project",
+					Zone:    "zone",
+				},
+				Hostname: "name-1",
+				Prefix:   "prefix",
+			})
+			So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 2)
 		})
-		So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 2)
-	})
 
-	Convey("UpdateQuota", t, func() {
-		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
+		Convey("UpdateInstances", func() {
+			fields := []interface{}{"prefix", "project", "zone"}
 
-		UpdateQuota(c, 100.0, 25.0, "metric", "region", "project")
-		fields := []interface{}{"metric", "region", "project"}
-		s := tsmon.Store(c)
-		So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 100.0)
-		So(s.Get(c, quotaRemaining, time.Time{}, fields).(float64), ShouldEqual, 75.0)
-		So(s.Get(c, quotaUsage, time.Time{}, fields).(float64), ShouldEqual, 25.0)
+			UpdateInstances(c, 1, "prefix", "project", "zone")
+			So(s.Get(c, createdInstances, time.Time{}, fields).(int64), ShouldEqual, 1)
+
+			UpdateInstances(c, 0, "prefix", "project", "zone")
+			So(s.Get(c, createdInstances, time.Time{}, fields).(int64), ShouldEqual, 0)
+		})
+
+		Convey("UpdateQuota", func() {
+			fields := []interface{}{"metric", "region", "project"}
+
+			UpdateQuota(c, 100.0, 25.0, "metric", "region", "project")
+			So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 100.0)
+			So(s.Get(c, quotaRemaining, time.Time{}, fields).(float64), ShouldEqual, 75.0)
+			So(s.Get(c, quotaUsage, time.Time{}, fields).(float64), ShouldEqual, 25.0)
+
+			UpdateQuota(c, 120.0, 40.0, "metric", "region", "project")
+			So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 120.0)
+			So(s.Get(c, quotaRemaining, time.Time{}, fields).(float64), ShouldEqual, 80.0)
+			So(s.Get(c, quotaUsage, time.Time{}, fields).(float64), ShouldEqual, 40.0)
+		})
 	})
 }

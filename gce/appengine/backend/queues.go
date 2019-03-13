@@ -34,6 +34,53 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
+// countVMsQueue is the name of the count VMs task handler queue.
+const countVMsQueue = "count-vms"
+
+// countVMs counts the VMs for a given config.
+func countVMs(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.CountVMs)
+	switch {
+	case !ok:
+		return errors.Reason("unexpected payload type %T", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("ID is required").Err()
+	}
+	var keys []*datastore.Key
+	q := datastore.NewQuery(model.VMKind).Eq("config", task.Id)
+	if err := datastore.GetAll(c, q, &keys); err != nil {
+		return errors.Annotate(err, "failed to fetch VMs").Err()
+	}
+	// Map project to zone to number of created VMs.
+	// VMs created from the same config eventually have the same project
+	// and zone but may currently exist in a different project or zone.
+	created := make(map[string]map[string]int)
+	vm := &model.VM{}
+	for _, k := range keys {
+		id := k.StringID()
+		vm.ID = id
+		switch err := datastore.Get(c, vm); {
+		case err == datastore.ErrNoSuchEntity:
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch VM").Err()
+		case vm.Created > 0:
+			if _, ok := created[vm.Attributes.Project]; !ok {
+				created[vm.Attributes.Project] = make(map[string]int)
+			}
+			if _, ok := created[vm.Attributes.Project][vm.Attributes.Zone]; !ok {
+				created[vm.Attributes.Project][vm.Attributes.Zone] = 0
+			}
+			created[vm.Attributes.Project][vm.Attributes.Zone]++
+		}
+	}
+	for p, zones := range created {
+		for z, n := range zones {
+			metrics.UpdateInstances(c, n, task.Id, p, z)
+		}
+	}
+	return nil
+}
+
 // drainVMQueue is the name of the drain VM task handler queue.
 const drainVMQueue = "drain-vm"
 

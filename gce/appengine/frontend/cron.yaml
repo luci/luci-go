@@ -1,4 +1,6 @@
 cron:
+- url: /internal/cron/count-vms
+  schedule: every 5 minutes
 - url: /internal/cron/create-instances
   schedule: every 1 minutes
 - url: /internal/cron/drain-vms
