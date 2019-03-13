@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "bee8a19c_8328cc2a",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-13T01:52:48Z",
+      "side": 1,
+      "message": "not relevant any more.",
+      "parentUuid": "0312faf6_6d2027ab",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 60
+      },
+      "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "428fbb2d_bb750436",
         "filename": "gce/api/config/v1/amount.go",
         "patchSetId": 2
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "3ead437e_be2f0e0f",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-13T01:52:48Z",
+      "side": 1,
+      "message": "I see nothing wrong with validate returning bool, but i didn\u0027t realize you\u0027d need to wire it through several layers of funcs.",
+      "parentUuid": "cdf39294_1bfc6e13",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 16
+      },
+      "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6fa401e_22a0119b",
         "filename": "gce/api/config/v1/amount.go",
         "patchSetId": 2
@@ -140,6 +188,30 @@
       "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7782a08d_375816df",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-13T01:52:48Z",
+      "side": 1,
+      "message": "prevEnd is typicall end of prior schedule. If you are skipping one schedule, then it\u0027s not particularly useful to compare to it. But anyways, not relevant any more.",
+      "parentUuid": "482e2d78_41275431",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 3
+      },
+      "revId": "3cc787bda5b6e826cc5531506d1741f725f8a1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
