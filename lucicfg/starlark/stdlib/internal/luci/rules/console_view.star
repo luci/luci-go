@@ -14,6 +14,7 @@
 
 load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/io.star', 'io')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
@@ -26,8 +27,10 @@ load('@proto//luci/milo/project_config.proto', milo_pb='milo')
 # inclusion into a console.
 
 
-def console_view(
+def _console_view(
+      ctx,
       *,
+
       name=None,
       title=None,
       repo=None,
@@ -202,3 +205,6 @@ def console_view(
           'default_expand': validate.bool('default_expand', default_expand, required=False),
       },
   )
+
+
+console_view = lucicfg.rule(impl = _console_view)

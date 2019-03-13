@@ -13,13 +13,14 @@
 # limitations under the License.
 
 load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys')
 load('@stdlib//internal/luci/lib/acl.star', 'aclimpl')
 
 
-def bucket(*, name=None, acls=None):
+def _bucket(ctx, *, name=None, acls=None):
   """Defines a bucket: a container for LUCI resources that share the same ACL.
 
   Args:
@@ -37,3 +38,6 @@ def bucket(*, name=None, acls=None):
   })
   graph.add_edge(keys.project(), key)
   return graph.keyset(key)
+
+
+bucket = lucicfg.rule(impl = _bucket)
