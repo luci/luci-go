@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dda66e6b_4d54c2c6",
+        "filename": "logdog/appengine/coordinator/endpoints/services/registerStream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-13T00:50:59Z",
+      "side": 1,
+      "message": "terminate, you say?",
+      "range": {
+        "startLine": 279,
+        "startChar": 1,
+        "endLine": 279,
+        "endChar": 22
+      },
+      "revId": "6709e902744ff0a409214c52323358ffb7842550",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
