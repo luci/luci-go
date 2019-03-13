@@ -23,6 +23,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -32,6 +34,14 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
+)
+
+var (
+	terminateStreamMetric = metric.NewCounter(
+		"logdog/endpoints/terminate_stream",
+		"Requests to terminate stream",
+		nil,
+		field.String("project"))
 )
 
 // TerminateStream is an idempotent stream state terminate operation.
@@ -110,6 +120,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 		return nil, err
 	}
 
+	terminateStreamMetric.Add(c, 1, req.Project)
 	return &empty.Empty{}, nil
 }
 

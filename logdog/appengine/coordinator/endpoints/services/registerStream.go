@@ -23,6 +23,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -34,6 +36,14 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+)
+
+var (
+	registerStreamMetric = metric.NewCounter(
+		"logdog/endpoints/register_stream",
+		"Requests to register stream",
+		nil,
+		field.String("project"))
 )
 
 func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamState) *logdog.LogStreamState {
@@ -266,6 +276,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		}
 	}
 
+	registerStreamMetric.Add(c, 1, req.Project)
 	return &logdog.RegisterStreamResponse{
 		Id:    string(ls.ID),
 		State: buildLogStreamState(ls, lst),
