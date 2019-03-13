@@ -87,6 +87,7 @@ type Build struct {
 	// Human-readable summary of the build in Markdown format
 	// (https://spec.commonmark.org/0.28/).
 	// Explains status.
+	// Up to 1Kb.
 	//
 	// BigQuery: excluded from rows.
 	SummaryMarkdown string `protobuf:"bytes,20,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
@@ -313,9 +314,10 @@ func (*Build) XXX_OneofWrappers() []interface{} {
 // Defines what to build/test.
 //
 // Behavior of a build script (recipe) MAY depend on Input.
-// It MAY NOT depend on anything outside of Input.
-// Build script may read non-Input fields to propagate outside of the build
-// for example, recipes trigger new builds with same "buildset" tags.
+// It MAY NOT modify its behavior based on anything outside of Input.
+// It MAY read non-Input fields to display for debugging or to pass-through to
+// triggered builds. For example the "tags" field may be passed to triggered
+// builds, or the "infra" field may be printed for debugging purposes.
 type Build_Input struct {
 	// Arbitrary JSON object. Available at build run time.
 	//
