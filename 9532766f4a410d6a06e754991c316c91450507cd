@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d468940f_5178f800",
+        "filename": "milo/git/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-14T00:30:08Z",
+      "side": 1,
+      "message": "This isn\u0027t a right place for a panic, when a different method of error handling would do the job (I.E. returning an err)\n\nhttps://golang.org/doc/effective_go.html#panic\n\"real library functions should avoid panic.\"",
+      "revId": "9532766f4a410d6a06e754991c316c91450507cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37dfc490_24c4831b",
+        "filename": "milo/git/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-14T00:30:08Z",
+      "side": 1,
+      "message": "should be \"context\"",
+      "revId": "9532766f4a410d6a06e754991c316c91450507cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aed1fe68_09c3c302",
+        "filename": "milo/git/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-14T00:30:08Z",
+      "side": 1,
+      "message": "return \"\", errors.Reason(\"LUCI project not available in context\").Err()",
+      "revId": "9532766f4a410d6a06e754991c316c91450507cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
