@@ -40,6 +40,23 @@ func TestCron(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
+		Convey("countVMsAsync", func() {
+			Convey("none", func() {
+				err := countVMsAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("one", func() {
+				datastore.Put(c, &model.Config{
+					ID: "id",
+				})
+				err := countVMsAsync(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+		})
+
 		Convey("createInstancesAsync", func() {
 			Convey("none", func() {
 				Convey("zero", func() {

@@ -1,4 +1,9 @@
 queue:
+- name: count-vms
+  rate: 100/s
+  retry_parameters:
+    task_retry_limit: 0
+
 - name: create-instance
   rate: 100/s
   retry_parameters:
