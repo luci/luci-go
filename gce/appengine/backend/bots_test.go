@@ -310,8 +310,9 @@ func TestManageBot(t *testing.T) {
 				Convey("deleted", func() {
 					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:   "id",
-							Deleted: true,
+							BotId:       "id",
+							Deleted:     true,
+							FirstSeenTs: "2019-03-13T00:12:29.882948",
 						}
 					}
 					datastore.Put(c, &model.VM{
@@ -325,13 +326,19 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Connected, ShouldNotEqual, 0)
 				})
 
 				Convey("dead", func() {
 					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:  "id",
-							IsDead: true,
+							BotId:       "id",
+							FirstSeenTs: "2019-03-13T00:12:29.882948",
+							IsDead:      true,
 						}
 					}
 					datastore.Put(c, &model.VM{
@@ -345,6 +352,11 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Connected, ShouldNotEqual, 0)
 				})
 
 				Convey("terminated", func() {
@@ -352,8 +364,9 @@ func TestManageBot(t *testing.T) {
 						So(req, ShouldHaveSameTypeAs, &map[string]string{})
 						So(*(req.(*map[string]string)), ShouldBeEmpty)
 						return http.StatusOK, map[string]interface{}{
-							"BotId": "id",
-							"Items": []*swarming.SwarmingRpcsBotEvent{
+							"bot_id":        "id",
+							"first_seen_ts": "2019-03-13T00:12:29.882948",
+							"items": []*swarming.SwarmingRpcsBotEvent{
 								{
 									EventType: "bot_terminate",
 								},
@@ -371,12 +384,18 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Connected, ShouldNotEqual, 0)
 				})
 
 				Convey("deadline", func() {
 					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId: "id",
+							BotId:       "id",
+							FirstSeenTs: "2019-03-13T00:12:29.882948",
 						}
 					}
 					datastore.Put(c, &model.VM{
@@ -392,12 +411,18 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.TerminateBot{})
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Connected, ShouldNotEqual, 0)
 				})
 
 				Convey("drained", func() {
 					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId: "id",
+							BotId:       "id",
+							FirstSeenTs: "2019-03-13T00:12:29.882948",
 						}
 					}
 					datastore.Put(c, &model.VM{
@@ -412,12 +437,18 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.TerminateBot{})
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Connected, ShouldNotEqual, 0)
 				})
 
 				Convey("alive", func() {
 					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId: "id",
+							BotId:       "id",
+							FirstSeenTs: "2019-03-13T00:12:29.882948",
 						}
 					}
 					datastore.Put(c, &model.VM{
@@ -430,6 +461,11 @@ func TestManageBot(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Connected, ShouldNotEqual, 0)
 				})
 			})
 		})

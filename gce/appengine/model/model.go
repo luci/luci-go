@@ -84,6 +84,8 @@ type VM struct {
 	Attributes config.VM `gae:"attributes,noindex"`
 	// Config is the ID of the config this VM was created from.
 	Config string `gae:"config"`
+	// Connected is the Unix time when the GCE instance connected to Swarming.
+	Connected int64 `gae:"connected"`
 	// Created is the Unix time when the GCE instance was created.
 	Created int64 `gae:"created"`
 	// Drained indicates whether or not this VM is drained.
