@@ -51,10 +51,18 @@ type Settings struct {
 	// PessimisticArchivalPercent (0-100) Controls what percent of registered
 	// streams are tasked to the new pipeline after 47 hours.
 	PessimisticArchivalPercent uint32
+
+	// ArchivistBatchSize controls the batchsize per lease cycle.
+	ArchivistBatchSize int64
+
+	// ArchivistLeaseTime controls the lease time per cycle.
+	ArchivistLeaseTime time.Duration
 }
 
 var defaultSettings = Settings{
 	OptimisticArchivalDelay: 5 * time.Minute,
+	ArchivistBatchSize:      50,
+	ArchivistLeaseTime:      15 * time.Minute,
 }
 
 // settingsPage is a UI page to configure a static Tumble configuration.
@@ -94,6 +102,22 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 			Placeholder: "0",
 			Validator:   validatePercent,
 		},
+		{
+			ID: "ArchivistBatchSize",
+			Title: "Number of Archive Tasks to lease in each LeaseTasks request. " +
+				"The theoretical max Task processed per second is this number * 10, " +
+				"due to the limitations of GAE TaskQueues.",
+			Type:        portal.FieldText,
+			Placeholder: fmt.Sprintf("%d", defaultSettings.ArchivistBatchSize),
+			Validator:   validateInt,
+		},
+		{
+			ID:          "ArchivistLeaseTime",
+			Title:       "Lease time per cycle for the Archivist.",
+			Type:        portal.FieldText,
+			Placeholder: defaultSettings.ArchivistLeaseTime.String(),
+			Validator:   validateDuration,
+		},
 	}, nil
 }
 
@@ -120,6 +144,12 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	}
 	if set.PessimisticArchivalPercent != defaultSettings.PessimisticArchivalPercent {
 		values["PessimisticArchivalPercent"] = fmt.Sprintf("%d", set.PessimisticArchivalPercent)
+	}
+	if set.ArchivistBatchSize != defaultSettings.ArchivistBatchSize {
+		values["ArchivistBatchSize"] = fmt.Sprintf("%d", set.ArchivistBatchSize)
+	}
+	if set.ArchivistLeaseTime != defaultSettings.ArchivistLeaseTime {
+		values["ArchivistLeaseTime"] = set.ArchivistLeaseTime.String()
 	}
 
 	return values, nil
@@ -150,6 +180,20 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 		}
 		set.PessimisticArchivalPercent = uint32(i)
 	}
+	if v := values["ArchivistBatchSize"]; v != "" {
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("could not parse ArchivistBatchSize : %v", err)
+		}
+		set.ArchivistBatchSize = int64(i)
+	}
+	if v := values["ArchivistLeaseTime"]; v != "" {
+		t, err := clockflag.ParseDuration(v)
+		if err != nil {
+			return fmt.Errorf("could not parse ArchivistLeaseTime : %v", err)
+		}
+		set.ArchivistLeaseTime = time.Duration(t)
+	}
 
 	return settings.SetIfChanged(c, baseName, &set, who, why)
 }
@@ -167,6 +211,15 @@ func validatePercent(v string) error {
 		return fmt.Errorf("%d is out of range (0-100)", i)
 	}
 	return nil
+}
+
+// validateInt validates a string is an integer between 0-100.
+func validateInt(v string) error {
+	if v == "" {
+		return nil
+	}
+	_, err := strconv.Atoi(v)
+	return err
 }
 
 func validateDuration(v string) error {
