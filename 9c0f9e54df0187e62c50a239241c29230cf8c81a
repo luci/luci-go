@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "9ad4d36a_37325721",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-14T05:14:21Z",
+      "side": 1,
+      "message": "I was just looking through all rules decided which ones need defaults and noticed that \u0027entries\u0027 here in the wrong place (they should be last). \u0027default_commit_limit\u0027 and \u0027default_expand\u0027 were recently added by Ryan and I didn\u0027t notice this nit during the review.",
+      "parentUuid": "90c1f83a_ed85a8c4",
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "68adb6d5_674bb149",
         "filename": "lucicfg/testdata/misc/rule_defaults.star",
         "patchSetId": 4
@@ -59,6 +77,24 @@
     },
     {
       "key": {
+        "uuid": "67a64f7f_99946128",
+        "filename": "lucicfg/testdata/misc/rule_defaults.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-14T05:14:21Z",
+      "side": 1,
+      "message": "Essentially yes, but a bit more verbose...\n\nIt was helpful when writing the actual logic, it was crashing on various edge cases.",
+      "parentUuid": "68adb6d5_674bb149",
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d231f2d0_823e8094",
         "filename": "lucicfg/testdata/misc/rule_defaults.star",
         "patchSetId": 4
@@ -70,6 +106,24 @@
       "writtenOn": "2019-03-14T05:04:44Z",
       "side": 1,
       "message": "spent a lot of time above in merge dicts, but this is better place to stick my comment.\nBasically, i\u0027m uneasy with what you chose, it\u0027s as if i wish there were 2 consts:\n\nkUseDefault (\u003d\u003d\u003d current None value)\nkDelDefault\n\nbut OTH, my proposal is complicated and maybe never used, and perhaps can be added later. Right? Was this your thinking, too?",
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5386d3ff_ec8e351c",
+        "filename": "lucicfg/testdata/misc/rule_defaults.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-14T05:14:21Z",
+      "side": 1,
+      "message": "I initially did \"None indicates the value should be removed\".\n\nThen I went to write https://chromium-review.googlesource.com/c/infra/infra/+/1522435 and realized I intuitively used None there as \"do not override default\". So I went back and changed it here to mean \"do not override default\".\n\nI later also realized this is more consistent with how we merge lists (there\u0027s no way to delete an item from a list provided via defaults), and with how we merge scalar values (\u0027None\u0027 means \"use default\"). I think adding an ability to \"unset\" defaults will be a complication.",
+      "parentUuid": "d231f2d0_823e8094",
       "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
