@@ -55,10 +55,19 @@ func (cmd *connectCmd) Run(app subcommands.Application, args []string, env subco
 		logging.Errorf(c, "%s", err.Error())
 		return 1
 	}
+	if cmd.server == ":metadata" {
+		meta := getMetadata(c)
+		srv, err := meta.Get("instance/attributes/swarming-server")
+		if err != nil {
+			logging.Errorf(c, "%s", err.Error())
+			return 1
+		}
+		cmd.server = srv
+	}
 
-	cli := getClient(c)
-	cli.server = cmd.server
-	if err := cli.Configure(c, cmd.dir, cmd.user); err != nil {
+	swr := getSwarming(c)
+	swr.server = cmd.server
+	if err := swr.Configure(c, cmd.dir, cmd.user); err != nil {
 		logging.Errorf(c, "%s", err.Error())
 		return 1
 	}
@@ -75,7 +84,7 @@ func newConnectCmd() *subcommands.Command {
 			cmd := &connectCmd{}
 			cmd.Initialize()
 			cmd.Flags.StringVar(&cmd.dir, "dir", "", "Path to use as the Swarming bot directory.")
-			cmd.Flags.StringVar(&cmd.server, "server", "", "Swarming server URL to connect to.")
+			cmd.Flags.StringVar(&cmd.server, "server", "", "Swarming server URL to connect to, or :metadata to read it from metadata.")
 			cmd.Flags.StringVar(&cmd.user, "user", "", "Name of the local user to start the Swarming bot process as.")
 			return cmd
 		},
