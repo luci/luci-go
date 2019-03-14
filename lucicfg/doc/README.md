@@ -231,7 +231,7 @@ A struct with two methods: `set(value)` and `get(): value`.
 ### lucicfg.rule {#lucicfg.rule}
 
 ```python
-lucicfg.rule(impl)
+lucicfg.rule(impl, defaults = None)
 ```
 
 
@@ -257,6 +257,7 @@ as inputs.
 #### Arguments {#lucicfg.rule-args}
 
 * **impl**: a callback that actually implements the rule. Its first argument should be `ctx`. The rest of the arguments define the API of the rule. Required.
+* **defaults**: a dict with keys matching the rule arguments and values of type [lucicfg.var(...)](#lucicfg.var). These variables can be used to set defaults to use for a rule within some exec scope (see [lucicfg.var(...)](#lucicfg.var) for more details about scoping). These vars become the public API of the rule. Callers can set them via `rule.defaults.<name>.set(...)`. `impl` callback can get them via `ctx.defaults.<name>.get()`. It is up to the rule's author to define vars for fields that can have defaults, document them in the rule doc, and finally use them from `impl` callback.
 
 
 #### Returns  {#lucicfg.rule-returns}

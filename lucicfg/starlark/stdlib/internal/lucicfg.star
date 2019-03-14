@@ -111,6 +111,10 @@ def _generator(impl):
   __native__.add_generator(impl)
 
 
+# A constructor for lucicfg.var structs.
+_var_ctor = __native__.genstruct('lucicfg.var')
+
+
 def _var(*, default=None, validator=None):
   """Declares a variable.
 
@@ -185,13 +189,13 @@ def _var(*, default=None, validator=None):
   if validator and default != None:
     default = validator(default)
 
-  return struct(
+  return _var_ctor(
       set = lambda v: __native__.set_var(var_id, validator(v) if validator else v),
       get = lambda: __native__.get_var(var_id, default),
   )
 
 
-def _rule(*, impl):
+def _rule(*, impl, defaults=None):
   """Declares a new rule.
 
   A rule is a callable that adds nodes and edges to an entity graph. It wraps
@@ -213,11 +217,19 @@ def _rule(*, impl):
     impl: a callback that actually implements the rule. Its first argument
         should be `ctx`. The rest of the arguments define the API of the rule.
         Required.
+    defaults: a dict with keys matching the rule arguments and values of type
+        lucicfg.var(...). These variables can be used to set defaults to use
+        for a rule within some exec scope (see lucicfg.var(...) for more details
+        about scoping). These vars become the public API of the rule. Callers
+        can set them via `rule.defaults.<name>.set(...)`. `impl` callback can
+        get them via `ctx.defaults.<name>.get()`. It is up to the rule's author
+        to define vars for fields that can have defaults, document them in
+        the rule doc, and finally use them from `impl` callback.
 
   Returns:
     A special callable.
   """
-  return __native__.declare_rule(impl)
+  return __native__.declare_rule(impl, defaults or {})
 
 
 # Public API.
