@@ -489,7 +489,8 @@ func withAccessClientMiddleware(c *router.Context, next router.Handler) {
 // projectACLMiddleware adds ACL checks on a per-project basis.
 // Expects c.Params to have project parameter.
 func projectACLMiddleware(c *router.Context, next router.Handler) {
-	switch allowed, err := common.IsAllowed(c.Context, c.Params.ByName("project")); {
+	luciProject := c.Params.ByName("project")
+	switch allowed, err := common.IsAllowed(c.Context, luciProject); {
 	case err != nil:
 		ErrorHandler(c, err)
 	case !allowed:
@@ -499,6 +500,7 @@ func projectACLMiddleware(c *router.Context, next router.Handler) {
 			ErrorHandler(c, errors.New("no access to project", common.CodeNoAccess))
 		}
 	default:
+		c.Context = git.WithProject(c.Context, luciProject)
 		next(c)
 	}
 }

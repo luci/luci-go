@@ -28,6 +28,9 @@ package git
 import (
 	"context"
 	"net/http"
+	"strings"
+
+	"go.chromium.org/luci/common/logging"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -138,12 +141,21 @@ var _ Client = (*implementation)(nil)
 
 // transport returns an authenticated RoundTripper for Gerrit or Gitiles RPCs.
 func (p *implementation) transport(c context.Context) (transport http.RoundTripper, err error) {
-	// TODO(tandrii): consider using OAuth 2.0 bearer token if current identity
-	//   has it. Caveat is that then the acls.IsAllowed check AND cache must be
-	//   skipped.
-	// TODO(tandrii): instead of auth.Self, use service accounts configured per
-	//   LUCI project ( != Git/Gerrit project ).
-	return auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	// TODO(fmatenaar): Remove recovery handler after "context missing luci project" issue
+	// has been resolved.
+	defer func() {
+		if r := recover(); r != nil {
+			logging.Errorf(c, "PROJECT SCOPED STACK TRACE:\n %s",
+				strings.Join(errors.RenderStack(errors.New(r.(string))), "\n"))
+			transport, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+		}
+	}()
+
+	opts := []auth.RPCOption{
+		auth.WithProject(ProjectFromContext(c)),
+		auth.WithScopes(gitiles.OAuthScope),
+	}
+	return auth.GetRPCTransport(c, auth.AsProject, opts...)
 }
 
 func (p *implementation) gitilesClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
