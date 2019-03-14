@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth"
 
@@ -89,7 +90,7 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 	if fetchAnnotations && b.Status != buildbucketpb.Status_SCHEDULED {
 		addr, err := logLocation(b)
 		if err != nil {
-			return nil, err
+			return nil, grpcutil.NotFound
 		}
 
 		ann, err := fetchAnnotationProto(c, addr)
