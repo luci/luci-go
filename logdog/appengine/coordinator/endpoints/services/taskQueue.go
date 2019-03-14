@@ -148,6 +148,7 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 		return nil, err
 	}
 	archiveTasks := make([]*logdog.ArchiveTask, 0, len(tasks))
+	leasedTaskMessage := "Leasing (project/id/task_name):\n"
 	for _, task := range tasks {
 		at, err := archiveTask(task)
 		if err != nil {
@@ -163,11 +164,12 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 			}
 			continue
 		}
-		logging.Infof(c, "Leasing Project: %s, ID: %s, TaskName: %s", at.Project, at.Id, at.TaskName)
+		leasedTaskMessage += fmt.Sprintf("%s/%s/%s\n", at.Project, at.Id, at.TaskName)
 		archiveTasks = append(archiveTasks, at)
 		leaseTask.Add(c, 1, task.RetryCount)
 	}
 	logging.Infof(c, "Leasing %d tasks", len(archiveTasks))
+	logging.Debugf(c, leasedTaskMessage)
 	if err := tsmon.Flush(c); err != nil {
 		logging.WithError(err).Errorf(c, "failed to flush tsmon")
 	}
