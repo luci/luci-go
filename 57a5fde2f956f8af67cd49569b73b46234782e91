@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7d3bee37_de7d9bcc",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-14T21:38:25Z",
+      "side": 1,
+      "message": "I did it because manageExistingBot will be called thousands of times per minute, every minute. I don\u0027t want to run a transaction unless it\u0027s really necessary. vm was fetched prior to sending an RPC to Swarming. I fetch it again in case it\u0027s already had its Connected field set by some other task queue.\n\n1. Fetch model.VM\n2. Send RPC to Swarming\n3. Check vm.Connected (may be 1 sec out of date because fetch/check was separated by RPC)\n4. Re-fetch model.VM from dscache\n5. Check vm.Connected\n6. Run txn\n\nYou think it\u0027s overkill?",
+      "parentUuid": "29371468_e8ef8908",
+      "revId": "57a5fde2f956f8af67cd49569b73b46234782e91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4c48afb2_5178493a",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2019-03-14T04:04:19Z",
       "side": 1,
       "message": "this bugs me, but I see why you need it https://play.golang.com/p/j4WItGZya3O\nthe only other way I can think of is s/get/update which takes a callable, but it\u0027s gross.",
+      "range": {
+        "startLine": 48,
+        "startChar": 52,
+        "endLine": 48,
+        "endChar": 58
+      },
+      "revId": "57a5fde2f956f8af67cd49569b73b46234782e91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1cb1c9d4_dfa316e2",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-14T21:38:25Z",
+      "side": 1,
+      "message": "I considered a slice of []int like you have, but I didn\u0027t want to remember indexes. struct gives me names.",
+      "parentUuid": "4c48afb2_5178493a",
       "range": {
         "startLine": 48,
         "startChar": 52,
@@ -56,6 +98,24 @@
       "revId": "57a5fde2f956f8af67cd49569b73b46234782e91",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d31d7666_15aadf24",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-14T21:38:25Z",
+      "side": 1,
+      "message": "Waiting until the next scheduled Flush is fine I think. Renamed to update since it calls metrics.Update.",
+      "parentUuid": "fb5b02e2_e741f9d1",
+      "revId": "57a5fde2f956f8af67cd49569b73b46234782e91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
