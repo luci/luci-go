@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ed0bc2f1_caa256ea",
+        "filename": "milo/git/client.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-14T00:49:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d468940f_5178f800",
+      "revId": "9532766f4a410d6a06e754991c316c91450507cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "37dfc490_24c4831b",
         "filename": "milo/git/context.go",
         "patchSetId": 7
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "67202246_fa4baef3",
+        "filename": "milo/git/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-14T00:49:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "37dfc490_24c4831b",
+      "revId": "9532766f4a410d6a06e754991c316c91450507cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aed1fe68_09c3c302",
         "filename": "milo/git/context.go",
         "patchSetId": 7
@@ -50,6 +86,24 @@
       "revId": "9532766f4a410d6a06e754991c316c91450507cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f2df70a_b6bb490d",
+        "filename": "milo/git/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-03-14T00:49:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aed1fe68_09c3c302",
+      "revId": "9532766f4a410d6a06e754991c316c91450507cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
