@@ -198,7 +198,7 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 	return settings.SetIfChanged(c, baseName, &set, who, why)
 }
 
-// validatePercent validates a string is an integer between 0-100.
+// validatePercent validates a string is empty or an integer between 0-100.
 func validatePercent(v string) error {
 	if v == "" {
 		return nil
@@ -213,7 +213,7 @@ func validatePercent(v string) error {
 	return nil
 }
 
-// validateInt validates a string is an integer between 0-100.
+// validateInt validates that a string is empty or an integer.
 func validateInt(v string) error {
 	if v == "" {
 		return nil
