@@ -107,31 +107,40 @@ def _builder(
     recipe: a recipe to run, see luci.recipe(...) rule. Required.
 
     properties: a dict with string keys and JSON-serializable values, defining
-        properties to pass to the recipe.
+        properties to pass to the recipe. Supports the module-scoped defaults.
+        They are merged (non-recursively) with the explicitly passed properties.
     service_account: an email of a service account to run the recipe under:
         the recipe (and various tools it calls, e.g. gsutil) will be able to
         make outbound HTTP calls that have an OAuth access token belonging to
-        this service account (provided it is registered with LUCI).
+        this service account (provided it is registered with LUCI). Supports
+        the module-scoped default.
     caches: a list of swarming.cache(...) objects describing Swarming named
         caches that should be present on the bot. See swarming.cache(...) doc
-        for more details.
+        for more details. Supports the module-scoped defaults. They are joined
+        with the explicitly passed caches.
     execution_timeout: how long to wait for a running build to finish before
         forcefully aborting it and marking the build as timed out. If None,
-        defer the decision to Buildbucket service.
+        defer the decision to Buildbucket service. Supports the module-scoped
+        default.
 
     dimensions: a dict with swarming dimensions, indicating requirements for
         a bot to execute the build. Keys are strings (e.g. `os`), and values are
         either strings (e.g. `Linux`), swarming.dimension(...) objects (for
-        defining expiring dimensions) or lists of thereof.
+        defining expiring dimensions) or lists of thereof. Supports the
+        module-scoped defaults. They are merged (non-recursively) with the
+        explicitly passed dimensions.
     priority: int [1-255] or None, indicating swarming task priority, lower is
         more important. If None, defer the decision to Buildbucket service.
+        Supports the module-scoped default.
     swarming_tags: a list of tags (`k:v` strings) to assign to the Swarming task
         that runs the builder. Each tag will also end up in `swarming_tag`
-        Buildbucket tag, for example `swarming_tag:builder:release`.
+        Buildbucket tag, for example `swarming_tag:builder:release`. Supports
+        the module-scoped defaults. They are joined with the explicitly passed
+        tags.
     expiration_timeout: how long to wait for a build to be picked up by a
         matching bot (based on `dimensions`) before canceling the build and
         marking it as expired. If None, defer the decision to Buildbucket
-        service.
+        service. Supports the module-scoped default.
 
     schedule: string with a cron schedule that describes when to run this
         builder. See [Defining cron schedules](#schedules_doc) for the expected
@@ -145,22 +154,23 @@ def _builder(
         it runs, triggering requests accumulate in a queue. Once the build
         finishes, if the queue is not empty, a new build starts right away,
         "consuming" all pending requests. See scheduler.policy(...) doc for more
-        details.
+        details. Supports the module-scoped default.
 
     build_numbers: if True, generate monotonically increasing contiguous numbers
         for each build, unique within the builder. If None, defer the decision
-        to Buildbucket service.
+        to Buildbucket service. Supports the module-scoped default.
     experimental: if True, by default a new build in this builder will be marked
         as experimental. This is seen from recipes and they may behave
         differently (e.g. avoiding any side-effects). If None, defer the
-        decision to Buildbucket service.
+        decision to Buildbucket service. Supports the module-scoped default.
     task_template_canary_percentage: int [0-100] or None, indicating percentage
         of builds that should use a canary swarming task template. If None,
-        defer the decision to Buildbucket service.
+        defer the decision to Buildbucket service. Supports the module-scoped
+        default.
 
     luci_migration_host: deprecated setting that was important during the
         migration from Buildbot to LUCI. Refer to Buildbucket docs for the
-        meaning.
+        meaning. Supports the module-scoped default.
 
     triggers: builders this builder triggers.
     triggered_by: builders or pollers this builder is triggered by.
@@ -169,16 +179,17 @@ def _builder(
   bucket_key = keys.bucket(bucket)
   recipe_key = keys.recipe(recipe)
 
-  # Node that carries the full definition of the builder.
-  builder_key = keys.builder(bucket_key.id, name)
-  graph.add_node(builder_key, props = {
+  # TODO(vadimsh): Validators here and in lucicfg.rule(..., defaults = ...) are
+  # duplicated. There's probably a way to avoid this by introducing a Schema
+  # object.
+  props = {
       'name': name,
       'bucket': bucket_key.id,
       'properties': validate.str_dict('properties', properties),
       'service_account': validate.string('service_account', service_account, required=False),
       'caches': swarming.validate_caches('caches', caches),
       'execution_timeout': validate.duration('execution_timeout', execution_timeout, required=False),
-      'dimensions': swarming.validate_dimensions('dimensions', dimensions),
+      'dimensions': swarming.validate_dimensions('dimensions', dimensions, allow_none=True),
       'priority': validate.int('priority', priority, min=1, max=255, required=False),
       'swarming_tags': swarming.validate_tags('swarming_tags', swarming_tags),
       'expiration_timeout': validate.duration('expiration_timeout', expiration_timeout, required=False),
@@ -187,8 +198,25 @@ def _builder(
       'build_numbers': validate.bool('build_numbers', build_numbers, required=False),
       'experimental': validate.bool('experimental', experimental, required=False),
       'task_template_canary_percentage': validate.int('task_template_canary_percentage', task_template_canary_percentage, min=0, max=100, required=False),
-      'luci_migration_host': validate.string('luci_migration_host', luci_migration_host, required=False)
-  })
+      'luci_migration_host': validate.string('luci_migration_host', luci_migration_host, allow_empty=True, required=False)
+  }
+
+  # Merge explicitly passed properties with the module-scoped defaults.
+  for k, prop_val in props.items():
+    var = getattr(ctx.defaults, k, None)
+    def_val = var.get() if var else None
+    if def_val == None:
+      continue
+    if k in ('properties', 'dimensions'):
+      props[k] = _merge_dicts(def_val, prop_val)
+    elif k in ('caches', 'swarming_tags'):
+      props[k] = _merge_lists(def_val, prop_val)
+    elif prop_val == None:
+      props[k] = def_val
+
+  # Add a node that carries the full definition of the builder.
+  builder_key = keys.builder(bucket_key.id, name)
+  graph.add_node(builder_key, props = props)
   graph.add_edge(bucket_key, builder_key)
   graph.add_edge(builder_key, recipe_key)
 
@@ -220,4 +248,33 @@ def _builder(
   return graph.keyset(builder_key, builder_ref_key, triggerer_key)
 
 
-builder = lucicfg.rule(impl = _builder)
+def _merge_dicts(defaults, extra):
+  out = dict(defaults.items())
+  for k, v in extra.items():
+    if v != None:
+      out[k] = v
+  return out
+
+
+def _merge_lists(defaults, extra):
+  return defaults + extra
+
+
+builder = lucicfg.rule(
+    impl = _builder,
+    defaults = validate.vars_with_validators({
+        'properties': validate.str_dict,
+        'service_account': validate.string,
+        'caches': swarming.validate_caches,
+        'execution_timeout': validate.duration,
+        'dimensions': swarming.validate_dimensions,
+        'priority': lambda attr, val: validate.int(attr, val, min=1, max=255),
+        'swarming_tags': swarming.validate_tags,
+        'expiration_timeout': validate.duration,
+        'triggering_policy': schedulerimpl.validate_policy,
+        'build_numbers': validate.bool,
+        'experimental': validate.bool,
+        'task_template_canary_percentage': lambda attr, val: validate.int(attr, val, min=1, max=100),
+        'luci_migration_host': validate.string,
+    }),
+)
