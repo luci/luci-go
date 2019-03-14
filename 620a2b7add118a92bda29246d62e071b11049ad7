@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ed131acc_7c572dbb",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T22:10:51Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 61,
+        "startChar": 3,
+        "endLine": 61,
+        "endChar": 17
+      },
+      "revId": "620a2b7add118a92bda29246d62e071b11049ad7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "57823217_1bb8afe8",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T22:10:51Z",
+      "side": 1,
+      "message": "based on yesterday\u0027s discussion this may not be the case in the future. Maybe worth filing a bug to support undefined zones and adding TODO(crbug/xxx) here to update doc later?",
+      "range": {
+        "startLine": 91,
+        "startChar": 11,
+        "endLine": 91,
+        "endChar": 20
+      },
+      "revId": "620a2b7add118a92bda29246d62e071b11049ad7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

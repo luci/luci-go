@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "87197fcb_817f5fb0",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T22:10:51Z",
+      "side": 1,
+      "message": "\u003e vm was fetched prior to sending an RPC to Swarming\n\nI didn\u0027t realize this. What you do is thus fine. Consider noting this in a comment.",
+      "parentUuid": "7d3bee37_de7d9bcc",
+      "revId": "57a5fde2f956f8af67cd49569b73b46234782e91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4c48afb2_5178493a",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
@@ -84,6 +102,30 @@
     },
     {
       "key": {
+        "uuid": "a3546469_8d2eb6c2",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T22:10:51Z",
+      "side": 1,
+      "message": "yeah, struct\u0027s better. This is what bugs me every time I code something non-trivial in Go :( i want generics.",
+      "parentUuid": "1cb1c9d4_dfa316e2",
+      "range": {
+        "startLine": 48,
+        "startChar": 52,
+        "endLine": 48,
+        "endChar": 58
+      },
+      "revId": "57a5fde2f956f8af67cd49569b73b46234782e91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fb5b02e2_e741f9d1",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
@@ -113,6 +155,24 @@
       "side": 1,
       "message": "Waiting until the next scheduled Flush is fine I think. Renamed to update since it calls metrics.Update.",
       "parentUuid": "fb5b02e2_e741f9d1",
+      "revId": "57a5fde2f956f8af67cd49569b73b46234782e91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f2e461dc_68734d2b",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T22:10:51Z",
+      "side": 1,
+      "message": "strictly speaking, this GAE instance may be killed before then. However, I think it\u0027s ok to lose such data, unless this specific kind of task queue request consistently takes too much memory and ends up killing instance w/o a report.",
+      "parentUuid": "d31d7666_15aadf24",
       "revId": "57a5fde2f956f8af67cd49569b73b46234782e91",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
