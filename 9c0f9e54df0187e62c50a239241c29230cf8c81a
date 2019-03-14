@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1695babf_382c3779",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-14T23:02:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63f281db_37980bd0",
+      "range": {
+        "startLine": 251,
+        "startChar": 17,
+        "endLine": 251,
+        "endChar": 21
+      },
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "90c1f83a_ed85a8c4",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
         "patchSetId": 4
