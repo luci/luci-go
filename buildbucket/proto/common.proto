@@ -52,6 +52,30 @@ enum Status {
   CANCELED = 68;  // 64 | ENDED
 }
 
+// Machine-readable details of a status.
+// Human-readble details are present in a sibling summary_markdown field.
+message StatusDetails {
+
+  // Details of Status.INFRA_FAILURE.
+  message InfraFailure {
+    // Indicates that the failure was due to a resource exhaustion / quota
+    // denial.
+    bool resource_exhaustion = 1;
+  }
+
+  // Details of Status.CANCELED.
+  message Canceled {
+    // Verified identity who canceled this build.
+    string canceled_by = 1;
+  }
+
+
+  oneof status {
+    InfraFailure infra_faiilure = 1;
+    Canceled canceled = 2;
+  }
+}
+
 // A Gerrit patchset.
 message GerritChange {
   // Gerrit hostname, e.g. "chromium-review.googlesource.com".
