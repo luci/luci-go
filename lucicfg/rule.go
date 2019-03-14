@@ -30,6 +30,26 @@ import (
 // TODO(vadimsh): Add attributes too, such as 'defaults' and 'key'.
 type ruleImpl struct {
 	starlark.Callable
+
+	defaults *starlarkstruct.Struct // struct with vars passed as 'defaults'
+}
+
+// newRuleImpl construct a new rule if arguments pass the validation.
+func newRuleImpl(impl starlark.Callable, defaults *starlark.Dict) (*ruleImpl, error) {
+	pairs := defaults.Items()
+	for _, pair := range pairs {
+		k, v := pair[0], pair[1]
+		if _, ok := k.(starlark.String); !ok {
+			return nil, fmt.Errorf("lucicfg.rule: keys in \"defaults\" must be strings")
+		}
+		if !isNamedStruct(v, "lucicfg.var") {
+			return nil, fmt.Errorf("lucicfg.rule: values in \"defaults\" must be lucicfg.var")
+		}
+	}
+	return &ruleImpl{
+		Callable: impl,
+		defaults: starlarkstruct.FromKeywords(starlark.String("lucicfg.rule.defaults"), pairs),
+	}, nil
 }
 
 // String lets caller know this is a rule now.
@@ -48,23 +68,38 @@ func (r *ruleImpl) CallInternal(th *starlark.Thread, args starlark.Tuple, kwargs
 	newArgs = append(newArgs, starlarkstruct.FromStringDict(
 		starlark.String("lucicfg.rule_ctx"),
 		starlark.StringDict{
-			// TODO(vadimsh): Add fields.
+			"defaults": r.defaults,
 		},
 	))
 	newArgs = append(newArgs, args...)
 	switch res, err := r.Callable.CallInternal(th, newArgs, kwargs); {
 	case err != nil:
 		return nil, err
-	case !isKeyset(res):
+	case !isNamedStruct(res, "graph.keyset"):
 		return nil, fmt.Errorf("bad rule implementation %s: must return graph.keyset, got %s", r.Callable, res.Type())
 	default:
 		return res, nil
 	}
 }
 
-func isKeyset(v starlark.Value) bool {
+// AttrNames is part of starlark.HasAttrs interface.
+func (r *ruleImpl) AttrNames() []string {
+	return []string{"defaults"}
+}
+
+// Attr is part of starlark.HasAttrs interface.
+func (r *ruleImpl) Attr(name string) (starlark.Value, error) {
+	switch name {
+	case "defaults":
+		return r.defaults, nil
+	default:
+		return nil, nil
+	}
+}
+
+func isNamedStruct(v starlark.Value, name string) bool {
 	if st, ok := v.(*starlarkstruct.Struct); ok {
-		return st.Constructor().String() == "graph.keyset"
+		return st.Constructor().String() == name
 	}
 	return false
 }
@@ -73,9 +108,10 @@ func init() {
 	// See //internal/lucicfg.star.
 	declNative("declare_rule", func(call nativeCall) (starlark.Value, error) {
 		var impl starlark.Callable
-		if err := call.unpack(1, &impl); err != nil {
+		var defaults *starlark.Dict
+		if err := call.unpack(1, &impl, &defaults); err != nil {
 			return nil, err
 		}
-		return &ruleImpl{impl}, nil
+		return newRuleImpl(impl, defaults)
 	})
 }
