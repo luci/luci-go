@@ -119,7 +119,7 @@ type fetchOrMintTokenOp struct {
 func (tc *tokenCache) fetchOrMintToken(ctx context.Context, op *fetchOrMintTokenOp) (tok *cachedToken, err error, label string) {
 	defer func() {
 		if err != nil {
-			logging.WithError(err).Errorf(ctx, "Failed to get the token")
+			logging.WithError(err).Warningf(ctx, "Failed to get the token")
 		}
 	}()
 
