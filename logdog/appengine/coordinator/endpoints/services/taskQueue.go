@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -167,6 +168,9 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 		leaseTask.Add(c, 1, task.RetryCount)
 	}
 	logging.Infof(c, "Leasing %d tasks", len(archiveTasks))
+	if err := tsmon.Flush(c); err != nil {
+		logging.WithError(err).Errorf(c, "failed to flush tsmon")
+	}
 	return &logdog.LeaseResponse{Tasks: archiveTasks}, nil
 }
 
@@ -184,6 +188,9 @@ func (b *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest
 	err := taskqueue.Delete(c, archiveQueueName, tasks...)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "while deleting tasks\n%#v", tasks)
+	}
+	if err := tsmon.Flush(c); err != nil {
+		logging.WithError(err).Errorf(c, "failed to flush tsmon")
 	}
 	return &empty.Empty{}, nil
 }
