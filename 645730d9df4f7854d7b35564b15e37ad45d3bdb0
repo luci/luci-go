@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8db8e42c_5d841018",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T23:07:18Z",
+      "side": 1,
+      "message": "can this be swarming-server?",
+      "range": {
+        "startLine": 60,
+        "startChar": 44,
+        "endLine": 60,
+        "endChar": 51
+      },
+      "revId": "645730d9df4f7854d7b35564b15e37ad45d3bdb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
