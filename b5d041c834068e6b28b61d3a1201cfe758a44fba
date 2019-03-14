@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b23d5be_aea3c03d",
+        "filename": "logdog/appengine/coordinator/settings.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T03:03:30Z",
+      "side": 1,
+      "message": "this part is not enforced, but I also don\u0027t see why 0-100 is necessary.",
+      "range": {
+        "startLine": 216,
+        "startChar": 56,
+        "endLine": 216,
+        "endChar": 62
+      },
+      "revId": "b5d041c834068e6b28b61d3a1201cfe758a44fba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
