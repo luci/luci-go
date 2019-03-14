@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -45,11 +44,21 @@ var (
 
 	errNoWorkToDo = errors.New("no work to do")
 
-	// maxSleepTime is the max amount of time to sleep in-between errors, in seconds.
-	maxSleepTime = 16
+	// batchSize is the number of jobs to lease from taskqueue per cycle.
+	// TaskQueue has a limit of 10qps for leasing tasks, so the batch size must be set to:
+	// batchSize * 10 > (max expected stream creation QPS)
+	// In 2019, max stream QPS is approximately 400 QPS
+	// TODO(hinoka): Make these configurable in settings.
+	batchSize = int64(50)
 
-	// numGoroutines is the number of goroutines to use to run the archivist processing loop.
-	numGoroutines = 8
+	// leaseTime is the amount of time to to lease the batch of tasks for.
+	// We need:
+	// (time to process avg stream) * batchSize < leaseTime
+	// As of 2019, 90th percentile process time per stream is ~4s.
+	leaseTime = 15 * time.Minute
+
+	// maxSleepTime is the max amount of time to sleep in-between errors, in seconds.
+	maxSleepTime = 32
 
 	// tsTaskProcessingTime measures the amount of time spent processing a single
 	// task.
@@ -82,8 +91,7 @@ func (t *taskWrapper) Task() *logdog.ArchiveTask {
 func (t *taskWrapper) Consume() {} // noop.
 
 // runForever runs the archivist loop forever.
-func runForever(c context.Context, index int, ar archivist.Archivist) error {
-	c = log.SetField(c, "index", index)
+func runForever(c context.Context, ar archivist.Archivist) error {
 	sleepTime := 1
 	client := ar.Service
 	// Forever loop.
@@ -93,12 +101,11 @@ func runForever(c context.Context, index int, ar archivist.Archivist) error {
 			return c.Err()
 		}
 		if err := func() error {
-			leaseTime := time.Minute * 10
 			leaseTimeProto := ptypes.DurationProto(leaseTime)
 			nc, _ := context.WithTimeout(c, leaseTime)
 
 			tasks, err := client.LeaseArchiveTasks(c, &logdog.LeaseRequest{
-				MaxTasks:  10,
+				MaxTasks:  batchSize,
 				LeaseTime: leaseTimeProto,
 			})
 			if err != nil {
@@ -206,18 +213,7 @@ func (a *application) runArchivist(c context.Context) error {
 	// shutdown Context.
 	a.SetShutdownFunc(cancelFunc)
 
-	// Spawn our runners.
-	// TODO(hinoka): This design fans out a bunch of lease / run / ack workers,
-	// Which means at any time we have much many leased and outstanding tasks.
-	// We can reduce that number by switching the main thread be the only one
-	// to do the lease / ack loop, so that the workers only do the work.
-	// This would reduce the total number of leased and outstanding tasks.
-	return parallel.FanOutIn(func(ch chan<- func() error) {
-		for i := 0; i < numGoroutines; i++ {
-			i := i
-			ch <- func() error { return runForever(c, i, ar) }
-		}
-	})
+	return runForever(c, ar)
 }
 
 // GetSettingsLoader is an archivist.SettingsLoader implementation that merges
