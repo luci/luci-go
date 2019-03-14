@@ -187,7 +187,12 @@ func (id *ConsoleID) SetID(c context.Context, console *Console) *Console {
 
 // ErrConsoleNotFound is returned from GetConsole if the requested console
 // isn't known to exist.
-var ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
+var ErrConsoleNotFound = errors.New("console not found")
+
+func init() {
+	// We need to wait until error codes have generated tags before initializing this error
+	ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
+}
 
 // LuciConfigURL returns a user friendly URL that specifies where to view
 // this console definition.
