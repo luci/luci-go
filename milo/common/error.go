@@ -26,6 +26,8 @@ import (
 // user.
 type ErrorCode int
 
+// TODO(hinoka): All of these codes can be represented by codes
+// in the luci/grpc/grpcutil package.  Use that instead.
 const (
 	// CodeUnknown means an error happened, but we weren't able to classify it.
 	CodeUnknown ErrorCode = iota
