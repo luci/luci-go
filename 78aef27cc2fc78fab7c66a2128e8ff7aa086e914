@@ -22,6 +22,30 @@
       "revId": "78aef27cc2fc78fab7c66a2128e8ff7aa086e914",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e1f0551_edf20f6f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-14T02:38:25Z",
+      "side": 1,
+      "message": "This feature is not used in any rule yet. Removed.",
+      "parentUuid": "63c49414_8a551c2d",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 12
+      },
+      "revId": "78aef27cc2fc78fab7c66a2128e8ff7aa086e914",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
