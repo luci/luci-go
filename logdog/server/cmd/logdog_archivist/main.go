@@ -31,6 +31,7 @@ import (
 	montypes "go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/archivist"
 	"go.chromium.org/luci/logdog/server/bundleServicesClient"
@@ -155,6 +156,21 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 	}
 }
 
+// settingsUpdater updates the settings from datastore every once in a while.
+func settingsUpdater(c context.Context) {
+	for {
+		set := coordinator.GetSettings(c)
+		logging.Debugf(c, "updating settings: %v", set)
+		if batchSize != set.ArchivistBatchSize {
+			batchSize = set.ArchivistBatchSize
+		}
+		if leaseTime != set.ArchivistLeaseTime {
+			leaseTime = set.ArchivistLeaseTime
+		}
+		clock.Sleep(c, 5*time.Minute)
+	}
+}
+
 // run is the main execution function.
 func (a *application) runArchivist(c context.Context) error {
 	cfg := a.ServiceConfig()
@@ -212,6 +228,9 @@ func (a *application) runArchivist(c context.Context) error {
 	// Application shutdown will now operate by cancelling the Archivist's
 	// shutdown Context.
 	a.SetShutdownFunc(cancelFunc)
+
+	// Update our settings periodicall.
+	go settingsUpdater(c)
 
 	return runForever(c, ar)
 }
