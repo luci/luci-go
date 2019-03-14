@@ -14,6 +14,7 @@
 
 """Generic value validators."""
 
+load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/re.star', 're')
 load('@stdlib//internal/time.star', 'time')
 
@@ -296,6 +297,35 @@ def _type(attr, val, prototype, default=None, required=True):
   return val
 
 
+def _var_with_validator(attr, validator, **kwargs):
+  """Returns a lucicfg.var that validates the value via a validator callback.
+
+  Args:
+    attr: name of the var for error messages. Required.
+    validator: a callback(attr, value, **kwargs), e.g. `validate.string`.
+        Required.
+
+  Returns:
+    lucicfg.var(...).
+  """
+  return lucicfg.var(validator=lambda value: validator(attr, value, **kwargs))
+
+
+def _vars_with_validators(vars):
+  """Accepts dict `{attr -> validator}`, returns dict `{attr -> lucicfg.var}`.
+
+  Basically applies validate.var_with_validator(...) to each item of the dict.
+
+  Args:
+    vars: a dict with string keys and callable values, matching the signature of
+        `validator` in validate.var_with_validator(...). Required.
+
+  Returns:
+    Dict with string keys and lucicfg.var(...) values.
+  """
+  return {attr: _var_with_validator(attr, validator) for attr, validator in vars.items()}
+
+
 validate = struct(
     string = _string,
     int = _int,
@@ -306,4 +336,7 @@ validate = struct(
     str_dict = _str_dict,
     struct = _struct,
     type = _type,
+
+    var_with_validator = _var_with_validator,
+    vars_with_validators = _vars_with_validators,
 )

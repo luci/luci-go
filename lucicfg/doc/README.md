@@ -453,9 +453,9 @@ Defines a bucket: a container for LUCI resources that share the same ACL.
 luci.recipe(
     # Required arguments.
     name,
-    cipd_package,
 
     # Optional arguments.
+    cipd_package = None,
     cipd_version = None,
     recipe = None,
 )
@@ -487,8 +487,8 @@ The cipd version to fetch is usually a lower-cased git ref (like
 #### Arguments {#luci.recipe-args}
 
 * **name**: name of this recipe entity, to refer to it from builders. If `recipe` is None, also specifies the recipe name within the bundle. Required.
-* **cipd_package**: a cipd package name with the recipe bundle. Required.
-* **cipd_version**: a version of the recipe bundle package to fetch, default is `refs/heads/master`.
+* **cipd_package**: a cipd package name with the recipe bundle. Supports the module-scoped default.
+* **cipd_version**: a version of the recipe bundle package to fetch, default is `refs/heads/master`. Supports the module-scoped default.
 * **recipe**: name of a recipe inside the recipe bundle if it differs from `name`. Useful if recipe names clash between different recipe bundles. When this happens, `name` can be used as a non-ambiguous alias, and `recipe` can provide the actual recipe name. Defaults to `name`.
 
 
@@ -574,20 +574,20 @@ This is not necessary if the recipe uses Scheduler API instead of Buildbucket.
 * **name**: name of the builder, will show up in UIs and logs. Required.
 * **bucket**: a bucket the builder is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
 * **recipe**: a recipe to run, see [luci.recipe(...)](#luci.recipe) rule. Required.
-* **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the recipe.
-* **service_account**: an email of a service account to run the recipe under: the recipe (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI).
-* **caches**: a list of [swarming.cache(...)](#swarming.cache) objects describing Swarming named caches that should be present on the bot. See [swarming.cache(...)](#swarming.cache) doc for more details.
-* **execution_timeout**: how long to wait for a running build to finish before forcefully aborting it and marking the build as timed out. If None, defer the decision to Buildbucket service.
-* **dimensions**: a dict with swarming dimensions, indicating requirements for a bot to execute the build. Keys are strings (e.g. `os`), and values are either strings (e.g. `Linux`), [swarming.dimension(...)](#swarming.dimension) objects (for defining expiring dimensions) or lists of thereof.
-* **priority**: int [1-255] or None, indicating swarming task priority, lower is more important. If None, defer the decision to Buildbucket service.
-* **swarming_tags**: a list of tags (`k:v` strings) to assign to the Swarming task that runs the builder. Each tag will also end up in `swarming_tag` Buildbucket tag, for example `swarming_tag:builder:release`.
-* **expiration_timeout**: how long to wait for a build to be picked up by a matching bot (based on `dimensions`) before canceling the build and marking it as expired. If None, defer the decision to Buildbucket service.
+* **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the recipe. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed properties.
+* **service_account**: an email of a service account to run the recipe under: the recipe (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI). Supports the module-scoped default.
+* **caches**: a list of [swarming.cache(...)](#swarming.cache) objects describing Swarming named caches that should be present on the bot. See [swarming.cache(...)](#swarming.cache) doc for more details. Supports the module-scoped defaults. They are joined with the explicitly passed caches.
+* **execution_timeout**: how long to wait for a running build to finish before forcefully aborting it and marking the build as timed out. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **dimensions**: a dict with swarming dimensions, indicating requirements for a bot to execute the build. Keys are strings (e.g. `os`), and values are either strings (e.g. `Linux`), [swarming.dimension(...)](#swarming.dimension) objects (for defining expiring dimensions) or lists of thereof. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed dimensions.
+* **priority**: int [1-255] or None, indicating swarming task priority, lower is more important. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **swarming_tags**: a list of tags (`k:v` strings) to assign to the Swarming task that runs the builder. Each tag will also end up in `swarming_tag` Buildbucket tag, for example `swarming_tag:builder:release`. Supports the module-scoped defaults. They are joined with the explicitly passed tags.
+* **expiration_timeout**: how long to wait for a build to be picked up by a matching bot (based on `dimensions`) before canceling the build and marking it as expired. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **schedule**: string with a cron schedule that describes when to run this builder. See [Defining cron schedules](#schedules_doc) for the expected format of this field. If None, the builder will not be running periodically.
-* **triggering_policy**: [scheduler.policy(...)](#scheduler.policy) struct with a configuration that defines when and how LUCI Scheduler should launch new builds in response to triggering requests from [luci.gitiles_poller(...)](#luci.gitiles_poller) or from EmitTriggers API. Does not apply to builds started directly through Buildbucket. By default, only one concurrent build is allowed and while it runs, triggering requests accumulate in a queue. Once the build finishes, if the queue is not empty, a new build starts right away, "consuming" all pending requests. See [scheduler.policy(...)](#scheduler.policy) doc for more details.
-* **build_numbers**: if True, generate monotonically increasing contiguous numbers for each build, unique within the builder. If None, defer the decision to Buildbucket service.
-* **experimental**: if True, by default a new build in this builder will be marked as experimental. This is seen from recipes and they may behave differently (e.g. avoiding any side-effects). If None, defer the decision to Buildbucket service.
-* **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service.
-* **luci_migration_host**: deprecated setting that was important during the migration from Buildbot to LUCI. Refer to Buildbucket docs for the meaning.
+* **triggering_policy**: [scheduler.policy(...)](#scheduler.policy) struct with a configuration that defines when and how LUCI Scheduler should launch new builds in response to triggering requests from [luci.gitiles_poller(...)](#luci.gitiles_poller) or from EmitTriggers API. Does not apply to builds started directly through Buildbucket. By default, only one concurrent build is allowed and while it runs, triggering requests accumulate in a queue. Once the build finishes, if the queue is not empty, a new build starts right away, "consuming" all pending requests. See [scheduler.policy(...)](#scheduler.policy) doc for more details. Supports the module-scoped default.
+* **build_numbers**: if True, generate monotonically increasing contiguous numbers for each build, unique within the builder. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **experimental**: if True, by default a new build in this builder will be marked as experimental. This is seen from recipes and they may behave differently (e.g. avoiding any side-effects). If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **luci_migration_host**: deprecated setting that was important during the migration from Buildbot to LUCI. Refer to Buildbucket docs for the meaning. Supports the module-scoped default.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
 
@@ -818,9 +818,9 @@ luci.console_view(
     header = None,
     include_experimental_builds = None,
     favicon = None,
-    entries = None,
     default_commit_list = None,
     default_expand = None,
+    entries = None,
 )
 ```
 
@@ -933,9 +933,9 @@ There are two way to supply this message via `header` field:
 * **header**: either a string with a path to the file with the header definition (see [io.read_file(...)](#io.read_file) for the acceptable path format), or a dict with the header definition.
 * **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.
 * **favicon**: optional https URL to the favicon for this console, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
-* **entries**: a list of [luci.console_view_entry(...)](#luci.console_view_entry) entities specifying builders to show on the console.
 * **default_commit_list**: if set, will change the default number of commits to query on a single page.
 * **default_expand**: if set, will default the console page to expanded view.
+* **entries**: a list of [luci.console_view_entry(...)](#luci.console_view_entry) entities specifying builders to show on the console.
 
 
 
@@ -1416,7 +1416,7 @@ Validates list of caches (may be an empty list, never None).
 ### swarming.validate_dimensions {#swarming.validate_dimensions}
 
 ```python
-swarming.validate_dimensions(attr, dimensions)
+swarming.validate_dimensions(attr, dimensions, allow_none = None)
 ```
 
 
@@ -1434,6 +1434,7 @@ or a list of thereof (for repeated dimensions).
 
 * **attr**: field name with dimensions, for error messages. Required.
 * **dimensions**: a dict `{string: string|swarming.dimension}`. Required.
+* **allow_none**: if True, allow None values (indicates absence of the dimension).
 
 
 #### Returns  {#swarming.validate_dimensions-returns}

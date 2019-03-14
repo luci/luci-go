@@ -39,9 +39,9 @@ def _console_view(
       include_experimental_builds=None,
       header=None,
       favicon=None,
-      entries=None,
       default_commit_limit=None,
-      default_expand=None
+      default_expand=None,
+      entries=None
   ):
   """A Milo UI view that displays a table-like console where columns are
   builders and rows are git commits on which builders are triggered.
@@ -169,11 +169,11 @@ def _console_view(
         builds.
     favicon: optional https URL to the favicon for this console, must be hosted
         on `storage.googleapis.com`. Defaults to `favicon` in luci.milo(...).
-    entries: a list of luci.console_view_entry(...) entities specifying builders
-        to show on the console.
     default_commit_list: if set, will change the default number of commits to
         query on a single page.
     default_expand: if set, will default the console page to expanded view.
+    entries: a list of luci.console_view_entry(...) entities specifying builders
+        to show on the console.
   """
   refs = validate.list('refs', refs) or ['refs/heads/master']
   for r in refs:
