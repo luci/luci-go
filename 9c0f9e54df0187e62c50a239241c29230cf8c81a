@@ -95,6 +95,24 @@
     },
     {
       "key": {
+        "uuid": "2a867ec9_d5546b37",
+        "filename": "lucicfg/testdata/misc/rule_defaults.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T05:24:19Z",
+      "side": 1,
+      "message": "i should try at some point :(",
+      "parentUuid": "67a64f7f_99946128",
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d231f2d0_823e8094",
         "filename": "lucicfg/testdata/misc/rule_defaults.star",
         "patchSetId": 4
@@ -127,6 +145,24 @@
       "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0043036_52d04a41",
+        "filename": "lucicfg/testdata/misc/rule_defaults.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T05:24:19Z",
+      "side": 1,
+      "message": "Totally agree None\u003d\u003dkUseDefault. Having it mean removal is a hack.",
+      "parentUuid": "5386d3ff_ec8e351c",
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
