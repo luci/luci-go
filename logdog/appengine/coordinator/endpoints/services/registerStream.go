@@ -275,7 +275,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			// No sane person is going to muck with this setting.
 			delay := 47 * time.Hour
 			if preTerminated {
-				percent = set.OptimisticalArchivalPercent
+				percent = set.OptimisticArchivalPercent
 				delay = set.OptimisticArchivalDelay
 			}
 			return nil, TaskArchival(c, lst, delay, percent)

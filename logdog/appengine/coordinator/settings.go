@@ -46,7 +46,7 @@ type Settings struct {
 
 	// OptimisticArchivalPercent (0-100) Controls what percent of terminated streams
 	// are tasked to the new pipeline
-	OptimisticalArchivalPercent uint32
+	OptimisticArchivalPercent uint32
 
 	// PessimisticArchivalPercent (0-100) Controls what percent of registered
 	// streams are tasked to the new pipeline after 47 hours.
@@ -139,8 +139,8 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	if set.OptimisticArchivalDelay != defaultSettings.OptimisticArchivalDelay {
 		values["OptimisticArchivalDelay"] = set.OptimisticArchivalDelay.String()
 	}
-	if set.OptimisticalArchivalPercent != defaultSettings.OptimisticalArchivalPercent {
-		values["OptimisticalArchivalPercent"] = fmt.Sprintf("%d", set.OptimisticalArchivalPercent)
+	if set.OptimisticArchivalPercent != defaultSettings.OptimisticArchivalPercent {
+		values["OptimisticArchivalPercent"] = fmt.Sprintf("%d", set.OptimisticArchivalPercent)
 	}
 	if set.PessimisticArchivalPercent != defaultSettings.PessimisticArchivalPercent {
 		values["PessimisticArchivalPercent"] = fmt.Sprintf("%d", set.PessimisticArchivalPercent)
@@ -171,7 +171,7 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 		if err != nil {
 			return fmt.Errorf("could not parse OptimisticArchivalPercent: %v", err)
 		}
-		set.OptimisticalArchivalPercent = uint32(i)
+		set.OptimisticArchivalPercent = uint32(i)
 	}
 	if v := values["PessimisticArchivalPercent"]; v != "" {
 		i, err := strconv.Atoi(v)
