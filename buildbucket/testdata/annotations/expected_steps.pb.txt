@@ -38,7 +38,7 @@ steps: <
   summary_markdown: <<END
 failure_details_text
 
-step_text
+\*step\_text\*
 END
 >
 
