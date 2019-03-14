@@ -33,6 +33,41 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
+// utcRFC3339 is the timestamp format used by Swarming.
+// Similar to RFC3339 but with an implicit UTC time zone.
+const utcRFC3339 = "2006-01-02T15:04:05"
+
+// setConnected sets the Swarming bot as connected in the datastore if it isn't already.
+func setConnected(c context.Context, id, hostname string, at time.Time) error {
+	// Check dscache in case vm.Connected is set now, to avoid a costly transaction.
+	vm := &model.VM{
+		ID: id,
+	}
+	switch err := datastore.Get(c, vm); {
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch VM").Err()
+	case vm.Hostname != hostname:
+		return errors.Reason("bot %q does not exist", hostname).Err()
+	case vm.Connected > 0:
+		return nil
+	}
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		switch err := datastore.Get(c, vm); {
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch VM").Err()
+		case vm.Hostname != hostname:
+			return errors.Reason("bot %q does not exist", hostname).Err()
+		case vm.Connected > 0:
+			return nil
+		}
+		vm.Connected = at.Unix()
+		if err := datastore.Put(c, vm); err != nil {
+			return errors.Annotate(err, "failed to store VM").Err()
+		}
+		return nil
+	}, nil)
+}
+
 // manageMissingBot manages a missing Swarming bot.
 func manageMissingBot(c context.Context, vm *model.VM) error {
 	// Set that the bot has not yet connected to Swarming.
@@ -53,9 +88,18 @@ func manageMissingBot(c context.Context, vm *model.VM) error {
 
 // manageExistingBot manages an existing Swarming bot.
 func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm *model.VM) error {
-	// Set that the bot was at one point connected to Swarming. If this function determines
-	// the bot is no longer connected, it will eventually delete the VM and the metric will
-	// stop being set at all.
+	// This value of vm.Connected may be several seconds old, because the VM was fetched
+	// prior to sending an RPC to Swarming. Still, check it here to save a costly operation
+	// in setConnected, since manageExistingBot may be called thousands of times per minute.
+	if vm.Connected == 0 {
+		t, err := time.Parse(utcRFC3339, bot.FirstSeenTs)
+		if err != nil {
+			return errors.Annotate(err, "failed to parse bot connection time").Err()
+		}
+		if err := setConnected(c, vm.ID, vm.Hostname, t); err != nil {
+			return err
+		}
+	}
 	// A bot connected to Swarming may be executing workload.
 	// To destroy the instance, terminate the bot first to avoid interruptions.
 	// Termination can be skipped if the bot is deleted, dead, or already terminated.

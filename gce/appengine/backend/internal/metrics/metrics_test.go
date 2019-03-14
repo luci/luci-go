@@ -60,13 +60,16 @@ func TestMetrics(t *testing.T) {
 		})
 
 		Convey("UpdateInstances", func() {
-			fields := []interface{}{"prefix", "project", "zone"}
+			connectedFields := []interface{}{"prefix", "project", "server", "zone"}
+			createdFields := []interface{}{"prefix", "project", "zone"}
 
-			UpdateInstances(c, 1, "prefix", "project", "zone")
-			So(s.Get(c, createdInstances, time.Time{}, fields).(int64), ShouldEqual, 1)
+			UpdateInstances(c, 1, 3, "prefix", "project", "server", "zone")
+			So(s.Get(c, connectedInstances, time.Time{}, connectedFields).(int64), ShouldEqual, 1)
+			So(s.Get(c, createdInstances, time.Time{}, createdFields).(int64), ShouldEqual, 3)
 
-			UpdateInstances(c, 0, "prefix", "project", "zone")
-			So(s.Get(c, createdInstances, time.Time{}, fields).(int64), ShouldEqual, 0)
+			UpdateInstances(c, 0, 2, "prefix", "project", "server", "zone")
+			So(s.Get(c, connectedInstances, time.Time{}, connectedFields).(int64), ShouldEqual, 0)
+			So(s.Get(c, createdInstances, time.Time{}, createdFields).(int64), ShouldEqual, 2)
 		})
 
 		Convey("UpdateQuota", func() {
