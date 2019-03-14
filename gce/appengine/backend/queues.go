@@ -141,6 +141,7 @@ func drainVM(c context.Context, payload proto.Message) error {
 	switch err := datastore.Get(c, cfg); {
 	case err == datastore.ErrNoSuchEntity:
 		// Config doesn't exist, drain the VM.
+		metrics.UpdateConfiguredInstances(c, 0, vm.Prefix, vm.Attributes.Project)
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
 	case cfg.Config.GetAmount().GetDefault() > vm.Index:
@@ -247,6 +248,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 			},
 		}
 	}
+	metrics.UpdateConfiguredInstances(c, len(t), cfg.Prefix, cfg.Attributes.Project)
 	logging.Debugf(c, "creating %d VMs", len(t))
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
 		return errors.Annotate(err, "failed to schedule tasks").Err()

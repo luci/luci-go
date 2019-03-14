@@ -59,6 +59,16 @@ func TestMetrics(t *testing.T) {
 			So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 2)
 		})
 
+		Convey("UpdateConfiguredInstances", func() {
+			fields := []interface{}{"prefix", "project"}
+
+			UpdateConfiguredInstances(c, 100, "prefix", "project")
+			So(s.Get(c, configuredInstances, time.Time{}, fields).(int64), ShouldEqual, 100)
+
+			UpdateConfiguredInstances(c, 200, "prefix", "project")
+			So(s.Get(c, configuredInstances, time.Time{}, fields).(int64), ShouldEqual, 200)
+		})
+
 		Convey("UpdateInstances", func() {
 			connectedFields := []interface{}{"prefix", "project", "server", "zone"}
 			createdFields := []interface{}{"prefix", "project", "zone"}
