@@ -21,6 +21,7 @@ import (
 	"os"
 	"text/template"
 
+	"cloud.google.com/go/compute/metadata"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -42,6 +43,19 @@ func substitute(c context.Context, s string, subs interface{}) (string, error) {
 		return "", nil
 	}
 	return buf.String(), nil
+}
+
+// metaKey is the key to a *metadata.Client in the context.
+var metaKey = "meta"
+
+// withMetadata returns a new context with the given *metadata.Client installed.
+func withMetadata(c context.Context, cli *metadata.Client) context.Context {
+	return context.WithValue(c, &metaKey, cli)
+}
+
+// getMetadata returns the *SwarmingClient installed in the current context.
+func getMetadata(c context.Context) *metadata.Client {
+	return c.Value(&metaKey).(*metadata.Client)
 }
 
 // cmdRunBase is the base struct all subcommands should embed.
@@ -71,10 +85,12 @@ func (b *cmdRunBase) ModifyContext(c context.Context) context.Context {
 		logging.Errorf(c, "%s", err.Error())
 		panic("failed to get authenticator")
 	}
-	return withClient(c, &SwarmingClient{
+	meta := metadata.NewClient(http)
+	swr := &SwarmingClient{
 		Client:           http,
 		PlatformStrategy: newStrategy(),
-	})
+	}
+	return withSwarming(withMetadata(c, meta), swr)
 }
 
 // New returns a new agent application.

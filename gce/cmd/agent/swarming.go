@@ -35,17 +35,17 @@ type SwarmingClient struct {
 	server string
 }
 
-// cliKey is the key to a *SwarmingClient in the context.
-var cliKey = "cli"
+// swrKey is the key to a *SwarmingClient in the context.
+var swrKey = "swr"
 
-// withClient returns a new context with the given *SwarmingClient installed.
-func withClient(c context.Context, cli *SwarmingClient) context.Context {
-	return context.WithValue(c, &cliKey, cli)
+// withSwarming returns a new context with the given *SwarmingClient installed.
+func withSwarming(c context.Context, cli *SwarmingClient) context.Context {
+	return context.WithValue(c, &swrKey, cli)
 }
 
-// getClient returns the *SwarmingClient installed in the current context.
-func getClient(c context.Context) *SwarmingClient {
-	return c.Value(&cliKey).(*SwarmingClient)
+// getSwarming returns the *SwarmingClient installed in the current context.
+func getSwarming(c context.Context) *SwarmingClient {
+	return c.Value(&swrKey).(*SwarmingClient)
 }
 
 // fetch fetches the Swarming bot code.
