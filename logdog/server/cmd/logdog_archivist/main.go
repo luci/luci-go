@@ -71,6 +71,23 @@ var (
 		&montypes.MetricMetadata{Units: montypes.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Bool("consumed"))
+
+	tsLoopCycleTime = metric.NewCumulativeDistribution("logdog/archivist/loop_cycle_time_ms",
+		"The amount of time a single batch of leases takes to process.",
+		&montypes.MetricMetadata{Units: montypes.Milliseconds},
+		distribution.DefaultBucketer)
+
+	tsLeaseCount = metric.NewCounter("logdog/archivist/tasks_leased",
+		"Number of tasks leased.",
+		nil)
+
+	tsNackCount = metric.NewCounter("logdog/archivist/tasks_not_acked",
+		"Number of tasks leased but failed.",
+		nil)
+
+	tsAckCount = metric.NewCounter("logdog/archivist/tasks_acked",
+		"Number of tasks successfully completed and acked.",
+		nil)
 )
 
 // application is the Archivist application state.
@@ -102,6 +119,7 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 			return c.Err()
 		}
 		if err := func() error {
+			cycleStartTime := clock.Now(c)
 			leaseTimeProto := ptypes.DurationProto(leaseTime)
 			nc, _ := context.WithTimeout(c, leaseTime)
 
@@ -112,6 +130,12 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 			if err != nil {
 				return err
 			}
+			logging.Fields{
+				"cycleStart": true,
+				"numLeased":  len(tasks.Tasks),
+				"noWork":     len(tasks.Tasks) == 0,
+			}.Infof(c, "Start of cycled, leased %d tasks", len(tasks.Tasks))
+			tsLeaseCount.Add(c, int64(len(tasks.Tasks)))
 			if len(tasks.Tasks) == 0 {
 				return errNoWorkToDo
 			}
@@ -129,13 +153,24 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 				duration := clock.Now(c).Sub(startTime)
 				tsTaskProcessingTime.Add(c, float64(duration.Nanoseconds())/1000000, deleteTask)
 			}
+			tsNackCount.Add(c, int64(len(tasks.Tasks)-len(ackTasks)))
 			// Ack the successful tasks.  We log the error here since there's nothing we can do.
 			if len(ackTasks) > 0 {
+				tsAckCount.Add(c, int64(len(ackTasks)))
 				c := log.SetFields(c, log.Fields{"Tasks": ackTasks})
 				if _, err := client.DeleteArchiveTasks(c, &logdog.DeleteRequest{Tasks: ackTasks}); err != nil {
 					log.WithError(err).Errorf(c, "error while acking tasks (%s)", ackTasks)
 				}
 			}
+
+			duration := clock.Now(c).Sub(cycleStartTime)
+			logging.Fields{
+				"cycleEnd":     true,
+				"numLeased":    len(tasks.Tasks),
+				"numCompleted": len(ackTasks),
+				"timeSpentSec": duration.Seconds(),
+			}.Infof(c, "Done archiving %d items (%d successful) took %.2fs", len(tasks.Tasks), len(ackTasks), duration.Seconds())
+			tsLoopCycleTime.Add(c, float64(duration.Nanoseconds()/1000000))
 			return merr.Get()
 		}(); err != nil {
 			// Back off on errors.
