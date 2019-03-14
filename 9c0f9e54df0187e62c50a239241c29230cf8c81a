@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "63f281db_37980bd0",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T05:04:44Z",
+      "side": 1,
+      "message": "defaults would be better name.",
+      "range": {
+        "startLine": 251,
+        "startChar": 17,
+        "endLine": 251,
+        "endChar": 21
+      },
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90c1f83a_ed85a8c4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T05:04:44Z",
+      "side": 1,
+      "message": "why this change?",
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68adb6d5_674bb149",
+        "filename": "lucicfg/testdata/misc/rule_defaults.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T05:04:44Z",
+      "side": 1,
+      "message": "curious, how does failure of this e2e test looks like? 3 lines of diff?",
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d231f2d0_823e8094",
+        "filename": "lucicfg/testdata/misc/rule_defaults.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-14T05:04:44Z",
+      "side": 1,
+      "message": "spent a lot of time above in merge dicts, but this is better place to stick my comment.\nBasically, i\u0027m uneasy with what you chose, it\u0027s as if i wish there were 2 consts:\n\nkUseDefault (\u003d\u003d\u003d current None value)\nkDelDefault\n\nbut OTH, my proposal is complicated and maybe never used, and perhaps can be added later. Right? Was this your thinking, too?",
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
