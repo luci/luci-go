@@ -51,9 +51,10 @@ def _recipe(
   Args:
     name: name of this recipe entity, to refer to it from builders. If `recipe`
         is None, also specifies the recipe name within the bundle. Required.
-    cipd_package: a cipd package name with the recipe bundle. Required.
+    cipd_package: a cipd package name with the recipe bundle. Supports the
+        module-scoped default.
     cipd_version: a version of the recipe bundle package to fetch, default
-        is `refs/heads/master`.
+        is `refs/heads/master`. Supports the module-scoped default.
     recipe: name of a recipe inside the recipe bundle if it differs from
         `name`. Useful if recipe names clash between different recipe bundles.
         When this happens, `name` can be used as a non-ambiguous alias, and
@@ -62,21 +63,32 @@ def _recipe(
   name = validate.string('name', name)
   key = keys.recipe(name)
   graph.add_node(key, props = {
-      'cipd_package': validate.string('cipd_package', cipd_package),
+      'cipd_package': validate.string(
+          'cipd_package',
+          cipd_package,
+          default = ctx.defaults.cipd_package.get(),
+          required = ctx.defaults.cipd_package.get() == None,
+      ),
       'cipd_version': validate.string(
           'cipd_version',
           cipd_version,
-          default='refs/heads/master',
-          required=False,
+          default = ctx.defaults.cipd_version.get() or 'refs/heads/master',
+          required = False,
       ),
       'recipe': validate.string(
           'recipe',
           recipe,
-          default=name,
-          required=False,
+          default = name,
+          required = False,
       ),
   })
   return graph.keyset(key)
 
 
-recipe = lucicfg.rule(impl = _recipe)
+recipe = lucicfg.rule(
+    impl = _recipe,
+    defaults = validate.vars_with_validators({
+        'cipd_package': validate.string,
+        'cipd_version': validate.string,
+    }),
+)

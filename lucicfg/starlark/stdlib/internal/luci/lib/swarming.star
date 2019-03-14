@@ -192,7 +192,7 @@ def _validate_caches(attr, caches):
   return caches
 
 
-def _validate_dimensions(attr, dimensions):
+def _validate_dimensions(attr, dimensions, allow_none=False):
   """Validates and normalizes a dict with dimensions.
 
   The dict should have string keys and values are swarming.dimension, a string
@@ -204,6 +204,7 @@ def _validate_dimensions(attr, dimensions):
   Args:
     attr: field name with dimensions, for error messages. Required.
     dimensions: a dict `{string: string|swarming.dimension}`. Required.
+    allow_none: if True, allow None values (indicates absence of the dimension).
 
   Returns:
     Validated and normalized dict in form `{string: [swarming.dimension]}`.
@@ -211,7 +212,9 @@ def _validate_dimensions(attr, dimensions):
   out = {}
   for k, v in validate.str_dict(attr, dimensions).items():
     validate.string(attr, k)
-    if type(v) == 'list':
+    if allow_none and v == None:
+      out[k] = None
+    elif type(v) == 'list':
       out[k] = [_as_dim(k, x) for x in v]
     else:
       out[k] = [_as_dim(k, v)]
