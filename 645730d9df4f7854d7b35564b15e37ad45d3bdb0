@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0eb08089_2ae0eb40",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-14T23:19:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8db8e42c_5d841018",
+      "range": {
+        "startLine": 60,
+        "startChar": 44,
+        "endLine": 60,
+        "endChar": 51
+      },
+      "revId": "645730d9df4f7854d7b35564b15e37ad45d3bdb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff29427d_8a967ac4",
         "filename": "gce/cmd/agent/connect.go",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2019-03-14T23:08:26Z",
       "side": 1,
       "message": "can we avoid magic \":metadata\" and instead have a different explicit flag?",
+      "revId": "645730d9df4f7854d7b35564b15e37ad45d3bdb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d308a7ea_78bca262",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-14T23:19:58Z",
+      "side": 1,
+      "message": "I made it like auth CLI options which have \":gce\" special value. I kind of prefer it to more complex flag logic (e.g. specify --server xor --server-from-metadata).",
+      "parentUuid": "ff29427d_8a967ac4",
       "revId": "645730d9df4f7854d7b35564b15e37ad45d3bdb0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
