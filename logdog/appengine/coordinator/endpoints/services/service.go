@@ -19,8 +19,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
@@ -36,6 +37,7 @@ func New() logdog.ServicesServer {
 	return &logdog.DecoratedServices{
 		Service: &server{},
 		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+			log.Infof(c, "Received request %v", req)
 			// Only service users may access this endpoint.
 			if err := coordinator.IsServiceUser(c); err != nil {
 				log.WithError(err).Errorf(c, "Failed to authenticate user as a service.")
@@ -48,6 +50,10 @@ func New() logdog.ServicesServer {
 			}
 
 			return maybeEnterProjectNamespace(c, req)
+		},
+		Postlude: func(c context.Context, methodName string, rsp proto.Message, err error) error {
+			tsmon.Flush(c) // This logs its own errors.
+			return err
 		},
 	}
 }
