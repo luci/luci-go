@@ -113,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "e6a3bd9b_ddb4cffd",
+        "filename": "lucicfg/testdata/misc/rule_defaults.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-14T05:30:12Z",
+      "side": 1,
+      "message": "Like this: https://paste.googleplex.com/4712108690243584\n\nThe diff is hilighted in red/green (so not preserved in the paste). The diffing library we use sucks.",
+      "parentUuid": "2a867ec9_d5546b37",
+      "revId": "9c0f9e54df0187e62c50a239241c29230cf8c81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d231f2d0_823e8094",
         "filename": "lucicfg/testdata/misc/rule_defaults.star",
         "patchSetId": 4
