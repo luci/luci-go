@@ -22,16 +22,15 @@ import (
 
 	"go.chromium.org/gae/filter/featureBreaker"
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/tumble"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -66,6 +65,10 @@ func TestTerminateStream(t *testing.T) {
 			TerminalIndex: 1337,
 		}
 
+		// The testable TQ object.
+		ts := taskqueue.GetTestable(c)
+		ts.CreatePullQueue(ArchiveQueueName)
+
 		Convey(`Returns Forbidden error if not a service.`, func() {
 			_, err := svr.TerminateStream(c, &req)
 			So(err, ShouldBeRPCPermissionDenied)
@@ -75,23 +78,7 @@ func TestTerminateStream(t *testing.T) {
 			env.JoinGroup("services")
 
 			Convey(`A non-terminal registered stream, "testing/+/foo/bar"`, func() {
-				tls.WithProjectNamespace(c, func(c context.Context) {
-					So(tls.Put(c), ShouldBeNil)
-
-					// Create an archival request for Tumble so we can ensure that it is
-					// replaced on termination. This is normally done by RegisterStream.
-					areq := mutations.CreateArchiveTask{
-						ID:         tls.Stream.ID,
-						Expiration: env.Clock.Now().Add(time.Hour),
-					}
-					arParent, arName := ds.KeyForObj(c, tls.Stream), areq.TaskName(c)
-					err := tumble.PutNamedMutations(c, arParent, map[string]tumble.Mutation{
-						arName: &areq,
-					})
-					if err != nil {
-						panic(err)
-					}
-				})
+				So(tls.Put(c), ShouldBeNil)
 				ds.GetTestable(c).CatchupIndexes()
 
 				Convey(`Can be marked terminal and schedules an archival mutation.`, func() {
@@ -105,7 +92,7 @@ func TestTerminateStream(t *testing.T) {
 					})
 					So(tls.State.TerminalIndex, ShouldEqual, 1337)
 					So(tls.State.Terminated(), ShouldBeTrue)
-					So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
+					So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 
 					Convey(`Can be marked terminal again (idempotent).`, func() {
 						_, err := svr.TerminateStream(c, &req)
@@ -116,7 +103,7 @@ func TestTerminateStream(t *testing.T) {
 
 						So(tls.State.Terminated(), ShouldBeTrue)
 						So(tls.State.TerminalIndex, ShouldEqual, 1337)
-						So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
+						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 					})
 
 					Convey(`Will reject attempts to change the terminal index.`, func() {
@@ -129,7 +116,7 @@ func TestTerminateStream(t *testing.T) {
 
 						So(tls.State.TerminalIndex, ShouldEqual, 1337)
 						So(tls.State.Terminated(), ShouldBeTrue)
-						So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
+						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 					})
 
 					Convey(`Will reject attempts to clear the terminal index.`, func() {
@@ -142,7 +129,7 @@ func TestTerminateStream(t *testing.T) {
 
 						So(tls.State.TerminalIndex, ShouldEqual, 1337)
 						So(tls.State.Terminated(), ShouldBeTrue)
-						So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
+						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 					})
 				})
 

@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/tumble"
 
@@ -90,12 +89,13 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 
 	path = desc.Path()
 	logStreamID := coordinator.LogStreamID(path)
-	log.Fields{
+	c = log.SetFields(c, log.Fields{
 		"project":       req.Project,
 		"path":          path,
 		"prospectiveID": logStreamID,
 		"terminalIndex": req.TerminalIndex,
-	}.Infof(c, "Registration request for log stream.")
+	})
+	log.Infof(c, "Registration request for log stream.")
 
 	if err := desc.Validate(true); err != nil {
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid log stream descriptor: %s", err)
@@ -117,12 +117,12 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 
 	// Load our Prefix. It must be registered.
 	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(prefix)}
+	c = log.SetFields(c, log.Fields{
+		"id":     pfx.ID,
+		"prefix": prefix,
+	})
 	if err := ds.Get(c, pfx); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"id":         pfx.ID,
-			"prefix":     prefix,
-		}.Errorf(c, "Failed to load log stream prefix.")
+		log.WithError(err).Errorf(c, "Failed to load log stream prefix.")
 		if err == ds.ErrNoSuchEntity {
 			return nil, grpcutil.Errf(codes.FailedPrecondition, "prefix is not registered")
 		}
@@ -142,7 +142,6 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	}
 	if now := clock.Now(c); expirationTime.IsZero() || !now.Before(expirationTime) {
 		log.Fields{
-			"prefix":     pfx.Prefix,
 			"expiration": expirationTime,
 		}.Errorf(c, "The log stream Prefix has expired.")
 		return nil, grpcutil.Errf(codes.FailedPrecondition, "prefix has expired")
@@ -223,62 +222,13 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				return nil, grpcutil.Internal
 			}
 
-			// Legacy pipline
-			// Add a named delayed mutation to archive this stream if it's not archived
-			// yet.
-			//
-			// If the registration did not include a terminal index, this will be our
-			// pessimistic archival request, scheduled on registration to catch streams
-			// that don't expire. This mutation will be replaced by the optimistic
-			// archival mutation when/if the stream is terminated via TerminateStream.
-			//
-			// If the registration included a terminal index, apply our standard
-			// parameters to the archival. Since TerminateStream will not be called,
-			// this will be our formal optimistic archival task.
-			params := standardArchivalParams(cfg, pcfg)
-			cat := mutations.CreateArchiveTask{
-				ID: ls.ID,
-			}
-			if req.TerminalIndex < 0 {
-				// No terminal index, schedule pessimistic cleanup archival.
-				cat.Expiration = now.Add(params.CompletePeriod)
-
-				log.Fields{
-					"deadline": cat.Expiration,
-				}.Debugf(c, "Scheduling cleanup archival mutation.")
-			} else {
-				// Terminal index, schedule optimistic archival (mirrors TerminateStream).
-				preTerminated = true
-				cat.SettleDelay = params.SettleDelay
-				cat.CompletePeriod = params.CompletePeriod
-
-				// Schedule this mutation to execute after our settle delay.
-				cat.Expiration = now.Add(params.SettleDelay)
-
-				log.Fields{
-					"settleDelay":    cat.SettleDelay,
-					"completePeriod": cat.CompletePeriod,
-					"scheduledAt":    cat.Expiration,
-				}.Debugf(c, "Scheduling archival mutation.")
-			}
-
-			aeName := cat.TaskName(c)
-			if err := tumble.PutNamedMutations(c, lstKey, map[string]tumble.Mutation{aeName: &cat}); err != nil {
-				log.WithError(err).Errorf(c, "Failed to write named mutations.")
-				return nil, grpcutil.Internal
-			}
-
+			// Send archival task.
 			set := coordinator.GetSettings(c)
-			percent := set.PessimisticArchivalPercent
-			// TODO(hinoka): This should be set to 48hr / params.CompletePeriod, once the pipeline is migrated.
-			// In all honesty this should just be a hardcoded value instead of a luci-config value.
-			// No sane person is going to muck with this setting.
-			delay := 47 * time.Hour
+			delay := 48 * time.Hour
 			if preTerminated {
-				percent = set.OptimisticArchivalPercent
 				delay = set.OptimisticArchivalDelay
 			}
-			return nil, TaskArchival(c, lst, delay, percent)
+			return nil, TaskArchival(c, lst, delay)
 		})
 		if err != nil {
 			log.Fields{
