@@ -70,6 +70,30 @@
       "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "85464a6a_4001168e",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-15T21:24:45Z",
+      "side": 1,
+      "message": "before this CL there were two limits: at Build level and Step level.\n\nThe limit at the Step level is what caused the outage. This CL removes the limit entirely, see CL description.\n\nThe limit at the Build level does not matter today because no user-code sets it (there is no such a thing as \"build_text\")\n\nFWIW, here is the impl of this change https://chromium-review.googlesource.com/c/infra/infra/+/1526331",
+      "parentUuid": "8d673b59_039aa22c",
+      "range": {
+        "startLine": 162,
+        "startChar": 11,
+        "endLine": 162,
+        "endChar": 15
+      },
+      "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
