@@ -30,6 +30,14 @@ handlers:
   secure: always
   login: admin
 
+  # Handlers for misc resources, for plain-text viewer and rpc explorer.
+- url: /static
+  static_dir: static
+  secure: always
+
 - url: "/.*"
   script: _go_app
   secure: always
+
+includes:
+- ./static/include.yaml

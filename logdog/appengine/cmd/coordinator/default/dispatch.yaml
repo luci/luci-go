@@ -13,19 +13,6 @@
 # limitations under the License.
 
 dispatch:
-  - url: "*/app/*"
-    service: static
-
-  - url: "*/static/*"
-    service: static
-
-  - url: "*/rpcexplorer"
-    service: static
-  - url: "*/rpcexplorer/*"
-    service: static
-  - url: "*/rpcexplorer"
-    service: static
-
   ##
   # Always route logdog.Logs RPCs to the "logs" module.
   ##
