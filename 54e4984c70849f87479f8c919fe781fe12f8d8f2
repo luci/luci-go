@@ -166,6 +166,30 @@
       "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5181b699_3ce7a204",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-15T21:47:37Z",
+      "side": 1,
+      "message": "proto comments may look unimportant, but actually they define what implementation should do. I find proto changes much more important than code changes.",
+      "parentUuid": "436974f3_603fbc3f",
+      "range": {
+        "startLine": 162,
+        "startChar": 11,
+        "endLine": 162,
+        "endChar": 15
+      },
+      "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
