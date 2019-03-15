@@ -41,6 +41,14 @@ func UpdateFailures(c context.Context, creations int, vm *model.VM) {
 }
 
 var (
+	configuredInstances = metric.NewInt(
+		"gce/instances/configured",
+		"The number of GCE instances configured to exist.",
+		nil,
+		field.String("prefix"),
+		field.String("project"),
+	)
+
 	connectedInstances = metric.NewInt(
 		"gce/instances/connected",
 		"The number of GCE instances connected to Swarming.",
@@ -60,6 +68,11 @@ var (
 		field.String("zone"),
 	)
 )
+
+// UpdateConfiguredInstances sets configured GCE instance metrics.
+func UpdateConfiguredInstances(c context.Context, configured int, prefix, project string) {
+	configuredInstances.Set(c, int64(configured), prefix, project)
+}
 
 // UpdateInstances sets GCE instance metrics.
 func UpdateInstances(c context.Context, connected, created int, prefix, project, server, zone string) {

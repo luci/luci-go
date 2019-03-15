@@ -356,8 +356,13 @@ func TestQueues(t *testing.T) {
 			Convey("valid", func() {
 				Convey("none", func() {
 					srv.Ensure(c, &config.EnsureRequest{
-						Id:     "id",
-						Config: &config.Config{},
+						Id: "id",
+						Config: &config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							Prefix: "prefix",
+						},
 					})
 					err := expandConfig(c, &tasks.ExpandConfig{
 						Id: "id",
@@ -370,9 +375,13 @@ func TestQueues(t *testing.T) {
 					srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
 						Config: &config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
 							Amount: &config.Amount{
 								Default: 3,
 							},
+							Prefix: "prefix",
 						},
 					})
 					err := expandConfig(c, &tasks.ExpandConfig{

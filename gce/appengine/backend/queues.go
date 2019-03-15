@@ -247,6 +247,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 			},
 		}
 	}
+	metrics.UpdateConfiguredInstances(c, len(t), cfg.Prefix, cfg.Attributes.Project)
 	logging.Debugf(c, "creating %d VMs", len(t))
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
 		return errors.Annotate(err, "failed to schedule tasks").Err()
