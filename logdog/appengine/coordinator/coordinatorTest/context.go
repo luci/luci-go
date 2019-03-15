@@ -91,10 +91,6 @@ type Environment struct {
 	// Services.
 	GSClient GSClient
 
-	// ArchivalPublisher is the test ArchivalPublisher instance installed (by
-	// default) into Services.
-	ArchivalPublisher ArchivalPublisher
-
 	// StorageCache is the default storage cache instance.
 	StorageCache StorageCache
 }
@@ -321,9 +317,6 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 				Storage: base,
 				Opts:    opts,
 			}, nil
-		},
-		AP: func() (coordinator.ArchivalPublisher, error) {
-			return &e.ArchivalPublisher, nil
 		},
 	}
 	c = coordinator.WithConfigProvider(c, &e.Services)

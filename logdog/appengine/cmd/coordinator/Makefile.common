@@ -54,7 +54,7 @@ $(error Missing required variable: GKE_SERVICES_YAML)
 endif
 
 # Define services.
-ALL_SERVICES = default logs services backend static
+ALL_SERVICES = default logs services static
 YAMLS = dispatch queue cron index
 ALL_GKE_CLUSTERS = collector archivist
 
