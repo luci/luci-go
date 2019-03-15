@@ -18,17 +18,21 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 
 	"google.golang.org/grpc"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logs_api "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	reg_api "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	services_api "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -36,6 +40,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	reg_impl "go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	services_impl "go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	logs_impl "go.chromium.org/luci/logdog/appengine/coordinator/flex/logs"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -248,6 +253,12 @@ func NewClient() *Client {
 	datastore.GetTestable(ctx).Consistent(true)
 	env.LogIn()
 	env.AuthState.IdentityGroups = []string{"admin", "all", "auth", "services"}
+
+	env.ModProjectConfig(ctx, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+		pcfg.MaxStreamAge = google.NewDuration(time.Hour)
+	})
+	ts := taskqueue.GetTestable(ctx)
+	ts.CreatePullQueue(services.ArchiveQueueName)
 
 	storage := &mem_storage.Storage{}
 	env.Services.ST = func(*coordinator.LogStreamState) (coordinator.SigningStorage, error) {
