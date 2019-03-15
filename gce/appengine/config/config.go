@@ -222,13 +222,16 @@ func deref(c context.Context, cfg *Config) error {
 // normalize normalizes VMs durations by converting them to seconds.
 func normalize(c context.Context, cfg *Config) error {
 	for _, v := range cfg.VMs.GetVms() {
-		if err := v.Lifetime.Normalize(); err != nil {
-			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
-		}
 		for _, ch := range v.Amount.GetChange() {
 			if err := ch.Length.Normalize(); err != nil {
 				return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 			}
+		}
+		if err := v.Lifetime.Normalize(); err != nil {
+			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
+		}
+		if err := v.Timeout.Normalize(); err != nil {
+			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 		}
 	}
 	return nil
