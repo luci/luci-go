@@ -15,23 +15,11 @@
 package endpoints
 
 import (
-	"context"
 	"sync"
-	"sync/atomic"
 
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/gcloud/pubsub"
-	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-
-	vkit "cloud.google.com/go/pubsub/apiv1"
-	"google.golang.org/api/option"
-	"google.golang.org/appengine"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 // Services is a set of support services used by AppEngine Classic Coordinator
@@ -44,9 +32,6 @@ import (
 // Services methods are goroutine-safe.
 type Services interface {
 	coordinator.ConfigProvider
-
-	// ArchivalPublisher returns an ArchivalPublisher instance.
-	ArchivalPublisher(context.Context) (coordinator.ArchivalPublisher, error)
 }
 
 // ProdService is an instance-global configuration for production
@@ -55,50 +40,6 @@ type Services interface {
 // It can be installed via middleware using its Base method.
 // This also fulfills the publisher ClientFactory interface.
 type ProdService struct {
-	pubSubLock   sync.Mutex
-	pubSubClient *vkit.PublisherClient
-}
-
-// RecreateClient removes the attached pubsub client so that the next
-// Client calls returns a new client.
-func (svc *ProdService) RecreateClient() {
-	svc.pubSubLock.Lock()
-	defer svc.pubSubLock.Unlock()
-	if svc.pubSubClient != nil {
-		svc.pubSubClient.Close()
-		svc.pubSubClient = nil
-	}
-}
-
-// Client creates or returns a new or existing pubsub client.
-// If the client is reused, the client context might be from a previous request
-// on the same instance.
-func (svc *ProdService) Client(c context.Context) (*vkit.PublisherClient, error) {
-	svc.pubSubLock.Lock()
-	defer svc.pubSubLock.Unlock()
-
-	if svc.pubSubClient != nil {
-		return svc.pubSubClient, nil
-	}
-
-	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
-	// we don't want any caller RPC to be forwarded to the backend service.
-	c = metadata.NewOutgoingContext(c, nil)
-
-	// Create an authenticated global Pub/Sub client.
-	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(pubsub.PublisherScopes...))
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to create Pub/Sub credentials").Err()
-	}
-
-	client, err := vkit.NewPublisherClient(c,
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
-	if err != nil {
-		return nil, errors.Annotate(err, "Failed to create Pub/Sub client").Err()
-	}
-
-	svc.pubSubClient = client
-	return client, nil
 }
 
 // Base is Middleware used by Coordinator services.
@@ -107,7 +48,6 @@ func (svc *ProdService) Client(c context.Context) (*vkit.PublisherClient, error)
 func (svc *ProdService) Base(c *router.Context, next router.Handler) {
 	services := prodServicesInst{
 		ProdService: svc,
-		aeCtx:       appengine.WithContext(c.Context, c.Request),
 	}
 
 	c.Context = coordinator.WithConfigProvider(c.Context, &services)
@@ -124,61 +64,6 @@ type prodServicesInst struct {
 	// LUCIConfigProvider satisfies the ConfigProvider interface requirement.
 	coordinator.LUCIConfigProvider
 
-	// aeCtx is an AppEngine Context initialized for the current request.
-	aeCtx context.Context
-
-	// archivalIndex is the atomically-manipulated archival index for the
-	// ArchivalPublisher. This is shared between all ArchivalPublisher instances
-	// from this service.
-	archivalIndex int32
-
-	// pubSubLock protects pubSubClient member.
-	pubSubLock sync.Mutex
-	// pubSubClient is a Pub/Sub client generated during this request.
-	//
-	// It will be closed on "close".
-	pubSubClient *vkit.PublisherClient
 	// signer is the signer instance to use.
 	signer gaesigner.Signer
-}
-
-func (s *prodServicesInst) ArchivalPublisher(c context.Context) (coordinator.ArchivalPublisher, error) {
-	cfg, err := s.Config(c)
-	if err != nil {
-		return nil, err
-	}
-
-	fullTopic := pubsub.Topic(cfg.Coordinator.ArchiveTopic)
-	if err := fullTopic.Validate(); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"topic":      fullTopic,
-		}.Errorf(c, "Failed to validate archival topic.")
-		return nil, errors.New("invalid archival topic")
-	}
-
-	// Create a Topic, and configure it to not bundle messages.
-	return &coordinator.PubsubArchivalPublisher{
-		Publisher: &pubsub.UnbufferedPublisher{
-			Topic:         fullTopic,
-			ClientFactory: s,
-			AECtx:         s.aeCtx,
-		},
-		AECtx:            s.aeCtx,
-		PublishIndexFunc: s.nextArchiveIndex,
-	}, nil
-}
-
-func (s *prodServicesInst) nextArchiveIndex() uint64 {
-	// We use a 32-bit value for this because it avoids atomic memory bounary
-	// issues. Furthermore, we constrain it to be positive, using a negative
-	// value as a sentinel that the archival index has wrapped.
-	//
-	// This is reasonable, as it is very unlikely that a single request will issue
-	// more than MaxInt32 archival tasks.
-	v := atomic.AddInt32(&s.archivalIndex, 1) - 1
-	if v < 0 {
-		panic("archival index has wrapped")
-	}
-	return uint64(v)
 }
