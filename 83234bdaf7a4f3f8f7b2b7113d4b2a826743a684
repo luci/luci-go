@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd44b765_857746de",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-15T01:41:07Z",
+      "side": 1,
+      "message": "For casual reader, it\u0027d be weird that you are setting this in the context of a single VM handler.\nPlease document here why it must be done here and not say when a config record itself is being deleted.",
+      "revId": "83234bdaf7a4f3f8f7b2b7113d4b2a826743a684",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
