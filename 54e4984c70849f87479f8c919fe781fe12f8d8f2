@@ -22,6 +22,30 @@
       "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca6a68d2_65426331",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-15T21:00:50Z",
+      "side": 1,
+      "message": "today, there is no API to set this, so this won\u0027t break anything existing.\n\nwhen kitchen starts sending this, it will trim the field before sending the request, so we\u0027d have \"bla bla .(23424234234 more bytes)\" or something, like Cloud Logging does this.",
+      "parentUuid": "cb5c7fca_6135750d",
+      "range": {
+        "startLine": 162,
+        "startChar": 11,
+        "endLine": 162,
+        "endChar": 15
+      },
+      "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
