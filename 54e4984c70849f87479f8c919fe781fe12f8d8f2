@@ -118,6 +118,30 @@
       "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "51c2c42b_8687c799",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-03-15T21:35:09Z",
+      "side": 1,
+      "message": "I\u0027m curious why you wouldn\u0027t instead CC us on the infra/infra change (https://chromium-review.googlesource.com/c/infra/infra/+/1526331)?\n\nThat one seems much more substantial. This just appears to be changing comments on protos we don\u0027t directly interact with? (But I could be missing something.)",
+      "parentUuid": "aed5e329_4ef21e96",
+      "range": {
+        "startLine": 162,
+        "startChar": 11,
+        "endLine": 162,
+        "endChar": 15
+      },
+      "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
