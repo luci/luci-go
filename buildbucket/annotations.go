@@ -40,9 +40,7 @@ const StepSep = "|"
 var markdownEscaper *strings.Replacer
 
 func init() {
-	// Markdown supports escaping these chars.
-	// https://spec.commonmark.org/0.28/#backslash-escapes
-	const special = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+	const special = "#*_"
 	oldNew := make([]string, 2*len(special))
 	for i, c := range special {
 		oldNew[i*2] = string(c)
