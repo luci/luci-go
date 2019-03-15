@@ -65,10 +65,6 @@ func init() {
 
 	r.GET("/admin/cron/stats", base, cronStatsHandler)
 
-	// Redirect "/" to "/app/".
-	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-		http.Redirect(c.Writer, c.Request, "/app/", http.StatusFound)
-	})
 	// Redirect "/v/?s=..." to "/logs/..."
 	r.GET("/v/", router.MiddlewareChain{}, func(c *router.Context) {
 		path := "/logs/" + c.Request.URL.Query().Get("s")
