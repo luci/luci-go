@@ -16,7 +16,6 @@ package services
 
 import (
 	"context"
-	"math/rand"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -50,18 +49,8 @@ var (
 		nil)
 )
 
-// TaskArchival tasks an archival of a stream with the given delay at a given experiment rate.
-func TaskArchival(c context.Context, state *coordinator.LogStreamState, delay time.Duration, experimentPercent uint32) error {
-	// See if we want to task to the new pipeline or now.
-	// Choose a number between 0-100.  This is good enough for our purposes.
-	randNum := uint32(rand.Uint64() % 100)
-	log.Debugf(c, "rolled a die, got %d", randNum)
-	if randNum >= experimentPercent {
-		log.Debugf(c, "%d >= %d, bypassing new pipeline", randNum, experimentPercent)
-		return nil
-	}
-	log.Debugf(c, "%d < %d, using new pipeline with %s delay", randNum, experimentPercent, delay)
-
+// TaskArchival tasks an archival of a stream with the given delay.
+func TaskArchival(c context.Context, state *coordinator.LogStreamState, delay time.Duration) error {
 	// Now task the archival.
 	state.Updated = clock.Now(c).UTC()
 	state.ArchivalKey = []byte{'1'} // Use a fake key just to signal that we've tasked the archival.
