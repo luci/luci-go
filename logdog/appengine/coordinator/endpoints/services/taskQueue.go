@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -148,7 +147,6 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 		return nil, err
 	}
 	archiveTasks := make([]*logdog.ArchiveTask, 0, len(tasks))
-	leasedTaskMessage := "Leasing (project/id/task_name):\n"
 	for _, task := range tasks {
 		at, err := archiveTask(task)
 		if err != nil {
@@ -164,15 +162,10 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 			}
 			continue
 		}
-		leasedTaskMessage += fmt.Sprintf("%s/%s/%s\n", at.Project, at.Id, at.TaskName)
 		archiveTasks = append(archiveTasks, at)
 		leaseTask.Add(c, 1, task.RetryCount)
 	}
 	logging.Infof(c, "Leasing %d tasks", len(archiveTasks))
-	logging.Debugf(c, leasedTaskMessage)
-	if err := tsmon.Flush(c); err != nil {
-		logging.WithError(err).Errorf(c, "failed to flush tsmon")
-	}
 	return &logdog.LeaseResponse{Tasks: archiveTasks}, nil
 }
 
@@ -182,17 +175,9 @@ func (b *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest
 	deleteTask.Add(c, int64(len(req.Tasks)))
 	tasks := make([]*taskqueue.Task, 0, len(req.Tasks))
 	msg := fmt.Sprintf("Deleting %d tasks", len(req.Tasks))
-	for _, at := range req.Tasks {
-		msg += fmt.Sprintf("\nProject: %s, ID: %s, TaskName: %s", at.Project, at.Id, at.TaskName)
-		tasks = append(tasks, tqTaskLite(at))
-	}
-	logging.Infof(c, msg)
 	err := taskqueue.Delete(c, archiveQueueName, tasks...)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "while deleting tasks\n%#v", tasks)
-	}
-	if err := tsmon.Flush(c); err != nil {
-		logging.WithError(err).Errorf(c, "failed to flush tsmon")
 	}
 	return &empty.Empty{}, nil
 }
