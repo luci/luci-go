@@ -1,0 +1,88 @@
+// Copyright 2019 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package instances;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// A GCE instance configured to exist.
+message Instance {
+  // The ID of the VM this instance was created from.
+  string id = 1;
+
+  // The hostname of this instance.
+  string hostname = 2;
+
+  // The timestamp when this instance was created.
+  google.protobuf.Timestamp created = 3;
+
+  // The lifetime of this instance.
+  // At the end of its lifetime, the instance is deleted.
+  int64 lifetime = 4;
+
+  // The hostname of the Swarming server this instance should connect to.
+  string swarming = 5;
+
+  // The timestamp when this instance connected to Swarming.
+  google.protobuf.Timestamp connected = 6;
+
+  // The timeout of this instance.
+  // If no Swarming bot has connected by the timeout, the instance is deleted.
+  int64 timeout = 7;
+
+  // Whether this instance is drained or not.
+  // A drained instance will be safely deleted regardless of lifetime.
+  bool drained = 8;
+}
+
+// A request to delete an instance.
+message DeleteRequest {
+  // The ID of the instance to delete.
+  string id = 1;
+}
+
+// A request to get an existing instance.
+message GetRequest {
+  // The ID of the instance to get.
+  string id = 1;
+
+  // The hostname of the instance to get.
+  string hostname = 2;
+}
+
+// A request to list existing instances.
+message ListRequest {
+  // The prefix to list instances for.
+  string prefix = 1;
+
+  // The value of next_page_token received in a ListResponse. Used to get the
+  // next page of instances. If empty, gets the first page.
+  string page_token = 2;
+}
+
+// A response to a request to list instances.
+message ListResponse {
+  // The prefix the instances are for.
+  string prefix = 1;
+
+  // The instances matching the prefix.
+  repeated Instance instances = 2;
+
+  // The value to use as the page_token in a ListRequest to get the next page of
+  // instances. If empty, there are no more instances.
+  string next_page_token = 3;
+}
+
+// A service for manipulating GCE instances.
+service Instances {
+  // Delete deletes an instance asynchronously.
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+  // Get returns an existing instance.
+  rpc Get(GetRequest) returns (Instance);
+  // List returns existing instances.
+  rpc List(ListRequest) returns (ListResponse);
+}

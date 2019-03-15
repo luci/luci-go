@@ -83,6 +83,10 @@ func (*Projects) Get(c context.Context, req *projects.GetRequest) (*projects.Con
 // List handles a request to list all projects.
 func (*Projects) List(c context.Context, req *projects.ListRequest) (*projects.ListResponse, error) {
 	rsp := &projects.ListResponse{}
+	// TODO(smut): Handle page tokens.
+	if req.GetPageToken() != "" {
+		return rsp, nil
+	}
 	q := datastore.NewQuery(model.ProjectKind)
 	if err := datastore.Run(c, q, func(p *model.Project, f datastore.CursorCB) error {
 		rsp.Projects = append(rsp.Projects, &p.Config)
