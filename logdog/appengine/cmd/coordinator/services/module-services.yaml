@@ -16,6 +16,8 @@ service: services
 runtime: go
 api_version: go1
 
+instance_class: F4_1G
+
 inbound_services:
   - warmup
 
