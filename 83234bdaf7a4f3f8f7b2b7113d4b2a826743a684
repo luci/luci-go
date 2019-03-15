@@ -34,6 +34,24 @@
       "revId": "83234bdaf7a4f3f8f7b2b7113d4b2a826743a684",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ffee71c_707a8340",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-15T02:20:39Z",
+      "side": 1,
+      "message": "I think making metrics package non-internal would be easiest to read solution, since metric will be updated right before config is deleted/updated.\n\nW/o fancy stuff with dictionaries remembering what was set before, i don\u0027t think you can really zero out stuff anyway, so I think starting with instance death is sufficient until proven otherwise.",
+      "parentUuid": "021faa9c_6909ffcb",
+      "revId": "83234bdaf7a4f3f8f7b2b7113d4b2a826743a684",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
