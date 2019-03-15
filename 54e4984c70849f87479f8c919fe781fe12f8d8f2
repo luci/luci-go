@@ -142,6 +142,30 @@
       "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "436974f3_603fbc3f",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-15T21:46:08Z",
+      "side": 1,
+      "message": "i am happy to include you folks in all CLs. I did not CC you because considered that CL noise to you. CCed now.\n\nThis CL defines the contract between the two teams, hence I ask you review this. That CL purely implements the spec that we agree here. It should not go beyond the spec.",
+      "parentUuid": "51c2c42b_8687c799",
+      "range": {
+        "startLine": 162,
+        "startChar": 11,
+        "endLine": 162,
+        "endChar": 15
+      },
+      "revId": "54e4984c70849f87479f8c919fe781fe12f8d8f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
