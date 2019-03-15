@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "beceb8fe_44b87496",
+        "filename": "logdog/appengine/coordinator/endpoints/services/registerStream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-15T23:02:58Z",
+      "side": 1,
+      "message": "this probably isn\u0027t necessary any more",
+      "range": {
+        "startLine": 145,
+        "startChar": 3,
+        "endLine": 145,
+        "endChar": 28
+      },
+      "revId": "b03962274f67ac8ae19c988e62cf6860df5f4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd1b935a_5efc43ad",
+        "filename": "logdog/appengine/coordinator/endpoints/services/terminateStream_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-15T23:02:58Z",
+      "side": 1,
+      "message": "either undo OR replace with a comment of why it can\u0027t be parallel",
+      "revId": "b03962274f67ac8ae19c988e62cf6860df5f4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
