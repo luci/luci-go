@@ -114,6 +114,8 @@ type Build struct {
 	// Current list of build steps.
 	// Updated as build runs.
 	//
+	// May take up to 1MB after zlib compression.
+	//
 	// RPC: By default, this field is excluded from responses.
 	Steps []*Step `protobuf:"bytes,17,rep,name=steps,proto3" json:"steps,omitempty"`
 	// Build infrastructure used by the build.
