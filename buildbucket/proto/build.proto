@@ -159,7 +159,7 @@ message Build {
   // Human-readable summary of the build in Markdown format
   // (https://spec.commonmark.org/0.28/).
   // Explains status.
-  // Up to 1Kb.
+  // Up to 4 KB.
   //
   // BigQuery: excluded from rows.
   string summary_markdown = 20;
@@ -192,6 +192,8 @@ message Build {
 
   // Current list of build steps.
   // Updated as build runs.
+  //
+  // May take up to 1MB after zlib compression.
   //
   // RPC: By default, this field is excluded from responses.
   repeated Step steps = 17;

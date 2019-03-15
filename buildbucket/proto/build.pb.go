@@ -87,7 +87,7 @@ type Build struct {
 	// Human-readable summary of the build in Markdown format
 	// (https://spec.commonmark.org/0.28/).
 	// Explains status.
-	// Up to 1Kb.
+	// Up to 4 KB.
 	//
 	// BigQuery: excluded from rows.
 	SummaryMarkdown string `protobuf:"bytes,20,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
@@ -113,6 +113,8 @@ type Build struct {
 	Output *Build_Output `protobuf:"bytes,16,opt,name=output,proto3" json:"output,omitempty"`
 	// Current list of build steps.
 	// Updated as build runs.
+	//
+	// May take up to 1MB after zlib compression.
 	//
 	// RPC: By default, this field is excluded from responses.
 	Steps []*Step `protobuf:"bytes,17,rep,name=steps,proto3" json:"steps,omitempty"`
