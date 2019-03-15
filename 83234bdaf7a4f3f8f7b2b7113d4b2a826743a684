@@ -16,6 +16,24 @@
       "revId": "83234bdaf7a4f3f8f7b2b7113d4b2a826743a684",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "021faa9c_6909ffcb",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-15T01:59:22Z",
+      "side": 1,
+      "message": "It\u0027s for no real reason other than Config entities are deleted out of scope of the backend package, but metrics is documented as internal to the backend package.\n\nActually this is imperfect. There are two cases:\n1. Config is outright deleted. In that case if we don\u0027t call Update with 0 the metric will continue to be transmitted until the app instance dies. I try to address it here.\n\n2. Config project is changed. If we don\u0027t call Update with 0 the metric for \u003cprefix, new project\u003e will appear and \u003cprefix, old project\u003e will continue to be transmitted until the app instance dies.\n\nTo properly handle #1 and #2, I\u0027d need the config package to zero the metric when a config is deleted or updated. Of course, that breaks structure since metrics is documented as internal to the backend package.\n\nFor the time being I\u0027ve just removed this, so it\u0027ll keep transmitting the value after deletion until the app instance dies. What do you think? Restructure everything so config can import the metrics package? Let app instance death zero it?",
+      "parentUuid": "cd44b765_857746de",
+      "revId": "83234bdaf7a4f3f8f7b2b7113d4b2a826743a684",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
