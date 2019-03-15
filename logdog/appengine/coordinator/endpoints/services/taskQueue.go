@@ -16,7 +16,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -30,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -142,13 +140,13 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 		return nil, err
 	}
 
+	logging.Infof(c, "got request to lease %d tasks for %s", req.MaxTasks, req.GetLeaseTime())
 	tasks, err := taskqueue.Lease(c, int(req.MaxTasks), archiveQueueName, duration)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "could not lease %d tasks from queue", req.MaxTasks)
 		return nil, err
 	}
 	archiveTasks := make([]*logdog.ArchiveTask, 0, len(tasks))
-	leasedTaskMessage := "Leasing (project/id/task_name):\n"
 	for _, task := range tasks {
 		at, err := archiveTask(task)
 		if err != nil {
@@ -158,21 +156,15 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 		}
 		// Optimization: Delete the task if it's already archived.
 		if isArchived(c, at) {
-			logging.Infof(c, "%s/%s is already archived, deleting.", at.Project, at.Id)
 			if err := taskqueue.Delete(c, archiveQueueName, task); err != nil {
 				logging.WithError(err).Errorf(c, "failed to delete %s/%s (%s)", at.Project, at.Id, task.Name)
 			}
 			continue
 		}
-		leasedTaskMessage += fmt.Sprintf("%s/%s/%s\n", at.Project, at.Id, at.TaskName)
 		archiveTasks = append(archiveTasks, at)
 		leaseTask.Add(c, 1, task.RetryCount)
 	}
 	logging.Infof(c, "Leasing %d tasks", len(archiveTasks))
-	logging.Debugf(c, leasedTaskMessage)
-	if err := tsmon.Flush(c); err != nil {
-		logging.WithError(err).Errorf(c, "failed to flush tsmon")
-	}
 	return &logdog.LeaseResponse{Tasks: archiveTasks}, nil
 }
 
@@ -181,18 +173,13 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 func (b *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest) (*empty.Empty, error) {
 	deleteTask.Add(c, int64(len(req.Tasks)))
 	tasks := make([]*taskqueue.Task, 0, len(req.Tasks))
-	msg := fmt.Sprintf("Deleting %d tasks", len(req.Tasks))
 	for _, at := range req.Tasks {
-		msg += fmt.Sprintf("\nProject: %s, ID: %s, TaskName: %s", at.Project, at.Id, at.TaskName)
 		tasks = append(tasks, tqTaskLite(at))
 	}
-	logging.Infof(c, msg)
+	logging.Infof(c, "Deleting %d tasks", len(req.Tasks))
 	err := taskqueue.Delete(c, archiveQueueName, tasks...)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "while deleting tasks\n%#v", tasks)
-	}
-	if err := tsmon.Flush(c); err != nil {
-		logging.WithError(err).Errorf(c, "failed to flush tsmon")
 	}
 	return &empty.Empty{}, nil
 }
