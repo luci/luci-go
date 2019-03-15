@@ -399,6 +399,24 @@ func TestNormalize(t *testing.T) {
 			So(normalize(c, cfg), ShouldBeNil)
 			So(cfg.VMs.GetVms()[0].Lifetime.GetSeconds(), ShouldEqual, 3600)
 		})
+
+		Convey("timeout", func() {
+			cfg := &Config{
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Timeout: &gce.TimePeriod{
+								Time: &gce.TimePeriod_Duration{
+									Duration: "1h",
+								},
+							},
+						},
+					},
+				},
+			}
+			So(normalize(c, cfg), ShouldBeNil)
+			So(cfg.VMs.GetVms()[0].Timeout.GetSeconds(), ShouldEqual, 3600)
+		})
 	})
 }
 
