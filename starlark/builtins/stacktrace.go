@@ -15,9 +15,9 @@
 package builtins
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"go.starlark.net/starlark"
 )
@@ -49,7 +49,7 @@ func CaptureStacktrace(th *starlark.Thread, skip int) (*CapturedStacktrace, erro
 	if f == nil {
 		return nil, fmt.Errorf("stacktrace: the stack is not deep enough to skip %d levels, has only %d frames", skip, skipped)
 	}
-	buf := bytes.Buffer{}
+	buf := strings.Builder{}
 	f.WriteBacktrace(&buf)
 	return &CapturedStacktrace{buf.String()}, nil
 }
