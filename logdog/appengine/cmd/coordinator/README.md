@@ -20,34 +20,26 @@ cooperative AppEngine services.
 
 ### Default
 
-The [default](default/) service handles basic LUCI services. Most other requests are
-redirected to other services by [dispatch.yaml](default/dispatch.yaml).
+The [default](default/) service hosts most GAE handlers including:
+* All coordinator endpoints
+* RPC explorer
 
-### Logs
-
-The [logs](logs/) service exposes the
-[Logs API](../../../api/endpoints/coordinator/logs/v1/) for log stream querying
-and consumption.
-
-It is a AppEngine Flex instance, since Flex is the only supported type of
-AppEngine instance that can use gRPC, and gRPC is needed to read from BigTable.
-
-### Services
-
-The [services](services/) service exposes management endpoints to the instance's
+This service exposes management endpoints to the instance's
 microservices, notably the [Collector](../../../server/cmd/logdog_collector) and
 [Archivist](../../../server/cmd/logdog_archivist) microservices. These endpoints
 are used to coordinate the microservice-managed aspects of the log stream
 lifecycle.
 
+### Logs
+
+The [logs](logs/) service exposes the
+[Logs API](../../../api/endpoints/coordinator/logs/v1/) for log stream querying,
+consumption, and viewing.
+
+It is a AppEngine Flex instance, since Flex is the only supported type of
+AppEngine instance that can use gRPC, and gRPC is needed to read from BigTable.
+
 ### Backend
 
 The [backend](backend/) service hosts the [Tumble](/tumble) journaled processing
 service, which handles log stream lifecycle transitions and deadlines.
-
-### Static
-
-The [static](static/) service hosts static content, including:
-* The LogDog Web Application
-* The LogDog Lightweight Stream Viewer
-* `rpcexplorer`
