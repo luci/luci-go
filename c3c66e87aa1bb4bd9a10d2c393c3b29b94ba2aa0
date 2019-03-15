@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2859e742_181d2671",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-15T02:11:33Z",
+      "side": 1,
+      "message": "the line between FAILURE and INFRA_FAILURE is whether to blame the patch/commit or something else. From buildbucket perspective, build script (recipe) decides who to blame. From this perspective, a status TIMEOUT would be ambiguous: who is to blame?\n\nperhaps (who to blame) and (is it a timeout) are orthogonal. What use case do you want to cover by providing \"did it timeout\" bit? i.e. who will consume the bit?\n\nAnyway, if we need it, i think we could add `bool is_timeout` in StatusDetails.",
+      "parentUuid": "2b91f49d_60c03d72",
+      "range": {
+        "startLine": 63,
+        "startChar": 9,
+        "endLine": 63,
+        "endChar": 28
+      },
+      "revId": "c3c66e87aa1bb4bd9a10d2c393c3b29b94ba2aa0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7ace2057_a967577e",
         "filename": "buildbucket/proto/common.proto",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2019-03-15T01:37:04Z",
       "side": 1,
       "message": "this seems a bit vague; should this say \"email address\"? Or maybe just provide an example?",
+      "range": {
+        "startLine": 68,
+        "startChar": 16,
+        "endLine": 68,
+        "endChar": 24
+      },
+      "revId": "c3c66e87aa1bb4bd9a10d2c393c3b29b94ba2aa0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28138794_27665287",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-15T02:11:33Z",
+      "side": 1,
+      "message": "seems to be pretty standard in LUCI\nhttps://cs.chromium.org/search/?q\u003didentity+f:luci+f:proto\u0026sq\u003dpackage:chromium\u0026type\u003dcs\n\nthis is not necessarily email address, this could be \"project:x\" or \"service:y\", or \"anonymous:anonymous\", basically any CIA-supported \"identity\".\n\nproviding an example here wouldn\u0027t be inconsistent with all other fields that use this term. Should we define it somewhere, or say \"LUCI identity\", something else?",
+      "parentUuid": "7ace2057_a967577e",
       "range": {
         "startLine": 68,
         "startChar": 16,
@@ -68,6 +116,30 @@
       "revId": "c3c66e87aa1bb4bd9a10d2c393c3b29b94ba2aa0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89371ef6_57e1b538",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-15T02:11:33Z",
+      "side": 1,
+      "message": "done. my keyboard is broken :(",
+      "parentUuid": "15d32e9d_5e0cee36",
+      "range": {
+        "startLine": 74,
+        "startChar": 17,
+        "endLine": 74,
+        "endChar": 31
+      },
+      "revId": "c3c66e87aa1bb4bd9a10d2c393c3b29b94ba2aa0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
