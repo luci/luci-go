@@ -49,6 +49,7 @@ func init() {
 	// Standard HTTP endpoints.
 	base := standard.Base().Extend(ps.Base)
 	svr.InstallHandlers(r, base)
+	standard.InstallHandlers(r)
 
 	http.Handle("/", r)
 }
