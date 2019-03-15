@@ -52,6 +52,24 @@
       "revId": "83234bdaf7a4f3f8f7b2b7113d4b2a826743a684",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80cc078e_c9f432a2",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-15T02:23:40Z",
+      "side": 1,
+      "message": "Ok. I\u0027ll try app instance death for now and move the metrics package later if we really need #1 and #2. Then for now I\u0027ve removed the line you wanted commented.",
+      "parentUuid": "7ffee71c_707a8340",
+      "revId": "83234bdaf7a4f3f8f7b2b7113d4b2a826743a684",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
