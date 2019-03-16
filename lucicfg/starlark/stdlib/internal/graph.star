@@ -138,8 +138,10 @@ def _add_edge(parent, child, title=None, trace=None):
   in arbitrary order as long as at the end of the script execution (when the
   graph is finalized) the graph is complete.
 
-  Fails if there's already an edge between the given nodes with exact same title
-  or the new edge introduces a cycle.
+  It is OK to add the same edge (with the same title) more than once. Only
+  the trace of the first definition is recorded.
+
+  Fails if the new edge introduces a cycle.
 
   Can be used only from code that was loaded via some exec(...). Fails if run
   from a module being loaded via load(...). Such library-like modules must not
