@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "52a47fcd_50f7f48f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-16T02:37:19Z",
+      "side": 1,
+      "message": "I\u0027m uneasy about this specifically, but, at least this can be fixed in list_view itself. Why don\u0027t you fix it?",
+      "revId": "ce1e4927fbc2e0d5663223853bcb99812a8bc03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
