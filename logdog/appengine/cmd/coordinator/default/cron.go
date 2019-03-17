@@ -97,7 +97,7 @@ func doQueryStat(c context.Context, ns string, stat queryStat) error {
 	archivedComplete := int64(0)
 
 	// Gather stats for this namespace.
-	if err := datastore.RunBatch(c, 4196, q, func(state *datastore.PropertyMap) error {
+	if err := datastore.RunBatch(c, 1024, q, func(state *datastore.PropertyMap) error {
 		asRaws := state.Slice(coordinator.ArchivalStateKey)
 		if len(asRaws) != 1 {
 			logging.Errorf(c, "%v for %v has the wrong size", asRaws, state)
