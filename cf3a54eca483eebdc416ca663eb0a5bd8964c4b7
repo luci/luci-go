@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a0daa923_cf5ec98c",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-18T22:54:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3264eb45_d3770040",
+      "revId": "cf3a54eca483eebdc416ca663eb0a5bd8964c4b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "549905b1_845c2f51",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -77,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "7bc6fcfc_4146ad74",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-18T22:54:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33b88f2b_17659416",
+      "range": {
+        "startLine": 380,
+        "startChar": 14,
+        "endLine": 380,
+        "endChar": 16
+      },
+      "revId": "cf3a54eca483eebdc416ca663eb0a5bd8964c4b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45ff4434_c322273a",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -97,6 +139,30 @@
       "revId": "cf3a54eca483eebdc416ca663eb0a5bd8964c4b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d41bebde_96783155",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-18T22:54:14Z",
+      "side": 1,
+      "message": "I decided to make use of the BuildPage.Errors variable for displaying the error message (there shouldn\u0027t be multiple ways of displaying error messages for a page).\nBut that means BlamelistLoaded needs to stick around in order to determine whether or not pressing on the blamelist button requires a force refresh.",
+      "parentUuid": "45ff4434_c322273a",
+      "range": {
+        "startLine": 398,
+        "startChar": 2,
+        "endLine": 398,
+        "endChar": 17
+      },
+      "revId": "cf3a54eca483eebdc416ca663eb0a5bd8964c4b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

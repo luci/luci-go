@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4988d10_40c305f7",
+        "filename": "milo/buildsource/buildbucket/build_legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-18T22:54:14Z",
+      "side": 1,
+      "message": "This is the legacy path, it\u0027s not hit by anything useful anymore, can let it decay.",
+      "parentUuid": "9bed87ec_697498ab",
+      "range": {
+        "startLine": 370,
+        "startChar": 0,
+        "endLine": 370,
+        "endChar": 1
+      },
+      "revId": "0e3df0d2ac03c17cee44ea88f07c0a9cc4c62bf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
