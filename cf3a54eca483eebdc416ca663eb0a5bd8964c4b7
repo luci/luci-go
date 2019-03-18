@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3264eb45_d3770040",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-18T20:55:42Z",
+      "side": 1,
+      "message": "this is an unusual signature for a function in Go. Why not return err? In general, the caller can check the returned error. In this particular case, it simplifies code, here and below:\n\nthen we don\u0027t need defer. We check \"DEADLINE_EXCEEDED\" in the switch below, and prepend \"Gitiles was talking too long: %s\"",
+      "revId": "cf3a54eca483eebdc416ca663eb0a5bd8964c4b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "549905b1_845c2f51",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-18T20:55:42Z",
+      "side": 1,
+      "message": "is this the only case where the code actually runs? why it isn\u0027t here then?",
+      "revId": "cf3a54eca483eebdc416ca663eb0a5bd8964c4b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33b88f2b_17659416",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-18T20:55:42Z",
+      "side": 1,
+      "message": "55\n\nif we wait 60, appengine will respond HTTP 500",
+      "range": {
+        "startLine": 380,
+        "startChar": 14,
+        "endLine": 380,
+        "endChar": 16
+      },
+      "revId": "cf3a54eca483eebdc416ca663eb0a5bd8964c4b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45ff4434_c322273a",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-18T20:55:42Z",
+      "side": 1,
+      "message": "then, this is \"BlameErr\" and HTML template can display the error message (instead of pretending that there is a commit with error message inside)",
+      "range": {
+        "startLine": 398,
+        "startChar": 2,
+        "endLine": 398,
+        "endChar": 17
+      },
+      "revId": "cf3a54eca483eebdc416ca663eb0a5bd8964c4b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
