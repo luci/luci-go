@@ -373,8 +373,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest) (*ui.Bu
 			return
 		}
 		ch <- func() error {
-			// We wait at most 4s to grab a blamelist.
-			nc, cancel := context.WithTimeout(c, 4*time.Second)
+			nc, cancel := context.WithTimeout(c, 55*time.Second)
 			defer cancel()
 			blame = getBlame(nc, host, sb)
 			return nil
