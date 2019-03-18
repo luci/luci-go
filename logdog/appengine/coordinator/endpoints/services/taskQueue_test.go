@@ -36,7 +36,7 @@ func TestTaskQueue(t *testing.T) {
 
 		// The testable TQ object.
 		ts := taskqueue.GetTestable(c)
-		ts.CreatePullQueue(archiveQueueName)
+		ts.CreatePullQueue(ArchiveQueueName)
 
 		Convey(`Lease a task with empty taskqueue`, func() {
 			tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
@@ -52,7 +52,7 @@ func TestTaskQueue(t *testing.T) {
 		task4, _ := tqTask(&logdog.ArchiveTask{Project: "foo", Id: "deadbeef4"})
 
 		Convey(`Two tasks`, func() {
-			So(taskqueue.Add(c, archiveQueueName, []*taskqueue.Task{task1, task2}...), ShouldBeNil)
+			So(taskqueue.Add(c, ArchiveQueueName, []*taskqueue.Task{task1, task2}...), ShouldBeNil)
 			tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
 				MaxTasks:  10,
 				LeaseTime: ptypes.DurationProto(10 * time.Minute),
@@ -66,12 +66,12 @@ func TestTaskQueue(t *testing.T) {
 					Tasks: []*logdog.ArchiveTask{tasks.Tasks[0]},
 				})
 				So(err, ShouldBeNil)
-				So(len(ts.GetScheduledTasks()[archiveQueueName]), ShouldEqual, 1)
+				So(len(ts.GetScheduledTasks()[ArchiveQueueName]), ShouldEqual, 1)
 			})
 		})
 
 		Convey(`Many tasks`, func() {
-			taskqueue.Add(c, archiveQueueName, []*taskqueue.Task{task1, task2, task3, task4}...)
+			taskqueue.Add(c, ArchiveQueueName, []*taskqueue.Task{task1, task2, task3, task4}...)
 			tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
 				MaxTasks:  3,
 				LeaseTime: ptypes.DurationProto(10 * time.Minute),

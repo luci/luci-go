@@ -16,7 +16,6 @@ package services
 
 import (
 	"context"
-	"math/rand"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -36,7 +35,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 )
 
-const archiveQueueName = "archiveTasks"
+const ArchiveQueueName = "archiveTasks"
 
 var (
 	leaseTask = metric.NewCounter(
@@ -50,18 +49,8 @@ var (
 		nil)
 )
 
-// TaskArchival tasks an archival of a stream with the given delay at a given experiment rate.
-func TaskArchival(c context.Context, state *coordinator.LogStreamState, delay time.Duration, experimentPercent uint32) error {
-	// See if we want to task to the new pipeline or now.
-	// Choose a number between 0-100.  This is good enough for our purposes.
-	randNum := uint32(rand.Uint64() % 100)
-	log.Debugf(c, "rolled a die, got %d", randNum)
-	if randNum >= experimentPercent {
-		log.Debugf(c, "%d >= %d, bypassing new pipeline", randNum, experimentPercent)
-		return nil
-	}
-	log.Debugf(c, "%d < %d, using new pipeline with %s delay", randNum, experimentPercent, delay)
-
+// TaskArchival tasks an archival of a stream with the given delay.
+func TaskArchival(c context.Context, state *coordinator.LogStreamState, delay time.Duration) error {
 	// Now task the archival.
 	state.Updated = clock.Now(c).UTC()
 	state.ArchivalKey = []byte{'1'} // Use a fake key just to signal that we've tasked the archival.
@@ -80,7 +69,7 @@ func TaskArchival(c context.Context, state *coordinator.LogStreamState, delay ti
 		return grpcutil.Internal
 	}
 	t.Delay = delay
-	if err := taskqueue.Add(c, archiveQueueName, t); err != nil {
+	if err := taskqueue.Add(c, ArchiveQueueName, t); err != nil {
 		log.WithError(err).Errorf(c, "could not task archival")
 		return grpcutil.Internal
 	}
@@ -141,7 +130,7 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 	}
 
 	logging.Infof(c, "got request to lease %d tasks for %s", req.MaxTasks, req.GetLeaseTime())
-	tasks, err := taskqueue.Lease(c, int(req.MaxTasks), archiveQueueName, duration)
+	tasks, err := taskqueue.Lease(c, int(req.MaxTasks), ArchiveQueueName, duration)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "could not lease %d tasks from queue", req.MaxTasks)
 		return nil, err
@@ -156,7 +145,7 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 		}
 		// Optimization: Delete the task if it's already archived.
 		if isArchived(c, at) {
-			if err := taskqueue.Delete(c, archiveQueueName, task); err != nil {
+			if err := taskqueue.Delete(c, ArchiveQueueName, task); err != nil {
 				logging.WithError(err).Errorf(c, "failed to delete %s/%s (%s)", at.Project, at.Id, task.Name)
 			}
 			continue
@@ -177,7 +166,7 @@ func (b *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest
 		tasks = append(tasks, tqTaskLite(at))
 	}
 	logging.Infof(c, "Deleting %d tasks", len(req.Tasks))
-	err := taskqueue.Delete(c, archiveQueueName, tasks...)
+	err := taskqueue.Delete(c, ArchiveQueueName, tasks...)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "while deleting tasks\n%#v", tasks)
 	}

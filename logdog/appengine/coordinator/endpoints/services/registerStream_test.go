@@ -23,11 +23,12 @@ import (
 
 	"go.chromium.org/gae/filter/featureBreaker"
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
@@ -56,6 +57,10 @@ func TestRegisterStream(t *testing.T) {
 
 		// By default, the testing user is a service.
 		env.JoinGroup("services")
+
+		// The testable TQ object.
+		ts := taskqueue.GetTestable(c)
+		ts.CreatePullQueue(ArchiveQueueName)
 
 		svr := New()
 
@@ -118,7 +123,8 @@ func TestRegisterStream(t *testing.T) {
 					So(tls.State.Secret, ShouldResemble, req.Secret)
 					So(tls.State.TerminalIndex, ShouldEqual, -1)
 					So(tls.State.Terminated(), ShouldBeFalse)
-					So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
+					// Pessimistic archival is scheduled.
+					So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 
 					// Should also register the log stream Prefix.
 					So(tls.Prefix.Created, ShouldResemble, created)
@@ -203,12 +209,13 @@ func TestRegisterStream(t *testing.T) {
 
 					// Registers the log stream state.
 					So(tls.State.Created, ShouldResemble, streamCreated)
-					So(tls.State.Updated, ShouldResemble, streamCreated)
+					// Tasking for archival should happen after creation.
+					So(tls.State.Updated.After(streamCreated), ShouldBeTrue)
 					So(tls.State.Secret, ShouldResemble, req.Secret)
 					So(tls.State.TerminalIndex, ShouldEqual, 1337)
 					So(tls.State.TerminatedTime, ShouldResemble, streamCreated)
 					So(tls.State.Terminated(), ShouldBeTrue)
-					So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
+					So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 
 					// Should also register the log stream Prefix.
 					So(tls.Prefix.Created, ShouldResemble, prefixCreated)
