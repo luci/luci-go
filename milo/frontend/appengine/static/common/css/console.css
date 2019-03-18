@@ -578,6 +578,7 @@
   padding-top: 1px;
 }
 
+.expanded .console-cell,
 .expanded .console-empty-cell,
 .expanded .console-cell-middle,
 .expanded .console-cell-top,

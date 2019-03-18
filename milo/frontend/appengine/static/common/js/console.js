@@ -22,7 +22,7 @@ $(function () {
    * the cells, the height of the commit descriptions need to be updated.
    */
   function resizeHeight() {
-    if ($('#console').hasClass('collapsed')) {
+    if ($('#console-page').hasClass('collapsed')) {
       return;  // Don't do anything in collapsed mode.
     }
     // Find the row height using the first console-cell-container of
@@ -151,8 +151,8 @@ $(function () {
     e.preventDefault();
     // Switch the top level class so that the expanded view nodes render.
     // TODO(hinoka): Refactor CSS so that we only need the expanded class.
-    $('#console').removeClass('collapsed');
-    $('#console').addClass('expanded');
+    $('#console-page').removeClass('collapsed');
+    $('#console-page').addClass('expanded');
 
     // Stack the console.
     $('.console-leaf-category').each(function() {
@@ -179,8 +179,8 @@ $(function () {
   // Expanded Mode -> Collapsed Mode.
   $('.control-collapse').click(function(e) {
     e.preventDefault();
-    $('#console').addClass('collapsed');
-    $('#console').removeClass('expanded');
+    $('#console-page').addClass('collapsed');
+    $('#console-page').removeClass('expanded');
 
     $('.stacked').remove();  // Delete all of the expanded elements.
     $('.console-builder-item').show();    // Show the builder boxes.

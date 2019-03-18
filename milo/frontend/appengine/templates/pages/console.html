@@ -35,6 +35,7 @@
 
 {{define "body"}}
 {{ $console := .Console }}
+<div id="console-page" class="collapsed">
 
 <!-- Title -->
 <div class="console-title">
@@ -186,7 +187,7 @@
 <div class="clear"></div>
 
 <!-- Container -->
-<div id="console" class="console-row collapsed {{ if not $console.HasCategory }}no-category{{ end }}">
+<div id="console" class="console-row {{ if not $console.HasCategory }}no-category{{ end }}">
   <!-- Commits -->
   <div class="console-column console-commits-column">
     <div class="console-controls">
@@ -234,6 +235,8 @@
 <div class="epiloge" style="margin-top: 1em">
   {{ template "controls" }}
 </div>
+
 <script src="/static/common/js/console.js"></script>
 
+</div> <!-- console-page -->
 {{end}} <!-- Body -->
