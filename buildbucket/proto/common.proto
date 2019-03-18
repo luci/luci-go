@@ -52,6 +52,19 @@ enum Status {
   CANCELED = 68;  // 64 | ENDED
 }
 
+// Machine-readable details of a status.
+// Human-readble details are present in a sibling summary_markdown field.
+message StatusDetails {
+  // Indicates that the failure was due to a resource exhaustion / quota
+  // denial.
+  // Applicable in FAILURE and INFRA_FAILURE statuses.
+  bool is_resource_exhaustion = 1;
+
+  // Indicates that the failure was due to a timeout.
+  // Applicable in FAILURE and INFRA_FAILURE statuses.
+  bool is_timeout = 2;
+}
+
 // A Gerrit patchset.
 message GerritChange {
   // Gerrit hostname, e.g. "chromium-review.googlesource.com".
