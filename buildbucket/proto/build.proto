@@ -35,7 +35,7 @@ import "go.chromium.org/luci/buildbucket/proto/step.proto";
 // a build at completion time and does not change after that.
 // All fields are included.
 //
-// Next id: 21.
+// Next id: 24.
 message Build {
   // Defines what to build/test.
   //
@@ -101,6 +101,8 @@ message Build {
   }
 
   reserved 5; // view_url
+  reserved 13; // infra_failure_reason was moved into status_details.
+  reserved 14; // cancel_reason was moved into status_details.
 
   // Identifier of the build, unique per LUCI deployment.
   // IDs are monotonically decreasing.
@@ -130,8 +132,11 @@ message Build {
   // than-HEAD version of the source.
   int32 number = 3;
 
-  // Verified identity which created this build.
+  // Verified LUCI identity that created this build.
   string created_by = 4;
+
+  // Verified LUCI identity that canceled this build.
+  string canceled_by = 23;
 
   // When the build was created.
   google.protobuf.Timestamp create_time = 6;
@@ -170,15 +175,9 @@ message Build {
   // For example, if a post-submit build has failed, CLs MAY continue landing.
   Trinary critical = 21;
 
-  // Machine-readable explanation of the current status.
-  // Human-readable reason is available in summary_markdown.
-  oneof status_reason {
-    // Why status is INFRA_FAILURE.
-    InfraFailureReason infra_failure_reason = 13;
-
-    // Why status is CANCELED.
-    CancelReason cancel_reason = 14;
-  }
+  // Machine-readable details of the current status.
+  // Human-readable status reason is available in summary_markdown.
+  StatusDetails status_details = 22;
 
   // Input to the build script / recipe.
   Input input = 15;
@@ -207,22 +206,6 @@ message Build {
   // One key may have multiple values, which is why this is not a map<string,string>.
   // Indexed by the server, see also BuildFilter.tags.
   repeated StringPair tags = 19;
-}
-
-// Explains why status is CANCELED.
-message CancelReason {
-  reserved 1; // was "message", removed in favor of Build.summary_markdown.
-
-  // Verified identity who canceled this build.
-  string canceled_by = 2;
-}
-
-// Explains why status is INFRA_FAILURE.
-message InfraFailureReason {
-  reserved 1; // was "message", removed in favor of Build.summary_markdown.
-
-  // Indicates that the failure was due to a resource exhaustion / quota denial.
-  bool resource_exhaustion = 2;
 }
 
 // Build infrastructure that was used for a particular build.
