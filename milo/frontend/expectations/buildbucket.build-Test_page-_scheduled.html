@@ -29,6 +29,9 @@
 <script>
   const timelineData = JSON.parse("{\"groups\":[],\"items\":[]}");
   const useTabs = true;
+  
+  
+  const blamelistLoaded =  false ;
 </script>
 <script src="/static/common/js/build.js"></script>
 
@@ -62,6 +65,7 @@
         <li><a href="#overview-tab">Overview</a></li>
         <li><a href="#related-tab">Related Builds</a></li>
         <li><a href="#timeline-tab">Timeline</a></li>
+        <li><a href="#blamelist-tab">Blamelist</a></li>
       </ul>
       <div id="overview-tab">
         
@@ -438,14 +442,6 @@
 
 </div>
 
-        
-  <div id="changes" class="column">
-    <h2>All Changes</h2>
-    
-      No Blamelist
-     
-  </div>
-
       </div>
       <div id="timeline-tab" style="display: none;">
   <div id="timeline">
@@ -458,6 +454,14 @@
   
     <h3>No buildsets found</h3>
   
+</div>
+      <div id="blamelist-tab" style="display: none;">
+  <div id="changes" class="column">
+    <h2>All Changes</h2>
+    
+      No Blamelist
+     
+  </div>
 </div>
     </div>
   </div>
