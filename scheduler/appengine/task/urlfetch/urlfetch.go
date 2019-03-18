@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -197,6 +198,11 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 // HandleTimer is part of Manager interface.
 func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
 	return errors.New("not implemented")
+}
+
+// GetDebugState is part of Manager interface.
+func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnly) (*internal.DebugManagerState, error) {
+	return nil, fmt.Errorf("no debug state")
 }
 
 ////////////////////////////////////////////////////////////////////////////////

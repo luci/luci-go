@@ -23,6 +23,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/scheduler/api/scheduler/v1/scheduler.proto";
 import "go.chromium.org/luci/scheduler/appengine/internal/db.proto";
 import "go.chromium.org/luci/scheduler/appengine/internal/triggers.proto";
+import "go.chromium.org/luci/scheduler/appengine/task/gitiles/pb/messages.proto";
 
 
 // Admin exposes administrative API usable only by the service owners.
@@ -37,6 +38,8 @@ service Admin {
 // DebugJobState loosely matches Job entity and associated data structures.
 //
 // See the engine implementation for details.
+//
+// Next tag: 10.
 message DebugJobState {
   message CronState {
     bool enabled = 1;
@@ -50,9 +53,21 @@ message DebugJobState {
   bool paused = 2;
   google.protobuf.Timestamp last_triage = 3;
   CronState cron_state = 4;
+  DebugManagerState manager_state = 9;
 
   repeated int64 active_invocations = 5;
   repeated internal.db.FinishedInvocation finished_invocations = 6;
   repeated int64 recently_finished_set = 7;
   repeated internal.triggers.Trigger pending_triggers_set = 8;
+}
+
+
+// DebugManagerState is whatever is reported by task.Manager.GetDebugState.
+message DebugManagerState {
+  string error = 1;
+  string debug_log = 2;
+
+  // One message per task.Manager kind that supports debug state.
+
+  gitiles.messages.DebugState gitiles_poller = 3;
 }

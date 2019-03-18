@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
+
+	"go.chromium.org/luci/scheduler/appengine/task/gitiles/pb"
 )
 
 var (
@@ -108,7 +110,7 @@ func loadState(c context.Context, jobID string, u *url.URL) (map[string]string, 
 			return nil, err
 		}
 
-		var state RepositoryState
+		var state pb.RepositoryState
 		if err = proto.Unmarshal(uncompressed, &state); err != nil {
 			return nil, err
 		}
@@ -130,7 +132,7 @@ func saveState(c context.Context, jobID string, u *url.URL, refTips map[string]s
 	// There could be many refTips in repos, though most will share some prefix.
 	// So we trade CPU to save this efficiently.
 
-	byNamespace := map[string]*RefSpace{}
+	byNamespace := map[string]*pb.RefSpace{}
 	for ref, sha1 := range refTips {
 		sha1bytes, err := hex.DecodeString(sha1)
 		if err != nil {
@@ -138,13 +140,13 @@ func saveState(c context.Context, jobID string, u *url.URL, refTips map[string]s
 		}
 		lastSlash := strings.LastIndex(ref, "/")
 		ns, suffix := ref[:lastSlash], ref[lastSlash+1:]
-		child := &Child{Sha1: sha1bytes, Suffix: suffix}
+		child := &pb.Child{Sha1: sha1bytes, Suffix: suffix}
 		if namespace, exists := byNamespace[ns]; exists {
 			namespace.Children = append(namespace.Children, child)
 		} else {
-			byNamespace[ns] = &RefSpace{
+			byNamespace[ns] = &pb.RefSpace{
 				Prefix:   ns,
-				Children: []*Child{child},
+				Children: []*pb.Child{child},
 			}
 		}
 	}
@@ -157,7 +159,7 @@ func saveState(c context.Context, jobID string, u *url.URL, refTips map[string]s
 	}
 	sort.Sort(spaces)
 
-	serialized, err := proto.Marshal(&RepositoryState{Spaces: spaces})
+	serialized, err := proto.Marshal(&pb.RepositoryState{Spaces: spaces})
 	if err != nil {
 		return err
 	}
@@ -178,13 +180,13 @@ func saveState(c context.Context, jobID string, u *url.URL, refTips map[string]s
 	}))
 }
 
-type sortedSpaces []*RefSpace
+type sortedSpaces []*pb.RefSpace
 
 func (s sortedSpaces) Len() int           { return len(s) }
 func (s sortedSpaces) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s sortedSpaces) Less(i, j int) bool { return s[i].Prefix < s[j].Prefix }
 
-type sortedChildren []*Child
+type sortedChildren []*pb.Child
 
 func (s sortedChildren) Len() int           { return len(s) }
 func (s sortedChildren) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
