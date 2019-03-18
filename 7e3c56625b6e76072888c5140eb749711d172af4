@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "0fe7461d_946a2051",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 757,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-18T23:11:26Z",
+      "side": 1,
+      "message": "Suggestion: ReadOnlyController or ROController would be easier to way to \"ensure\" read-onlyness than panics and readOnly flag.",
+      "range": {
+        "startLine": 751,
+        "startChar": 1,
+        "endLine": 757,
+        "endChar": 2
+      },
+      "revId": "7e3c56625b6e76072888c5140eb749711d172af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1797c062_63e0c8c0",
         "filename": "scheduler/appengine/task/gitiles/pb/messages.proto",
         "patchSetId": 1
