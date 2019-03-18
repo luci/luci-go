@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1797c062_63e0c8c0",
+        "filename": "scheduler/appengine/task/gitiles/pb/messages.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-18T22:25:19Z",
+      "side": 1,
+      "message": "had to move it to avoid module import cycle",
+      "revId": "7e3c56625b6e76072888c5140eb749711d172af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
