@@ -66,7 +66,6 @@ var getRequestFieldMask = &field_mask.FieldMask{
 
 		// Since we add output props above, we must list default fields too.
 		"builder",
-		"cancel_reason",
 		"create_time",
 		"created_by",
 		"end_time",
