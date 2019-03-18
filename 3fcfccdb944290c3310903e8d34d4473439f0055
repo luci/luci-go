@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "abb7ae9f_3d3f0365",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-18T23:17:20Z",
+      "side": 1,
+      "message": "- as a user, if I am not interested in blamelist, this error has no value to me.\n- If I am interested in blamelist, I\u0027m gonna click on blamelist tab regardless of this message.\nso in any case, this instruction does not appear to be valueable. \n\nThis raises an idea though: how about \n- if blamelist qs param is not set, do not load blamelist at all. This will speed up page load for all users not interested in blamelist.\n- if blamelist tab is clicked and blamelist\u003d1 is not set, set it: causes a page refresh and requires blamelist to load\n\nthen we don\u0027t need conditional context timeout",
+      "revId": "3fcfccdb944290c3310903e8d34d4473439f0055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70bbdce7_aa7f3703",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-18T23:17:20Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 102,
+        "startChar": 8,
+        "endLine": 102,
+        "endChar": 11
+      },
+      "revId": "3fcfccdb944290c3310903e8d34d4473439f0055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32421899_4c2d503a",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 4
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-18T23:17:20Z",
+      "side": 1,
+      "message": "\u0027",
+      "range": {
+        "startLine": 103,
+        "startChar": 19,
+        "endLine": 103,
+        "endChar": 20
+      },
+      "revId": "3fcfccdb944290c3310903e8d34d4473439f0055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdda002a_bebf9eba",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-18T23:17:20Z",
+      "side": 1,
+      "message": "unnecessary\n\ndocument.location can accept a relative url, i.e. just part starting from ?",
+      "range": {
+        "startLine": 104,
+        "startChar": 29,
+        "endLine": 104,
+        "endChar": 66
+      },
+      "revId": "3fcfccdb944290c3310903e8d34d4473439f0055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42ad4df7_369d7392",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-18T23:17:20Z",
+      "side": 1,
+      "message": "now unnecessary",
+      "range": {
+        "startLine": 310,
+        "startChar": 4,
+        "endLine": 310,
+        "endChar": 24
+      },
+      "revId": "3fcfccdb944290c3310903e8d34d4473439f0055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
