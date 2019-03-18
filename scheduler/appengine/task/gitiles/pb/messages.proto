@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package gitiles.messages;
 
-option go_package = "gitiles";
+option go_package = "pb";
 
 // Child is the last part and its sha1 tip.
 message Child {
@@ -33,4 +33,14 @@ message RefSpace {
 // RepositoryState stores tips of all watched refs in a repo.
 message RepositoryState {
   repeated RefSpace spaces = 1;
+}
+
+// DebugState is returned as part of GetDebugJobState RPC response.
+message DebugState {
+  message Ref {
+    string ref = 1;
+    string commit = 2;
+  }
+  repeated Ref known = 1;   // tips as stored in the datastore
+  repeated Ref current = 2; // tips as returned by gitiles right now
 }

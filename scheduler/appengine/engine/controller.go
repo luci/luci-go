@@ -70,6 +70,7 @@ type taskController struct {
 	manager task.Manager
 	request task.Request
 
+	readOnly bool              // if set, panic on all mutations
 	saved    Invocation        // what have been given initially or saved in Save()
 	state    task.State        // state mutated by TaskManager
 	debugLog string            // mutated by DebugLog
@@ -117,6 +118,23 @@ func (ctl *taskController) populateState() error {
 	return nil
 }
 
+// setReadOnly makes the controller panic on mutations.
+//
+// The only allowed calls are getters, GetClient and DebugLog.
+//
+// Used by GetDebugJobState to make sure task.Manager.GetDebugState can't mutate
+// any state.
+func (ctl *taskController) setReadOnly() {
+	ctl.readOnly = true
+}
+
+// panicIfReadOnly panics if the controller is in read-only mode.
+func (ctl *taskController) panicIfReadOnly() {
+	if ctl.readOnly {
+		panic("this call is not allowed in read-only mode")
+	}
+}
+
 // consumeTimer removes the given timer from the invocation, if it is there.
 //
 // Returns true if it was there, false if it wasn't, or an error on
@@ -126,6 +144,7 @@ func (ctl *taskController) populateState() error {
 // what is (or has been) in the datastore. So delay the entity modification
 // until Save() call.
 func (ctl *taskController) consumeTimer(timerID string) (bool, error) {
+	ctl.panicIfReadOnly()
 	if ctl.consumedTimers != nil && ctl.consumedTimers.Has(timerID) {
 		return false, nil // already consumed
 	}
@@ -178,6 +197,8 @@ func (ctl *taskController) DebugLog(format string, args ...interface{}) {
 
 // AddTimer is part of Controller interface.
 func (ctl *taskController) AddTimer(ctx context.Context, delay time.Duration, title string, payload []byte) {
+	ctl.panicIfReadOnly()
+
 	// ID for the new timer. It is guaranteed to be unique when we land the
 	// transaction because all ctl.saved modifications are serialized in time (see
 	// MutationsCount checks in Save), and we include serial number of such
@@ -203,6 +224,7 @@ func (ctl *taskController) AddTimer(ctx context.Context, delay time.Duration, ti
 
 // PrepareTopic is part of task.Controller interface.
 func (ctl *taskController) PrepareTopic(ctx context.Context, publisher string) (topic string, token string, err error) {
+	ctl.panicIfReadOnly()
 	return ctl.eng.prepareTopic(ctx, &topicParams{
 		jobID:     ctl.JobID(),
 		invID:     ctl.InvocationID(),
@@ -223,6 +245,8 @@ func (ctl *taskController) GetClient(ctx context.Context, opts ...auth.RPCOption
 
 // EmitTrigger is part of task.Controller interface.
 func (ctl *taskController) EmitTrigger(ctx context.Context, trigger *internal.Trigger) {
+	ctl.panicIfReadOnly()
+
 	ctl.DebugLog("Emitting a trigger %s", trigger.Id)
 	trigger.JobId = ctl.JobID()
 	trigger.InvocationId = ctl.InvocationID()
@@ -249,6 +273,8 @@ func (ctl *taskController) EmitTrigger(ctx context.Context, trigger *internal.Tr
 //
 // May also return transient errors (on RPC timeouts, etc).
 func (ctl *taskController) Save(ctx context.Context) (err error) {
+	ctl.panicIfReadOnly()
+
 	// Log the intent to trigger jobs, if any.
 	if len(ctl.triggers) != 0 && len(ctl.saved.TriggeredJobIDs) != 0 {
 		ctl.DebugLog("Dispatching triggers (%d of them) to the following jobs:", len(ctl.triggers))

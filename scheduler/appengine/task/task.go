@@ -183,6 +183,12 @@ type Manager interface {
 	// invocation state won't be saved in this case), no error to acknowledge the
 	// event and a fatal error to move the invocation to failed state.
 	HandleTimer(c context.Context, ctl Controller, name string, payload []byte) error
+
+	// GetDebugState returns debug info about the state persisted by the manager.
+	//
+	// Controller here is very limited. Only its getters are effective. An attempt
+	// to mutate the state cause panics.
+	GetDebugState(c context.Context, ctl Controller) (*internal.DebugManagerState, error)
 }
 
 // Controller is passed to LaunchTask by the scheduler engine. It gives Manager
