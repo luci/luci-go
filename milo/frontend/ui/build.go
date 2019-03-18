@@ -98,6 +98,10 @@ type BuildPage struct {
 
 	// Now is the current time, used for generating step intervals.
 	Now time.Time
+
+	// BlamelistLoaded is a signal as to whether or not the blamelist is present
+	// in this page.
+	BlamelistLoaded bool
 }
 
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
