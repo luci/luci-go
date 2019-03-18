@@ -367,5 +367,6 @@ func getBlameLegacy(c context.Context, msg *bbv1.ApiCommonBuildMessage) []*ui.Co
 		BuildSet:  bSet,
 		BuilderID: bid.String(),
 	}
-	return simplisticBlamelist(c, bs)
+	blame, _ := simplisticBlamelist(c, bs)
+	return blame
 }
