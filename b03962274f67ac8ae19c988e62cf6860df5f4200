@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "56309b16_b3aa8d0c",
+        "filename": "logdog/appengine/coordinator/endpoints/services/registerStream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-18T18:02:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "beceb8fe_44b87496",
+      "range": {
+        "startLine": 145,
+        "startChar": 3,
+        "endLine": 145,
+        "endChar": 28
+      },
+      "revId": "b03962274f67ac8ae19c988e62cf6860df5f4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd1b935a_5efc43ad",
         "filename": "logdog/appengine/coordinator/endpoints/services/terminateStream_test.go",
         "patchSetId": 8
@@ -39,6 +63,24 @@
       "revId": "b03962274f67ac8ae19c988e62cf6860df5f4200",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f05875db_251d0577",
+        "filename": "logdog/appengine/coordinator/endpoints/services/terminateStream_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-18T18:02:55Z",
+      "side": 1,
+      "message": "oops this was a mistake.",
+      "parentUuid": "fd1b935a_5efc43ad",
+      "revId": "b03962274f67ac8ae19c988e62cf6860df5f4200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
