@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 
@@ -469,6 +470,10 @@ func (m fakeTaskManager) HandleNotification(c context.Context, ctl task.Controll
 
 func (m fakeTaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
 	return errors.New("not implemented")
+}
+
+func (m fakeTaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnly) (*internal.DebugManagerState, error) {
+	return nil, errors.New("not implemented")
 }
 
 type brokenTaskManager struct {

@@ -779,8 +779,8 @@ type GitilesTask struct {
 	// path_regexps and path_regexps_exclude rules apply on each individual commit
 	// independently. For each commit, a set of all filepaths referenced in Git
 	// commit diff is used for matching.  On top of simple file additions and file
-	// modifictions, this also includes: file removals, file moves (old and new
-	// path considered), and changing of file metadata (e.g., chmod +x). This
+	// modifications, this also includes: file removals, file moves (old and new
+	// path is considered), and changing of file metadata (e.g., chmod +x). This
 	// doesn't include directories (git doesn't track them explicitly).
 	//
 	// Triggers are emitted for a commit if only if at least 1 touched filepath
@@ -796,9 +796,9 @@ type GitilesTask struct {
 	//  1. path_regexps: ".+"
 	//     will NOT match commits which modify no files (aka empty commits) and
 	//     as such differs from default case of not specifying any `path_regexps`.
-	//  2. Per GitilesTask doc, if a ref fast-forwards >50 commits, only last 50
-	//     commits are checked. If none of them matches any path specified here, a
-	//     single trigger is emitted for the ref's new tip.
+	//  2. Per GitilesTask doc, if a ref fast-forwards >=50 commits, only the last
+	//     50 commits are checked. If none of them matches any path specified here,
+	//     a single trigger is emitted for the ref's new tip.
 	//     Rational: it's better to emit redundant triggers than silently not emit
 	//     triggers for commits beyond latest 50.
 	//     TODO(tandrii): it's possible to improve this by examining diff

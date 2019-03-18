@@ -222,6 +222,7 @@ type DebugJobState struct {
 	FinishedInvocations []*internal.FinishedInvocation // unmarshalled Job.FinishedInvocationsRaw
 	RecentlyFinishedSet []int64                        // in-flight notifications from recentlyFinishedSet()
 	PendingTriggersSet  []*internal.Trigger            // triggers from pendingTriggersSet()
+	ManagerState        *internal.DebugManagerState    // whatever task.Manager wants to report
 }
 
 // ListInvocationsOpts are passed to ListInvocations method.
@@ -740,6 +741,27 @@ func (e *engineImpl) GetDebugJobState(c context.Context, jobID string) (*DebugJo
 	_, state.PendingTriggersSet, err = triggersSet.Triggers(c)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch pendingTriggersSet").Err()
+	}
+
+	// Ask the corresponding task.Manager to fill in DebugManagerState. Pass it
+	// a phony controller configured just enough to be useful for fetching the
+	// state, but not anything else.
+	ctl, err := controllerForInvocation(c, e, &Invocation{
+		ID:    -1,
+		JobID: jobID,
+		Task:  job.Task,
+	})
+	if err == nil {
+		state.ManagerState, err = ctl.manager.GetDebugState(c, ctl)
+	}
+	if state.ManagerState == nil {
+		state.ManagerState = &internal.DebugManagerState{}
+	}
+	if err != nil {
+		state.ManagerState.Error = err.Error()
+	}
+	if ctl != nil {
+		state.ManagerState.DebugLog = ctl.debugLog
 	}
 
 	return state, nil

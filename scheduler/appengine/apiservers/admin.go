@@ -88,6 +88,7 @@ func (s *adminServer) GetDebugJobState(c context.Context, r *schedulerpb.JobRef)
 				LastTickWhen:  google.NewTimestamp(state.Job.Cron.LastTick.When),
 				LastTickNonce: state.Job.Cron.LastTick.TickNonce,
 			},
+			ManagerState:        state.ManagerState,
 			ActiveInvocations:   state.Job.ActiveInvocations,
 			FinishedInvocations: state.FinishedInvocations,
 			RecentlyFinishedSet: state.RecentlyFinishedSet,

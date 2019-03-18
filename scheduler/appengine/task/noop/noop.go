@@ -96,3 +96,8 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
 	return nil
 }
+
+// GetDebugState is part of Manager interface.
+func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnly) (*internal.DebugManagerState, error) {
+	return nil, fmt.Errorf("no debug state")
+}

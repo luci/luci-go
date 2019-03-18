@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils"
@@ -343,6 +344,11 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 		m.checkBuildStatusLater(c, ctl) // reschedule this check
 	}
 	return nil
+}
+
+// GetDebugState is part of Manager interface.
+func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnly) (*internal.DebugManagerState, error) {
+	return nil, fmt.Errorf("no debug state")
 }
 
 func makeServerUrl(s string) string {

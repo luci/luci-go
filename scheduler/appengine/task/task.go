@@ -183,6 +183,9 @@ type Manager interface {
 	// invocation state won't be saved in this case), no error to acknowledge the
 	// event and a fatal error to move the invocation to failed state.
 	HandleTimer(c context.Context, ctl Controller, name string, payload []byte) error
+
+	// GetDebugState returns debug info about the state persisted by the manager.
+	GetDebugState(c context.Context, ctl ControllerReadOnly) (*internal.DebugManagerState, error)
 }
 
 // Controller is passed to LaunchTask by the scheduler engine. It gives Manager
@@ -194,20 +197,7 @@ type Manager interface {
 // passed to 'Manager' methods. A derived context can be used to set custom
 // deadlines for some potentially expensive methods like 'PrepareTopic'.
 type Controller interface {
-	// JobID returns full job ID the controller is operating on.
-	JobID() string
-
-	// InvocationID returns unique identifier of this particular invocation.
-	InvocationID() int64
-
-	// Request contains parameters of the invocation supplied when it was created.
-	Request() Request
-
-	// Task is proto message with task definition.
-	//
-	// It is guaranteed to have same underlying type as manager.ProtoMessageType()
-	// return value.
-	Task() proto.Message
+	ControllerReadOnly
 
 	// State returns a mutable portion of task invocation state.
 	//
@@ -215,10 +205,6 @@ type Controller interface {
 	// the changes. The state will also be saved by the engine automatically if
 	// Manager doesn't call Save.
 	State() *State
-
-	// DebugLog appends a line to the free form text log of the task.
-	// For debugging.
-	DebugLog(format string, args ...interface{})
 
 	// AddTimer sets up a new delayed call to Manager.HandleTimer.
 	//
@@ -250,10 +236,6 @@ type Controller interface {
 	// component expose this endpoint.
 	PrepareTopic(c context.Context, publisher string) (topic string, token string, err error)
 
-	// GetClient returns http.Client that is configured to use job's service
-	// account credentials to talk to other services.
-	GetClient(c context.Context, opts ...auth.RPCOption) (*http.Client, error)
-
 	// EmitTrigger delivers a given trigger to all jobs which are triggered by
 	// current one.
 	EmitTrigger(ctx context.Context, trigger *internal.Trigger)
@@ -270,6 +252,32 @@ type Controller interface {
 	// ignore it. The engine will attempt to Save the invocation at the end anyway
 	// and it will properly handle the error if it happens again.
 	Save(c context.Context) error
+}
+
+// ControllerReadOnly is a subset of Controller interface with methods that do
+// not mutate the job's state.
+type ControllerReadOnly interface {
+	// JobID returns full job ID the controller is operating on.
+	JobID() string
+
+	// InvocationID returns unique identifier of this particular invocation.
+	InvocationID() int64
+
+	// Request contains parameters of the invocation supplied when it was created.
+	Request() Request
+
+	// Task is proto message with task definition.
+	//
+	// It is guaranteed to have same underlying type as manager.ProtoMessageType()
+	// return value.
+	Task() proto.Message
+
+	// DebugLog appends a line to the free form text log of the task.
+	DebugLog(format string, args ...interface{})
+
+	// GetClient returns http.Client that is configured to use job's service
+	// account credentials to talk to other services.
+	GetClient(c context.Context, opts ...auth.RPCOption) (*http.Client, error)
 }
 
 // State is mutable portion of the task invocation state.

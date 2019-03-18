@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -173,4 +174,8 @@ func (m *fakeTaskManager) HandleNotification(c context.Context, ctl task.Control
 
 func (m fakeTaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
 	return m.handleTimer(c, ctl, name, payload)
+}
+
+func (m fakeTaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnly) (*internal.DebugManagerState, error) {
+	return nil, errors.New("not implemented")
 }

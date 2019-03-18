@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
+	"go.chromium.org/luci/scheduler/appengine/task/gitiles/pb"
 )
 
 // gitilesRPCTimeout limits how long Gitiles RPCs are allowed to last.
@@ -218,7 +219,48 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 	return errors.New("not implemented")
 }
 
-func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg *messages.GitilesTask, g *gitilesClient, repoURL *url.URL) (*refsState, error) {
+// GetDebugState is part of Manager interface.
+func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnly) (*internal.DebugManagerState, error) {
+	cfg := ctl.Task().(*messages.GitilesTask)
+	g, err := m.getGitilesClient(c, ctl, cfg)
+	if err != nil {
+		return nil, err
+	}
+	// TODO(tandrii): use g.host, g.project for saving/loading state
+	// instead of repoURL.
+	repoURL, err := url.Parse(cfg.Repo)
+	if err != nil {
+		return nil, err
+	}
+
+	refs, err := m.fetchRefsState(c, ctl, cfg, g, repoURL)
+	if err != nil {
+		ctl.DebugLog("Error fetching state of the world: %s", err)
+		return nil, err
+	}
+
+	sortedRefs := func(refs map[string]string) []*pb.DebugState_Ref {
+		keys := make([]string, 0, len(refs))
+		for k := range refs {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		out := make([]*pb.DebugState_Ref, len(refs))
+		for i, key := range keys {
+			out[i] = &pb.DebugState_Ref{Ref: key, Commit: refs[key]}
+		}
+		return out
+	}
+
+	return &internal.DebugManagerState{
+		GitilesPoller: &pb.DebugState{
+			Known:   sortedRefs(refs.known),
+			Current: sortedRefs(refs.current),
+		},
+	}, nil
+}
+
+func (m TaskManager) fetchRefsState(c context.Context, ctl task.ControllerReadOnly, cfg *messages.GitilesTask, g *gitilesClient, repoURL *url.URL) (*refsState, error) {
 	refs := &refsState{}
 	refs.watched = gitiles.NewRefSet(cfg.GetRefs())
 	var missingRefs []string
@@ -331,7 +373,7 @@ func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controll
 	return 0, nil
 }
 
-func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, cfg *messages.GitilesTask) (*gitilesClient, error) {
+func (m TaskManager) getGitilesClient(c context.Context, ctl task.ControllerReadOnly, cfg *messages.GitilesTask) (*gitilesClient, error) {
 	host, project, err := gitiles.ParseRepoURL(cfg.Repo)
 	if err != nil {
 		return nil, errors.Annotate(err, "invalid repo URL %q", cfg.Repo).Err()
