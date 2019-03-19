@@ -97,6 +97,12 @@ $(document).ready(function() {
       if (ui.newPanel.attr('id') === 'timeline-tab' && timeline === null) {
         timeline = createTimeline();
       }
+      if (ui.newPanel.attr('id') === 'blamelist-tab' && !blamelistLoaded) {
+        let l = window.location;
+        const params = (new URL(l)).searchParams;
+        params.set('blamelist', '1');
+        document.location = `?${params.toString()}#blamelist-tab`;
+      }
     },
   }).show();
 });
