@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "09f4db0a_a99d9df1",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-19T20:56:36Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "2e12d682_0306ac87",
+      "revId": "3fcfccdb944290c3310903e8d34d4473439f0055",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70bbdce7_aa7f3703",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 4

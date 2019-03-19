@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "358680be_221bdcbc",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-19T20:56:36Z",
+      "side": 1,
+      "message": "is this still accurate?",
+      "range": {
+        "startLine": 67,
+        "startChar": 42,
+        "endLine": 67,
+        "endChar": 51
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcd5da33_a025577e",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-19T20:56:36Z",
+      "side": 1,
+      "message": "unnecessary?",
+      "range": {
+        "startLine": 363,
+        "startChar": 14,
+        "endLine": 363,
+        "endChar": 18
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54b5a886_5cde2629",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-19T20:56:36Z",
+      "side": 1,
+      "message": "nit: inline",
+      "range": {
+        "startLine": 101,
+        "startChar": 12,
+        "endLine": 101,
+        "endChar": 13
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45740872_edab8aa3",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-19T20:56:36Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 17,
+        "startChar": 65,
+        "endLine": 17,
+        "endChar": 66
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d5c3b4a_aeb53c33",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-19T20:56:36Z",
+      "side": 1,
+      "message": "{{ eq .BuildPage.BlamelistError nil}}\n\n?",
+      "range": {
+        "startLine": 18,
+        "startChar": 26,
+        "endLine": 18,
+        "endChar": 88
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "005fa61b_60154c7c",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-19T20:56:36Z",
+      "side": 1,
+      "message": "not done yet",
+      "range": {
+        "startLine": 310,
+        "startChar": 4,
+        "endLine": 310,
+        "endChar": 24
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55f9bbb1_93c770e3",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-19T20:56:36Z",
+      "side": 1,
+      "message": "how does it look like?\n\n  Loading blamelist... why?\n\nat this point we know that it is not going to load, right? should we just display the error?",
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
