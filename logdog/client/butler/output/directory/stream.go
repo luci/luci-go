@@ -75,7 +75,7 @@ func (s *stream) getCurFile() (*os.File, error) {
 
 	var err error
 	s.curFile, err = os.Create(
-		filepath.Join(s.basePath, fmt.Sprintf("_%d.%s", s.datagramCount, s.fname)))
+		filepath.Join(s.basePath, fmt.Sprintf("_%05d.%s", s.datagramCount, s.fname)))
 	if err != nil {
 		return nil, errors.Annotate(err, "could not open %d'th datagram of %s",
 			s.datagramCount, filepath.Join(s.basePath, s.fname)).Err()
