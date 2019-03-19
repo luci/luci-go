@@ -142,6 +142,10 @@ def gen_project_cfg(ctx):
       access.append('user:' + a.user)
     elif a.group:
       access.append('group:' + a.group)
+    elif a.project:
+      access.append('project:' + a.project)
+    else:
+      fail('impossible')
 
   ctx.config_set['project.cfg'] = config_pb.ProjectCfg(
       name = proj.props.name,
@@ -217,10 +221,19 @@ def _buildbucket_acls(elementary):
       buildbucket_pb.Acl(
           role = _buildbucket_roles[a.role],
           group = a.group,
-          identity = 'user:' + a.user if a.user else None,
+          identity = None if a.group else _buildbucket_identity(a),
       )
       for a in filter_acls(elementary, _buildbucket_roles.keys())
   ]
+
+
+def _buildbucket_identity(a):
+  """acl.elementary => identity string for buildbucket_pb.Acl."""
+  if a.user:
+    return 'user:' + a.user
+  if a.project:
+    return 'project:' + a.project
+  fail('impossible')
 
 
 def _buildbucket_builders(bucket, swarming_host):
@@ -464,10 +477,21 @@ def _scheduler_acls(elementary):
   return [
       scheduler_pb.Acl(
           role = _scheduler_roles[a.role],
-          granted_to = a.user if a.user else 'group:' + a.group,
+          granted_to = _scheduler_identity(a),
       )
       for a in filter_acls(elementary, _scheduler_roles.keys())
   ]
+
+
+def _scheduler_identity(a):
+  """acl.elementary => identity string for scheduler_pb.Acl."""
+  if a.user:
+    return a.user
+  if a.group:
+    return 'group:' + a.group
+  if a.project:
+    return 'project:' + a.project
+  fail('impossible')
 
 
 ################################################################################

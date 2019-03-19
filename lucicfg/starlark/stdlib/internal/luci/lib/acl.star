@@ -50,18 +50,21 @@ _role_ctor = __native__.genstruct('acl.role')
 #   roles: a list of acl.role in the entry, at least one.
 #   users: a list of user emails to apply roles to, may be empty.
 #   groups: a list of group names to apply roles to, may be empty.
+#   projects: a list of project names to apply roles to, may be empty.
 _entry_ctor = __native__.genstruct('acl.entry')
 
 
 # A constructor for acl.elementary structs.
 #
-# This is conceptually a sum type: (Role, User | Group). For convenience it is
-# represented as a triple where either 'user' or 'group' is set, but not both.
+# This is conceptually a sum type: (Role, User | Group | Project). For
+# convenience it is represented as a tuple where only one of 'user', 'group' or
+# 'project' is set.
 #
 # Fields:
 #   role: an acl.role, always set.
 #   user: an user email.
 #   group: a group name.
+#   project: a project name.
 _elementary_ctor = __native__.genstruct('acl.elementary')
 
 
@@ -86,9 +89,9 @@ def _role(name, *, project_level_only=False, groups_only=False):
   )
 
 
-def _entry(roles, *, groups=None, users=None):
+def _entry(roles, *, groups=None, users=None, projects=None):
   """Returns an ACL binding which assigns given role (or roles) to given
-  individuals or groups.
+  individuals, groups or LUCI projects.
 
   Lists of acl.entry structs are passed to `acls` fields of luci.project(...)
   and luci.bucket(...) rules.
@@ -110,6 +113,8 @@ def _entry(roles, *, groups=None, users=None):
     roles: a single role or a list of roles to assign. Required.
     groups: a single group name or a list of groups to assign the role to.
     users: a single user email or a list of emails to assign the role to.
+    projects: a single LUCI project name or a list of project names to assign
+        the role to.
 
   Returns:
     acl.entry object, should be treated as opaque.
@@ -129,9 +134,15 @@ def _entry(roles, *, groups=None, users=None):
   elif users != None and type(users) != 'list':
     validate.string('users', users)
 
+  if type(projects) == 'string':
+    projects = [projects]
+  elif projects != None and type(projects) != 'list':
+    validate.string('projects', projects)
+
   roles = validate.list('roles', roles, required=True)
   groups = validate.list('groups', groups)
   users = validate.list('users', users)
+  projects = validate.list('projects', projects)
 
   for r in roles:
     validate.struct('roles', r, _role_ctor)
@@ -139,17 +150,20 @@ def _entry(roles, *, groups=None, users=None):
     validate.string('groups', g)
   for u in users:
     validate.string('users', u)
+  for p in projects:
+    validate.string('projects', p)
 
   # Some ACLs (e.g. LogDog) can be formulated only in terms of groups,
   # check this.
   for r in roles:
-    if r.groups_only and users:
-      fail('role %s can be assigned only to groups, not individual users' % r.name)
+    if r.groups_only and (users or projects):
+      fail('role %s can be assigned only to groups' % r.name)
 
   return _entry_ctor(
       roles = roles,
       groups = groups,
       users = users,
+      projects = projects,
   )
 
 
@@ -180,9 +194,9 @@ def _validate_acls(acls, *, project_level=False, allowed_roles=None):
 def _normalize_acls(acls):
   """Expands, dedups and sorts ACLs from the given list of acl.entry structs.
 
-  Expands plural 'roles', 'groups' and 'users' fields in acl.entry into multiple
-  acl.elementary structs: elementary pairs of (role, principal), where principal
-  is either a user or a group.
+  Expands plural 'roles', 'groups', 'users' and 'projects' fields in acl.entry
+  into multiple acl.elementary structs: elementary pairs of (role, principal),
+  where principal is either a user, a group or a project.
 
   Args:
     acls: an iterable of acl.entry structs to expand, assumed to be validated.
@@ -194,15 +208,25 @@ def _normalize_acls(acls):
   for e in acls:
     for r in e.roles:
       for u in e.users:
-        out.append(_elementary_ctor(role=r, user=u, group=None))
+        out.append(_elementary_ctor(role=r, user=u, group=None, project=None))
       for g in e.groups:
-        out.append(_elementary_ctor(role=r, user=None, group=g))
+        out.append(_elementary_ctor(role=r, user=None, group=g, project=None))
+      for p in e.projects:
+        out.append(_elementary_ctor(role=r, user=None, group=None, project=p))
   return sorted(set(out), key=_sort_key)
 
 
 def _sort_key(e):
   """acl.elementary -> tuple to sort it by."""
-  return (e.role.name, 'u:' + e.user if e.user else 'g:' + e.group)
+  if e.user:
+    order, ident = 0, e.user
+  elif e.group:
+    order, ident = 1, e.group
+  elif e.project:
+    order, ident = 2, e.project
+  else:
+    fail('impossible')
+  return (e.role.name, order, ident)
 
 
 ################################################################################
