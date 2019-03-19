@@ -1,10 +1,11 @@
 load('@stdlib//internal/luci/lib/acl.star', 'acl')
 
 
-def check_entry(entry, roles, groups=[], users=[]):
+def check_entry(entry, roles, groups=[], users=[], projects=[]):
   assert.eq(entry.roles, roles)
   assert.eq(entry.groups, groups)
   assert.eq(entry.users, users)
+  assert.eq(entry.projects, projects)
 
 
 def test_roles_validation():
@@ -91,6 +92,37 @@ def test_users_validation():
       'bad "users": must not be empty')
 
 
+def test_projects_validation():
+  # Singular project is OK.
+  check_entry(
+      entry = acl.entry(acl.BUILDBUCKET_READER, projects='a'),
+      roles = [acl.BUILDBUCKET_READER],
+      projects = ['a'],
+  )
+  # Multiple project is OK.
+  check_entry(
+      entry = acl.entry(
+          acl.BUILDBUCKET_READER,
+          projects = ['a', 'b']),
+      roles = [acl.BUILDBUCKET_READER],
+      projects = ['a', 'b'],
+  )
+  # Empty list is OK.
+  check_entry(
+      entry = acl.entry(acl.BUILDBUCKET_READER, projects=[]),
+      roles = [acl.BUILDBUCKET_READER],
+      projects = [],
+  )
+  # Wrong type is not OK.
+  assert.fails(
+      lambda: acl.entry(acl.BUILDBUCKET_READER, projects=123),
+      'bad "projects": got int, want string')
+  # Empty user name is not OK.
+  assert.fails(
+      lambda: acl.entry(acl.BUILDBUCKET_READER, projects=''),
+      'bad "projects": must not be empty')
+
+
 def test_group_only_roles():
   assert.true(acl.LOGDOG_READER.groups_only)
   # Works with groups.
@@ -102,7 +134,7 @@ def test_group_only_roles():
   # Fails with users.
   assert.fails(
       lambda: acl.entry(acl.LOGDOG_READER, users='a@example.com'),
-      'role LOGDOG_READER can be assigned only to groups, not individual users')
+      'role LOGDOG_READER can be assigned only to groups')
 
 
 test_roles_validation()

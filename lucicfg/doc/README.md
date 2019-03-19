@@ -1246,13 +1246,21 @@ Similarly some roles can be assigned to individual users, other only to groups.
 ### acl.entry {#acl.entry}
 
 ```python
-acl.entry(roles, groups = None, users = None)
+acl.entry(
+    # Required arguments.
+    roles,
+
+    # Optional arguments.
+    groups = None,
+    users = None,
+    projects = None,
+)
 ```
 
 
 
 Returns an ACL binding which assigns given role (or roles) to given
-individuals or groups.
+individuals, groups or LUCI projects.
 
 Lists of acl.entry structs are passed to `acls` fields of [luci.project(...)](#luci.project)
 and [luci.bucket(...)](#luci.bucket) rules.
@@ -1275,6 +1283,7 @@ luci.project(
 * **roles**: a single role or a list of roles to assign. Required.
 * **groups**: a single group name or a list of groups to assign the role to.
 * **users**: a single user email or a list of emails to assign the role to.
+* **projects**: a single LUCI project name or a list of project names to assign the role to.
 
 
 #### Returns  {#acl.entry-returns}

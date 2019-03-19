@@ -14,16 +14,20 @@ def test_works():
       acl.entry(acl.BUILDBUCKET_READER),  # should be ignored
       acl.entry(acl.BUILDBUCKET_READER, groups='group b'),
       acl.entry(acl.BUILDBUCKET_READER, groups='group a'),
+      acl.entry(acl.BUILDBUCKET_READER, projects='p2'),
+      acl.entry(acl.BUILDBUCKET_READER, projects=['p1', 'p2']),
   ]
-  assert.eq([(e.role, e.user, e.group) for e in aclimpl.normalize_acls(ents)], [
-      (acl.BUILDBUCKET_OWNER, None, 'group a'),
-      (acl.BUILDBUCKET_OWNER, None, 'group b'),
-      (acl.BUILDBUCKET_OWNER, 'a@example.com', None),
-      (acl.BUILDBUCKET_READER, None, 'group a'),
-      (acl.BUILDBUCKET_READER, None, 'group b'),
-      (acl.BUILDBUCKET_READER, 'a@example.com', None),
-      (acl.BUILDBUCKET_READER, 'b@example.com', None),
-      (acl.BUILDBUCKET_READER, 'c@example.com', None),
+  assert.eq([(e.role, e.user, e.group, e.project) for e in aclimpl.normalize_acls(ents)], [
+      (acl.BUILDBUCKET_OWNER, 'a@example.com', None, None),
+      (acl.BUILDBUCKET_OWNER, None, 'group a', None),
+      (acl.BUILDBUCKET_OWNER, None, 'group b', None),
+      (acl.BUILDBUCKET_READER, 'a@example.com', None, None),
+      (acl.BUILDBUCKET_READER, 'b@example.com', None, None),
+      (acl.BUILDBUCKET_READER, 'c@example.com', None, None),
+      (acl.BUILDBUCKET_READER, None, 'group a', None),
+      (acl.BUILDBUCKET_READER, None, 'group b', None),
+      (acl.BUILDBUCKET_READER, None, None, 'p1'),
+      (acl.BUILDBUCKET_READER, None, None, 'p2'),
   ])
 
 
