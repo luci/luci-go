@@ -22,6 +22,30 @@
       "revId": "f5320408f52abc12175061d2da4957902d0d17ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4985004_d46cd1b2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-19T20:05:12Z",
+      "side": 1,
+      "message": "I\u0027m afraid of uncareful copy-pasta where we end up with 100% duplicated chunks of configs :)",
+      "parentUuid": "e977a0f4_fd13c32c",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 47
+      },
+      "revId": "f5320408f52abc12175061d2da4957902d0d17ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
