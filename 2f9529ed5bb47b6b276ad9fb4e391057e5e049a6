@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "12c2fa55_83abd128",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-19T22:49:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "358680be_221bdcbc",
+      "range": {
+        "startLine": 67,
+        "startChar": 42,
+        "endLine": 67,
+        "endChar": 51
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fcd5da33_a025577e",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 8
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "6447df43_b72b317a",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 8
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-19T22:49:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54b5a886_5cde2629",
+      "range": {
+        "startLine": 101,
+        "startChar": 12,
+        "endLine": 101,
+        "endChar": 13
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45740872_edab8aa3",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 8
@@ -91,6 +139,30 @@
       "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "713fecd0_16053253",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-19T22:49:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "45740872_edab8aa3",
+      "range": {
+        "startLine": 17,
+        "startChar": 65,
+        "endLine": 17,
+        "endChar": 66
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "0bc50c82_2f2ec780",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-19T22:49:20Z",
+      "side": 1,
+      "message": "{{if pipeline}} T1 {{end}}\n\tIf the value of the pipeline is empty, no output is generated;\n\totherwise, T1 is executed. The empty values are false, 0, any\n\tnil pointer or interface value, and any array, slice, map, or\n\tstring of length zero.\n\tDot is unaffected.\n\nI think {{ if .Error }} is closer to what the go authors had in mind.\nEG, if the Error is a type errors.MultiError, and the value is a MultiError of 0 length, the desired behavior is actually to treat it as a nil error.",
+      "parentUuid": "1d5c3b4a_aeb53c33",
+      "range": {
+        "startLine": 18,
+        "startChar": 26,
+        "endLine": 18,
+        "endChar": 88
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "005fa61b_60154c7c",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 8
@@ -140,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "cf0694bd_4cf17ce5",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-19T22:49:20Z",
+      "side": 1,
+      "message": "Weird, my change got eaten o_o",
+      "parentUuid": "005fa61b_60154c7c",
+      "range": {
+        "startLine": 310,
+        "startChar": 4,
+        "endLine": 310,
+        "endChar": 24
+      },
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "55f9bbb1_93c770e3",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 8
@@ -154,6 +274,24 @@
       "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "949c2e8b_4d2a4871",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-19T22:49:20Z",
+      "side": 1,
+      "message": "Not loading is the \"normal\" case now, so even though \"best effort\" has failed, we don\u0027t want to put the user on alert.  So I think hiding the error behind a hover is justified.",
+      "parentUuid": "55f9bbb1_93c770e3",
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
