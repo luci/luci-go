@@ -58,32 +58,6 @@ func (e *NodeRedeclarationError) Backtrace() string {
 	return backtrace(e, e.Trace)
 }
 
-// EdgeRedeclarationError is returned when adding an edge that has exact same
-// end points and a title as some existing edge.
-//
-// Edges that link same nodes (in same direction) and differ only in title are
-// OK and do not cause this error.
-//
-// Nodes referenced by the edge may not be fully declared yet (i.e. they may not
-// yet have properties or trace associated with them). They do have valid keys
-// though.
-type EdgeRedeclarationError struct {
-	Trace    *builtins.CapturedStacktrace // where it is added second time
-	Previous *Edge                        // the previously added edge
-}
-
-// Error is part of 'error' interface.
-func (e *EdgeRedeclarationError) Error() string {
-	// TODO(vadimsh): Improve error messages.
-	return fmt.Sprintf("relation %q between %s and %s is redeclared, previous declaration:\n%s",
-		e.Previous.Title, e.Previous.Parent, e.Previous.Child, e.Previous.Trace)
-}
-
-// Backtrace returns an error message with a backtrace where it happened.
-func (e *EdgeRedeclarationError) Backtrace() string {
-	return backtrace(e, e.Trace)
-}
-
 // CycleError is returned when adding an edge that introduces a cycle.
 //
 // Nodes referenced by edges may not be fully declared yet (i.e. they may not
@@ -273,8 +247,10 @@ func (g *Graph) AddNode(k *Key, props *starlark.Dict, idempotent bool, trace *bu
 // in arbitrary order as long as at the end of the graph construction (when it
 // is finalized) the graph is complete.
 //
-// Returns an error if there's already an edge between the given nodes with
-// exact same title or the new edge introduces a cycle.
+// It is OK to add the same edge (with the same title) more than once. Only
+// the trace of the first definition is recorded.
+//
+// Returns an error if the new edge introduces a cycle.
 func (g *Graph) AddEdge(parent, child *Key, title string, trace *builtins.CapturedStacktrace) error {
 	if g.finalized {
 		return ErrFinalized
@@ -293,13 +269,10 @@ func (g *Graph) AddEdge(parent, child *Key, title string, trace *builtins.Captur
 		Trace:  trace,
 	}
 
-	// Have this exact edge already?
+	// Have this exact edge already? This is fine.
 	for _, e := range edge.Parent.children {
 		if e.Child == edge.Child && e.Title == title {
-			return &EdgeRedeclarationError{
-				Trace:    trace,
-				Previous: e,
-			}
+			return nil
 		}
 	}
 

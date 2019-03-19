@@ -22,12 +22,9 @@ def test_edge_redeclaration():
   k2 = g.key('t1', 'id2')
 
   g.add_edge(parent=k1, child=k2, title='blah')
-
-  assert.fails(
-      lambda: g.add_edge(parent=k1, child=k2, title='blah'),
-      'relation "blah" between .* is redeclared')
-
-  # Using a different title is fine.
+  # Redeclaring is fine.
+  g.add_edge(parent=k1, child=k2, title='blah')
+  # Using a different title is fine too.
   g.add_edge(parent=k1, child=k2, title='zzz')
 
 test_edge_redeclaration()
