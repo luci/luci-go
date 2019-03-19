@@ -16,6 +16,24 @@
       "revId": "ce1e4927fbc2e0d5663223853bcb99812a8bc03f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88577d2f_ca9fe6e3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-19T19:41:41Z",
+      "side": 1,
+      "message": "It\u0027s just a bad example... luci.list_view verifies there are no dups already:\n\n  //testdata/full_example.star:206: in \u003ctoplevel\u003e\n  \u003cbuiltin\u003e:1: in _list_view\n  @stdlib//internal/luci/common.star:386: in _view_add_view\n  \u003cbuiltin\u003e:1: in _list_view_entry\n  @stdlib//internal/luci/common.star:421: in _view_add_entry\nError: builder luci.builder(\"ci/cron builder\") was already added to luci.list_view(\"List view\"), previous declaration:\nTraceback (most recent call last):\n  //testdata/full_example.star:206: in \u003ctoplevel\u003e\n  \u003cbuiltin\u003e:1: in _list_view\n  @stdlib//internal/luci/common.star:386: in _view_add_view\n  \u003cbuiltin\u003e:1: in _list_view_entry\n  @stdlib//internal/luci/common.star:421: in _view_add_entry",
+      "parentUuid": "52a47fcd_50f7f48f",
+      "revId": "ce1e4927fbc2e0d5663223853bcb99812a8bc03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
