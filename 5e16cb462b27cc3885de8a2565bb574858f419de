@@ -1,0 +1,169 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ce4b309b_1bd3db36",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-19T23:30:49Z",
+      "side": 1,
+      "message": "what\u0027s the purpose? who\u0027ll consume it? Troopers | bots | other services?",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2d42f47_08ca5877",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-19T23:30:49Z",
+      "side": 1,
+      "message": "also, it appears it\u0027s not hooked to actual handler yet, so note this here",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d36efb9_55490a78",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-19T23:30:49Z",
+      "side": 1,
+      "message": "imo, documenting this is more valuable than trivial comments for structs below.",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57e34dec_4773a596",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-19T23:30:49Z",
+      "side": 1,
+      "message": "this part is better stated in rpc doc.",
+      "range": {
+        "startLine": 41,
+        "startChar": 16,
+        "endLine": 41,
+        "endChar": 30
+      },
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3938feef_c5492523",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-19T23:30:49Z",
+      "side": 1,
+      "message": "this can be misinterpreted as create. \"an existing instance\" for clarity (like you did in rpc Get)",
+      "range": {
+        "startLine": 47,
+        "startChar": 16,
+        "endLine": 47,
+        "endChar": 19
+      },
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd35fa3d_0c825011",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-19T23:30:49Z",
+      "side": 1,
+      "message": "I don\u0027t know the use case (yet), but if it\u0027s for humans like troopers, consider supporting hostname as an input.",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94c99060_a9125324",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-19T23:30:49Z",
+      "side": 1,
+      "message": "add cursor **now** here and in ListResponse, but don\u0027t set to anything until paging is actually necessary;\nthis way you won\u0027t need **breaking** existing clients later when paging is actually required.",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f7d8e1b_9cb5c38c",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-19T23:30:49Z",
+      "side": 1,
+      "message": "useless doc on a private func, see recent TOT :)",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11b94171_c4ed9853",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-19T23:30:49Z",
+      "side": 1,
+      "message": "does this restrict this to admins only?",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
