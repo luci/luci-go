@@ -250,7 +250,7 @@ builder_ref = struct(
 ## triggerer implementation.
 
 
-def _triggerer_add(owner):
+def _triggerer_add(owner, idempotent=False):
   """Adds two 'triggerer' nodes ("<bucket>/<name>" and "<name>") that have
   'owner' as a parent.
 
@@ -275,6 +275,7 @@ def _triggerer_add(owner):
 
   Args:
     owner: a graph.key to setup triggerers for.
+    idempotent: if True, allow the triggerer node to be redeclared.
 
   Returns:
     graph.key of added bucket-scoped TRIGGERER node ("<bucket>/<name>" one).
@@ -285,12 +286,15 @@ def _triggerer_add(owner):
   bucket = owner.container.id  # name of the bucket, as string
   name = owner.id              # name of the builder or poller, as string
 
+  # Short (not scoped to a bucket) keys are not unique, even for nodes that
+  # are marked as idempotent=False. Make sure it is OK to readd them by marking
+  # them as idempotent. Dups are checked in triggerer.targets(...).
   short = keys.triggerer(name)
-  graph.add_node(short, idempotent=True)  # there may be such node already
+  graph.add_node(short, idempotent=True)
   graph.add_edge(owner, short)
 
   full = keys.triggerer("%s/%s" % (bucket, name))
-  graph.add_node(full)
+  graph.add_node(full, idempotent=idempotent)
   graph.add_edge(owner, full)
 
   return full

@@ -169,6 +169,20 @@ luci.builder(
 # Inline definitions.
 
 
+def inline_poller():
+  return luci.gitiles_poller(
+      name = 'inline poller',
+      bucket = 'inline',
+      repo = 'https://noop.com',
+      refs = [
+          'refs/heads/master',
+          'refs/tags/blah',
+          'refs/branch-heads/\d+\.\d+',
+      ],
+      schedule = 'with 10s interval',
+  )
+
+
 luci.builder(
     name = 'triggerer builder',
     bucket = luci.bucket(name = 'inline'),
@@ -187,19 +201,19 @@ luci.builder(
         ),
     ],
 
-    triggered_by = [
-        luci.gitiles_poller(
-            name = 'inline poller',
-            bucket = 'inline',
-            repo = 'https://noop.com',
-            refs = [
-                'refs/heads/master',
-                'refs/tags/blah',
-                'refs/branch-heads/\d+\.\d+',
-            ],
-            schedule = 'with 10s interval',
-        ),
-    ],
+    triggered_by = [inline_poller()],
+)
+
+
+luci.builder(
+    name = 'another builder',
+    bucket = 'inline',
+    recipe = luci.recipe(
+        name = 'inline/recipe',
+        cipd_package = 'recipe/bundles/inline',
+    ),
+    service_account = 'builder@example.com',
+    triggered_by = [inline_poller()],
 )
 
 
@@ -487,6 +501,16 @@ luci.cq_tryjob_verifier(
 #   >
 #   swarming: <
 #     builders: <
+#       name: "another builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "inline/recipe"
+#         cipd_package: "recipe/bundles/inline"
+#         cipd_version: "refs/heads/master"
+#       >
+#       service_account: "builder@example.com"
+#     >
+#     builders: <
 #       name: "triggered builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
@@ -643,6 +667,15 @@ luci.cq_tryjob_verifier(
 #
 # === luci-scheduler.cfg
 # job: <
+#   id: "another builder"
+#   acl_sets: "inline"
+#   buildbucket: <
+#     server: "cr-buildbucket.appspot.com"
+#     bucket: "luci.infra.inline"
+#     builder: "another builder"
+#   >
+# >
+# job: <
 #   id: "cron builder"
 #   schedule: "0 6 * * *"
 #   acl_sets: "ci"
@@ -705,6 +738,7 @@ luci.cq_tryjob_verifier(
 #   id: "inline poller"
 #   schedule: "with 10s interval"
 #   acl_sets: "inline"
+#   triggers: "another builder"
 #   triggers: "triggerer builder"
 #   gitiles: <
 #     repo: "https://noop.com"
