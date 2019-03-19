@@ -37,7 +37,6 @@ var (
 	_ BacktracableError = (*builtins.Failure)(nil)
 	_ BacktracableError = (*Error)(nil)
 	_ BacktracableError = (*graph.NodeRedeclarationError)(nil)
-	_ BacktracableError = (*graph.EdgeRedeclarationError)(nil)
 	_ BacktracableError = (*graph.CycleError)(nil)
 	_ BacktracableError = (*graph.DanglingEdgeError)(nil)
 )
