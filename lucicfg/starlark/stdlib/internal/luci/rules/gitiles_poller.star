@@ -56,6 +56,11 @@ def _gitiles_poller(
     * A ref belonging to the watched set has just been created. This produces
       a single triggering request.
 
+  A luci.gitiles_poller(...) with some particular name can be redeclared many
+  times as long as all fields in all declaration are identical. This is helpful
+  when luci.gitiles_poller(...) is used inside a helper function that at once
+  declares a builder and a poller that triggers this builder.
+
   Args:
     name: name of the poller, to refer to it from other rules. Required.
     bucket: a bucket the poller is in, see luci.bucket(...) rule. Required.
@@ -83,7 +88,7 @@ def _gitiles_poller(
 
   # Node that carries the full definition of the poller.
   poller_key = keys.gitiles_poller(bucket_key.id, name)
-  graph.add_node(poller_key, props = {
+  graph.add_node(poller_key, idempotent = True, props = {
       'name': name,
       'bucket': bucket_key.id,
       'repo': validate.string('repo', repo, regexp=r'https://.+'),
@@ -94,7 +99,7 @@ def _gitiles_poller(
 
   # Setup nodes that indicate this poller can be referenced in 'triggered_by'
   # relations (either via its bucket-scoped name or via its global name).
-  triggerer_key = triggerer.add(poller_key)
+  triggerer_key = triggerer.add(poller_key, idempotent=True)
 
   # Link to builders triggered by this builder.
   for t in validate.list('triggers', triggers):
