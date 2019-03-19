@@ -85,7 +85,10 @@ luci.gitiles_poller(
 luci.builder(
     name = 'linux ci builder',
     bucket = 'ci',
-    recipe = 'main/recipe',
+    recipe = luci.recipe(
+        name = 'main/recipe',
+        cipd_package = 'recipe/bundles/main',
+    ),
 
     triggered_by = ['master-poller'],
     triggers = ['ci/generically named builder'],

@@ -48,6 +48,11 @@ def _recipe(
   The cipd version to fetch is usually a lower-cased git ref (like
   `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
 
+  A luci.recipe(...) with some particular name can be redeclared many times as
+  long as all fields in all declaration are identical. This is helpful when
+  luci.recipe(...) is used inside a helper function that at once declares
+  a builder and a recipe needed for this builder.
+
   Args:
     name: name of this recipe entity, to refer to it from builders. If `recipe`
         is None, also specifies the recipe name within the bundle. Required.
@@ -62,7 +67,7 @@ def _recipe(
   """
   name = validate.string('name', name)
   key = keys.recipe(name)
-  graph.add_node(key, props = {
+  graph.add_node(key, idempotent = True, props = {
       'cipd_package': validate.string(
           'cipd_package',
           cipd_package,
