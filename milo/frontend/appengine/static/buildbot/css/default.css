@@ -676,7 +676,7 @@ li.substeps > div.result > b:before {
   font-weight: bold;
 }
 
-.result {
+.result, .errors {
   padding: 0.3em 1em 0.3em 1em;
 }
 
