@@ -644,6 +644,11 @@ each iteration it triggers builders if either:
   * A ref belonging to the watched set has just been created. This produces
     a single triggering request.
 
+A [luci.gitiles_poller(...)](#luci.gitiles_poller) with some particular name can be redeclared many
+times as long as all fields in all declaration are identical. This is helpful
+when [luci.gitiles_poller(...)](#luci.gitiles_poller) is used inside a helper function that at once
+declares a builder and a poller that triggers this builder.
+
 #### Arguments {#luci.gitiles_poller-args}
 
 * **name**: name of the poller, to refer to it from other rules. Required.
