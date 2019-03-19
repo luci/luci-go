@@ -13,6 +13,9 @@
 <script>
   const timelineData = JSON.parse({{ .BuildPage.Timeline }});
   const useTabs = true;
+  // If true, the blamelist tab contains the blamelist.
+  // If false, the blamelist tab should reload the page to force the blamelist to load.
+  const blamelistLoaded = {{ if .BuildPage.BlamelistError }}false{{ else }}true{{ end }};
 </script>
 <script src="/static/common/js/build.js"></script>
 {{end}}
@@ -87,6 +90,7 @@
     {{ range .BuildPage.Banners }}
       <img src="/static/common/logos/{{.Img}}" alt="{{.Alt}}" width="25px">
     {{ end }}
+
     </h1>
 
     <div id="tabs">
@@ -94,23 +98,23 @@
         <li><a href="#overview-tab">Overview</a></li>
         <li><a href="#related-tab">Related Builds</a></li>
         <li><a href="#timeline-tab">Timeline</a></li>
+        <li><a href="#blamelist-tab">Blamelist</a></li>
       </ul>
       <div id="overview-tab">
         {{ template "overview" . }}
         {{ template "attributes" . }}
-        {{ template "changes" . }}
       </div>
       <div id="timeline-tab" style="display: none;">{{ template "timeline_tab" . }}</div>
       <div id="related-tab" style="display: none;">{{ template "related_tab" .BuildPage }}</div>
+      <div id="blamelist-tab" style="display: none;">{{ template "blamelist_tab" . }}</div>
     </div>
   </div>
 {{end}}
 
 {{define "overview"}}
   <div id="overview" class="column">
-    <!--- TODO(hinoka): Stylize this -->
     {{ range .BuildPage.Errors }}
-      <p class="status FAILURE">Error while rendering page: {{.}}</p>
+      <p class="errors status FAILURE">Error while rendering page: {{.}}</p>
     {{ end }}
     <h2>Overview</h2>
     <div class="result status {{.BuildPage.Status}}">
@@ -301,10 +305,11 @@
   {{ end }}
 {{end}}
 
-{{define "changes"}}
+{{define "blamelist_tab"}}
   <div id="changes" class="column">
-    <h2>All Changes</h2>
-    {{ if .BuildPage.Blame }}
+    {{ if .BuildPage.BlamelistError }}
+      Loading blamelist... (<a title="{{ .BuildPage.BlamelistError }}">why?</a>)
+    {{ else if .BuildPage.Blame }}
     <ol>
     {{ range .BuildPage.Blame }}
     <li>

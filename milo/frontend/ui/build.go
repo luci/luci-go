@@ -98,6 +98,10 @@ type BuildPage struct {
 
 	// Now is the current time, used for generating step intervals.
 	Now time.Time
+
+	// BlamelistError holds errors related to the blamelist.
+	// This determines the behavior of clicking the "blamelist" tab.
+	BlamelistError error
 }
 
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {

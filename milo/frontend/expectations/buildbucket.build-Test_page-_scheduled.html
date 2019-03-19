@@ -29,6 +29,9 @@
 <script>
   const timelineData = JSON.parse("{\"groups\":[],\"items\":[]}");
   const useTabs = true;
+  
+  
+  const blamelistLoaded = true;
 </script>
 <script src="/static/common/js/build.js"></script>
 
@@ -55,6 +58,7 @@
     Build <a href="/p/chromium/builders/try/mac-rel/5963" aria-label="Build 5963">5963</a>
     
     
+
     </h1>
 
     <div id="tabs">
@@ -62,11 +66,11 @@
         <li><a href="#overview-tab">Overview</a></li>
         <li><a href="#related-tab">Related Builds</a></li>
         <li><a href="#timeline-tab">Timeline</a></li>
+        <li><a href="#blamelist-tab">Blamelist</a></li>
       </ul>
       <div id="overview-tab">
         
   <div id="overview" class="column">
-    
     
     <h2>Overview</h2>
     <div class="result status SCHEDULED">
@@ -438,14 +442,6 @@
 
 </div>
 
-        
-  <div id="changes" class="column">
-    <h2>All Changes</h2>
-    
-      No Blamelist
-     
-  </div>
-
       </div>
       <div id="timeline-tab" style="display: none;">
   <div id="timeline">
@@ -458,6 +454,13 @@
   
     <h3>No buildsets found</h3>
   
+</div>
+      <div id="blamelist-tab" style="display: none;">
+  <div id="changes" class="column">
+    
+      No Blamelist
+     
+  </div>
 </div>
     </div>
   </div>

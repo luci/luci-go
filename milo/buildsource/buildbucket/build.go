@@ -46,7 +46,9 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-var ErrNotFound = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
+var (
+	ErrNotFound = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
+)
 
 // BuildAddress constructs the build address of a buildbucketpb.Build.
 // This is used as the key for the BuildSummary entity.
@@ -62,7 +64,7 @@ func BuildAddress(build *buildbucketpb.Build) string {
 	return fmt.Sprintf("luci.%s.%s/%s/%s", b.Project, b.Bucket, b.Builder, num)
 }
 
-// simplisticBlamelist returns a slice of ui.Blame for a build.
+// simplisticBlamelist returns a slice of ui.Commit for a build, and/or an error.
 //
 // HACK(iannucci) - Getting the frontend to render a proper blamelist will
 // require some significant refactoring. To do this properly, we'll need:
@@ -72,23 +74,7 @@ func BuildAddress(build *buildbucketpb.Build) string {
 //     the SourceManifest objects inside of them). Currently getRespBuild defers
 //     to swarming's implementation of buildsource.ID.Get(), which only returns
 //     the resp object.
-func simplisticBlamelist(c context.Context, build *model.BuildSummary) (result []*ui.Commit) {
-	var err error
-	defer func() {
-		if err != nil {
-			msg := "Failed to fetch blame information\n"
-			logging.WithError(err).Warningf(c, msg)
-			if strings.Contains(err.Error(), "DEADLINE_EXCEEDED") || c.Err() != nil {
-				// When the context deadline is reached, the error that is returned is
-				// a bit racy.
-				// Either the actual context error itself is returned, or the urlfetch variant.
-				msg += "Gitiles was taking too long"
-			} else {
-				msg += err.Error()
-			}
-			result = append(result, &ui.Commit{Description: msg})
-		}
-	}()
+func simplisticBlamelist(c context.Context, build *model.BuildSummary) (result []*ui.Commit, err error) {
 	bs := build.GitilesCommit()
 	if bs == nil {
 		return
@@ -173,11 +159,11 @@ func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 
 // getBlame fetches blame information from Gitiles.
 // This requires the BuildSummary to be indexed in Milo.
-func getBlame(c context.Context, host string, b *buildbucketpb.Build) []*ui.Commit {
+func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Commit, error) {
 	commit := b.GetInput().GetGitilesCommit()
 	// No commit? No blamelist.
 	if commit == nil {
-		return nil
+		return nil, nil
 	}
 	// TODO(hinoka): This converts a buildbucketpb.Commit into a string
 	// and back into a buildbucketpb.Commit.  That's a bit silly.
@@ -337,7 +323,7 @@ var (
 
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
-func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest) (*ui.BuildPage, error) {
+func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBlamelist bool) (*ui.BuildPage, error) {
 	c := ctx.Context
 	host, err := getHost(c)
 	if err != nil {
@@ -351,6 +337,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest) (*ui.Bu
 	var b *buildbucketpb.Build
 	var relatedBuilds []*ui.Build
 	var blame []*ui.Commit
+	var blameErr error
 	if err = parallel.FanOutIn(func(ch chan<- func() error) {
 		ch <- func() (err error) {
 			fullbr := br // Copy request
@@ -373,9 +360,13 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest) (*ui.Bu
 			return
 		}
 		ch <- func() error {
-			nc, cancel := context.WithTimeout(c, 55*time.Second)
+			timeout := 1 * time.Second
+			if forceBlamelist {
+				timeout = 55 * time.Second
+			}
+			nc, cancel := context.WithTimeout(c, timeout)
 			defer cancel()
-			blame = getBlame(nc, host, sb)
+			blame, blameErr = getBlame(nc, host, sb)
 			return nil
 		}
 	}); err != nil {
@@ -384,10 +375,11 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest) (*ui.Bu
 	link, err := getBugLink(ctx, b)
 	logging.Infof(c, "Got all the things")
 	return &ui.BuildPage{
-		Build:         ui.Build{b},
-		Blame:         blame,
-		RelatedBuilds: relatedBuilds,
-		BuildBugLink:  link,
-		Now:           clock.Now(c),
+		Build:          ui.Build{b},
+		Blame:          blame,
+		RelatedBuilds:  relatedBuilds,
+		BuildBugLink:   link,
+		Now:            clock.Now(c),
+		BlamelistError: blameErr,
 	}, err
 }
