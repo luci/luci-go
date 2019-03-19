@@ -31,11 +31,12 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 )
 
 func TestMintOAuthTokenViaGrant(t *testing.T) {
@@ -97,7 +98,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		So(lastMintParams, ShouldResemble, auth.MintAccessTokenParams{
 			ServiceAccount: "serviceaccount@robots.com",
 			Scopes:         []string{"https://www.googleapis.com/scope1"},
-			MinTTL:         defaultMinValidityDuration,
+			MinTTL:         utils.DefaultMinValidityDuration,
 		})
 
 		// LogOAuthToken called.
