@@ -292,6 +292,24 @@
       "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d5771e9e_bd9d2800",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-19T22:51:08Z",
+      "side": 1,
+      "message": "oh, the page is being reloaded as the user reads this message. got it",
+      "parentUuid": "949c2e8b_4d2a4871",
+      "revId": "2f9529ed5bb47b6b276ad9fb4e391057e5e049a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
