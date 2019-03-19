@@ -66,7 +66,11 @@ luci.bucket(
     # machines are assumed to be running only "approved" code (being post-submit
     # builders).
     acls = [
-        acl.entry(acl.SCHEDULER_TRIGGERER, groups = ['devs']),
+        acl.entry(
+            acl.SCHEDULER_TRIGGERER,
+            groups = ['devs'],
+            projects = ['some-project'],
+        ),
     ],
 )
 
@@ -772,6 +776,10 @@ luci.cq_tryjob_verifier(
 #   acls: <
 #     role: TRIGGERER
 #     granted_to: "group:devs"
+#   >
+#   acls: <
+#     role: TRIGGERER
+#     granted_to: "project:some-project"
 #   >
 # >
 # acl_sets: <
