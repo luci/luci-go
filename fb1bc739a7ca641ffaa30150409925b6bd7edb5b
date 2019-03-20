@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8c160d15_d0b4cf91",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T04:05:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9b6f84f_b294ed60",
+      "range": {
+        "startLine": 30,
+        "startChar": 23,
+        "endLine": 30,
+        "endChar": 35
+      },
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be4c2de3_22cba3af",
         "filename": "gce/api/config/v1/amount.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47777eaf_f0584a5b",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T04:05:12Z",
+      "side": 1,
+      "message": "It\u0027s not for GetAmount. Removed.",
+      "parentUuid": "be4c2de3_22cba3af",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 1
+      },
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -83,6 +131,24 @@
     },
     {
       "key": {
+        "uuid": "ecc4e324_0fbb495e",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T04:05:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a309f8e5_2509b0d1",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e1e7503_4b64b1e2",
         "filename": "gce/api/config/v1/timeofday.go",
         "patchSetId": 1
@@ -103,6 +169,30 @@
       "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b3fbfb9_45a43f4e",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T04:05:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e1e7503_4b64b1e2",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 49,
+        "endChar": 0
+      },
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -177,6 +267,24 @@
     },
     {
       "key": {
+        "uuid": "de094505_0c14f1ec",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T04:05:12Z",
+      "side": 1,
+      "message": "Mostly done. isSameDay vs. toWeekDay is about the same.",
+      "parentUuid": "942b3f6e_4ab4a8ac",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6676de99_cdf9221d",
         "filename": "gce/appengine/config/config.go",
         "patchSetId": 1
@@ -191,6 +299,24 @@
       "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aaca0dba_436c883a",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T04:05:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6676de99_cdf9221d",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
