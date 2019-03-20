@@ -522,9 +522,11 @@ luci.builder(
     build_numbers = None,
     experimental = None,
     task_template_canary_percentage = None,
+    repo = None,
     luci_migration_host = None,
     triggers = None,
     triggered_by = None,
+    notifies = None,
 )
 ```
 
@@ -592,9 +594,11 @@ This is not necessary if the recipe uses Scheduler API instead of Buildbucket.
 * **build_numbers**: if True, generate monotonically increasing contiguous numbers for each build, unique within the builder. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **experimental**: if True, by default a new build in this builder will be marked as experimental. This is seen from recipes and they may behave differently (e.g. avoiding any side-effects). If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using luci.notifier(...) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by timestamp. If unset, will be taken from the configuration of a [luci.gitiles_poller(...)](#luci.gitiles_poller) that triggers this builder, if there's only one such poller.
 * **luci_migration_host**: deprecated setting that was important during the migration from Buildbot to LUCI. Refer to Buildbucket docs for the meaning. Supports the module-scoped default.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
+* **notifies**: a list of names of luci.notifier(...) to notify when the builder changes its status.
 
 
 
