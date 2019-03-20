@@ -23,26 +23,32 @@ message EnsureRequest {
   Config config = 2;
 }
 
-// A request to get a config.
+// A request to get an existing config.
 message GetRequest {
   // The id of the config to get.
   string id = 1;
 }
 
-// A request to list all configs.
+// A request to list existing configs.
 message ListRequest {
-  // TODO(smut): Support page size and token if necessary.
+  // The value of next_page_token received in a ListResponse. Used to get the
+  // next page of configs. If empty, gets the first page.
+  string page_token = 1;
 }
 
-// A response containing configs.
+// A response to a request to list configs.
 message ListResponse {
   // The configs.
   repeated Config configs = 1;
+
+  // The value to use as the page_token in a ListRequest to get the next page of
+  // configs. If empty, there are no more configs.
+  string next_page_token = 2;
 }
 
 // A service for manipulating configs.
 service Configuration {
-  // Delete deletes an existing config.
+  // Delete deletes a config.
   // Internal API.
   rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
   // Ensure ensures a config exists.
@@ -51,6 +57,6 @@ service Configuration {
   rpc Ensure(EnsureRequest) returns (Config);
   // Get returns an existing config.
   rpc Get(GetRequest) returns (Config);
-  // List returns all existing configs.
+  // List returns existing configs.
   rpc List(ListRequest) returns (ListResponse);
 }

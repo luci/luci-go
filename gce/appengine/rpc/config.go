@@ -85,6 +85,10 @@ func (*Config) Get(c context.Context, req *config.GetRequest) (*config.Config, e
 // List handles a request to list all configs.
 func (*Config) List(c context.Context, req *config.ListRequest) (*config.ListResponse, error) {
 	rsp := &config.ListResponse{}
+	// TODO(smut): Handle page tokens.
+	if req.GetPageToken() != "" {
+		return rsp, nil
+	}
 	q := datastore.NewQuery(model.ConfigKind)
 	if err := datastore.Run(c, q, func(cfg *model.Config, f datastore.CursorCB) error {
 		rsp.Configs = append(rsp.Configs, &cfg.Config)

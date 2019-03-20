@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	server "go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/api/instances/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
 	"go.chromium.org/luci/gce/appengine/backend"
 	"go.chromium.org/luci/gce/appengine/config"
@@ -36,6 +37,7 @@ func init() {
 	mathrand.SeedRandomly()
 	api := prpc.Server{UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil)}
 	server.RegisterConfigurationServer(&api, rpc.NewConfigurationServer())
+	instances.RegisterInstancesServer(&api, rpc.NewInstancesServer())
 	projects.RegisterProjectsServer(&api, rpc.NewProjectsServer())
 	discovery.Enable(&api)
 
