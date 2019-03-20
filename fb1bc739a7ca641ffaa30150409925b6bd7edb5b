@@ -16,6 +16,23 @@
       "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1d1715f_fb7fa7cb",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:10:47Z",
+      "side": 1,
+      "message": "reading this code it is not clear that (and why) isSameDay handles unspecified day as \"true\".\n\nI propose you explicitly handle unspecified day of week before L68.\nThen change IsSameDay to toWeekDay, encapsulating Sunday difference and simplifying its doc, s.t. loop becomes:\n\n    weekday :\u003d toWeekDay(t.Day)\n    for weekday !\u003d rel.Weekday() {\n      ..\n    }",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
