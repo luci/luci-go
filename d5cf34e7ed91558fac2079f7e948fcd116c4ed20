@@ -1,0 +1,118 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95b8c162_8c22b311",
+        "filename": "gce/api/config/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T01:57:35Z",
+      "side": 1,
+      "message": "thanks % same comments as below.",
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4737a782_1f193903",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T01:57:35Z",
+      "side": 1,
+      "message": "Don\u0027t say *this*, you are giving clients excuse to not do paging *yet*.\nYour service as implemented (subject to 3 line change I request below) already complies with this field because you never return next_page_token below. But, clients must be coded as if you may return it.",
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfd9f2f7_5568b5da",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T01:57:35Z",
+      "side": 1,
+      "message": "why have it then here? This gives no backwards compatibility.",
+      "range": {
+        "startLine": 66,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 22
+      },
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fb0974f_97c65197",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T01:57:35Z",
+      "side": 1,
+      "message": "the fact that it\u0027s currently always \"\" is an implementation detail. No reasons to tell about it to clients.",
+      "range": {
+        "startLine": 78,
+        "startChar": 4,
+        "endLine": 78,
+        "endChar": 22
+      },
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a54e2a02_aa3e00fd",
+        "filename": "gce/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T01:57:35Z",
+      "side": 1,
+      "message": "oops, i missed this line the first time.",
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "db677296_eae934ff",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T01:57:35Z",
+      "side": 1,
+      "message": "please add early exit if req.GetPageToken() !\u003d \"\"\n\nand I guess the same for the other service?",
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
