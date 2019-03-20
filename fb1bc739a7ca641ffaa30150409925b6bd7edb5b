@@ -51,6 +51,24 @@
       "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "422d761b_57bb93bb",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T02:29:23Z",
+      "side": 1,
+      "message": "It doesn\u0027t really matter, Validate ensures the day isn\u0027t unspecified. I just needed some vaguely reasonable behavior in isSameDay and didn\u0027t want to return (bool, error) or panic.",
+      "parentUuid": "ce2e96de_07e09756",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
