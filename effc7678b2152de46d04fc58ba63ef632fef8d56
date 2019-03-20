@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0bdd9162_0da24afa",
+        "filename": "gce/api/config/v1/schedule_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T04:55:36Z",
+      "side": 1,
+      "message": "test that it\u0027s actually monday in code.",
+      "revId": "effc7678b2152de46d04fc58ba63ef632fef8d56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56b176bc_8e85d519",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T04:55:36Z",
+      "side": 1,
+      "message": "actually, why do you still need current date? I think it doesn\u0027t matter now.\nI think a constant epoch of arbitrary but static timestamp would make this func deterministic.",
+      "range": {
+        "startLine": 32,
+        "startChar": 14,
+        "endLine": 32,
+        "endChar": 45
+      },
+      "revId": "effc7678b2152de46d04fc58ba63ef632fef8d56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
