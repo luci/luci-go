@@ -33,6 +33,24 @@
       "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce2e96de_07e09756",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:14:07Z",
+      "side": 1,
+      "message": "hold on. let me rethink the whole CL, I sent this prematurely.",
+      "parentUuid": "a1d1715f_fb7fa7cb",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
