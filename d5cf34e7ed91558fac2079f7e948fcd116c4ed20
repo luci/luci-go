@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1c8d4038_6d80fa10",
+        "filename": "gce/api/config/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T02:32:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95b8c162_8c22b311",
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4737a782_1f193903",
         "filename": "gce/api/instances/v1/service.proto",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf31d432_0c7ea4ee",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T02:32:32Z",
+      "side": 1,
+      "message": "I guess I didn\u0027t understand your rationale. I didn\u0027t realize you wanted clients to be written to handle page tokens, I thought you just didn\u0027t want the proto definition to change for clients.",
+      "parentUuid": "4737a782_1f193903",
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "36869e60_644a5e70",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T02:32:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cfd9f2f7_5568b5da",
+      "range": {
+        "startLine": 66,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 22
+      },
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8fb0974f_97c65197",
         "filename": "gce/api/instances/v1/service.proto",
         "patchSetId": 2
@@ -79,6 +139,30 @@
       "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f69e327_dffdaf6c",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T02:32:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8fb0974f_97c65197",
+      "range": {
+        "startLine": 78,
+        "startChar": 4,
+        "endLine": 78,
+        "endChar": 22
+      },
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -113,6 +197,24 @@
       "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fd9fa8b_61e3c2e9",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T02:32:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db677296_eae934ff",
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

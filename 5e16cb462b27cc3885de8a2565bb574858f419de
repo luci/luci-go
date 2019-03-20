@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "fa2138da_685afe8e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T02:32:32Z",
+      "side": 1,
+      "message": "I think it\u0027s too much context. I added a shorter sentence.",
+      "parentUuid": "7610d460_7f00ba07",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2d42f47_08ca5877",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
