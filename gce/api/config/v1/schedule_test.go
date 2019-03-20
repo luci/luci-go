@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"testing"
+	"time"
 
 	"google.golang.org/genproto/googleapis/type/dayofweek"
 
@@ -28,6 +29,107 @@ import (
 
 func TestSchedule(t *testing.T) {
 	t.Parallel()
+
+	Convey("Less", t, func() {
+		now := time.Time{}
+
+		Convey("empty", func() {
+			si := &Schedule{}
+			sj := &Schedule{}
+			So(less(now, si, sj), ShouldBeFalse)
+			So(less(now, sj, si), ShouldBeFalse)
+		})
+
+		Convey("invalid time", func() {
+			si := &Schedule{
+				Start: &TimeOfDay{
+					Time: "25:00",
+				},
+			}
+			sj := &Schedule{
+				Start: &TimeOfDay{
+					Time: "-1:00",
+				},
+			}
+			So(less(now, si, sj), ShouldBeFalse)
+			So(less(now, sj, si), ShouldBeFalse)
+		})
+
+		Convey("same day", func() {
+			si := &Schedule{
+				Start: &TimeOfDay{
+					Day:  dayofweek.DayOfWeek_TUESDAY,
+					Time: "1:00",
+				},
+			}
+			sj := &Schedule{
+				Start: &TimeOfDay{
+					Day:  dayofweek.DayOfWeek_TUESDAY,
+					Time: "2:00",
+				},
+			}
+			So(less(now, si, sj), ShouldBeTrue)
+			So(less(now, sj, si), ShouldBeFalse)
+		})
+
+		Convey("different day", func() {
+			Convey("same time", func() {
+				si := &Schedule{
+					Start: &TimeOfDay{
+						Day:  dayofweek.DayOfWeek_MONDAY,
+						Time: "1:00",
+					},
+				}
+				sj := &Schedule{
+					Start: &TimeOfDay{
+						Day:  dayofweek.DayOfWeek_TUESDAY,
+						Time: "1:00",
+					},
+				}
+				So(less(now, si, sj), ShouldBeTrue)
+				So(less(now, sj, si), ShouldBeFalse)
+			})
+
+			Convey("different time", func() {
+				si := &Schedule{
+					Start: &TimeOfDay{
+						Day:  dayofweek.DayOfWeek_MONDAY,
+						Time: "2:00",
+					},
+				}
+				sj := &Schedule{
+					Start: &TimeOfDay{
+						Day:  dayofweek.DayOfWeek_TUESDAY,
+						Time: "1:00",
+					},
+				}
+				So(less(now, si, sj), ShouldBeTrue)
+				So(less(now, sj, si), ShouldBeFalse)
+			})
+		})
+
+		Convey("location", func() {
+			si := &Schedule{
+				Start: &TimeOfDay{
+					Day:      dayofweek.DayOfWeek_MONDAY,
+					Location: "America/Los_Angeles",
+					Time:     "23:00",
+				},
+			}
+			sj := &Schedule{
+				Start: &TimeOfDay{
+					Day:  dayofweek.DayOfWeek_TUESDAY,
+					Time: "1:00",
+				},
+			}
+			So(less(now, si, sj), ShouldBeFalse)
+			So(less(now, sj, si), ShouldBeTrue)
+
+			si.Start.Location = ""
+			So(less(now, si, sj), ShouldBeTrue)
+			So(less(now, sj, si), ShouldBeFalse)
+		})
+	})
 
 	Convey("Validate", t, func() {
 		c := &validation.Context{Context: context.Background()}

@@ -15,8 +15,25 @@
 package config
 
 import (
+	"time"
+
 	"go.chromium.org/luci/config/validation"
 )
+
+// less returns whether the first *Schedule sorts before the second when each
+// start time is interpreted relative to the given time. Returns false if either
+// can't be parsed.
+func less(now time.Time, si, sj *Schedule) bool {
+	ti, err := si.GetStart().toTime(now)
+	if err != nil {
+		return false
+	}
+	tj, err := sj.GetStart().toTime(now)
+	if err != nil {
+		return false
+	}
+	return ti.Before(tj)
+}
 
 // Validate validates this schedule.
 func (s *Schedule) Validate(c *validation.Context) {

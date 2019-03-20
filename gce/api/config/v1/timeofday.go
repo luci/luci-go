@@ -28,9 +28,25 @@ import (
 // timeRegex is the regular expression valid time strings must match.
 const timeRegex = "^([0-2]?[0-9]):([0-6][0-9])$"
 
-// ToTime returns this time of day relative to the current day.
-func (t *TimeOfDay) ToTime() (time.Time, error) {
-	now := time.Now()
+// isSameDay returns whether the given time.Weekday and dayofweek.DayOfWeek
+// represent the same day of the week. If the dayofweek.DayOfWeek is
+// dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED, always returns true.
+func isSameDay(wkd time.Weekday, dow dayofweek.DayOfWeek) bool {
+	if dow == dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED {
+		return true
+	}
+	// time.Weekday has Sunday == 0, dayofweek.DayOfWeek has Sunday == 7.
+	// Otherwise, their values are identical.
+	if wkd == time.Sunday && dow == dayofweek.DayOfWeek_SUNDAY {
+		return true
+	}
+	return int(wkd) == int(dow)
+}
+
+// toTime returns this time of day relative to the given time. The date in the
+// returned time.Time will be the most recent date falling on the specified day
+// of the week which results in the given time being after the returned time.
+func (t *TimeOfDay) toTime(now time.Time) (time.Time, error) {
 	loc, err := time.LoadLocation(t.GetLocation())
 	if err != nil {
 		return now, errors.Reason("invalid location").Err()
@@ -49,7 +65,14 @@ func (t *TimeOfDay) ToTime() (time.Time, error) {
 	if err != nil || min > 59 {
 		return now, errors.Reason("time must not exceed xx:59").Err()
 	}
-	return time.Date(now.Year(), now.Month(), now.Day(), hr, min, 0, 0, loc), nil
+	rel := time.Date(now.Year(), now.Month(), now.Day(), hr, min, 0, 0, loc)
+	for !isSameDay(rel.Weekday(), t.Day) {
+		rel = rel.Add(time.Hour * -24)
+	}
+	if rel.After(now) {
+		rel = rel.Add(time.Hour * -24 * 7)
+	}
+	return rel, nil
 }
 
 // Validate validates this time of day.
@@ -57,7 +80,7 @@ func (t *TimeOfDay) Validate(c *validation.Context) {
 	if t.GetDay() == dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED {
 		c.Errorf("day must be specified")
 	}
-	_, err := t.ToTime()
+	_, err := t.toTime(time.Now())
 	if err != nil {
 		c.Errorf("%s", err)
 	}

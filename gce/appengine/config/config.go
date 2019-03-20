@@ -227,6 +227,7 @@ func normalize(c context.Context, cfg *Config) error {
 				return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 			}
 		}
+		v.Amount.Normalize()
 		if err := v.Lifetime.Normalize(); err != nil {
 			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 		}
