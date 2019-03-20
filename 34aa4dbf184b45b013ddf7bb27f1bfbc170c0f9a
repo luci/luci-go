@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44fcaaff_e292fce6",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-20T17:29:56Z",
+      "side": 1,
+      "message": "this now leaks the secret token into logs",
+      "range": {
+        "startLine": 80,
+        "startChar": 7,
+        "endLine": 80,
+        "endChar": 17
+      },
+      "revId": "34aa4dbf184b45b013ddf7bb27f1bfbc170c0f9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c505316_dd7d4735",
+        "filename": "tokenserver/appengine/impl/utils/rpc_utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-20T17:29:56Z",
+      "side": 1,
+      "message": "this provides no value, callers just as easily can run these validators themselves and it will be less convoluted (no need to put stuff into closures)",
+      "range": {
+        "startLine": 72,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 2
+      },
+      "revId": "34aa4dbf184b45b013ddf7bb27f1bfbc170c0f9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
