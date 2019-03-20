@@ -24,15 +24,15 @@ import (
 )
 
 const (
-	// projectNamespacePrefix is the datastore namespace prefix for project
+	// ProjectNamespacePrefix is the datastore namespace prefix for project
 	// namespaces.
-	projectNamespacePrefix = "luci."
+	ProjectNamespacePrefix = "luci."
 )
 
 // ProjectNamespace returns the AppEngine namespace for a given luci-config
 // project name.
 func ProjectNamespace(project types.ProjectName) string {
-	return projectNamespacePrefix + string(project)
+	return ProjectNamespacePrefix + string(project)
 }
 
 // ProjectFromNamespace returns the current project installed in the supplied
@@ -41,10 +41,10 @@ func ProjectNamespace(project types.ProjectName) string {
 // If the namespace does not have a project namespace prefix, this function
 // will return an empty string.
 func ProjectFromNamespace(ns string) types.ProjectName {
-	if !strings.HasPrefix(ns, projectNamespacePrefix) {
+	if !strings.HasPrefix(ns, ProjectNamespacePrefix) {
 		return ""
 	}
-	return types.ProjectName(ns[len(projectNamespacePrefix):])
+	return types.ProjectName(ns[len(ProjectNamespacePrefix):])
 }
 
 // CurrentProject returns the current project based on the currently-loaded
