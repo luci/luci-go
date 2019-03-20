@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "57a7602c_e28f5d7e",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:45:15Z",
+      "side": 1,
+      "message": "right. Sorry for ambiguity.",
+      "parentUuid": "bf31d432_0c7ea4ee",
+      "revId": "d5cf34e7ed91558fac2079f7e948fcd116c4ed20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cfd9f2f7_5568b5da",
         "filename": "gce/api/instances/v1/service.proto",
         "patchSetId": 2

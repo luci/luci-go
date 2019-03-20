@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ffe8075_844a3fd1",
+        "filename": "gce/api/projects/v1/service.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:45:15Z",
+      "side": 1,
+      "message": "nit: 2?",
+      "range": {
+        "startLine": 46,
+        "startChar": 27,
+        "endLine": 46,
+        "endChar": 28
+      },
+      "revId": "8f551210cbf897ed73e41d7a52c3920d9e413d17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
