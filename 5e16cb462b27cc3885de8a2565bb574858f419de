@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8c259808_bf1c49ed",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T00:13:30Z",
+      "side": 1,
+      "message": "It\u0027s intended for humans debugging problems with the service, but I don\u0027t necessarily know who will want to consume it. Maybe some other service will use it to render dashboards, who knows.\n\nMy current intended use case is for a human who receives an alert saying prefix x is underprovisioned to use the List API to find the status of every member of that prefix. This gives a specific entity to debug in a more convenient way that scouring logs. For example if an instance is listed as created a long time ago but not yet connected it gives you the specific instance to SSH into to see what happened.",
+      "parentUuid": "ce4b309b_1bd3db36",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c2d42f47_08ca5877",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "3b875625_a6d04166",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T00:13:30Z",
+      "side": 1,
+      "message": "It is though. It works on the live server.",
+      "parentUuid": "c2d42f47_08ca5877",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d36efb9_55490a78",
         "filename": "gce/api/instances/v1/service.proto",
         "patchSetId": 1
@@ -50,6 +86,24 @@
       "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f02aedb_8c4a9ecf",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T00:13:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d36efb9_55490a78",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -76,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "41cafdf9_cc21fa6b",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T00:13:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57e34dec_4773a596",
+      "range": {
+        "startLine": 41,
+        "startChar": 16,
+        "endLine": 41,
+        "endChar": 30
+      },
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3938feef_c5492523",
         "filename": "gce/api/instances/v1/service.proto",
         "patchSetId": 1
@@ -99,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "e49243b5_5a4ffc17",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T00:13:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3938feef_c5492523",
+      "range": {
+        "startLine": 47,
+        "startChar": 16,
+        "endLine": 47,
+        "endChar": 19
+      },
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dd35fa3d_0c825011",
         "filename": "gce/api/instances/v1/service.proto",
         "patchSetId": 1
@@ -113,6 +215,24 @@
       "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57e88495_5a17a3b8",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T00:13:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd35fa3d_0c825011",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -133,6 +253,24 @@
     },
     {
       "key": {
+        "uuid": "54e638cd_5083c01f",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T00:13:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94c99060_a9125324",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f7d8e1b_9cb5c38c",
         "filename": "gce/appengine/rpc/instances.go",
         "patchSetId": 1
@@ -150,6 +288,24 @@
     },
     {
       "key": {
+        "uuid": "b221f3d8_c8efa2be",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T00:13:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f7d8e1b_9cb5c38c",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "11b94171_c4ed9853",
         "filename": "gce/appengine/rpc/instances.go",
         "patchSetId": 1
@@ -161,6 +317,24 @@
       "writtenOn": "2019-03-19T23:30:49Z",
       "side": 1,
       "message": "does this restrict this to admins only?",
+      "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c02b093_6f4071c5",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T00:13:30Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "11b94171_c4ed9853",
       "revId": "5e16cb462b27cc3885de8a2565bb574858f419de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
