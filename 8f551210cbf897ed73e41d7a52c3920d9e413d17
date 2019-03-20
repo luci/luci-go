@@ -22,6 +22,30 @@
       "revId": "8f551210cbf897ed73e41d7a52c3920d9e413d17",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddccd65f_659afc07",
+        "filename": "gce/api/projects/v1/service.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T04:07:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ffe8075_844a3fd1",
+      "range": {
+        "startLine": 46,
+        "startChar": 27,
+        "endLine": 46,
+        "endChar": 28
+      },
+      "revId": "8f551210cbf897ed73e41d7a52c3920d9e413d17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
