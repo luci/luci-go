@@ -288,6 +288,29 @@ luci.console_view_entry(
 )
 
 
+# Notifier.
+
+
+luci.notifier(
+    name = 'main notifier',
+    on_new_failure = True,
+    emails = ['someone@example,com'],
+    notify_blamelist = True,
+    notified_by = [
+        'linux ci builder',
+        'cron builder',
+    ],
+)
+
+
+luci.builder(
+    name = 'watched builder',
+    bucket = 'ci',
+    recipe = 'main/recipe',
+    notifies = ['main notifier'],
+)
+
+
 # CQ.
 
 

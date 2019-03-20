@@ -49,13 +49,15 @@ def _builder(
       build_numbers=None,
       experimental=None,
       task_template_canary_percentage=None,
+      repo=None,
 
       # Deprecated stuff, candidate for deletion.
       luci_migration_host=None,
 
       # Relations.
       triggers=None,
-      triggered_by=None
+      triggered_by=None,
+      notifies=None
   ):
   """Defines a generic builder.
 
@@ -167,6 +169,13 @@ def _builder(
         of builds that should use a canary swarming task template. If None,
         defer the decision to Buildbucket service. Supports the module-scoped
         default.
+    repo: URL of a primary git repository (starting with `https://`) associated
+        with the builder, if known. It is in particular important when using
+        luci.notifier(...) to let LUCI know what git history it should use to
+        chronologically order builds on this builder. If unknown, builds will be
+        ordered by timestamp. If unset, will be taken from the configuration of
+        a luci.gitiles_poller(...) that triggers this builder, if there's only
+        one such poller.
 
     luci_migration_host: deprecated setting that was important during the
         migration from Buildbot to LUCI. Refer to Buildbucket docs for the
@@ -174,6 +183,8 @@ def _builder(
 
     triggers: builders this builder triggers.
     triggered_by: builders or pollers this builder is triggered by.
+    notifies: a list of names of luci.notifier(...) to notify when the builder
+        changes its status.
   """
   name = validate.string('name', name)
   bucket_key = keys.bucket(bucket)
