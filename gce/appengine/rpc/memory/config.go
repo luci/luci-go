@@ -60,6 +60,10 @@ func (srv *Config) Get(c context.Context, req *config.GetRequest) (*config.Confi
 // List handles a request to list all configs.
 func (srv *Config) List(c context.Context, req *config.ListRequest) (*config.ListResponse, error) {
 	rsp := &config.ListResponse{}
+	// TODO(smut): Handle page tokens.
+	if req.GetPageToken() != "" {
+		return rsp, nil
+	}
 	srv.cfg.Range(func(_, val interface{}) bool {
 		rsp.Configs = append(rsp.Configs, val.(*config.Config))
 		return true

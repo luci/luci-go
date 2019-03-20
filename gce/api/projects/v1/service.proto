@@ -11,7 +11,7 @@ import "go.chromium.org/luci/gce/api/projects/v1/config.proto";
 
 // A request to delete a project.
 message DeleteRequest {
-  // The id of the config to project.
+  // The id of the project to delete.
   string id = 1;
 }
 
@@ -23,26 +23,32 @@ message EnsureRequest {
   Config project = 2;
 }
 
-// A request to get a project.
+// A request to get an existing project.
 message GetRequest {
   // The id of the project to get.
   string id = 1;
 }
 
-// A request to list all projects.
+// A request to list existing projects.
 message ListRequest {
-  // TODO(smut): Support page size and token if necessary.
+  // The value of next_page_token received in a ListResponse. Used to get the
+  // next page of projects. If empty, gets the first page.
+  string page_token = 1;
 }
 
-// A response containing projects.
+// A response to a request to list projects.
 message ListResponse {
   // The projects.
   repeated Config projects = 1;
+
+  // The value to use as the page_token in a ListRequest to get the next page of
+  // projects. If empty, there are no more projects.
+  string next_page_token = 2;
 }
 
 // A service for manipulating projects.
 service Projects {
-  // Delete deletes an existing project.
+  // Delete deletes a project.
   // Internal API.
   rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
   // Ensure ensures a project exists.
@@ -51,6 +57,6 @@ service Projects {
   rpc Ensure(EnsureRequest) returns (Config);
   // Get returns an existing project.
   rpc Get(GetRequest) returns (Config);
-  // List returns all existing projects.
+  // List returns existing projects.
   rpc List(ListRequest) returns (ListResponse);
 }
