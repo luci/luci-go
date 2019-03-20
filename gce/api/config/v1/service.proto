@@ -23,7 +23,7 @@ message EnsureRequest {
   Config config = 2;
 }
 
-// A request to get a config.
+// A request to get an existing config.
 message GetRequest {
   // The id of the config to get.
   string id = 1;
@@ -31,13 +31,22 @@ message GetRequest {
 
 // A request to list all configs.
 message ListRequest {
-  // TODO(smut): Support page size and token if necessary.
+  // Not implemented. The value of next_page_token received in a ListResponse.
+  // Used to get the next page of configs. If empty, gets the first page.
+  string page_token = 1;
+
+  // Not implemented. The maximum number of configs to list.
+  int32 page_size = 2;
 }
 
-// A response containing configs.
+// A response to a request to list existing configs.
 message ListResponse {
   // The configs.
   repeated Config configs = 1;
+
+  // Not implemented. The value to use as the page_token in a ListRequest to get
+  // the next page of configs. If empty, there are no more configs.
+  string next_page_token = 3;
 }
 
 // A service for manipulating configs.
