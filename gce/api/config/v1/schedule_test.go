@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"testing"
+	"time"
 
 	"google.golang.org/genproto/googleapis/type/dayofweek"
 
@@ -28,6 +29,129 @@ import (
 
 func TestSchedule(t *testing.T) {
 	t.Parallel()
+
+	Convey("isSameDay", t, func() {
+		So(isSameDay(time.Sunday, dayofweek.DayOfWeek_SUNDAY), ShouldBeTrue)
+		So(isSameDay(time.Monday, dayofweek.DayOfWeek_MONDAY), ShouldBeTrue)
+		So(isSameDay(time.Friday, dayofweek.DayOfWeek_FRIDAY), ShouldBeTrue)
+		So(isSameDay(time.Sunday, dayofweek.DayOfWeek_MONDAY), ShouldBeFalse)
+		So(isSameDay(time.Monday, dayofweek.DayOfWeek_SUNDAY), ShouldBeFalse)
+		So(isSameDay(time.Sunday, dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED), ShouldBeFalse)
+		So(isSameDay(time.Monday, dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED), ShouldBeFalse)
+		So(isSameDay(time.Friday, dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED), ShouldBeFalse)
+	})
+
+	Convey("mostRecentStart", t, func() {
+		now := time.Time{}.Add(time.Hour * 12)
+		So(now.Weekday(), ShouldEqual, time.Monday)
+		So(now.Hour(), ShouldEqual, 12)
+
+		Convey("invalid", func() {
+			Convey("day", func() {
+				s := &Schedule{
+					Start: &TimeOfDay{
+						Time: "1:00",
+					},
+				}
+				_, err := s.mostRecentStart(now)
+				So(err, ShouldErrLike, "day must be specified")
+			})
+
+			Convey("location", func() {
+				s := &Schedule{
+					Start: &TimeOfDay{
+						Day:      dayofweek.DayOfWeek_MONDAY,
+						Location: "location",
+						Time:     "1:00",
+					},
+				}
+				_, err := s.mostRecentStart(now)
+				So(err, ShouldErrLike, "invalid location")
+			})
+
+			Convey("time", func() {
+				s := &Schedule{
+					Start: &TimeOfDay{
+						Day:  dayofweek.DayOfWeek_MONDAY,
+						Time: "24:00",
+					},
+				}
+				_, err := s.mostRecentStart(now)
+				So(err, ShouldErrLike, "time must not exceed")
+			})
+		})
+
+		Convey("valid", func() {
+			Convey("past", func() {
+				Convey("different day", func() {
+					s := &Schedule{
+						Start: &TimeOfDay{
+							Day:  dayofweek.DayOfWeek_SUNDAY,
+							Time: "23:00",
+						},
+					}
+					t, err := s.mostRecentStart(now)
+					So(err, ShouldBeNil)
+					So(t.Weekday(), ShouldEqual, time.Sunday)
+					So(t.Before(now), ShouldBeTrue)
+				})
+
+				Convey("same day", func() {
+					s := &Schedule{
+						Start: &TimeOfDay{
+							Day:  dayofweek.DayOfWeek_MONDAY,
+							Time: "11:00",
+						},
+					}
+					t, err := s.mostRecentStart(now)
+					So(err, ShouldBeNil)
+					So(t.Weekday(), ShouldEqual, time.Monday)
+					So(t.Before(now), ShouldBeTrue)
+				})
+			})
+
+			Convey("present", func() {
+				s := &Schedule{
+					Start: &TimeOfDay{
+						Day:  dayofweek.DayOfWeek_MONDAY,
+						Time: "12:00",
+					},
+				}
+				t, err := s.mostRecentStart(now)
+				So(err, ShouldBeNil)
+				So(t.Weekday(), ShouldEqual, time.Monday)
+				So(t.Equal(now), ShouldBeTrue)
+			})
+
+			Convey("future", func() {
+				Convey("same day", func() {
+					s := &Schedule{
+						Start: &TimeOfDay{
+							Day:  dayofweek.DayOfWeek_MONDAY,
+							Time: "13:00",
+						},
+					}
+					t, err := s.mostRecentStart(now)
+					So(err, ShouldBeNil)
+					So(t.Weekday(), ShouldEqual, time.Monday)
+					So(t.Before(now), ShouldBeTrue)
+				})
+
+				Convey("different day", func() {
+					s := &Schedule{
+						Start: &TimeOfDay{
+							Day:  dayofweek.DayOfWeek_TUESDAY,
+							Time: "1:00",
+						},
+					}
+					t, err := s.mostRecentStart(now)
+					So(err, ShouldBeNil)
+					So(t.Weekday(), ShouldEqual, time.Tuesday)
+					So(t.Before(now), ShouldBeTrue)
+				})
+			})
+		})
+	})
 
 	Convey("Validate", t, func() {
 		c := &validation.Context{Context: context.Background()}

@@ -30,14 +30,14 @@ import (
 func TestTimeOfDay(t *testing.T) {
 	t.Parallel()
 
-	Convey("ToTime", t, func() {
+	Convey("toTime", t, func() {
 		Convey("invalid", func() {
 			Convey("location", func() {
 				t := &TimeOfDay{
 					Location: "location",
 					Time:     "1:23",
 				}
-				_, err := t.ToTime()
+				_, err := t.toTime()
 				So(err, ShouldErrLike, "invalid location")
 			})
 
@@ -46,7 +46,7 @@ func TestTimeOfDay(t *testing.T) {
 					t := &TimeOfDay{
 						Time: "1/1/1970",
 					}
-					_, err := t.ToTime()
+					_, err := t.toTime()
 					So(err, ShouldErrLike, "time must match regex")
 				})
 
@@ -55,7 +55,7 @@ func TestTimeOfDay(t *testing.T) {
 						t := &TimeOfDay{
 							Time: "24:00",
 						}
-						_, err := t.ToTime()
+						_, err := t.toTime()
 						So(err, ShouldErrLike, "time must not exceed")
 					})
 
@@ -63,7 +63,7 @@ func TestTimeOfDay(t *testing.T) {
 						t := &TimeOfDay{
 							Time: "00:60",
 						}
-						_, err := t.ToTime()
+						_, err := t.toTime()
 						So(err, ShouldErrLike, "time must not exceed")
 					})
 				})
@@ -76,7 +76,7 @@ func TestTimeOfDay(t *testing.T) {
 					t := &TimeOfDay{
 						Time: "1:23",
 					}
-					rel, err := t.ToTime()
+					rel, err := t.toTime()
 					So(err, ShouldBeNil)
 					So(rel.Location(), ShouldEqual, time.UTC)
 				})
@@ -86,7 +86,7 @@ func TestTimeOfDay(t *testing.T) {
 						Location: "America/Los_Angeles",
 						Time:     "1:23",
 					}
-					rel, err := t.ToTime()
+					rel, err := t.toTime()
 					So(err, ShouldBeNil)
 					So(rel.Location().String(), ShouldEqual, "America/Los_Angeles")
 				})
@@ -97,7 +97,7 @@ func TestTimeOfDay(t *testing.T) {
 					t := &TimeOfDay{
 						Time: "1:23",
 					}
-					rel, err := t.ToTime()
+					rel, err := t.toTime()
 					So(err, ShouldBeNil)
 					So(rel.Hour(), ShouldEqual, 1)
 					So(rel.Minute(), ShouldEqual, 23)
@@ -109,7 +109,7 @@ func TestTimeOfDay(t *testing.T) {
 						Location: "America/Los_Angeles",
 						Time:     "1:23",
 					}
-					rel, err := t.ToTime()
+					rel, err := t.toTime()
 					So(err, ShouldBeNil)
 					So(rel.Hour(), ShouldEqual, 1)
 					So(rel.Minute(), ShouldEqual, 23)
