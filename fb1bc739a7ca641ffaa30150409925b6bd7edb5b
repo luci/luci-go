@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "b9b6f84f_b294ed60",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:42:18Z",
+      "side": 1,
+      "message": "s/toTime/mostRecentBefore is easier to read:\n\nstart, err :\u003d s.Start.mostRecentBefore(now)",
+      "range": {
+        "startLine": 30,
+        "startChar": 23,
+        "endLine": 30,
+        "endChar": 35
+      },
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be4c2de3_22cba3af",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:42:18Z",
+      "side": 1,
+      "message": "why is this important? When GetAmount() is called, schedules must be valid, so their order shouldn\u0027t matter. Where am I wrong?",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 1
+      },
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "71823711_f277641d",
         "filename": "gce/api/config/v1/amount.go",
         "patchSetId": 1
@@ -13,6 +59,47 @@
       "writtenOn": "2019-03-20T01:32:32Z",
       "side": 1,
       "message": "Requiring \"less\" to accept a time is a bit odd, but it\u0027s not exported so I think it\u0027s ok. Requiring \"toTime\" to accept a time is the simplest way to implement GetAmount, I think. Plus whether a scheduled change starting on Monday is earlier than one starting on Wednesday arguably differs if it\u0027s Tuesday or Thursday.",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a309f8e5_2509b0d1",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:42:18Z",
+      "side": 1,
+      "message": "at first I disagreed, but after thinking deeper, I agree. However, I think you won\u0027t even need to call into less here and making relativism to current date more clear with:\n\n1. Add RelativeStart field to indexedSchedule\n2. move \"now\" const above and set RelativeStart field in L71..L74, immediately exiting if mostRecentBefore(now) fails\n3. sorting needs to compare RelativeStarts only.\n4. a bit simpler code below.",
+      "parentUuid": "71823711_f277641d",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e1e7503_4b64b1e2",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:42:18Z",
+      "side": 1,
+      "message": "s/toTime/mostRecentBefore\n\nbtw, even crazier idea: change this method (or add new one) to act on Schedule\nfunc (s *Schedule) mostRecentStartBefore() ...\n\nthen code makes even more sense, since schedule is recurrent, while TimeOfDay is less obviously so, ie \ni\u0027d rather read:\nschedule.mostRecentStartBefore(now)\nthan \nschedule.Start.mostRecentStartBefore(now)",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 49,
+        "endChar": 0
+      },
       "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -66,6 +153,41 @@
       "side": 1,
       "message": "It doesn\u0027t really matter, Validate ensures the day isn\u0027t unspecified. I just needed some vaguely reasonable behavior in isSameDay and didn\u0027t want to return (bool, error) or panic.",
       "parentUuid": "ce2e96de_07e09756",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "942b3f6e_4ab4a8ac",
+        "filename": "gce/api/config/v1/timeofday.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:42:18Z",
+      "side": 1,
+      "message": "still applies.",
+      "parentUuid": "ce2e96de_07e09756",
+      "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6676de99_cdf9221d",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:42:18Z",
+      "side": 1,
+      "message": "why? this doesn\u0027t convert amount to seconds :)",
       "revId": "fb1bc739a7ca641ffaa30150409925b6bd7edb5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

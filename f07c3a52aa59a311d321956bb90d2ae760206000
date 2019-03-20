@@ -16,6 +16,24 @@
       "revId": "f07c3a52aa59a311d321956bb90d2ae760206000",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ef32ce8_529c84d2",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-20T02:42:18Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "c595a616_5d23bdcf",
+      "revId": "f07c3a52aa59a311d321956bb90d2ae760206000",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
