@@ -15,8 +15,52 @@
 package config
 
 import (
+	"time"
+
+	"google.golang.org/genproto/googleapis/type/dayofweek"
+
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/validation"
 )
+
+// isSameDay returns whether the given time.Weekday and dayofweek.DayOfWeek
+// represent the same day of the week.
+func isSameDay(wkd time.Weekday, dow dayofweek.DayOfWeek) bool {
+	switch dow {
+	case dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED:
+		return false
+	case dayofweek.DayOfWeek_SUNDAY:
+		// time.Weekday has Sunday == 0, dayofweek.DayOfWeek has Sunday == 7.
+		return wkd == time.Sunday
+	default:
+		// For all other values, time.Weekday == dayofweek.DayOfWeek.
+		return int(wkd) == int(dow)
+	}
+}
+
+// mostRecentStart returns the most recent start time for this schedule relative
+// to the given time. The date in the returned time.Time will be the most recent
+// date falling on the day of the week specified in this schedule which results
+// in the returned time being equal to or before the given time.
+func (s *Schedule) mostRecentStart(now time.Time) (time.Time, error) {
+	t, err := s.GetStart().toTime()
+	if err != nil {
+		return time.Time{}, err
+	}
+	now = now.In(t.Location())
+	// toTime returns a time relative to the current date. Change it to be relative to the given date.
+	t = time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
+	if s.GetStart().Day == dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED {
+		return time.Time{}, errors.Reason("day must be specified").Err()
+	}
+	for !isSameDay(t.Weekday(), s.GetStart().Day) {
+		t = t.Add(time.Hour * -24)
+	}
+	if t.After(now) {
+		t = t.Add(time.Hour * -24 * 7)
+	}
+	return t, nil
+}
 
 // Validate validates this schedule.
 func (s *Schedule) Validate(c *validation.Context) {

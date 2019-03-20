@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"testing"
+	"time"
 
 	"google.golang.org/genproto/googleapis/type/dayofweek"
 
@@ -29,74 +30,104 @@ import (
 func TestAmount(t *testing.T) {
 	t.Parallel()
 
-	Convey("Less", t, func() {
-		Convey("empty", func() {
-			si := &Schedule{}
-			sj := &Schedule{}
-			So(less(si, sj), ShouldBeFalse)
-			So(less(si, sj), ShouldBeFalse)
+	Convey("GetAmount", t, func() {
+		now := time.Time{}
+		So(now.Weekday(), ShouldEqual, time.Monday)
+		So(now.Hour(), ShouldEqual, 0)
+
+		Convey("default", func() {
+			a := &Amount{
+				Default: 1,
+			}
+			n, err := a.GetAmount(now)
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 1)
 		})
 
-		Convey("invalid", func() {
-			si := &Schedule{
-				Start: &TimeOfDay{
-					Time: "25:00",
+		Convey("schedule", func() {
+			a := &Amount{
+				Change: []*Schedule{
+					{
+						Amount: 2,
+						Length: &TimePeriod{
+							Time: &TimePeriod_Duration{
+								Duration: "2h",
+							},
+						},
+						Start: &TimeOfDay{
+							Day:  dayofweek.DayOfWeek_SUNDAY,
+							Time: "23:00",
+						},
+					},
 				},
+				Default: 1,
 			}
-			sj := &Schedule{
-				Start: &TimeOfDay{
-					Time: "-1:00",
-				},
-			}
-			So(less(si, sj), ShouldBeFalse)
-			So(less(sj, si), ShouldBeFalse)
+			n, err := a.GetAmount(now)
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 2)
+
+			n, err = a.GetAmount(now.Add(time.Minute * 59))
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 2)
+
+			n, err = a.GetAmount(now.Add(time.Hour))
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 1)
+
+			n, err = a.GetAmount(now.Add(time.Hour * -1))
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 2)
+
+			n, err = a.GetAmount(now.Add(time.Minute * -61))
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 1)
 		})
 
-		Convey("day", func() {
-			si := &Schedule{
-				Start: &TimeOfDay{
-					Day: dayofweek.DayOfWeek_MONDAY,
+		Convey("schedules", func() {
+			a := &Amount{
+				Change: []*Schedule{
+					{
+						Amount: 2,
+						Length: &TimePeriod{
+							Time: &TimePeriod_Duration{
+								Duration: "2h",
+							},
+						},
+						Start: &TimeOfDay{
+							Day:  dayofweek.DayOfWeek_SUNDAY,
+							Time: "23:00",
+						},
+					},
+					{
+						Amount: 3,
+						Length: &TimePeriod{
+							Time: &TimePeriod_Duration{
+								Duration: "1m",
+							},
+						},
+						Start: &TimeOfDay{
+							Day:  dayofweek.DayOfWeek_MONDAY,
+							Time: "1:00",
+						},
+					},
 				},
+				Default: 1,
 			}
-			sj := &Schedule{
-				Start: &TimeOfDay{
-					Day: dayofweek.DayOfWeek_TUESDAY,
-				},
-			}
-			So(less(si, sj), ShouldBeTrue)
-			So(less(sj, si), ShouldBeFalse)
-		})
+			n, err := a.GetAmount(now)
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 2)
 
-		Convey("time", func() {
-			si := &Schedule{
-				Start: &TimeOfDay{
-					Time: "1:00",
-				},
-			}
-			sj := &Schedule{
-				Start: &TimeOfDay{
-					Time: "2:00",
-				},
-			}
-			So(less(si, sj), ShouldBeTrue)
-			So(less(sj, si), ShouldBeFalse)
-		})
+			n, err = a.GetAmount(now.Add(time.Minute * 59))
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 2)
 
-		Convey("different day", func() {
-			si := &Schedule{
-				Start: &TimeOfDay{
-					Day:  dayofweek.DayOfWeek_MONDAY,
-					Time: "2:00",
-				},
-			}
-			sj := &Schedule{
-				Start: &TimeOfDay{
-					Day:  dayofweek.DayOfWeek_TUESDAY,
-					Time: "1:00",
-				},
-			}
-			So(less(si, sj), ShouldBeTrue)
-			So(less(sj, si), ShouldBeFalse)
+			n, err = a.GetAmount(now.Add(time.Hour))
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 3)
+
+			n, err = a.GetAmount(now.Add(time.Minute * 61))
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 1)
 		})
 	})
 
@@ -320,8 +351,9 @@ func TestAmount(t *testing.T) {
 									},
 								},
 								Start: &TimeOfDay{
-									Day:  dayofweek.DayOfWeek_TUESDAY,
-									Time: "1:00",
+									Day:      dayofweek.DayOfWeek_TUESDAY,
+									Location: "America/Los_Angeles",
+									Time:     "1:00",
 								},
 							},
 							{
@@ -331,7 +363,40 @@ func TestAmount(t *testing.T) {
 									},
 								},
 								Start: &TimeOfDay{
-									Day:  dayofweek.DayOfWeek_MONDAY,
+									Day:      dayofweek.DayOfWeek_MONDAY,
+									Location: "America/Los_Angeles",
+									Time:     "1:00",
+								},
+							},
+						},
+					}
+					a.Validate(c)
+					So(c.Finalize(), ShouldBeNil)
+				})
+
+				Convey("different location", func() {
+					a := &Amount{
+						Change: []*Schedule{
+							{
+								Length: &TimePeriod{
+									Time: &TimePeriod_Duration{
+										Duration: "1h",
+									},
+								},
+								Start: &TimeOfDay{
+									Day:      dayofweek.DayOfWeek_MONDAY,
+									Location: "America/Los_Angeles",
+									Time:     "23:00",
+								},
+							},
+							{
+								Length: &TimePeriod{
+									Time: &TimePeriod_Duration{
+										Duration: "6h",
+									},
+								},
+								Start: &TimeOfDay{
+									Day:  dayofweek.DayOfWeek_TUESDAY,
 									Time: "1:00",
 								},
 							},

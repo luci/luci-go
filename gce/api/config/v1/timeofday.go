@@ -28,9 +28,10 @@ import (
 // timeRegex is the regular expression valid time strings must match.
 const timeRegex = "^([0-2]?[0-9]):([0-6][0-9])$"
 
-// ToTime returns this time of day relative to the current day.
-func (t *TimeOfDay) ToTime() (time.Time, error) {
-	now := time.Now()
+// toTime returns the time.Time representation of the time referenced by this
+// time of day.
+func (t *TimeOfDay) toTime() (time.Time, error) {
+	now := time.Time{}
 	loc, err := time.LoadLocation(t.GetLocation())
 	if err != nil {
 		return now, errors.Reason("invalid location").Err()
@@ -57,7 +58,7 @@ func (t *TimeOfDay) Validate(c *validation.Context) {
 	if t.GetDay() == dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED {
 		c.Errorf("day must be specified")
 	}
-	_, err := t.ToTime()
+	_, err := t.toTime()
 	if err != nil {
 		c.Errorf("%s", err)
 	}
