@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "732d3649_cf028855",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-20T23:34:10Z",
+      "side": 1,
+      "message": "did you consider making this, and poller.repo and console_view.repo, an *object*?\nit would be a bit more consistent with other objects and future proof if we want to attach some metadata to repos in the future",
+      "range": {
+        "startLine": 172,
+        "startChar": 10,
+        "endLine": 172,
+        "endChar": 13
+      },
+      "revId": "93a511520a75587c58d04e0a478e8e52dc94a28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "869eb422_1747a75c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-20T23:34:10Z",
+      "side": 1,
+      "message": "did you mean notifiers?\nthe object is called luci.notifier",
+      "range": {
+        "startLine": 186,
+        "startChar": 4,
+        "endLine": 186,
+        "endChar": 12
+      },
+      "revId": "93a511520a75587c58d04e0a478e8e52dc94a28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f9cf57d0_5e825a9d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 3
