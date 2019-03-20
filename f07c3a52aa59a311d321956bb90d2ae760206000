@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c595a616_5d23bdcf",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-20T01:32:32Z",
+      "side": 0,
+      "message": "Moved to schedule.go since it concerns Schedules only.",
+      "revId": "f07c3a52aa59a311d321956bb90d2ae760206000",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
