@@ -51,29 +51,20 @@ func getVM(c context.Context, id string) (*model.VM, error) {
 	vm := &model.VM{
 		ID: id,
 	}
-	if err := datastore.Get(c, vm); err != nil {
+	switch err := datastore.Get(c, vm); {
+	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch VM").Err()
-	}
-	switch {
 	case vm.Hostname != "":
 		return vm, nil
-	case vm.Drained:
-		// If the VM is drained, don't generate a new name.
-		return nil, errors.Reason("VM drained").Err()
 	}
 	// Generate a new hostname and record it so future calls are idempotent.
 	hostname := fmt.Sprintf("%s-%s", vm.ID, getSuffix(c))
 	if err := datastore.RunInTransaction(c, func(c context.Context) error {
-		if err := datastore.Get(c, vm); err != nil {
+		switch err := datastore.Get(c, vm); {
+		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
-		}
-		// Double-check inside transaction.
-		// Hostname may already be generated or the VM may be drained.
-		switch {
 		case vm.Hostname != "":
 			return nil
-		case vm.Drained:
-			return errors.Reason("VM drained").Err()
 		}
 		vm.Hostname = hostname
 		if err := datastore.Put(c, vm); err != nil {
