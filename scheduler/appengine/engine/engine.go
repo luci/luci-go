@@ -1276,8 +1276,8 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	}
 
 	// Ask the manager to start the task. If it returns no errors, it should also
-	// move the invocation out of StatusStarting state (a failure to do so is a
-	// fatal error). If it returns an error, the invocation is forcefully moved to
+	// move the invocation out of an initial state (a failure to do so is a fatal
+	// error). If it returns an error, the invocation is forcefully moved to
 	// StatusRetrying or StatusFailed state (depending on whether the error is
 	// transient or not and how many retries are left). In either case, invocation
 	// never ends up in StatusStarting state.
@@ -1285,22 +1285,29 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to LaunchTask")
 	}
-	if ctl.State().Status == task.StatusStarting && err == nil {
-		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
+	if status := ctl.State().Status; status.Initial() && err == nil {
+		err = fmt.Errorf("LaunchTask didn't move invocation out of initial %s state", status)
 	}
 	if transient.Tag.In(err) && inv.RetryCount+1 >= invocationRetryLimit {
 		err = fmt.Errorf("Too many retries, giving up (original error - %s)", err)
 	}
 
-	// The task must always end up in a non-starting state. Do it on behalf of the
+	// The task must always end up in a non-initial state. Do it on behalf of the
 	// controller if necessary.
-	if ctl.State().Status == task.StatusStarting {
+	if ctl.State().Status.Initial() {
 		if transient.Tag.In(err) {
 			// This invocation object will be reused for a retry later.
 			ctl.State().Status = task.StatusRetrying
 		} else {
+			// The invocation has crashed with the fatal error.
 			ctl.State().Status = task.StatusFailed
 		}
+	}
+
+	// Add a notice into the invocation log that we'll attempt to retry.
+	isRetrying := ctl.State().Status == task.StatusRetrying
+	if isRetrying {
+		ctl.DebugLog("The invocation will be retried")
 	}
 
 	// We MUST commit the state of the invocation. A failure to save the state
@@ -1314,7 +1321,7 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 
 	// Task retries happen via the task queue, need to explicitly trigger a retry
 	// by returning a transient error.
-	if ctl.State().Status == task.StatusRetrying {
+	if isRetrying {
 		return errRetryingLaunch
 	}
 

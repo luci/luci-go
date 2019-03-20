@@ -314,10 +314,6 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 		ctl.timers = nil
 	}
 
-	if saving.Status == task.StatusRetrying {
-		saving.debugLog(ctx, "The invocation will be retried")
-	}
-
 	// Update the invocation entity, notifying the engine about all changes.
 	err = runTxn(ctx, func(c context.Context) error {
 		// Grab what's currently in the store to compare MutationsCount to what we

@@ -884,7 +884,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 			So(fetchInvocation(c).Status, ShouldEqual, task.StatusAborted)
 		})
 
-		Convey("retying", func() {
+		Convey("successful retry", func() {
 			// Attempt #1.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				return transient.Tag.Apply(fmt.Errorf("oops, failed to start"))
@@ -909,6 +909,30 @@ func TestLaunchInvocationTask(t *testing.T) {
 				"[22:42:00.000] Starting the invocation (attempt 2)\n"+
 				"[22:42:00.000] Succeeded!\n"+
 				"[22:42:00.000] Invocation finished in 0s with status SUCCEEDED\n")
+		})
+
+		Convey("failed retry", func() {
+			// Attempt #1.
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				return transient.Tag.Apply(fmt.Errorf("oops, failed to start"))
+			}
+			So(callLaunchInvocation(c, 0), ShouldEqual, errRetryingLaunch)
+			So(fetchInvocation(c).Status, ShouldEqual, task.StatusRetrying)
+
+			// Attempt #2.
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				return fmt.Errorf("boom, fatal shot")
+			}
+			So(callLaunchInvocation(c, 1), ShouldBeNil) // didn't ask for a retry
+
+			updated := fetchInvocation(c)
+			So(updated.Status, ShouldEqual, task.StatusFailed)
+			So(updated.RetryCount, ShouldEqual, 1)
+			So(updated.DebugLog, ShouldEqual, "[22:42:00.000] New invocation is queued and will start shortly\n"+
+				"[22:42:00.000] Starting the invocation (attempt 1)\n"+
+				"[22:42:00.000] The invocation will be retried\n"+
+				"[22:42:00.000] Starting the invocation (attempt 2)\n"+
+				"[22:42:00.000] Invocation finished in 0s with status FAILED\n")
 		})
 	})
 }
