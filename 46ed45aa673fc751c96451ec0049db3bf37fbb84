@@ -22,6 +22,30 @@
       "revId": "46ed45aa673fc751c96451ec0049db3bf37fbb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de74a914_0ce63099",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-21T20:01:13Z",
+      "side": 1,
+      "message": "Strictly speaking, commit can be requested from Git server w/o knowing which ref commit belongs to:\nhttps://stackoverflow.com/a/30701724\n\nGiven default \"git clone\" sets refs/heads/*, it\u0027s quite common (and that\u0027s what bot_update pretty much does) to fetch\n$ git fetch # default refspec of refs/heads/*:refs/heads/*\nthen locally expect commit to already be known:\n$ git checkout $REVISION\n\nSo, I think refs/heads/master is not a really a good default if no ref is specified .\n\nHowever, we should encourage ref to be set if known, promising faster fetching times some day...",
+      "parentUuid": "7c41a368_ca54f939",
+      "range": {
+        "startLine": 254,
+        "startChar": 26,
+        "endLine": 254,
+        "endChar": 31
+      },
+      "revId": "46ed45aa673fc751c96451ec0049db3bf37fbb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
