@@ -305,6 +305,7 @@ type Build_Input struct {
 	// Gerrit patchsets to run against.
 	// Usually present in tryjobs, set by CQ, Gerrit, git-cl-try.
 	// Applied on top of gitiles_commit if specified, otherwise tip of the tree.
+	// All GerritChange fields are required.
 	//
 	// V1 equivalent: supersedes patch_* properties and "buildset"
 	// tag that starts with "patch/gerrit/".
