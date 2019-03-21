@@ -326,8 +326,8 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
 }
 
-func newBuildsClient(c context.Context, host string) (buildbucketpb.BuildsClient, error) {
-	t, err := auth.GetRPCTransport(c, auth.AsSelf)
+func newBuildsClient(c context.Context, host, project string) (buildbucketpb.BuildsClient, error) {
+	t, err := auth.GetRPCTransport(c, auth.AsProject, auth.WithProject(project))
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +396,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		return nil, nil
 	}
 
-	buildsClient, err := newBuildsClient(c, message.Hostname)
+	buildsClient, err := newBuildsClient(c, message.Hostname, message.Build.Project)
 	if err != nil {
 		return nil, err
 	}
