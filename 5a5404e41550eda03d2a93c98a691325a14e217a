@@ -1,0 +1,341 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a0d1397_80cb4117",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "what principles do you use to decide direction of an edge?",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2cc87463_12f22f84",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "seems to assume the caller",
+      "range": {
+        "startLine": 146,
+        "startChar": 55,
+        "endLine": 146,
+        "endChar": 65
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dbb64290_f2bda217",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 936,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "see my another comment about limitation. I think the loop should go over watched builders, not notifiers",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4c99749_f8a654b9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "creation timestamp\nor\ncreation time",
+      "range": {
+        "startLine": 176,
+        "startChar": 19,
+        "endLine": 176,
+        "endChar": 28
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20ba9f7f_1504704f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "could you also validate that it does not end with .git? it a very common mistake",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23a8fbd8_6998182e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "event",
+      "range": {
+        "startLine": 48,
+        "startChar": 43,
+        "endLine": 48,
+        "endChar": 47
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82546f52_3a3fec1f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "nit: would be more consistent to say that recipients are specified via `notify_*` fields, and at least one is also required",
+      "range": {
+        "startLine": 49,
+        "startChar": 76,
+        "endLine": 49,
+        "endChar": 77
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "405b0e26_cb3b08dc",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "specifically \"a build ends\"",
+      "range": {
+        "startLine": 52,
+        "startChar": 64,
+        "endLine": 53,
+        "endChar": 43
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3a9a031_1da68e77",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "why do we have to expose this impl detail / limitation? at the generation phase we can generate as many \"notification\" objects as the user asked for, while maintaining one \"notifier\" per builder",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74b2dae1_097f150b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "let\u0027s rename on_status_change while we can. \non_change was too abstract",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 66,
+        "endChar": 13
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70db6ffd_0cd45c91",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "please add a note that this explicitly does not include INFRA_FAILURE\n\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/luci_notify/api/config/notify.go?q\u003dOnFailure+f:notify\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d27\n\nsame in on_new_failure",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b1c449a_50a81dcd",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "nit: emails? plural, since it is a list\n\nFWIW it might be more consistent with some other parts of lucicfg to allow a string here",
+      "range": {
+        "startLine": 73,
+        "startChar": 11,
+        "endLine": 73,
+        "endChar": 16
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea2ba1b1_3ba8a207",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "luci-notify will silently ignore this completely unless builder has a repo :(\nThis isn\u0027t obvious from this docstring. Please mention repo.",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd4ad168_e228fd02",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "default\u003dFalse\n? otherwise we add Nones to props below, so we have two ways to represent false\n\nsame for other params",
+      "range": {
+        "startLine": 89,
+        "startChar": 66,
+        "endLine": 89,
+        "endChar": 67
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5938e7e1_ecaedc46",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "i think we need validation.repo_url() that would check .git too",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7000596d_7409ef84",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "i think we should check that at least one of notify_ is set, otherwise this notifier is useless",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50d01816_c8ae21ee",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T17:50:49Z",
+      "side": 1,
+      "message": "nit: consider moving this blank line 1L up so that this add_edge is closer to add_edge below",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
