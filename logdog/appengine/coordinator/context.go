@@ -240,5 +240,5 @@ func Project(c context.Context) types.ProjectName {
 	if project != "" {
 		return project
 	}
-	panic(fmt.Errorf("current namespace %q does not begin with project namespace prefix (%q)", ns, projectNamespacePrefix))
+	panic(fmt.Errorf("current namespace %q does not begin with project namespace prefix (%q)", ns, ProjectNamespacePrefix))
 }
