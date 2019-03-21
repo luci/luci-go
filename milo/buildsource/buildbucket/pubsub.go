@@ -20,9 +20,15 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -70,12 +76,64 @@ func PubSubHandler(ctx *router.Context) {
 	ctx.Writer.WriteHeader(http.StatusOK)
 }
 
+func mustTimestamp(ts *timestamp.Timestamp) time.Time {
+	if t, err := ptypes.Timestamp(ts); err == nil {
+		return t
+	}
+	return time.Time{}
+}
+
+// getSummary returns a model.BuildSummary representing a buildbucket build.
+func getSummary(c context.Context, host string, id int64) (*model.BuildSummary, error) {
+	client, err := buildbucketClient(c, host)
+	if err != nil {
+		return nil, err
+	}
+	br := &buildbucketpb.GetBuildRequest{
+		Id:     id,
+		Fields: summaryBuildMask,
+	}
+	b, err := client.GetBuild(c, br)
+	if err != nil {
+		return nil, err
+	}
+	buildAddress := fmt.Sprintf("luci.%s.%s/%s/", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
+	if b.Number != 0 {
+		buildAddress += fmt.Sprintf("%d", b.Number)
+	} else {
+		buildAddress += fmt.Sprintf("%d", b.Id)
+	}
+
+	buildKey := datastore.MakeKey(c, "buildbucket.Build", fmt.Sprintf("%s:%s", host, buildAddress))
+	b.UpdateTime.GetNanos()
+
+	return &model.BuildSummary{
+		ProjectID:  b.Builder.Project,
+		BuildKey:   buildKey,
+		BuilderID:  BuilderID{*b.Builder}.String(),
+		BuildID:    "buildbucket/" + buildAddress,
+		BuildSet:   b.Buildsets(),
+		ContextURI: []string{fmt.Sprintf("buildbucket://%s/build/%d", host, id)},
+		Created:    mustTimestamp(b.CreateTime),
+		Summary: model.Summary{
+			Start:  mustTimestamp(b.StartTime),
+			End:    mustTimestamp(b.EndTime),
+			Status: statusMap[b.Status],
+		},
+		Version: mustTimestamp(b.UpdateTime).UnixNano(),
+	}, nil
+}
+
 // generateSummary takes a decoded buildbucket event and generates
 // a model.BuildSummary from it.
 //
 // This is the portion of the summarization process which cannot fail (i.e. is
 // pure-data).
 func generateSummary(c context.Context, hostname string, build buildbucket.Build) (*model.BuildSummary, error) {
+	bs, err := getSummary(c, hostname, build.ID)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "got error while getting summary")
+	}
 	// HACK(iannucci,nodir) - crbug.com/776300 - The project and annotation URL
 	// should be directly represented on the Build. This is a leaky abstraction;
 	// swarming isn't relevant to either value.
@@ -83,12 +141,11 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 	project := swarmTags.Get("luci_project")
 
 	ret := &model.BuildSummary{
-		ProjectID:     project,
-		AnnotationURL: swarmTags.Get("log_location"),
-		BuildKey:      MakeBuildKey(c, hostname, build.Address()),
-		BuilderID:     NewBuilderID(build.Bucket, build.Builder).String(),
-		BuildID:       "buildbucket/" + build.Address(),
-		BuildSet:      build.Tags[bbv1.TagBuildSet],
+		ProjectID: project,
+		BuildKey:  MakeBuildKey(c, hostname, build.Address()),
+		BuilderID: NewBuilderID(build.Bucket, build.Builder).String(),
+		BuildID:   "buildbucket/" + build.Address(),
+		BuildSet:  build.Tags[bbv1.TagBuildSet],
 		ContextURI: []string{
 			fmt.Sprintf("buildbucket://%s/build/%d", hostname, build.ID),
 		},
@@ -103,6 +160,13 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		Version: build.UpdateTime.UnixNano(),
 
 		Experimental: build.Experimental,
+	}
+
+	// Informational compare of v1 and v2 API result.
+	if diff := cmp.Diff(ret, bs, cmpopts.IgnoreUnexported(model.BuildSummary{})); diff != "" {
+		logging.Errorf(c, "BuildSummary of v2 has Diff (-v1, +v2)\n%s", diff)
+	} else {
+		logging.Debugf(c, "BuildSummary between v1 and v2 are the same.")
 	}
 
 	if shost, sid := build.Tags.Get("swarming_hostname"), build.Tags.Get("swarming_task_id"); shost != "" && sid != "" {

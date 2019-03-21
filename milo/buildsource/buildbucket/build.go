@@ -216,7 +216,7 @@ func searchBuildsRequest(buildset string) *buildbucketpb.SearchBuildsRequest {
 		Predicate: &buildbucketpb.BuildPredicate{
 			Tags: []*buildbucketpb.StringPair{{Key: "buildset", Value: buildset}},
 		},
-		Fields:   summaryBuildMask,
+		Fields:   summaryBuildsMask,
 		PageSize: 1000,
 	}
 }
@@ -306,7 +306,7 @@ var (
 			"tags",
 		},
 	}
-	summaryBuildMask = &field_mask.FieldMask{
+	summaryBuildsMask = &field_mask.FieldMask{
 		Paths: []string{
 			"builds.*.id",
 			"builds.*.builder",
@@ -317,6 +317,20 @@ var (
 			"builds.*.update_time",
 			"builds.*.status",
 			"builds.*.summary_markdown",
+		},
+	}
+	summaryBuildMask = &field_mask.FieldMask{
+		Paths: []string{
+			"id",
+			"builder",
+			"number",
+			"create_time",
+			"start_time",
+			"end_time",
+			"update_time",
+			"status",
+			"summary_markdown",
+			"tags",
 		},
 	}
 )
