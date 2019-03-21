@@ -11,6 +11,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -998,6 +1000,35 @@ type SchedulerServer interface {
 	//
 	// Requires TRIGGERER Job permission.
 	EmitTriggers(context.Context, *EmitTriggersRequest) (*empty.Empty, error)
+}
+
+// UnimplementedSchedulerServer can be embedded to have forward compatible implementations.
+type UnimplementedSchedulerServer struct {
+}
+
+func (*UnimplementedSchedulerServer) GetJobs(ctx context.Context, req *JobsRequest) (*JobsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetJobs not implemented")
+}
+func (*UnimplementedSchedulerServer) GetInvocations(ctx context.Context, req *InvocationsRequest) (*InvocationsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInvocations not implemented")
+}
+func (*UnimplementedSchedulerServer) GetInvocation(ctx context.Context, req *InvocationRef) (*Invocation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInvocation not implemented")
+}
+func (*UnimplementedSchedulerServer) PauseJob(ctx context.Context, req *JobRef) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PauseJob not implemented")
+}
+func (*UnimplementedSchedulerServer) ResumeJob(ctx context.Context, req *JobRef) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResumeJob not implemented")
+}
+func (*UnimplementedSchedulerServer) AbortJob(ctx context.Context, req *JobRef) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AbortJob not implemented")
+}
+func (*UnimplementedSchedulerServer) AbortInvocation(ctx context.Context, req *InvocationRef) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AbortInvocation not implemented")
+}
+func (*UnimplementedSchedulerServer) EmitTriggers(ctx context.Context, req *EmitTriggersRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EmitTriggers not implemented")
 }
 
 func RegisterSchedulerServer(s prpc.Registrar, srv SchedulerServer) {

@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,33 @@
 
 // Package buildbucket provides access to the Build Bucket Service.
 //
+// Creating a client
+//
 // Usage example:
 //
 //   import "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 //   ...
-//   buildbucketService, err := buildbucket.New(oauthHttpClient)
+//   ctx := context.Background()
+//   buildbucketService, err := buildbucket.NewService(ctx)
+//
+// In this example, Google Application Default Credentials are used for authentication.
+//
+// For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
+//
+// Other authentication options
+//
+// To use an API key for authentication (note: some APIs do not support API keys), use option.WithAPIKey:
+//
+//   buildbucketService, err := buildbucket.NewService(ctx, option.WithAPIKey("AIza..."))
+//
+// To use an OAuth token (e.g., a user token obtained via a three-legged OAuth flow), use option.WithTokenSource:
+//
+//   config := &oauth2.Config{...}
+//   // ...
+//   token, err := config.Exchange(ctx, ...)
+//   buildbucketService, err := buildbucket.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+//
+// See https://godoc.org/google.golang.org/api/option/ for details on options.
 package buildbucket // import "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 
 import (
@@ -37,6 +59,8 @@ import (
 
 	gensupport "google.golang.org/api/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	option "google.golang.org/api/option"
+	htransport "google.golang.org/api/transport/http"
 )
 
 // Always reference these packages, just in case the auto-generated code
@@ -64,6 +88,32 @@ const (
 	UserinfoEmailScope = "https://www.googleapis.com/auth/userinfo.email"
 )
 
+// NewService creates a new Service.
+func NewService(ctx context.Context, opts ...option.ClientOption) (*Service, error) {
+	scopesOption := option.WithScopes(
+		"https://www.googleapis.com/auth/userinfo.email",
+	)
+	// NOTE: prepend, so we don't override user-specified scopes.
+	opts = append([]option.ClientOption{scopesOption}, opts...)
+	client, endpoint, err := htransport.NewClient(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	s, err := New(client)
+	if err != nil {
+		return nil, err
+	}
+	if endpoint != "" {
+		s.BasePath = endpoint
+	}
+	return s, nil
+}
+
+// New creates a new Service. It uses the provided http.Client for requests.
+//
+// Deprecated: please use NewService instead.
+// To provide a custom HTTP client, use option.WithHTTPClient.
+// If you are using google.golang.org/api/googleapis/transport.APIKey, use option.WithAPIKey with NewService instead.
 func New(client *http.Client) (*Service, error) {
 	if client == nil {
 		return nil, errors.New("client is nil")
@@ -85,14 +135,14 @@ func (s *Service) userAgent() string {
 	return googleapi.UserAgent + " " + s.UserAgent
 }
 
-type ApiBucketMessage struct {
+type LegacyApiBucketMessage struct {
 	ConfigFileContent string `json:"config_file_content,omitempty"`
 
 	ConfigFileRev string `json:"config_file_rev,omitempty"`
 
 	ConfigFileUrl string `json:"config_file_url,omitempty"`
 
-	Error *ApiErrorMessage `json:"error,omitempty"`
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
 	Name string `json:"name,omitempty"`
 
@@ -120,17 +170,17 @@ type ApiBucketMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiBucketMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiBucketMessage
+func (s *LegacyApiBucketMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiBucketMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiBuildResponseMessage struct {
+type LegacyApiBuildResponseMessage struct {
 	// Build: Describes model.Build, see its docstring.
-	Build *ApiCommonBuildMessage `json:"build,omitempty"`
+	Build *LegacyApiCommonBuildMessage `json:"build,omitempty"`
 
-	Error *ApiErrorMessage `json:"error,omitempty"`
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
@@ -153,13 +203,13 @@ type ApiBuildResponseMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiBuildResponseMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiBuildResponseMessage
+func (s *LegacyApiBuildResponseMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiBuildResponseMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiCancelBatchRequestMessage struct {
+type LegacyApiCancelBatchRequestMessage struct {
 	BuildIds googleapi.Int64s `json:"build_ids,omitempty"`
 
 	ResultDetailsJson string `json:"result_details_json,omitempty"`
@@ -181,16 +231,16 @@ type ApiCancelBatchRequestMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiCancelBatchRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiCancelBatchRequestMessage
+func (s *LegacyApiCancelBatchRequestMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiCancelBatchRequestMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiCancelBatchResponseMessage struct {
-	Error *ApiErrorMessage `json:"error,omitempty"`
+type LegacyApiCancelBatchResponseMessage struct {
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
-	Results []*ApiCancelBatchResponseMessageOneResult `json:"results,omitempty"`
+	Results []*LegacyApiCancelBatchResponseMessageOneResult `json:"results,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
@@ -213,19 +263,19 @@ type ApiCancelBatchResponseMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiCancelBatchResponseMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiCancelBatchResponseMessage
+func (s *LegacyApiCancelBatchResponseMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiCancelBatchResponseMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiCancelBatchResponseMessageOneResult struct {
+type LegacyApiCancelBatchResponseMessageOneResult struct {
 	// Build: Describes model.Build, see its docstring.
-	Build *ApiCommonBuildMessage `json:"build,omitempty"`
+	Build *LegacyApiCommonBuildMessage `json:"build,omitempty"`
 
 	BuildId int64 `json:"build_id,omitempty,string"`
 
-	Error *ApiErrorMessage `json:"error,omitempty"`
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Build") to
 	// unconditionally include in API requests. By default, fields with
@@ -244,13 +294,13 @@ type ApiCancelBatchResponseMessageOneResult struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiCancelBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiCancelBatchResponseMessageOneResult
+func (s *LegacyApiCancelBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiCancelBatchResponseMessageOneResult
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiCancelRequestBodyMessage struct {
+type LegacyApiCancelRequestBodyMessage struct {
 	ResultDetailsJson string `json:"result_details_json,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "ResultDetailsJson")
@@ -271,14 +321,15 @@ type ApiCancelRequestBodyMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiCancelRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiCancelRequestBodyMessage
+func (s *LegacyApiCancelRequestBodyMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiCancelRequestBodyMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// ApiCommonBuildMessage: Describes model.Build, see its docstring.
-type ApiCommonBuildMessage struct {
+// LegacyApiCommonBuildMessage: Describes model.Build, see its
+// docstring.
+type LegacyApiCommonBuildMessage struct {
 	Bucket string `json:"bucket,omitempty"`
 
 	Canary bool `json:"canary,omitempty"`
@@ -366,14 +417,14 @@ type ApiCommonBuildMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiCommonBuildMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiCommonBuildMessage
+func (s *LegacyApiCommonBuildMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiCommonBuildMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiDeleteManyBuildsResponse struct {
-	Error *ApiErrorMessage `json:"error,omitempty"`
+type LegacyApiDeleteManyBuildsResponse struct {
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
@@ -396,13 +447,13 @@ type ApiDeleteManyBuildsResponse struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiDeleteManyBuildsResponse) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiDeleteManyBuildsResponse
+func (s *LegacyApiDeleteManyBuildsResponse) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiDeleteManyBuildsResponse
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiErrorMessage struct {
+type LegacyApiErrorMessage struct {
 	Message string `json:"message,omitempty"`
 
 	// Possible values:
@@ -432,13 +483,13 @@ type ApiErrorMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiErrorMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiErrorMessage
+func (s *LegacyApiErrorMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiErrorMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiFailRequestBodyMessage struct {
+type LegacyApiFailRequestBodyMessage struct {
 	// Possible values:
 	//   "BUILDBUCKET_FAILURE"
 	//   "BUILD_FAILURE"
@@ -471,14 +522,14 @@ type ApiFailRequestBodyMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiFailRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiFailRequestBodyMessage
+func (s *LegacyApiFailRequestBodyMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiFailRequestBodyMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiHeartbeatBatchRequestMessage struct {
-	Heartbeats []*ApiHeartbeatBatchRequestMessageOneHeartbeat `json:"heartbeats,omitempty"`
+type LegacyApiHeartbeatBatchRequestMessage struct {
+	Heartbeats []*LegacyApiHeartbeatBatchRequestMessageOneHeartbeat `json:"heartbeats,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Heartbeats") to
 	// unconditionally include in API requests. By default, fields with
@@ -497,13 +548,13 @@ type ApiHeartbeatBatchRequestMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiHeartbeatBatchRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiHeartbeatBatchRequestMessage
+func (s *LegacyApiHeartbeatBatchRequestMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiHeartbeatBatchRequestMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiHeartbeatBatchRequestMessageOneHeartbeat struct {
+type LegacyApiHeartbeatBatchRequestMessageOneHeartbeat struct {
 	BuildId int64 `json:"build_id,omitempty,string"`
 
 	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
@@ -527,16 +578,16 @@ type ApiHeartbeatBatchRequestMessageOneHeartbeat struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiHeartbeatBatchRequestMessageOneHeartbeat) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiHeartbeatBatchRequestMessageOneHeartbeat
+func (s *LegacyApiHeartbeatBatchRequestMessageOneHeartbeat) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiHeartbeatBatchRequestMessageOneHeartbeat
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiHeartbeatBatchResponseMessage struct {
-	Error *ApiErrorMessage `json:"error,omitempty"`
+type LegacyApiHeartbeatBatchResponseMessage struct {
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
-	Results []*ApiHeartbeatBatchResponseMessageOneHeartbeatResult `json:"results,omitempty"`
+	Results []*LegacyApiHeartbeatBatchResponseMessageOneHeartbeatResult `json:"results,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
@@ -559,16 +610,16 @@ type ApiHeartbeatBatchResponseMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiHeartbeatBatchResponseMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiHeartbeatBatchResponseMessage
+func (s *LegacyApiHeartbeatBatchResponseMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiHeartbeatBatchResponseMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiHeartbeatBatchResponseMessageOneHeartbeatResult struct {
+type LegacyApiHeartbeatBatchResponseMessageOneHeartbeatResult struct {
 	BuildId int64 `json:"build_id,omitempty,string"`
 
-	Error *ApiErrorMessage `json:"error,omitempty"`
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
 	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
 
@@ -589,13 +640,13 @@ type ApiHeartbeatBatchResponseMessageOneHeartbeatResult struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiHeartbeatBatchResponseMessageOneHeartbeatResult) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiHeartbeatBatchResponseMessageOneHeartbeatResult
+func (s *LegacyApiHeartbeatBatchResponseMessageOneHeartbeatResult) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiHeartbeatBatchResponseMessageOneHeartbeatResult
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiHeartbeatRequestBodyMessage struct {
+type LegacyApiHeartbeatRequestBodyMessage struct {
 	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
 
 	LeaseKey int64 `json:"lease_key,omitempty,string"`
@@ -618,13 +669,13 @@ type ApiHeartbeatRequestBodyMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiHeartbeatRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiHeartbeatRequestBodyMessage
+func (s *LegacyApiHeartbeatRequestBodyMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiHeartbeatRequestBodyMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiLeaseRequestBodyMessage struct {
+type LegacyApiLeaseRequestBodyMessage struct {
 	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
 
 	// ForceSendFields is a list of field names (e.g. "LeaseExpirationTs")
@@ -645,19 +696,19 @@ type ApiLeaseRequestBodyMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiLeaseRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiLeaseRequestBodyMessage
+func (s *LegacyApiLeaseRequestBodyMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiLeaseRequestBodyMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiPauseResponse struct {
+type LegacyApiPauseResponse struct {
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
 	googleapi.ServerResponse `json:"-"`
 }
 
-type ApiPubSubCallbackMessage struct {
+type LegacyApiPubSubCallbackMessage struct {
 	AuthToken string `json:"auth_token,omitempty"`
 
 	Topic string `json:"topic,omitempty"`
@@ -681,14 +732,14 @@ type ApiPubSubCallbackMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiPubSubCallbackMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiPubSubCallbackMessage
+func (s *LegacyApiPubSubCallbackMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiPubSubCallbackMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiPutBatchRequestMessage struct {
-	Builds []*ApiPutRequestMessage `json:"builds,omitempty"`
+type LegacyApiPutBatchRequestMessage struct {
+	Builds []*LegacyApiPutRequestMessage `json:"builds,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Builds") to
 	// unconditionally include in API requests. By default, fields with
@@ -707,16 +758,16 @@ type ApiPutBatchRequestMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiPutBatchRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiPutBatchRequestMessage
+func (s *LegacyApiPutBatchRequestMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiPutBatchRequestMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiPutBatchResponseMessage struct {
-	Error *ApiErrorMessage `json:"error,omitempty"`
+type LegacyApiPutBatchResponseMessage struct {
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
-	Results []*ApiPutBatchResponseMessageOneResult `json:"results,omitempty"`
+	Results []*LegacyApiPutBatchResponseMessageOneResult `json:"results,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
@@ -739,19 +790,19 @@ type ApiPutBatchResponseMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiPutBatchResponseMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiPutBatchResponseMessage
+func (s *LegacyApiPutBatchResponseMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiPutBatchResponseMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiPutBatchResponseMessageOneResult struct {
+type LegacyApiPutBatchResponseMessageOneResult struct {
 	// Build: Describes model.Build, see its docstring.
-	Build *ApiCommonBuildMessage `json:"build,omitempty"`
+	Build *LegacyApiCommonBuildMessage `json:"build,omitempty"`
 
 	ClientOperationId string `json:"client_operation_id,omitempty"`
 
-	Error *ApiErrorMessage `json:"error,omitempty"`
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Build") to
 	// unconditionally include in API requests. By default, fields with
@@ -770,13 +821,13 @@ type ApiPutBatchResponseMessageOneResult struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiPutBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiPutBatchResponseMessageOneResult
+func (s *LegacyApiPutBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiPutBatchResponseMessageOneResult
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiPutRequestMessage struct {
+type LegacyApiPutRequestMessage struct {
 	Bucket string `json:"bucket,omitempty"`
 
 	// Possible values:
@@ -793,7 +844,7 @@ type ApiPutRequestMessage struct {
 
 	ParametersJson string `json:"parameters_json,omitempty"`
 
-	PubsubCallback *ApiPubSubCallbackMessage `json:"pubsub_callback,omitempty"`
+	PubsubCallback *LegacyApiPubSubCallbackMessage `json:"pubsub_callback,omitempty"`
 
 	Tags []string `json:"tags,omitempty"`
 
@@ -814,18 +865,18 @@ type ApiPutRequestMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiPutRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiPutRequestMessage
+func (s *LegacyApiPutRequestMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiPutRequestMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiRetryRequestMessage struct {
+type LegacyApiRetryRequestMessage struct {
 	ClientOperationId string `json:"client_operation_id,omitempty"`
 
 	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
 
-	PubsubCallback *ApiPubSubCallbackMessage `json:"pubsub_callback,omitempty"`
+	PubsubCallback *LegacyApiPubSubCallbackMessage `json:"pubsub_callback,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "ClientOperationId")
 	// to unconditionally include in API requests. By default, fields with
@@ -845,17 +896,17 @@ type ApiRetryRequestMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiRetryRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiRetryRequestMessage
+func (s *LegacyApiRetryRequestMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiRetryRequestMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiSearchResponseMessage struct {
+type LegacyApiSearchResponseMessage struct {
 	// Builds: Describes model.Build, see its docstring.
-	Builds []*ApiCommonBuildMessage `json:"builds,omitempty"`
+	Builds []*LegacyApiCommonBuildMessage `json:"builds,omitempty"`
 
-	Error *ApiErrorMessage `json:"error,omitempty"`
+	Error *LegacyApiErrorMessage `json:"error,omitempty"`
 
 	NextCursor string `json:"next_cursor,omitempty"`
 
@@ -880,13 +931,13 @@ type ApiSearchResponseMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiSearchResponseMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiSearchResponseMessage
+func (s *LegacyApiSearchResponseMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiSearchResponseMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiStartRequestBodyMessage struct {
+type LegacyApiStartRequestBodyMessage struct {
 	Canary bool `json:"canary,omitempty"`
 
 	LeaseKey int64 `json:"lease_key,omitempty,string"`
@@ -910,13 +961,13 @@ type ApiStartRequestBodyMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiStartRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiStartRequestBodyMessage
+func (s *LegacyApiStartRequestBodyMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiStartRequestBodyMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiSucceedRequestBodyMessage struct {
+type LegacyApiSucceedRequestBodyMessage struct {
 	LeaseKey int64 `json:"lease_key,omitempty,string"`
 
 	NewTags []string `json:"new_tags,omitempty"`
@@ -942,8 +993,8 @@ type ApiSucceedRequestBodyMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiSucceedRequestBodyMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiSucceedRequestBodyMessage
+func (s *LegacyApiSucceedRequestBodyMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiSucceedRequestBodyMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -957,7 +1008,7 @@ type BackfillTagIndexCall struct {
 	header_    http.Header
 }
 
-// BackfillTagIndex: Backfills TagIndex entites from builds.
+// BackfillTagIndex: Backfills TagIndex entities from builds.
 func (s *Service) BackfillTagIndex(tagKey string) *BackfillTagIndexCall {
 	c := &BackfillTagIndexCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.urlParams_.Set("tag_key", tagKey)
@@ -1021,7 +1072,7 @@ func (c *BackfillTagIndexCall) Do(opts ...googleapi.CallOption) error {
 	}
 	return nil
 	// {
-	//   "description": "Backfills TagIndex entites from builds.",
+	//   "description": "Backfills TagIndex entities from builds.",
 	//   "httpMethod": "POST",
 	//   "id": "buildbucket.backfill_tag_index",
 	//   "parameterOrder": [
@@ -1045,19 +1096,19 @@ func (c *BackfillTagIndexCall) Do(opts ...googleapi.CallOption) error {
 // method id "buildbucket.cancel":
 
 type CancelCall struct {
-	s                           *Service
-	id                          int64
-	apicancelrequestbodymessage *ApiCancelRequestBodyMessage
-	urlParams_                  gensupport.URLParams
-	ctx_                        context.Context
-	header_                     http.Header
+	s                                 *Service
+	id                                int64
+	legacyapicancelrequestbodymessage *LegacyApiCancelRequestBodyMessage
+	urlParams_                        gensupport.URLParams
+	ctx_                              context.Context
+	header_                           http.Header
 }
 
 // Cancel: Cancels a build.
-func (s *Service) Cancel(id int64, apicancelrequestbodymessage *ApiCancelRequestBodyMessage) *CancelCall {
+func (s *Service) Cancel(id int64, legacyapicancelrequestbodymessage *LegacyApiCancelRequestBodyMessage) *CancelCall {
 	c := &CancelCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
-	c.apicancelrequestbodymessage = apicancelrequestbodymessage
+	c.legacyapicancelrequestbodymessage = legacyapicancelrequestbodymessage
 	return c
 }
 
@@ -1093,7 +1144,7 @@ func (c *CancelCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apicancelrequestbodymessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapicancelrequestbodymessage)
 	if err != nil {
 		return nil, err
 	}
@@ -1114,13 +1165,13 @@ func (c *CancelCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.cancel" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *CancelCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *CancelCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -1139,7 +1190,7 @@ func (c *CancelCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage,
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -1167,11 +1218,11 @@ func (c *CancelCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage,
 	//   },
 	//   "path": "builds/{id}/cancel",
 	//   "request": {
-	//     "$ref": "ApiCancelRequestBodyMessage",
+	//     "$ref": "LegacyApiCancelRequestBodyMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -1183,17 +1234,17 @@ func (c *CancelCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage,
 // method id "buildbucket.cancel_batch":
 
 type CancelBatchCall struct {
-	s                            *Service
-	apicancelbatchrequestmessage *ApiCancelBatchRequestMessage
-	urlParams_                   gensupport.URLParams
-	ctx_                         context.Context
-	header_                      http.Header
+	s                                  *Service
+	legacyapicancelbatchrequestmessage *LegacyApiCancelBatchRequestMessage
+	urlParams_                         gensupport.URLParams
+	ctx_                               context.Context
+	header_                            http.Header
 }
 
 // CancelBatch: Cancels builds.
-func (s *Service) CancelBatch(apicancelbatchrequestmessage *ApiCancelBatchRequestMessage) *CancelBatchCall {
+func (s *Service) CancelBatch(legacyapicancelbatchrequestmessage *LegacyApiCancelBatchRequestMessage) *CancelBatchCall {
 	c := &CancelBatchCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.apicancelbatchrequestmessage = apicancelbatchrequestmessage
+	c.legacyapicancelbatchrequestmessage = legacyapicancelbatchrequestmessage
 	return c
 }
 
@@ -1229,7 +1280,7 @@ func (c *CancelBatchCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apicancelbatchrequestmessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapicancelbatchrequestmessage)
 	if err != nil {
 		return nil, err
 	}
@@ -1247,13 +1298,14 @@ func (c *CancelBatchCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.cancel_batch" call.
-// Exactly one of *ApiCancelBatchResponseMessage or error will be
+// Exactly one of *LegacyApiCancelBatchResponseMessage or error will be
 // non-nil. Any non-2xx status code is an error. Response headers are in
-// either *ApiCancelBatchResponseMessage.ServerResponse.Header or (if a
-// response was returned at all) in error.(*googleapi.Error).Header. Use
-// googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
-func (c *CancelBatchCall) Do(opts ...googleapi.CallOption) (*ApiCancelBatchResponseMessage, error) {
+// either *LegacyApiCancelBatchResponseMessage.ServerResponse.Header or
+// (if a response was returned at all) in
+// error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
+// whether the returned error was because http.StatusNotModified was
+// returned.
+func (c *CancelBatchCall) Do(opts ...googleapi.CallOption) (*LegacyApiCancelBatchResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -1272,7 +1324,7 @@ func (c *CancelBatchCall) Do(opts ...googleapi.CallOption) (*ApiCancelBatchRespo
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiCancelBatchResponseMessage{
+	ret := &LegacyApiCancelBatchResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -1289,11 +1341,11 @@ func (c *CancelBatchCall) Do(opts ...googleapi.CallOption) (*ApiCancelBatchRespo
 	//   "id": "buildbucket.cancel_batch",
 	//   "path": "builds/cancel",
 	//   "request": {
-	//     "$ref": "ApiCancelBatchRequestMessage",
+	//     "$ref": "LegacyApiCancelBatchRequestMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiCancelBatchResponseMessage"
+	//     "$ref": "LegacyApiCancelBatchResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -1380,13 +1432,14 @@ func (c *DeleteManyBuildsCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.delete_many_builds" call.
-// Exactly one of *ApiDeleteManyBuildsResponse or error will be non-nil.
-// Any non-2xx status code is an error. Response headers are in either
-// *ApiDeleteManyBuildsResponse.ServerResponse.Header or (if a response
-// was returned at all) in error.(*googleapi.Error).Header. Use
-// googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
-func (c *DeleteManyBuildsCall) Do(opts ...googleapi.CallOption) (*ApiDeleteManyBuildsResponse, error) {
+// Exactly one of *LegacyApiDeleteManyBuildsResponse or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiDeleteManyBuildsResponse.ServerResponse.Header or
+// (if a response was returned at all) in
+// error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
+// whether the returned error was because http.StatusNotModified was
+// returned.
+func (c *DeleteManyBuildsCall) Do(opts ...googleapi.CallOption) (*LegacyApiDeleteManyBuildsResponse, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -1405,7 +1458,7 @@ func (c *DeleteManyBuildsCall) Do(opts ...googleapi.CallOption) (*ApiDeleteManyB
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiDeleteManyBuildsResponse{
+	ret := &LegacyApiDeleteManyBuildsResponse{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -1457,7 +1510,7 @@ func (c *DeleteManyBuildsCall) Do(opts ...googleapi.CallOption) (*ApiDeleteManyB
 	//   },
 	//   "path": "bucket/{bucket}/delete",
 	//   "response": {
-	//     "$ref": "ApiDeleteManyBuildsResponse"
+	//     "$ref": "LegacyApiDeleteManyBuildsResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -1469,19 +1522,19 @@ func (c *DeleteManyBuildsCall) Do(opts ...googleapi.CallOption) (*ApiDeleteManyB
 // method id "buildbucket.fail":
 
 type FailCall struct {
-	s                         *Service
-	id                        int64
-	apifailrequestbodymessage *ApiFailRequestBodyMessage
-	urlParams_                gensupport.URLParams
-	ctx_                      context.Context
-	header_                   http.Header
+	s                               *Service
+	id                              int64
+	legacyapifailrequestbodymessage *LegacyApiFailRequestBodyMessage
+	urlParams_                      gensupport.URLParams
+	ctx_                            context.Context
+	header_                         http.Header
 }
 
 // Fail: Marks a build as failed.
-func (s *Service) Fail(id int64, apifailrequestbodymessage *ApiFailRequestBodyMessage) *FailCall {
+func (s *Service) Fail(id int64, legacyapifailrequestbodymessage *LegacyApiFailRequestBodyMessage) *FailCall {
 	c := &FailCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
-	c.apifailrequestbodymessage = apifailrequestbodymessage
+	c.legacyapifailrequestbodymessage = legacyapifailrequestbodymessage
 	return c
 }
 
@@ -1517,7 +1570,7 @@ func (c *FailCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apifailrequestbodymessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapifailrequestbodymessage)
 	if err != nil {
 		return nil, err
 	}
@@ -1538,13 +1591,13 @@ func (c *FailCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.fail" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *FailCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *FailCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -1563,7 +1616,7 @@ func (c *FailCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, e
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -1591,11 +1644,11 @@ func (c *FailCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, e
 	//   },
 	//   "path": "builds/{id}/fail",
 	//   "request": {
-	//     "$ref": "ApiFailRequestBodyMessage",
+	//     "$ref": "LegacyApiFailRequestBodyMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -1766,13 +1819,13 @@ func (c *GetCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.get" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *GetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *GetCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -1791,7 +1844,7 @@ func (c *GetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, er
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -1819,7 +1872,7 @@ func (c *GetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, er
 	//   },
 	//   "path": "builds/{id}",
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -1907,13 +1960,13 @@ func (c *GetBucketCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.get_bucket" call.
-// Exactly one of *ApiBucketMessage or error will be non-nil. Any
+// Exactly one of *LegacyApiBucketMessage or error will be non-nil. Any
 // non-2xx status code is an error. Response headers are in either
-// *ApiBucketMessage.ServerResponse.Header or (if a response was
+// *LegacyApiBucketMessage.ServerResponse.Header or (if a response was
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *GetBucketCall) Do(opts ...googleapi.CallOption) (*ApiBucketMessage, error) {
+func (c *GetBucketCall) Do(opts ...googleapi.CallOption) (*LegacyApiBucketMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -1932,7 +1985,7 @@ func (c *GetBucketCall) Do(opts ...googleapi.CallOption) (*ApiBucketMessage, err
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBucketMessage{
+	ret := &LegacyApiBucketMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -1959,7 +2012,7 @@ func (c *GetBucketCall) Do(opts ...googleapi.CallOption) (*ApiBucketMessage, err
 	//   },
 	//   "path": "buckets/{bucket}",
 	//   "response": {
-	//     "$ref": "ApiBucketMessage"
+	//     "$ref": "LegacyApiBucketMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -1971,19 +2024,19 @@ func (c *GetBucketCall) Do(opts ...googleapi.CallOption) (*ApiBucketMessage, err
 // method id "buildbucket.heartbeat":
 
 type HeartbeatCall struct {
-	s                              *Service
-	id                             int64
-	apiheartbeatrequestbodymessage *ApiHeartbeatRequestBodyMessage
-	urlParams_                     gensupport.URLParams
-	ctx_                           context.Context
-	header_                        http.Header
+	s                                    *Service
+	id                                   int64
+	legacyapiheartbeatrequestbodymessage *LegacyApiHeartbeatRequestBodyMessage
+	urlParams_                           gensupport.URLParams
+	ctx_                                 context.Context
+	header_                              http.Header
 }
 
 // Heartbeat: Updates build lease.
-func (s *Service) Heartbeat(id int64, apiheartbeatrequestbodymessage *ApiHeartbeatRequestBodyMessage) *HeartbeatCall {
+func (s *Service) Heartbeat(id int64, legacyapiheartbeatrequestbodymessage *LegacyApiHeartbeatRequestBodyMessage) *HeartbeatCall {
 	c := &HeartbeatCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
-	c.apiheartbeatrequestbodymessage = apiheartbeatrequestbodymessage
+	c.legacyapiheartbeatrequestbodymessage = legacyapiheartbeatrequestbodymessage
 	return c
 }
 
@@ -2019,7 +2072,7 @@ func (c *HeartbeatCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apiheartbeatrequestbodymessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapiheartbeatrequestbodymessage)
 	if err != nil {
 		return nil, err
 	}
@@ -2040,13 +2093,13 @@ func (c *HeartbeatCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.heartbeat" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *HeartbeatCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *HeartbeatCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -2065,7 +2118,7 @@ func (c *HeartbeatCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessa
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -2093,11 +2146,11 @@ func (c *HeartbeatCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessa
 	//   },
 	//   "path": "builds/{id}/heartbeat",
 	//   "request": {
-	//     "$ref": "ApiHeartbeatRequestBodyMessage",
+	//     "$ref": "LegacyApiHeartbeatRequestBodyMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2109,17 +2162,17 @@ func (c *HeartbeatCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessa
 // method id "buildbucket.heartbeat_batch":
 
 type HeartbeatBatchCall struct {
-	s                               *Service
-	apiheartbeatbatchrequestmessage *ApiHeartbeatBatchRequestMessage
-	urlParams_                      gensupport.URLParams
-	ctx_                            context.Context
-	header_                         http.Header
+	s                                     *Service
+	legacyapiheartbeatbatchrequestmessage *LegacyApiHeartbeatBatchRequestMessage
+	urlParams_                            gensupport.URLParams
+	ctx_                                  context.Context
+	header_                               http.Header
 }
 
 // HeartbeatBatch: Updates multiple build leases.
-func (s *Service) HeartbeatBatch(apiheartbeatbatchrequestmessage *ApiHeartbeatBatchRequestMessage) *HeartbeatBatchCall {
+func (s *Service) HeartbeatBatch(legacyapiheartbeatbatchrequestmessage *LegacyApiHeartbeatBatchRequestMessage) *HeartbeatBatchCall {
 	c := &HeartbeatBatchCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.apiheartbeatbatchrequestmessage = apiheartbeatbatchrequestmessage
+	c.legacyapiheartbeatbatchrequestmessage = legacyapiheartbeatbatchrequestmessage
 	return c
 }
 
@@ -2155,7 +2208,7 @@ func (c *HeartbeatBatchCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apiheartbeatbatchrequestmessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapiheartbeatbatchrequestmessage)
 	if err != nil {
 		return nil, err
 	}
@@ -2173,13 +2226,14 @@ func (c *HeartbeatBatchCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.heartbeat_batch" call.
-// Exactly one of *ApiHeartbeatBatchResponseMessage or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *ApiHeartbeatBatchResponseMessage.ServerResponse.Header or (if
+// Exactly one of *LegacyApiHeartbeatBatchResponseMessage or error will
+// be non-nil. Any non-2xx status code is an error. Response headers are
+// in either
+// *LegacyApiHeartbeatBatchResponseMessage.ServerResponse.Header or (if
 // a response was returned at all) in error.(*googleapi.Error).Header.
 // Use googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *HeartbeatBatchCall) Do(opts ...googleapi.CallOption) (*ApiHeartbeatBatchResponseMessage, error) {
+func (c *HeartbeatBatchCall) Do(opts ...googleapi.CallOption) (*LegacyApiHeartbeatBatchResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -2198,7 +2252,7 @@ func (c *HeartbeatBatchCall) Do(opts ...googleapi.CallOption) (*ApiHeartbeatBatc
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiHeartbeatBatchResponseMessage{
+	ret := &LegacyApiHeartbeatBatchResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -2215,11 +2269,11 @@ func (c *HeartbeatBatchCall) Do(opts ...googleapi.CallOption) (*ApiHeartbeatBatc
 	//   "id": "buildbucket.heartbeat_batch",
 	//   "path": "heartbeat",
 	//   "request": {
-	//     "$ref": "ApiHeartbeatBatchRequestMessage",
+	//     "$ref": "LegacyApiHeartbeatBatchRequestMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiHeartbeatBatchResponseMessage"
+	//     "$ref": "LegacyApiHeartbeatBatchResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2231,19 +2285,19 @@ func (c *HeartbeatBatchCall) Do(opts ...googleapi.CallOption) (*ApiHeartbeatBatc
 // method id "buildbucket.lease":
 
 type LeaseCall struct {
-	s                          *Service
-	id                         int64
-	apileaserequestbodymessage *ApiLeaseRequestBodyMessage
-	urlParams_                 gensupport.URLParams
-	ctx_                       context.Context
-	header_                    http.Header
+	s                                *Service
+	id                               int64
+	legacyapileaserequestbodymessage *LegacyApiLeaseRequestBodyMessage
+	urlParams_                       gensupport.URLParams
+	ctx_                             context.Context
+	header_                          http.Header
 }
 
 // Lease: Leases a build. Response may contain an error.
-func (s *Service) Lease(id int64, apileaserequestbodymessage *ApiLeaseRequestBodyMessage) *LeaseCall {
+func (s *Service) Lease(id int64, legacyapileaserequestbodymessage *LegacyApiLeaseRequestBodyMessage) *LeaseCall {
 	c := &LeaseCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
-	c.apileaserequestbodymessage = apileaserequestbodymessage
+	c.legacyapileaserequestbodymessage = legacyapileaserequestbodymessage
 	return c
 }
 
@@ -2279,7 +2333,7 @@ func (c *LeaseCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apileaserequestbodymessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapileaserequestbodymessage)
 	if err != nil {
 		return nil, err
 	}
@@ -2300,13 +2354,13 @@ func (c *LeaseCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.lease" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *LeaseCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *LeaseCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -2325,7 +2379,7 @@ func (c *LeaseCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -2353,11 +2407,11 @@ func (c *LeaseCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 	//   },
 	//   "path": "builds/{id}/lease",
 	//   "request": {
-	//     "$ref": "ApiLeaseRequestBodyMessage",
+	//     "$ref": "LegacyApiLeaseRequestBodyMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2432,13 +2486,13 @@ func (c *PauseCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.pause" call.
-// Exactly one of *ApiPauseResponse or error will be non-nil. Any
+// Exactly one of *LegacyApiPauseResponse or error will be non-nil. Any
 // non-2xx status code is an error. Response headers are in either
-// *ApiPauseResponse.ServerResponse.Header or (if a response was
+// *LegacyApiPauseResponse.ServerResponse.Header or (if a response was
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *PauseCall) Do(opts ...googleapi.CallOption) (*ApiPauseResponse, error) {
+func (c *PauseCall) Do(opts ...googleapi.CallOption) (*LegacyApiPauseResponse, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -2457,7 +2511,7 @@ func (c *PauseCall) Do(opts ...googleapi.CallOption) (*ApiPauseResponse, error) 
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiPauseResponse{
+	ret := &LegacyApiPauseResponse{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -2490,7 +2544,7 @@ func (c *PauseCall) Do(opts ...googleapi.CallOption) (*ApiPauseResponse, error) 
 	//   },
 	//   "path": "buckets/{bucket}/pause",
 	//   "response": {
-	//     "$ref": "ApiPauseResponse"
+	//     "$ref": "LegacyApiPauseResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2591,13 +2645,13 @@ func (c *PeekCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.peek" call.
-// Exactly one of *ApiSearchResponseMessage or error will be non-nil.
-// Any non-2xx status code is an error. Response headers are in either
-// *ApiSearchResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiSearchResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiSearchResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *PeekCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage, error) {
+func (c *PeekCall) Do(opts ...googleapi.CallOption) (*LegacyApiSearchResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -2616,7 +2670,7 @@ func (c *PeekCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage, 
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiSearchResponseMessage{
+	ret := &LegacyApiSearchResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -2649,7 +2703,7 @@ func (c *PeekCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage, 
 	//   },
 	//   "path": "peek",
 	//   "response": {
-	//     "$ref": "ApiSearchResponseMessage"
+	//     "$ref": "LegacyApiSearchResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2661,17 +2715,17 @@ func (c *PeekCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage, 
 // method id "buildbucket.put":
 
 type PutCall struct {
-	s                    *Service
-	apiputrequestmessage *ApiPutRequestMessage
-	urlParams_           gensupport.URLParams
-	ctx_                 context.Context
-	header_              http.Header
+	s                          *Service
+	legacyapiputrequestmessage *LegacyApiPutRequestMessage
+	urlParams_                 gensupport.URLParams
+	ctx_                       context.Context
+	header_                    http.Header
 }
 
 // Put: Creates a new build.
-func (s *Service) Put(apiputrequestmessage *ApiPutRequestMessage) *PutCall {
+func (s *Service) Put(legacyapiputrequestmessage *LegacyApiPutRequestMessage) *PutCall {
 	c := &PutCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.apiputrequestmessage = apiputrequestmessage
+	c.legacyapiputrequestmessage = legacyapiputrequestmessage
 	return c
 }
 
@@ -2707,7 +2761,7 @@ func (c *PutCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apiputrequestmessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapiputrequestmessage)
 	if err != nil {
 		return nil, err
 	}
@@ -2725,13 +2779,13 @@ func (c *PutCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.put" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *PutCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *PutCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -2750,7 +2804,7 @@ func (c *PutCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, er
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -2767,11 +2821,11 @@ func (c *PutCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, er
 	//   "id": "buildbucket.put",
 	//   "path": "builds",
 	//   "request": {
-	//     "$ref": "ApiPutRequestMessage",
+	//     "$ref": "LegacyApiPutRequestMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2783,17 +2837,17 @@ func (c *PutCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, er
 // method id "buildbucket.put_batch":
 
 type PutBatchCall struct {
-	s                         *Service
-	apiputbatchrequestmessage *ApiPutBatchRequestMessage
-	urlParams_                gensupport.URLParams
-	ctx_                      context.Context
-	header_                   http.Header
+	s                               *Service
+	legacyapiputbatchrequestmessage *LegacyApiPutBatchRequestMessage
+	urlParams_                      gensupport.URLParams
+	ctx_                            context.Context
+	header_                         http.Header
 }
 
 // PutBatch: Creates builds.
-func (s *Service) PutBatch(apiputbatchrequestmessage *ApiPutBatchRequestMessage) *PutBatchCall {
+func (s *Service) PutBatch(legacyapiputbatchrequestmessage *LegacyApiPutBatchRequestMessage) *PutBatchCall {
 	c := &PutBatchCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.apiputbatchrequestmessage = apiputbatchrequestmessage
+	c.legacyapiputbatchrequestmessage = legacyapiputbatchrequestmessage
 	return c
 }
 
@@ -2829,7 +2883,7 @@ func (c *PutBatchCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apiputbatchrequestmessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapiputbatchrequestmessage)
 	if err != nil {
 		return nil, err
 	}
@@ -2847,13 +2901,13 @@ func (c *PutBatchCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.put_batch" call.
-// Exactly one of *ApiPutBatchResponseMessage or error will be non-nil.
-// Any non-2xx status code is an error. Response headers are in either
-// *ApiPutBatchResponseMessage.ServerResponse.Header or (if a response
-// was returned at all) in error.(*googleapi.Error).Header. Use
-// googleapi.IsNotModified to check whether the returned error was
+// Exactly one of *LegacyApiPutBatchResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiPutBatchResponseMessage.ServerResponse.Header or (if
+// a response was returned at all) in error.(*googleapi.Error).Header.
+// Use googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *PutBatchCall) Do(opts ...googleapi.CallOption) (*ApiPutBatchResponseMessage, error) {
+func (c *PutBatchCall) Do(opts ...googleapi.CallOption) (*LegacyApiPutBatchResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -2872,7 +2926,7 @@ func (c *PutBatchCall) Do(opts ...googleapi.CallOption) (*ApiPutBatchResponseMes
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiPutBatchResponseMessage{
+	ret := &LegacyApiPutBatchResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -2889,11 +2943,11 @@ func (c *PutBatchCall) Do(opts ...googleapi.CallOption) (*ApiPutBatchResponseMes
 	//   "id": "buildbucket.put_batch",
 	//   "path": "builds/batch",
 	//   "request": {
-	//     "$ref": "ApiPutBatchRequestMessage",
+	//     "$ref": "LegacyApiPutBatchRequestMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiPutBatchResponseMessage"
+	//     "$ref": "LegacyApiPutBatchResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2967,13 +3021,13 @@ func (c *ResetCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.reset" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *ResetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *ResetCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -2992,7 +3046,7 @@ func (c *ResetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -3020,7 +3074,7 @@ func (c *ResetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 	//   },
 	//   "path": "builds/{id}/reset",
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3032,19 +3086,19 @@ func (c *ResetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 // method id "buildbucket.retry":
 
 type RetryCall struct {
-	s                      *Service
-	id                     int64
-	apiretryrequestmessage *ApiRetryRequestMessage
-	urlParams_             gensupport.URLParams
-	ctx_                   context.Context
-	header_                http.Header
+	s                            *Service
+	id                           int64
+	legacyapiretryrequestmessage *LegacyApiRetryRequestMessage
+	urlParams_                   gensupport.URLParams
+	ctx_                         context.Context
+	header_                      http.Header
 }
 
 // Retry: Retries an existing build.
-func (s *Service) Retry(id int64, apiretryrequestmessage *ApiRetryRequestMessage) *RetryCall {
+func (s *Service) Retry(id int64, legacyapiretryrequestmessage *LegacyApiRetryRequestMessage) *RetryCall {
 	c := &RetryCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
-	c.apiretryrequestmessage = apiretryrequestmessage
+	c.legacyapiretryrequestmessage = legacyapiretryrequestmessage
 	return c
 }
 
@@ -3080,7 +3134,7 @@ func (c *RetryCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apiretryrequestmessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapiretryrequestmessage)
 	if err != nil {
 		return nil, err
 	}
@@ -3101,13 +3155,13 @@ func (c *RetryCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.retry" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *RetryCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *RetryCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -3126,7 +3180,7 @@ func (c *RetryCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -3154,11 +3208,11 @@ func (c *RetryCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 	//   },
 	//   "path": "builds/{id}/retry",
 	//   "request": {
-	//     "$ref": "ApiRetryRequestMessage",
+	//     "$ref": "LegacyApiRetryRequestMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3347,13 +3401,13 @@ func (c *SearchCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.search" call.
-// Exactly one of *ApiSearchResponseMessage or error will be non-nil.
-// Any non-2xx status code is an error. Response headers are in either
-// *ApiSearchResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiSearchResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiSearchResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage, error) {
+func (c *SearchCall) Do(opts ...googleapi.CallOption) (*LegacyApiSearchResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -3372,7 +3426,7 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiSearchResponseMessage{
+	ret := &LegacyApiSearchResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -3495,7 +3549,7 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage
 	//   },
 	//   "path": "search",
 	//   "response": {
-	//     "$ref": "ApiSearchResponseMessage"
+	//     "$ref": "LegacyApiSearchResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3507,19 +3561,19 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage
 // method id "buildbucket.start":
 
 type StartCall struct {
-	s                          *Service
-	id                         int64
-	apistartrequestbodymessage *ApiStartRequestBodyMessage
-	urlParams_                 gensupport.URLParams
-	ctx_                       context.Context
-	header_                    http.Header
+	s                                *Service
+	id                               int64
+	legacyapistartrequestbodymessage *LegacyApiStartRequestBodyMessage
+	urlParams_                       gensupport.URLParams
+	ctx_                             context.Context
+	header_                          http.Header
 }
 
 // Start: Marks a build as started.
-func (s *Service) Start(id int64, apistartrequestbodymessage *ApiStartRequestBodyMessage) *StartCall {
+func (s *Service) Start(id int64, legacyapistartrequestbodymessage *LegacyApiStartRequestBodyMessage) *StartCall {
 	c := &StartCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
-	c.apistartrequestbodymessage = apistartrequestbodymessage
+	c.legacyapistartrequestbodymessage = legacyapistartrequestbodymessage
 	return c
 }
 
@@ -3555,7 +3609,7 @@ func (c *StartCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apistartrequestbodymessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapistartrequestbodymessage)
 	if err != nil {
 		return nil, err
 	}
@@ -3576,13 +3630,13 @@ func (c *StartCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.start" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *StartCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *StartCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -3601,7 +3655,7 @@ func (c *StartCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -3629,11 +3683,11 @@ func (c *StartCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 	//   },
 	//   "path": "builds/{id}/start",
 	//   "request": {
-	//     "$ref": "ApiStartRequestBodyMessage",
+	//     "$ref": "LegacyApiStartRequestBodyMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3645,19 +3699,19 @@ func (c *StartCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 // method id "buildbucket.succeed":
 
 type SucceedCall struct {
-	s                            *Service
-	id                           int64
-	apisucceedrequestbodymessage *ApiSucceedRequestBodyMessage
-	urlParams_                   gensupport.URLParams
-	ctx_                         context.Context
-	header_                      http.Header
+	s                                  *Service
+	id                                 int64
+	legacyapisucceedrequestbodymessage *LegacyApiSucceedRequestBodyMessage
+	urlParams_                         gensupport.URLParams
+	ctx_                               context.Context
+	header_                            http.Header
 }
 
 // Succeed: Marks a build as succeeded.
-func (s *Service) Succeed(id int64, apisucceedrequestbodymessage *ApiSucceedRequestBodyMessage) *SucceedCall {
+func (s *Service) Succeed(id int64, legacyapisucceedrequestbodymessage *LegacyApiSucceedRequestBodyMessage) *SucceedCall {
 	c := &SucceedCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
-	c.apisucceedrequestbodymessage = apisucceedrequestbodymessage
+	c.legacyapisucceedrequestbodymessage = legacyapisucceedrequestbodymessage
 	return c
 }
 
@@ -3693,7 +3747,7 @@ func (c *SucceedCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apisucceedrequestbodymessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapisucceedrequestbodymessage)
 	if err != nil {
 		return nil, err
 	}
@@ -3714,13 +3768,13 @@ func (c *SucceedCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "buildbucket.succeed" call.
-// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
+// Exactly one of *LegacyApiBuildResponseMessage or error will be
+// non-nil. Any non-2xx status code is an error. Response headers are in
+// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
+// response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *SucceedCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+func (c *SucceedCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -3739,7 +3793,7 @@ func (c *SucceedCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &ApiBuildResponseMessage{
+	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -3767,11 +3821,11 @@ func (c *SucceedCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage
 	//   },
 	//   "path": "builds/{id}/succeed",
 	//   "request": {
-	//     "$ref": "ApiSucceedRequestBodyMessage",
+	//     "$ref": "LegacyApiSucceedRequestBodyMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ApiBuildResponseMessage"
+	//     "$ref": "LegacyApiBuildResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"

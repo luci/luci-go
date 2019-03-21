@@ -11,6 +11,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -185,6 +187,14 @@ type AdminServer interface {
 	// SetConfig loads the supplied configuration into a config.GlobalConfig
 	// instance.
 	SetConfig(context.Context, *SetConfigRequest) (*empty.Empty, error)
+}
+
+// UnimplementedAdminServer can be embedded to have forward compatible implementations.
+type UnimplementedAdminServer struct {
+}
+
+func (*UnimplementedAdminServer) SetConfig(ctx context.Context, req *SetConfigRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetConfig not implemented")
 }
 
 func RegisterAdminServer(s prpc.Registrar, srv AdminServer) {

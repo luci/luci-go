@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,33 @@
 
 // Package swarmbucket provides access to the Buildbucket-Swarming integration.
 //
+// Creating a client
+//
 // Usage example:
 //
 //   import "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 //   ...
-//   swarmbucketService, err := swarmbucket.New(oauthHttpClient)
+//   ctx := context.Background()
+//   swarmbucketService, err := swarmbucket.NewService(ctx)
+//
+// In this example, Google Application Default Credentials are used for authentication.
+//
+// For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
+//
+// Other authentication options
+//
+// To use an API key for authentication (note: some APIs do not support API keys), use option.WithAPIKey:
+//
+//   swarmbucketService, err := swarmbucket.NewService(ctx, option.WithAPIKey("AIza..."))
+//
+// To use an OAuth token (e.g., a user token obtained via a three-legged OAuth flow), use option.WithTokenSource:
+//
+//   config := &oauth2.Config{...}
+//   // ...
+//   token, err := config.Exchange(ctx, ...)
+//   swarmbucketService, err := swarmbucket.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+//
+// See https://godoc.org/google.golang.org/api/option/ for details on options.
 package swarmbucket // import "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 
 import (
@@ -37,6 +59,8 @@ import (
 
 	gensupport "google.golang.org/api/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	option "google.golang.org/api/option"
+	htransport "google.golang.org/api/transport/http"
 )
 
 // Always reference these packages, just in case the auto-generated code
@@ -64,6 +88,32 @@ const (
 	UserinfoEmailScope = "https://www.googleapis.com/auth/userinfo.email"
 )
 
+// NewService creates a new Service.
+func NewService(ctx context.Context, opts ...option.ClientOption) (*Service, error) {
+	scopesOption := option.WithScopes(
+		"https://www.googleapis.com/auth/userinfo.email",
+	)
+	// NOTE: prepend, so we don't override user-specified scopes.
+	opts = append([]option.ClientOption{scopesOption}, opts...)
+	client, endpoint, err := htransport.NewClient(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	s, err := New(client)
+	if err != nil {
+		return nil, err
+	}
+	if endpoint != "" {
+		s.BasePath = endpoint
+	}
+	return s, nil
+}
+
+// New creates a new Service. It uses the provided http.Client for requests.
+//
+// Deprecated: please use NewService instead.
+// To provide a custom HTTP client, use option.WithHTTPClient.
+// If you are using google.golang.org/api/googleapis/transport.APIKey, use option.WithAPIKey with NewService instead.
 func New(client *http.Client) (*Service, error) {
 	if client == nil {
 		return nil, errors.New("client is nil")
@@ -85,7 +135,7 @@ func (s *Service) userAgent() string {
 	return googleapi.UserAgent + " " + s.UserAgent
 }
 
-type ApiPubSubCallbackMessage struct {
+type LegacyApiPubSubCallbackMessage struct {
 	AuthToken string `json:"auth_token,omitempty"`
 
 	Topic string `json:"topic,omitempty"`
@@ -109,13 +159,13 @@ type ApiPubSubCallbackMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiPubSubCallbackMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiPubSubCallbackMessage
+func (s *LegacyApiPubSubCallbackMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiPubSubCallbackMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type ApiPutRequestMessage struct {
+type LegacyApiPutRequestMessage struct {
 	Bucket string `json:"bucket,omitempty"`
 
 	// Possible values:
@@ -132,7 +182,7 @@ type ApiPutRequestMessage struct {
 
 	ParametersJson string `json:"parameters_json,omitempty"`
 
-	PubsubCallback *ApiPubSubCallbackMessage `json:"pubsub_callback,omitempty"`
+	PubsubCallback *LegacyApiPubSubCallbackMessage `json:"pubsub_callback,omitempty"`
 
 	Tags []string `json:"tags,omitempty"`
 
@@ -153,14 +203,14 @@ type ApiPutRequestMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *ApiPutRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod ApiPutRequestMessage
+func (s *LegacyApiPutRequestMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacyApiPutRequestMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type SwarmingSwarmbucketApiBucketMessage struct {
-	Builders []*SwarmingSwarmbucketApiBuilderMessage `json:"builders,omitempty"`
+type LegacySwarmbucketApiBucketMessage struct {
+	Builders []*LegacySwarmbucketApiBuilderMessage `json:"builders,omitempty"`
 
 	Name string `json:"name,omitempty"`
 
@@ -183,13 +233,13 @@ type SwarmingSwarmbucketApiBucketMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *SwarmingSwarmbucketApiBucketMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod SwarmingSwarmbucketApiBucketMessage
+func (s *LegacySwarmbucketApiBucketMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacySwarmbucketApiBucketMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type SwarmingSwarmbucketApiBuilderMessage struct {
+type LegacySwarmbucketApiBuilderMessage struct {
 	Category string `json:"category,omitempty"`
 
 	Name string `json:"name,omitempty"`
@@ -197,6 +247,8 @@ type SwarmingSwarmbucketApiBuilderMessage struct {
 	PropertiesJson string `json:"properties_json,omitempty"`
 
 	SwarmingDimensions []string `json:"swarming_dimensions,omitempty"`
+
+	SwarmingHostname string `json:"swarming_hostname,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Category") to
 	// unconditionally include in API requests. By default, fields with
@@ -215,14 +267,14 @@ type SwarmingSwarmbucketApiBuilderMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *SwarmingSwarmbucketApiBuilderMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod SwarmingSwarmbucketApiBuilderMessage
+func (s *LegacySwarmbucketApiBuilderMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacySwarmbucketApiBuilderMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type SwarmingSwarmbucketApiGetBuildersResponseMessage struct {
-	Buckets []*SwarmingSwarmbucketApiBucketMessage `json:"buckets,omitempty"`
+type LegacySwarmbucketApiGetBuildersResponseMessage struct {
+	Buckets []*LegacySwarmbucketApiBucketMessage `json:"buckets,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
@@ -245,14 +297,14 @@ type SwarmingSwarmbucketApiGetBuildersResponseMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *SwarmingSwarmbucketApiGetBuildersResponseMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod SwarmingSwarmbucketApiGetBuildersResponseMessage
+func (s *LegacySwarmbucketApiGetBuildersResponseMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacySwarmbucketApiGetBuildersResponseMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage struct {
-	BuildRequest *ApiPutRequestMessage `json:"build_request,omitempty"`
+type LegacySwarmbucketApiGetTaskDefinitionRequestMessage struct {
+	BuildRequest *LegacyApiPutRequestMessage `json:"build_request,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "BuildRequest") to
 	// unconditionally include in API requests. By default, fields with
@@ -271,13 +323,13 @@ type SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage
+func (s *LegacySwarmbucketApiGetTaskDefinitionRequestMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacySwarmbucketApiGetTaskDefinitionRequestMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage struct {
+type LegacySwarmbucketApiGetTaskDefinitionResponseMessage struct {
 	SwarmingHost string `json:"swarming_host,omitempty"`
 
 	TaskDefinition string `json:"task_definition,omitempty"`
@@ -303,13 +355,13 @@ type SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage
+func (s *LegacySwarmbucketApiGetTaskDefinitionResponseMessage) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacySwarmbucketApiGetTaskDefinitionResponseMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type SwarmingSwarmbucketApiSetNextBuildNumberRequest struct {
+type LegacySwarmbucketApiSetNextBuildNumberRequest struct {
 	Bucket string `json:"bucket,omitempty"`
 
 	Builder string `json:"builder,omitempty"`
@@ -333,8 +385,8 @@ type SwarmingSwarmbucketApiSetNextBuildNumberRequest struct {
 	NullFields []string `json:"-"`
 }
 
-func (s *SwarmingSwarmbucketApiSetNextBuildNumberRequest) MarshalJSON() ([]byte, error) {
-	type NoMethod SwarmingSwarmbucketApiSetNextBuildNumberRequest
+func (s *LegacySwarmbucketApiSetNextBuildNumberRequest) MarshalJSON() ([]byte, error) {
+	type NoMethod LegacySwarmbucketApiSetNextBuildNumberRequest
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -421,15 +473,15 @@ func (c *GetBuildersCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "swarmbucket.get_builders" call.
-// Exactly one of *SwarmingSwarmbucketApiGetBuildersResponseMessage or
+// Exactly one of *LegacySwarmbucketApiGetBuildersResponseMessage or
 // error will be non-nil. Any non-2xx status code is an error. Response
 // headers are in either
-// *SwarmingSwarmbucketApiGetBuildersResponseMessage.ServerResponse.Heade
-// r or (if a response was returned at all) in
+// *LegacySwarmbucketApiGetBuildersResponseMessage.ServerResponse.Header
+// or (if a response was returned at all) in
 // error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
 // whether the returned error was because http.StatusNotModified was
 // returned.
-func (c *GetBuildersCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucketApiGetBuildersResponseMessage, error) {
+func (c *GetBuildersCall) Do(opts ...googleapi.CallOption) (*LegacySwarmbucketApiGetBuildersResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -448,7 +500,7 @@ func (c *GetBuildersCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucket
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &SwarmingSwarmbucketApiGetBuildersResponseMessage{
+	ret := &LegacySwarmbucketApiGetBuildersResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -472,7 +524,7 @@ func (c *GetBuildersCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucket
 	//   },
 	//   "path": "builders",
 	//   "response": {
-	//     "$ref": "SwarmingSwarmbucketApiGetBuildersResponseMessage"
+	//     "$ref": "LegacySwarmbucketApiGetBuildersResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -484,17 +536,17 @@ func (c *GetBuildersCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucket
 // method id "swarmbucket.get_task_def":
 
 type GetTaskDefCall struct {
-	s                                                     *Service
-	swarmingswarmbucketapigettaskdefinitionrequestmessage *SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage
-	urlParams_                                            gensupport.URLParams
-	ctx_                                                  context.Context
-	header_                                               http.Header
+	s                                                   *Service
+	legacyswarmbucketapigettaskdefinitionrequestmessage *LegacySwarmbucketApiGetTaskDefinitionRequestMessage
+	urlParams_                                          gensupport.URLParams
+	ctx_                                                context.Context
+	header_                                             http.Header
 }
 
 // GetTaskDef: Returns a swarming task definition for a build request.
-func (s *Service) GetTaskDef(swarmingswarmbucketapigettaskdefinitionrequestmessage *SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage) *GetTaskDefCall {
+func (s *Service) GetTaskDef(legacyswarmbucketapigettaskdefinitionrequestmessage *LegacySwarmbucketApiGetTaskDefinitionRequestMessage) *GetTaskDefCall {
 	c := &GetTaskDefCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.swarmingswarmbucketapigettaskdefinitionrequestmessage = swarmingswarmbucketapigettaskdefinitionrequestmessage
+	c.legacyswarmbucketapigettaskdefinitionrequestmessage = legacyswarmbucketapigettaskdefinitionrequestmessage
 	return c
 }
 
@@ -530,7 +582,7 @@ func (c *GetTaskDefCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingswarmbucketapigettaskdefinitionrequestmessage)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyswarmbucketapigettaskdefinitionrequestmessage)
 	if err != nil {
 		return nil, err
 	}
@@ -548,16 +600,15 @@ func (c *GetTaskDefCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "swarmbucket.get_task_def" call.
-// Exactly one of
-// *SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage or error will
-// be non-nil. Any non-2xx status code is an error. Response headers are
-// in either
-// *SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage.ServerResponse
-// .Header or (if a response was returned at all) in
+// Exactly one of *LegacySwarmbucketApiGetTaskDefinitionResponseMessage
+// or error will be non-nil. Any non-2xx status code is an error.
+// Response headers are in either
+// *LegacySwarmbucketApiGetTaskDefinitionResponseMessage.ServerResponse.H
+// eader or (if a response was returned at all) in
 // error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
 // whether the returned error was because http.StatusNotModified was
 // returned.
-func (c *GetTaskDefCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage, error) {
+func (c *GetTaskDefCall) Do(opts ...googleapi.CallOption) (*LegacySwarmbucketApiGetTaskDefinitionResponseMessage, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -576,7 +627,7 @@ func (c *GetTaskDefCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucketA
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage{
+	ret := &LegacySwarmbucketApiGetTaskDefinitionResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -593,11 +644,11 @@ func (c *GetTaskDefCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucketA
 	//   "id": "swarmbucket.get_task_def",
 	//   "path": "get_task_def",
 	//   "request": {
-	//     "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
+	//     "$ref": "LegacySwarmbucketApiGetTaskDefinitionRequestMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage"
+	//     "$ref": "LegacySwarmbucketApiGetTaskDefinitionResponseMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -609,18 +660,18 @@ func (c *GetTaskDefCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucketA
 // method id "swarmbucket.set_next_build_number":
 
 type SetNextBuildNumberCall struct {
-	s                                               *Service
-	swarmingswarmbucketapisetnextbuildnumberrequest *SwarmingSwarmbucketApiSetNextBuildNumberRequest
-	urlParams_                                      gensupport.URLParams
-	ctx_                                            context.Context
-	header_                                         http.Header
+	s                                             *Service
+	legacyswarmbucketapisetnextbuildnumberrequest *LegacySwarmbucketApiSetNextBuildNumberRequest
+	urlParams_                                    gensupport.URLParams
+	ctx_                                          context.Context
+	header_                                       http.Header
 }
 
 // SetNextBuildNumber: Sets the build number that will be used for the
 // next build.
-func (s *Service) SetNextBuildNumber(swarmingswarmbucketapisetnextbuildnumberrequest *SwarmingSwarmbucketApiSetNextBuildNumberRequest) *SetNextBuildNumberCall {
+func (s *Service) SetNextBuildNumber(legacyswarmbucketapisetnextbuildnumberrequest *LegacySwarmbucketApiSetNextBuildNumberRequest) *SetNextBuildNumberCall {
 	c := &SetNextBuildNumberCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.swarmingswarmbucketapisetnextbuildnumberrequest = swarmingswarmbucketapisetnextbuildnumberrequest
+	c.legacyswarmbucketapisetnextbuildnumberrequest = legacyswarmbucketapisetnextbuildnumberrequest
 	return c
 }
 
@@ -656,7 +707,7 @@ func (c *SetNextBuildNumberCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingswarmbucketapisetnextbuildnumberrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyswarmbucketapisetnextbuildnumberrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -691,7 +742,7 @@ func (c *SetNextBuildNumberCall) Do(opts ...googleapi.CallOption) error {
 	//   "id": "swarmbucket.set_next_build_number",
 	//   "path": "set_next_build_number",
 	//   "request": {
-	//     "$ref": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
+	//     "$ref": "LegacySwarmbucketApiSetNextBuildNumberRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "scopes": [

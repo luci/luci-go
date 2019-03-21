@@ -11,6 +11,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -725,6 +727,95 @@ type CrimsonServer interface {
 	UpdateVM(context.Context, *UpdateVMRequest) (*VM, error)
 	// Deletes a physical or virtual host from the database.
 	DeleteHost(context.Context, *DeleteHostRequest) (*empty.Empty, error)
+}
+
+// UnimplementedCrimsonServer can be embedded to have forward compatible implementations.
+type UnimplementedCrimsonServer struct {
+}
+
+func (*UnimplementedCrimsonServer) ListDatacenters(ctx context.Context, req *ListDatacentersRequest) (*ListDatacentersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListDatacenters not implemented")
+}
+func (*UnimplementedCrimsonServer) ListFreeIPs(ctx context.Context, req *ListFreeIPsRequest) (*ListIPsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFreeIPs not implemented")
+}
+func (*UnimplementedCrimsonServer) ListKVMs(ctx context.Context, req *ListKVMsRequest) (*ListKVMsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListKVMs not implemented")
+}
+func (*UnimplementedCrimsonServer) ListOSes(ctx context.Context, req *ListOSesRequest) (*ListOSesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListOSes not implemented")
+}
+func (*UnimplementedCrimsonServer) ListPlatforms(ctx context.Context, req *ListPlatformsRequest) (*ListPlatformsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPlatforms not implemented")
+}
+func (*UnimplementedCrimsonServer) ListRacks(ctx context.Context, req *ListRacksRequest) (*ListRacksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRacks not implemented")
+}
+func (*UnimplementedCrimsonServer) ListSwitches(ctx context.Context, req *ListSwitchesRequest) (*ListSwitchesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSwitches not implemented")
+}
+func (*UnimplementedCrimsonServer) ListVLANs(ctx context.Context, req *ListVLANsRequest) (*ListVLANsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListVLANs not implemented")
+}
+func (*UnimplementedCrimsonServer) CreateMachine(ctx context.Context, req *CreateMachineRequest) (*Machine, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateMachine not implemented")
+}
+func (*UnimplementedCrimsonServer) DeleteMachine(ctx context.Context, req *DeleteMachineRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMachine not implemented")
+}
+func (*UnimplementedCrimsonServer) ListMachines(ctx context.Context, req *ListMachinesRequest) (*ListMachinesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMachines not implemented")
+}
+func (*UnimplementedCrimsonServer) RenameMachine(ctx context.Context, req *RenameMachineRequest) (*Machine, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RenameMachine not implemented")
+}
+func (*UnimplementedCrimsonServer) UpdateMachine(ctx context.Context, req *UpdateMachineRequest) (*Machine, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateMachine not implemented")
+}
+func (*UnimplementedCrimsonServer) CreateNIC(ctx context.Context, req *CreateNICRequest) (*NIC, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateNIC not implemented")
+}
+func (*UnimplementedCrimsonServer) DeleteNIC(ctx context.Context, req *DeleteNICRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteNIC not implemented")
+}
+func (*UnimplementedCrimsonServer) ListNICs(ctx context.Context, req *ListNICsRequest) (*ListNICsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListNICs not implemented")
+}
+func (*UnimplementedCrimsonServer) UpdateNIC(ctx context.Context, req *UpdateNICRequest) (*NIC, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateNIC not implemented")
+}
+func (*UnimplementedCrimsonServer) CreateDRAC(ctx context.Context, req *CreateDRACRequest) (*DRAC, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateDRAC not implemented")
+}
+func (*UnimplementedCrimsonServer) ListDRACs(ctx context.Context, req *ListDRACsRequest) (*ListDRACsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListDRACs not implemented")
+}
+func (*UnimplementedCrimsonServer) UpdateDRAC(ctx context.Context, req *UpdateDRACRequest) (*DRAC, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDRAC not implemented")
+}
+func (*UnimplementedCrimsonServer) CreatePhysicalHost(ctx context.Context, req *CreatePhysicalHostRequest) (*PhysicalHost, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreatePhysicalHost not implemented")
+}
+func (*UnimplementedCrimsonServer) ListPhysicalHosts(ctx context.Context, req *ListPhysicalHostsRequest) (*ListPhysicalHostsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPhysicalHosts not implemented")
+}
+func (*UnimplementedCrimsonServer) UpdatePhysicalHost(ctx context.Context, req *UpdatePhysicalHostRequest) (*PhysicalHost, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePhysicalHost not implemented")
+}
+func (*UnimplementedCrimsonServer) FindVMSlots(ctx context.Context, req *FindVMSlotsRequest) (*FindVMSlotsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindVMSlots not implemented")
+}
+func (*UnimplementedCrimsonServer) CreateVM(ctx context.Context, req *CreateVMRequest) (*VM, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateVM not implemented")
+}
+func (*UnimplementedCrimsonServer) ListVMs(ctx context.Context, req *ListVMsRequest) (*ListVMsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListVMs not implemented")
+}
+func (*UnimplementedCrimsonServer) UpdateVM(ctx context.Context, req *UpdateVMRequest) (*VM, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateVM not implemented")
+}
+func (*UnimplementedCrimsonServer) DeleteHost(ctx context.Context, req *DeleteHostRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteHost not implemented")
 }
 
 func RegisterCrimsonServer(s prpc.Registrar, srv CrimsonServer) {

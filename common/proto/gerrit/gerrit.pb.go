@@ -11,6 +11,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -1474,6 +1476,32 @@ type GerritServer interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
 	AbandonChange(context.Context, *AbandonChangeRequest) (*ChangeInfo, error)
+}
+
+// UnimplementedGerritServer can be embedded to have forward compatible implementations.
+type UnimplementedGerritServer struct {
+}
+
+func (*UnimplementedGerritServer) GetChange(ctx context.Context, req *GetChangeRequest) (*ChangeInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetChange not implemented")
+}
+func (*UnimplementedGerritServer) CreateChange(ctx context.Context, req *CreateChangeRequest) (*ChangeInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateChange not implemented")
+}
+func (*UnimplementedGerritServer) ChangeEditFileContent(ctx context.Context, req *ChangeEditFileContentRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeEditFileContent not implemented")
+}
+func (*UnimplementedGerritServer) ChangeEditPublish(ctx context.Context, req *ChangeEditPublishRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeEditPublish not implemented")
+}
+func (*UnimplementedGerritServer) SetReview(ctx context.Context, req *SetReviewRequest) (*ReviewResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetReview not implemented")
+}
+func (*UnimplementedGerritServer) SubmitChange(ctx context.Context, req *SubmitChangeRequest) (*ChangeInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitChange not implemented")
+}
+func (*UnimplementedGerritServer) AbandonChange(ctx context.Context, req *AbandonChangeRequest) (*ChangeInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AbandonChange not implemented")
 }
 
 func RegisterGerritServer(s prpc.Registrar, srv GerritServer) {

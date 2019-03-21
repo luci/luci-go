@@ -12,6 +12,8 @@ import (
 	empty "github.com/golang/protobuf/ptypes/empty"
 	mapper "go.chromium.org/luci/appengine/mapper"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -477,6 +479,23 @@ type AdminServer interface {
 	GetJobState(context.Context, *JobID) (*JobState, error)
 	// Fixes (right inside the handler) tags marked by the given mapper job.
 	FixMarkedTags(context.Context, *JobID) (*TagFixReport, error)
+}
+
+// UnimplementedAdminServer can be embedded to have forward compatible implementations.
+type UnimplementedAdminServer struct {
+}
+
+func (*UnimplementedAdminServer) LaunchJob(ctx context.Context, req *JobConfig) (*JobID, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LaunchJob not implemented")
+}
+func (*UnimplementedAdminServer) AbortJob(ctx context.Context, req *JobID) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AbortJob not implemented")
+}
+func (*UnimplementedAdminServer) GetJobState(ctx context.Context, req *JobID) (*JobState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetJobState not implemented")
+}
+func (*UnimplementedAdminServer) FixMarkedTags(ctx context.Context, req *JobID) (*TagFixReport, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FixMarkedTags not implemented")
 }
 
 func RegisterAdminServer(s prpc.Registrar, srv AdminServer) {

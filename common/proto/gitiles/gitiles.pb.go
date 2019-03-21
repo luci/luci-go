@@ -11,6 +11,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	git "go.chromium.org/luci/common/proto/git"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -607,6 +609,20 @@ type GitilesServer interface {
 	//
 	// An archive is a shallow bundle of the contents of a repository.
 	Archive(context.Context, *ArchiveRequest) (*ArchiveResponse, error)
+}
+
+// UnimplementedGitilesServer can be embedded to have forward compatible implementations.
+type UnimplementedGitilesServer struct {
+}
+
+func (*UnimplementedGitilesServer) Log(ctx context.Context, req *LogRequest) (*LogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Log not implemented")
+}
+func (*UnimplementedGitilesServer) Refs(ctx context.Context, req *RefsRequest) (*RefsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Refs not implemented")
+}
+func (*UnimplementedGitilesServer) Archive(ctx context.Context, req *ArchiveRequest) (*ArchiveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Archive not implemented")
 }
 
 func RegisterGitilesServer(s prpc.Registrar, srv GitilesServer) {

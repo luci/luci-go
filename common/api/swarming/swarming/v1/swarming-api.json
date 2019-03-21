@@ -1317,7 +1317,7 @@
       "type": "object"
     },
     "SwarmingRpcsFilesRef": {
-      "description": "Defines a data tree reference, normally a reference to a .isolated file.",
+      "description": "Defines a data tree reference for Swarming task inputs or outputs. It can either be: - a reference to an isolated file on an isolate server - a reference to an isolated file on a RBE CAS server In the RBE CAS case, the isolatedserver must be set to GCP name, and namespace must be set to \"sha256-GCP\". For the moment, RBE CAS requires SHA-256 and doesn't support precompressed data.",
       "id": "SwarmingRpcsFilesRef",
       "properties": {
         "isolated": {
@@ -1621,7 +1621,7 @@
         },
         "inputs_ref": {
           "$ref": "SwarmingRpcsFilesRef",
-          "description": "Defines a data tree reference, normally a reference to a .isolated file."
+          "description": "Defines a data tree reference for Swarming task inputs or outputs. It can either be: - a reference to an isolated file on an isolate server - a reference to an isolated file on a RBE CAS server In the RBE CAS case, the isolatedserver must be set to GCP name, and namespace must be set to \"sha256-GCP\". For the moment, RBE CAS requires SHA-256 and doesn't support precompressed data."
         },
         "io_timeout_secs": {
           "format": "int64",
@@ -1854,7 +1854,7 @@
         },
         "outputs_ref": {
           "$ref": "SwarmingRpcsFilesRef",
-          "description": "Defines a data tree reference, normally a reference to a .isolated file."
+          "description": "Defines a data tree reference for Swarming task inputs or outputs. It can either be: - a reference to an isolated file on an isolate server - a reference to an isolated file on a RBE CAS server In the RBE CAS case, the isolatedserver must be set to GCP name, and namespace must be set to \"sha256-GCP\". For the moment, RBE CAS requires SHA-256 and doesn't support precompressed data."
         },
         "performance_stats": {
           "$ref": "SwarmingRpcsPerformanceStats"

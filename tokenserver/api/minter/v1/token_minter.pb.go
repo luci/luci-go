@@ -13,6 +13,8 @@ import (
 	messages "go.chromium.org/luci/server/auth/delegation/messages"
 	api "go.chromium.org/luci/tokenserver/api"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -1443,6 +1445,26 @@ type TokenMinterServer interface {
 	// when LUCI services access project specific resources such as a source code
 	// repository.
 	MintProjectToken(context.Context, *MintProjectTokenRequest) (*MintProjectTokenResponse, error)
+}
+
+// UnimplementedTokenMinterServer can be embedded to have forward compatible implementations.
+type UnimplementedTokenMinterServer struct {
+}
+
+func (*UnimplementedTokenMinterServer) MintMachineToken(ctx context.Context, req *MintMachineTokenRequest) (*MintMachineTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MintMachineToken not implemented")
+}
+func (*UnimplementedTokenMinterServer) MintDelegationToken(ctx context.Context, req *MintDelegationTokenRequest) (*MintDelegationTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MintDelegationToken not implemented")
+}
+func (*UnimplementedTokenMinterServer) MintOAuthTokenGrant(ctx context.Context, req *MintOAuthTokenGrantRequest) (*MintOAuthTokenGrantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MintOAuthTokenGrant not implemented")
+}
+func (*UnimplementedTokenMinterServer) MintOAuthTokenViaGrant(ctx context.Context, req *MintOAuthTokenViaGrantRequest) (*MintOAuthTokenViaGrantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MintOAuthTokenViaGrant not implemented")
+}
+func (*UnimplementedTokenMinterServer) MintProjectToken(ctx context.Context, req *MintProjectTokenRequest) (*MintProjectTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MintProjectToken not implemented")
 }
 
 func RegisterTokenMinterServer(s prpc.Registrar, srv TokenMinterServer) {

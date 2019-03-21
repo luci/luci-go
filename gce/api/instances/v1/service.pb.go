@@ -8,12 +8,13 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 import (
 	context "context"
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -477,6 +478,20 @@ type InstancesServer interface {
 	Get(context.Context, *GetRequest) (*Instance, error)
 	// List returns existing instances.
 	List(context.Context, *ListRequest) (*ListResponse, error)
+}
+
+// UnimplementedInstancesServer can be embedded to have forward compatible implementations.
+type UnimplementedInstancesServer struct {
+}
+
+func (*UnimplementedInstancesServer) Delete(ctx context.Context, req *DeleteRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (*UnimplementedInstancesServer) Get(ctx context.Context, req *GetRequest) (*Instance, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (*UnimplementedInstancesServer) List(ctx context.Context, req *ListRequest) (*ListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 
 func RegisterInstancesServer(s prpc.Registrar, srv InstancesServer) {

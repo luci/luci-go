@@ -13,6 +13,8 @@ import (
 	status "google.golang.org/genproto/googleapis/rpc/status"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status1 "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -1407,6 +1409,29 @@ type BuildsServer interface {
 	// Executes multiple requests in a batch.
 	// The response code is always OK.
 	Batch(context.Context, *BatchRequest) (*BatchResponse, error)
+}
+
+// UnimplementedBuildsServer can be embedded to have forward compatible implementations.
+type UnimplementedBuildsServer struct {
+}
+
+func (*UnimplementedBuildsServer) GetBuild(ctx context.Context, req *GetBuildRequest) (*Build, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method GetBuild not implemented")
+}
+func (*UnimplementedBuildsServer) SearchBuilds(ctx context.Context, req *SearchBuildsRequest) (*SearchBuildsResponse, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method SearchBuilds not implemented")
+}
+func (*UnimplementedBuildsServer) UpdateBuild(ctx context.Context, req *UpdateBuildRequest) (*Build, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method UpdateBuild not implemented")
+}
+func (*UnimplementedBuildsServer) ScheduleBuild(ctx context.Context, req *ScheduleBuildRequest) (*Build, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method ScheduleBuild not implemented")
+}
+func (*UnimplementedBuildsServer) CancelBuild(ctx context.Context, req *CancelBuildRequest) (*Build, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method CancelBuild not implemented")
+}
+func (*UnimplementedBuildsServer) Batch(ctx context.Context, req *BatchRequest) (*BatchResponse, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method Batch not implemented")
 }
 
 func RegisterBuildsServer(s prpc.Registrar, srv BuildsServer) {

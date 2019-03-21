@@ -13,6 +13,8 @@ import (
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	logpb "go.chromium.org/luci/logdog/api/logpb"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -1008,6 +1010,20 @@ type LogsServer interface {
 	Tail(context.Context, *TailRequest) (*GetResponse, error)
 	// Query returns log stream paths that match the requested query.
 	Query(context.Context, *QueryRequest) (*QueryResponse, error)
+}
+
+// UnimplementedLogsServer can be embedded to have forward compatible implementations.
+type UnimplementedLogsServer struct {
+}
+
+func (*UnimplementedLogsServer) Get(ctx context.Context, req *GetRequest) (*GetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (*UnimplementedLogsServer) Tail(ctx context.Context, req *TailRequest) (*GetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Tail not implemented")
+}
+func (*UnimplementedLogsServer) Query(ctx context.Context, req *QueryRequest) (*QueryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Query not implemented")
 }
 
 func RegisterLogsServer(s prpc.Registrar, srv LogsServer) {
