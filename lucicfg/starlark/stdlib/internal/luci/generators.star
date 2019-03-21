@@ -30,6 +30,7 @@ load('@proto//luci/config/project_config.proto', config_pb='config')
 load('@proto//luci/cq/project_config.proto', cq_pb='cq.config')
 load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
 load('@proto//luci/milo/project_config.proto', milo_pb='milo')
+load('@proto//luci/notify/project_config.proto', notify_pb='notify')
 load('@proto//luci/scheduler/project_config.proto', scheduler_pb='scheduler.config')
 
 
@@ -41,6 +42,7 @@ def register():
   lucicfg.generator(impl = gen_scheduler_cfg)
   lucicfg.generator(impl = gen_milo_cfg)
   lucicfg.generator(impl = gen_cq_cfg)
+  lucicfg.generator(impl = gen_notify_cfg)
 
 
 ################################################################################
@@ -661,9 +663,6 @@ def _milo_builder_pb(entry, view, project_name, seen):
 ## commit-queue.cfg.
 
 
-# TODO(vadimsh): Implement equivalent_to generation.
-
-
 def gen_cq_cfg(ctx):
   """Generates commit-queue.cfg."""
   _cq_check_connections()
@@ -909,3 +908,107 @@ def _cq_builder_name(builder, project):
       builder.props.bucket,
       builder.props.name,
   )
+
+
+################################################################################
+## notify.cfg.
+
+
+def gen_notify_cfg(ctx):
+  notifiers = graph.children(keys.project(), kinds.NOTIFIER)
+  if not notifiers:
+    return
+
+  service = get_service('notify', 'using notifiers')
+
+  cfg = notify_pb.ProjectConfig()
+  ctx.config_set[service.cfg_file] = cfg
+
+  # Calculate the map {builder key => [gitiles_poller that triggers it]} needed
+  # for deriving repo URLs associated with builders.
+  #
+  # TODO(vadimsh): Cache this somewhere. A very similar calculation is done by
+  # scheduler.cfg generator. There's currently no reliable mechanism to carry
+  # precalculated state between different luci.generator(...) implementations.
+  poller = _notify_pollers_map()
+
+  seen = {}
+  for n in notifiers:
+    cfg.notifiers.append(notify_pb.Notifier(
+        name = n.props.name,
+        notifications = [_notify_notification_pb(n)],
+        builders = _notify_builders_pb(n, poller, seen),
+    ))
+
+
+def _notify_pollers_map():
+  """Returns a map {builder key => [gitiles poller that triggers it]}."""
+  out = {}
+  for bucket in get_buckets():
+    for poller in graph.children(bucket.key, kinds.GITILES_POLLER):
+      for builder in triggerer.targets(poller):
+        out.setdefault(builder.key, []).append(poller)
+  return out
+
+
+def _notify_notification_pb(node):
+  """Given luci.notifier node returns notify_pb.Notification."""
+  pb = notify_pb.Notification(
+      on_change = node.props.on_change,
+      on_failure = node.props.on_failure,
+      on_new_failure = node.props.on_new_failure,
+      on_success = node.props.on_success,
+      template = node.props.template,
+  )
+  if node.props.notify_email:
+    pb.email = notify_pb.Notification.Email(recipients=node.props.notify_email)
+  if node.props.notify_blamelist:
+    pb.notify_blamelist = notify_pb.Notification.Blamelist(
+        repository_whitelist = node.props.blamelist_repos_whitelist,
+    )
+  return pb
+
+
+def _notify_builders_pb(node, pollers, seen):
+  """Given luci.notifier node returns list of notify_pb.Builder.
+
+  Args:
+    node: luci.notifier node.
+    pollers: precalculated map {builder key => single gitiles poller node}.
+    seen: dict {builder key => notifier node that added it}. Mutated.
+
+  Returns:
+    List of notify_pb.Builder.
+  """
+  out = []
+  for ref in graph.children(node.key, kinds.BUILDER_REF):
+    builder = builder_ref.follow(ref, context_node=node)
+
+    # TODO(vadimsh): There's no real logical reason why a builder cannot be
+    # associated with multiple notifiers. This is just how LUCI Notify currently
+    # works. This check can be removed once LUCI Notify learns to have multiple
+    # notifiers per builder.
+    if builder.key in seen:
+      error(
+          '%s has already been assigned a notifier:\n%s' % (builder, seen[builder.key].trace),
+          trace=node.trace,
+      )
+      continue
+    seen[builder.key] = node
+
+    # Either use a repo URL explicitly passed via `repo` field in the builder
+    # definition, or grab it from a poller that triggers this builder, if
+    # there's only one such poller (so there's no ambiguity).
+    repo = builder.props.repo
+    if not repo:
+      triggered_by = pollers.get(builder.key)
+      if triggered_by and len(triggered_by) == 1:
+        repo = triggered_by[0].props.repo
+
+    out.append(notify_pb.Builder(
+        name = builder.props.name,
+        bucket = builder.props.bucket,
+        repository = repo,
+    ))
+
+  return sorted(out, key=lambda x: (x.bucket, x.name))
