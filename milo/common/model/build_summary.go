@@ -132,6 +132,7 @@ type BuildSummary struct {
 	// AnnotationURL is the URL to the logdog annotation location. This will be in
 	// the form of:
 	//   logdog://service.host.example.com/project_id/prefix/+/stream/name
+	// (Deprecated)
 	AnnotationURL string
 
 	// Version can be used by buildsource implementations to compare with an
