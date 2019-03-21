@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "13b19f99_890c5553",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T21:10:37Z",
+      "side": 1,
+      "message": "we have 4 vars here. The names of the first two clearly communicate what\u0027s inside the mask and are generic. The last two are unclear, and do not appear to be generic. If they are specific to concrete callers, perhaps they should be closer to the caller.",
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3ede2a6_b40fccc6",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T21:10:37Z",
+      "side": 1,
+      "message": "did you try it on dev? this uses AsUser in a pubsub handler. There is no user. I recommend trying on dev to make code reviews more effective\n\nit should use AsProject, see https://groups.google.com/a/google.com/forum/#!topic/luci-eng/adnG5qSTpmI",
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91edf377_71df09be",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T21:10:37Z",
+      "side": 1,
+      "message": "nit: inline?",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 92,
+        "endChar": 3
+      },
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "946605ba_8b44b994",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T21:10:37Z",
+      "side": 1,
+      "message": "?",
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bc7dfd8_4abf752f",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-21T21:10:37Z",
+      "side": 1,
+      "message": "do we plan to simply keep serialized buildbucketpb.Build in datastore?\n\nat this point there is no need for its milo-own format",
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
