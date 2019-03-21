@@ -623,7 +623,8 @@ func (m *UpdateBuildRequest) GetFields() *field_mask.FieldMask {
 //
 // Next ID: 13.
 type ScheduleBuildRequest struct {
-	// Required. A unique string id used for detecting duplicate requests.
+	// ** STRONGLY RECOMMENDED **.
+	// A unique string id used for detecting duplicate requests.
 	// Should be unique at least per requesting identity.
 	// Used to dedup build scheduling requests with same id within 1 min.
 	// If a build was successfully scheduled with the same request id in the past
