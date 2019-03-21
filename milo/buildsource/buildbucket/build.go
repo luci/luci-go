@@ -174,8 +174,8 @@ func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Com
 	})
 }
 
-func buildbucketClient(c context.Context, host string) (buildbucketpb.BuildsClient, error) {
-	t, err := auth.GetRPCTransport(c, auth.AsUser)
+func buildbucketClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+	t, err := auth.GetRPCTransport(c, as, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -210,13 +210,27 @@ func getBugLink(c *router.Context, b *buildbucketpb.Build) (string, error) {
 	})
 }
 
+var summaryBuildsMask = &field_mask.FieldMask{
+	Paths: []string{
+		"builds.*.id",
+		"builds.*.builder",
+		"builds.*.number",
+		"builds.*.create_time",
+		"builds.*.start_time",
+		"builds.*.end_time",
+		"builds.*.update_time",
+		"builds.*.status",
+		"builds.*.summary_markdown",
+	},
+}
+
 // searchBuildsRequest creates a searchBuildsRequest that looks for a buildset tag.
 func searchBuildsRequest(buildset string) *buildbucketpb.SearchBuildsRequest {
 	return &buildbucketpb.SearchBuildsRequest{
 		Predicate: &buildbucketpb.BuildPredicate{
 			Tags: []*buildbucketpb.StringPair{{Key: "buildset", Value: buildset}},
 		},
-		Fields:   summaryBuildMask,
+		Fields:   summaryBuildsMask,
 		PageSize: 1000,
 	}
 }
@@ -306,19 +320,6 @@ var (
 			"tags",
 		},
 	}
-	summaryBuildMask = &field_mask.FieldMask{
-		Paths: []string{
-			"builds.*.id",
-			"builds.*.builder",
-			"builds.*.number",
-			"builds.*.create_time",
-			"builds.*.start_time",
-			"builds.*.end_time",
-			"builds.*.update_time",
-			"builds.*.status",
-			"builds.*.summary_markdown",
-		},
-	}
 )
 
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
@@ -329,7 +330,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 	if err != nil {
 		return nil, err
 	}
-	client, err := buildbucketClient(c, host)
+	client, err := buildbucketClient(c, host, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
