@@ -8,11 +8,12 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 import (
 	context "context"
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -414,6 +415,23 @@ type ProjectsServer interface {
 	Get(context.Context, *GetRequest) (*Config, error)
 	// List returns existing projects.
 	List(context.Context, *ListRequest) (*ListResponse, error)
+}
+
+// UnimplementedProjectsServer can be embedded to have forward compatible implementations.
+type UnimplementedProjectsServer struct {
+}
+
+func (*UnimplementedProjectsServer) Delete(ctx context.Context, req *DeleteRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (*UnimplementedProjectsServer) Ensure(ctx context.Context, req *EnsureRequest) (*Config, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ensure not implemented")
+}
+func (*UnimplementedProjectsServer) Get(ctx context.Context, req *GetRequest) (*Config, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (*UnimplementedProjectsServer) List(ctx context.Context, req *ListRequest) (*ListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 
 func RegisterProjectsServer(s prpc.Registrar, srv ProjectsServer) {
