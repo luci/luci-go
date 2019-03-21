@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5549aa6d_595dd4ad",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-21T23:06:56Z",
+      "side": 1,
+      "message": "Good idea, Done",
+      "parentUuid": "13b19f99_890c5553",
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3ede2a6_b40fccc6",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36c50532_dcf4e894",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-21T23:06:56Z",
+      "side": 1,
+      "message": "I did try it on -dev, but it just occurred to me that almost everything on dev is public and unauthenticated, so authenticated as anon worked.\nprivate stuff appear so seldomly that errors didn\u0027t crop up in the sample.\n\nFixed to use project token",
+      "parentUuid": "b3ede2a6_b40fccc6",
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "f030d731_5d26632e",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-21T23:06:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "91edf377_71df09be",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 92,
+        "endChar": 3
+      },
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "946605ba_8b44b994",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
@@ -76,6 +136,24 @@
     },
     {
       "key": {
+        "uuid": "97be118b_540c76ba",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-21T23:06:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "946605ba_8b44b994",
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3bc7dfd8_4abf752f",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 1
@@ -87,6 +165,24 @@
       "writtenOn": "2019-03-21T21:10:37Z",
       "side": 1,
       "message": "do we plan to simply keep serialized buildbucketpb.Build in datastore?\n\nat this point there is no need for its milo-own format",
+      "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f77f2b26_b6382faf",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-21T23:06:56Z",
+      "side": 1,
+      "message": "Milo still needs to maintain it\u0027s own format regardless of the format we put in datastore, because we still index on Console Name + Manifest Name (slash revision).\n\nBut yeah BuildSummary could just be a small wrapper on top of build.proto (soon)",
+      "parentUuid": "3bc7dfd8_4abf752f",
       "revId": "83b4508d5a8737ea524eaba6060adcbed7d8797e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
