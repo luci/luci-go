@@ -8,6 +8,7 @@ luci.project(
     buildbucket = 'cr-buildbucket.appspot.com',
     logdog = 'luci-logdog.appspot.com',
     milo = 'luci-milo.appspot.com',
+    notify = 'luci-notify.appspot.com',
     scheduler = 'luci-scheduler.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 
@@ -288,6 +289,30 @@ luci.console_view_entry(
 )
 
 
+# Notifier.
+
+
+luci.notifier(
+    name = 'main notifier',
+    on_new_failure = True,
+    notify_emails = ['someone@example,com'],
+    notify_blamelist = True,
+    notified_by = [
+        'linux ci builder',
+        'cron builder',
+    ],
+)
+
+
+luci.builder(
+    name = 'watched builder',
+    bucket = 'ci',
+    recipe = 'main/recipe',
+    repo = 'https://custom.example.com/repo',
+    notifies = ['main notifier'],
+)
+
+
 # CQ.
 
 
@@ -492,6 +517,15 @@ luci.cq_tryjob_verifier(
 #       build_numbers: YES
 #       service_account: "builder@example.com"
 #     >
+#     builders: <
+#       name: "watched builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
 #   >
 # >
 # buckets: <
@@ -666,6 +700,53 @@ luci.cq_tryjob_verifier(
 #   description: "Everything is broken"
 #   monorail_project: "tutu, all aboard"
 #   components: "Stuff>Hard"
+# >
+# ===
+#
+# === luci-notify.cfg
+# notifiers: <
+#   notifications: <
+#     on_new_failure: true
+#     email: <
+#       recipients: "someone@example,com"
+#     >
+#     notify_blamelist: <
+#     >
+#   >
+#   builders: <
+#     bucket: "ci"
+#     name: "cron builder"
+#   >
+# >
+# notifiers: <
+#   notifications: <
+#     on_new_failure: true
+#     email: <
+#       recipients: "someone@example,com"
+#     >
+#     notify_blamelist: <
+#     >
+#   >
+#   builders: <
+#     bucket: "ci"
+#     name: "linux ci builder"
+#     repository: "https://noop.com"
+#   >
+# >
+# notifiers: <
+#   notifications: <
+#     on_new_failure: true
+#     email: <
+#       recipients: "someone@example,com"
+#     >
+#     notify_blamelist: <
+#     >
+#   >
+#   builders: <
+#     bucket: "ci"
+#     name: "watched builder"
+#     repository: "https://custom.example.com/repo"
+#   >
 # >
 # ===
 #

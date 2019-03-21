@@ -15,7 +15,7 @@ luci.cq_group(
 luci.cq_group(
     name = 'group 2',
     watch = cq.refset(
-        repo = 'https://example.googlesource.com/a/repo.git',
+        repo = 'https://example.googlesource.com/a/repo',
         refs = ['c'],
     ),
 )
@@ -24,7 +24,7 @@ luci.cq_group(
 luci.cq_group(
     name = 'group 3',
     watch = cq.refset(
-        repo = 'https://example.googlesource.com/a/repo.git',
+        repo = 'https://example.googlesource.com/a/repo',
         refs = ['a', 'd'],
     ),
 )
@@ -34,7 +34,7 @@ luci.cq_group(
 # Traceback (most recent call last):
 #   //testdata/cq/dup_repo_2.star:24: in <toplevel>
 #   ...
-# Error: ref regexp "a" of "https://example.googlesource.com/a/repo.git" is already covered by a cq_group, previous declaration:
+# Error: ref regexp "a" of "https://example.googlesource.com/a/repo" is already covered by a cq_group, previous declaration:
 # Traceback (most recent call last):
 #   //testdata/cq/dup_repo_2.star:6: in <toplevel>
 #   ...

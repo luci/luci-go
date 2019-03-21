@@ -195,7 +195,7 @@ def _console_view(
       props = {
           'name': name,
           'title': validate.string('title', title, default=name, required=False),
-          'repo': validate.string('repo', repo, regexp=r'https://.+'),
+          'repo': validate.repo_url('repo', repo),
           'refs': refs,
           'exclude_ref': validate.string('exclude_ref', exclude_ref, required=False),
           'header': header,

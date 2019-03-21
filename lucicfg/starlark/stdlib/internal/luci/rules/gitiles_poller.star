@@ -91,7 +91,7 @@ def _gitiles_poller(
   graph.add_node(poller_key, idempotent = True, props = {
       'name': name,
       'bucket': bucket_key.id,
-      'repo': validate.string('repo', repo, regexp=r'https://.+'),
+      'repo': validate.repo_url('repo', repo),
       'refs': refs,
       'schedule': validate.string('schedule', schedule, required=False),
   })
