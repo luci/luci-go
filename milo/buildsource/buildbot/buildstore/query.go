@@ -16,9 +16,11 @@ package buildstore
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 
 	"google.golang.org/api/googleapi"
 
@@ -34,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/git"
 )
 
 // Ternary has 3 defined values: either (zero), yes and no.
@@ -169,6 +172,14 @@ func mergeBuilds(a, b []*buildbot.Build) []*buildbot.Build {
 	return ret
 }
 
+func extractProject(c context.Context, master string) (string, error) {
+	components := strings.Split(master, ".")
+	if len(components) < 2 {
+		return "", fmt.Errorf(`master "%s" missing '.' separated components`, master)
+	}
+	return components[1], nil
+}
+
 func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 	if q.Cursor != "" {
 		// build query emulation does not support cursors
@@ -188,6 +199,13 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 	case bucket == "":
 		return nil, nil
 	}
+
+	// Extract project and annotate context to use project scoped account.
+	project, err := extractProject(c, q.Master)
+	if err != nil {
+		return nil, errors.Annotate(err, "unable to extract project from master").Err()
+	}
+	c = git.WithProject(c, project)
 
 	search := bb.Search().
 		Bucket(bucket).
