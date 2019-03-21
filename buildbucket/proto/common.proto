@@ -55,14 +55,19 @@ enum Status {
 // Machine-readable details of a status.
 // Human-readble details are present in a sibling summary_markdown field.
 message StatusDetails {
-  // Indicates that the failure was due to a resource exhaustion / quota
+  reserved 1; // is_resource_exhaustion, replaced by resource_exhaustion
+  reserved 2; // is_timeout, replaced with timeout.
+
+  message ResourceExhaustion {}
+  // If set, indicates that the failure was due to a resource exhaustion / quota
   // denial.
   // Applicable in FAILURE and INFRA_FAILURE statuses.
-  bool is_resource_exhaustion = 1;
+  ResourceExhaustion resource_exhaustion = 3;
 
-  // Indicates that the failure was due to a timeout.
+  message Timeout {}
+  // If set, indicates that the failure was due to a timeout.
   // Applicable in FAILURE and INFRA_FAILURE statuses.
-  bool is_timeout = 2;
+  Timeout timeout = 4;
 }
 
 // A Gerrit patchset.
