@@ -174,8 +174,8 @@ func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Com
 	})
 }
 
-func buildbucketClient(c context.Context, host string) (buildbucketpb.BuildsClient, error) {
-	t, err := auth.GetRPCTransport(c, auth.AsUser)
+func buildbucketClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+	t, err := auth.GetRPCTransport(c, as, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func searchBuildsRequest(buildset string) *buildbucketpb.SearchBuildsRequest {
 		Predicate: &buildbucketpb.BuildPredicate{
 			Tags: []*buildbucketpb.StringPair{{Key: "buildset", Value: buildset}},
 		},
-		Fields:   summaryBuildMask,
+		Fields:   summaryBuildsMask,
 		PageSize: 1000,
 	}
 }
@@ -306,7 +306,7 @@ var (
 			"tags",
 		},
 	}
-	summaryBuildMask = &field_mask.FieldMask{
+	summaryBuildsMask = &field_mask.FieldMask{
 		Paths: []string{
 			"builds.*.id",
 			"builds.*.builder",
@@ -319,6 +319,20 @@ var (
 			"builds.*.summary_markdown",
 		},
 	}
+	summaryBuildMask = &field_mask.FieldMask{
+		Paths: []string{
+			"id",
+			"builder",
+			"number",
+			"create_time",
+			"start_time",
+			"end_time",
+			"update_time",
+			"status",
+			"summary_markdown",
+			"tags",
+		},
+	}
 )
 
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
@@ -329,7 +343,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 	if err != nil {
 		return nil, err
 	}
-	client, err := buildbucketClient(c, host)
+	client, err := buildbucketClient(c, host, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
