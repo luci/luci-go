@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e085886_8bca5e29",
+        "filename": "milo/buildsource/buildbot/buildstore/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-21T17:01:36Z",
+      "side": 1,
+      "message": "Use https://godoc.org/go.chromium.org/luci/buildbucket#BucketNameToV2",
+      "revId": "1e1c8cabece660e168f7aad2456d70a34f9d542a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1171d55f_980297e8",
+        "filename": "milo/buildsource/buildbot/buildstore/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-21T17:01:36Z",
+      "side": 1,
+      "message": "we want to use the buildbucket bucket, not buildbot master",
+      "range": {
+        "startLine": 204,
+        "startChar": 35,
+        "endLine": 204,
+        "endChar": 43
+      },
+      "revId": "1e1c8cabece660e168f7aad2456d70a34f9d542a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
