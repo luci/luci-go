@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ceb96405_d0cd8ba7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T00:58:02Z",
+      "side": 1,
+      "message": "I did consider something similar. Incapsulating source of commits (repo, refs list) into an object. But different LUCI services want slightly different things, so the end result looked inconsistent (some rules ignored some fields, other rules had additional fields they wanted not present in the \u0027source\u0027 object).\n\nI think adding an object to represent a repo is premature for now. We can add it later if it becomes useful.",
+      "parentUuid": "732d3649_cf028855",
+      "range": {
+        "startLine": 172,
+        "startChar": 10,
+        "endLine": 172,
+        "endChar": 13
+      },
+      "revId": "93a511520a75587c58d04e0a478e8e52dc94a28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "869eb422_1747a75c",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "93a511520a75587c58d04e0a478e8e52dc94a28d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49efe71c_c8c5bb9b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T00:58:02Z",
+      "side": 1,
+      "message": "No, it\u0027s a verb. This CL adds \u0027notifies/notified_by\u0027 relation, similar to existing \u0027triggers/triggered_by\u0027 relation.",
+      "parentUuid": "869eb422_1747a75c",
+      "range": {
+        "startLine": 186,
+        "startChar": 4,
+        "endLine": 186,
+        "endChar": 12
+      },
+      "revId": "93a511520a75587c58d04e0a478e8e52dc94a28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
