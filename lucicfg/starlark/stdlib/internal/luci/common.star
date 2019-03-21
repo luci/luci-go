@@ -30,6 +30,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.project -> luci.cq
 #   luci.project -> [luci.bucket]
 #   luci.project -> [luci.milo_view]
+#   luci.project -> [luci.notifier]
 #   luci.project -> [luci.cq_group]
 #   luci.bucket -> [luci.builder]
 #   luci.bucket -> [luci.gitiles_poller]
@@ -38,6 +39,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.builder -> luci.recipe
 #   luci.gitiles_poller -> [luci.triggerer]
 #   luci.triggerer -> [luci.builder_ref]
+#   luci.notifier -> [luci.builder_ref]
 #   luci.milo_entries_root -> [luci.list_view_entry]
 #   luci.milo_entries_root -> [luci.console_view_entry]
 #   luci.milo_view -> luci.list_view
@@ -99,6 +101,7 @@ kinds = struct(
     RECIPE = 'luci.recipe',
     BUILDER = 'luci.builder',
     GITILES_POLLER = 'luci.gitiles_poller',
+    NOTIFIER = 'luci.notifier',
     MILO = 'luci.milo',
     LIST_VIEW = 'luci.list_view',
     LIST_VIEW_ENTRY = 'luci.list_view_entry',
@@ -132,6 +135,8 @@ keys = struct(
     # are never consumed via keysets.
     builder = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.BUILDER, name),
     gitiles_poller = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.GITILES_POLLER, name),
+
+    notifier = lambda ref: _global_key(kinds.NOTIFIER, 'notifies', ref),
 
     milo = lambda: graph.key(kinds.MILO, '...'),  # singleton
     list_view = lambda ref: _global_key(kinds.LIST_VIEW, 'list_view', ref),
