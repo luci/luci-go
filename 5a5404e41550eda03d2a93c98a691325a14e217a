@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "cc1ce5cb_d6e9ed82",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "In this case based on simplicity of the generator implementation. luci.notifer nodes are \"terminal\" (either leafs or root depending on chosen direction), and can\u0027t be part of a cycle, so it doesn\u0027t really matter what direction it used.\n\nThis direction is simpler, since it allows to use builder_ref.follow(...) function to disambiguate references to builders specified without bucket name.",
+      "parentUuid": "9a0d1397_80cb4117",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2cc87463_12f22f84",
         "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
         "patchSetId": 5
@@ -30,6 +48,30 @@
       "writtenOn": "2019-03-21T17:50:49Z",
       "side": 1,
       "message": "seems to assume the caller",
+      "range": {
+        "startLine": 146,
+        "startChar": 55,
+        "endLine": 146,
+        "endChar": 65
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1e09a4ae_5f4e4cc5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Yes, there\u0027s only one caller. Where there\u0027ll be more I can change this.",
+      "parentUuid": "2cc87463_12f22f84",
       "range": {
         "startLine": 146,
         "startChar": 55,
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "ead56965_bc953120",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 936,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Ack. Loop over notifiers still simpler to implement. It doesn\u0027t matter in the end, all (builder, notifier) pairs are visited.",
+      "parentUuid": "dbb64290_f2bda217",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4c99749_f8a654b9",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 5
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "5a8b9258_fc7f53e5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4c99749_f8a654b9",
+      "range": {
+        "startLine": 176,
+        "startChar": 19,
+        "endLine": 176,
+        "endChar": 28
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20ba9f7f_1504704f",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 5
@@ -96,6 +180,24 @@
       "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "118ca4de_1be40372",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20ba9f7f_1504704f",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -122,6 +224,30 @@
     },
     {
       "key": {
+        "uuid": "4daa603b_11a0a8d5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "23a8fbd8_6998182e",
+      "range": {
+        "startLine": 48,
+        "startChar": 43,
+        "endLine": 48,
+        "endChar": 47
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "82546f52_3a3fec1f",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 5
@@ -142,6 +268,30 @@
       "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00ac21e8_bc269423",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Mentioned `notify_*`. Except I checked and it is fine to have empty notifiers. I also think it is OK, useful for stuff like:\n\nluci.notifier(\n  notify_emails \u003d [\n     # Temporary disabled.\n     #\u0027email@example.com\u0027,\n  ],\n)",
+      "parentUuid": "82546f52_3a3fec1f",
+      "range": {
+        "startLine": 49,
+        "startChar": 76,
+        "endLine": 49,
+        "endChar": 77
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -168,6 +318,30 @@
     },
     {
       "key": {
+        "uuid": "b23971aa_e06285b6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "405b0e26_cb3b08dc",
+      "range": {
+        "startLine": 52,
+        "startChar": 64,
+        "endLine": 53,
+        "endChar": 43
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3a9a031_1da68e77",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 5
@@ -182,6 +356,24 @@
       "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "996c9b8b_d0f56cf8",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Done. I assumed grouping of builders per Notifier instance is important (e.g. LUIC Notify waits for all builds in a buildset to finish and then emits single email). I also wanted to keep the generated config short. It is very verbose now (lots of repetition).",
+      "parentUuid": "f3a9a031_1da68e77",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -208,6 +400,30 @@
     },
     {
       "key": {
+        "uuid": "80252b52_aae7e0ef",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74b2dae1_097f150b",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 66,
+        "endChar": 13
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70db6ffd_0cd45c91",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 5
@@ -222,6 +438,24 @@
       "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "580b820d_bf4ac922",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "This should have been mentioned in the proto 😒\n\nBtw based on that code, it handle infra failures in on_change notifier inconsistently. I can\u0027t just say \"infra failures are skipped\", because they are skipped only by on_failure and on_new_failure, but not by on_change 😕",
+      "parentUuid": "70db6ffd_0cd45c91",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -248,6 +482,30 @@
     },
     {
       "key": {
+        "uuid": "65b0f3b2_0c07f818",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b1c449a_50a81dcd",
+      "range": {
+        "startLine": 73,
+        "startChar": 11,
+        "endLine": 73,
+        "endChar": 16
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea2ba1b1_3ba8a207",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 5
@@ -262,6 +520,24 @@
       "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36514d87_a8e69ef7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "This is not obvious from the proto doc either.",
+      "parentUuid": "ea2ba1b1_3ba8a207",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -288,6 +564,30 @@
     },
     {
       "key": {
+        "uuid": "63ca17ad_2864ef18",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "This is intentional. For booleans it doesn\u0027t really matter but in general I prefer to omit fields in generated *.proto, instead of setting them to their default values. This allows the server to substitute the default it wants.\n\nHere is is important for \u0027template\u0027 field. I want it to be None, so the generated proto has it empty, so LUCI Notify can substitute its own default. I try to avoid copying default values into lucicfg code.",
+      "parentUuid": "dd4ad168_e228fd02",
+      "range": {
+        "startLine": 89,
+        "startChar": 66,
+        "endLine": 89,
+        "endChar": 67
+      },
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5938e7e1_ecaedc46",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 5
@@ -302,6 +602,24 @@
       "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50e48b51_d5c9101c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5938e7e1_ecaedc46",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -322,6 +640,24 @@
     },
     {
       "key": {
+        "uuid": "55a2f0eb_9cd265ac",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "I think it is useful to allow empty notifiers, see my example above.",
+      "parentUuid": "7000596d_7409ef84",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "50d01816_c8ae21ee",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 5
@@ -336,6 +672,24 @@
       "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d094a70_ef11a361",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-21T23:00:32Z",
+      "side": 1,
+      "message": "Considered. Not doing it. They are different things. add_node+add_edge above setup the notifier in general, and add_edge below connect it to other entities. add_node+add_edge above are sort-of indivisible (a hanging unconnected node is undiscoverable).",
+      "parentUuid": "50d01816_c8ae21ee",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
