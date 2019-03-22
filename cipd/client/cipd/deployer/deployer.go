@@ -481,7 +481,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkgname string
 
 	// checkIntegrity needs DeployedPackage with Pin set, so call it last.
 	if par != NotParanoid {
-		out.ToRedeploy, out.ToRelink = d.checkIntegrity(ctx, out)
+		out.ToRedeploy, out.ToRelink = d.checkIntegrity(ctx, out, par)
 	}
 
 	return
@@ -1236,8 +1236,10 @@ func (d *deployerImpl) isPresentInGuts(ctx context.Context, instDir string, f pk
 // returns a list of files to relink and to redeploy if something is broken.
 //
 // See DeployedPackage struct for definition of "relink" and "redeploy".
-func (d *deployerImpl) checkIntegrity(ctx context.Context, p *DeployedPackage) (redeploy, relink []string) {
-	logging.Debugf(ctx, "Checking integrity of %q deployment...", p.Pin.PackageName)
+func (d *deployerImpl) checkIntegrity(ctx context.Context, p *DeployedPackage, mode ParanoidMode) (redeploy, relink []string) {
+	logging.Debugf(ctx, "Checking integrity of %q deployment in %q mode...", p.Pin.PackageName, mode)
+
+	// TODO(vadimsh): Understand mode == CheckIntegrity.
 
 	// Examine files that are supposed to be installed.
 	for _, f := range p.Manifest.Files {
