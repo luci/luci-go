@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4abc1b12_93e31c16",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-22T02:07:28Z",
+      "side": 1,
+      "message": "slice",
+      "revId": "cdee7b958abd4482866cdc92452c46fdb6197aca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ce33654_c9fc0848",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-22T02:07:28Z",
+      "side": 1,
+      "message": "Any reason not to just return it instead of pointing the pointer-to-slice at the new slice?",
+      "revId": "cdee7b958abd4482866cdc92452c46fdb6197aca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
