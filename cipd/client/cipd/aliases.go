@@ -38,6 +38,14 @@ const (
 	//
 	// Note that it will not check file's content or file mode. Only its presence.
 	CheckPresence = deployer.CheckPresence
+
+	// CheckIntegrity indicates that CIPD client should verify all files installed
+	// in the site root have correct contents (based on their hash).
+	//
+	// CIPD will use information for 'stat' to skip rechecking hashes all the
+	// time. Only files updated (based on 'stat') since they were installed are
+	// checked.
+	CheckIntegrity = deployer.CheckIntegrity
 )
 
 // ManifestMode is used to indicate presence of absence of manifest when calling

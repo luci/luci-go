@@ -2835,7 +2835,7 @@ func checkDeployment(ctx context.Context, clientOpts clientOptions) (cipd.Action
 	if err != nil {
 		return nil, err
 	}
-	actions, err := client.CheckDeployment(ctx, cipd.CheckPresence)
+	actions, err := client.CheckDeployment(ctx, cipd.CheckIntegrity)
 	if err != nil {
 		return nil, err
 	}
@@ -2882,7 +2882,7 @@ func repairDeployment(ctx context.Context, clientOpts clientOptions) (cipd.Actio
 	if err != nil {
 		return nil, err
 	}
-	return client.RepairDeployment(ctx, cipd.CheckPresence)
+	return client.RepairDeployment(ctx, cipd.CheckIntegrity)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
