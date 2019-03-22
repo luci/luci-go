@@ -18,6 +18,46 @@ def _version():
   return __native__.version()
 
 
+def _check_version(min, message=None):
+  """Fails if lucicfg version is below the requested minimal one.
+
+  Useful when a script depends on some lucicfg feature that may not be available
+  in earlier versions. lucicfg.check_version(...) can be used at the start of
+  the script to fail right away with a clean error message:
+
+  ```python
+  lucicfg.check_version(
+      min = '1.5.5',
+      message = 'Update depot_tools',
+  )
+  ```
+
+  Or even
+
+  ```python
+  lucicfg.check_version('1.5.5')
+  ```
+
+  Args:
+    min: a string `major.minor.revision` with minimally accepted version.
+        Required.
+    message: a custom failure message to show.
+  """
+  min_ver = [int(x) for x in min.split('.')][:3]
+  if len(min_ver) < 3:
+    min_ver += [0] * (3-len(min_ver))
+  min_ver = tuple(min_ver)
+
+  ver = _version()
+  if ver < min_ver:
+    fail(
+        'Your lucicfg version v%s is older than required v%s. %s.' % (
+        '%d.%d.%d' % ver,
+        '%d.%d.%d' % min_ver,
+        message or 'Please update',
+    ))
+
+
 def _config(
       *,
       config_service_host=None,
@@ -236,6 +276,7 @@ def _rule(*, impl, defaults=None):
 
 lucicfg = struct(
     version = _version,
+    check_version = _check_version,
     config = _config,
     generator = _generator,
     var = _var,
