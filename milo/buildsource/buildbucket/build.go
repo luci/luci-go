@@ -375,11 +375,12 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 	link, err := getBugLink(ctx, b)
 	logging.Infof(c, "Got all the things")
 	return &ui.BuildPage{
-		Build:          ui.Build{b},
-		Blame:          blame,
-		RelatedBuilds:  relatedBuilds,
-		BuildBugLink:   link,
-		Now:            clock.Now(c),
-		BlamelistError: blameErr,
+		Build:           ui.Build{b},
+		Blame:           blame,
+		RelatedBuilds:   relatedBuilds,
+		BuildBugLink:    link,
+		Now:             clock.Now(c),
+		BlamelistError:  blameErr,
+		ForcedBlamelist: forceBlamelist,
 	}, err
 }
