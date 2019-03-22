@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a2aab83_b669a5d8",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-22T23:57:53Z",
+      "side": 1,
+      "message": "nit: this looks like a generic method, but it assumes that field set needed by the caller. Consider adding fields param and moving summaryBuildsMask to the place that it is currently assumes",
+      "range": {
+        "startLine": 228,
+        "startChar": 5,
+        "endLine": 228,
+        "endChar": 24
+      },
+      "revId": "37e87a4d9b96b304a2628e0e29af7ea6e8677766",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
