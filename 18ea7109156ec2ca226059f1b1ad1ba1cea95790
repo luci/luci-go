@@ -170,6 +170,24 @@
       "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ea39c84_089207a3",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-22T23:49:57Z",
+      "side": 1,
+      "message": "\"N/A\" everywhere for any piece of information that is expectedly or unexpectedly not present is probably the least surprising option.\n\nEg. If a bug causes the build to be inconsistent (We have bot, but Task ID isn\u0027t created yet, and never will), N/A is the most universally correct message we can give.",
+      "parentUuid": "360feae1_14b6d53d",
+      "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
