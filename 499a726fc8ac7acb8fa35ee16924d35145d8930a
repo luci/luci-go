@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0ad22a2c_19d44ea5",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-03-22T12:09:26Z",
+      "side": 1,
+      "message": "I assume this is just creating a point to the same underlying array but with length 0. Is there no better way to express this in Golang? Please ignore if this is the usual way to do this as I am not super experienced in Golang yet.",
+      "range": {
+        "startLine": 89,
+        "startChar": 8,
+        "endLine": 89,
+        "endChar": 19
+      },
+      "revId": "499a726fc8ac7acb8fa35ee16924d35145d8930a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a6b08c9_406ad575",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-03-22T12:09:26Z",
+      "side": 1,
+      "message": "I wonder how much memory this takes as compared to a bool type? IMHO using bools here would make this code more readable / consistent with what we\u0027ve had in Python. But again, maybe it\u0027s common to use this approach in Golang, so feel free to ignore.",
+      "range": {
+        "startLine": 92,
+        "startChar": 13,
+        "endLine": 92,
+        "endChar": 23
+      },
+      "revId": "499a726fc8ac7acb8fa35ee16924d35145d8930a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0200fa92_de2f50e4",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-03-22T12:09:26Z",
+      "side": 1,
+      "message": "This now modifies passed-in buildIDs array, which may be unexpected for the caller. However, given that this is a private method and only used once below, I guess this is not a big issue.",
+      "revId": "499a726fc8ac7acb8fa35ee16924d35145d8930a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
