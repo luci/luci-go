@@ -12,22 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package projects
-
-import (
-	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/config/validation"
-)
-
-// Validate validates these configs.
-func (cfgs *Configs) Validate(c *validation.Context) {
-	prjs := stringset.New(len(cfgs.GetProject()))
-	for i, cfg := range cfgs.GetProject() {
-		c.Enter("project %d", i)
-		cfg.Validate(c)
-		if !prjs.Add(cfg.Project) {
-			c.Errorf("project %q is not unique", cfg.Project)
-		}
-		c.Exit()
-	}
-}
+// Package memory contains a RPC servers backed by in-memory storage.
+package memory
