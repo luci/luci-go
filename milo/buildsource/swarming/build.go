@@ -263,6 +263,8 @@ func addBuilderLink(c context.Context, build *ui.MiloBuildLegacy, tags strpair.M
 	builder := tags.Get("builder")
 	project := tags.Get("luci_project")
 	if bucket != "" && builder != "" {
+		builderParts := strings.Split(builder, "/")
+		builder = builderParts[len(builderParts)-1]
 		build.Summary.ParentLabel = ui.NewLink(
 			builder, fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket, builder),
 			fmt.Sprintf("buildbucket builder %s on bucket %s", builder, bucket))
