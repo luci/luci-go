@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7db831ad_368a4b03",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-22T22:59:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7e626c6c_84a4713b",
+      "range": {
+        "startLine": 162,
+        "startChar": 23,
+        "endLine": 162,
+        "endChar": 24
+      },
+      "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4a6760b9_f7fa19dc",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 2
@@ -36,6 +60,24 @@
       "writtenOn": "2019-03-22T22:45:50Z",
       "side": 1,
       "message": "What about adding\n\nSwarming Task: \u003ca title\u003d\"A swarming task is not available for this build, or has not been created yet\"\u003eNot Available\u003c/a\u003e\n\nIf there is no task?\n\nIt may reduce confusion if the user expects one.",
+      "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12f4f4d7_41acdf86",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-22T22:59:55Z",
+      "side": 1,
+      "message": "\u003ca title\u003d\"A swarming task is not available for this build, or has not been created yet\"\u003eNot Available\u003c/a\u003e\nvisually wouldn\u0027t indicate that there is more text on mouse hover.\n\nI think \"is not available\" and \"has not been created\" is about the same thing.\n\nPTAL",
+      "parentUuid": "4a6760b9_f7fa19dc",
       "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
