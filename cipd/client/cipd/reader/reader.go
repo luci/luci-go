@@ -193,13 +193,13 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 		if err != nil {
 			return err
 		}
+		h := common.MustNewHash(common.DefaultHashAlgo)
 		defer func() {
 			if closeErr := out.Close(); err == nil {
 				err = closeErr
 			}
 			if err == nil {
-				// TODO(vadimsh): Calculate the hash.
-				recordExtracted(f, "", "")
+				recordExtracted(f, "", common.ObjectRefToInstanceID(common.ObjectRefFromHash(h)))
 			}
 		}()
 		in, err := f.Open()
@@ -207,7 +207,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 			return err
 		}
 		defer in.Close()
-		_, err = io.Copy(out, in)
+		_, err = io.Copy(io.MultiWriter(out, h), in)
 		return err
 	}
 
