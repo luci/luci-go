@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "d2693fa6_3471e067",
+        "filename": "cipd/client/cipd/pkg/manifest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-22T05:49:26Z",
+      "side": 1,
+      "message": "It might be worth allowing this to optionally be en the packed manifest too; could catch some end-to-end data flubs (compression -\u003e decompression), though I suppose there\u0027s still the possibility that the package creator has a bad harddrive...",
+      "range": {
+        "startLine": 47,
+        "startChar": 72,
+        "endLine": 47,
+        "endChar": 75
+      },
+      "revId": "f91fc71469673298afb7d0ff7511b118d893cf53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b9427ad_f04e0d71",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-22T05:49:26Z",
+      "side": 1,
+      "message": "as in: in a subsequent cl? we should probably be careful about not deploying cipd in the meantime?",
+      "range": {
+        "startLine": 201,
+        "startChar": 7,
+        "endLine": 201,
+        "endChar": 11
+      },
+      "revId": "f91fc71469673298afb7d0ff7511b118d893cf53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d8d71880_670d4a33",
         "filename": "cipd/client/cipd/reader/reader.go",
         "patchSetId": 1
@@ -13,6 +59,30 @@
       "writtenOn": "2019-03-22T02:14:11Z",
       "side": 1,
       "message": "This was wtf for me. Apparently !\u003cbool alias\u003e has type \u003cbool alias\u003e and \"bool || \u003cbool alias\u003e\" doesn\u0027t work.\n\nEven more bizarrely:\n\nswitch {\ncase \u003cbool\u003e:\n  ...\ncase \u003cbool alias\u003e:\n  ...\n}\n\nalso doesn\u0027t work.\n\nBut\n\nswitch {\ncase \u003cbool alias\u003e:\n  ...\n}\n\ndoes.",
+      "range": {
+        "startLine": 247,
+        "startChar": 20,
+        "endLine": 247,
+        "endChar": 25
+      },
+      "revId": "f91fc71469673298afb7d0ff7511b118d893cf53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ff9a983a_ec4171da",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-22T05:49:26Z",
+      "side": 1,
+      "message": "\u003e This was wtf for me. Apparently !\u003cbool alias\u003e has type \u003cbool alias\u003e and \"bool || \u003cbool alias\u003e\" doesn\u0027t work.\n\u003e \n\nMeaning that you get a compile error? This sort-of makes sense...\n\n\u003e Even more bizarrely:\n\u003e \n\u003e switch {\n\u003e case \u003cbool\u003e:\n\u003e   ...\n\u003e case \u003cbool alias\u003e:\n\u003e   ...\n\u003e }\n\u003e \n\u003e also doesn\u0027t work.\n\nWhat do you mean by that? Doesn\u0027t compile because the implicit comparison value of switch is `bool(true)` and so there\u0027s a type mismatch as well?\n\n\u003e \n\u003e But\n\u003e \n\u003e switch {\n\u003e case \u003cbool alias\u003e:\n\u003e   ...\n\u003e }\n\u003e \n\u003e does.\n\nOk, that\u0027s weird O_o",
+      "parentUuid": "d8d71880_670d4a33",
       "range": {
         "startLine": 247,
         "startChar": 20,
