@@ -21,5 +21,5 @@ import (
 )
 
 func init() {
-	registerHashAlgo(api.HashAlgo_SHA1, sha1.New, sha1.Size)
+	registerHashAlgo(api.HashAlgo_SHA1, sha1.New)
 }
