@@ -17,13 +17,13 @@ cron:
 - description: "tsmon housekeeping task"
   url: "/internal/cron/ts_mon/housekeeping"
   schedule: "every 1 minutes"
-  target: backend
+  target: default
 
 # This cron task supports the refresh of the datastore cache every 10 minutes.
 - description: "LUCI Config datastore cache periodic refresh"
   url: "/admin/config/cache/manager"
   schedule: "every 10 minutes"
-  target: backend
+  target: default
 
 # Update critical stats.
 - description: "Stats updater"

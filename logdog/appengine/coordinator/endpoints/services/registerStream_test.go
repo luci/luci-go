@@ -130,9 +130,6 @@ func TestRegisterStream(t *testing.T) {
 					So(tls.Prefix.Created, ShouldResemble, created)
 					So(tls.Prefix.Secret, ShouldResemble, req.Secret)
 
-					// No archival request yet.
-					So(env.ArchivalPublisher.Hashes(), ShouldBeEmpty)
-
 					Convey(`Can register the stream again (idempotent).`, func() {
 						env.Clock.Set(created.Add(10 * time.Minute))
 
@@ -145,21 +142,6 @@ func TestRegisterStream(t *testing.T) {
 						})
 						So(tls.State.Created, ShouldResemble, created)
 						So(tls.Stream.Created, ShouldResemble, created)
-
-						// No archival request yet.
-						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
-
-						Convey(`Forces an archival request after first archive expiration.`, func() {
-							// Make it so that any 2s sleep timers progress.
-							env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
-								env.Clock.Add(3 * time.Second)
-							})
-							env.Clock.Set(created.Add(time.Hour)) // 1 hour after initial registration.
-							env.IterateTumbleAll(c)
-
-							// TODO(hinoka): Fixme.
-							SkipSo(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
-						})
 
 						Convey(`Skips archival completely after 3 weeks`, func() {
 							// Three weeks and an hour later
@@ -174,7 +156,6 @@ func TestRegisterStream(t *testing.T) {
 							tls.WithProjectNamespace(c, func(c context.Context) {
 								So(ds.Get(c, tls.State), ShouldBeNil)
 							})
-							So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 							SkipSo(tls.State.ArchivedTime.After(created.Add(threeWeeks)), ShouldBeTrue)
 						})
 					})
@@ -221,20 +202,9 @@ func TestRegisterStream(t *testing.T) {
 					So(tls.Prefix.Created, ShouldResemble, prefixCreated)
 					So(tls.Prefix.Secret, ShouldResemble, req.Secret)
 
-					// No pending archival requests.
-					env.IterateTumbleAll(c)
-					So(env.ArchivalPublisher.Hashes(), ShouldBeEmpty)
-
 					// When we advance to our settle delay, an archival task is scheduled.
 					env.Clock.Add(10 * time.Minute)
 					env.IterateTumbleAll(c)
-
-					// Has a pending archival request.
-					// TODO(hinoka): Fix me.  This racily fails on bots for some reason,
-					// likely because the hack to increment clock by 3s on every timer call
-					// causes the time to go beyond the 9min settle delay, so the pending
-					// archival request ends up getting processed.
-					SkipSo(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 				})
 
 				Convey(`Will schedule the correct archival expiration delay`, func() {
@@ -250,18 +220,6 @@ func TestRegisterStream(t *testing.T) {
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCOK)
 						ds.GetTestable(c).CatchupIndexes()
-
-						// The cleanup archival should be scheduled for 24 hours, so advance
-						// 12, confirm no archival, then advance another 12 and confirm that
-						// archival was tasked.
-						env.Clock.Add(12 * time.Hour)
-						env.IterateTumbleAll(c)
-						So(env.ArchivalPublisher.Hashes(), ShouldHaveLength, 0)
-
-						env.Clock.Add(12 * time.Hour)
-						env.IterateTumbleAll(c)
-						// TODO(hinoka): Fixme.  See comment in test above.
-						SkipSo(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 					})
 
 					Convey(`When there is no service or project config delay.`, func() {
@@ -279,11 +237,6 @@ func TestRegisterStream(t *testing.T) {
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCOK)
 						ds.GetTestable(c).CatchupIndexes()
-
-						// The cleanup archival should be scheduled immediately.
-						env.IterateTumbleAll(c)
-						// TODO(hinoka): Fixme.
-						SkipSo(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 					})
 				})
 

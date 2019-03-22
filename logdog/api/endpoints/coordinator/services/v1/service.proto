@@ -222,10 +222,6 @@ service Services {
   // archival.
   rpc ArchiveStream(ArchiveStreamRequest) returns (google.protobuf.Empty);
 
-  // RescheduleArchiveTask is an internal operation used to schedule an archive task
-  // for a later time.
-  rpc RescheduleArchiveTask(ArchiveDispatchTask) returns (google.protobuf.Empty);
-
   // Batch is a series of requests submitted in batch. It returns a
   // BatchResponse containing the same number of entries, with each entry index
   // corresponding to its request index.
