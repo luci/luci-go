@@ -318,7 +318,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 
 	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if err := reader.ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), pkg.WithManifest); err != nil {
+	if _, err := reader.ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), pkg.WithManifest); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -639,7 +639,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	}
 	if len(repair) != 0 {
 		logging.Infof(ctx, "Repairing %d files...", len(repair))
-		if err := reader.ExtractFiles(ctx, repair, fs.ExistingDestination(p.instancePath, d.fs), pkg.WithoutManifest); err != nil {
+		if _, err := reader.ExtractFiles(ctx, repair, fs.ExistingDestination(p.instancePath, d.fs), pkg.WithoutManifest); err != nil {
 			return err
 		}
 	}

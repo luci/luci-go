@@ -136,64 +136,37 @@ func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (
 //
 // If withManifest is WithManifest, the manifest file is required to be among
 // 'files'. It will be extended with information about extracted files and
-// placed into the destination.
+// placed into the destination. Note that it will *not* be included into
+// 'extracted' slice.
 //
 // If withManifest is WithoutManifest, the function will fail if the manifest is
 // among 'files' (as a precaution against unintended override of manifests).
-func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, withManifest pkg.ManifestMode) error {
+func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, withManifest pkg.ManifestMode) (extracted []pkg.FileInfo, err error) {
 	if !withManifest {
 		for _, f := range files {
 			if f.Name() == pkg.ManifestName {
-				return fmt.Errorf("refusing to extract the manifest, it is unexpected here")
+				return nil, fmt.Errorf("refusing to extract the manifest, it is unexpected here")
 			}
 		}
 	}
 
 	progress := newProgressReporter(ctx, files)
 
-	extractManifestFile := func(f fs.File) (err error) {
-		defer progress.advance(f)
-		manifest, err := readManifestFile(f)
-		if err != nil {
-			return err
+	extracted = make([]pkg.FileInfo, 0, len(files))
+	recordExtracted := func(file fs.File, symlink, hash string) {
+		fi := pkg.FileInfo{
+			Name:       file.Name(),
+			Size:       file.Size(),
+			Executable: file.Executable(),
+			Writable:   file.Writable(),
+			WinAttrs:   file.WinAttrs().String(),
+			Symlink:    symlink,
+			Hash:       hash,
 		}
-		manifest.Files = make([]pkg.FileInfo, 0, len(files))
-		for _, file := range files {
-			// Do not put info about service .cipdpkg files into the manifest,
-			// otherwise it becomes recursive and "size" property of manifest file
-			// itself is not correct.
-			if strings.HasPrefix(file.Name(), pkg.ServiceDir+"/") {
-				continue
-			}
-			fi := pkg.FileInfo{
-				Name:       file.Name(),
-				Size:       file.Size(),
-				Executable: file.Executable(),
-				Writable:   file.Writable(),
-				WinAttrs:   file.WinAttrs().String(),
-			}
-			if modTime := file.ModTime(); !modTime.IsZero() {
-				fi.ModTime = modTime.Unix()
-			}
-			if file.Symlink() {
-				target, err := file.SymlinkTarget()
-				if err != nil {
-					return err
-				}
-				fi.Symlink = target
-			}
-			manifest.Files = append(manifest.Files, fi)
+		if modTime := file.ModTime(); !modTime.IsZero() {
+			fi.ModTime = modTime.Unix()
 		}
-		out, err := dest.CreateFile(ctx, f.Name(), fs.CreateFileOptions{})
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if closeErr := out.Close(); err == nil {
-				err = closeErr
-			}
-		}()
-		return pkg.WriteManifest(&manifest, out)
+		extracted = append(extracted, fi)
 	}
 
 	extractSymlinkFile := func(f fs.File) error {
@@ -202,7 +175,11 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 		if err != nil {
 			return err
 		}
-		return dest.CreateSymlink(ctx, f.Name(), target)
+		if err := dest.CreateSymlink(ctx, f.Name(), target); err != nil {
+			return err
+		}
+		recordExtracted(f, target, "")
+		return nil
 	}
 
 	extractRegularFile := func(f fs.File) (err error) {
@@ -220,6 +197,10 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 			if closeErr := out.Close(); err == nil {
 				err = closeErr
 			}
+			if err == nil {
+				// TODO(vadimsh): Calculate the hash.
+				recordExtracted(f, "", "")
+			}
 		}()
 		in, err := f.Open()
 		if err != nil {
@@ -230,49 +211,67 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 		return err
 	}
 
-	var manifest fs.File
-	var err error
+	// Extract everything except files under .cipdpkg dir (they are special CIPD
+	// guts that are interpreted by CIPD itself and thus don't need to be blindly
+	// extracted with everything else). Grab the manifest from them though. It
+	// will be extended with []pkg.FileInfo of extracted files and dropped to disk
+	// too, to represent the now unpacked package.
+	var manifestFile fs.File
 	for _, f := range files {
-		select {
-		case <-ctx.Done():
-			err = ctx.Err()
+		if err = ctx.Err(); err != nil {
 			break
+		}
 
+		switch {
+		case f.Name() == pkg.ManifestName:
+			// We delay writing the extended manifest until the very end because we
+			// need to know hashes of all extract files (to put them inside the
+			// manifest), so we need to extract them all first.
+			manifestFile = f
+			progress.advance(f)
+		case strings.HasPrefix(f.Name(), pkg.ServiceDir+"/"):
+			// Skip private package files. Note that pkg.ManifestName is one such
+			// file, so the order of 'case' branches here is important.
+			progress.advance(f)
+		case f.Symlink():
+			err = extractSymlinkFile(f)
 		default:
-			switch {
-			case f.Name() == pkg.ManifestName:
-				// We delay writing the extended manifest until the very end because it
-				// contains values of 'SymlinkTarget' fields of all extracted files.
-				// Fetching 'SymlinkTarget' in general involves seeking inside the zip,
-				// and we prefer not to do that now. Upon exit from the loop, all
-				// 'SymlinkTarget' values will be already cached in memory, and writing
-				// the manifest will be cheaper.
-				manifest = f
-			case f.Symlink():
-				err = extractSymlinkFile(f)
-			default:
-				err = extractRegularFile(f)
-			}
+			err = extractRegularFile(f)
 		}
 		if err != nil {
 			break
 		}
 	}
 
+	switch {
+	case err != nil || bool(!withManifest):
+		return
+	case manifestFile == nil:
+		err = fmt.Errorf("bad CIPD package: no %s file", pkg.ManifestName)
+		return
+	}
+
+	// Now grab the original manifest.json from inside the package and extend it
+	// with information about extracted files collected above while we were
+	// extracting them.
+	manifest, err := readManifestFile(manifestFile)
 	if err != nil {
-		return err
+		return
 	}
+	manifest.Files = extracted
 
-	// Finally extract the extended manifest, now that we have read (and cached)
-	// all 'SymlinkTarget' values.
-	if withManifest {
-		if manifest == nil {
-			return fmt.Errorf("no %s file, this is bad", pkg.ManifestName)
+	// And place it into the destination.
+	out, err := dest.CreateFile(ctx, pkg.ManifestName, fs.CreateFileOptions{})
+	if err != nil {
+		return
+	}
+	defer func() {
+		if closeErr := out.Close(); err == nil {
+			err = closeErr
 		}
-		return extractManifestFile(manifest)
-	}
-
-	return nil
+	}()
+	err = pkg.WriteManifest(&manifest, out)
+	return
 }
 
 // ExtractFilesTxn is like ExtractFiles, but it also opens and closes
@@ -280,9 +279,9 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 //
 // It guarantees that if extraction fails for some reason, there'll be no
 // garbage laying around.
-func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.TransactionalDestination, withManifest pkg.ManifestMode) (err error) {
+func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.TransactionalDestination, withManifest pkg.ManifestMode) (extracted []pkg.FileInfo, err error) {
 	if err := dest.Begin(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Cleanup the garbage even on panics.
