@@ -297,6 +297,25 @@ def _type(attr, val, prototype, default=None, required=True):
   return val
 
 
+def _repo_url(attr, val, required=True):
+  """Validates that the value is `https://...` repository URL and returns it.
+
+  Additionally verifies that `val` doesn't end with `.git`.
+
+  Args:
+    attr: name of the var for error messages. Required.
+    val: a value to validate. Required.
+    required: if False, allow `val` to be None, return None in this case.
+
+  Returns:
+    Validate `val` or None if it is None and `required` is False.
+  """
+  val = validate.string(attr, val, regexp=r'https://.+', required=required)
+  if val and val.endswith('.git'):
+    fail('bad %r: %r should not end with ".git"' % (attr, val))
+  return val
+
+
 def _var_with_validator(attr, validator, **kwargs):
   """Returns a lucicfg.var that validates the value via a validator callback.
 
@@ -336,6 +355,7 @@ validate = struct(
     str_dict = _str_dict,
     struct = _struct,
     type = _type,
+    repo_url = _repo_url,
 
     var_with_validator = _var_with_validator,
     vars_with_validators = _vars_with_validators,

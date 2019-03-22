@@ -57,7 +57,7 @@ def _refset(repo=None, *, refs=None):
   Returns:
     An opaque struct to be passed to `watch` field of luci.cq_group(...).
   """
-  repo = validate.string('repo', repo, regexp=r'https://.+')
+  repo = validate.repo_url('repo', repo)
 
   # Deconstruct GoB URL into a (host, repo) tuple. Support only public GoB URLs.
 

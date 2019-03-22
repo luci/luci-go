@@ -8,7 +8,7 @@ def test_refset_ok():
     assert.eq(refset.__gob_proj, out_proj)
     assert.eq(refset.__refs, out_refs)
   cmp('https://example.googlesource.com/repo', ['.*'], 'example', 'repo', ['.*'])
-  cmp('https://example-review.googlesource.com/a/zzz/repo.git', None, 'example', 'zzz/repo', ['refs/heads/master'])
+  cmp('https://example-review.googlesource.com/a/zzz/repo', None, 'example', 'zzz/repo', ['refs/heads/master'])
 
 
 def test_refset_fail():

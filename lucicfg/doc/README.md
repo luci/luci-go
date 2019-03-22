@@ -385,6 +385,7 @@ luci.project(
     buildbucket = None,
     logdog = None,
     milo = None,
+    notify = None,
     scheduler = None,
     swarming = None,
     acls = None,
@@ -403,6 +404,7 @@ There should be exactly one such definition in the top-level config file.
 * **buildbucket**: appspot hostname of a Buildbucket service to use (if any).
 * **logdog**: appspot hostname of a LogDog service to use (if any).
 * **milo**: appspot hostname of a Milo service to use (if any).
+* **notify**: appspot hostname of a LUCI Notify service to use (if any).
 * **scheduler**: appspot hostname of a LUCI Scheduler service to use (if any).
 * **swarming**: appspot hostname of a Swarming service to use (if any).
 * **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets.
@@ -522,9 +524,11 @@ luci.builder(
     build_numbers = None,
     experimental = None,
     task_template_canary_percentage = None,
+    repo = None,
     luci_migration_host = None,
     triggers = None,
     triggered_by = None,
+    notifies = None,
 )
 ```
 
@@ -592,9 +596,11 @@ This is not necessary if the recipe uses Scheduler API instead of Buildbucket.
 * **build_numbers**: if True, generate monotonically increasing contiguous numbers for each build, unique within the builder. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **experimental**: if True, by default a new build in this builder will be marked as experimental. This is seen from recipes and they may behave differently (e.g. avoiding any side-effects). If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using [luci.notifier(...)](#luci.notifier) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by creation time. If unset, will be taken from the configuration of [luci.gitiles_poller(...)](#luci.gitiles_poller) that trigger this builder if they all poll the same repo.
 * **luci_migration_host**: deprecated setting that was important during the migration from Buildbot to LUCI. Refer to Buildbucket docs for the meaning. Supports the module-scoped default.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
+* **notifies**: list of [luci.notifier(...)](#luci.notifier) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier).
 
 
 
@@ -1000,6 +1006,60 @@ the console declaration. In particular useful in functions. For example:
 * **category**: a string of the form `term1|term2|...` that describes the hierarchy of the builder columns. Neighboring builders with common ancestors will have their column headers merged.
 * **console_view**: a console view to add the builder to. Can be omitted if `console_view_entry` is used inline inside some [luci.console_view(...)](#luci.console_view) declaration.
 * **buildbot**: a reference to an equivalent Buildbot builder, given as `<master>/<builder>` string. **Deprecated**. Exists only to aid in the migration off Buildbot.
+
+
+
+
+### luci.notifier {#luci.notifier}
+
+```python
+luci.notifier(
+    # Required arguments.
+    name,
+
+    # Optional arguments.
+    on_failure = None,
+    on_new_failure = None,
+    on_status_change = None,
+    on_success = None,
+    notify_emails = None,
+    notify_blamelist = None,
+    blamelist_repos_whitelist = None,
+    template = None,
+    notified_by = None,
+)
+```
+
+
+
+Defines a notifier that sends notifications on events from builders.
+
+A notifier contains a set of conditions specifying what events are considered
+interesting (e.g. a previously green builder has failed), and a set of
+recipients to notify when an interesting event happens. The conditions are
+specified via `on_*` fields (at least one of which should be set to `True`)
+and recipients are specified via `notify_*` fields.
+
+The set of builders that are being observed is defined through `notified_by`
+field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
+finishes, the builder "notifies" all [luci.notifier(...)](#luci.notifier) objects subscribed to
+it, and in turn each notifier filters and forwards this event to corresponding
+recipients.
+
+[Email Templates]: https://chromium.googlesource.com/infra/luci/luci-go/+/master/luci_notify/doc/email_templates.md
+
+#### Arguments {#luci.notifier-args}
+
+* **name**: name of this notifier to reference it from other rules. Required.
+* **on_failure**: if True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
+* **on_new_failure**: if True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
+* **on_status_change**: if True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
+* **on_success**: if True, notify on each build success. Default is False.
+* **notify_emails**: an optional list of emails to send notifications to.
+* **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
+* **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
+* **template**: name of the template to use to format the notification email. If not present, `default` is used. See [Email Templates].
+* **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
 
 
 
