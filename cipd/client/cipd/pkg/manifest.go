@@ -38,10 +38,16 @@ type Manifest struct {
 	PackageName   string      `json:"package_name"`
 	VersionFile   string      `json:"version_file,omitempty"` // where to put JSON with info about deployed package
 	InstallMode   InstallMode `json:"install_mode,omitempty"` // how to install: "copy" or "symlink"
-	Files         []FileInfo  `json:"files,omitempty"`        // present only in deployed manifest
+	Files         []FileInfo  `json:"files,omitempty"`        // present only in deployed manifests
 }
 
-// FileInfo is a definition of a file inside a CIPD package.
+// FileInfo describes a file that was extracted from a CIPD package.
+//
+// It is derived (based on zip info headers and actual contents of the files) by
+// ExtractFiles when it unpacks the CIPD package. FileInfo structs are *not*
+// stored in an explicit form in manifest.json inside the package. They are
+// present only in manifest.json files on disk, representing already unpacked
+// packages.
 type FileInfo struct {
 	// Name is slash separated file path relative to a package root.
 	Name string `json:"name"`
@@ -71,6 +77,15 @@ type FileInfo struct {
 
 	// Symlink is a path the symlink points to or "" if the file is not a symlink.
 	Symlink string `json:"symlink,omitempty"`
+
+	// Hash of the file body in the same format as used for instance IDs (i.e. a
+	// base64 string that encodes both the algorithm and the digest).
+	//
+	// See common.ObjectRefToInstanceID for more info. Uses the best algorithm
+	// available at the time of the package unpacking.
+	//
+	// Empty for symlink files. May also be empty in older manifests.
+	Hash string `json:"hash,omitempty"`
 }
 
 // VersionFile describes JSON file with package version information that's
