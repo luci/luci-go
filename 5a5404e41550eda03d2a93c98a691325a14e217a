@@ -377,6 +377,24 @@
     },
     {
       "key": {
+        "uuid": "0c0afc75_75deaece",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-22T03:19:41Z",
+      "side": 1,
+      "message": "it is not that smart",
+      "parentUuid": "996c9b8b_d0f56cf8",
+      "revId": "5a5404e41550eda03d2a93c98a691325a14e217a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "74b2dae1_097f150b",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 5

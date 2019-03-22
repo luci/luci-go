@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45e609b3_dbf8f503",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 949,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-22T03:19:41Z",
+      "side": 1,
+      "message": "this should error out if any of notifications have \"blamelist\" configured, but repository turns out to be falsy",
+      "revId": "dcb2fb5ee623026bcca49467f605b322e597d9c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
