@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "f72877f5_7c269ff2",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-22T21:39:17Z",
+      "side": 1,
+      "message": "This is idiomatic Go for creating what Python calls a set (i.e. a dict where you only care about the keys). A bool takes up one byte, but the empty struct takes up zero.",
+      "parentUuid": "9a6b08c9_406ad575",
+      "range": {
+        "startLine": 92,
+        "startChar": 13,
+        "endLine": 92,
+        "endChar": 23
+      },
+      "revId": "499a726fc8ac7acb8fa35ee16924d35145d8930a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0200fa92_de2f50e4",
         "filename": "buildbucket/client/cmd/buildbucket/collect.go",
         "patchSetId": 7
