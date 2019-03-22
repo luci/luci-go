@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8d71880_670d4a33",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-22T02:14:11Z",
+      "side": 1,
+      "message": "This was wtf for me. Apparently !\u003cbool alias\u003e has type \u003cbool alias\u003e and \"bool || \u003cbool alias\u003e\" doesn\u0027t work.\n\nEven more bizarrely:\n\nswitch {\ncase \u003cbool\u003e:\n  ...\ncase \u003cbool alias\u003e:\n  ...\n}\n\nalso doesn\u0027t work.\n\nBut\n\nswitch {\ncase \u003cbool alias\u003e:\n  ...\n}\n\ndoes.",
+      "range": {
+        "startLine": 247,
+        "startChar": 20,
+        "endLine": 247,
+        "endChar": 25
+      },
+      "revId": "f91fc71469673298afb7d0ff7511b118d893cf53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
