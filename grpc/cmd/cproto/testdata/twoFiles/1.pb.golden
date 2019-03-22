@@ -10,6 +10,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -171,6 +173,14 @@ func (c *s1Client) M(ctx context.Context, in *Req, opts ...grpc.CallOption) (*Re
 // S1Server is the server API for S1 service.
 type S1Server interface {
 	M(context.Context, *Req) (*Res, error)
+}
+
+// UnimplementedS1Server can be embedded to have forward compatible implementations.
+type UnimplementedS1Server struct {
+}
+
+func (*UnimplementedS1Server) M(ctx context.Context, req *Req) (*Res, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method M not implemented")
 }
 
 func RegisterS1Server(s prpc.Registrar, srv S1Server) {
