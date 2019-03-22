@@ -67,6 +67,10 @@ func NewS2_0Client(cc *grpc.ClientConn) S2_0Client {
 type S2_0Server interface {
 }
 
+// UnimplementedS2_0Server can be embedded to have forward compatible implementations.
+type UnimplementedS2_0Server struct {
+}
+
 func RegisterS2_0Server(s prpc.Registrar, srv S2_0Server) {
 	s.RegisterService(&_S2_0_serviceDesc, srv)
 }
@@ -102,6 +106,10 @@ func NewS2_1Client(cc *grpc.ClientConn) S2_1Client {
 
 // S2_1Server is the server API for S2_1 service.
 type S2_1Server interface {
+}
+
+// UnimplementedS2_1Server can be embedded to have forward compatible implementations.
+type UnimplementedS2_1Server struct {
 }
 
 func RegisterS2_1Server(s prpc.Registrar, srv S2_1Server) {
