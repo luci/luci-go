@@ -134,6 +134,24 @@
       "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34b1762a_9f11395d",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-22T23:35:27Z",
+      "side": 1,
+      "message": "If no behavioral change leave as is.\n\nI\u0027m thinking, if we have a task without a bot, the expected behavior would probably be to show \"N/A\".  Can probably do it in botLink.",
+      "parentUuid": "b782d014_c30ffff6",
+      "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
