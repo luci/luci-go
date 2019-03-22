@@ -303,22 +303,26 @@ func TestPackageReading(t *testing.T) {
 			"files": [
 				{
 					"name": "testing/qwerty",
-					"size": 5
+					"size": 5,
+					"hash": "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC"
 				},
 				{
 					"name": "abc",
 					"size": 3,
-					"executable": true
+					"executable": true,
+					"hash": "i_jQPvLtCYwT3iPForJuG9tFWRu9c3ndgjxk7nXjY2kC"
 				},
 				{
 					"name": "writable",
 					"size": 8,
-					"writable": true
+					"writable": true,
+					"hash": "QeUFaPVoXLyp7lPHwnWGgBD5Wo-buja_bBGTx4s3jkkC"
 				},
 				{
 					"modtime":1514764800,
 					"name": "timestamped",
-					"size": 7
+					"size": 7,
+					"hash": "M2fO8ZiWvyqNVmp_Nu5QZo80JXSjkqHz60zRlhqNHzgC"
 				},
 				{
 					"name": "rel_symlink",
@@ -332,7 +336,8 @@ func TestPackageReading(t *testing.T) {
 				}%s,
 				{
 					"name": "subpath/version.json",
-					"size": 96
+					"size": 96,
+					"hash": "9IYeZqpt0Ci4nxzyl6YJR2fSe870Y2MpmiS17r0h-cIC"
 				}
 			]
 		}`
@@ -340,12 +345,14 @@ func TestPackageReading(t *testing.T) {
 			goodManifest = fmt.Sprintf(goodManifest, `,{
 				"name": "secret",
 				"size": 5,
-				"win_attrs": "H"
+				"win_attrs": "H",
+				"hash": "TODO"
 			},
 			{
 				"name": "system",
 				"size": 7,
-				"win_attrs": "S"
+				"win_attrs": "S",
+				"hash": "TODO"
 			}`)
 		} else {
 			goodManifest = fmt.Sprintf(goodManifest, "")
@@ -452,12 +459,14 @@ func TestPackageReading(t *testing.T) {
 			"files": [
 				{
 					"name": "testing/qwerty",
-					"size": 5
+					"size": 5,
+					"hash": "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC"
 				},
 				{
 					"name": "abc",
 					"size": 3,
-					"executable": true
+					"executable": true,
+					"hash": "i_jQPvLtCYwT3iPForJuG9tFWRu9c3ndgjxk7nXjY2kC"
 				},
 				{
 					"name": "rel_symlink",
@@ -471,7 +480,8 @@ func TestPackageReading(t *testing.T) {
 				}%s,
 				{
 					"name": "subpath/version.json",
-					"size": 96
+					"size": 96,
+					"hash": "26nPG7CQsXMilBA-yCqbzNeqp_9LTlTu3Kh2cbD7X4gC"
 				}
 			]
 		}`
@@ -479,12 +489,14 @@ func TestPackageReading(t *testing.T) {
 			goodManifest = fmt.Sprintf(goodManifest, `,{
 				"name": "secret",
 				"size": 5,
-				"win_attrs": "H"
+				"win_attrs": "H",
+				"hash": "TODO"
 			},
 			{
 				"name": "system",
 				"size": 7,
-				"win_attrs": "S"
+				"win_attrs": "S",
+				"hash": "TODO"
 			}`)
 		} else {
 			goodManifest = fmt.Sprintf(goodManifest, "")
