@@ -81,6 +81,41 @@
       "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "196fa2d6_03f8c757",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-22T23:06:46Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "12f4f4d7_41acdf86",
+      "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e3b5929c_b6f164af",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-22T23:06:46Z",
+      "side": 1,
+      "message": "Can we have a bot without a task id?",
+      "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
