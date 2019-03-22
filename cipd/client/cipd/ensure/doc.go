@@ -44,12 +44,14 @@
 //     specify a list of ${platform} expansions to use for verification.
 //     Multiple $VerifiedPlatform directives can be specified, and will
 //     accumulate.
-//   - `$ParanoidMode NotParanoid|CheckPresence` controls how paranoid CIPD
-//     should be when checking the state of already installed packages.
-//     `NotParanoid` (default) indicates that CIPD should trust that no one is
-//     messing with the installation root directory. `CheckPresence` indicates
-//     CIPD should verify all files that are supposed to be already installed
-//     are indeed present (this incurs additional overhead).
+//   - `$ParanoidMode NotParanoid|CheckPresence|CheckIntegrity` controls how
+//     paranoid CIPD should be when checking the state of already installed
+//     packages. `NotParanoid` (default) indicates that CIPD should trust that
+//     no one is messing with the installation root directory. `CheckPresence`
+//     indicates CIPD should verify all files that are supposed to be already
+//     installed are indeed present (this incurs additional overhead). And
+//     finally `CheckIntegrity` will verify that files weren't modified since
+//     they were installed (this incurs even more overhead).
 //   - `$ResolvedVersions <filename>` is a path (either relative to the ensure
 //     file or absolute) to a file that contains "frozen" instance IDs (hashes)
 //     of all packages for all verified platforms, resolved at the time the
