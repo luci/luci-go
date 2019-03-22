@@ -79,6 +79,41 @@ Returns a triple with lucicfg version: `(major, minor, revision)`.
 
 
 
+### lucicfg.check_version {#lucicfg.check_version}
+
+```python
+lucicfg.check_version(min, message = None)
+```
+
+
+
+Fails if lucicfg version is below the requested minimal one.
+
+Useful when a script depends on some lucicfg feature that may not be available
+in earlier versions. [lucicfg.check_version(...)](#lucicfg.check_version) can be used at the start of
+the script to fail right away with a clean error message:
+
+```python
+lucicfg.check_version(
+    min = '1.5.5',
+    message = 'Update depot_tools',
+)
+```
+
+Or even
+
+```python
+lucicfg.check_version('1.5.5')
+```
+
+#### Arguments {#lucicfg.check_version-args}
+
+* **min**: a string `major.minor.revision` with minimally accepted version. Required.
+* **message**: a custom failure message to show.
+
+
+
+
 ### lucicfg.config {#lucicfg.config}
 
 ```python
