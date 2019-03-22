@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fdff5c9c_53078eef",
+        "filename": "cipd/client/cipd/pkg/manifest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-22T18:14:16Z",
+      "side": 1,
+      "message": "This would be more complicated change. If we start writing hashes into the package, I\u0027d like the backend to be able to verify them, and this is not trivial.\n\nI\u0027ll change this comment when we actually start doing it.",
+      "parentUuid": "d2693fa6_3471e067",
+      "range": {
+        "startLine": 47,
+        "startChar": 72,
+        "endLine": 47,
+        "endChar": 75
+      },
+      "revId": "f91fc71469673298afb7d0ff7511b118d893cf53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b9427ad_f04e0d71",
         "filename": "cipd/client/cipd/reader/reader.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "f91fc71469673298afb7d0ff7511b118d893cf53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "303bf1cd_79aff176",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-22T18:14:16Z",
+      "side": 1,
+      "message": "Deploying it is fine, it produces exact same output as existing prod version of CIPD (manifests.json without \u0027hash\u0027 field).",
+      "parentUuid": "9b9427ad_f04e0d71",
+      "range": {
+        "startLine": 201,
+        "startChar": 7,
+        "endLine": 201,
+        "endChar": 11
+      },
+      "revId": "f91fc71469673298afb7d0ff7511b118d893cf53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -83,6 +131,30 @@
       "side": 1,
       "message": "\u003e This was wtf for me. Apparently !\u003cbool alias\u003e has type \u003cbool alias\u003e and \"bool || \u003cbool alias\u003e\" doesn\u0027t work.\n\u003e \n\nMeaning that you get a compile error? This sort-of makes sense...\n\n\u003e Even more bizarrely:\n\u003e \n\u003e switch {\n\u003e case \u003cbool\u003e:\n\u003e   ...\n\u003e case \u003cbool alias\u003e:\n\u003e   ...\n\u003e }\n\u003e \n\u003e also doesn\u0027t work.\n\nWhat do you mean by that? Doesn\u0027t compile because the implicit comparison value of switch is `bool(true)` and so there\u0027s a type mismatch as well?\n\n\u003e \n\u003e But\n\u003e \n\u003e switch {\n\u003e case \u003cbool alias\u003e:\n\u003e   ...\n\u003e }\n\u003e \n\u003e does.\n\nOk, that\u0027s weird O_o",
       "parentUuid": "d8d71880_670d4a33",
+      "range": {
+        "startLine": 247,
+        "startChar": 20,
+        "endLine": 247,
+        "endChar": 25
+      },
+      "revId": "f91fc71469673298afb7d0ff7511b118d893cf53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c10f823_d1a6f22f",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-22T18:14:16Z",
+      "side": 1,
+      "message": "I was surprised that \"if \u003cbool alias\u003e\" has implicit cast, but \"\u003cboo\u003e || \u003cbool alias\u003e\" doesn\u0027t.",
+      "parentUuid": "ff9a983a_ec4171da",
       "range": {
         "startLine": 247,
         "startChar": 20,
