@@ -13,10 +13,5 @@
 # limitations under the License.
 
 queue:
-- name: "tumble"
-  rate: 500/s
-  target: backend
-  bucket_size: 500
-
 - name: "archiveTasks"
   mode: pull

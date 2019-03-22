@@ -22,15 +22,11 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/config"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
@@ -121,11 +117,4 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 
 	terminateStreamMetric.Add(c, 1, req.Project)
 	return &empty.Empty{}, nil
-}
-
-func standardArchivalParams(cfg *config.Config, pcfg *svcconfig.ProjectConfig) *coordinator.ArchivalParams {
-	return &coordinator.ArchivalParams{
-		SettleDelay:    google.DurationFromProto(cfg.Coordinator.ArchiveSettleDelay),
-		CompletePeriod: endpoints.MinDuration(cfg.Coordinator.ArchiveDelayMax, pcfg.MaxStreamAge),
-	}
 }

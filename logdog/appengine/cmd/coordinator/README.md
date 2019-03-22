@@ -40,11 +40,6 @@ microservices, notably the [Collector](../../../server/cmd/logdog_collector) and
 are used to coordinate the microservice-managed aspects of the log stream
 lifecycle.
 
-### Backend
-
-The [backend](backend/) service hosts the [Tumble](/tumble) journaled processing
-service, which handles log stream lifecycle transitions and deadlines.
-
 ### Static
 
 The [static](static/) service hosts static content, including:
