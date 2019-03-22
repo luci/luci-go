@@ -18,6 +18,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"hash"
+	"reflect"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -35,16 +36,19 @@ const DefaultHashAlgo = api.HashAlgo_SHA256
 // hashes can be turned off by build flags or by omitting files when vendoring.
 var supportedAlgos = make([]struct {
 	hash         func() hash.Hash
+	typ          reflect.Type
 	hexDigestLen int
 }, len(api.HashAlgo_value))
 
 // registerHash is used from hash_*.go files to update supportedAlgos.
-func registerHashAlgo(algo api.HashAlgo, h func() hash.Hash, digestSize int) {
+func registerHashAlgo(algo api.HashAlgo, h func() hash.Hash) {
 	if supportedAlgos[algo].hash != nil {
 		panic(fmt.Sprintf("hash algo %s is already registered", algo))
 	}
+	inst := h()
 	supportedAlgos[algo].hash = h
-	supportedAlgos[algo].hexDigestLen = 2 * digestSize
+	supportedAlgos[algo].typ = reflect.TypeOf(inst)
+	supportedAlgos[algo].hexDigestLen = 2 * len(inst.Sum(nil))
 }
 
 // NewHash returns a hash implementation or an error if the algo is unknown.
@@ -85,4 +89,21 @@ func ValidateHashAlgo(h api.HashAlgo) error {
 // HexDigest returns a digest string as it is used in ObjectRef.
 func HexDigest(h hash.Hash) string {
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+// ObjectRefFromHash returns ObjectRef based on the given hash.Hash.
+//
+// `h` must be one of the supported hashes (as created by `NewHash`). Panics
+// otherwise.
+func ObjectRefFromHash(h hash.Hash) *api.ObjectRef {
+	typ := reflect.TypeOf(h)
+	for algo, props := range supportedAlgos {
+		if props.typ == typ {
+			return &api.ObjectRef{
+				HashAlgo:  api.HashAlgo(algo),
+				HexDigest: HexDigest(h),
+			}
+		}
+	}
+	panic(fmt.Sprintf("unknown hash algo %T", h))
 }

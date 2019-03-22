@@ -303,22 +303,26 @@ func TestPackageReading(t *testing.T) {
 			"files": [
 				{
 					"name": "testing/qwerty",
-					"size": 5
+					"size": 5,
+					"hash": "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC"
 				},
 				{
 					"name": "abc",
 					"size": 3,
-					"executable": true
+					"executable": true,
+					"hash": "i_jQPvLtCYwT3iPForJuG9tFWRu9c3ndgjxk7nXjY2kC"
 				},
 				{
 					"name": "writable",
 					"size": 8,
-					"writable": true
+					"writable": true,
+					"hash": "QeUFaPVoXLyp7lPHwnWGgBD5Wo-buja_bBGTx4s3jkkC"
 				},
 				{
 					"modtime":1514764800,
 					"name": "timestamped",
-					"size": 7
+					"size": 7,
+					"hash": "M2fO8ZiWvyqNVmp_Nu5QZo80JXSjkqHz60zRlhqNHzgC"
 				},
 				{
 					"name": "rel_symlink",
@@ -329,26 +333,33 @@ func TestPackageReading(t *testing.T) {
 					"name": "abs_symlink",
 					"size": 0,
 					"symlink": "/abc/def"
-				}%s,
-				{
-					"name": "subpath/version.json",
-					"size": 96
-				}
+				},%s
 			]
 		}`
 		if runtime.GOOS == "windows" {
-			goodManifest = fmt.Sprintf(goodManifest, `,{
+			goodManifest = fmt.Sprintf(goodManifest, `{
 				"name": "secret",
 				"size": 5,
-				"win_attrs": "H"
+				"win_attrs": "H",
+				"hash": "VEgllRdxFuYQOwdtvzBkjl0FN90e2c9a5FYvqKcA1HsC"
 			},
 			{
 				"name": "system",
 				"size": 7,
-				"win_attrs": "S"
+				"win_attrs": "S",
+				"hash": "vAIKNbf5yxOC57U0xo48Ux2EmxGb8U913erWzEXDzMEC"
+			},
+			{
+				"name": "subpath/version.json",
+				"size": 96,
+				"hash": "lOUA6OkQklkAG75z0QNVQokCFNiR9ONkz-04wnpi464C"
 			}`)
 		} else {
-			goodManifest = fmt.Sprintf(goodManifest, "")
+			goodManifest = fmt.Sprintf(goodManifest, `{
+				"name": "subpath/version.json",
+				"size": 96,
+				"hash": "9IYeZqpt0Ci4nxzyl6YJR2fSe870Y2MpmiS17r0h-cIC"
+			}`)
 		}
 		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
 			shouldBeSameJSONDict, goodManifest)
@@ -452,12 +463,14 @@ func TestPackageReading(t *testing.T) {
 			"files": [
 				{
 					"name": "testing/qwerty",
-					"size": 5
+					"size": 5,
+					"hash": "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC"
 				},
 				{
 					"name": "abc",
 					"size": 3,
-					"executable": true
+					"executable": true,
+					"hash": "i_jQPvLtCYwT3iPForJuG9tFWRu9c3ndgjxk7nXjY2kC"
 				},
 				{
 					"name": "rel_symlink",
@@ -468,26 +481,33 @@ func TestPackageReading(t *testing.T) {
 					"name": "abs_symlink",
 					"size": 0,
 					"symlink": "/abc/def"
-				}%s,
-				{
-					"name": "subpath/version.json",
-					"size": 96
-				}
+				},%s
 			]
 		}`
 		if runtime.GOOS == "windows" {
-			goodManifest = fmt.Sprintf(goodManifest, `,{
+			goodManifest = fmt.Sprintf(goodManifest, `{
 				"name": "secret",
 				"size": 5,
-				"win_attrs": "H"
+				"win_attrs": "H",
+				"hash": "VEgllRdxFuYQOwdtvzBkjl0FN90e2c9a5FYvqKcA1HsC"
 			},
 			{
 				"name": "system",
 				"size": 7,
-				"win_attrs": "S"
+				"win_attrs": "S",
+				"hash": "vAIKNbf5yxOC57U0xo48Ux2EmxGb8U913erWzEXDzMEC"
+			},
+			{
+				"name": "subpath/version.json",
+				"size": 96,
+				"hash": "o5sP_TrygG-tmf0sP6EzwEvB8G8eZKi4RWcxCBj8PxwC"
 			}`)
 		} else {
-			goodManifest = fmt.Sprintf(goodManifest, "")
+			goodManifest = fmt.Sprintf(goodManifest, `{
+				"name": "subpath/version.json",
+				"size": 96,
+				"hash": "26nPG7CQsXMilBA-yCqbzNeqp_9LTlTu3Kh2cbD7X4gC"
+			}`)
 		}
 		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
 			shouldBeSameJSONDict, goodManifest)
