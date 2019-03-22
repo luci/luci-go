@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc1b9014_c8360b43",
+        "filename": "cipd/client/cipd/aliases.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-22T00:55:42Z",
+      "side": 1,
+      "message": "s/updated/modified (since it\u0027s the filesystemey term)",
+      "range": {
+        "startLine": 46,
+        "startChar": 21,
+        "endLine": 46,
+        "endChar": 28
+      },
+      "revId": "702360fc0308cec6290c55c819daad3d58b0fd21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
