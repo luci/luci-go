@@ -307,9 +307,7 @@
 
 {{define "blamelist_tab"}}
   <div id="changes" class="column">
-    {{ if .BuildPage.BlamelistError }}
-      Loading blamelist... (<a title="{{ .BuildPage.BlamelistError }}">why?</a>)
-    {{ else if .BuildPage.Blame }}
+    {{ if .BuildPage.Blame }}
     <ol>
     {{ range .BuildPage.Blame }}
     <li>
@@ -361,6 +359,12 @@
     </li>
     {{ end }} <!-- range .Build.Blame -->
     </ol>
+    {{ else if .BuildPage.BlamelistError }}
+      {{ if .BuildPage.ForcedBlamelist }}
+        Error while loading blamelist:<br>{{ .BuildPage.BlamelistError }}
+      {{ else }}
+        Loading blamelist... (<a title="{{ .BuildPage.BlamelistError }}">why?</a>)
+      {{ end }}
     {{ else }}
       No Blamelist
     {{ end }} <!-- if .Build.Blame -->

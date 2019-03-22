@@ -102,6 +102,9 @@ type BuildPage struct {
 	// BlamelistError holds errors related to the blamelist.
 	// This determines the behavior of clicking the "blamelist" tab.
 	BlamelistError error
+
+	// ForcedBlamelist indicates that the user forced a blamelist load.
+	ForcedBlamelist bool
 }
 
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
