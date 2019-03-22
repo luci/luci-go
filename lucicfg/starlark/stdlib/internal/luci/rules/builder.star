@@ -49,13 +49,15 @@ def _builder(
       build_numbers=None,
       experimental=None,
       task_template_canary_percentage=None,
+      repo=None,
 
       # Deprecated stuff, candidate for deletion.
       luci_migration_host=None,
 
       # Relations.
       triggers=None,
-      triggered_by=None
+      triggered_by=None,
+      notifies=None
   ):
   """Defines a generic builder.
 
@@ -167,6 +169,13 @@ def _builder(
         of builds that should use a canary swarming task template. If None,
         defer the decision to Buildbucket service. Supports the module-scoped
         default.
+    repo: URL of a primary git repository (starting with `https://`) associated
+        with the builder, if known. It is in particular important when using
+        luci.notifier(...) to let LUCI know what git history it should use to
+        chronologically order builds on this builder. If unknown, builds will be
+        ordered by creation time. If unset, will be taken from the configuration
+        of luci.gitiles_poller(...) that trigger this builder if they all poll
+        the same repo.
 
     luci_migration_host: deprecated setting that was important during the
         migration from Buildbot to LUCI. Refer to Buildbucket docs for the
@@ -174,6 +183,9 @@ def _builder(
 
     triggers: builders this builder triggers.
     triggered_by: builders or pollers this builder is triggered by.
+    notifies: list of luci.notifier(...) the builder notifies when it changes
+        its status. This relation can also be defined via `notified_by` field in
+        luci.notifier(...).
   """
   name = validate.string('name', name)
   bucket_key = keys.bucket(bucket)
@@ -198,6 +210,7 @@ def _builder(
       'build_numbers': validate.bool('build_numbers', build_numbers, required=False),
       'experimental': validate.bool('experimental', experimental, required=False),
       'task_template_canary_percentage': validate.int('task_template_canary_percentage', task_template_canary_percentage, min=0, max=100, required=False),
+      'repo': validate.repo_url('repo', repo, required=False),
       'luci_migration_host': validate.string('luci_migration_host', luci_migration_host, allow_empty=True, required=False)
   }
 
@@ -243,6 +256,14 @@ def _builder(
         parent = keys.triggerer(t),
         child = builder_ref_key,
         title = 'triggered_by',
+    )
+
+  # Subscribe notifiers to this builder.
+  for n in validate.list('notifies', notifies):
+    graph.add_edge(
+        parent = keys.notifier(n),
+        child = builder_ref_key,
+        title = 'notifies',
     )
 
   return graph.keyset(builder_key, builder_ref_key, triggerer_key)
