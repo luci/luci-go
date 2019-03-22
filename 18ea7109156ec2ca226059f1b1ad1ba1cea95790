@@ -116,6 +116,24 @@
       "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b782d014_c30ffff6",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-22T23:22:18Z",
+      "side": 1,
+      "message": "no. no behavioral change here: we can have a task without bot.\nif you think it is a bug, it was here before\n\nwhat do you prefer?",
+      "parentUuid": "e3b5929c_b6f164af",
+      "revId": "18ea7109156ec2ca226059f1b1ad1ba1cea95790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
