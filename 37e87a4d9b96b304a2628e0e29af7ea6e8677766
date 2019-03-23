@@ -22,6 +22,23 @@
       "revId": "37e87a4d9b96b304a2628e0e29af7ea6e8677766",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50c89a18_4102d17b",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-23T00:01:11Z",
+      "side": 1,
+      "message": "it wasn\u0027t obvious that this is a fake entity kind",
+      "revId": "37e87a4d9b96b304a2628e0e29af7ea6e8677766",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
