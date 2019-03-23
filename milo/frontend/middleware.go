@@ -228,7 +228,7 @@ func botLink(s *buildbucketpb.BuildInfra_Swarming) (result template.HTML) {
 				fmt.Sprintf("swarming bot %s", d.Value)).HTML()
 		}
 	}
-	return ""
+	return "N/A"
 }
 
 // formatCommitDesc takes a commit message and adds embellishments such as:
