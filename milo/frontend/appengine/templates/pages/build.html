@@ -159,13 +159,17 @@
 
       {{ with .BuildPage.Infra }}
         {{ with .Swarming }}
-        <li>
-          Swarming Task:
-          <a href="https://{{ .Hostname }}/task?id={{ .TaskId }}&o=true&w=true">
-            {{ .TaskId }}
-          </a>
-        </li>
-        <li>Bot: {{ . | botLink }}</li>
+          <li>
+            Swarming Task:
+            {{ if .TaskId }}
+              <a href="https://{{ .Hostname }}/task?id={{ .TaskId }}&o=true&w=true">
+                {{ .TaskId }}
+              </a>
+            {{ else }}
+              N/A
+            {{ end }}
+          </li>
+          <li>Bot: {{ . | botLink }}</li>
         {{ end }}
 
         {{ with .Recipe }}
