@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b550bd27_05e225f2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 945,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-25T23:17:32Z",
+      "side": 0,
+      "message": "That\u0027s the root cause, this is always true-ish, since proto fields are instantiated on first access (in python this sort of a check should have been done with HasField, but there\u0027s no HasField in Starlark, at least currently, since it wasn\u0027t absolutely needed).",
+      "range": {
+        "startLine": 945,
+        "startChar": 12,
+        "endLine": 945,
+        "endChar": 30
+      },
+      "revId": "546dd6723c8bb8ebfad4977807c24a5485647648",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
