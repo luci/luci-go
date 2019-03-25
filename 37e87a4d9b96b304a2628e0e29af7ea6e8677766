@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3644f0f2_c81df239",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-25T18:44:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a2aab83_b669a5d8",
+      "range": {
+        "startLine": 228,
+        "startChar": 5,
+        "endLine": 228,
+        "endChar": 24
+      },
+      "revId": "37e87a4d9b96b304a2628e0e29af7ea6e8677766",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "50c89a18_4102d17b",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 6
@@ -36,6 +60,24 @@
       "writtenOn": "2019-03-23T00:01:11Z",
       "side": 1,
       "message": "it wasn\u0027t obvious that this is a fake entity kind",
+      "revId": "37e87a4d9b96b304a2628e0e29af7ea6e8677766",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e531077e_a42023da",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-25T18:44:34Z",
+      "side": 1,
+      "message": "Added more documentation.",
+      "parentUuid": "50c89a18_4102d17b",
       "revId": "37e87a4d9b96b304a2628e0e29af7ea6e8677766",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
