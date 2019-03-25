@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "91abff9d_db94f593",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-25T20:12:46Z",
+      "side": 1,
+      "message": "I think this could be accomplished by doing \n\n    open(stream_server_path, \u0027rwb\u0027) as fd\n    fd.write(\u0027{\"command\": \"new_namespace\", \"namespace\": \"foo/bar\"}\u0027)\n    new_stream_server_path \u003d fd.read()\n\nThe protocol is already that you open the stream_server_path and write a JSON blob to it (to describe the rest of the data you plan to write). I think this could be trivially extended to accepting commands (in the form above), and allowing the connected socket to be bidirectional.\n\nThe server would read the command, then:\n  * make a new named pipe/unix socket/whatever\n  * add that to the list of things the butler loop is listening to\n  * write the name of that new thing back to the connection\n\n\nSo, ultimately, there would still only be one butler process running.\n\nThis could also be used to move out the url stuff:\n\n    open(stream_server_path, \u0027rwb\u0027) as fd\n    fd.write(\u0027{\"command\": \"get_log_url\", \"stream_name\": \"foo/bar\"}\u0027)\n    http_url_for_foo_bar \u003d fd.read()",
+      "parentUuid": "dc9417e1_aaa80e1e",
+      "range": {
+        "startLine": 173,
+        "startChar": 22,
+        "endLine": 173,
+        "endChar": 65
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fcc9b99e_7f6b2c76",
         "filename": "buildbucket/proto/config/project_config.proto",
         "patchSetId": 3
