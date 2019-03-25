@@ -101,9 +101,9 @@ type Build struct {
 	// Machine-readable details of the current status.
 	// Human-readable status reason is available in summary_markdown.
 	StatusDetails *StatusDetails `protobuf:"bytes,22,opt,name=status_details,json=statusDetails,proto3" json:"status_details,omitempty"`
-	// Input to the build script / recipe.
+	// Input to the build executable.
 	Input *Build_Input `protobuf:"bytes,15,opt,name=input,proto3" json:"input,omitempty"`
-	// Output of the build script / recipe.
+	// Output of the build executable.
 	// SHOULD depend only on input field and NOT other fields.
 	//
 	// RPC: By default, this field is excluded from responses.
@@ -282,7 +282,7 @@ func (m *Build) GetTags() []*StringPair {
 
 // Defines what to build/test.
 //
-// Behavior of a build script (recipe) MAY depend on Input.
+// Behavior of a build executable MAY depend on Input.
 // It MAY NOT modify its behavior based on anything outside of Input.
 // It MAY read non-Input fields to display for debugging or to pass-through to
 // triggered builds. For example the "tags" field may be passed to triggered
@@ -374,7 +374,7 @@ func (m *Build_Input) GetExperimental() bool {
 	return false
 }
 
-// Result of the build script (recipe).
+// Result of the build executable.
 type Build_Output struct {
 	// Arbitrary JSON object produced by the build.
 	//
