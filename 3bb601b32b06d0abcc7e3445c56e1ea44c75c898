@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "25ee47f1_3be16f85",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-25T23:22:45Z",
+      "side": 1,
+      "message": "i thought about this a bit and not sure now. Without $LOGDOG_NAMESPACE, a sub-recipe wouldn\u0027t know what to put in $build.proto step log, or what it will put will be relative to its proxy, as opposed to what butler that kitchen manages. WDYT?\n\nat the same time, this seems to be mostly sub-recipe thing. I don\u0027t see why kitchen needs this param. I am tempted to simply remove $LOGDOG_NAMESPACE from this protocol and ask the user executable to always write \"u/build.proto\". If it needs to rub sub-recipes, then it can manage $LOGDOG_NAMESPACE on its own. Kitchen does not need to know about this.",
+      "parentUuid": "91abff9d_db94f593",
+      "range": {
+        "startLine": 173,
+        "startChar": 22,
+        "endLine": 173,
+        "endChar": 65
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fcc9b99e_7f6b2c76",
         "filename": "buildbucket/proto/config/project_config.proto",
         "patchSetId": 3
