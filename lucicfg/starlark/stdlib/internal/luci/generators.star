@@ -921,13 +921,12 @@ def gen_notify_cfg(ctx):
 
   service = get_service('notify', 'using notifiers')
 
-  # Build the map 'builder node => [notify_pb.Notification] watching it'.
+  # Build the map 'builder node => [notifier node] watching it'.
   per_builder = {}
   for n in notifiers:
-    notification = _notify_notification_pb(n)
     for ref in graph.children(n.key, kinds.BUILDER_REF):
       builder = builder_ref.follow(ref, context_node=n)
-      per_builder.setdefault(builder, []).append(notification)
+      per_builder.setdefault(builder, []).append(n)
 
   # Calculate the map {builder key => [gitiles_poller that triggers it]} needed
   # for deriving repo URLs associated with builders.
@@ -942,14 +941,14 @@ def gen_notify_cfg(ctx):
   notifiers_pb = []
   for builder, notifications in per_builder.items():
     repo = _notify_builder_repo(builder, pollers)
-    if any([n.notify_blamelist for n in notifications]) and not repo:
+    if any([n.props.notify_blamelist for n in notifications]) and not repo:
       error(
           ('cannot deduce a primary repo for %s, which is observed by a ' +
           'luci.notifier with notify_blamelist=True; add repo=... field') % builder,
           trace=builder.trace
       )
     notifiers_pb.append(notify_pb.Notifier(
-        notifications = notifications,
+        notifications = [_notify_notification_pb(n) for n in notifications],
         builders = [notify_pb.Builder(
             bucket = builder.props.bucket,
             name = builder.props.name,
