@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "021744f9_3e8871ad",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-25T23:11:49Z",
+      "side": 1,
+      "message": "nit: headers normally don\u0027t have colon?",
+      "range": {
+        "startLine": 37,
+        "startChar": 57,
+        "endLine": 37,
+        "endChar": 58
+      },
+      "revId": "bef88323c13f2722911cf9e962a8c0c351026c85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7911add_9f14a5aa",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-25T23:11:49Z",
+      "side": 1,
+      "message": "h2 is common. put it before/after if-else-end?",
+      "range": {
+        "startLine": 39,
+        "startChar": 6,
+        "endLine": 39,
+        "endChar": 9
+      },
+      "revId": "bef88323c13f2722911cf9e962a8c0c351026c85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
