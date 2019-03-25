@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d2eeb314_1d1fd5b1",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-25T23:36:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "021744f9_3e8871ad",
+      "range": {
+        "startLine": 37,
+        "startChar": 57,
+        "endLine": 37,
+        "endChar": 58
+      },
+      "revId": "bef88323c13f2722911cf9e962a8c0c351026c85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b7911add_9f14a5aa",
         "filename": "milo/frontend/appengine/templates/pages/builder.html",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "bef88323c13f2722911cf9e962a8c0c351026c85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88b88128_b85e57ab",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-25T23:36:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b7911add_9f14a5aa",
+      "range": {
+        "startLine": 39,
+        "startChar": 6,
+        "endLine": 39,
+        "endChar": 9
+      },
+      "revId": "bef88323c13f2722911cf9e962a8c0c351026c85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
