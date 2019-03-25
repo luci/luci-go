@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a09a2f0_c99186a3",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-25T18:19:22Z",
+      "side": 1,
+      "message": "I think actually all the vars here: https://cs.chromium.org/chromium/infra/luci/client/libs/logdog/bootstrap.py?type\u003dcs\u0026q\u003dLOGDOG_STREAM_SERVER_PATH\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d30\n\n    LOGDOG_STREAM_PROJECT - The LUCI project \n    LOGDOG_STREAM_PREFIX  - The prefix of the logging session (before the \u0027+\u0027)\n    LOGDOG_STREAM_SERVER_PATH - The local path/socket/etc. to the local butler service\n    LOGDOG_COORDINATOR_HOST - The hostname of the logdog coordinator, used to compose URLs\n    LOGDOG_NAMESPACE - The prefix of the logdog stream name.\n\n\nedit - or did you omit these others because they\u0027re not strictly required for the protocol?",
+      "range": {
+        "startLine": 166,
+        "startChar": 8,
+        "endLine": 166,
+        "endChar": 33
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56a1824f_f7811fcc",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-25T18:19:22Z",
+      "side": 1,
+      "message": "note that we currently have no way to enforce this :(.\n\nI think eventually we should have a butler command \u0027namespace\u0027 which will return a new value of LOGDOG_STREAM_SERVER_PATH. This new value will be served by the same butler instance, but stream (or namespace) creation requests will automatically apply the namespace.\n\nTo that end, the generation of the \u0027log url\u0027 should also be an rpc to butler.\n\nIf we do both of these, then the ONLY envvar needed is $LOGDOG_STREAM_SERVER_PATH, at which point we can change it to `LUCI_CONTEXT[\u0027logdog\u0027][\u0027butler\u0027]`",
+      "range": {
+        "startLine": 173,
+        "startChar": 22,
+        "endLine": 173,
+        "endChar": 65
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcc9b99e_7f6b2c76",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-25T18:19:22Z",
+      "side": 1,
+      "message": "document content type requirement",
+      "range": {
+        "startLine": 181,
+        "startChar": 24,
+        "endLine": 181,
+        "endChar": 35
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "079b24b9_bb021f69",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-25T18:19:22Z",
+      "side": 1,
+      "message": "This is a bit unclear. Maybe \"a build step without children, as defined in the build.proto stream, MAY have....\".\n\nAlso \"LogDog log\" needs to note that this is really a Step.log in the build.proto stream (so, both the logdog log and also the \u0027log\u0027 entry in the proto need to exist)",
+      "range": {
+        "startLine": 185,
+        "startChar": 7,
+        "endLine": 185,
+        "endChar": 22
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "545a1b9e_9e97ea30",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-25T18:19:22Z",
+      "side": 1,
+      "message": "maybe need to define how \u0027override\u0027 works? i.e. this is really just overriding top-level keys of the JSON blob, right?",
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
