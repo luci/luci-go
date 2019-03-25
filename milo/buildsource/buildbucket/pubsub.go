@@ -97,6 +97,7 @@ var summaryBuildMask = &field_mask.FieldMask{
 		"summary_markdown",
 		"tags",
 		"infra.swarming",
+		"input.experimental",
 	},
 }
 
