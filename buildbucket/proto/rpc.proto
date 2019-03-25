@@ -8,6 +8,7 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/rpc/status.proto";
@@ -69,6 +70,10 @@ service Builds {
   // Cancels a build.
   // The requester must have at least SCHEDULER role in the destination bucket.
   rpc CancelBuild(CancelBuildRequest) returns (Build) {};
+
+  // Asynchronously cancels all builds matching a predicate.
+  // The requester must have at least SCHEDULER role in the destination bucket.
+  rpc CancelBuilds(CancelBuildsRequest) returns (google.protobuf.Empty) {};
 
   // Executes multiple requests in a batch.
   // The response code is always OK.
@@ -311,6 +316,20 @@ message CancelBuildRequest {
 
   // Fields to include in the response. See also GetBuildRequest.fields.
   google.protobuf.FieldMask fields = 100;
+}
+
+// A request message for CancelBuilds rpc.
+message CancelBuildsRequest {
+  // ID of the build to cancel.
+  int64 id = 1;
+
+  // Required. Value for Build.summary_markdown.
+  string summary_markdown = 2;
+
+  // Predicate for the builds to cancel.
+  // predicate.builder.project is required, unless you are an admin.
+  // predicate.status MUST be SCHEDULED or STARTED.
+  BuildPredicate predicate = 3;
 }
 
 // A build predicate.
