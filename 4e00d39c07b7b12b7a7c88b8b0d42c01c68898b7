@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "edb2b876_d2793341",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-25T23:32:22Z",
+      "side": 1,
+      "message": "stable path? random path? I think we should strictly prohibit implementers to rely on what absolute path cwd resolves to.",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 36
+      },
+      "revId": "4e00d39c07b7b12b7a7c88b8b0d42c01c68898b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "807d8a18_9a7c5b28",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-25T23:32:22Z",
+      "side": 1,
+      "message": "what happens if it requests streams with different prefix? Should we say it \"MUST NOT\" do this?",
+      "range": {
+        "startLine": 65,
+        "startChar": 40,
+        "endLine": 65,
+        "endChar": 56
+      },
+      "revId": "4e00d39c07b7b12b7a7c88b8b0d42c01c68898b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e75beda6_7f4d1222",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-25T23:32:22Z",
+      "side": 1,
+      "message": "note that MAY NOT is undefined per rfc2119, so the meaning of this phrase is unclear (since MAY is optional, MAY NOT may be interpreter as optional too)",
+      "range": {
+        "startLine": 69,
+        "startChar": 20,
+        "endLine": 69,
+        "endChar": 27
+      },
+      "revId": "4e00d39c07b7b12b7a7c88b8b0d42c01c68898b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c4da2b9_224e9fa9",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-25T23:32:22Z",
+      "side": 1,
+      "message": "nit: named :) (to be consistent with the previous sentence)",
+      "range": {
+        "startLine": 94,
+        "startChar": 28,
+        "endLine": 94,
+        "endChar": 34
+      },
+      "revId": "4e00d39c07b7b12b7a7c88b8b0d42c01c68898b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
