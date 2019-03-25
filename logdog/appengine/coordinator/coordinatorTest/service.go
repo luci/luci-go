@@ -45,9 +45,6 @@ type Services struct {
 	// *ArchivalStorage instance bound to this Environment's GSClient instance
 	// if the stream is archived.
 	ST func(*coordinator.LogStreamState) (coordinator.SigningStorage, error)
-
-	// ArchivalPublisher returns an ArchivalPublisher instance.
-	AP func() (coordinator.ArchivalPublisher, error)
 }
 
 var _ endpoints.Services = (*Services)(nil)
@@ -73,14 +70,6 @@ func (s *Services) ProjectConfig(c context.Context, project types.ProjectName) (
 func (s *Services) StorageForStream(c context.Context, lst *coordinator.LogStreamState) (coordinator.SigningStorage, error) {
 	if s.ST != nil {
 		return s.ST(lst)
-	}
-	panic("not implemented")
-}
-
-// ArchivalPublisher implements coordinator.Services.
-func (s *Services) ArchivalPublisher(context.Context) (coordinator.ArchivalPublisher, error) {
-	if s.AP != nil {
-		return s.AP()
 	}
 	panic("not implemented")
 }

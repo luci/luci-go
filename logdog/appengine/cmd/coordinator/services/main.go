@@ -27,10 +27,6 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	"go.chromium.org/luci/server/router"
-
-	// Include mutations package so its Mutations will register with tumble via
-	// init().
-	_ "go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 )
 
 // Run installs and executes this site.

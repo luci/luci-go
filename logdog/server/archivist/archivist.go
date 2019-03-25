@@ -15,22 +15,16 @@
 package archivist
 
 import (
-	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -105,16 +99,6 @@ var (
 		field.String("stream"))
 )
 
-// Task is a single archive task.
-type Task interface {
-	// Task is the archive task to execute.
-	Task() *logdog.ArchiveTask
-
-	// Consume marks that this task's processing is complete and that it should be
-	// consumed. This may be called multiple times with no additional effect.
-	Consume()
-}
-
 // Settings defines the archival parameters for a specific archival operation.
 //
 // In practice, this will be formed from service and project settings.
@@ -173,15 +157,12 @@ const storageBufferSize = types.MaxLogEntryDataSize * 64
 
 // ArchiveTask processes and executes a single log stream archive task.
 //
-// During processing, the Task's Consume method may be called to indicate that
-// it should be consumed.
-//
 // If the supplied Context is Done, operation may terminate before completion,
 // returning the Context's error.
-func (a *Archivist) ArchiveTask(c context.Context, task Task) error {
+func (a *Archivist) ArchiveTask(c context.Context, task *logdog.ArchiveTask) error {
 	c = log.SetFields(c, log.Fields{
-		"project": task.Task().Project,
-		"id":      task.Task().Id,
+		"project": task.Project,
+		"id":      task.Id,
 	})
 	log.Debugf(c, "Received archival task.")
 
@@ -204,21 +185,18 @@ func (a *Archivist) ArchiveTask(c context.Context, task Task) error {
 // Its error return value is used to indicate how the archive failed. isFailure
 // will be called to determine if the returned error value is a failure or a
 // status error.
-func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
-	at := task.Task()
-
+func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask) error {
 	// Validate the project name.
-	if err := types.ProjectName(at.Project).Validate(); err != nil {
-		task.Consume()
-		log.WithError(err).Errorf(c, "invalid project name %q: %s", at.Project)
+	if err := types.ProjectName(task.Project).Validate(); err != nil {
+		log.WithError(err).Errorf(c, "invalid project name %q: %s", task.Project)
 		return nil
 	}
 
 	// Load the log stream's current state. If it is already archived, we will
 	// return an immediate success.
 	ls, err := a.Service.LoadStream(c, &logdog.LoadStreamRequest{
-		Project: at.Project,
-		Id:      at.Id,
+		Project: task.Project,
+		Id:      task.Id,
 		Desc:    true,
 	})
 	switch {
@@ -232,41 +210,10 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 
 	case ls.State.Purged:
 		log.Warningf(c, "Log stream is purged. Discarding archival request.")
-		task.Consume()
 		return nil
 
 	case ls.State.Archived:
 		log.Infof(c, "Log stream is already archived. Discarding archival request.")
-		task.Consume()
-		return nil
-
-	case len(at.Key) > 0 && !bytes.Equal(ls.ArchivalKey, at.Key):
-		// TODO(hinoka): Remove this condition after crbug.com/923557.
-		if len(ls.ArchivalKey) == 0 {
-			// The log stream is not registering as "archive pending" state.
-			//
-			// This can happen if the eventually-consistent datastore hasn't updated
-			// its log stream state by the time this Pub/Sub task is received. In
-			// this case, we will continue retrying the task until datastore registers
-			// that some key is associated with it.
-			log.Infof(c, "Archival request received before log stream has its key.")
-			// If this was dispatched:
-			// Less than 5 minutes ago: try again later.
-			// More than 5 minutes ago: drop it.
-			if dt, err := ptypes.Timestamp(at.DispatchedAt); err == nil && clock.Now(c).Before(dt.Add(5*time.Minute)) {
-				return statusErr(errors.New("premature archival request"))
-			}
-		}
-
-		// This can happen if a Pub/Sub message is dispatched during a transaction,
-		// but that specific transaction failed. In this case, the Pub/Sub message
-		// will have a key that doesn't match the key that was transactionally
-		// encoded, and can be discarded.
-		log.Fields{
-			"logStreamArchivalKey": hex.EncodeToString(ls.ArchivalKey),
-			"requestArchivalKey":   hex.EncodeToString(at.Key),
-		}.Infof(c, "Superfluous archival request (keys do not match). Discarding.")
-		task.Consume()
 		return nil
 
 	case ls.State.ProtoVersion != logpb.Version:
@@ -281,56 +228,28 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		return errors.New("log stream did not include a descriptor")
 	}
 
-	// TODO(hinoka): Remove this condition after crbug.com/923557.
-	age := google.DurationFromProto(ls.Age)
-	if at.SettleDelay != nil {
-		// If the archival request is younger than the settle delay, kick it back to
-		// retry later.
-		if settle := google.DurationFromProto(at.SettleDelay); age < settle {
-			log.Fields{
-				"age":         age,
-				"settleDelay": settle,
-			}.Infof(c, "Log stream is younger than the settle delay. Returning task to queue.")
-			return statusErr(errors.New("log stream is within settle delay"))
-		}
-	}
-
 	// Load archival settings for this project.
-	settings, err := a.loadSettings(c, types.ProjectName(at.Project))
+	settings, err := a.loadSettings(c, types.ProjectName(task.Project))
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
-			"project":    at.Project,
+			"project":    task.Project,
 		}.Errorf(c, "Failed to load settings for project.")
 		// This project has bad or no archival settings, this is non-transient, discard the task.
-		task.Consume()
 		return nil
 	}
 
 	ar := logdog.ArchiveStreamRequest{
-		Project: at.Project,
-		Id:      at.Id,
+		Project: task.Project,
+		Id:      task.Id,
 	}
 
 	// Build our staged archival plan. This doesn't actually do any archiving.
 	uid := fmt.Sprintf("%d", mathrand.Int63(c))
-	staged, err := a.makeStagedArchival(c, types.ProjectName(at.Project), settings, ls, uid)
+	staged, err := a.makeStagedArchival(c, types.ProjectName(task.Project), settings, ls, uid)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
 		return err
-	}
-
-	// TODO(hinoka): Remove this condition after crbug.com/923557.
-	// Are we required to archive a complete log stream?
-	if at.CompletePeriod != nil {
-		if age <= google.DurationFromProto(at.CompletePeriod) {
-			// If we're requiring completeness, perform a keys-only scan of intermediate
-			// storage to ensure that we have all of the records before we bother
-			// streaming to storage only to find that we are missing data.
-			if err := staged.checkComplete(c); err != nil {
-				return err
-			}
-		}
 	}
 
 	// Archive to staging.
@@ -395,9 +314,6 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		return err
 	}
 
-	// Archival is complete and acknowledged by Coordinator. Consume the archival
-	// task.
-	task.Consume()
 	return nil
 }
 

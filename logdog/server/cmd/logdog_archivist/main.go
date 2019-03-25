@@ -95,19 +95,6 @@ type application struct {
 	service.Service
 }
 
-// TODO(hinoka): Remove after crbug.com/923557.
-// taskWrapper implements archivist.Task.
-// It's purely here for compatibility with legacy archivist.
-type taskWrapper struct {
-	*logdog.ArchiveTask
-}
-
-func (t *taskWrapper) Task() *logdog.ArchiveTask {
-	return t.ArchiveTask
-}
-
-func (t *taskWrapper) Consume() {} // noop.
-
 // runForever runs the archivist loop forever.
 func runForever(c context.Context, ar archivist.Archivist) error {
 	sleepTime := 1
@@ -144,7 +131,7 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 			for i, task := range tasks.Tasks {
 				deleteTask := false
 				startTime := clock.Now(c)
-				if err := ar.ArchiveTask(nc, &taskWrapper{task}); err != nil {
+				if err := ar.ArchiveTask(nc, task); err != nil {
 					merr.Assign(i, err)
 				} else { // err == nil
 					ackTasks = append(ackTasks, task)

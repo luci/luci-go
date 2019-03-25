@@ -110,23 +110,6 @@ func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamR
 	return
 }
 
-func (s *DecoratedServices) RescheduleArchiveTask(c context.Context, req *ArchiveDispatchTask) (rsp *empty.Empty, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "RescheduleArchiveTask", req)
-		if err == nil {
-			c = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.RescheduleArchiveTask(c, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(c, "RescheduleArchiveTask", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedServices) Batch(c context.Context, req *BatchRequest) (rsp *BatchResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
