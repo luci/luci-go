@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common"
@@ -210,8 +211,8 @@ func getBugLink(c *router.Context, b *buildbucketpb.Build) (string, error) {
 	})
 }
 
-// searchBuildsRequest creates a searchBuildsRequest that looks for a buildset tag.
-func searchBuildsRequest(buildset string, fields *field_mask.FieldMask) *buildbucketpb.SearchBuildsRequest {
+// searchBuildset creates a searchBuildsRequest that looks for a buildset tag.
+func searchBuildset(buildset string, fields *field_mask.FieldMask) *buildbucketpb.SearchBuildsRequest {
 	return &buildbucketpb.SearchBuildsRequest{
 		Predicate: &buildbucketpb.BuildPredicate{
 			Tags: []*buildbucketpb.StringPair{{Key: "buildset", Value: buildset}},
@@ -262,7 +263,7 @@ func getRelatedBuilds(c context.Context, client buildbucketpb.BuildsClient, b *b
 			buildset := buildset
 			ch <- func() (err error) {
 				logging.Debugf(c, "Searching for %s (%d)", buildset, i)
-				resps[i], err = client.SearchBuilds(c, searchBuildsRequest(buildset, summaryBuildsMask))
+				resps[i], err = client.SearchBuilds(c, searchBuildset(buildset, summaryBuildsMask))
 				return
 			}
 		}
@@ -289,6 +290,37 @@ func getRelatedBuilds(c context.Context, client buildbucketpb.BuildsClient, b *b
 	sort.Slice(result, func(i, j int) bool { return result[i].Id < result[j].Id })
 
 	return result, nil
+}
+
+var builderIDMask = &field_mask.FieldMask{
+	Paths: []string{
+		"builder",
+		"number",
+	},
+}
+
+// GetBuilderID returns the builder, and maybe the build number, for a build id.
+func GetBuilderID(c context.Context, id int64) (builder *buildbucketpb.BuilderID, number int32, err error) {
+	host, err := getHost(c)
+	if err != nil {
+		return
+	}
+	client, err := buildbucketClient(c, host, auth.AsUser)
+	if err != nil {
+		return
+	}
+	br, err := client.GetBuild(c, &buildbucketpb.GetBuildRequest{
+		Id:     id,
+		Fields: builderIDMask,
+	})
+	switch grpcutil.Code(err) {
+	case codes.OK:
+		builder = br.Builder
+		number = br.Number
+	case codes.NotFound, codes.PermissionDenied:
+		err = ErrNotFound
+	}
+	return
 }
 
 var (
