@@ -72,6 +72,7 @@ type BuildSummary struct {
 
 	// BuildKey will always point to the "real" build, i.e. a buildbotBuild or
 	// a buildbucketBuild. It is always the parent key for the BuildSummary.
+	// The parent build may or may not actually exist.
 	BuildKey *datastore.Key `gae:"$parent"`
 
 	// Global identifier for the builder that this Build belongs to, i.e.:
@@ -132,6 +133,7 @@ type BuildSummary struct {
 	// AnnotationURL is the URL to the logdog annotation location. This will be in
 	// the form of:
 	//   logdog://service.host.example.com/project_id/prefix/+/stream/name
+	// (Deprecated)
 	AnnotationURL string
 
 	// Version can be used by buildsource implementations to compare with an
