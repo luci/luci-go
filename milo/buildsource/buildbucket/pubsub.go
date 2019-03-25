@@ -139,7 +139,8 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 			End:    mustTimestamp(b.EndTime),
 			Status: statusMap[b.Status],
 		},
-		Version: mustTimestamp(b.UpdateTime).UnixNano(),
+		Version:      mustTimestamp(b.UpdateTime).UnixNano(),
+		Experimental: b.GetInput().GetExperimental(),
 	}, nil
 }
 
