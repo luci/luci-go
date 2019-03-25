@@ -33,7 +33,11 @@
   <div class="column">
   {{ if .Builder.MachinePool }}
     {{ with .Builder.MachinePool }}
+      {{ if .SwarmingHost }}
+        <h2><a href="{{ .SwarmingURL }}">Machine Pool</a>:</h2>
+      {{ else }}
       <h2>Machine Pool:</h2>
+      {{ end }}
       <table>
         <tr>
           <td>Idle</td><td>{{ .Idle }}</td>
