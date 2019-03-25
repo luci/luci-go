@@ -194,7 +194,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild rpc.
 //
-// Next ID: 13.
+// Next ID: 14.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -293,6 +293,9 @@ message ScheduleBuildRequest {
 
   // Fields to include in the response. See also GetBuildRequest.fields.
   google.protobuf.FieldMask fields = 100;
+
+  // Value for Build.critical.
+  Trinary critical = 13;
 }
 
 // A request message for CancelBuild rpc.
