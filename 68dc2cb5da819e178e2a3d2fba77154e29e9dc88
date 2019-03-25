@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2fadaeb_14f778e9",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-03-25T22:52:54Z",
+      "side": 1,
+      "message": "Is this needed? Why would someone call CancelBuildsRequest with an id instead of CancelBuildRequest?",
+      "range": {
+        "startLine": 323,
+        "startChar": 0,
+        "endLine": 324,
+        "endChar": 15
+      },
+      "revId": "68dc2cb5da819e178e2a3d2fba77154e29e9dc88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1cb7382_6b5827c2",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-03-25T22:52:54Z",
+      "side": 1,
+      "message": "Wowza, that\u0027s pretty scary. Is it feasible to require a bucket to be specified? (I can picture someone forgetting to specify one and ending up killing a bunch of stuff unintentionally.)",
+      "range": {
+        "startLine": 331,
+        "startChar": 0,
+        "endLine": 332,
+        "endChar": 38
+      },
+      "revId": "68dc2cb5da819e178e2a3d2fba77154e29e9dc88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
