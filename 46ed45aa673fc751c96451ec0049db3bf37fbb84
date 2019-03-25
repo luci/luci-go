@@ -70,6 +70,30 @@
       "revId": "46ed45aa673fc751c96451ec0049db3bf37fbb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "318fecd4_330614bb",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-25T17:55:25Z",
+      "side": 1,
+      "message": "I agree with andrii here: we should never specify a default ref on the user\u0027s behalf. I would make this required for now, and also enforce that this is a full ref (i.e. it must start with \u0027refs/\u0027).\n\nWe can relax this later to make it optional if we determine that all git servers we care about support refless fetches in a performant manner (though I have my doubts w/ gerrit given the way that gerrit CLs are stored)",
+      "parentUuid": "719252b7_c187ba7d",
+      "range": {
+        "startLine": 254,
+        "startChar": 26,
+        "endLine": 254,
+        "endChar": 31
+      },
+      "revId": "46ed45aa673fc751c96451ec0049db3bf37fbb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
