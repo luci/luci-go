@@ -673,12 +673,15 @@ type ScheduleBuildRequest struct {
 	// Setting this field will cause the created build to have a "buildset"
 	// tag with value "commit/gitiles/{hostname}/{project}/+/{id}".
 	//
+	// GitilesCommit objects MUST have host, project, ref fields set.
+	//
 	// V1 equivalent: supersedes "revision" property and "buildset"
 	// tag that starts with "commit/gitiles/".
 	GitilesCommit *GitilesCommit `protobuf:"bytes,7,opt,name=gitiles_commit,json=gitilesCommit,proto3" json:"gitiles_commit,omitempty"`
 	// Value for Build.input.gerrit_changes.
 	// Usually present in tryjobs, set by CQ, Gerrit, git-cl-try.
 	// Applied on top of gitiles_commit if specified, otherwise tip of the tree.
+	// All GerritChange fields are required.
 	//
 	// Setting this field will cause the created build to have a "buildset"
 	// tag with value "patch/gerrit/{hostname}/{change}/{patchset}"
