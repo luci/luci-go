@@ -22,8 +22,6 @@ import (
 
 	bb "go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
@@ -100,43 +98,18 @@ func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
 func redirectLUCIBuild(c *router.Context) error {
 	idStr := c.Params.ByName("id")
 	// Verify it is an int64.
-	if _, err := strconv.ParseInt(idStr, 10, 64); err != nil {
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
 		return errors.Annotate(err, "invalid id").Tag(common.CodeParameterError).Err()
 	}
-
-	// TODO(hinoka): Use the Buildbucket V2 API here instead.
-	build, err := buildbucket.GetRawBuild(c.Context, idStr)
-	if err != nil {
-		return err
+	builder, number, err := buildbucket.GetBuilderID(c.Context, id)
+	numberOrID := fmt.Sprintf("%d", number)
+	if number == 0 {
+		numberOrID = fmt.Sprintf("b%d", id)
 	}
 
-	// If the build has a number, redirect to a URL with it.
-	builder := ""
-	u := *c.Request.URL
-	for _, t := range build.Tags {
-		switch k, v := strpair.Parse(t); k {
-		case bbv1.TagBuildAddress:
-			_, project, v1bucket, builder, number, _ := bbv1.ParseBuildAddress(v)
-			// Use V2 bucket
-			_, bucket := bb.BucketNameToV2(v1bucket)
-			if number > 0 {
-				u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%d", project, bucket, builder, number)
-				http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
-				return nil
-			}
-
-		case bbv1.TagBuilder:
-			builder = v
-		}
-	}
-	if builder == "" {
-		return errors.Reason("build %s does not have a builder", idStr).Tag(common.CodeParameterError).Err()
-	}
-
-	// Use V2 bucket
-	_, bucket := bb.BucketNameToV2(build.Bucket)
-	u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/b%d", build.Project, bucket, builder, build.Id)
-	http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
+	u := fmt.Sprintf("/p/%s/builders/%s/%s/%s", builder.Project, builder.Bucket, builder.Builder, numberOrID)
+	http.Redirect(c.Writer, c.Request, u, http.StatusMovedPermanently)
 	return nil
 }
 
