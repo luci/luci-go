@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "241d5ef1_efa37e2a",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-25T18:41:14Z",
+      "side": 1,
+      "message": "exactly, I did omit the on purpose. I don\u0027t think we want the executable to start writing logs in a different host/project/prefix or start its own butler process?",
+      "parentUuid": "1a09a2f0_c99186a3",
+      "range": {
+        "startLine": 166,
+        "startChar": 8,
+        "endLine": 166,
+        "endChar": 33
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "56a1824f_f7811fcc",
         "filename": "buildbucket/proto/config/project_config.proto",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2019-03-25T18:19:22Z",
       "side": 1,
       "message": "note that we currently have no way to enforce this :(.\n\nI think eventually we should have a butler command \u0027namespace\u0027 which will return a new value of LOGDOG_STREAM_SERVER_PATH. This new value will be served by the same butler instance, but stream (or namespace) creation requests will automatically apply the namespace.\n\nTo that end, the generation of the \u0027log url\u0027 should also be an rpc to butler.\n\nIf we do both of these, then the ONLY envvar needed is $LOGDOG_STREAM_SERVER_PATH, at which point we can change it to `LUCI_CONTEXT[\u0027logdog\u0027][\u0027butler\u0027]`",
+      "range": {
+        "startLine": 173,
+        "startChar": 22,
+        "endLine": 173,
+        "endChar": 65
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc9417e1_aaa80e1e",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-25T18:41:14Z",
+      "side": 1,
+      "message": "yes, my thoughts exactly. I agree that only $LOGDOG_STREAM_SERVER_PATH would be better. It also contributes to omitting other LOGDOG_* vars.\n\nHow hard/easy it is to start a new local butler server connected to another butler server? I think essentially this is the butler proxy that we talked about before.",
+      "parentUuid": "56a1824f_f7811fcc",
       "range": {
         "startLine": 173,
         "startChar": 22,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ef57fe1a_20429f0e",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-25T18:41:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fcc9b99e_7f6b2c76",
+      "range": {
+        "startLine": 181,
+        "startChar": 24,
+        "endLine": 181,
+        "endChar": 35
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "079b24b9_bb021f69",
         "filename": "buildbucket/proto/config/project_config.proto",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "521a25d5_a44f3892",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-25T18:41:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "079b24b9_bb021f69",
+      "range": {
+        "startLine": 185,
+        "startChar": 7,
+        "endLine": 185,
+        "endChar": 22
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "545a1b9e_9e97ea30",
         "filename": "buildbucket/proto/config/project_config.proto",
         "patchSetId": 3
@@ -108,6 +204,24 @@
       "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78fda031_2f90f904",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-25T18:41:14Z",
+      "side": 1,
+      "message": "it is defined in ScheduleBuildRequest.",
+      "parentUuid": "545a1b9e_9e97ea30",
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
