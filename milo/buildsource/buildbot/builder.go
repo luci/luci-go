@@ -102,7 +102,7 @@ func summarizeSlavePool(
 		}
 		bots[i] = bot
 	}
-	return ui.NewMachinePool(c, bots)
+	return ui.NewMachinePool(c, &model.BotPool{Bots: bots})
 }
 
 // GetBuilder is the implementation for getting a milo builder page from
