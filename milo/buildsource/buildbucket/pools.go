@@ -49,15 +49,15 @@ func getPool(c context.Context, bid BuilderID) (*ui.MachinePool, error) {
 		return nil, err
 	}
 	// Get BotPool
-	botPool := model.BotPool{PoolID: builderPool.PoolKey.StringID()}
-	switch err := datastore.Get(c, &botPool); {
+	botPool := &model.BotPool{PoolID: builderPool.PoolKey.StringID()}
+	switch err := datastore.Get(c, botPool); {
 	case datastore.IsErrNoSuchEntity(err):
 		logging.Warningf(c, "bot pool not found")
 		return nil, nil
 	case err != nil:
 		return nil, err
 	}
-	return ui.NewMachinePool(c, botPool.Bots), nil
+	return ui.NewMachinePool(c, botPool), nil
 }
 
 // stripEmptyDimensions removes dimensions that are empty, such as "cores:".

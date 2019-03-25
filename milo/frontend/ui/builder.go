@@ -16,6 +16,7 @@ package ui
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -96,22 +97,42 @@ func (b *Bot) Label() *Link {
 
 // MachinePool represents the capacity and availability of a builder.
 type MachinePool struct {
-	Total   int
-	Offline int
-	Idle    int
-	Busy    int
-	Bots    []Bot
+	Total        int
+	Offline      int
+	Idle         int
+	Busy         int
+	Bots         []Bot
+	Dimensions   []string
+	SwarmingHost string
+}
+
+// SwarmingURL returns the swarming bot URL for the machine pool, if available.
+func (mp *MachinePool) SwarmingURL() string {
+	if mp.SwarmingHost == "" {
+		return ""
+	}
+	u := &url.URL{
+		Scheme: "https",
+		Host:   mp.SwarmingHost,
+		Path:   "botlist",
+		RawQuery: url.Values{
+			"f": mp.Dimensions,
+		}.Encode(),
+	}
+	return u.String()
 }
 
 // NewMachinePool calculates stats from a model.Bot and generates a MachinePool.
 // This requires a context because setting the UI Status field requires the current time.
-func NewMachinePool(c context.Context, bots []model.Bot) *MachinePool {
+func NewMachinePool(c context.Context, botPool *model.BotPool) *MachinePool {
 	fiveMinAgo := clock.Now(c).Add(-time.Minute * 5)
 	result := &MachinePool{
-		Total: len(bots),
-		Bots:  make([]Bot, len(bots)),
+		Total:        len(botPool.Bots),
+		Bots:         make([]Bot, len(botPool.Bots)),
+		Dimensions:   botPool.Descriptor.Dimensions().Format(),
+		SwarmingHost: botPool.Descriptor.Host(),
 	}
-	for i, bot := range bots {
+	for i, bot := range botPool.Bots {
 		uiBot := Bot{bot, bot.Status} // Wrap the model.Bot
 		if bot.Status == model.Offline && bot.LastSeen.After(fiveMinAgo) {
 			// If the bot has been offline for less than 5 minutes, mark it as busy.
