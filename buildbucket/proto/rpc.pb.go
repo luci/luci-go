@@ -907,8 +907,8 @@ func (m *CancelBuildRequest) GetFields() *field_mask.FieldMask {
 type CancelBuildsRequest struct {
 	// Predicate for the builds to cancel.
 	// predicate.status MUST be SCHEDULED or STARTED.
-	// If bucket is not specified, predicate matches all buckets where the user
-	// has permissions to cancel builds.
+	// If bucket is not specified, predicate matches all buckets where the
+	// requester has WRITER role.
 	Predicate *BuildPredicate `protobuf:"bytes,1,opt,name=predicate,proto3" json:"predicate,omitempty"`
 	// Required. Value for Build.summary_markdown.
 	SummaryMarkdown      string   `protobuf:"bytes,2,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
@@ -1304,8 +1304,8 @@ type BuildsClient interface {
 	// Cancels a build.
 	// The requester must have at least SCHEDULER role in the destination bucket.
 	CancelBuild(ctx context.Context, in *CancelBuildRequest, opts ...grpc.CallOption) (*Build, error)
-	// Asynchronously cancels all builds matching a predicate.
-	// The requester must have at least SCHEDULER role in the destination bucket.
+	// Asynchronously mass-cancels all builds matching a predicate.
+	// Use with care!
 	CancelBuilds(ctx context.Context, in *CancelBuildsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Executes multiple requests in a batch.
 	// The response code is always OK.
@@ -1497,8 +1497,8 @@ type BuildsServer interface {
 	// Cancels a build.
 	// The requester must have at least SCHEDULER role in the destination bucket.
 	CancelBuild(context.Context, *CancelBuildRequest) (*Build, error)
-	// Asynchronously cancels all builds matching a predicate.
-	// The requester must have at least SCHEDULER role in the destination bucket.
+	// Asynchronously mass-cancels all builds matching a predicate.
+	// Use with care!
 	CancelBuilds(context.Context, *CancelBuildsRequest) (*empty.Empty, error)
 	// Executes multiple requests in a batch.
 	// The response code is always OK.
