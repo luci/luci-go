@@ -325,7 +325,6 @@ func GetBuilderID(c context.Context, id int64) (builder *buildbucketpb.BuilderID
 
 var (
 	fullBuildMask = &field_mask.FieldMask{
-		// TODO(hinoka): Add statusReason here.
 		Paths: []string{
 			"id",
 			"builder",
@@ -341,6 +340,7 @@ var (
 			"steps",
 			"infra",
 			"tags",
+			"summary_markdown",
 		},
 	}
 	tagsAndGitilesMask = &field_mask.FieldMask{
