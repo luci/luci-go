@@ -39,6 +39,7 @@ func handleDevBuild(c *router.Context) error {
 		return err
 	}
 	bp := ui.NewBuildPage(c.Context, b)
+	bp.Host = "example.com"
 	return renderBuild(c, bp, nil)
 }
 
