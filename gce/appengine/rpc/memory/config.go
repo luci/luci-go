@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package memory contains a config.ConfigurationServer backed by in-memory storage.
 package memory
 
 import (

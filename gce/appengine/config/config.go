@@ -34,11 +34,15 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	gce "go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/api/projects/v1"
 	"go.chromium.org/luci/gce/appengine/rpc"
 )
 
 // kindsFile is the name of the kinds config file.
 const kindsFile = "kinds.cfg"
+
+// projectsFile is the name of the projects config file.
+const projectsFile = "projects.cfg"
 
 // vmsFile is the name of the VMs config file.
 const vmsFile = "vms.cfg"
@@ -47,13 +51,15 @@ const vmsFile = "vms.cfg"
 type Config struct {
 	revision string
 	Kinds    *gce.Kinds
+	Projects *projects.Configs
 	VMs      *gce.Configs
 }
 
 // cfgKey is the key to a config.Interface in the context.
 var cfgKey = "cfg"
 
-// withInterface returns a new context with the given config.Interface installed.
+// withInterface returns a new context with the given config.Interface
+// installed.
 func withInterface(c context.Context, cfg config.Interface) context.Context {
 	return context.WithValue(c, &cfgKey, cfg)
 }
@@ -63,17 +69,34 @@ func getInterface(c context.Context) config.Interface {
 	return c.Value(&cfgKey).(config.Interface)
 }
 
-// srvKey is the key to a gce.ConfigurationServer in the context.
-var srvKey = "srv"
+// prjKey is the key to a projects.ProjectsServer in the context.
+var prjKey = "prj"
 
-// withServer returns a new context with the given gce.ConfigurationServer installed.
-func withServer(c context.Context, srv gce.ConfigurationServer) context.Context {
-	return context.WithValue(c, &srvKey, srv)
+// withProjServer returns a new context with the given projects.ProjectsServer
+// installed.
+func withProjServer(c context.Context, srv projects.ProjectsServer) context.Context {
+	return context.WithValue(c, &prjKey, srv)
 }
 
-// getServer returns the gce.ConfigurationServer installed in the current context.
-func getServer(c context.Context) gce.ConfigurationServer {
-	return c.Value(&srvKey).(gce.ConfigurationServer)
+// getProjServer returns the projects.ProjectsServer installed in the current
+// context.
+func getProjServer(c context.Context) projects.ProjectsServer {
+	return c.Value(&prjKey).(projects.ProjectsServer)
+}
+
+// vmsKey is the key to a gce.ConfigurationServer in the context.
+var vmsKey = "vms"
+
+// withVMsServer returns a new context with the given gce.ConfigurationServer
+// installed.
+func withVMsServer(c context.Context, srv gce.ConfigurationServer) context.Context {
+	return context.WithValue(c, &vmsKey, srv)
+}
+
+// getVMsServer returns the gce.ConfigurationServer installed in the current
+// context.
+func getVMsServer(c context.Context) gce.ConfigurationServer {
+	return c.Value(&vmsKey).(gce.ConfigurationServer)
 }
 
 // newInterface returns a new config.Interface. Panics on error.
@@ -121,7 +144,7 @@ func fetch(c context.Context) (*Config, error) {
 	case err == config.ErrNoConfig:
 		logging.Debugf(c, "%q not found", kindsFile)
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %s", kindsFile).Err()
+		return nil, errors.Annotate(err, "failed to fetch %q", kindsFile).Err()
 	default:
 		logging.Debugf(c, "found %q revision %s", kindsFile, kindsCfg.Revision)
 		if rev != "" && kindsCfg.Revision != rev {
@@ -131,9 +154,26 @@ func fetch(c context.Context) (*Config, error) {
 			return nil, errors.Annotate(err, "failed to load %q", kindsFile).Err()
 		}
 	}
+
+	prjs := &projects.Configs{}
+	switch prjsCfg, err := cli.GetConfig(c, set, projectsFile, false); {
+	case err == config.ErrNoConfig:
+		logging.Debugf(c, "%q not found", projectsFile)
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch %q", projectsFile).Err()
+	default:
+		logging.Debugf(c, "found %q revision %s", projectsFile, prjsCfg.Revision)
+		if rev != "" && prjsCfg.Revision != rev {
+			return nil, errors.Reason("config revision mismatch").Err()
+		}
+		if err := proto.UnmarshalText(prjsCfg.Content, prjs); err != nil {
+			return nil, errors.Annotate(err, "failed to load %q", projectsFile).Err()
+		}
+	}
 	return &Config{
 		revision: rev,
 		Kinds:    kinds,
+		Projects: prjs,
 		VMs:      vms,
 	}, nil
 }
@@ -143,6 +183,8 @@ func validate(c context.Context, cfg *Config) error {
 	v := &validation.Context{Context: c}
 	v.SetFile(kindsFile)
 	cfg.Kinds.Validate(v)
+	v.SetFile(projectsFile)
+	cfg.Projects.Validate(v)
 	v.SetFile(vmsFile)
 	cfg.VMs.Validate(v)
 	return v.Finalize()
@@ -237,41 +279,89 @@ func normalize(c context.Context, cfg *Config) error {
 	return nil
 }
 
-// sync synchronizes the given validated configs.
-func sync(c context.Context, cfg *Config) error {
-	srv := getServer(c)
+// syncVMs synchronizes the given validated VM configs.
+func syncVMs(c context.Context, vms []*gce.Config) error {
+	srv := getVMsServer(c)
 	ids := stringset.New(0)
 	rsp, err := srv.List(c, &gce.ListRequest{})
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch configs").Err()
+		return errors.Annotate(err, "failed to fetch VMs configs").Err()
 	}
 	for _, v := range rsp.Configs {
-		logging.Debugf(c, "fetched config %q", v.Prefix)
 		ids.Add(v.Prefix)
 	}
+	logging.Debugf(c, "fetched %d VMs configs", len(rsp.Configs))
 	ens := &gce.EnsureRequest{}
-	for _, v := range cfg.VMs.GetVms() {
+	for _, v := range vms {
 		// Validation enforces prefix uniqueness, so use it as the ID.
 		ens.Id = v.Prefix
 		ens.Config = v
 		if _, err := srv.Ensure(c, ens); err != nil {
-			return errors.Annotate(err, "failed to ensure config %q", ens.Id).Err()
+			return errors.Annotate(err, "failed to ensure VMs config %q", ens.Id).Err()
 		}
-		logging.Debugf(c, "stored config %q", ens.Id)
 		ids.Del(v.Prefix)
 	}
+	logging.Debugf(c, "stored %d VMs configs", len(vms))
 	del := &gce.DeleteRequest{}
 	err = nil
 	ids.Iter(func(id string) bool {
 		del.Id = id
 		if _, err := srv.Delete(c, del); err != nil {
-			err = errors.Annotate(err, "failed to delete config %q", del.Id).Err()
+			err = errors.Annotate(err, "failed to delete VMs config %q", del.Id).Err()
 			return false
 		}
-		logging.Debugf(c, "deleted config %q", del.Id)
+		logging.Debugf(c, "deleted VMs config %q", del.Id)
 		return true
 	})
 	return err
+}
+
+// syncPrjs synchronizes the given validated project configs.
+func syncPrjs(c context.Context, prjs []*projects.Config) error {
+	srv := getProjServer(c)
+	ids := stringset.New(0)
+	rsp, err := srv.List(c, &projects.ListRequest{})
+	if err != nil {
+		return errors.Annotate(err, "failed to fetch project configs").Err()
+	}
+	for _, v := range rsp.Projects {
+		ids.Add(v.Project)
+	}
+	logging.Debugf(c, "fetched %d project configs", len(rsp.Projects))
+	ens := &projects.EnsureRequest{}
+	for _, p := range prjs {
+		// Validation enforces project uniqueness, so use it as the ID.
+		ens.Id = p.Project
+		ens.Project = p
+		if _, err := srv.Ensure(c, ens); err != nil {
+			return errors.Annotate(err, "failed to ensure project config %q", ens.Id).Err()
+		}
+		ids.Del(p.Project)
+	}
+	logging.Debugf(c, "stored %d project configs", len(prjs))
+	del := &projects.DeleteRequest{}
+	err = nil
+	ids.Iter(func(id string) bool {
+		del.Id = id
+		if _, err := srv.Delete(c, del); err != nil {
+			err = errors.Annotate(err, "failed to delete project config %q", del.Id).Err()
+			return false
+		}
+		logging.Debugf(c, "deleted project config %q", del.Id)
+		return true
+	})
+	return err
+}
+
+// sync synchronizes the given validated configs.
+func sync(c context.Context, cfg *Config) error {
+	if err := syncVMs(c, cfg.VMs.GetVms()); err != nil {
+		return errors.Annotate(err, "failed to sync VMs configs").Err()
+	}
+	if err := syncPrjs(c, cfg.Projects.GetProject()); err != nil {
+		return errors.Annotate(err, "failed to sync project configs").Err()
+	}
+	return nil
 }
 
 // Import fetches and validates configs from the config service.
@@ -321,9 +411,10 @@ func importHandler(c *router.Context) {
 // InstallHandlers installs HTTP request handlers into the given router.
 func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
-		// Install the config interface and the configuration service.
+		// Install the config interface and services.
 		c.Context = withInterface(c.Context, newInterface(c.Context))
-		c.Context = withServer(c.Context, &rpc.Config{})
+		c.Context = withProjServer(c.Context, &rpc.Projects{})
+		c.Context = withVMsServer(c.Context, &rpc.Config{})
 		next(c)
 	})
 	r.GET("/internal/cron/import-config", mw, importHandler)

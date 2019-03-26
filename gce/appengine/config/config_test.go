@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/config/impl/memory"
 
 	gce "go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/api/projects/v1"
 	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -147,7 +148,16 @@ func TestFetch(t *testing.T) {
 				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
 					"services/gce": map[string]string{
 						kindsFile: "invalid",
-						vmsFile:   "",
+					},
+				}))
+				_, err := fetch(c)
+				So(err, ShouldErrLike, "failed to load")
+			})
+
+			Convey("projects", func() {
+				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
+					"services/gce": map[string]string{
+						projectsFile: "invalid",
 					},
 				}))
 				_, err := fetch(c)
@@ -157,8 +167,7 @@ func TestFetch(t *testing.T) {
 			Convey("vms", func() {
 				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
 					"services/gce": map[string]string{
-						kindsFile: "",
-						vmsFile:   "invalid",
+						vmsFile: "invalid",
 					},
 				}))
 				_, err := fetch(c)
@@ -172,6 +181,7 @@ func TestFetch(t *testing.T) {
 				cfg, err := fetch(c)
 				So(err, ShouldBeNil)
 				So(cfg.Kinds, ShouldResemble, &gce.Kinds{})
+				So(cfg.Projects, ShouldResemble, &projects.Configs{})
 				So(cfg.VMs, ShouldResemble, &gce.Configs{})
 			})
 
@@ -179,23 +189,26 @@ func TestFetch(t *testing.T) {
 				c := withInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
 					"services/gce": {},
 				}))
-				cfgs, err := fetch(c)
+				cfg, err := fetch(c)
 				So(err, ShouldBeNil)
-				So(cfgs.Kinds, ShouldResemble, &gce.Kinds{})
-				So(cfgs.VMs, ShouldResemble, &gce.Configs{})
+				So(cfg.Kinds, ShouldResemble, &gce.Kinds{})
+				So(cfg.Projects, ShouldResemble, &projects.Configs{})
+				So(cfg.VMs, ShouldResemble, &gce.Configs{})
 			})
 
 			Convey("explicit", func() {
 				c := withInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
 					"services/gce": {
-						kindsFile: "",
-						vmsFile:   "",
+						kindsFile:    "",
+						projectsFile: "",
+						vmsFile:      "",
 					},
 				}))
-				cfgs, err := fetch(c)
+				cfg, err := fetch(c)
 				So(err, ShouldBeNil)
-				So(cfgs.Kinds, ShouldResemble, &gce.Kinds{})
-				So(cfgs.VMs, ShouldResemble, &gce.Configs{})
+				So(cfg.Kinds, ShouldResemble, &gce.Kinds{})
+				So(cfg.Projects, ShouldResemble, &projects.Configs{})
+				So(cfg.VMs, ShouldResemble, &gce.Configs{})
 			})
 		})
 	})
@@ -420,32 +433,103 @@ func TestNormalize(t *testing.T) {
 	})
 }
 
-func TestSync(t *testing.T) {
+func TestSyncPrjs(t *testing.T) {
 	t.Parallel()
 
-	Convey("sync", t, func() {
-		srv := &rpc.Config{}
-		c := withServer(context.Background(), srv)
+	Convey("syncPrjs", t, func() {
+		srv := &rpc.Projects{}
+		c := withProjServer(context.Background(), srv)
 
-		Convey("none", func() {
-			cfg := &Config{}
-			So(sync(c, cfg), ShouldBeNil)
+		Convey("nil", func() {
+			prjs := []*projects.Config{}
+			So(syncPrjs(c, prjs), ShouldBeNil)
+			rsp, err := srv.List(c, &projects.ListRequest{})
+			So(err, ShouldBeNil)
+			So(rsp.Projects, ShouldBeEmpty)
+		})
+
+		Convey("creates", func() {
+			prjs := []*projects.Config{
+				{
+					Project: "project",
+				},
+			}
+			So(syncPrjs(c, prjs), ShouldBeNil)
+			rsp, err := srv.List(c, &projects.ListRequest{})
+			So(err, ShouldBeNil)
+			So(rsp.Projects, ShouldHaveLength, 1)
+			So(rsp.Projects[0].Project, ShouldEqual, "project")
+		})
+
+		Convey("updates", func() {
+			srv.Ensure(c, &projects.EnsureRequest{
+				Id: "project",
+				Project: &projects.Config{
+					Project: "project",
+					Region: []string{
+						"region1",
+					},
+				},
+			})
+			prjs := []*projects.Config{
+				{
+					Project: "project",
+					Region: []string{
+						"region2",
+						"region3",
+					},
+				},
+			}
+			So(syncPrjs(c, prjs), ShouldBeNil)
+			rsp, err := srv.List(c, &projects.ListRequest{})
+			So(err, ShouldBeNil)
+			So(rsp.Projects, ShouldHaveLength, 1)
+			So(rsp.Projects, ShouldContain, &projects.Config{
+				Project: "project",
+				Region: []string{
+					"region2",
+					"region3",
+				},
+			})
+		})
+
+		Convey("deletes", func() {
+			srv.Ensure(c, &projects.EnsureRequest{
+				Id: "project",
+				Project: &projects.Config{
+					Project: "project",
+				},
+			})
+			So(syncPrjs(c, nil), ShouldBeNil)
+			rsp, err := srv.List(c, &projects.ListRequest{})
+			So(err, ShouldBeNil)
+			So(rsp.Projects, ShouldBeEmpty)
+		})
+	})
+}
+
+func TestSyncVMs(t *testing.T) {
+	t.Parallel()
+
+	Convey("syncVMs", t, func() {
+		srv := &rpc.Config{}
+		c := withVMsServer(context.Background(), srv)
+
+		Convey("nil", func() {
+			vms := []*gce.Config{}
+			So(syncVMs(c, vms), ShouldBeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
 			So(err, ShouldBeNil)
 			So(rsp.Configs, ShouldBeEmpty)
 		})
 
 		Convey("creates", func() {
-			cfg := &Config{
-				VMs: &gce.Configs{
-					Vms: []*gce.Config{
-						{
-							Prefix: "prefix",
-						},
-					},
+			vms := []*gce.Config{
+				{
+					Prefix: "prefix",
 				},
 			}
-			So(sync(c, cfg), ShouldBeNil)
+			So(syncVMs(c, vms), ShouldBeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
 			So(err, ShouldBeNil)
 			So(rsp.Configs, ShouldHaveLength, 1)
@@ -462,19 +546,15 @@ func TestSync(t *testing.T) {
 					Prefix: "prefix",
 				},
 			})
-			cfg := &Config{
-				VMs: &gce.Configs{
-					Vms: []*gce.Config{
-						{
-							Amount: &gce.Amount{
-								Default: 2,
-							},
-							Prefix: "prefix",
-						},
+			vms := []*gce.Config{
+				{
+					Amount: &gce.Amount{
+						Default: 2,
 					},
+					Prefix: "prefix",
 				},
 			}
-			So(sync(c, cfg), ShouldBeNil)
+			So(syncVMs(c, vms), ShouldBeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
 			So(err, ShouldBeNil)
 			So(rsp.Configs, ShouldHaveLength, 1)
@@ -488,13 +568,12 @@ func TestSync(t *testing.T) {
 
 		Convey("deletes", func() {
 			srv.Ensure(c, &gce.EnsureRequest{
-				Id: "prefix1",
+				Id: "prefix",
 				Config: &gce.Config{
-					Prefix: "prefix1",
+					Prefix: "prefix",
 				},
 			})
-			cfg := &Config{}
-			So(sync(c, cfg), ShouldBeNil)
+			So(syncVMs(c, nil), ShouldBeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
 			So(err, ShouldBeNil)
 			So(rsp.Configs, ShouldBeEmpty)
@@ -517,11 +596,21 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				}
-				err := validate(c, cfg)
-				So(err, ShouldErrLike, "is required")
+				So(validate(c, cfg), ShouldErrLike, "is required")
 			})
 
-			Convey("configs", func() {
+			Convey("projects", func() {
+				cfg := &Config{
+					Projects: &projects.Configs{
+						Project: []*projects.Config{
+							{},
+						},
+					},
+				}
+				So(validate(c, cfg), ShouldErrLike, "is required")
+			})
+
+			Convey("vms", func() {
 				cfg := &Config{
 					VMs: &gce.Configs{
 						Vms: []*gce.Config{
@@ -529,8 +618,7 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				}
-				err := validate(c, cfg)
-				So(err, ShouldErrLike, "is required")
+				So(validate(c, cfg), ShouldErrLike, "is required")
 			})
 		})
 
