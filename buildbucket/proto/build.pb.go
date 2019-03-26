@@ -105,6 +105,7 @@ type Build struct {
 	Input *Build_Input `protobuf:"bytes,15,opt,name=input,proto3" json:"input,omitempty"`
 	// Output of the build script / recipe.
 	// SHOULD depend only on input field and NOT other fields.
+	// MUST be unset if build status is SCHEDULED.
 	//
 	// RPC: By default, this field is excluded from responses.
 	// Updated while the build is running and finalized when the build ends.
@@ -113,6 +114,7 @@ type Build struct {
 	// Updated as build runs.
 	//
 	// May take up to 1MB after zlib compression.
+	// MUST be unset if build status is SCHEDULED.
 	//
 	// RPC: By default, this field is excluded from responses.
 	Steps []*Step `protobuf:"bytes,17,rep,name=steps,proto3" json:"steps,omitempty"`

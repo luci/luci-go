@@ -184,6 +184,7 @@ message Build {
 
   // Output of the build script / recipe.
   // SHOULD depend only on input field and NOT other fields.
+  // MUST be unset if build status is SCHEDULED.
   //
   // RPC: By default, this field is excluded from responses.
   // Updated while the build is running and finalized when the build ends.
@@ -193,6 +194,7 @@ message Build {
   // Updated as build runs.
   //
   // May take up to 1MB after zlib compression.
+  // MUST be unset if build status is SCHEDULED.
   //
   // RPC: By default, this field is excluded from responses.
   repeated Step steps = 17;
