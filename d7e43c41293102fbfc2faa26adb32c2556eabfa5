@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4451f426_d54f39af",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-26T21:01:25Z",
+      "side": 1,
+      "message": "maybe BuildbucketHost? \n\njust Host is ambiguous and you also said that you don\u0027t want Milo to be just buildbucket UI",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 89,
+        "endChar": 5
+      },
+      "revId": "d7e43c41293102fbfc2faa26adb32c2556eabfa5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
