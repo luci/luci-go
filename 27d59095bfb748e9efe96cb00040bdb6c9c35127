@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "52e43a9e_f7401b97",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-26T20:40:31Z",
+      "side": 1,
+      "message": "can you explicitly state that new binary name is bb?\n\nAlso, FYI you\u0027ll need a follow up to change infra/infra\u0027s build/ CIPD package configs.",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 0
+      },
+      "revId": "27d59095bfb748e9efe96cb00040bdb6c9c35127",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
