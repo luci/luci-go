@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -84,6 +85,9 @@ type BuildPage struct {
 	// no link, for example, if the project has not set up their build bug template.
 	BuildBugLink string
 
+	// BuildbucketHost is the hostname for the buildbucket instance this build came from.
+	BuildbucketHost string
+
 	// Errors contains any non-critical errors encountered while rendering the page.
 	Errors []error
 
@@ -131,6 +135,25 @@ func (b *Build) Summary() (result []string) {
 		}
 	}
 	return
+}
+
+// BuildbucketLink returns a link to the buildbucket version of the page.
+func (bp *BuildPage) BuildbucketLink() *Link {
+	if bp.BuildbucketHost == "" {
+		return nil
+	}
+	u := url.URL{
+		Scheme: "https",
+		Host:   bp.BuildbucketHost,
+		Path:   "/rpcexplorer/services/buildbucket.v2.Builds/GetBuild",
+		RawQuery: url.Values{
+			"request": []string{fmt.Sprintf(`{"id":"%d"}`, bp.Id)},
+		}.Encode(),
+	}
+	return NewLink(
+		fmt.Sprintf("%d", bp.Id),
+		u.String(),
+		"Buildbucket RPC explorer for build")
 }
 
 // Steps converts the flat Steps from the underlying Build into a tree.

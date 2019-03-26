@@ -412,6 +412,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 		Blame:           blame,
 		RelatedBuilds:   relatedBuilds,
 		BuildBugLink:    link,
+		BuildbucketHost: host,
 		Now:             clock.Now(c),
 		BlamelistError:  blameErr,
 		ForcedBlamelist: forceBlamelist,
