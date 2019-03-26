@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e2641a1_98619690",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-26T20:30:17Z",
+      "side": 1,
+      "message": "\"it\" here is confusing -- audience? token?",
+      "range": {
+        "startLine": 41,
+        "startChar": 17,
+        "endLine": 41,
+        "endChar": 19
+      },
+      "revId": "9fbd25bf7efb21f9d1a323597ab87f64f5d564b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
