@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "8596977e_3b5916ac",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-26T00:54:44Z",
+      "side": 1,
+      "message": "See my reply to the other comment. LOGDOG_NAMESPACE is critical for any semblance of sanity.",
+      "parentUuid": "fbb39825_ac189e10",
+      "range": {
+        "startLine": 65,
+        "startChar": 40,
+        "endLine": 65,
+        "endChar": 56
+      },
+      "revId": "4e00d39c07b7b12b7a7c88b8b0d42c01c68898b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e75beda6_7f4d1222",
         "filename": "buildbucket/proto/common.proto",
         "patchSetId": 7

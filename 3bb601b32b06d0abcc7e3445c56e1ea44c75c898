@@ -192,6 +192,30 @@
     },
     {
       "key": {
+        "uuid": "f1ca9951_24ab14c7",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-26T00:54:44Z",
+      "side": 1,
+      "message": "I disagree; LOGDOG_NAMESPACE must be set otherwise it introduces run_build asymmetry (unless you\u0027re saying that the sub-recipes will also always write to $LOGDOG_NAMESPACE/u/build.proto?). If you remove this, are you expecting the run_build implementation to just \"know\" to hard-code \u0027u\u0027 before all streams it creates? If it wants to create \u0027stdout\u0027, it would instead create \u0027u/stdout\u0027? This seems strictly worse than telling it to just prepend $LOGDOG_NAMESPACE to its streams.\n\nThe point of the namespace is so that buildbucket can have a cooperative way to namespace the log streams with the children. Making the namespace enforced is a project for later. Not specifying it now will make enforcing it later unnecessarily difficult.\n\nI think it\u0027s GOOD that the recipe cannot refer to parent logs in its build.proto. This is asking for trouble. This is the same reason that the child recipe\u0027s build.proto doesn\u0027t have to prepend its parent\u0027s step name to every step it emits either (kitchen must do this).",
+      "parentUuid": "ef6545a9_c4b2a347",
+      "range": {
+        "startLine": 173,
+        "startChar": 22,
+        "endLine": 173,
+        "endChar": 65
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fcc9b99e_7f6b2c76",
         "filename": "buildbucket/proto/config/project_config.proto",
         "patchSetId": 3
