@@ -31,14 +31,35 @@ func TestConfigs(t *testing.T) {
 		c := &validation.Context{Context: context.Background()}
 
 		Convey("invalid", func() {
-			cfgs := &Configs{
-				Project: []*Config{
-					{},
-				},
-			}
-			cfgs.Validate(c)
-			errs := c.Finalize().(*validation.Error).Errors
-			So(errs, ShouldContainErr, "project is required")
+			Convey("missing", func() {
+				cfgs := &Configs{
+					Project: []*Config{
+						{},
+					},
+				}
+				cfgs.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "project is required")
+			})
+
+			Convey("duplicate", func() {
+				cfgs := &Configs{
+					Project: []*Config{
+						{
+							Project: "duplicated",
+						},
+						{
+							Project: "unique",
+						},
+						{
+							Project: "duplicated",
+						},
+					},
+				}
+				cfgs.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "is not unique")
+			})
 		})
 
 		Convey("valid", func() {
