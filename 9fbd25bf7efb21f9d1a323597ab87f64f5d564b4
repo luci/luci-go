@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "6e1df4ec_f21231d7",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-26T21:06:09Z",
+      "side": 1,
+      "message": "how do you decide when to use fmt.Errorf and when clunkier errors.Reason(...).Err() ?",
+      "revId": "9fbd25bf7efb21f9d1a323597ab87f64f5d564b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3e2641a1_98619690",
         "filename": "gce/vmtoken/vmtoken.go",
         "patchSetId": 2
@@ -18,6 +35,52 @@
         "startChar": 17,
         "endLine": 41,
         "endChar": 19
+      },
+      "revId": "9fbd25bf7efb21f9d1a323597ab87f64f5d564b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "245b6d71_d8c8570b",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-26T21:06:09Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 59,
+        "startChar": 4,
+        "endLine": 59,
+        "endChar": 7
+      },
+      "revId": "9fbd25bf7efb21f9d1a323597ab87f64f5d564b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd2c545b_0d33adb4",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-26T21:06:09Z",
+      "side": 1,
+      "message": "i think annotate.Error is better, since some errors may be due to network errors and it\u0027d be useful to know the stack trace.",
+      "range": {
+        "startLine": 102,
+        "startChar": 14,
+        "endLine": 102,
+        "endChar": 61
       },
       "revId": "9fbd25bf7efb21f9d1a323597ab87f64f5d564b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
