@@ -104,6 +104,9 @@ func redirectLUCIBuild(c *router.Context) error {
 		return errors.Annotate(err, "invalid id").Tag(common.CodeParameterError).Err()
 	}
 	builder, number, err := buildbucket.GetBuilderID(c.Context, id)
+	if err != nil {
+		return err
+	}
 	numberOrID := fmt.Sprintf("%d", number)
 	if number == 0 {
 		numberOrID = fmt.Sprintf("b%d", id)
