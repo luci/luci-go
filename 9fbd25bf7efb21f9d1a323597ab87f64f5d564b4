@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c0b08bea_c4139b15",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-26T22:20:46Z",
+      "side": 1,
+      "message": "Since this is in GCE, consider errors.Reason and errors.Annotate everywhere, I use them everywhere in gce/*.",
+      "parentUuid": "6e1df4ec_f21231d7",
+      "revId": "9fbd25bf7efb21f9d1a323597ab87f64f5d564b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3e2641a1_98619690",
         "filename": "gce/vmtoken/vmtoken.go",
         "patchSetId": 2
@@ -81,6 +99,53 @@
         "startChar": 14,
         "endLine": 102,
         "endChar": 61
+      },
+      "revId": "9fbd25bf7efb21f9d1a323597ab87f64f5d564b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55d7a583_a4195f00",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-26T22:20:46Z",
+      "side": 1,
+      "message": "Agreed, but also consider errors.Annotate everywhere else.",
+      "parentUuid": "cd2c545b_0d33adb4",
+      "range": {
+        "startLine": 102,
+        "startChar": 14,
+        "endLine": 102,
+        "endChar": 61
+      },
+      "revId": "9fbd25bf7efb21f9d1a323597ab87f64f5d564b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3ede2df_c079a06e",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-26T22:20:46Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 115,
+        "startChar": 80,
+        "endLine": 115,
+        "endChar": 81
       },
       "revId": "9fbd25bf7efb21f9d1a323597ab87f64f5d564b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
