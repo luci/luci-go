@@ -18,6 +18,7 @@ package backend
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"google.golang.org/api/compute/v1"
 
@@ -130,7 +131,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	dsp := &tq.Dispatcher{}
 	registerTasks(dsp)
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
-		// Install the task queue dispatcher, configuration service, and GCE service.
+		c.Context, _ = context.WithTimeout(c.Context, 30*time.Second)
 		c.Context = withDispatcher(c.Context, dsp)
 		c.Context = withConfig(c.Context, &rpc.Config{})
 		c.Context = withCompute(c.Context, newCompute(c.Context))
