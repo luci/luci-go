@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "074e1495_b7348e9c",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-26T20:45:04Z",
+      "side": 1,
+      "message": "add docstring (how did you pick 30? How would someone know when to increase this? Is there any bad stuff that would happen by increasing this? How would you know that you increased it too much?)",
+      "range": {
+        "startLine": 59,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 12
+      },
+      "revId": "755ab5a08c5234ea8297265fdc898125c7fbf1d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77c97d01_a57a4e0e",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-26T20:45:04Z",
+      "side": 1,
+      "message": "docstrings (I presume that 24h and 72h both correlate to other parameters in the service, like the # hours to wait for a pessimistic purge)",
+      "revId": "755ab5a08c5234ea8297265fdc898125c7fbf1d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13ad6de7_c2bd9571",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-26T20:45:04Z",
+      "side": 1,
+      "message": "this needs to match the function name.\n\npresumably this isn\u0027t just \"namespaces\" now, but LUCI project ids?",
+      "range": {
+        "startLine": 73,
+        "startChar": 3,
+        "endLine": 73,
+        "endChar": 25
+      },
+      "revId": "755ab5a08c5234ea8297265fdc898125c7fbf1d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d313a76_eca89b5d",
+        "filename": "logdog/appengine/cmd/coordinator/default/cron.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-26T20:45:04Z",
+      "side": 1,
+      "message": "\"NA\" looks like \"N/A\" or \"Not Applicable\".  Why not just \"Unarchived\" or \"Not Archived\"?",
+      "range": {
+        "startLine": 125,
+        "startChar": 21,
+        "endLine": 125,
+        "endChar": 23
+      },
+      "revId": "755ab5a08c5234ea8297265fdc898125c7fbf1d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
