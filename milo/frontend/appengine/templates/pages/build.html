@@ -155,7 +155,7 @@
 
     <h2>Infra</h2>
     <ul>
-      <li>Buildbucket ID: {{ .BuildPage.Id }}</li>
+      <li>Buildbucket ID: {{ .BuildPage.BuildbucketLink.HTML }}</li>
 
       {{ with .BuildPage.Infra }}
         {{ with .Swarming }}
