@@ -20,7 +20,9 @@ import (
 	"sort"
 
 	"go.chromium.org/gae/service/datastore"
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/access"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -30,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -46,17 +49,52 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 		limit = tLimit
 	}
 
-	// Get project builders.
-	builders, err := getBuildersForProject(c.Context, projectID, group)
-	if err != nil {
-		return err
-	}
+	var buildersFromConfig, buildersFromSwarmbucket []string
+	err := parallel.FanOutIn(func(ch chan<- func() error) {
+		// TODO(hinoka): This codepatch is mostly redundant with the swarmbucket codepath.
+		// Assuming the project's cr-buildbucket.cfg and luci-milo.cfg configs match,
+		// This would return the same data as the swarmbucket get_builders() call below.
+		// (In addition to buildbot builders defined in luci-milo.cfg)
+		// It makes more sense to not use data from luci-milo.cfg since cr-buildbucket.cfg
+		// is always more canonical.
+		// Remove this once buildbot is removed.
+		ch <- func() error {
+			builders, err := getBuildersForProject(c.Context, projectID, group)
+			if err != nil {
+				return err
+			}
+			builders, err = filterAuthorizedBuilders(c.Context, builders)
+			return err
+		}
+		// Also grab data from swarmbucket.
+		ch <- func() error {
+			// This call does it's own ACL checks.
+			builders, err := buildbucket.GetBuilders(c.Context)
+			if err != nil {
+				return err
+			}
+			for _, bBucket := range builders.Buckets {
+				// This uses v1 style bucket names, which are luci.project.bucket.
+				project, bucket := bb.BucketNameToV2(bBucket.Name)
+				if project != projectID {
+					continue
+				}
+				for _, builder := range bBucket.Builders {
+					bid := buildbucket.BuilderID{
+						buildbucketpb.BuilderID{
+							Project: project,
+							Bucket:  bucket,
+							Builder: builder.Name,
+						},
+					}
+					buildersFromSwarmbucket = append(buildersFromSwarmbucket, bid.String())
+				}
+			}
+			return nil
+		}
+	})
+	builders := common.MergeStrings(buildersFromConfig, buildersFromSwarmbucket)
 
-	// Filter them out based on auth.
-	builders, err = filterAuthorizedBuilders(c.Context, builders)
-	if err != nil {
-		return err
-	}
 	if len(builders) == 0 {
 		return errors.New("No such project or group.", common.CodeNotFound)
 	}
