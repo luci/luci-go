@@ -19,9 +19,9 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
+	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -39,68 +39,72 @@ I69yAHZUpJ9lzcwmHcaCJ76m/jDINZrYoL/4aSlDEGgHmw==
 `
 
 func TestFetchCertificates(t *testing.T) {
-	Convey("Works", t, func() {
+	t.Parallel()
+
+	const testURL = "https://test.example.com"
+
+	Convey("With empty cache", t, func() {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(fmt.Sprintf(`{
+		Convey("Works", func() {
+			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
+				So(r.URL.String(), ShouldEqual, testURL)
+				return 200, fmt.Sprintf(`{
 				"service_account_name": "blah@blah.com",
 				"certificates": [{
 					"key_name": "abc",
 					"x509_certificate_pem": %q
 				}],
 				"timestamp": 1446166229439210
-			}`, certBlob)))
-		}))
-		certs, err := FetchCertificates(ctx, ts.URL)
-		So(err, ShouldBeNil)
-		So(certs.ServiceAccountName, ShouldEqual, "blah@blah.com")
-		So(len(certs.Certificates), ShouldEqual, 1)
-	})
+			}`, certBlob)
+			})
 
-	Convey("Errors", t, func() {
-		ctx := caching.WithEmptyProcessCache(context.Background())
+			certs, err := FetchCertificates(ctx, testURL)
+			So(err, ShouldBeNil)
+			So(certs.ServiceAccountName, ShouldEqual, "blah@blah.com")
+			So(len(certs.Certificates), ShouldEqual, 1)
+		})
 
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Error(w, "fail", 401)
-		}))
-		_, err := FetchCertificates(ctx, ts.URL)
-		So(err, ShouldNotBeNil)
-	})
+		Convey("Errors", func() {
+			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
+				return 401, "fail"
+			})
 
-	Convey("Bad JSON", t, func() {
-		ctx := caching.WithEmptyProcessCache(context.Background())
+			_, err := FetchCertificates(ctx, testURL)
+			So(err, ShouldNotBeNil)
+		})
 
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(fmt.Sprintf(`{
+		Convey("Bad JSON", func() {
+			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
+				return 200, fmt.Sprintf(`{
 				"certificates": [{
 					"key_name": "abc",
 					"x509_certificate_pem": %q
 				}],
 				"timestamp": "not an int"
-			}`, certBlob)))
-		}))
-		_, err := FetchCertificates(ctx, ts.URL)
-		So(err, ShouldNotBeNil)
+			}`, certBlob)
+			})
+
+			_, err := FetchCertificates(ctx, testURL)
+			So(err, ShouldNotBeNil)
+		})
 	})
 }
 
 func TestFetchCertificatesForServiceAccount(t *testing.T) {
-	Convey("Works", t, func() {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path != "/robot@robots.gserviceaccount.com" {
-				http.Error(w, "Wrong URL", 404)
-				return
-			}
-			w.Write([]byte(`{
-					"0392f9886770640357cbb29e57d3698291b1e805": "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
-					"f5db308971078d1496c262cc06b6e7f87652af55": "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n"
-			}`))
-		}))
+	t.Parallel()
 
-		c := caching.WithEmptyProcessCache(context.Background())
-		c = context.WithValue(c, robotCertURLKey(0), ts.URL+"/")
-		certs, err := FetchCertificatesForServiceAccount(c, "robot@robots.gserviceaccount.com")
+	Convey("Works", t, func() {
+		ctx := caching.WithEmptyProcessCache(context.Background())
+		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
+			So(r.URL.String(), ShouldEqual, "https://www.googleapis.com/robot/v1/metadata/x509/robot%40robots.gserviceaccount.com")
+			return 200, `{
+				"0392f9886770640357cbb29e57d3698291b1e805": "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
+				"f5db308971078d1496c262cc06b6e7f87652af55": "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n"
+			}`
+		})
+
+		certs, err := FetchCertificatesForServiceAccount(ctx, "robot@robots.gserviceaccount.com")
 		So(err, ShouldBeNil)
 		So(certs.ServiceAccountName, ShouldEqual, "robot@robots.gserviceaccount.com")
 		So(certs.Certificates, ShouldResemble, []Certificate{
@@ -116,7 +120,37 @@ func TestFetchCertificatesForServiceAccount(t *testing.T) {
 	})
 }
 
+func TestFetchGoogleOAuth2Certificates(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		ctx := caching.WithEmptyProcessCache(context.Background())
+		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
+			So(r.URL.String(), ShouldEqual, "https://www.googleapis.com/oauth2/v1/certs")
+			return 200, `{
+				"0392f9886770640357cbb29e57d3698291b1e805": "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
+				"f5db308971078d1496c262cc06b6e7f87652af55": "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n"
+			}`
+		})
+
+		certs, err := FetchGoogleOAuth2Certificates(ctx)
+		So(err, ShouldBeNil)
+		So(certs.Certificates, ShouldResemble, []Certificate{
+			{
+				KeyName:            "0392f9886770640357cbb29e57d3698291b1e805",
+				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
+			},
+			{
+				KeyName:            "f5db308971078d1496c262cc06b6e7f87652af55",
+				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n",
+			},
+		})
+	})
+}
+
 func TestCertificateForKey(t *testing.T) {
+	t.Parallel()
+
 	Convey("Works", t, func() {
 		certs := PublicCertificates{
 			Certificates: []Certificate{
@@ -179,6 +213,8 @@ func TestCheckSignature(t *testing.T) {
 	// See signingtest/signer_test.go for where this cert and signature were
 	// generated. 'signingtest' module itself can't be imported due to import
 	// cycle.
+
+	t.Parallel()
 
 	Convey("Works", t, func() {
 		certs := PublicCertificates{

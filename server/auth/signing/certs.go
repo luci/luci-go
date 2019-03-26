@@ -30,12 +30,17 @@ import (
 	"go.chromium.org/luci/server/caching"
 )
 
-// "url:..." | "email:..." => *PublicCertificates.
-var certsCache = caching.RegisterLRUCache(256)
+// "url:..." | "email:..." | "google_auth2_certs" => *PublicCertificates.
+var certsCache = caching.RegisterLRUCache(1024)
+
+const (
+	robotCertsURL  = "https://www.googleapis.com/robot/v1/metadata/x509/"
+	oauth2CertsURL = "https://www.googleapis.com/oauth2/v1/certs"
+)
 
 // CertsCacheExpiration defines how long to cache fetched certificates in local
 // memory.
-const CertsCacheExpiration = 15 * time.Minute
+const CertsCacheExpiration = time.Hour
 
 // Certificate is public certificate of some service. Must not be mutated once
 // initialized.
@@ -51,7 +56,7 @@ type Certificate struct {
 type PublicCertificates struct {
 	// AppID is GAE app ID of a service that owns the keys if it is on GAE.
 	AppID string `json:"app_id,omitempty"`
-	// ServiceAccountName is name of a service account that owns the key.
+	// ServiceAccountName is name of a service account that owns the key, if any.
 	ServiceAccountName string `json:"service_account_name,omitempty"`
 	// Certificates is the list of certificates.
 	Certificates []Certificate `json:"certificates"`
@@ -89,7 +94,7 @@ func (t JSONTime) MarshalJSON() ([]byte, error) {
 // FetchCertificates fetches certificates from the given URL.
 //
 // The server is expected to reply with JSON described by PublicCertificates
-// struct (like LUCI services do). Uses process cache to cache them for
+// struct (like LUCI services do). Uses the process cache to cache them for
 // CertsCacheExpiration minutes.
 //
 // LUCI services serve certificates at /auth/api/v1/server/certificates.
@@ -120,20 +125,10 @@ func FetchCertificatesFromLUCIService(c context.Context, serviceURL string) (*Pu
 	return FetchCertificates(c, serviceURL+"/auth/api/v1/server/certificates")
 }
 
-type robotCertURLKey int
-
-// robotCertURL is used to mock URL of a google backend in unit tests.
-func robotCertURL(c context.Context) string {
-	if url, ok := c.Value(robotCertURLKey(0)).(string); ok {
-		return url
-	}
-	return "https://www.googleapis.com/robot/v1/metadata/x509/"
-}
-
 // FetchCertificatesForServiceAccount fetches certificates of some Google
 // service account.
 //
-// Works only with Google service accounts (@*.gserviceaccount.com). Uses
+// Works only with Google service accounts (@*.gserviceaccount.com). Uses the
 // process cache to cache them for CertsCacheExpiration minutes.
 //
 // Usage (roughly):
@@ -147,33 +142,32 @@ func FetchCertificatesForServiceAccount(c context.Context, email string) (*Publi
 	if !strings.HasSuffix(email, ".gserviceaccount.com") {
 		return nil, fmt.Errorf("signature: not a google service account %q", email)
 	}
-
 	certs, err := certsCache.LRU(c).GetOrCreate(c, "email:"+email, func() (interface{}, time.Duration, error) {
-		// Ask Google backend for a dict "key id => x509 PEM encoded cert".
-		keysAndCerts := map[string]string{}
-		req := internal.Request{
-			Method: "GET",
-			URL:    robotCertURL(c) + url.QueryEscape(email),
-			Out:    &keysAndCerts,
-		}
-		if err := req.Do(c); err != nil {
+		certs, err := fetchCertsJSON(c, robotCertsURL+url.QueryEscape(email))
+		if err != nil {
 			return nil, 0, err
 		}
+		certs.ServiceAccountName = email
+		return certs, CertsCacheExpiration, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return certs.(*PublicCertificates), nil
+}
 
-		// Sort by key for reproducibility of return values.
-		keys := make([]string, 0, len(keysAndCerts))
-		for key := range keysAndCerts {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-
-		// Convert to PublicCertificates struct.
-		certs := &PublicCertificates{ServiceAccountName: email}
-		for _, key := range keys {
-			certs.Certificates = append(certs.Certificates, Certificate{
-				KeyName:            key,
-				X509CertificatePEM: keysAndCerts[key],
-			})
+// FetchGoogleOAuth2Certificates fetches root certificates of Google OAuth2
+// service.
+//
+// They can be used to verify signatures on various JWTs issued by Google
+// OAuth2 backends (like OpenID identity tokens and GCE signed metadata JWTs).
+//
+// Uses the process cache to cache them for CertsCacheExpiration minutes.
+func FetchGoogleOAuth2Certificates(c context.Context) (*PublicCertificates, error) {
+	certs, err := certsCache.LRU(c).GetOrCreate(c, "google_auth2_certs", func() (interface{}, time.Duration, error) {
+		certs, err := fetchCertsJSON(c, oauth2CertsURL)
+		if err != nil {
+			return nil, 0, err
 		}
 		return certs, CertsCacheExpiration, nil
 	})
@@ -181,6 +175,38 @@ func FetchCertificatesForServiceAccount(c context.Context, email string) (*Publi
 		return nil, err
 	}
 	return certs.(*PublicCertificates), nil
+}
+
+// fetchCertsJSON loads certificates from a JSON dict "key id => x509 PEM cert".
+//
+// This is the format served by Google certificate endpoints.
+func fetchCertsJSON(c context.Context, url string) (*PublicCertificates, error) {
+	keysAndCerts := map[string]string{}
+	req := internal.Request{
+		Method: "GET",
+		URL:    url,
+		Out:    &keysAndCerts,
+	}
+	if err := req.Do(c); err != nil {
+		return nil, err
+	}
+
+	// Sort by key for reproducibility of return values.
+	keys := make([]string, 0, len(keysAndCerts))
+	for key := range keysAndCerts {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	// Convert to PublicCertificates struct.
+	certs := &PublicCertificates{}
+	for _, key := range keys {
+		certs.Certificates = append(certs.Certificates, Certificate{
+			KeyName:            key,
+			X509CertificatePEM: keysAndCerts[key],
+		})
+	}
+	return certs, nil
 }
 
 // CertificateForKey finds the certificate for given key and deserializes it.
