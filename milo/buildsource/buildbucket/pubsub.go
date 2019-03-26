@@ -124,17 +124,14 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 	buildKey := datastore.MakeKey(c, "buildbucket.Build", fmt.Sprintf("%s:%s", host, buildAddress))
 	swarming := b.GetInfra().GetSwarming()
 
-	return &model.BuildSummary{
-		ProjectID: b.Builder.Project,
-		BuildKey:  buildKey,
-		BuilderID: BuilderID{*b.Builder}.String(),
-		BuildID:   "buildbucket/" + buildAddress,
-		BuildSet:  b.Buildsets(),
-		ContextURI: []string{
-			fmt.Sprintf("buildbucket://%s/build/%d", host, id),
-			fmt.Sprintf("swarming://%s/task/%s", swarming.GetHostname(), swarming.GetTaskId()),
-		},
-		Created: mustTimestamp(b.CreateTime),
+	bs := &model.BuildSummary{
+		ProjectID:  b.Builder.Project,
+		BuildKey:   buildKey,
+		BuilderID:  BuilderID{*b.Builder}.String(),
+		BuildID:    "buildbucket/" + buildAddress,
+		BuildSet:   b.Buildsets(),
+		ContextURI: []string{fmt.Sprintf("buildbucket://%s/build/%d", host, id)},
+		Created:    mustTimestamp(b.CreateTime),
 		Summary: model.Summary{
 			Start:  mustTimestamp(b.StartTime),
 			End:    mustTimestamp(b.EndTime),
@@ -142,7 +139,13 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 		},
 		Version:      mustTimestamp(b.UpdateTime).UnixNano(),
 		Experimental: b.GetInput().GetExperimental(),
-	}, nil
+	}
+	if task := swarming.GetTaskId(); task != "" {
+		bs.ContextURI = append(
+			bs.ContextURI,
+			fmt.Sprintf("swarming://%s/task/%s", swarming.GetHostname(), swarming.GetTaskId()))
+	}
+	return bs, nil
 }
 
 // generateSummary takes a decoded buildbucket event and generates
