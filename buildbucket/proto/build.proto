@@ -35,11 +35,11 @@ import "go.chromium.org/luci/buildbucket/proto/step.proto";
 // a build at completion time and does not change after that.
 // All fields are included.
 //
-// Next id: 24.
+// Next id: 25.
 message Build {
   // Defines what to build/test.
   //
-  // Behavior of a build script (recipe) MAY depend on Input.
+  // Behavior of a build executable MAY depend on Input.
   // It MAY NOT modify its behavior based on anything outside of Input.
   // It MAY read non-Input fields to display for debugging or to pass-through to
   // triggered builds. For example the "tags" field may be passed to triggered
@@ -78,7 +78,7 @@ message Build {
     bool experimental = 5;
   }
 
-  // Result of the build script (recipe).
+  // Result of the build executable.
   message Output {
     reserved 2; // summary_markdown, was moved to Build.
     reserved 4; // critical, was moved to Build.
@@ -179,10 +179,10 @@ message Build {
   // Human-readable status reason is available in summary_markdown.
   StatusDetails status_details = 22;
 
-  // Input to the build script / recipe.
+  // Input to the build executable.
   Input input = 15;
 
-  // Output of the build script / recipe.
+  // Output of the build executable.
   // SHOULD depend only on input field and NOT other fields.
   // MUST be unset if build status is SCHEDULED.
   //
@@ -208,6 +208,9 @@ message Build {
   // One key may have multiple values, which is why this is not a map<string,string>.
   // Indexed by the server, see also BuildFilter.tags.
   repeated StringPair tags = 19;
+
+  // What to run when the build is ready to start.
+  Executable executable = 24;
 }
 
 // Build infrastructure that was used for a particular build.
