@@ -216,6 +216,30 @@
     },
     {
       "key": {
+        "uuid": "3d80111a_ccf7cd8c",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-26T20:17:54Z",
+      "side": 1,
+      "message": "\u003e I think it\u0027s GOOD that the recipe cannot refer to parent logs in its build.proto. This is asking for trouble. This is the same reason that the child recipe\u0027s build.proto doesn\u0027t have to prepend its parent\u0027s step name to every step it emits either (kitchen must do this).\n\nthat\u0027s not what I meant, but nvm",
+      "parentUuid": "f1ca9951_24ab14c7",
+      "range": {
+        "startLine": 173,
+        "startChar": 22,
+        "endLine": 173,
+        "endChar": 65
+      },
+      "revId": "3bb601b32b06d0abcc7e3445c56e1ea44c75c898",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fcc9b99e_7f6b2c76",
         "filename": "buildbucket/proto/config/project_config.proto",
         "patchSetId": 3

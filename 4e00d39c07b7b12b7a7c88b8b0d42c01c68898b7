@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "2b26c66c_840c4aff",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-26T20:17:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8596977e_3b5916ac",
+      "range": {
+        "startLine": 65,
+        "startChar": 40,
+        "endLine": 65,
+        "endChar": 56
+      },
+      "revId": "4e00d39c07b7b12b7a7c88b8b0d42c01c68898b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e75beda6_7f4d1222",
         "filename": "buildbucket/proto/common.proto",
         "patchSetId": 7
@@ -155,6 +179,30 @@
       "side": 1,
       "message": "removed",
       "parentUuid": "e75beda6_7f4d1222",
+      "range": {
+        "startLine": 69,
+        "startChar": 20,
+        "endLine": 69,
+        "endChar": 27
+      },
+      "revId": "4e00d39c07b7b12b7a7c88b8b0d42c01c68898b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "09d61b57_a5a7eaf3",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-26T20:17:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da92d3a0_b5f867d9",
       "range": {
         "startLine": 69,
         "startChar": 20,
