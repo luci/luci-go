@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -48,7 +49,8 @@ import (
 )
 
 var (
-	ErrNotFound = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
+	ErrNotFound    = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
+	ErrNotLoggedIn = errors.Reason("not logged in").Tag(common.CodeUnauthorized).Err()
 )
 
 // BuildAddress constructs the build address of a buildbucketpb.Build.
@@ -317,7 +319,13 @@ func GetBuilderID(c context.Context, id int64) (builder *buildbucketpb.BuilderID
 	case codes.OK:
 		builder = br.Builder
 		number = br.Number
-	case codes.NotFound, codes.PermissionDenied:
+	case codes.NotFound:
+		if auth.CurrentIdentity(c) == identity.AnonymousIdentity {
+			err = ErrNotLoggedIn
+			return
+		}
+		fallthrough
+	case codes.PermissionDenied:
 		err = ErrNotFound
 	}
 	return
