@@ -22,6 +22,8 @@ option go_package = "go.chromium.org/luci/buildbucket/proto/config;configpb";
 
 import "google/protobuf/wrappers.proto";
 
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
 // A single access control rule.
 message Acl {
 
@@ -67,7 +69,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 23.
+// Next tag: 25.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -156,7 +158,10 @@ message Builder {
     int32 wait_for_warm_cache_secs = 3;
   }
 
-  // Specifies a recipe to run.
+  // DEPRECATED. See Builder.executable and Builder.properties
+  //
+  // To specify a recipe name, pass "$recipe_engine" property which is a JSON
+  // object having "recipe" property.
   message Recipe {
     // Deprecated "repository" mode used git to bootstrap recipes directly from
     // the recipe repo. Use `cipd_package` ++ `cipd_version` below instead, as
@@ -189,7 +194,7 @@ message Builder {
     string cipd_version = 5;
 
     // Colon-separated build properties to set.
-    // A property can be overriden by "properties" build parameter.
+    // Ignored if Builder.properties is set.
     //
     // Use this field for string properties and use properties_j for other
     // types.
@@ -343,7 +348,16 @@ message Builder {
   repeated string dimensions = 3;
 
   // Specifies that a recipe to run.
+  // DEPRECATED: use executable.
   Recipe recipe = 4;
+
+  // What to run when a build is ready to start.
+  buildbucket.v2.Executable executable = 23;
+
+  // A JSON object representing Build.input.properties.
+  // Individual object properties can be overridden with
+  // ScheduleBuildRequest.properties.
+  string properties = 24;
 
   // Swarming task priority.
   // A value between 20 and 255, inclusive.
