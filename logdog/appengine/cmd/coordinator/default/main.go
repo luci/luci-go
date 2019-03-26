@@ -63,6 +63,7 @@ func init() {
 	base := standard.Base().Extend(ps.Base)
 	svr.InstallHandlers(r, base)
 
+	r.POST("/admin/cron/stats/:stat/:namespace", base, cronStatsNSHandler)
 	r.GET("/admin/cron/stats", base, cronStatsHandler)
 
 	// Redirect "/" to "/app/".
