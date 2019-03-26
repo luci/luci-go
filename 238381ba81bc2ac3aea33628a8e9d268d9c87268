@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4aef5cb_6b8da127",
+        "filename": "server/auth/signing/certs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-26T01:22:02Z",
+      "side": 1,
+      "message": "curious, why only for 1 hour? is that to avoid parsing certs to see when these certs expire?",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 38
+      },
+      "revId": "238381ba81bc2ac3aea33628a8e9d268d9c87268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
