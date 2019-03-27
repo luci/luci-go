@@ -18,13 +18,16 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/genproto/googleapis/type/dayofweek"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
@@ -314,6 +317,72 @@ func TestQueues(t *testing.T) {
 							datastore.Get(c, v)
 							So(v.Drained, ShouldBeFalse)
 						})
+
+						Convey("schedule", func() {
+							datastore.Put(c, &model.Config{
+								ID: "config",
+								Config: config.Config{
+									Amount: &config.Amount{
+										Default: 2,
+										Change: []*config.Schedule{
+											{
+												Amount: 3,
+												Length: &config.TimePeriod{
+													Time: &config.TimePeriod_Duration{
+														Duration: "1h",
+													},
+												},
+												Start: &config.TimeOfDay{
+													Day:  dayofweek.DayOfWeek_MONDAY,
+													Time: "1:00",
+												},
+											},
+										},
+									},
+								},
+							})
+
+							Convey("matches", func() {
+								now := time.Time{}
+								So(now.Weekday(), ShouldEqual, time.Monday)
+								c, _ := testclock.UseTime(c, now)
+								datastore.Put(c, &model.VM{
+									ID:     "id",
+									Config: "config",
+									Index:  2,
+								})
+								err := drainVM(c, &tasks.DrainVM{
+									Id: "id",
+								})
+								So(err, ShouldBeNil)
+								v := &model.VM{
+									ID: "id",
+								}
+								datastore.Get(c, v)
+								So(v.Drained, ShouldBeTrue)
+							})
+
+							Convey("exceeds", func() {
+								now := time.Time{}.Add(time.Hour)
+								So(now.Weekday(), ShouldEqual, time.Monday)
+								So(now.Hour(), ShouldEqual, 1)
+								c, _ := testclock.UseTime(c, now)
+								datastore.Put(c, &model.VM{
+									ID:     "id",
+									Config: "config",
+									Index:  2,
+								})
+								err := drainVM(c, &tasks.DrainVM{
+									Id: "id",
+								})
+								So(err, ShouldBeNil)
+								v := &model.VM{
+									ID: "id",
+								}
+								datastore.Get(c, v)
+								So(v.Drained, ShouldBeFalse)
+							})
+						})
 					})
 				})
 
@@ -371,7 +440,7 @@ func TestQueues(t *testing.T) {
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
-				Convey("create", func() {
+				Convey("default", func() {
 					srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
 						Config: &config.Config{
@@ -389,6 +458,58 @@ func TestQueues(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
+				})
+
+				Convey("schedule", func() {
+					srv.Ensure(c, &config.EnsureRequest{
+						Id: "id",
+						Config: &config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							Amount: &config.Amount{
+								Default: 2,
+								Change: []*config.Schedule{
+									{
+										Amount: 5,
+										Length: &config.TimePeriod{
+											Time: &config.TimePeriod_Duration{
+												Duration: "1h",
+											},
+										},
+										Start: &config.TimeOfDay{
+											Day:  dayofweek.DayOfWeek_MONDAY,
+											Time: "1:00",
+										},
+									},
+								},
+							},
+							Prefix: "prefix",
+						},
+					})
+
+					Convey("default", func() {
+						now := time.Time{}
+						So(now.Weekday(), ShouldEqual, time.Monday)
+						c, _ := testclock.UseTime(c, now)
+						err := expandConfig(c, &tasks.ExpandConfig{
+							Id: "id",
+						})
+						So(err, ShouldBeNil)
+						So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+					})
+
+					Convey("scheduled", func() {
+						now := time.Time{}.Add(time.Hour)
+						So(now.Weekday(), ShouldEqual, time.Monday)
+						So(now.Hour(), ShouldEqual, 1)
+						c, _ := testclock.UseTime(c, now)
+						err := expandConfig(c, &tasks.ExpandConfig{
+							Id: "id",
+						})
+						So(err, ShouldBeNil)
+						So(tqt.GetScheduledTasks(), ShouldHaveLength, 5)
+					})
 				})
 			})
 		})

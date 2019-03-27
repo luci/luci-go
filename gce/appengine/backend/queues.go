@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -143,7 +144,11 @@ func drainVM(c context.Context, payload proto.Message) error {
 		// Config doesn't exist, drain the VM.
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
-	case cfg.Config.GetAmount().GetDefault() > vm.Index:
+	}
+	switch amt, err := cfg.Config.Amount.GetAmount(clock.Now(c)); {
+	case err != nil:
+		return errors.Annotate(err, "failed to parse amount").Err()
+	case amt > vm.Index:
 		// VM is configured to exist, don't drain the VM.
 		return nil
 	}
@@ -233,8 +238,12 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
-	t := make([]*tq.Task, cfg.GetAmount().GetDefault())
-	for i := int32(0); i < cfg.GetAmount().GetDefault(); i++ {
+	amt, err := cfg.Amount.GetAmount(clock.Now(c))
+	if err != nil {
+		return errors.Annotate(err, "failed to parse amount").Err()
+	}
+	t := make([]*tq.Task, amt)
+	for i := int32(0); i < amt; i++ {
 		t[i] = &tq.Task{
 			Payload: &tasks.CreateVM{
 				Attributes: cfg.Attributes,
