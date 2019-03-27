@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -129,7 +130,7 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 		BuildKey:   buildKey,
 		BuilderID:  BuilderID{*b.Builder}.String(),
 		BuildID:    "buildbucket/" + buildAddress,
-		BuildSet:   b.Buildsets(),
+		BuildSet:   protoutil.BuildSets(b),
 		ContextURI: []string{fmt.Sprintf("buildbucket://%s/build/%d", host, id)},
 		Created:    mustTimestamp(b.CreateTime),
 		Summary: model.Summary{

@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -94,10 +95,9 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) (result [
 		return
 	}
 
-	repoURL := bs.RepoURL()
 	result = make([]*ui.Commit, 0, len(commits)+1)
 	for _, commit := range commits {
-		result = append(result, uiCommit(commit, repoURL))
+		result = append(result, uiCommit(commit, protoutil.GitilesRepoURL(bs)))
 	}
 	logging.Infof(c, "Fetched %d commit blamelist from Gitiles", len(result))
 
@@ -172,7 +172,7 @@ func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Com
 	// and back into a buildbucketpb.Commit.  That's a bit silly.
 	return simplisticBlamelist(c, &model.BuildSummary{
 		BuildKey:  MakeBuildKey(c, host, BuildAddress(b)),
-		BuildSet:  []string{commit.BuildSetString()},
+		BuildSet:  []string{protoutil.GitilesBuildSet(commit)},
 		BuilderID: BuilderID{BuilderID: *b.Builder}.String(),
 	})
 }
@@ -241,7 +241,7 @@ var summaryBuildsMask = &field_mask.FieldMask{
 // getRelatedBuilds fetches build summaries of builds with the same buildset as b.
 func getRelatedBuilds(c context.Context, client buildbucketpb.BuildsClient, b *buildbucketpb.Build) ([]*ui.Build, error) {
 	var bs []string
-	for _, buildset := range b.Buildsets() {
+	for _, buildset := range protoutil.BuildSets(b) {
 		// HACK(hinoka): Remove the commit/git/ buildsets because we know they're redundant
 		// with the commit/gitiles/ buildsets, and we don't need to ask Buildbucket twice.
 		if strings.HasPrefix(buildset, "commit/git/") {
