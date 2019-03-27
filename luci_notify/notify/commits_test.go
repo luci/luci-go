@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
 	gitpb "go.chromium.org/luci/common/proto/git"
 
@@ -97,8 +98,8 @@ func TestCheckout(t *testing.T) {
 	Convey(`Conversion with GitilesCommits Non-Empty`, t, func() {
 		checkout := NewCheckout(gitilesCheckout)
 		So(checkout, ShouldResemble, Checkout{
-			gitilesCheckout.Commits[0].RepoURL(): rev1,
-			gitilesCheckout.Commits[1].RepoURL(): rev2,
+			protoutil.GitilesRepoURL(gitilesCheckout.Commits[0]): rev1,
+			protoutil.GitilesRepoURL(gitilesCheckout.Commits[1]): rev2,
 		})
 		result := checkout.ToGitilesCommits()
 		So(&result, ShouldResembleProto, &gitilesCheckout)
@@ -106,7 +107,7 @@ func TestCheckout(t *testing.T) {
 
 	Convey(`Filter repositories from whitelist`, t, func() {
 		checkout := NewCheckout(gitilesCheckout)
-		repoURL := gitilesCheckout.Commits[0].RepoURL()
+		repoURL := protoutil.GitilesRepoURL(gitilesCheckout.Commits[0])
 		filteredCheckout := checkout.Filter(stringset.NewFromSlice([]string{repoURL}...))
 		So(filteredCheckout, ShouldResemble, Checkout{repoURL: rev1})
 	})
