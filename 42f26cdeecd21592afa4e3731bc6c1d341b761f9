@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "da4ab81f_c1965440",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-27T00:15:01Z",
+      "side": 1,
+      "message": "bleh, fine.",
+      "parentUuid": "efcb7cd4_ee50d7bf",
+      "revId": "42f26cdeecd21592afa4e3731bc6c1d341b761f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "303d0bde_6bf14096",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -72,6 +90,30 @@
       "side": 1,
       "message": "I\u0027m not sure. I don\u0027t see any other apps where we\u0027ve increased max_concurrent_requests, even if they\u0027re instance_class: F4. Isn\u0027t it going backwards? I increased CPU and RAM so maybe requests stop timing out. If I correspondingly increase concurrent requests then each request\u0027s slice of CPU decreases, tending back towards timeouts.",
       "parentUuid": "303d0bde_6bf14096",
+      "range": {
+        "startLine": 10,
+        "startChar": 3,
+        "endLine": 10,
+        "endChar": 5
+      },
+      "revId": "42f26cdeecd21592afa4e3731bc6c1d341b761f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3ed07f8_0e08dbc9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-27T00:15:01Z",
+      "side": 1,
+      "message": "do you have evidence that you lack RAM or CPU?\nThis isn\u0027t python, and even then what\u0027s so CPU intensive that your app does? consider splitting CL of changing instance class to separate CL if you really think it should be done.",
+      "parentUuid": "0a4ce569_ce59f96c",
       "range": {
         "startLine": 10,
         "startChar": 3,
