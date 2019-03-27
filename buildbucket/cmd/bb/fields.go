@@ -27,7 +27,6 @@ import (
 
 type buildFieldFlags struct {
 	all              bool
-	tags             bool
 	inputProperties  bool
 	outputProperties bool
 	steps            bool
@@ -35,7 +34,6 @@ type buildFieldFlags struct {
 
 func (f *buildFieldFlags) Register(fs *flag.FlagSet) {
 	fs.BoolVar(&f.all, "A", false, "output build entirely")
-	fs.BoolVar(&f.tags, "tags", false, "output tags")
 	fs.BoolVar(&f.steps, "steps", false, "output steps")
 	fs.BoolVar(&f.inputProperties, "ip", false, "output input properties")
 	fs.BoolVar(&f.outputProperties, "op", false, "output output properties")
@@ -66,6 +64,7 @@ func (f *buildFieldFlags) FieldMask() *field_mask.FieldMask {
 			"start_time",
 			"status",
 			"status_details",
+			"tags",
 			"update_time",
 		},
 	}
@@ -80,10 +79,6 @@ func (f *buildFieldFlags) FieldMask() *field_mask.FieldMask {
 
 	if f.steps {
 		ret.Paths = append(ret.Paths, "steps")
-	}
-
-	if f.tags {
-		ret.Paths = append(ret.Paths, "tags")
 	}
 
 	return ret
