@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
@@ -190,67 +191,69 @@ var errMissingProperties = errors.New("missing required properties")
 func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSummary) error {
 	funcs := []struct {
 		Name string
-		CB   func() (buildbucketpb.BuildSet, error)
+		CB   func() (string, error)
 	}{
-		{"GitilesCommit", func() (buildbucketpb.BuildSet, error) {
+		{"GitilesCommit", func() (string, error) {
 			repoI, revI := b.PropertyValue("repository"), b.PropertyValue("revision")
 			repo, _ := repoI.(string)
 			rev, _ := revI.(string)
 			revBytes, _ := hex.DecodeString(rev)
 
 			if repo == "" || len(revBytes) != sha1.Size {
-				return nil, errMissingProperties
+				return "", errMissingProperties
 			}
 
 			u, err := url.Parse(repo)
 			if err != nil {
-				return nil, errors.Annotate(err, "bad url").Err()
+				return "", errors.Annotate(err, "bad url").Err()
 			}
 
 			if !strings.HasSuffix(u.Host, ".googlesource.com") {
-				return nil, errors.Reason("unknown host: %q", u.Host).Err()
+				return "", errors.Reason("unknown host: %q", u.Host).Err()
 			}
 
 			if strings.Contains(u.Path, "+") {
-				return nil, errors.Reason("path has '+': %q", u.Path).Err()
+				return "", errors.Reason("path has '+': %q", u.Path).Err()
 			}
 
-			return &buildbucketpb.GitilesCommit{
+			commit := &buildbucketpb.GitilesCommit{
 				Project: strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"), ".git"),
 				Host:    u.Host,
 				Id:      rev,
-			}, nil
+			}
+			return protoutil.GitilesBuildSet(commit), nil
 		}},
 
-		{"GerritChange", func() (buildbucketpb.BuildSet, error) {
+		{"GerritChange", func() (string, error) {
 			pgu, _ := b.PropertyValue("patch_gerrit_url").(string)
 			pi, _ := b.PropertyValue("patch_issue").(float64)
 			ps, _ := b.PropertyValue("patch_set").(float64)
 
 			if pgu == "" || pi == 0 || ps == 0 {
-				return nil, errMissingProperties
+				return "", errMissingProperties
 			}
 
 			u, err := url.Parse(pgu)
 			if err != nil {
-				return nil, errors.Annotate(err, "parsing url").Err()
+				return "", errors.Annotate(err, "parsing url").Err()
 			}
 
 			if !strings.HasSuffix(u.Host, ".googlesource.com") {
-				return nil, errors.Reason("unknown host: %q", u.Host).Err()
+				return "", errors.Reason("unknown host: %q", u.Host).Err()
 			}
 
-			return &buildbucketpb.GerritChange{
+			change := &buildbucketpb.GerritChange{
 				Host:     u.Host,
 				Change:   int64(pi),
 				Patchset: int64(ps),
-			}, nil
+			}
+			return protoutil.GerritBuildSet(change), nil
 		}},
 	}
 
 	for _, f := range funcs {
 		if bset, err := f.CB(); err == nil {
-			bs.BuildSet = append(bs.BuildSet, bset.BuildSetString())
+			bs.BuildSet = append(bs.BuildSet, bset)
 		} else if err != errMissingProperties {
 			logging.WithError(err).Warningf(c, "failed to apply %s", f.Name)
 		}
