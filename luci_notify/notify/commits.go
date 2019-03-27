@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -67,7 +68,7 @@ type Checkout map[string]string
 func NewCheckout(commits notifypb.GitilesCommits) Checkout {
 	results := make(Checkout, len(commits.GetCommits()))
 	for _, gitilesCommit := range commits.GetCommits() {
-		results[gitilesCommit.RepoURL()] = gitilesCommit.Id
+		results[protoutil.GitilesRepoURL(gitilesCommit)] = gitilesCommit.Id
 	}
 	return results
 }

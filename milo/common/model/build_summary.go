@@ -28,6 +28,7 @@ import (
 
 	bb "go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
@@ -244,7 +245,7 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 	}
 
 	for _, bsetRaw := range bs.BuildSet {
-		commit, ok := buildbucketpb.ParseBuildSet(bsetRaw).(*buildbucketpb.GitilesCommit)
+		commit, ok := protoutil.ParseBuildSet(bsetRaw).(*buildbucketpb.GitilesCommit)
 		if !ok {
 			continue
 		}
@@ -270,7 +271,7 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 				bs.AddManifestKey(con.ProjectID(), con.ID, "REVISION", "", revision)
 
 				bs.AddManifestKey(con.ProjectID(), con.ID, "BUILD_SET/GitilesCommit",
-					commit.RepoURL(), revision)
+					protoutil.GitilesCommitURL(commit), revision)
 			}
 		}
 	}
@@ -282,7 +283,7 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 // If no such BuildSet is found, this returns nil.
 func (bs *BuildSummary) GitilesCommit() *buildbucketpb.GitilesCommit {
 	for _, bset := range bs.BuildSet {
-		if gc, ok := buildbucketpb.ParseBuildSet(bset).(*buildbucketpb.GitilesCommit); ok {
+		if gc, ok := protoutil.ParseBuildSet(bset).(*buildbucketpb.GitilesCommit); ok {
 			return gc
 		}
 	}
@@ -327,7 +328,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", bs.BuilderID)
 	for i, commit := range commits[1:] { // skip the first commit... it's us!
 		curGC.Id = commit.Id
-		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.BuildSetString()), &builds); err != nil {
+		if err = datastore.GetAll(c, q.Eq("BuildSet", protoutil.GitilesBuildSet(curGC)), &builds); err != nil {
 			return
 		}
 		builds = filterBuilds(builds, InfraFailure, Expired, Cancelled)

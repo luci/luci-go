@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -41,7 +42,7 @@ type EmailTemplateInput struct {
 // errorBodyTemplate is used when a user-defined email template fails.
 var errorBodyTemplate = html.Must(html.New("error").Parse(strings.TrimSpace(`
 <p>A <a href="https://ci.chromium.org/b/{{.Build.Id}}">build</a>
-  on builder <code>{{ .Build.Builder.IDString }}</code>
+  on builder <code>{{ .Build.Builder.Project }}/{{ .Build.Builder.Bucket }}/{{ .Build.Builder.Builder }}</code>
   completed with status <code>{{.Build.Status}}</code>.</p>
 
 <p>This email is so spartan because the actual
@@ -56,7 +57,7 @@ has failed on this build:
 var defaultTemplate = config.EmailTemplate{
 	Name:                "default",
 	SubjectTextTemplate: `[Build Status] Builder "{{ .Build.Builder.IDString }}"`,
-	BodyHTMLTemplate: `luci-notify detected a status change for builder "{{ .Build.Builder.IDString }}"
+	BodyHTMLTemplate: `luci-notify detected a status change for builder "{{ .Build.Builder.Project }}/{{ .Build.Builder.Bucket }}/{{ .Build.Builder.Builder }}"
 at {{ .Build.EndTime | time }}.
 
 <table>
@@ -142,7 +143,7 @@ func (b *bundle) executeUserTemplate(templateName string, input *EmailTemplateIn
 // executeErrorTemplate generates a spartan email that contains information
 // about an error during execution of a user-defined template.
 func (b *bundle) executeErrorTemplate(templateName string, input *EmailTemplateInput, err error) (subject, body string) {
-	subject = fmt.Sprintf(`[Build Status] Builder %q`, input.Build.Builder.IDString())
+	subject = fmt.Sprintf(`[Build Status] Builder %q`, protoutil.FormatBuilderID(input.Build.Builder))
 
 	errorTemplateInput := map[string]interface{}{
 		"Build":        input.Build,
