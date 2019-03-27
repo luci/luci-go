@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "efcb7cd4_ee50d7bf",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-27T00:08:19Z",
+      "side": 1,
+      "message": "Yeah. https://crbug.com/765505.",
+      "parentUuid": "275c99a0_f57168ca",
+      "revId": "42f26cdeecd21592afa4e3731bc6c1d341b761f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "303d0bde_6bf14096",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2019-03-26T23:30:16Z",
       "side": 1,
       "message": "shouldn\u0027t you bump number of concurrent requests then? None of your requests use much RAM, should be safe.",
+      "range": {
+        "startLine": 10,
+        "startChar": 3,
+        "endLine": 10,
+        "endChar": 5
+      },
+      "revId": "42f26cdeecd21592afa4e3731bc6c1d341b761f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a4ce569_ce59f96c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-27T00:08:19Z",
+      "side": 1,
+      "message": "I\u0027m not sure. I don\u0027t see any other apps where we\u0027ve increased max_concurrent_requests, even if they\u0027re instance_class: F4. Isn\u0027t it going backwards? I increased CPU and RAM so maybe requests stop timing out. If I correspondingly increase concurrent requests then each request\u0027s slice of CPU decreases, tending back towards timeouts.",
+      "parentUuid": "303d0bde_6bf14096",
       "range": {
         "startLine": 10,
         "startChar": 3,
