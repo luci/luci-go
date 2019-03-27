@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9fb6e5ad_6eee773d",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-27T22:08:21Z",
+      "side": 1,
+      "message": "If a step name is really long, its status and time will be misaligned with respect to other steps:\n  Step first   SUCCESS   60.0ms\n  ...\n  Step second  SUCCESS   60.0ms\n  ...\n  Step very-long-name SUCCESS 60.0ms\n  ...\n\nUp to you if this matters.",
+      "revId": "85b962f8b9880ceb8d318760e31e2b1a99706475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
