@@ -42,6 +42,7 @@ type baseCommandRun struct {
 	parsedAuthOpts auth.Options
 	host           string
 	json           bool
+	noColor        bool
 }
 
 func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
@@ -55,6 +56,11 @@ func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
 		"json",
 		false,
 		"Print information in JSON format.")
+	r.Flags.BoolVar(
+		&r.noColor,
+		"nocolor",
+		false,
+		"Disable coloration.")
 	r.authFlags.Register(&r.Flags, defaultAuthOpts)
 }
 
