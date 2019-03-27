@@ -27,12 +27,13 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
+
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 type baseCommandRun struct {
@@ -40,6 +41,7 @@ type baseCommandRun struct {
 	authFlags      authcli.Flags
 	parsedAuthOpts auth.Options
 	host           string
+	json           bool
 }
 
 func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
@@ -48,6 +50,11 @@ func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
 		"host",
 		"cr-buildbucket.appspot.com",
 		"host for the buildbucket service instance.")
+	r.Flags.BoolVar(
+		&r.json,
+		"json",
+		false,
+		"Print information in JSON format.")
 	r.authFlags.Register(&r.Flags, defaultAuthOpts)
 }
 
