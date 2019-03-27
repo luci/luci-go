@@ -49,24 +49,23 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 		limit = tLimit
 	}
 
-	var buildersFromConfig, buildersFromSwarmbucket []string
+	var buildersFromGroup, buildersFromSwarmbucket []string
 	err := parallel.FanOutIn(func(ch chan<- func() error) {
-		// TODO(hinoka): This codepatch is mostly redundant with the swarmbucket codepath.
-		// Assuming the project's cr-buildbucket.cfg and luci-milo.cfg configs match,
-		// This would return the same data as the swarmbucket get_builders() call below.
-		// (In addition to buildbot builders defined in luci-milo.cfg)
-		// It makes more sense to not use data from luci-milo.cfg since cr-buildbucket.cfg
-		// is always more canonical.
-		// Remove this once buildbot is removed.
-		ch <- func() error {
-			builders, err := getBuildersForProject(c.Context, projectID, group)
+		// This grab builders from the project config, defined in luci-milo.cfg.
+		ch <- func() (err error) {
+			buildersFromGroup, err = getBuildersForProject(c.Context, projectID, group)
 			if err != nil {
 				return err
 			}
-			builders, err = filterAuthorizedBuilders(c.Context, builders)
+			buildersFromGroup, err = filterAuthorizedBuilders(c.Context, buildersFromGroup)
 			return err
 		}
-		// Also grab data from swarmbucket.
+		// TODO(hinoka): Support implicit groups mode by bucket.
+		if group != "" {
+			return
+		}
+		// This grab builders from swarmbucket, defined in cr-buildbucket.cfg.
+		// We do this when the user requests to see all builders in a project.
 		ch <- func() error {
 			// This call does it's own ACL checks.
 			builders, err := buildbucket.GetBuilders(c.Context)
@@ -93,7 +92,7 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 			return nil
 		}
 	})
-	builders := common.MergeStrings(buildersFromConfig, buildersFromSwarmbucket)
+	builders := common.MergeStrings(buildersFromGroup, buildersFromSwarmbucket)
 
 	if len(builders) == 0 {
 		return errors.New("No such project or group.", common.CodeNotFound)
