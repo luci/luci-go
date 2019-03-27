@@ -34,11 +34,11 @@ type buildFieldFlags struct {
 }
 
 func (f *buildFieldFlags) Register(fs *flag.FlagSet) {
-	fs.BoolVar(&f.all, "A", false, "output build entirely")
-	fs.BoolVar(&f.tags, "tags", false, "output tags")
-	fs.BoolVar(&f.steps, "steps", false, "output steps")
-	fs.BoolVar(&f.inputProperties, "ip", false, "output input properties")
-	fs.BoolVar(&f.outputProperties, "op", false, "output output properties")
+	fs.BoolVar(&f.all, "A", false, "Print build entirely")
+	fs.BoolVar(&f.tags, "tags", false, "Print tags")
+	fs.BoolVar(&f.steps, "steps", false, "Print steps")
+	fs.BoolVar(&f.inputProperties, "ip", false, "Print input properties")
+	fs.BoolVar(&f.outputProperties, "op", false, "Print output properties")
 }
 
 func (f *buildFieldFlags) FieldMask() *field_mask.FieldMask {

@@ -49,7 +49,7 @@ func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
 		&r.host,
 		"host",
 		"cr-buildbucket.appspot.com",
-		"host for the buildbucket service instance.")
+		"Host for the buildbucket service instance.")
 	r.Flags.BoolVar(
 		&r.json,
 		"json",
