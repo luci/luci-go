@@ -237,13 +237,20 @@ func (p *printer) buildTime(b *buildbucketpb.Build) {
 	started := localTimestamp(b.StartTime)
 	if !started.IsZero() {
 		p.f(", ")
+		p.keyword("waited")
+		p.f(" %s, ", started.Sub(created))
 		p.keyword("started")
 		p.f(" ")
 		p.time(started)
 	}
 
-	ended := localTimestamp(b.StartTime)
+	ended := localTimestamp(b.EndTime)
 	if !ended.IsZero() {
+		if !started.IsZero() {
+			p.f(", ")
+			p.keyword("ran")
+			p.f(" for %s", ended.Sub(started))
+		}
 		p.f(", ")
 		p.keyword("ended")
 		p.f(" ")
