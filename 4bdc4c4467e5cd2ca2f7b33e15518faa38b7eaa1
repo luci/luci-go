@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2fdee696_3a5ff2ce",
+        "filename": "buildbucket/cmd/bb/print_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-27T22:13:08Z",
+      "side": 1,
+      "message": "Worth adding separate \"Number:\" or \"Build number:\" line? There used to be builders with names like \"Mac Tester (1)\" and \"Mac Tester (2)\" so it may be misinterpreted as part of the builder name.",
+      "revId": "4bdc4c4467e5cd2ca2f7b33e15518faa38b7eaa1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
