@@ -29,10 +29,22 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/mgutz/ansi"
 
+	"go.chromium.org/luci/common/data/text/color"
 	"go.chromium.org/luci/common/data/text/indented"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+)
+
+var (
+	ansiWhiteUnderline = ansi.ColorCode("white+u")
+	ansiStatus         = map[buildbucketpb.Status]string{
+		buildbucketpb.Status_STARTED:       ansi.Yellow,
+		buildbucketpb.Status_SUCCESS:       ansi.Green,
+		buildbucketpb.Status_FAILURE:       ansi.Red,
+		buildbucketpb.Status_INFRA_FAILURE: ansi.Magenta,
+	}
 )
 
 // printer can print a buildbucket build to a io.Writer in a human-friendly
@@ -41,23 +53,32 @@ import (
 type printer struct {
 	tab    *tabwriter.Writer
 	indent indented.Writer
+	w      io.Writer
 }
 
-func newPrinter(w io.Writer) *printer {
+func newPrinter(w io.Writer, colored bool) *printer {
 	p := &printer{}
 	p.tab = tabwriter.NewWriter(w, 0, 1, 4, ' ', 0)
-	p.indent.Writer = p.tab
+	p.w = p.tab
+
+	if !colored {
+		// Put StripWriter after tabwriter.
+		// tabwriter does not like strip writer.
+		p.w = &color.StripWriter{Writer: p.w}
+	}
+
+	p.indent.Writer = p.w
 	p.indent.UseSpaces = true
 	return p
 }
 
-func newStdoutPrinter() *printer {
-	return newPrinter(os.Stdout)
+func newStdoutPrinter(colored bool) *printer {
+	return newPrinter(os.Stdout, colored)
 }
 
 // f prints a formatted message. Panics if writing fails.
 func (p *printer) f(format string, args ...interface{}) {
-	if _, err := fmt.Fprintf(&p.indent, format, args...); err != nil {
+	if _, err := fmt.Fprintf(p.w, format, args...); err != nil && err != io.ErrShortWrite {
 		panic(err)
 	}
 }
@@ -94,18 +115,22 @@ func (p *printer) JSONPB(pb proto.Message) {
 func (p *printer) Build(b *buildbucketpb.Build) {
 	defer p.tab.Flush()
 
-	p.f("ID: %d\n", b.Id)
+	p.header("ID")
+	p.f("%d\n", b.Id)
 
 	// Builder and build number.
-	p.f("Builder: %s/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
+	p.header("Builder")
+	p.f("%s/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
 	if b.Number != 0 {
 		p.f(" #%d", b.Number)
 	}
 	p.f("\n")
 
 	// Build status and summary.
-	p.f("Status: %s", b.Status)
+	p.header("Status")
+	p.status(b.Status)
 	if b.SummaryMarkdown != "" {
+		// TODO(nodir): color markdown.
 		p.f(" %s", b.SummaryMarkdown)
 	}
 	p.f("\n")
@@ -116,25 +141,28 @@ func (p *printer) Build(b *buildbucketpb.Build) {
 
 	// Commit, CLs and tags.
 	if c := b.Input.GetGitilesCommit(); c != nil {
-		p.f("Commit: ")
+		p.header("Commit")
 		p.commit(c)
+		p.f("\n")
 	}
 	for _, cl := range b.Input.GetGerritChanges() {
-		p.f("CL: ")
+		p.header("CL")
 		p.change(cl)
+		p.f("\n")
 	}
 	for _, t := range b.Tags {
-		p.f("Tag: %s:%s\n", t.Key, t.Value)
+		p.header("Tag")
+		p.f("%s:%s\n", t.Key, t.Value)
 	}
 
 	// Properties
 	if props := b.Input.GetProperties(); props != nil {
-		p.f("Input properties: ")
+		p.header("Input properties")
 		p.JSONPB(props)
 	}
 
 	if props := b.Output.GetProperties(); props != nil {
-		p.f("Output properties: ")
+		p.header("Output properties")
 		p.JSONPB(props)
 	}
 
@@ -150,21 +178,27 @@ func (p *printer) Build(b *buildbucketpb.Build) {
 // commit prints c.
 func (p *printer) commit(c *buildbucketpb.GitilesCommit) {
 	if c.Id == "" {
-		p.f("https://%s/%s/+/%s", c.Host, c.Project, c.Ref)
+		p.linkf("https://%s/%s/+/%s", c.Host, c.Project, c.Ref)
 		return
 	}
 
-	p.f("https://%s/%s/+/%s", c.Host, c.Project, c.Id)
+	p.linkf("https://%s/%s/+/%s", c.Host, c.Project, c.Id)
 	if c.Ref != "" {
 		p.f(" on %s", c.Ref)
 	}
-	p.f("\n")
+}
+
+// change prints cl.
+func (p *printer) change(cl *buildbucketpb.GerritChange) {
+	p.linkf("https://%s/c/%s/+/%d/%d", cl.Host, cl.Project, cl.Change, cl.Patchset)
 }
 
 // step prints s.
 func (p *printer) step(s *buildbucketpb.Step) {
-	p.fw(40, "Step %q", s.Name)
-	p.fw(10, "%s", s.Status)
+	p.keyword("Step")
+	p.fw(35, " %q", s.Name)
+	p.status(s.Status)
+	p.f("%s", strings.Repeat(" ", 10-len(s.Status.String())))
 
 	start, startErr := ptypes.Timestamp(s.StartTime)
 	end, endErr := ptypes.Timestamp(s.EndTime)
@@ -175,17 +209,20 @@ func (p *printer) step(s *buildbucketpb.Step) {
 
 	p.indent.Level += 2
 	if s.SummaryMarkdown != "" {
+		// TODO(nodir): color markdown.
+		// TODO(nodir): transform lists of links to look like logs
 		p.f("%s\n", s.SummaryMarkdown)
 	}
 	for _, l := range s.Logs {
-		p.f("* %s %s\n", l.Name, l.ViewUrl)
+		p.f("* %s\t", l.Name)
+		p.linkf("%s", l.ViewUrl)
+		p.f("\n")
 	}
 	p.indent.Level -= 2
 }
 
-// change prints cl.
-func (p *printer) change(cl *buildbucketpb.GerritChange) {
-	p.f("https://%s/c/%s/+/%d/%d\n", cl.Host, cl.Project, cl.Change, cl.Patchset)
+func (p *printer) status(s buildbucketpb.Status) {
+	p.f("%s%s%s", ansiStatus[s], s, ansi.Reset)
 }
 
 func (p *printer) buildTime(b *buildbucketpb.Build) {
@@ -193,18 +230,23 @@ func (p *printer) buildTime(b *buildbucketpb.Build) {
 	if created.IsZero() {
 		return
 	}
-	p.f("Created ")
+	p.keyword("Created")
+	p.f(" ")
 	p.dateTime(created)
 
 	started := localTimestamp(b.StartTime)
 	if !started.IsZero() {
-		p.f(", started ")
+		p.f(", ")
+		p.keyword("started")
+		p.f(" ")
 		p.time(started)
 	}
 
 	ended := localTimestamp(b.StartTime)
 	if !ended.IsZero() {
-		p.f(", ended ")
+		p.f(", ")
+		p.keyword("ended")
+		p.f(" ")
 		p.time(ended)
 	}
 }
@@ -229,6 +271,21 @@ func (p *printer) time(t time.Time) {
 	} else {
 		p.f("at %s", t.Format("15:04:05"))
 	}
+}
+
+func (p *printer) header(s string) {
+	p.keyword(s)
+	p.f(": ")
+}
+
+func (p *printer) keyword(s string) {
+	p.f("%s%s%s", ansi.Blue, s, ansi.Reset)
+}
+
+func (p *printer) linkf(format string, args ...interface{}) {
+	p.f("%s", ansiWhiteUnderline)
+	p.f(format, args...)
+	p.f("%s", ansi.Reset)
 }
 
 // localTimestamp converts ts to local time.Time.
