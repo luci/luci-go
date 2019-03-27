@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -53,11 +54,23 @@ func newStdoutPrinter() *printer {
 	return newPrinter(os.Stdout)
 }
 
-// f prints the formatted message. Panics if writing fails.
+// f prints a formatted message. Panics if writing fails.
 func (p *printer) f(format string, args ...interface{}) {
 	if _, err := fmt.Fprintf(&p.indent, format, args...); err != nil {
 		panic(err)
 	}
+}
+
+// fw prints a formatted message and spaces such that the printed
+// string takes at least minWidth.
+// Appends at least one space.
+func (p *printer) fw(minWidth int, format string, args ...interface{}) {
+	s := fmt.Sprintf(format, args...)
+	pad := minWidth - len(s)
+	if pad < 1 {
+		pad = 1
+	}
+	p.f("%s%s", s, strings.Repeat(" ", pad))
 }
 
 // JSONPB prints pb in JSON format, indented.
@@ -125,7 +138,10 @@ func (p *printer) Build(b *buildbucketpb.Build) {
 	}
 
 	// Steps
-	for _, s := range b.Steps {
+	for i, s := range b.Steps {
+		if i > 0 {
+			p.f("\n")
+		}
 		p.step(s)
 	}
 }
@@ -146,12 +162,13 @@ func (p *printer) commit(c *buildbucketpb.GitilesCommit) {
 
 // step prints s.
 func (p *printer) step(s *buildbucketpb.Step) {
-	p.f("Step %q\t%s", s.Name, s.Status)
+	p.fw(40, "Step %q", s.Name)
+	p.fw(10, "%s", s.Status)
 
 	start, startErr := ptypes.Timestamp(s.StartTime)
 	end, endErr := ptypes.Timestamp(s.EndTime)
 	if startErr == nil && endErr == nil {
-		p.f("\t%s", end.Sub(start))
+		p.f("%s", end.Sub(start))
 	}
 	p.f("\n")
 
