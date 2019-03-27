@@ -123,6 +123,30 @@
       "revId": "42f26cdeecd21592afa4e3731bc6c1d341b761f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4611328f_885d981e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-27T01:00:17Z",
+      "side": 1,
+      "message": "I don\u0027t have logging with critical level that says the app OOMed like I did for Python, if that\u0027s what you mean.\n\nStill, why are API calls timing out? I could see Swarming calls timing out since we control Swarming, but even GCE API calls are timing out, and that\u0027s an even more widely available platform. I\u0027d guess the problem is this end. Increasing the timeout doesn\u0027t really address the problem, it works around it. If anything, I\u0027d try F4 first and then try a 30s timeout.",
+      "parentUuid": "e3ed07f8_0e08dbc9",
+      "range": {
+        "startLine": 10,
+        "startChar": 3,
+        "endLine": 10,
+        "endChar": 5
+      },
+      "revId": "42f26cdeecd21592afa4e3731bc6c1d341b761f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
