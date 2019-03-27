@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/proto"
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -48,8 +48,8 @@ type Build struct {
 	// The type is *int to prevent accidental confusion
 	// of valid build number 0 with absence of the number (zero value).
 	Number *int
-	Tags   strpair.Map
-	Input  Input
+	Tags      strpair.Map
+	Input     Input
 
 	// fields that can change during build lifetime
 
