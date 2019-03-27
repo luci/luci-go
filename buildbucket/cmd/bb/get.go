@@ -15,17 +15,18 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
-
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `get [flags] <build id>`,
+		UsageLine: `get [flags] <build>`,
 		ShortDesc: "get details about a build",
 		LongDesc:  "Get details about a build.",
 		CommandRun: func() subcommands.CommandRun {
@@ -39,14 +40,21 @@ func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
 
 type getRun struct {
 	baseCommandRun
-	buildIDArg
 	buildFieldFlags
 }
 
 func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
-	if err := r.parseArgs(args); err != nil {
+	if len(args) < 1 {
+		return r.done(ctx, fmt.Errorf("missing an argument"))
+	}
+	if len(args) > 1 {
+		return r.done(ctx, fmt.Errorf("unexpected arguments: %s", args[1:]))
+	}
+
+	req, err := protoutil.ParseGetBuildRequest(args[0])
+	if err != nil {
 		return r.done(ctx, err)
 	}
 
@@ -55,10 +63,7 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	build, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
-		Id:     r.buildID,
-		Fields: r.FieldMask(),
-	})
+	build, err := client.GetBuild(ctx, req)
 	p := newStdoutPrinter()
 	switch {
 	case err != nil:
