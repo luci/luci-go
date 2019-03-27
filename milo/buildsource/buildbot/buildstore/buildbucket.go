@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -79,9 +80,10 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 		Steps: []buildbot.Step{},
 	}
 
-	for _, bs := range b.BuildSets {
-		if commit, ok := bs.(*buildbucketpb.GitilesCommit); ok {
-			res.Sourcestamp.Repository = commit.RepoURL()
+	for _, bs := range b.Tags[bbv1.TagBuildSet] {
+		commit, ok := protoutil.ParseBuildSet(bs).(*buildbucketpb.GitilesCommit)
+		if ok {
+			res.Sourcestamp.Repository = protoutil.GitilesCommitURL(commit)
 			res.Sourcestamp.Revision = commit.Id
 			break
 		}
