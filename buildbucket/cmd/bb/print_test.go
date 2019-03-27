@@ -33,6 +33,7 @@ var buildJSON = `
     "bucket": "try",
     "builder": "Luci-go Mac Tester"
   },
+  "number": 1,
   "createdBy": "user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com",
   "createTime": "2019-03-26T18:33:47.958975Z",
   "startTime": "2019-03-26T18:33:52.447816Z",
@@ -146,7 +147,7 @@ var buildJSON = `
 }`
 
 const expectedBuildPrinted = `ID: 8917899588926498064
-Builder: infra/try/Luci-go Mac Tester
+Builder: infra/try/Luci-go Mac Tester #1
 Status: SUCCESS it was ok
 Created on 2019-03-26 at 11:33:47, started at 11:33:52, ended at 11:33:52
 Commit: https://chromium.googlesource.com/infra/luci/luci-go/+/deadbeef on refs/heads/master

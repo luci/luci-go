@@ -99,7 +99,7 @@ func (p *printer) Build(b *buildbucketpb.Build) {
 	// Builder and build number.
 	p.f("Builder: %s/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
 	if b.Number != 0 {
-		p.f("# %d\n", b.Number)
+		p.f(" #%d", b.Number)
 	}
 	p.f("\n")
 
