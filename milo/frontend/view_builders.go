@@ -49,24 +49,18 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 		limit = tLimit
 	}
 
-	var buildersFromConfig, buildersFromSwarmbucket []string
+	var builders, buildersFromSwarmbucket []string
 	err := parallel.FanOutIn(func(ch chan<- func() error) {
-		// TODO(hinoka): This codepatch is mostly redundant with the swarmbucket codepath.
-		// Assuming the project's cr-buildbucket.cfg and luci-milo.cfg configs match,
-		// This would return the same data as the swarmbucket get_builders() call below.
-		// (In addition to buildbot builders defined in luci-milo.cfg)
-		// It makes more sense to not use data from luci-milo.cfg since cr-buildbucket.cfg
-		// is always more canonical.
-		// Remove this once buildbot is removed.
-		ch <- func() error {
-			builders, err := getBuildersForProject(c.Context, projectID, group)
+		// This grabs builders from the project config, defined in luci-milo.cfg.
+		ch <- func() (err error) {
+			builders, err = getBuildersForProject(c.Context, projectID, group)
 			if err != nil {
 				return err
 			}
 			builders, err = filterAuthorizedBuilders(c.Context, builders)
 			return err
 		}
-		// Also grab data from swarmbucket.
+		// This grabs builders from swarmbucket, defined in cr-buildbucket.cfg.
 		ch <- func() error {
 			// This call does it's own ACL checks.
 			builders, err := buildbucket.GetBuilders(c.Context)
@@ -77,6 +71,10 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 				// This uses v1 style bucket names, which are luci.project.bucket.
 				project, bucket := bb.BucketNameToV2(bBucket.Name)
 				if project != projectID {
+					continue
+				}
+				if group != "" && group != bucket {
+					// This is for a group query, meaning we want to check for implicit groups named after buckets.
 					continue
 				}
 				for _, builder := range bBucket.Builders {
@@ -93,7 +91,14 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 			return nil
 		}
 	})
-	builders := common.MergeStrings(buildersFromConfig, buildersFromSwarmbucket)
+	// If the project defines a builder group that is the same name as the bucket,
+	// prefer showing the project definition builder group _only_.
+	// Conversely, add in builders from swarmbucket if:
+	// 1. This is a project query, or
+	// 2. No builders were found in the config.
+	if group == "" || len(builders) == 0 {
+		builders = common.MergeStrings(builders, buildersFromSwarmbucket)
+	}
 
 	if len(builders) == 0 {
 		return errors.New("No such project or group.", common.CodeNotFound)
