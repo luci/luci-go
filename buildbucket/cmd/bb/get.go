@@ -59,7 +59,7 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 		Id:     r.buildID,
 		Fields: r.FieldMask(),
 	})
-	p := newStdoutPrinter()
+	p := newStdoutPrinter(!r.noColor)
 	switch {
 	case err != nil:
 		return r.done(ctx, err)
