@@ -19,7 +19,8 @@ import (
 	"strings"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/strpair"
@@ -88,7 +89,7 @@ func (r *RequestBuilder) FromGitilesTrigger(t *scheduler.GitilesTrigger) {
 		r.DebugLog("Bad repo URL %q in the trigger - %s", t.Repo, err)
 		return
 	}
-	commit := buildbucketpb.GitilesCommit{
+	commit := &buildbucketpb.GitilesCommit{
 		Host:    repo.Host,
 		Project: strings.TrimPrefix(repo.Path, "/"),
 		Id:      t.Revision,
@@ -100,7 +101,7 @@ func (r *RequestBuilder) FromGitilesTrigger(t *scheduler.GitilesTrigger) {
 		"repository": t.Repo,
 	})
 	r.Tags = []string{
-		strpair.Format(bbv1.TagBuildSet, commit.BuildSetString()),
+		strpair.Format(bbv1.TagBuildSet, protoutil.GitilesBuildSet(commit)),
 		// TODO(nodir): remove after switching to ScheduleBuild RPC v2.
 		strpair.Format(bbv1.TagBuildSet, "commit/git/"+commit.Id),
 		strpair.Format("gitiles_ref", t.Ref),
