@@ -80,35 +80,35 @@ var buildJSON = `
   },
   "steps": [
     {
-      "name": "step-1",
+      "name": "first",
       "startTime": "2019-03-26T18:34:01.896053Z",
       "endTime": "2019-03-26T18:34:01.954986Z",
       "status": "SUCCESS",
       "logs": [
         {
           "name": "stdout",
-          "viewUrl": "https://logs.example.com/step-1/stdout"
+          "viewUrl": "https://logs.example.com/first/stdout"
         },
         {
           "name": "stderr",
-          "viewUrl": "https://logs.example.com/step-1/stderr"
+          "viewUrl": "https://logs.example.com/first/stderr"
         }
       ],
-      "summaryMarkdown": "step-1 summary markdown\nsummary second line"
+      "summaryMarkdown": "first summary markdown\nsummary second line"
     },
     {
-      "name": "step-2",
+      "name": "second",
       "startTime": "2019-03-26T18:34:01.896053Z",
       "endTime": "2019-03-26T18:34:01.954986Z",
       "status": "SUCCESS",
       "logs": [
         {
           "name": "stdout",
-          "viewUrl": "https://logs.example.com/step-2/stdout"
+          "viewUrl": "https://logs.example.com/second/stdout"
         },
         {
           "name": "stderr",
-          "viewUrl": "https://logs.example.com/step-2/stderr"
+          "viewUrl": "https://logs.example.com/second/stderr"
         }
       ]
     }
@@ -174,14 +174,15 @@ Output properties: {
   },
   "bot_id": "build234-m9"
 }
-Step "step-1"    SUCCESS    58.933ms
-  step-1 summary markdown
+Step "first"                            SUCCESS   58.933ms
+  first summary markdown
   summary second line
-  * stdout https://logs.example.com/step-1/stdout
-  * stderr https://logs.example.com/step-1/stderr
-Step "step-2"    SUCCESS    58.933ms
-  * stdout https://logs.example.com/step-2/stdout
-  * stderr https://logs.example.com/step-2/stderr
+  * stdout https://logs.example.com/first/stdout
+  * stderr https://logs.example.com/first/stderr
+
+Step "second"                           SUCCESS   58.933ms
+  * stdout https://logs.example.com/second/stdout
+  * stderr https://logs.example.com/second/stderr
 `
 
 func TestPrint(t *testing.T) {
