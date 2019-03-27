@@ -48,11 +48,6 @@ type Build struct {
 	// The type is *int to prevent accidental confusion
 	// of valid build number 0 with absence of the number (zero value).
 	Number *int
-	// BuildSets is parsed "buildset" tag values.
-	//
-	// If a buildset is present in tags, but not recognized
-	// it won't be included here.
-	BuildSets []buildbucketpb.BuildSet
 	Tags      strpair.Map
 	Input     Input
 
@@ -218,13 +213,6 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 		outErr = errors.New(output.Error.Message)
 	}
 
-	var bs []buildbucketpb.BuildSet
-	for _, t := range tags[v1.TagBuildSet] {
-		if parsed := buildbucketpb.ParseBuildSet(t); parsed != nil {
-			bs = append(bs, parsed)
-		}
-	}
-
 	project := msg.Project
 	if project == "" {
 		// old builds do not have project attribute.
@@ -239,7 +227,6 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 		Bucket:       msg.Bucket,
 		Builder:      builder,
 		Number:       number,
-		BuildSets:    bs,
 		Tags:         tags,
 		Input: Input{
 			Properties: input.Properties,
@@ -270,10 +257,9 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 func (b *Build) PutRequest() (*v1.ApiPutRequestMessage, error) {
 	tags := b.Tags.Copy()
 	tags.Del(v1.TagBuilder) // buildbucket adds it automatically
-	for _, bs := range b.BuildSets {
-		s := bs.BuildSetString()
-		if !tags.Contains(v1.TagBuildSet, s) {
-			tags.Add(v1.TagBuildSet, s)
+	for _, bs := range b.Tags[v1.TagBuildSet] {
+		if !tags.Contains(v1.TagBuildSet, bs) {
+			tags.Add(v1.TagBuildSet, bs)
 		}
 	}
 

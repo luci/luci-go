@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucketpb
+// Package protoutil provides utility functions for protobuf messages
+// in ../proto package.
 
-import (
-	"fmt"
-)
-
-// IDString returns "{project}/{bucket}/{builder}" string.
-func (id *BuilderID) IDString() string {
-	return fmt.Sprintf("%s/%s/%s", id.Project, id.Bucket, id.Builder)
-}
+package protoutil

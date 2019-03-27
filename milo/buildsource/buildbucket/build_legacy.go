@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -199,9 +200,8 @@ func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*u
 			fmt.Sprintf("Swarming Bot %s", botID))
 	}
 
-	for _, bs := range b.BuildSets {
-		// ignore rietveld.
-		cl, ok := bs.(*buildbucketpb.GerritChange)
+	for _, bs := range b.Tags[bbv1.TagBuildSet] {
+		cl, ok := protoutil.ParseBuildSet(bs).(*buildbucketpb.GerritChange)
 		if !ok {
 			continue
 		}
