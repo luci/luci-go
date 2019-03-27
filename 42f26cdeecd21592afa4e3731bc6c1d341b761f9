@@ -147,6 +147,30 @@
       "revId": "42f26cdeecd21592afa4e3731bc6c1d341b761f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "704d4cc5_193234d6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-27T02:44:21Z",
+      "side": 1,
+      "message": "OK, proceed. It\u0027s worth trying.",
+      "parentUuid": "4611328f_885d981e",
+      "range": {
+        "startLine": 10,
+        "startChar": 3,
+        "endLine": 10,
+        "endChar": 5
+      },
+      "revId": "42f26cdeecd21592afa4e3731bc6c1d341b761f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
