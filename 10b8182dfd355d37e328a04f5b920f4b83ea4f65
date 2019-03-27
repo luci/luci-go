@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e4301e87_2914a889",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-27T10:12:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4dd161d7_4bb5cb7c",
+      "revId": "10b8182dfd355d37e328a04f5b920f4b83ea4f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a171ac05_34c53c38",
         "filename": "buildbucket/cmd/bb/print.go",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "319287f8_bf13bbe7",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-27T10:12:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a171ac05_34c53c38",
+      "revId": "10b8182dfd355d37e328a04f5b920f4b83ea4f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b7e52102_7a0bfae6",
         "filename": "buildbucket/cmd/bb/print.go",
         "patchSetId": 3
@@ -50,6 +86,24 @@
       "revId": "10b8182dfd355d37e328a04f5b920f4b83ea4f65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b564b58_2162159b",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-27T10:12:23Z",
+      "side": 1,
+      "message": "made it always work",
+      "parentUuid": "b7e52102_7a0bfae6",
+      "revId": "10b8182dfd355d37e328a04f5b920f4b83ea4f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
