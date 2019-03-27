@@ -52,6 +52,56 @@ enum Status {
   CANCELED = 68;  // 64 | ENDED
 }
 
+// An executable to run when the build is ready to start.
+//
+// The following describes the protocol between buildbucket and the executable.
+// The executable MUST NOT assume/rely on anything that is not explicitly
+// specified below.
+//
+// The executable will be started with the following input:
+// - empty current working directory (CWD).
+// - stdin: binary-encoded buildbucket.v2.Build message.
+// - $TMPDIR, $TEMP, $TMP: env variables point to an empty directory, on the
+//   same file system as CWD.
+// - $LOGDOG_COORDINATOR_HOST, $LOGDOG_STREAM_PROJECT, $LOGDOG_STREAM_PREFIX,
+//   $LOGDOG_NAMESPACE, $LOGDOG_STREAM_SERVER_PATH: env variables describing
+//   LogDog context, part of the LogDog Butler protocol.
+//   The executable MAY create logdog streams using these variables.
+// - LUCI_CONTEXT["run_build"]["cache_dir"]: a LUCI context value pointing to
+//   the root directory of Swarming named caches.
+//   MAY be on the same file system as CWD.
+//   For example, builder cache is available at "<cache_dir>/builder".
+//   See also CacheEntry.
+//
+// The executable MUST write "$LOGDOG_NAMESPACE/build.proto" stream using the
+// LogDog streamserver at $LOGDOG_STREAM_SERVER_PATH.
+// The stream MUST have a binary-encoded buildbucket.v2.Build message datagrams,
+// with content type "application/luci+proto; message=buildbucket.v2.Build".
+// Server-side build will be updated with the values from the latest message.
+//
+// A build step S without children in the datagram MAY have a Step.Log named
+// "$build.proto".
+// It MUST point to a LogDog datagram stream with binary-encoded
+// buildbucket.v2.Build messages and content type
+// "application/luci+proto; message=buildbucket.v2.Build".
+// The step tree from the second datagram will appear as substeps of step S.
+// This rule applies recursively, i.e. a leaf step in the datagram MAY also
+// have a "$build.proto" log.
+// The graph of datagram streams MUST be a tree, i.e. acyclic.
+//
+// All build step log urls of all Build messages MUST be relative to
+// $LOGDOG_STREAM_PREFIX (only stream name) and start with $LOGDOG_NAMESPACE.
+message Executable {
+  // The CIPD package containing the executable.
+  // On Linux/Mac, the executable MUST be named "run_build".
+  // On Windows, it MUST be named "run_build.exe" or "run_build.bat",
+  // in this order of precedence.
+  string cipd_package = 1;
+
+  // The CIPD version to fetch. Defaults to `latest`.
+  string cipd_version = 2;
+}
+
 // Machine-readable details of a status.
 // Human-readble details are present in a sibling summary_markdown field.
 message StatusDetails {
