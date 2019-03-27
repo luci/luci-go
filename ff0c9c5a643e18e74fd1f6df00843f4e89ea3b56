@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "202cdd08_fea9bf75",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-27T10:04:04Z",
+      "side": 1,
+      "message": "nit: name a bit inconsistent with buildersFromSwarmbucket,\nalso can be accidentally overwritten in L71\n\nconsider buildersFromGroup",
+      "range": {
+        "startLine": 52,
+        "startChar": 5,
+        "endLine": 52,
+        "endChar": 13
+      },
+      "revId": "ff0c9c5a643e18e74fd1f6df00843f4e89ea3b56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa12bb61_2ff4577d",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-27T10:04:04Z",
+      "side": 1,
+      "message": "nit: Grab builders from luci-milo.cfg",
+      "revId": "ff0c9c5a643e18e74fd1f6df00843f4e89ea3b56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bbecb27_a7ce154a",
+        "filename": "milo/frontend/view_builders.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-27T10:04:04Z",
+      "side": 1,
+      "message": "nit: Grab builders from cr-buildbucket.cfg",
+      "revId": "ff0c9c5a643e18e74fd1f6df00843f4e89ea3b56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
