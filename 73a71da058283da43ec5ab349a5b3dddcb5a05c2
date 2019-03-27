@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b72cf9fa_b728a738",
+        "filename": "buildbucket/cmd/bb/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-27T22:29:38Z",
+      "side": 1,
+      "message": "That makes it harder for scripts. Who is the intended audience for -json?",
+      "range": {
+        "startLine": 39,
+        "startChar": 40,
+        "endLine": 39,
+        "endChar": 53
+      },
+      "revId": "73a71da058283da43ec5ab349a5b3dddcb5a05c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
