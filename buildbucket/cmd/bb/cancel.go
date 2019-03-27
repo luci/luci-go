@@ -65,14 +65,13 @@ func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 
 	req := &buildbucketpb.BatchRequest{}
-	fields := r.FieldMask()
 	for _, id := range buildIDs {
 		req.Requests = append(req.Requests, &buildbucketpb.BatchRequest_Request{
 			Request: &buildbucketpb.BatchRequest_Request_CancelBuild{
 				CancelBuild: &buildbucketpb.CancelBuildRequest{
 					Id:              id,
 					SummaryMarkdown: r.summary,
-					Fields:          fields,
+					Fields:          r.FieldMask(),
 				},
 			},
 		})
