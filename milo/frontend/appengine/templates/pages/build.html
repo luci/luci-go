@@ -227,9 +227,9 @@
 {{define "related_tab"}}
   {{ $now := .Now }}
   <h2>Related Builds</h2>
-  {{ if .Buildsets }}
+  {{ if .BuildSets }}
     <h3>Other builds with the same buildsets:</h3>
-    {{ range .Buildsets }}
+    {{ range .BuildSets }}
       <li>{{ . }}</li>
     {{ end }}
 

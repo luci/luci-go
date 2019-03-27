@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucketpb
+package protoutil
 
 import (
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -27,16 +29,16 @@ func TestTimestamps(t *testing.T) {
 	t.Parallel()
 
 	Convey("Durations", t, func() {
-		build := &Build{
+		build := &buildbucketpb.Build{
 			CreateTime: &timestamp.Timestamp{Seconds: 1000},
 			StartTime:  &timestamp.Timestamp{Seconds: 1010},
 			EndTime:    &timestamp.Timestamp{Seconds: 1030},
 		}
-		dur, ok := build.SchedulingDuration()
+		dur, ok := SchedulingDuration(build)
 		So(ok, ShouldBeTrue)
 		So(dur, ShouldEqual, 10*time.Second)
 
-		dur, ok = build.RunDuration()
+		dur, ok = RunDuration(build)
 		So(ok, ShouldBeTrue)
 		So(dur, ShouldEqual, 20*time.Second)
 	})

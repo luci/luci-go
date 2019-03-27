@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucketpb
+package protoutil
 
 import (
 	"testing"
+
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -26,26 +28,26 @@ func TestBuildSet(t *testing.T) {
 	Convey("Gerrit", t, func() {
 		Convey("ParseBuildSet", func() {
 			actual := ParseBuildSet("patch/gerrit/chromium-review.googlesource.com/678507/3")
-			So(actual, ShouldResemble, &GerritChange{
+			So(actual, ShouldResemble, &buildbucketpb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   678507,
 				Patchset: 3,
 			})
 		})
 		Convey("BuildSet", func() {
-			bs := &GerritChange{
+			bs := GerritBuildSet(&buildbucketpb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   678507,
 				Patchset: 3,
-			}
-			So(bs.BuildSetString(), ShouldEqual, "patch/gerrit/chromium-review.googlesource.com/678507/3")
+			})
+			So(bs, ShouldEqual, "patch/gerrit/chromium-review.googlesource.com/678507/3")
 		})
 	})
 
 	Convey("Gitiles", t, func() {
 		Convey("ParseBuildSet", func() {
 			actual := ParseBuildSet("commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
-			So(actual, ShouldResemble, &GitilesCommit{
+			So(actual, ShouldResemble, &buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
@@ -65,12 +67,12 @@ func TestBuildSet(t *testing.T) {
 			So(bs, ShouldBeNil)
 		})
 		Convey("BuildSet", func() {
-			bs := &GitilesCommit{
+			bs := GitilesBuildSet(&buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
-			}
-			So(bs.BuildSetString(), ShouldEqual, "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
+			})
+			So(bs, ShouldEqual, "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
 		})
 	})
 }
