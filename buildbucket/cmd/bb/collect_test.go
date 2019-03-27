@@ -21,8 +21,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCollect(t *testing.T) {

@@ -15,12 +15,12 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
+
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -31,6 +31,7 @@ func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &getRun{}
 			r.SetDefaultFlags(defaultAuthOpts)
+			r.buildFieldFlags.Register(&r.Flags)
 			return r
 		},
 	}
@@ -39,6 +40,7 @@ func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
 type getRun struct {
 	baseCommandRun
 	buildIDArg
+	buildFieldFlags
 }
 
 func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -48,5 +50,23 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	return r.callAndDone(ctx, "GET", fmt.Sprintf("builds/%d", r.buildID), nil)
+	client, err := r.newClient(ctx)
+	if err != nil {
+		return r.done(ctx, err)
+	}
+
+	build, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
+		Id:     r.buildID,
+		Fields: r.FieldMask(),
+	})
+	p := newStdoutPrinter()
+	switch {
+	case err != nil:
+		return r.done(ctx, err)
+	case r.json:
+		p.JSONPB(build)
+	default:
+		p.Build(build)
+	}
+	return 0
 }
