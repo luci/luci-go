@@ -54,7 +54,6 @@ func cmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
 
 type collectRun struct {
 	baseCommandRun
-	repeatedBuildIDArg
 	intervalArg time.Duration
 	outputArg   string
 }
@@ -149,7 +148,9 @@ func writeBuildDetails(buildIDs []int64, buildDetails map[int64]*buildbucketpb.B
 
 func (r *collectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-	if err := r.parseArgs(args); err != nil {
+
+	buildIDs, err := parseBuildIDArgs(args)
+	if err != nil {
 		return r.done(ctx, err)
 	}
 
@@ -158,7 +159,7 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		return r.done(ctx, err)
 	}
 
-	buildDetails, err := collectBuildDetails(ctx, client, r.buildIDs, func() {
+	buildDetails, err := collectBuildDetails(ctx, client, buildIDs, func() {
 		fmt.Printf("Waiting %s before trying again...\n", r.intervalArg)
 		time.Sleep(r.intervalArg)
 	})
@@ -167,7 +168,7 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 
 	if r.outputArg != "" {
-		if err := writeBuildDetails(r.buildIDs, buildDetails, r.outputArg); err != nil {
+		if err := writeBuildDetails(buildIDs, buildDetails, r.outputArg); err != nil {
 			return r.done(ctx, err)
 		}
 	}
