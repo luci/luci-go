@@ -170,26 +170,48 @@ func (r *baseCommandRun) callAndDone(ctx context.Context, method, relURL string,
 	return 0
 }
 
-// buildIDArg can be embedded into a subcommand that accepts a build ID.
+// buildIDArg can be embedded into a subcommand that accepts a build ID
+// or a (builder_id, build_number).
 type buildIDArg struct {
 	buildID int64
+
+	builderID   *buildbucketpb.BuilderID
+	buildNumber int
 }
 
+// parseArgs parses a single argument as either an int64 build id or a builder
+// id with a build number.
 func (a *buildIDArg) parseArgs(args []string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("missing parameter: <Build ID>")
+		return fmt.Errorf("missing an argument")
 	}
 	if len(args) > 1 {
 		return fmt.Errorf("unexpected arguments: %s", args[1:])
 	}
 
 	id, err := strconv.ParseInt(args[0], 10, 64)
-	if err != nil {
-		return fmt.Errorf("expected a build id (int64), got %s: %s", args[0], err)
+	if err == nil {
+		a.buildID = id
+		return nil
 	}
 
-	a.buildID = id
-	return nil
+	parts := strings.Split(args[0], "/")
+	if len(parts) == 4 {
+		num, err := strconv.Atoi(parts[3])
+		if err == nil {
+			a.builderID = &buildbucketpb.BuilderID{
+				Project: parts[0],
+				Bucket:  parts[1],
+				Builder: parts[2],
+			}
+			a.buildNumber = num
+			return nil
+		}
+	}
+
+	return fmt.Errorf(
+		"argument build must be either an int64 build id or " +
+			"a string project/bucket/builder/build_number, e.g. chromium/ci/linux-rel/1")
 }
 
 type repeatedBuildIDArg struct {

@@ -25,7 +25,7 @@ import (
 
 func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `get [flags] <build id>`,
+		UsageLine: `get [flags] <build>`,
 		ShortDesc: "get details about a build",
 		LongDesc:  "Get details about a build.",
 		CommandRun: func() subcommands.CommandRun {
@@ -56,8 +56,10 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 	}
 
 	build, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
-		Id:     r.buildID,
-		Fields: r.FieldMask(),
+		Id:          r.buildID,
+		Builder:     r.builderID,
+		BuildNumber: int32(r.buildNumber),
+		Fields:      r.FieldMask(),
 	})
 	p := newStdoutPrinter(!r.noColor)
 	switch {
