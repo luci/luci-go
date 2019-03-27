@@ -29,6 +29,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -396,19 +398,15 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 }
 
 func addBuildsetInfo(build *ui.MiloBuildLegacy, tags strpair.Map) {
-	buildset := tags.Get("buildset")
-	cl := buildbucketpb.ParseBuildSet(buildset)
-	if cl == nil {
-		return
+	for _, bs := range tags[bbv1.TagBuildSet] {
+		if cl, ok := protoutil.ParseBuildSet(bs).(*buildbucketpb.GerritChange); ok {
+			if build.Trigger == nil {
+				build.Trigger = &ui.Trigger{}
+			}
+			build.Trigger.Changelist = ui.NewPatchLink(cl)
+			break
+		}
 	}
-	link := ui.NewPatchLink(cl)
-	if link == nil {
-		return
-	}
-	if build.Trigger == nil {
-		build.Trigger = &ui.Trigger{}
-	}
-	build.Trigger.Changelist = link
 }
 
 var regexRepoFromRecipeBundle = regexp.MustCompile(`/[^/]+\.googlesource\.com/.+$`)

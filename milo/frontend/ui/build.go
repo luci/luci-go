@@ -31,10 +31,12 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // Step encapsulates a buildbucketpb.Step, and also allows it to carry
@@ -154,6 +156,10 @@ func (bp *BuildPage) BuildbucketLink() *Link {
 		fmt.Sprintf("%d", bp.Id),
 		u.String(),
 		"Buildbucket RPC explorer for build")
+}
+
+func (bp *BuildPage) BuildSets() []string {
+	return protoutil.BuildSets(bp.Build.Build)
 }
 
 // Steps converts the flat Steps from the underlying Build into a tree.
@@ -579,19 +585,12 @@ func NewLink(label, url, ariaLabel string) *Link {
 	return &Link{Link: model.Link{Label: label, URL: url}, AriaLabel: ariaLabel}
 }
 
-// NewPatchLink is the right way (TM) to generate links to Rietveld/Gerrit CLs.
-//
-// Returns nil if provided buildset is not Rietveld or Gerrit CL.
-func NewPatchLink(cl buildbucketpb.BuildSet) *Link {
-	switch v := cl.(type) {
-	case *buildbucketpb.GerritChange:
-		return NewLink(
-			fmt.Sprintf("Gerrit CL %d (ps#%d)", v.Change, v.Patchset),
-			v.URL(),
-			fmt.Sprintf("gerrit changelist number %d patchset %d", v.Change, v.Patchset))
-	default:
-		return nil
-	}
+// NewPatchLink generates a URL to a Gerrit CL.
+func NewPatchLink(cl *buildbucketpb.GerritChange) *Link {
+	return NewLink(
+		fmt.Sprintf("Gerrit CL %d (ps#%d)", cl.Change, cl.Patchset),
+		protoutil.GerritChangeURL(cl),
+		fmt.Sprintf("gerrit changelist number %d patchset %d", cl.Change, cl.Patchset))
 }
 
 // NewEmptyLink creates a Link struct acting as a pure text label.

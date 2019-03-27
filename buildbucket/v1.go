@@ -25,6 +25,7 @@ import (
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/strpair"
@@ -205,7 +206,7 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) error {
 			// We've already parsed these tags.
 
 		case v1.TagBuildSet:
-			switch bs := buildbucketpb.ParseBuildSet(t.Value).(type) {
+			switch bs := protoutil.ParseBuildSet(t.Value).(type) {
 			case *buildbucketpb.GerritChange:
 				dest.Input.GerritChanges = append(dest.Input.GerritChanges, bs)
 			case *buildbucketpb.GitilesCommit:
