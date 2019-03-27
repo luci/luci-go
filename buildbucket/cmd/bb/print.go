@@ -52,13 +52,14 @@ var (
 // format.
 // Panics if writing fails.
 type printer struct {
+	nowFn  func() time.Time
 	tab    *tabwriter.Writer
 	indent indented.Writer
 	w      io.Writer
 }
 
 func newPrinter(w io.Writer, disableColor bool) *printer {
-	p := &printer{}
+	p := &printer{nowFn: time.Now}
 	p.tab = tabwriter.NewWriter(w, 0, 1, 4, ' ', 0)
 	p.w = p.tab
 
@@ -216,7 +217,11 @@ func (p *printer) step(s *buildbucketpb.Step) {
 }
 
 func (p *printer) buildTime(b *buildbucketpb.Build) {
-	created := localTimestamp(b.CreateTime)
+	now := p.nowFn()
+	created := readTimestamp(b.CreateTime).In(now.Location())
+	started := readTimestamp(b.StartTime).In(now.Location())
+	ended := readTimestamp(b.EndTime).In(now.Location())
+
 	if created.IsZero() {
 		return
 	}
@@ -224,16 +229,34 @@ func (p *printer) buildTime(b *buildbucketpb.Build) {
 	p.f(" ")
 	p.dateTime(created)
 
-	started := localTimestamp(b.StartTime)
+	if started.IsZero() && ended.IsZero() {
+		p.f(", ")
+		p.keyword("waiting")
+		p.f(" for %s, ", now.Sub(created))
+		return
+	}
+
 	if !started.IsZero() {
 		p.f(", ")
+		p.keyword("waited")
+		p.f(" %s, ", started.Sub(created))
 		p.keyword("started")
 		p.f(" ")
 		p.time(started)
 	}
 
-	ended := localTimestamp(b.StartTime)
-	if !ended.IsZero() {
+	if ended.IsZero() {
+		if !started.IsZero() {
+			p.f(", ")
+			p.keyword("running")
+			p.f(" for %s", now.Sub(started))
+		}
+	} else {
+		if !started.IsZero() {
+			p.f(", ")
+			p.keyword("ran")
+			p.f(" for %s", ended.Sub(started))
+		}
 		p.f(", ")
 		p.keyword("ended")
 		p.f(" ")
@@ -248,7 +271,7 @@ func (p *printer) dateTime(t time.Time) {
 }
 
 func (p *printer) date(t time.Time) {
-	if isToday(t) {
+	if p.isToday(t) {
 		p.f("today")
 	} else {
 		p.f("on %s", t.Format("2006-01-02"))
@@ -278,18 +301,19 @@ func (p *printer) linkf(format string, args ...interface{}) {
 	p.f("%s", ansi.Reset)
 }
 
-// localTimestamp converts ts to local time.Time.
+// readTimestamp converts ts to time.Time.
 // Returns zero if ts is invalid.
-func localTimestamp(ts *timestamp.Timestamp) time.Time {
+func readTimestamp(ts *timestamp.Timestamp) time.Time {
 	t, err := ptypes.Timestamp(ts)
 	if err != nil {
 		return time.Time{}
 	}
-	return t.Local()
+	return t
 }
 
-func isToday(t time.Time) bool {
-	tYear, tMonth, tDay := t.Local().Date()
-	nYear, nMonth, nDay := time.Now().Date()
+func (p *printer) isToday(t time.Time) bool {
+	now := p.nowFn()
+	nYear, nMonth, nDay := now.Date()
+	tYear, tMonth, tDay := t.In(now.Location()).Date()
 	return tYear == nYear && tMonth == nMonth && tDay == nDay
 }

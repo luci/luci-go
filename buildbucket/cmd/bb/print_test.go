@@ -152,7 +152,7 @@ var buildJSON = `
 const expectedBuildPrintedTemplate = `<yellow>Build 8917899588926498064<reset>
 <blue>Builder<reset>: infra/try/Luci-go Mac Tester #1
 <blue>Status<reset>: <green>SUCCESS<reset> it was ok
-<blue>Created<reset> on 2019-03-26 at 11:33:47, <blue>started<reset> at 11:33:52, <blue>ended<reset> at 11:33:52
+<blue>Created<reset> on 2019-03-26 at 11:33:47, <blue>waited<reset> 4.488841s, <blue>started<reset> at 11:33:52, <blue>ran<reset> for 3m21.444617s, <blue>ended<reset> at 11:37:13
 <blue>Commit<reset>: <white+u>https://chromium.googlesource.com/infra/luci/luci-go/+/deadbeef<reset> on refs/heads/master
 <blue>CL<reset>: <white+u>https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1<reset>
 <blue>Tag<reset>: buildset:patch/gerrit/chromium-review.googlesource.com/1539021/1
