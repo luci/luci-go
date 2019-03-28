@@ -16,6 +16,8 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"strconv"
 
 	"github.com/maruel/subcommands"
 
@@ -26,42 +28,48 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
+func cmdAdd(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `get [flags] <BUILD>`,
-		ShortDesc: "get details about a build",
-		LongDesc: `Get details about a build.
+		UsageLine: `add [flags] builder [builder...]`,
+		ShortDesc: "schedule builds",
+		LongDesc: `Schedule builds.
 
-Argument BUILD can be an int64 build id or a string
-<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
+Example:
+	# Add linux-rel and mac-rel builds to chromium/ci bucket
+	bb add infra/ci/{linux-rel,mac-rel}
 `,
 		CommandRun: func() subcommands.CommandRun {
-			r := &getRun{}
+			r := &addRun{}
 			r.SetDefaultFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
+			// TODO(crbug.com/946422): add -cl flag
+			// TODO(crbug.com/946422): add -commit flag
 			return r
 		},
 	}
 }
 
-type getRun struct {
+type addRun struct {
 	baseCommandRun
 	buildFieldFlags
 }
 
-func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
 	req := &buildbucketpb.BatchRequest{}
-	fields := r.FieldMask()
 	for _, a := range args {
-		getBuild, err := protoutil.ParseGetBuildRequest(a)
+		builder, err := protoutil.ParseBuilderID(a)
 		if err != nil {
-			return r.done(ctx, fmt.Errorf("invalid build %q: %s", a, err))
+			return r.done(ctx, fmt.Errorf("invalid builder %q: %s", a, err))
 		}
-		getBuild.Fields = fields
 		req.Requests = append(req.Requests, &buildbucketpb.BatchRequest_Request{
-			Request: &buildbucketpb.BatchRequest_Request_GetBuild{GetBuild: getBuild},
+			Request: &buildbucketpb.BatchRequest_Request_ScheduleBuild{
+				ScheduleBuild: &buildbucketpb.ScheduleBuildRequest{
+					RequestId: strconv.FormatInt(rand.Int63(), 10),
+					Builder:   builder,
+				},
+			},
 		})
 	}
 

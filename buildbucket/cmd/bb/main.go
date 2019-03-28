@@ -21,6 +21,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -42,11 +43,18 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 			return logCfg.Use(ctx)
 		},
 		Commands: []*subcommands.Command{
-			cmdPutBatch(defaultAuthOpts),
+			cmdAdd(defaultAuthOpts),
 			cmdGet(defaultAuthOpts),
 			cmdCancel(defaultAuthOpts),
 			cmdBatch(defaultAuthOpts),
 			cmdCollect(defaultAuthOpts),
+
+			{},
+			authcli.SubcommandLogin(defaultAuthOpts, "auth-login", false),
+			authcli.SubcommandLogout(defaultAuthOpts, "auth-logout", false),
+			authcli.SubcommandInfo(defaultAuthOpts, "auth-info", false),
+
+			{},
 			subcommands.CmdHelp,
 		},
 	}
