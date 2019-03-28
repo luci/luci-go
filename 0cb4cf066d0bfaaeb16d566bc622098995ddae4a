@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "108c6907_54e1343f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T00:10:42Z",
+      "side": 1,
+      "message": "should NOT",
+      "range": {
+        "startLine": 104,
+        "startChar": 51,
+        "endLine": 104,
+        "endChar": 52
+      },
+      "revId": "0cb4cf066d0bfaaeb16d566bc622098995ddae4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "baa8c118_3d3255d0",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/gitiles_poller.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T00:10:42Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 107,
+        "startChar": 72,
+        "endLine": 107,
+        "endChar": 78
+      },
+      "revId": "0cb4cf066d0bfaaeb16d566bc622098995ddae4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
