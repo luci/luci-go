@@ -16,12 +16,16 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -50,17 +54,17 @@ type getRun struct {
 func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
-	if len(args) < 1 {
-		return r.done(ctx, fmt.Errorf("missing an argument"))
-	}
-	if len(args) > 1 {
-		return r.done(ctx, fmt.Errorf("unexpected arguments: %s", args[1:]))
-	}
-
-	req, err := protoutil.ParseGetBuildRequest(args[0])
-	req.Fields = r.FieldMask()
-	if err != nil {
-		return r.done(ctx, err)
+	req := &buildbucketpb.BatchRequest{}
+	fields := r.FieldMask()
+	for _, a := range args {
+		getBuild, err := protoutil.ParseGetBuildRequest(a)
+		if err != nil {
+			return r.done(ctx, fmt.Errorf("invalid build %q: %s", a, err))
+		}
+		getBuild.Fields = fields
+		req.Requests = append(req.Requests, &buildbucketpb.BatchRequest_Request{
+			Request: &buildbucketpb.BatchRequest_Request_GetBuild{GetBuild: getBuild},
+		})
 	}
 
 	client, err := r.newClient(ctx)
@@ -68,15 +72,25 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	build, err := client.GetBuild(ctx, req)
+	res, err := client.Batch(ctx, req)
+
 	p := newStdoutPrinter()
-	switch {
-	case err != nil:
-		return r.done(ctx, err)
-	case r.json:
-		p.JSONPB(build)
-	default:
-		p.Build(build)
+	hasErr := false
+	for i, subres := range res.Responses {
+		error := subres.GetError()
+		build := subres.GetGetBuild()
+		switch {
+		case error != nil:
+			hasErr = true
+			fmt.Fprintf(os.Stderr, "Failed to get build %d: %s: %s\n", req.Requests[i].GetGetBuild().Id, codes.Code(error.Code), error.Message)
+		case r.json:
+			p.JSONPB(build)
+		default:
+			p.Build(build)
+		}
+	}
+	if hasErr {
+		return 1
 	}
 	return 0
 }
