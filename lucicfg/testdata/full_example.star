@@ -379,6 +379,15 @@ luci.cq_tryjob_verifier(
     cq_group = 'main-cq',
 )
 
+
+# Emitting arbitrary configs,
+
+lucicfg.emit(
+    dest = 'dir/custom.cfg',
+    data = 'hello!\n',
+)
+
+
 # Expect configs:
 #
 # === commit-queue.cfg
@@ -624,6 +633,10 @@ luci.cq_tryjob_verifier(
 #     >
 #   >
 # >
+# ===
+#
+# === dir/custom.cfg
+# hello!
 # ===
 #
 # === luci-logdog.cfg

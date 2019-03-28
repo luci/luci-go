@@ -184,6 +184,37 @@ by adding new values there or mutating/deleting existing ones.
 
 
 
+### lucicfg.emit {#lucicfg.emit}
+
+```python
+lucicfg.emit(dest, data)
+```
+
+
+
+Tells lucicfg to write given data to some output file.
+
+In particular useful in conjunction with [io.read_file(...)](#io.read_file) to copy files into
+the generated output:
+
+```python
+lucicfg.emit(
+    dest = 'tricium.cfg',
+    data = io.read_file('//tricium.cfg'),
+)
+```
+
+Note that [lucicfg.emit(...)](#lucicfg.emit) cannot be used to override generated files. `dest`
+must refer to a path not generated or emitted by anything else.
+
+#### Arguments {#lucicfg.emit-args}
+
+* **dest**: path to the output file, relative to the `config_dir`. Required.
+* **data**: either a string or a proto message to write to `dest`. Proto messages are serialized using text protobuf encoding. Required.
+
+
+
+
 ### lucicfg.var {#lucicfg.var}
 
 ```python
