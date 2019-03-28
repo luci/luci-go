@@ -411,6 +411,8 @@ def gen_scheduler_cfg(ctx):
         gitiles = scheduler_pb.GitilesTask(
             repo = poller.props.repo,
             refs = ['regexp:' + r for r in poller.props.refs],
+            path_regexps = poller.props.path_regexps,
+            path_regexps_exclude = poller.props.path_regexps_exclude,
         ),
     ))
   cfg.trigger = sorted(cfg.trigger, key=lambda x: x.id)

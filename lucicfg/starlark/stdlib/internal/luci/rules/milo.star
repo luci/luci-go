@@ -39,8 +39,8 @@ def _milo(
   (see luci.console_view(...)).
 
   Can optionally be configured with a reference to a [Monorail] project to use
-  for filing bugs via custom feedback links on build pages. The format of a new
-  bug is defined via `bug_summary` and `bug_description` fields which are
+  for filing bugs via custom bug links on build pages. The format of a new bug
+  is defined via `bug_summary` and `bug_description` fields which are
   interpreted as Golang [text templates]. They can either be given directly as
   strings, or loaded from external files via io.read_file(...).
 
@@ -55,8 +55,8 @@ def _milo(
       {{.MiloBuildUrl}}
       {{.MiloBuilderUrl}}
 
-  If any specified placeholder cannot be satisfied then no URL is rendered for
-  the build page feedback link.
+  If any specified placeholder cannot be satisfied then the bug link is not
+  displayed.
 
   [Monorail]: https://bugs.chromium.org
   [text templates]: https://golang.org/pkg/text/template
@@ -73,11 +73,11 @@ def _milo(
         `Infra>Client>ChromeOS>CI`. Required if `monorail_project` is set,
         otherwise must not be used.
     bug_summary: string with a text template for generating new bug's summary
-        given a builder on whose page a user clicked the feedback link. Must
-        not be used if `monorail_project` is unset.
+        given a builder on whose page a user clicked the bug link. Must not be
+        used if `monorail_project` is unset.
     bug_description: string with a text template for generating new bug's
-        description given a builder on whose page a user clicked the feedback
-        link. Must not be used if `monorail_project` is unset.
+        description given a builder on whose page a user clicked the bug link.
+        Must not be used if `monorail_project` is unset.
   """
   mon_proj = validate.string('monorail_project', monorail_project, required=False)
 
