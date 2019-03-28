@@ -300,10 +300,21 @@ luci.notifier(
     on_new_failure = True,
     notify_emails = ['someone@example,com'],
     notify_blamelist = True,
+    template = 'notifier-template',
     notified_by = [
         'linux ci builder',
         'cron builder',
     ],
+)
+
+luci.notifier_template(
+    name = 'notifier-template',
+    body = 'Hello\n\nHi\n',
+)
+
+luci.notifier_template(
+    name = 'another-template',
+    body = 'Boo!\n',
 )
 
 
@@ -726,6 +737,7 @@ lucicfg.emit(
 #     email: <
 #       recipients: "someone@example,com"
 #     >
+#     template: "notifier-template"
 #     notify_blamelist: <
 #     >
 #   >
@@ -741,6 +753,7 @@ lucicfg.emit(
 #     email: <
 #       recipients: "someone@example,com"
 #     >
+#     template: "notifier-template"
 #     notify_blamelist: <
 #     >
 #   >
@@ -756,6 +769,7 @@ lucicfg.emit(
 #     email: <
 #       recipients: "someone@example,com"
 #     >
+#     template: "notifier-template"
 #     notify_blamelist: <
 #     >
 #   >
@@ -765,6 +779,16 @@ lucicfg.emit(
 #     repository: "https://custom.example.com/repo"
 #   >
 # >
+# ===
+#
+# === luci-notify/email-templates/another-template.template
+# Boo!
+# ===
+#
+# === luci-notify/email-templates/notifier-template.template
+# Hello
+#
+# Hi
 # ===
 #
 # === luci-scheduler.cfg

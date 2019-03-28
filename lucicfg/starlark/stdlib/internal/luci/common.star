@@ -32,6 +32,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.project -> [luci.milo_view]
 #   luci.project -> [luci.cq_group]
 #   luci.project -> [luci.notifier]
+#   luci.project -> [luci.notifier_template]
 #   luci.bucket -> [luci.builder]
 #   luci.bucket -> [luci.gitiles_poller]
 #   luci.builder_ref -> luci.builder
@@ -53,6 +54,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.cq_tryjob_verifier -> luci.cq_equivalent_builder
 #   luci.cq_equivalent_builder -> luci.builder_ref
 #   luci.notifier -> [luci.builder_ref]
+#   luci.notifier -> luci.notifier_template
 
 
 def _global_key(kind, attr, ref):
@@ -110,6 +112,7 @@ kinds = struct(
     CQ_GROUP = 'luci.cq_group',
     CQ_TRYJOB_VERIFIER = 'luci.cq_tryjob_verifier',
     NOTIFIER = 'luci.notifier',
+    NOTIFIER_TEMPLATE = 'luci.notifier_template',
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = 'luci.builder_ref',
@@ -144,6 +147,7 @@ keys = struct(
     cq_group = lambda ref: _global_key(kinds.CQ_GROUP, 'cq_group', ref),
 
     notifier = lambda ref: _global_key(kinds.NOTIFIER, 'notifies', ref),
+    notifier_template = lambda ref: _global_key(kinds.NOTIFIER_TEMPLATE, 'template', ref),
 
     # Internal nodes (declared internally as dependency of other nodes).
     builder_ref = lambda ref, attr='triggers': _bucket_scoped_key(kinds.BUILDER_REF, attr, ref),
