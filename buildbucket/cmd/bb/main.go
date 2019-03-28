@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -62,6 +63,11 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 
 func main() {
 	mathrand.SeedRandomly()
-	app := GetApplication(chromeinfra.DefaultAuthOptions())
+	authOpts := chromeinfra.DefaultAuthOptions()
+	authOpts.Scopes = []string{
+		auth.OAuthScopeEmail,
+		gerrit.OAuthScope,
+	}
+	app := GetApplication(authOpts)
 	os.Exit(subcommands.Run(app, os.Args[1:]))
 }
