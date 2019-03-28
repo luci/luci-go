@@ -389,6 +389,14 @@ func (m *Build_Input) GetExperimental() bool {
 type Build_Output struct {
 	// Arbitrary JSON object produced by the build.
 	//
+	// In recipes, use step_result.presentation.properties to set these,
+	// for example
+	//
+	//   step_result = api.step(['echo'])
+	//   step_result.presentation.properties['foo'] = 'bar'
+	//
+	// More docs: https://chromium.googlesource.com/infra/luci/recipes-py/+/HEAD/doc/old_user_guide.md#Setting-properties
+	//
 	// V1 equivalent: corresponds to "properties" key in
 	// "result_details_json".
 	// In V1 output properties are not populated until build ends.
