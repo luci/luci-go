@@ -55,8 +55,6 @@ def _notifier(
   it, and in turn each notifier filters and forwards this event to corresponding
   recipients.
 
-  [Email Templates]: https://chromium.googlesource.com/infra/luci/luci-go/+/master/luci_notify/doc/email_templates.md
-
   Args:
     name: name of this notifier to reference it from other rules. Required.
 
@@ -79,8 +77,9 @@ def _notifier(
         `https://host/repo`) to restrict the blamelist calculation to. If empty
         (default), only the primary repository associated with the builder is
         considered, see `repo` field in luci.builder(...).
-    template: name of the template to use to format the notification email.
-        If not present, `default` is used. See [Email Templates].
+    template: a luci.notifier_template(...) to use to format notification
+        emails. If not specified, and a template named `default` is defined
+        in the project somewhere, it is used implicitly by the notifier.
 
     notified_by: builders to receive status notifications from. This relation
         can also be defined via `notifies` field in luci.builder(...).
@@ -105,8 +104,6 @@ def _notifier(
   if blamelist_repos_whitelist and not notify_blamelist:
     fail('blamelist_repos_whitelist requires notify_blamelist to be True')
 
-  template = validate.string('template', template, required=False)
-
   key = keys.notifier(name)
   graph.add_node(key, idempotent = True, props = {
       'name': name,
@@ -117,7 +114,6 @@ def _notifier(
       'notify_emails': notify_emails,
       'notify_blamelist': notify_blamelist,
       'blamelist_repos_whitelist': blamelist_repos_whitelist,
-      'template': template,
   })
   graph.add_edge(keys.project(), key)
 
@@ -127,6 +123,9 @@ def _notifier(
         child = keys.builder_ref(b, attr='notified_by'),
         title = 'notified_by',
     )
+
+  if template != None:
+    graph.add_edge(key, keys.notifier_template(template))
 
   return graph.keyset(key)
 
