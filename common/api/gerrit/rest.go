@@ -98,12 +98,17 @@ type changeInfo struct {
 	Branch   string                `json:"branch"`
 	ChangeID string                `json:"change_id"`
 	// json.Unmarshal cannot convert enum string to value
-	Status          string `json:"status"`
-	CurrentRevision string `json:"current_revision"`
+	Status          string                   `json:"status"`
+	CurrentRevision string                   `json:"current_revision"`
+	Revisions       map[string]*revisionInfo `json:"revisions"`
+}
+
+type revisionInfo struct {
+	Number int `json:"_number"`
 }
 
 func toGerritChangeInfo(ci *changeInfo) *gerritpb.ChangeInfo {
-	return &gerritpb.ChangeInfo{
+	ret := &gerritpb.ChangeInfo{
 		Number:          ci.Number,
 		Owner:           ci.Owner,
 		Project:         ci.Project,
@@ -111,6 +116,13 @@ func toGerritChangeInfo(ci *changeInfo) *gerritpb.ChangeInfo {
 		Status:          gerritpb.ChangeInfo_Status(gerritpb.ChangeInfo_Status_value[ci.Status]),
 		CurrentRevision: ci.CurrentRevision,
 	}
+	if ci.Revisions != nil {
+		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))
+		for rev, info := range ci.Revisions {
+			ret.Revisions[rev] = &gerritpb.RevisionInfo{Number: int32(info.Number)}
+		}
+	}
+	return ret
 }
 
 func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
