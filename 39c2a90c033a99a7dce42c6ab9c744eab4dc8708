@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f2b7802c_0c349d74",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-28T23:58:15Z",
+      "side": 1,
+      "message": "(For followup)\n\nConsider printing the available step names if \u003cBUILD\u003e is given but \u003cSTEP\u003e is not\n\nThat way, an easy flow would be\n\n$ bb log 12345\nusage: bb log \u003cBUILD\u003e \u003cSTEP\u003e [LOG...]\nAvailable Steps:\nsetup_build\nbot_update\n....\n\n$ bb log 12345 setup_build\n...",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "141ab855_4f7d692c",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-28T23:58:15Z",
+      "side": 1,
+      "message": "consider printing available logs",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "551ef241_4f6c5394",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-28T23:58:15Z",
+      "side": 1,
+      "message": "consider printing available steps",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c74f40e2_3a1ce0b9",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-28T23:58:15Z",
+      "side": 1,
+      "message": "I\u0027ve noticed a condition (likely race condition in the butler) where timeoffsets for some streams aren\u0027t always populated for the first log chunk.\n(root cause of https://bugs.chromium.org/p/chromium/issues/detail?id\u003d908436)\nThis means in some very rare conditions, if timestamp is used for ordering, the ordering of the lines in the first chunk between streams may be unstable.\n\nTo mitigate this, the PrefixIndex can be used for ordering instead.",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4260d964_5f1e2ced",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-28T23:58:15Z",
+      "side": 1,
+      "message": "nit: maybe call this \"print\" or \"output\"",
+      "range": {
+        "startLine": 266,
+        "startChar": 36,
+        "endLine": 266,
+        "endChar": 37
+      },
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
