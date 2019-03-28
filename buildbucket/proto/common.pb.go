@@ -126,7 +126,7 @@ func (Trinary) EnumDescriptor() ([]byte, []int) {
 // - $TMPDIR, $TEMP, $TMP: env variables point to an empty directory, on the
 //   same file system as CWD.
 // - $LOGDOG_COORDINATOR_HOST, $LOGDOG_STREAM_PROJECT, $LOGDOG_STREAM_PREFIX,
-//   $LOGDOG_NAMESPACE, $LOGDOG_STREAM_SERVER_PATH: env variables descripbing
+//   $LOGDOG_NAMESPACE, $LOGDOG_STREAM_SERVER_PATH: env variables describing
 //   LogDog context, part of the LogDog Butler protocol.
 //   The executable MAY create logdog streams using these variables.
 // - LUCI_CONTEXT["run_build"]["cache_dir"]: a LUCI context value pointing to
@@ -149,9 +149,9 @@ func (Trinary) EnumDescriptor() ([]byte, []int) {
 // The step tree from the second datagram will appear as substeps of step S.
 // This rule applies recursively, i.e. a leaf step in the datagram MAY also
 // have a "$build.proto" log.
-// The graph of datagram streams must be a tree, i.e. acyclic.
+// The graph of datagram streams MUST be a tree, i.e. acyclic.
 //
-// All build step log urls of all Build messages must be relative to
+// All build step log urls of all Build messages MUST be relative to
 // $LOGDOG_STREAM_PREFIX (only stream name) and start with $LOGDOG_NAMESPACE.
 type Executable struct {
 	// The CIPD package containing the executable.
