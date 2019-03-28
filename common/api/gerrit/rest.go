@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -219,20 +220,24 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 }
 
 // call executes a request to Gerrit REST API with JSON input/output.
+// If data is nil, request will be made without a body.
 //
 // call returns HTTP status code and gRPC error.
 // If error happens before HTTP status code was determined, HTTP status code
 // will be -1.
 func (c *client) call(ctx context.Context, method, urlPath string, params url.Values, data, dest interface{}, expectedHTTPCodes ...int) (int, error) {
-	rawData, err := json.Marshal(data)
-	if err != nil {
-		return -1, status.Errorf(codes.Internal, "failed to serialize request message: %s", err)
-	}
-
 	headers := make(map[string]string)
-	if len(rawData) > 0 {
+
+	var rawData []byte
+	if data != nil {
+		var err error
+		rawData, err = json.Marshal(data)
+		if err != nil {
+			return -1, status.Errorf(codes.Internal, "failed to serialize request message: %s", err)
+		}
 		headers["Content-Type"] = contentTypeJSON
 	}
+
 	ret, body, err := c.callRaw(ctx, method, urlPath, params, headers, rawData, expectedHTTPCodes...)
 	body = bytes.TrimPrefix(body, jsonPrefix)
 	if err == nil {
@@ -254,7 +259,11 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 		url += "?" + params.Encode()
 	}
 
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
+	var requestBody io.Reader
+	if data != nil {
+		requestBody = bytes.NewBuffer(data)
+	}
+	req, err := http.NewRequest(method, url, requestBody)
 	if err != nil {
 		return 0, []byte{}, status.Errorf(codes.Internal, "failed to create an HTTP request: %s", err)
 	}
