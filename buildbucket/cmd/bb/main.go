@@ -42,7 +42,7 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 			return logCfg.Use(ctx)
 		},
 		Commands: []*subcommands.Command{
-			cmdPutBatch(defaultAuthOpts),
+			cmdPut(defaultAuthOpts),
 			cmdGet(defaultAuthOpts),
 			cmdCancel(defaultAuthOpts),
 			cmdBatch(defaultAuthOpts),

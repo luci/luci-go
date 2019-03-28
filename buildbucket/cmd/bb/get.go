@@ -16,10 +16,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/maruel/subcommands"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -67,30 +65,5 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 		})
 	}
 
-	client, err := r.newClient(ctx)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	res, err := client.Batch(ctx, req)
-
-	p := newStdoutPrinter()
-	hasErr := false
-	for i, subres := range res.Responses {
-		error := subres.GetError()
-		build := subres.GetGetBuild()
-		switch {
-		case error != nil:
-			hasErr = true
-			fmt.Fprintf(os.Stderr, "Failed to get build %d: %s: %s\n", req.Requests[i].GetGetBuild().Id, codes.Code(error.Code), error.Message)
-		case r.json:
-			p.JSONPB(build)
-		default:
-			p.Build(build)
-		}
-	}
-	if hasErr {
-		return 1
-	}
-	return 0
+	return r.batchAndDone(ctx, req)
 }
