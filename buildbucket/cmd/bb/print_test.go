@@ -19,11 +19,13 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/mgutz/ansi"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -151,7 +153,7 @@ var buildJSON = `
 
 const expectedBuildPrintedTemplate = `<green>Build 8917899588926498064 SUCCESS   'chromium/try/linux-rel/1'<reset>
 <white+b>Summary<reset>: it was ok
-<white+b>Created<reset> on 2019-03-26 at 11:33:47, <white+b>started<reset> at 11:33:52, <white+b>ended<reset> at 11:33:52
+<white+b>Created<reset> on 2019-03-26 at 18:33:47, <white+b>waited<reset> 4.488841s, <white+b>started<reset> at 18:33:52, <white+b>ran<reset> for 3m21.444617s, <white+b>ended<reset> at 18:37:13
 <white+b>Commit<reset>: <white+u>https://chromium.googlesource.com/infra/luci/luci-go/+/deadbeef<reset> on refs/heads/master
 <white+b>CL<reset>: <white+u>https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1<reset>
 <white+b>Tag<reset>: buildset:patch/gerrit/chromium-review.googlesource.com/1539021/1
@@ -190,7 +192,9 @@ const expectedBuildPrintedTemplate = `<green>Build 8917899588926498064 SUCCESS  
 func TestPrint(t *testing.T) {
 	Convey("Print", t, func() {
 		buf := &bytes.Buffer{}
-		p := newPrinter(buf, false)
+		p := newPrinter(buf, false, func() time.Time {
+			return testclock.TestRecentTimeUTC
+		})
 
 		Convey("Build", func() {
 			build := &buildbucketpb.Build{}
