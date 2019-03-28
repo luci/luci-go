@@ -52,6 +52,24 @@
       "revId": "25eee3f97bd98fef3b00e60f9a21afa9d7e52ea8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b92195b4_831c36dc",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-28T23:25:50Z",
+      "side": 1,
+      "message": "That was the confusing part, I didn\u0027t know that p.indent.Writer didn\u0027t have Flush without a type assertion. IMO document that as the reason for having printer.tab.\n\nThe only reason I suggested printer.flush() is to call p.indent.Writer.Flush(), but if that\u0027s impossible and printer.flush() just calls p.tab.Flush() I don\u0027t mind if you go back to inlining p.tab.Flush(), up to you.",
+      "parentUuid": "c4e4dee1_fc685dbd",
+      "revId": "25eee3f97bd98fef3b00e60f9a21afa9d7e52ea8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

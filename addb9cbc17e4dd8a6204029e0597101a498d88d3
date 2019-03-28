@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b174d338_acafe051",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-28T23:25:50Z",
+      "side": 1,
+      "message": "Do you need this if you have !isatty.IsTerminal? What\u0027s the use case for being on a terminal but disabling color? Just user preference?",
+      "revId": "addb9cbc17e4dd8a6204029e0597101a498d88d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e560f57_ce1e8915",
+        "filename": "common/data/text/color/strip_test.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-28T23:25:50Z",
+      "side": 1,
+      "message": "I think you could actually test this with something like:\nb :\u003d \u0026bytes.Buffer{}\ns :\u003d \u0026StripWriter{Writer: b}\nfmt.Fprintf(s, ...)\nSo(b.String(), ShouldEqual, \"before inside after\")",
+      "revId": "addb9cbc17e4dd8a6204029e0597101a498d88d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
