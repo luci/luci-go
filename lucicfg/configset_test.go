@@ -106,13 +106,13 @@ func TestConfigSet(t *testing.T) {
 
 			Convey("No untracked", func() {
 				cs := generated()
-				So(cs.DiscardChangesToUntracked(ctx, []string{"*"}, "-"), ShouldBeNil)
+				So(cs.DiscardChangesToUntracked(ctx, []string{"**/*"}, "-"), ShouldBeNil)
 				So(cs, ShouldResemble, generated())
 			})
 
 			Convey("Untracked files are restored from disk", func() {
 				cs := generated()
-				So(cs.DiscardChangesToUntracked(ctx, []string{"!b.cfg"}, tmp), ShouldBeNil)
+				So(cs.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, tmp), ShouldBeNil)
 				So(cs, ShouldResemble, ConfigSet{
 					"a.cfg":        generated()["a.cfg"],
 					"subdir/b.cfg": original["subdir/b.cfg"],
@@ -121,7 +121,7 @@ func TestConfigSet(t *testing.T) {
 
 			Convey("Untracked files are discarded when dumping to stdout", func() {
 				cs := generated()
-				So(cs.DiscardChangesToUntracked(ctx, []string{"!b.cfg"}, "-"), ShouldBeNil)
+				So(cs.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, "-"), ShouldBeNil)
 				So(cs, ShouldResemble, ConfigSet{
 					"a.cfg": generated()["a.cfg"],
 				})

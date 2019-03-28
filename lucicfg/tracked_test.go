@@ -49,13 +49,13 @@ func TestFindTrackedFiles(t *testing.T) {
 		}
 
 		Convey("Works", func() {
-			files, err := FindTrackedFiles(tmp, []string{"*.cfg", "!*-dev.cfg"})
+			files, err := FindTrackedFiles(tmp, []string{"*.cfg", "sub/*", "!**/*-dev.cfg"})
 			So(err, ShouldBeNil)
 			So(files, ShouldResemble, []string{"a.cfg", "sub/a.cfg"})
 		})
 
 		Convey("No negative", func() {
-			files, err := FindTrackedFiles(tmp, []string{"*.cfg"})
+			files, err := FindTrackedFiles(tmp, []string{"**/*.cfg"})
 			So(err, ShouldBeNil)
 			So(files, ShouldResemble, []string{
 				"a-dev.cfg",
@@ -66,13 +66,13 @@ func TestFindTrackedFiles(t *testing.T) {
 		})
 
 		Convey("No positive", func() {
-			files, err := FindTrackedFiles(tmp, []string{"!*.cfg"})
+			files, err := FindTrackedFiles(tmp, []string{"!**/*.cfg"})
 			So(err, ShouldBeNil)
 			So(files, ShouldHaveLength, 0)
 		})
 
-		Convey("Implied *", func() {
-			files, err := FindTrackedFiles(tmp, []string{"!*-dev.cfg"})
+		Convey("Implied **/*", func() {
+			files, err := FindTrackedFiles(tmp, []string{"!**/*-dev.cfg"})
 			So(err, ShouldBeNil)
 			So(files, ShouldResemble, []string{
 				"a.cfg",
