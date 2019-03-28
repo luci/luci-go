@@ -46,6 +46,7 @@ type baseCommandRun struct {
 	parsedAuthOpts auth.Options
 	host           string
 	json           bool
+	noColor        bool
 }
 
 func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
@@ -59,6 +60,11 @@ func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
 		"json",
 		false,
 		"Print information in JSON format.")
+	r.Flags.BoolVar(
+		&r.noColor,
+		"nocolor",
+		false,
+		"Disable coloration.")
 	r.authFlags.Register(&r.Flags, defaultAuthOpts)
 }
 
@@ -146,7 +152,7 @@ func (r *baseCommandRun) batchAndDone(ctx context.Context, req *buildbucketpb.Ba
 	}
 
 	hasErr := false
-	p := newStdoutPrinter()
+	p := newStdoutPrinter(r.noColor)
 	for i, res := range res.Responses {
 		var build *buildbucketpb.Build
 		switch res := res.Response.(type) {
