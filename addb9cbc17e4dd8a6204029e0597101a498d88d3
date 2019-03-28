@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4da59e8f_b2918f5c",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-28T23:47:09Z",
+      "side": 1,
+      "message": "yes, i think a user should have a choice of opting out of coloring in terminal",
+      "parentUuid": "b174d338_acafe051",
+      "revId": "addb9cbc17e4dd8a6204029e0597101a498d88d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e560f57_ce1e8915",
         "filename": "common/data/text/color/strip_test.go",
         "patchSetId": 19
@@ -30,6 +48,24 @@
       "writtenOn": "2019-03-28T23:25:50Z",
       "side": 1,
       "message": "I think you could actually test this with something like:\nb :\u003d \u0026bytes.Buffer{}\ns :\u003d \u0026StripWriter{Writer: b}\nfmt.Fprintf(s, ...)\nSo(b.String(), ShouldEqual, \"before inside after\")",
+      "revId": "addb9cbc17e4dd8a6204029e0597101a498d88d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e41c0627_51aa4c9c",
+        "filename": "common/data/text/color/strip_test.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-28T23:47:09Z",
+      "side": 1,
+      "message": "yes. But isn\u0027t this better? It is an example AND it is tested https://blog.golang.org/examples\n\n$ go test -v\n\u003d\u003d\u003d RUN   ExampleStripWriter\n--- PASS: ExampleStripWriter (0.00s)\nPASS\nok      go.chromium.org/luci/common/data/text/color     0.019s",
+      "parentUuid": "9e560f57_ce1e8915",
       "revId": "addb9cbc17e4dd8a6204029e0597101a498d88d3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
