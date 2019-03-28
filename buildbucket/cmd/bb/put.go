@@ -19,11 +19,13 @@ import (
 	"math/rand"
 	"strconv"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/flag"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -43,7 +45,7 @@ Creates linux-rel and mac-rel builds in chromium/try bucket.
 			r := &putRun{}
 			r.SetDefaultFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
-			// TODO(crbug.com/946422): add -cl flag
+			r.Flags.Var(flag.StringSlice(&r.cls), "cl", "CL input for the builds. Can be specified multiple times.")
 			// TODO(crbug.com/946422): add -commit flag
 			return r
 		},
@@ -53,24 +55,35 @@ Creates linux-rel and mac-rel builds in chromium/try bucket.
 type putRun struct {
 	baseCommandRun
 	buildFieldFlags
+	cls []string
 }
 
 func (r *putRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
+	baseReq := &buildbucketpb.ScheduleBuildRequest{
+		RequestId: strconv.FormatInt(rand.Int63(), 10),
+	}
+	for _, cl := range r.cls {
+		change, err := r.retrieveCL(ctx, cl)
+		if err != nil {
+			return r.done(ctx, fmt.Errorf("parsing CL %q: %s", cl, err))
+		}
+		baseReq.GerritChanges = append(baseReq.GerritChanges, change)
+	}
+
 	req := &buildbucketpb.BatchRequest{}
-	for _, a := range args {
-		builder, err := protoutil.ParseBuilderID(a)
+	for i, a := range args {
+		schedReq := proto.Clone(baseReq).(*buildbucketpb.ScheduleBuildRequest)
+		schedReq.RequestId += fmt.Sprintf("-%d", i)
+
+		var err error
+		schedReq.Builder, err = protoutil.ParseBuilderID(a)
 		if err != nil {
 			return r.done(ctx, fmt.Errorf("invalid builder %q: %s", a, err))
 		}
 		req.Requests = append(req.Requests, &buildbucketpb.BatchRequest_Request{
-			Request: &buildbucketpb.BatchRequest_Request_ScheduleBuild{
-				ScheduleBuild: &buildbucketpb.ScheduleBuildRequest{
-					RequestId: strconv.FormatInt(rand.Int63(), 10),
-					Builder:   builder,
-				},
-			},
+			Request: &buildbucketpb.BatchRequest_Request_ScheduleBuild{ScheduleBuild: schedReq},
 		})
 	}
 
