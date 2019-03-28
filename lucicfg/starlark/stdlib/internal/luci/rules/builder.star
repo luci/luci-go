@@ -227,6 +227,9 @@ def _builder(
     elif prop_val == None:
       props[k] = def_val
 
+  # There should be no dimensions with value None after merging.
+  swarming.validate_dimensions('dimensions', props['dimensions'], allow_none=False)
+
   # Add a node that carries the full definition of the builder.
   builder_key = keys.builder(bucket_key.id, name)
   graph.add_node(builder_key, props = props)

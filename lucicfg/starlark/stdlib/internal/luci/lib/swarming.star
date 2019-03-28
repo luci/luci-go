@@ -223,6 +223,8 @@ def _validate_dimensions(attr, dimensions, allow_none=False):
 
 def _as_dim(key, val):
   """string|swarming.dimension -> swarming.dimension."""
+  if val == None:
+    fail('bad dimension %r: None value is not allowed' % key)
   if type(val) == 'string':
     return _dimension(val)
   return validate.struct(key, val, _dimension_ctor)
