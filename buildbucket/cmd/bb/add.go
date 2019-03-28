@@ -15,15 +15,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -37,12 +41,15 @@ func cmdAdd(defaultAuthOpts auth.Options) *subcommands.Command {
 Example:
 	# Add linux-rel and mac-rel builds to chromium/ci bucket
 	bb add infra/ci/{linux-rel,mac-rel}
+
+	# Add linux-rel tryjob for a CL.
+	bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 infra/try/linux-rel
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &addRun{}
 			r.SetDefaultFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
-			// TODO(crbug.com/946422): add -cl flag
+			r.Flags.Var(flag.StringSlice(&r.cls), "cl", "CL URL as input for the builds. Can be specified multiple times.")
 			// TODO(crbug.com/946422): add -commit flag
 			return r
 		},
@@ -52,26 +59,53 @@ Example:
 type addRun struct {
 	baseCommandRun
 	buildFieldFlags
+	cls []string
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
+	baseReq := &buildbucketpb.ScheduleBuildRequest{
+		RequestId: strconv.FormatInt(rand.Int63(), 10),
+	}
+
+	var err error
+	if baseReq.GerritChanges, err = r.parseCLs(ctx); err != nil {
+		return r.done(ctx, err)
+	}
+
 	req := &buildbucketpb.BatchRequest{}
-	for _, a := range args {
-		builder, err := protoutil.ParseBuilderID(a)
+	for i, a := range args {
+		schedReq := proto.Clone(baseReq).(*buildbucketpb.ScheduleBuildRequest)
+		schedReq.RequestId += fmt.Sprintf("-%d", i)
+
+		var err error
+		schedReq.Builder, err = protoutil.ParseBuilderID(a)
 		if err != nil {
 			return r.done(ctx, fmt.Errorf("invalid builder %q: %s", a, err))
 		}
 		req.Requests = append(req.Requests, &buildbucketpb.BatchRequest_Request{
-			Request: &buildbucketpb.BatchRequest_Request_ScheduleBuild{
-				ScheduleBuild: &buildbucketpb.ScheduleBuildRequest{
-					RequestId: strconv.FormatInt(rand.Int63(), 10),
-					Builder:   builder,
-				},
-			},
+			Request: &buildbucketpb.BatchRequest_Request_ScheduleBuild{ScheduleBuild: schedReq},
 		})
 	}
 
 	return r.batchAndDone(ctx, req)
+}
+
+// parseCLs parses r.cls.
+func (r *addRun) parseCLs(ctx context.Context) ([]*buildbucketpb.GerritChange, error) {
+	ret := make([]*buildbucketpb.GerritChange, len(r.cls))
+	return ret, parallel.FanOutIn(func(work chan<- func() error) {
+		for i, cl := range r.cls {
+			i := i
+			work <- func() error {
+				change, err := r.retrieveCL(ctx, cl)
+				if err != nil {
+					return fmt.Errorf("parsing CL %q: %s", cl, err)
+				}
+				ret[i] = change
+				return nil
+			}
+		}
+	})
 }
