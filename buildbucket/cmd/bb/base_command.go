@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/maruel/subcommands"
@@ -32,11 +31,13 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
 type baseCommandRun struct {
@@ -233,15 +234,36 @@ func (r *baseCommandRun) callAndDone(ctx context.Context, method, relURL string,
 	return 0
 }
 
-func parseBuildIDArgs(args []string) ([]int64, error) {
-	buildIDs := make([]int64, len(args))
-	for i, arg := range args {
-		id, err := strconv.ParseInt(arg, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("invalid build id %s, expected an int64", arg)
-		}
-		buildIDs[i] = id
+// retrieveCL retrieves GerritChange from a string.
+// Makes a Gerrit RPC if necessary.
+func (r *baseCommandRun) retrieveCL(ctx context.Context, cl string) (*buildbucketpb.GerritChange, error) {
+	ret, err := parseCL(cl)
+	if err != nil {
+		return nil, err
 	}
 
-	return buildIDs, nil
+	if ret.Project != "" && ret.Patchset != 0 {
+		return ret, nil
+	}
+
+	// Fetch CL info from Gerrit.
+	httpClient, err := r.createHTTPClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	client, err := gerrit.NewRESTClient(httpClient, ret.Host, true)
+	if err != nil {
+		return nil, err
+	}
+	change, err := client.GetChange(ctx, &gerritpb.GetChangeRequest{
+		Number:  ret.Change,
+		Options: []gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch CL %d from %q: %s", ret.Change, ret.Host, err)
+	}
+
+	ret.Project = change.Project
+	ret.Patchset = int64(change.Revisions[change.CurrentRevision].Number)
+	return ret, nil
 }
