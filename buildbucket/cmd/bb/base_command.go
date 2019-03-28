@@ -164,45 +164,15 @@ func (r *baseCommandRun) callAndDone(ctx context.Context, method, relURL string,
 	return 0
 }
 
-// buildIDArg can be embedded into a subcommand that accepts a build ID.
-type buildIDArg struct {
-	buildID int64
-}
-
-func (a *buildIDArg) parseArgs(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("missing parameter: <Build ID>")
-	}
-	if len(args) > 1 {
-		return fmt.Errorf("unexpected arguments: %s", args[1:])
-	}
-
-	id, err := strconv.ParseInt(args[0], 10, 64)
-	if err != nil {
-		return fmt.Errorf("expected a build id (int64), got %s: %s", args[0], err)
-	}
-
-	a.buildID = id
-	return nil
-}
-
-type repeatedBuildIDArg struct {
-	buildIDs []int64
-}
-
-func (a *repeatedBuildIDArg) parseArgs(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("missing parameter: <Build ID>")
-	}
-
-	a.buildIDs = make([]int64, len(args))
+func parseBuildIDArgs(args []string) ([]int64, error) {
+	buildIDs := make([]int64, len(args))
 	for i, arg := range args {
 		id, err := strconv.ParseInt(arg, 10, 64)
 		if err != nil {
-			return fmt.Errorf("expected a build id (int64), got %s: %s", arg, err)
+			return nil, fmt.Errorf("invalid build id %s, expected an int64", arg)
 		}
-		a.buildIDs[i] = id
+		buildIDs[i] = id
 	}
 
-	return nil
+	return buildIDs, nil
 }
