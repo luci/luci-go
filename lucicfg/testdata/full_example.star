@@ -84,6 +84,8 @@ luci.gitiles_poller(
         'refs/tags/blah',
         'refs/branch-heads/\d+\.\d+',
     ],
+    path_regexps = ['.*'],
+    path_regexps_exclude = ['excluded'],
     schedule = 'with 10s interval',
 )
 
@@ -845,6 +847,8 @@ luci.cq_tryjob_verifier(
 #     refs: "regexp:refs/heads/master"
 #     refs: "regexp:refs/tags/blah"
 #     refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
+#     path_regexps: ".*"
+#     path_regexps_exclude: "excluded"
 #   >
 # >
 # acl_sets: <

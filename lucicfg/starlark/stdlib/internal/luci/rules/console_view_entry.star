@@ -62,10 +62,15 @@ def _console_view_entry(
     builder: a builder to add, see luci.builder(...). Can be omitted for **extra
         deprecated** case of Buildbot-only views. `buildbot` field must be set
         in this case.
-    short_name: a string with the 1-3 character abbreviation of the builder.
+    short_name: a shorter name of the builder. The recommendation is to keep
+        this name as short as reasonable, as longer names take up more
+        horizontal space.
     category: a string of the form `term1|term2|...` that describes the
         hierarchy of the builder columns. Neighboring builders with common
-        ancestors will have their column headers merged.
+        ancestors will have their column headers merged. In expanded view, each
+        leaf category or builder under a non-leaf category will have it's own
+        column. The recommendation for maximum densification is not to mix
+        subcategories and builders for children of each category.
     console_view: a console view to add the builder to. Can be omitted if
         `console_view_entry` is used inline inside some luci.console_view(...)
         declaration.

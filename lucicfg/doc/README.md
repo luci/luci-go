@@ -651,6 +651,8 @@ luci.gitiles_poller(
 
     # Optional arguments.
     refs = None,
+    path_regexps = None,
+    path_regexps_exclude = None,
     schedule = None,
     triggers = None,
 )
@@ -685,6 +687,29 @@ each iteration it triggers builders if either:
   * A ref belonging to the watched set has just been created. This produces
     a single triggering request.
 
+Commits that trigger builders can also optionally be filtered by file paths
+they touch. These conditions are specified via `path_regexps` and
+`path_regexps_exclude` fields, each is a list of regular expressions against
+Unix file paths relative to the repository root. A file is considered
+"touched" if it is either added, modified, removed, moved (both old and new
+paths are considered "touched"), or its metadata has changed (e.g.
+`chmod +x`).
+
+A triggering request is emitted for a commit if only if at least one touched
+file is *not* matched by any `path_regexps_exclude` *and* simultaneously
+matched by some `path_regexps`, subject to following caveats:
+
+  * `path_regexps = [".+"]` will *not* match commits which modify no files
+    (aka empty commits) and as such this situation differs from the default
+    case of not specifying any `path_regexps`.
+  * As mentioned above, if a ref fast-forwards >=50 commits, only the last
+    50 commits are checked. If none of them pass path-based filtering, a
+    single triggering request is emitted for the ref's new tip. Rational: it's
+    better to emit redundant triggers than silently not emit triggers for
+    commits beyond latest 50.
+  * If a ref tip has just been created, a triggering request would be emitted
+    regardless of what files the commit touches.
+
 A [luci.gitiles_poller(...)](#luci.gitiles_poller) with some particular name can be redeclared many
 times as long as all fields in all declaration are identical. This is helpful
 when [luci.gitiles_poller(...)](#luci.gitiles_poller) is used inside a helper function that at once
@@ -695,7 +720,9 @@ declares a builder and a poller that triggers this builder.
 * **name**: name of the poller, to refer to it from other rules. Required.
 * **bucket**: a bucket the poller is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
 * **repo**: URL of a git repository to poll, starting with `https://`. Required.
-* **refs**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. If empty, defaults to `['refs/heads/master']`.
+* **refs**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. Each supplied regexp must match at least one ref in the gitiles output, e.g. specifying `refs/tags/v.+` for a repo that doesn't have tags starting with `v` causes a runtime error. If empty, defaults to `['refs/heads/master']`.
+* **path_regexps**: a list of regexps that define a set of files to watch for changes. `^` and `$` are implied and should not be specified manually. See the explanation above for all details.
+* **path_regexps_exclude**: a list of regexps that define a set of files to *ignore* when watching for changes. `^` and `$` are implied and should not be specified manually. See the explanation above for all details.
 * **schedule**: string with a schedule that describes when to run one iteration of the poller. See [Defining cron schedules](#schedules_doc) for the expected format of this field. Note that it is rare to use custom schedules for pollers. By default, the poller will run each 30 sec.
 * **triggers**: builders to trigger whenever the poller detects a new git commit on any ref in the watched ref set.
 
@@ -725,8 +752,8 @@ builds, builders, builder lists (see [luci.list_view(...)](#luci.list_view)) and
 (see [luci.console_view(...)](#luci.console_view)).
 
 Can optionally be configured with a reference to a [Monorail] project to use
-for filing bugs via custom feedback links on build pages. The format of a new
-bug is defined via `bug_summary` and `bug_description` fields which are
+for filing bugs via custom bug links on build pages. The format of a new bug
+is defined via `bug_summary` and `bug_description` fields which are
 interpreted as Golang [text templates]. They can either be given directly as
 strings, or loaded from external files via [io.read_file(...)](#io.read_file).
 
@@ -741,8 +768,8 @@ Other available fields include:
     {{.MiloBuildUrl}}
     {{.MiloBuilderUrl}}
 
-If any specified placeholder cannot be satisfied then no URL is rendered for
-the build page feedback link.
+If any specified placeholder cannot be satisfied then the bug link is not
+displayed.
 
 [Monorail]: https://bugs.chromium.org
 [text templates]: https://golang.org/pkg/text/template
@@ -753,8 +780,8 @@ the build page feedback link.
 * **favicon**: optional https URL to the project favicon, must be hosted on `storage.googleapis.com`.
 * **monorail_project**: optional Monorail project to file bugs in when a user clicks the feedback link on a build page.
 * **monorail_components**: a list of the Monorail component to assign to a new bug, in the hierarchical `>`-separated format, e.g. `Infra>Client>ChromeOS>CI`. Required if `monorail_project` is set, otherwise must not be used.
-* **bug_summary**: string with a text template for generating new bug's summary given a builder on whose page a user clicked the feedback link. Must not be used if `monorail_project` is unset.
-* **bug_description**: string with a text template for generating new bug's description given a builder on whose page a user clicked the feedback link. Must not be used if `monorail_project` is unset.
+* **bug_summary**: string with a text template for generating new bug's summary given a builder on whose page a user clicked the bug link. Must not be used if `monorail_project` is unset.
+* **bug_description**: string with a text template for generating new bug's description given a builder on whose page a user clicked the bug link. Must not be used if `monorail_project` is unset.
 
 
 
@@ -869,7 +896,7 @@ luci.console_view(
     header = None,
     include_experimental_builds = None,
     favicon = None,
-    default_commit_list = None,
+    default_commit_limit = None,
     default_expand = None,
     entries = None,
 )
@@ -984,7 +1011,7 @@ There are two way to supply this message via `header` field:
 * **header**: either a string with a path to the file with the header definition (see [io.read_file(...)](#io.read_file) for the acceptable path format), or a dict with the header definition.
 * **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.
 * **favicon**: optional https URL to the favicon for this console, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
-* **default_commit_list**: if set, will change the default number of commits to query on a single page.
+* **default_commit_limit**: if set, will change the default number of commits to display on a single page.
 * **default_expand**: if set, will default the console page to expanded view.
 * **entries**: a list of [luci.console_view_entry(...)](#luci.console_view_entry) entities specifying builders to show on the console.
 
@@ -1037,8 +1064,8 @@ the console declaration. In particular useful in functions. For example:
 #### Arguments {#luci.console_view_entry-args}
 
 * **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can be omitted for **extra deprecated** case of Buildbot-only views. `buildbot` field must be set in this case.
-* **short_name**: a string with the 1-3 character abbreviation of the builder.
-* **category**: a string of the form `term1|term2|...` that describes the hierarchy of the builder columns. Neighboring builders with common ancestors will have their column headers merged.
+* **short_name**: a shorter name of the builder. The recommendation is to keep this name as short as reasonable, as longer names take up more horizontal space.
+* **category**: a string of the form `term1|term2|...` that describes the hierarchy of the builder columns. Neighboring builders with common ancestors will have their column headers merged. In expanded view, each leaf category or builder under a non-leaf category will have it's own column. The recommendation for maximum densification is not to mix subcategories and builders for children of each category.
 * **console_view**: a console view to add the builder to. Can be omitted if `console_view_entry` is used inline inside some [luci.console_view(...)](#luci.console_view) declaration.
 * **buildbot**: a reference to an equivalent Buildbot builder, given as `<master>/<builder>` string. **Deprecated**. Exists only to aid in the migration off Buildbot.
 
