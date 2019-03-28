@@ -108,6 +108,14 @@ func TestGetChange(t *testing.T) {
 					[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
 				)
 			})
+			Convey("Request", func() {
+				_, err := c.GetChange(ctx, req)
+				So(err, ShouldBeNil)
+
+				body, err := ioutil.ReadAll(actualRequest.Body)
+				So(err, ShouldBeNil)
+				So(body, ShouldHaveLength, 0)
+			})
 		})
 	})
 }
