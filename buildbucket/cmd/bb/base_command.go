@@ -20,10 +20,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
@@ -34,6 +36,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 type baseCommandRun struct {
@@ -127,6 +130,67 @@ func (r *baseCommandRun) newClient(ctx context.Context) (buildbucketpb.BuildsCli
 		Host:    r.host,
 		Options: opts,
 	}), nil
+}
+
+func (r *baseCommandRun) batchAndDone(ctx context.Context, req *buildbucketpb.BatchRequest) int {
+	client, err := r.newClient(ctx)
+	if err != nil {
+		return r.done(ctx, err)
+	}
+
+	res, err := client.Batch(ctx, req)
+	if err != nil {
+		return r.done(ctx, err)
+	}
+
+	hasErr := false
+	p := newStdoutPrinter()
+	for i, res := range res.Responses {
+		var build *buildbucketpb.Build
+		switch res := res.Response.(type) {
+
+		case *buildbucketpb.BatchResponse_Response_Error:
+			hasErr = true
+
+			var requestTitle string
+			switch req := req.Requests[i].Request.(type) {
+			case *buildbucketpb.BatchRequest_Request_GetBuild:
+				getBuild := req.GetBuild
+				if getBuild.Id != 0 {
+					requestTitle = fmt.Sprintf("build %d", getBuild.Id)
+				}
+				requestTitle = fmt.Sprintf(`bulid "%s/%d"`, protoutil.FormatBuilderID(getBuild.Builder), getBuild.BuildNumber)
+
+			case *buildbucketpb.BatchRequest_Request_CancelBuild:
+				requestTitle = fmt.Sprintf("build %d", req.CancelBuild.Id, 64)
+
+			default:
+				requestTitle = fmt.Sprintf("request #%d", i)
+			}
+
+			fmt.Fprintf(os.Stderr, "%s: %s: %s\n", requestTitle, codes.Code(res.Error.Code), res.Error.Message)
+			continue
+
+		case *buildbucketpb.BatchResponse_Response_GetBuild:
+			build = res.GetBuild
+		case *buildbucketpb.BatchResponse_Response_CancelBuild:
+			build = res.CancelBuild
+		case *buildbucketpb.BatchResponse_Response_ScheduleBuild:
+			build = res.ScheduleBuild
+		default:
+			panic("forgot to update batchAndDone()?")
+		}
+
+		if r.json {
+			p.JSONPB(build)
+		} else {
+			p.Build(build)
+		}
+	}
+	if hasErr {
+		return 1
+	}
+	return 0
 }
 
 func (r *baseCommandRun) done(ctx context.Context, err error) int {
