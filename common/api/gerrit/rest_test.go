@@ -71,25 +71,35 @@ func TestGetChange(t *testing.T) {
 				},
 				Project:         "example/repo",
 				Ref:             "refs/heads/master",
-				CurrentRevision: "",
+				CurrentRevision: "deadbeef",
+				Revisions: map[string]*gerritpb.RevisionInfo{
+					"deadbeef": {
+						Number: 1,
+					},
+				},
 			}
 			var actualRequest *http.Request
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				actualRequest = r
 				w.WriteHeader(200)
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprint(w, `)]}'`)
-				json.NewEncoder(w).Encode(map[string]interface{}{
+				fmt.Fprint(w, `)]}'{
 					"_number": 1,
-					"owner": map[string]interface{}{
+					"owner": {
 						"name":             "John Doe",
 						"email":            "jdoe@example.com",
-						"secondary_emails": []string{"johndoe@chromium.org"},
-						"username":         "jdoe",
+						"secondary_emails": ["johndoe@chromium.org"],
+						"username":         "jdoe"
 					},
 					"project": "example/repo",
 					"branch":  "master",
-				})
+					"current_revision": "deadbeef",
+					"revisions": {
+						"deadbeef": {
+							"_number": 1
+						}
+					}
+				}`)
 			})
 			defer srv.Close()
 

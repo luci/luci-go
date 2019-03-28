@@ -98,12 +98,18 @@ type changeInfo struct {
 	Branch   string                `json:"branch"`
 	ChangeID string                `json:"change_id"`
 	// json.Unmarshal cannot convert enum string to value
-	Status          string `json:"status"`
-	CurrentRevision string `json:"current_revision"`
+	Status string `json:"status"`
+
+	CurrentRevision string                   `json:"current_revision"`
+	Revisions       map[string]*revisionInfo `json:"revisions"`
 }
 
-func toGerritChangeInfo(ci *changeInfo) *gerritpb.ChangeInfo {
-	return &gerritpb.ChangeInfo{
+type revisionInfo struct {
+	Number int `json:"_number"`
+}
+
+func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
+	ret := &gerritpb.ChangeInfo{
 		Number:          ci.Number,
 		Owner:           ci.Owner,
 		Project:         ci.Project,
@@ -111,6 +117,17 @@ func toGerritChangeInfo(ci *changeInfo) *gerritpb.ChangeInfo {
 		Status:          gerritpb.ChangeInfo_Status(gerritpb.ChangeInfo_Status_value[ci.Status]),
 		CurrentRevision: ci.CurrentRevision,
 	}
+	if ci.Revisions != nil {
+		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))
+		for rev, info := range ci.Revisions {
+			ret.Revisions[rev] = info.ToProto()
+		}
+	}
+	return ret
+}
+
+func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
+	return &gerritpb.RevisionInfo{Number: int32(ri.Number)}
 }
 
 func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
@@ -131,7 +148,7 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 		return nil, err
 	}
 
-	return toGerritChangeInfo(&resp), nil
+	return resp.ToProto(), nil
 }
 
 type changeInput struct {
@@ -154,7 +171,7 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 		return nil, errors.Annotate(err, "create empty change").Err()
 	}
 
-	ci := toGerritChangeInfo(&resp)
+	ci := resp.ToProto()
 	if ci.Status != gerritpb.ChangeInfo_NEW {
 		return nil, fmt.Errorf("unknown status %s for newly created change", ci.Status)
 	}
@@ -204,7 +221,7 @@ func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeReq
 	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
 		return nil, errors.Annotate(err, "submit change").Err()
 	}
-	return toGerritChangeInfo(&resp), nil
+	return resp.ToProto(), nil
 }
 
 func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
@@ -216,7 +233,7 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
 		return nil, errors.Annotate(err, "abandon change").Err()
 	}
-	return toGerritChangeInfo(&resp), nil
+	return resp.ToProto(), nil
 }
 
 // call executes a request to Gerrit REST API with JSON input/output.
