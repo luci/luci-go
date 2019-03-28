@@ -31,7 +31,7 @@ import (
 // `!<glob pattern>` (a "negative" glob). A path is considered tracked if its
 // base name matches any of the positive globs and none of the negative globs.
 // If `patterns` is empty, no paths are considered tracked. If all patterns
-// are negative, single `*` positive pattern is implied as well.
+// are negative, single `**/*` positive pattern is implied as well.
 //
 // The predicate returns an error if some pattern is malformed.
 func TrackedSet(patterns []string) func(string) (bool, error) {
@@ -49,15 +49,14 @@ func TrackedSet(patterns []string) func(string) (bool, error) {
 	}
 
 	if len(pos) == 0 {
-		pos = []string{"*"}
+		pos = []string{"**/*"}
 	}
 
 	return func(p string) (bool, error) {
-		base := path.Base(p)
-		if isPos, err := matchesAny(base, pos); !isPos || err != nil {
+		if isPos, err := matchesAny(p, pos); !isPos || err != nil {
 			return false, err
 		}
-		if isNeg, err := matchesAny(base, neg); isNeg || err != nil {
+		if isNeg, err := matchesAny(p, neg); isNeg || err != nil {
 			return false, err
 		}
 		return true, nil
@@ -110,7 +109,12 @@ func FindTrackedFiles(dir string, patterns []string) ([]string, error) {
 
 func matchesAny(name string, pats []string) (yes bool, err error) {
 	for _, pat := range pats {
-		switch match, err := path.Match(pat, name); {
+		subject := name
+		if strings.HasPrefix(pat, "**/") {
+			pat = pat[3:]
+			subject = path.Base(name)
+		}
+		switch match, err := path.Match(pat, subject); {
 		case err != nil:
 			return false, errors.Annotate(err, "bad pattern %q", pat).Err()
 		case match:
