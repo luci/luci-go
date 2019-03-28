@@ -169,8 +169,8 @@ def _console_view(
         builds.
     favicon: optional https URL to the favicon for this console, must be hosted
         on `storage.googleapis.com`. Defaults to `favicon` in luci.milo(...).
-    default_commit_list: if set, will change the default number of commits to
-        query on a single page.
+    default_commit_limit: if set, will change the default number of commits to
+        display on a single page.
     default_expand: if set, will default the console page to expanded view.
     entries: a list of luci.console_view_entry(...) entities specifying builders
         to show on the console.

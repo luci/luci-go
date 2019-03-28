@@ -26,6 +26,8 @@ def _gitiles_poller(
       bucket=None,
       repo=None,
       refs=None,
+      path_regexps=None,
+      path_regexps_exclude=None,
       schedule=None,
       triggers=None
   ):
@@ -56,6 +58,29 @@ def _gitiles_poller(
     * A ref belonging to the watched set has just been created. This produces
       a single triggering request.
 
+  Commits that trigger builders can also optionally be filtered by file paths
+  they touch. These conditions are specified via `path_regexps` and
+  `path_regexps_exclude` fields, each is a list of regular expressions against
+  Unix file paths relative to the repository root. A file is considered
+  "touched" if it is either added, modified, removed, moved (both old and new
+  paths are considered "touched"), or its metadata has changed (e.g.
+  `chmod +x`).
+
+  A triggering request is emitted for a commit if only if at least one touched
+  file is *not* matched by any `path_regexps_exclude` *and* simultaneously
+  matched by some `path_regexps`, subject to following caveats:
+
+    * `path_regexps = [".+"]` will *not* match commits which modify no files
+      (aka empty commits) and as such this situation differs from the default
+      case of not specifying any `path_regexps`.
+    * As mentioned above, if a ref fast-forwards >=50 commits, only the last
+      50 commits are checked. If none of them pass path-based filtering, a
+      single triggering request is emitted for the ref's new tip. Rational: it's
+      better to emit redundant triggers than silently not emit triggers for
+      commits beyond latest 50.
+    * If a ref tip has just been created, a triggering request would be emitted
+      regardless of what files the commit touches.
+
   A luci.gitiles_poller(...) with some particular name can be redeclared many
   times as long as all fields in all declaration are identical. This is helpful
   when luci.gitiles_poller(...) is used inside a helper function that at once
@@ -71,7 +96,16 @@ def _gitiles_poller(
         present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the
         literal prefix `refs/release-` contains only one slash. The regexp
         should not start with `^` or end with `$` as they will be added
-        automatically. If empty, defaults to `['refs/heads/master']`.
+        automatically. Each supplied regexp must match at least one ref in the
+        gitiles output, e.g. specifying `refs/tags/v.+` for a repo that doesn't
+        have tags starting with `v` causes a runtime error. If empty, defaults
+        to `['refs/heads/master']`.
+    path_regexps: a list of regexps that define a set of files to watch for
+        changes. `^` and `$` are implied and should not be specified manually.
+        See the explanation above for all details.
+    path_regexps_exclude: a list of regexps that define a set of files to
+        *ignore* when watching for changes. `^` and `$` are implied and should
+        not be specified manually. See the explanation above for all details.
     schedule: string with a schedule that describes when to run one iteration
         of the poller. See [Defining cron schedules](#schedules_doc) for the
         expected format of this field. Note that it is rare to use custom
@@ -86,6 +120,14 @@ def _gitiles_poller(
   for r in refs:
     validate.string('refs', r)
 
+  path_regexps = validate.list('path_regexps', path_regexps)
+  for p in path_regexps:
+    validate.string('path_regexps', p)
+
+  path_regexps_exclude = validate.list('path_regexps_exclude', path_regexps_exclude)
+  for p in path_regexps_exclude:
+    validate.string('path_regexps_exclude', p)
+
   # Node that carries the full definition of the poller.
   poller_key = keys.gitiles_poller(bucket_key.id, name)
   graph.add_node(poller_key, idempotent = True, props = {
@@ -93,6 +135,8 @@ def _gitiles_poller(
       'bucket': bucket_key.id,
       'repo': validate.repo_url('repo', repo),
       'refs': refs,
+      'path_regexps': path_regexps,
+      'path_regexps_exclude': path_regexps_exclude,
       'schedule': validate.string('schedule', schedule, required=False),
   })
   graph.add_edge(bucket_key, poller_key)
