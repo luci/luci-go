@@ -16,6 +16,24 @@
       "revId": "25eee3f97bd98fef3b00e60f9a21afa9d7e52ea8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4e4dee1_fc685dbd",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-28T23:04:49Z",
+      "side": 1,
+      "message": "removed p.w\nadded comments for printer.tab and printer.indent.\nadded printer.Flush.\n\np.indent.Writer does not have Flush() method, so i\u0027d have to type-cast (which wouldn\u0027t work with -nocolor). I think doing p.tab.Flush() in printer.Flush() is more explicit/better.\n\nwhat is currently missing/confusing? note that .tab and .indent aren\u0027t public API of this struct",
+      "parentUuid": "ec4c3e96_794e3364",
+      "revId": "25eee3f97bd98fef3b00e60f9a21afa9d7e52ea8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
