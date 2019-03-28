@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ec4c3e96_794e3364",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-28T21:48:21Z",
+      "side": 1,
+      "message": "I find p.tab, p.indent, and p.w confusing, especially since they all seem to be assigned variations of the same value. Can you document these in the printer?\n\nAlternately, do you really need all three? It seems confusing to introduce p.w just to have a shorthand for \u0026p.indent in one place on L88. If I\u0027m missing the reason, please document it.\n\nYou could also define:\nfunc (p *printer) Flush() {\n  p.indent.Writer.Flush()\n}\nThen you don\u0027t need p.tab either, which only seems to be used on L123. Unless, the reason for having p.tab is because once the tabwriter is wrapped in a StripWriter, Flush no longer flushes the tabwriter? If that\u0027s true, please document it.",
+      "revId": "25eee3f97bd98fef3b00e60f9a21afa9d7e52ea8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
