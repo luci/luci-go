@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "49cd0386_22e89c50",
+        "filename": "buildbucket/cmd/bb/base_command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:53:25Z",
+      "side": 1,
+      "message": "sg, thanks,",
+      "parentUuid": "d76dd162_27a61db2",
+      "range": {
+        "startLine": 236,
+        "startChar": 0,
+        "endLine": 269,
+        "endChar": 1
+      },
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "120cda1a_b1eab678",
         "filename": "buildbucket/cmd/bb/parse.go",
         "patchSetId": 5
@@ -183,6 +207,24 @@
     },
     {
       "key": {
+        "uuid": "6cf335aa_4310865d",
+        "filename": "buildbucket/cmd/bb/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:53:25Z",
+      "side": 1,
+      "message": "ah, i see.",
+      "parentUuid": "993ca2c7_1e5b1bad",
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73d72aed_aacbe02e",
         "filename": "buildbucket/cmd/bb/put.go",
         "patchSetId": 5
@@ -212,6 +254,24 @@
       "side": 1,
       "message": "i\u0027ve changed this example in the latest patchset. PTAL",
       "parentUuid": "73d72aed_aacbe02e",
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "21b0fa11_30052f3b",
+        "filename": "buildbucket/cmd/bb/put.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:53:25Z",
+      "side": 1,
+      "message": "perfect.",
+      "parentUuid": "632952a4_5fc79d02",
       "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
