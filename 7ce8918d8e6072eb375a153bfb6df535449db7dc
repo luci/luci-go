@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f879ff96_ce5a36d2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-28T21:58:38Z",
+      "side": 1,
+      "message": "Ones that don\u0027t produce structured output, or something else?",
+      "revId": "7ce8918d8e6072eb375a153bfb6df535449db7dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
