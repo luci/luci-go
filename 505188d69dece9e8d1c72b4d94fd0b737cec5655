@@ -1,0 +1,152 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "adf0a895_784b7269",
+        "filename": "buildbucket/cmd/bb/base_command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:19:54Z",
+      "side": 1,
+      "message": "this should be used by led, too.",
+      "range": {
+        "startLine": 236,
+        "startChar": 0,
+        "endLine": 269,
+        "endChar": 1
+      },
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "120cda1a_b1eab678",
+        "filename": "buildbucket/cmd/bb/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:19:54Z",
+      "side": 1,
+      "message": "\"any sufficiently advanced technology is indistinguishable from magic\"",
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f2be45a4_55894c1f",
+        "filename": "buildbucket/cmd/bb/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:19:54Z",
+      "side": 1,
+      "message": "nit: am I the only one who likes empty line after short description?\n\n// retrieveCL tries to retrieve a CL info from a string.\n//\n// It is not ...",
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0330be25_fd9266b3",
+        "filename": "buildbucket/cmd/bb/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:19:54Z",
+      "side": 1,
+      "message": "parseCL\n\notherwise it sounds to me like this code does some RPC to retrieve CL from somewhere else based on passed string.",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 15
+      },
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b5da8b2_a7631b7f",
+        "filename": "buildbucket/cmd/bb/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:19:54Z",
+      "side": 1,
+      "message": "any reason why you can\u0027t use \\d+ instead in regexp? (it\u0027s too magic to me to see implications)",
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73d72aed_aacbe02e",
+        "filename": "buildbucket/cmd/bb/put.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:19:54Z",
+      "side": 1,
+      "message": "for try bucket, add -cl  to the example.",
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5a8592e_812316a0",
+        "filename": "buildbucket/cmd/bb/put.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:19:54Z",
+      "side": 1,
+      "message": "\"CL input\" doesn\u0027t give immediate idea what format it is. Maybe\n\"CL URL as input for the builds\"?",
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd007979_f7873726",
+        "filename": "buildbucket/cmd/bb/put.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-28T19:19:54Z",
+      "side": 1,
+      "message": "maybe parallelize? I really hate waiting for slow gerrit RPCs.",
+      "revId": "505188d69dece9e8d1c72b4d94fd0b737cec5655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
