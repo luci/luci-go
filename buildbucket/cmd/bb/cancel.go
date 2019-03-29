@@ -27,9 +27,12 @@ import (
 
 func cmdCancel(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `cancel [flags] <build id> [<build id>...]`,
+		UsageLine: `cancel [flags] <BUILD> [<BUILD>...]`,
 		ShortDesc: "cancel builds",
 		LongDesc: `Cancel builds.
+
+Argument BUILD can be an int64 build id or a string
+<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
 
 -summary is required and it should explain the reason of cancelation.
 
@@ -58,7 +61,7 @@ func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommand
 		return r.done(ctx, fmt.Errorf("-summary is required"))
 	}
 
-	buildIDs, err := parseBuildIDArgs(args)
+	buildIDs, err := r.retrieveBuildIDs(ctx, args)
 	if err != nil {
 		return r.done(ctx, err)
 	}

@@ -33,11 +33,15 @@ import (
 
 func cmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `collect [flags] <build id> [<build id>...]`,
-		ShortDesc: "wait for a list of builds to end and return their details",
-		LongDesc: "Wait for a list of builds to end and optionally write their " +
-			"details into an output file as JSONPB-encoded proto messages embedded " +
-			"into a JSON Array.",
+		UsageLine: `collect [flags] <BUILD> [<BUILD>...]`,
+		ShortDesc: "wait for builds to end",
+		LongDesc: `Wait for builds to end.
+
+Argument BUILD can be an int64 build id or a string
+<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
+
+Optionally writes build details into an output file as JSON array of
+bulidbucket.v2.Build proto messages.`,
 		CommandRun: func() subcommands.CommandRun {
 			r := &collectRun{}
 			r.SetDefaultFlags(defaultAuthOpts)
@@ -149,7 +153,7 @@ func writeBuildDetails(buildIDs []int64, buildDetails map[int64]*buildbucketpb.B
 func (r *collectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
-	buildIDs, err := parseBuildIDArgs(args)
+	buildIDs, err := r.retrieveBuildIDs(ctx, args)
 	if err != nil {
 		return r.done(ctx, err)
 	}
