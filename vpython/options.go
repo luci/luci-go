@@ -118,10 +118,17 @@ func (o *Options) ResolveSpec(c context.Context) error {
 		return nil
 	}
 
+	o.EnvConfig.Spec = &o.DefaultSpec
+
 	// If we're running a Python script, assert that the target script exists.
 	// Additionally, track whether it's a file or a module (directory).
 	target := o.CommandLine.Target
 	script, isScriptTarget := target.(python.ScriptTarget)
+	if isScriptTarget && script.Path == "-" {
+		logging.Infof(c, "Skipping specification probing for script via stdin.")
+		return nil
+	}
+
 	isModule := false
 	if isScriptTarget {
 		logging.Debugf(c, "Resolved Python target script: %s", target)
@@ -157,6 +164,5 @@ func (o *Options) ResolveSpec(c context.Context) error {
 
 	// If standard resolution doesn't yield a spec, fall back on our default spec.
 	logging.Infof(c, "Unable to resolve specification path. Using default specification.")
-	o.EnvConfig.Spec = &o.DefaultSpec
 	return nil
 }
