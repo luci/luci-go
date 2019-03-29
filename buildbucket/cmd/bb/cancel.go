@@ -41,7 +41,7 @@ buildbucket.v2.Build protobuf messages. Not an array.`,
 		CommandRun: func() subcommands.CommandRun {
 			r := &cancelRun{}
 			r.buildFieldFlags.Register(&r.Flags)
-			r.SetDefaultFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(defaultAuthOpts)
 			r.Flags.StringVar(&r.summary, "summary", "", "reason of cancelation; required")
 			return r
 		},

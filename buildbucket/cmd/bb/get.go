@@ -37,7 +37,7 @@ Argument BUILD can be an int64 build id or a string
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &getRun{}
-			r.SetDefaultFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
 			return r
 		},
