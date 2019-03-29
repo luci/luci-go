@@ -178,6 +178,24 @@
     },
     {
       "key": {
+        "uuid": "ed1283c9_dd2b487f",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-29T22:42:19Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s a huge issue.\n\nImagine this - We try to multiplex 20 streams.  The butler ingests them at distinct times, but for whatever reason (let\u0027s say they\u0027re user provided log timestamps), all timestamps are 0 offsets.  All lines in all 20 streams have the same timestamp.\nNow, in this case, using timestamps, there is no defined order between the different streams.  I think in the current implementation they will probably be stable because the streams have a defined order between themselves (ie not in a map).\n\nThat being said, I think this will only be a problem in pathological cases, and isn\u0027t something we should be too worried about.",
+      "parentUuid": "ed54715e_601083d2",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4260d964_5f1e2ced",
         "filename": "buildbucket/cmd/bb/log.go",
         "patchSetId": 3

@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9eaad1e_4341c9b5",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-29T22:42:19Z",
+      "side": 1,
+      "message": "Suggestion: wdyt about making multiplexLogs return a channel of logAndErr?\n\nSo this turns into\n\nfor l :\u003d range multiplexLogs(chans) {\n  ...\n}\n\nI say this because I tend to think ranges are easier to follow than callbacks.",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd2d1314_55fe04d3",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-29T22:42:19Z",
+      "side": 1,
+      "message": "What was wrong with the slice implementation? It was easier to follow than the heap version.",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fba7a591_37d7fda7",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-29T22:42:19Z",
+      "side": 1,
+      "message": "It\u0027s not immediately clear recv actually writes into h.\nsuggestion: could make this a method of the heap, so multiplexLogs() turn into\n\n// Receive into the buffer.\nh :\u003d newHeapBuffer(chans)\nfor len(h) \u003e 0 {\n  log, err :\u003d h.NextEntry()  // Also does the next recv\n  if err !\u003d nil {\n    return err\n  }\n  f(log.chanIndex, log.LogEntry)\n}",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
