@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cada7cfd_9e6747f7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 922,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-29T03:25:13Z",
+      "side": 1,
+      "message": "if no notifiers, why allow templates?",
+      "revId": "ab0de9ed9f2c450c3dccd9afce04e95dfd06dc8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c6fa035_63d7cc68",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier_template.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-29T03:25:13Z",
+      "side": 1,
+      "message": "be",
+      "range": {
+        "startLine": 32,
+        "startChar": 17,
+        "endLine": 32,
+        "endChar": 18
+      },
+      "revId": "ab0de9ed9f2c450c3dccd9afce04e95dfd06dc8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6640b3e9_ba47074f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier_template.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-29T03:25:13Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 105,
+        "startChar": 46,
+        "endLine": 105,
+        "endChar": 48
+      },
+      "revId": "ab0de9ed9f2c450c3dccd9afce04e95dfd06dc8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
