@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "75984a4f_5241fc9c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 922,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-29T19:34:44Z",
+      "side": 1,
+      "message": "For example to allow validate the templates with LUCI Config before actually start using them.",
+      "parentUuid": "de88735a_778790f2",
+      "revId": "ab0de9ed9f2c450c3dccd9afce04e95dfd06dc8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c6fa035_63d7cc68",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier_template.star",
         "patchSetId": 3
@@ -60,6 +78,30 @@
     },
     {
       "key": {
+        "uuid": "a07c1d20_e686b728",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier_template.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-29T19:34:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c6fa035_63d7cc68",
+      "range": {
+        "startLine": 32,
+        "startChar": 17,
+        "endLine": 32,
+        "endChar": 18
+      },
+      "revId": "ab0de9ed9f2c450c3dccd9afce04e95dfd06dc8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6640b3e9_ba47074f",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier_template.star",
         "patchSetId": 3
@@ -80,6 +122,30 @@
       "revId": "ab0de9ed9f2c450c3dccd9afce04e95dfd06dc8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cedc871d_011a11c2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier_template.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-29T19:34:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6640b3e9_ba47074f",
+      "range": {
+        "startLine": 105,
+        "startChar": 46,
+        "endLine": 105,
+        "endChar": 48
+      },
+      "revId": "ab0de9ed9f2c450c3dccd9afce04e95dfd06dc8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
