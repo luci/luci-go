@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f81381de_ad90d4a1",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1181690
+      },
+      "writtenOn": "2019-03-29T02:20:24Z",
+      "side": 1,
+      "message": "These additions are blocking the luci-go -\u003e infra autoroll w/\n\n  Check Go Imports (2.15s) failed\n  Invalid Go package dependencies:\n    in go.chromium.org/luci/buildbucket/cmd/bb\n      - github.com/mattn/go-isatty\n      - github.com/mgutz/ansi\n\ne.g. https://ci.chromium.org/p/infra/builders/try/Infra%20Presubmit/b8917696407856422976",
+      "revId": "24036e46823db68e88ed14089fe6a74259a30ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
