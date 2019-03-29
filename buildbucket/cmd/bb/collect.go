@@ -40,7 +40,7 @@ func cmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
 			"into a JSON Array.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &collectRun{}
-			r.SetDefaultFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(defaultAuthOpts)
 			r.Flags.DurationVar(
 				&r.intervalArg, "interval", time.Minute,
 				"duration to wait between requests")
