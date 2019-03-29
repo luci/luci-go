@@ -28,12 +28,18 @@ import (
 	"encoding/json"
 	"strings"
 
+	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/warmup"
 )
+
+// Header is the name of the HTTP header where the GCE VM metadata token is
+// expected.
+const Header = "X-Luci-Gce-Vm-Token"
 
 // Payload is extracted from a verified GCE VM metadata token.
 //
@@ -164,6 +170,53 @@ func unmarshalB64JSON(blob string, out interface{}) error {
 		return errors.Annotate(err, "not JSON").Err()
 	}
 	return nil
+}
+
+// pldKey is the key to a *Payload in the context.
+var pldKey = "pld"
+
+// withPayload returns a new context with the given *Payload installed.
+func withPayload(c context.Context, p *Payload) context.Context {
+	return context.WithValue(c, &pldKey, p)
+}
+
+// getPayload returns the *Payload installed in the current context. May be nil.
+func getPayload(c context.Context) *Payload {
+	switch t := c.Value(&pldKey).(type) {
+	case *Payload:
+		return t
+	default:
+		return nil
+	}
+}
+
+// Matches returns whether the current context contains a GCE VM metadata
+// token matching the given identity and current service name.
+func Matches(c context.Context, host, zone, proj string) bool {
+	p := getPayload(c)
+	if p == nil {
+		return false
+	}
+	// TODO(smut): Support requests made to other modules and versions.
+	aud := info.DefaultVersionHostname(c)
+	if p.Audience != aud {
+		return false
+	}
+	return p.Instance == host && p.Zone == zone && p.Project == proj
+}
+
+// Middleware embeds a Payload in the context if the request contains a GCE VM
+// metadata token.
+func Middleware(c *router.Context, next router.Handler) {
+	if tok := c.Request.Header.Get(Header); tok != "" {
+		switch p, err := Verify(c.Context, tok); {
+		case err != nil:
+			logging.Debugf(c.Context, "ignoring invalid GCE VM metadata token: %s", err)
+		default:
+			c.Context = withPayload(c.Context, p)
+		}
+	}
+	next(c)
 }
 
 func init() {
