@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "97d8c223_dbc54417",
+        "filename": "buildbucket/cmd/bb/add.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-29T23:45:46Z",
+      "side": 1,
+      "message": "ah, i meant to flip the meaning: \n\nconfirmedRef \u003d\u003d true \u003d\u003e has already been confirmed\nhence code here to act only if !confirmedRef.\n\nBut mustConfirmRef is better.",
+      "parentUuid": "0c867afe_ccd4b582",
+      "range": {
+        "startLine": 129,
+        "startChar": 9,
+        "endLine": 129,
+        "endChar": 19
+      },
+      "revId": "94b7e750d13556fe58e8632dcf4c3faa7c863070",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "32a78002_15f17fdf",
         "filename": "buildbucket/cmd/bb/parse.go",
         "patchSetId": 3
