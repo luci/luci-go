@@ -37,6 +37,17 @@ func TestParseCL(t *testing.T) {
 			})
 		})
 
+		Convey("Hash", func() {
+			actual, err := parseCL("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7")
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
+				Host:     "chromium-review.googlesource.com",
+				Project:  "infra/luci/luci-go",
+				Change:   1541677,
+				Patchset: 7,
+			})
+		})
+
 		Convey("File", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go")
 			So(err, ShouldBeNil)
