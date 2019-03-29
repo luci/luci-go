@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c357270_b5fe3306",
+        "filename": "buildbucket/cmd/bb/base_command.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-29T21:43:30Z",
+      "side": 1,
+      "message": "Consider tests.",
+      "revId": "450655832c7f2d8b1a8c109bf6599dea059ce98b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8b52429_1ec24a1c",
+        "filename": "buildbucket/cmd/bb/base_command.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-29T21:43:30Z",
+      "side": 1,
+      "message": "I guess this doesn\u0027t need to be \"return buildIDs, nil\" because you have named return values? IMO prefer consistency, you don\u0027t do \"return\" anywhere else in this function.",
+      "revId": "450655832c7f2d8b1a8c109bf6599dea059ce98b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
