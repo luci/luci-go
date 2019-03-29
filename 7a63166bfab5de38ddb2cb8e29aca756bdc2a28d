@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8b00d9b2_d261195e",
+        "filename": "buildbucket/cmd/bb/base_command.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-03-29T19:41:30Z",
+      "side": 0,
+      "message": "Please keep it there. ALL LUCI tools have this. An average user would never ever figure out to use \"luci-auth context -service-account-json secret.json -- bb ...\" instead of \"-service-account-json\".",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 48
+      },
+      "revId": "7a63166bfab5de38ddb2cb8e29aca756bdc2a28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
