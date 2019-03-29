@@ -46,6 +46,7 @@ Listed builds are sorted by creation time, descending.
 			r := &lsRun{}
 			r.SetDefaultFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
+			r.Flags.BoolVar(&r.table, "table", false, "Display builds in a table")
 			return r
 		},
 	}
@@ -54,10 +55,15 @@ Listed builds are sorted by creation time, descending.
 type lsRun struct {
 	baseCommandRun
 	buildFieldFlags
+	table bool
 }
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
+
+	if r.table && r.json {
+		return r.done(ctx, fmt.Errorf("-table and -json are mutually exclusive"))
+	}
 
 	req, err := r.parseSearchRequests(args)
 	if err != nil {
@@ -93,12 +99,16 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 	sort.Slice(builds, func(i, j int) bool { return builds[i].Id < builds[j].Id })
 
 	p := newStdoutPrinter(r.noColor)
-	for _, b := range builds {
-		if r.json {
-			p.JSONPB(b)
-		} else {
-			p.Build(b)
-			fmt.Println()
+	if r.table {
+		p.BuildTable(builds)
+	} else {
+		for _, b := range builds {
+			if r.json {
+				p.JSONPB(b)
+			} else {
+				p.Build(b)
+				fmt.Println()
+			}
 		}
 	}
 	return 0

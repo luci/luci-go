@@ -47,6 +47,7 @@ var (
 		buildbucketpb.Status_SUCCESS:       ansi.Green,
 		buildbucketpb.Status_FAILURE:       ansi.Red,
 		buildbucketpb.Status_INFRA_FAILURE: ansi.Magenta,
+		buildbucketpb.Status_CANCELED:      ansi.White,
 	}
 )
 
@@ -176,6 +177,37 @@ func (p *printer) Build(b *buildbucketpb.Build) {
 	for _, s := range b.Steps {
 		p.step(s)
 	}
+}
+
+// BuildTable prints builds in a table.
+func (p *printer) BuildTable(builds []*buildbucketpb.Build) {
+	hasNumbers := false
+	for _, b := range builds {
+		if b.Number != 0 {
+			hasNumbers = true
+			break
+		}
+	}
+
+	// Print table header.
+	p.f("ID\tBuilder\t")
+	if hasNumbers {
+		p.f("Number\t")
+	}
+	p.f("Status\n")
+
+	// Print table rows.
+	for _, b := range builds {
+		p.f("%s%d\t", ansiStatus[b.Status], b.Id)
+		p.f("%s/%s/%s\t", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
+		if hasNumbers {
+			p.f("#%d\t", b.Number)
+		}
+		p.f("%s%s\n", b.Status, ansi.Reset)
+		// TODO(crbug.com/946422): display revision
+		// TODO(crbug.com/946422): display CLs
+	}
+	p.tab.Flush()
 }
 
 // commit prints c.
