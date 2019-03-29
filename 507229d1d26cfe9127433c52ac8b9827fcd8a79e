@@ -52,6 +52,24 @@
       "revId": "507229d1d26cfe9127433c52ac8b9827fcd8a79e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cedcf5c_bffa3d3a",
+        "filename": "vpython/options.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1181690
+      },
+      "writtenOn": "2019-03-29T01:52:38Z",
+      "side": 1,
+      "message": "Checked:\n\n  $ ./bin/vpython - \u003c\u003c\u003c \u0027import requests; print \"hello world\"\u0027\n  Traceback (most recent call last):\n    File \"\u003cstdin\u003e\", line 1, in \u003cmodule\u003e\n    File \"/usr/local/buildtools/current/sitecustomize/sitecustomize.py\", line 152, in SetupPathsAndImport\n      return real_import(name, globals, locals, fromlist, level)\n  ImportError: No module named requests\n  $./bin/vpython -vpython-spec requests.vpython - \u003c\u003c\u003c \u0027import requests; print \"hello world\"\u0027\n  hello world\n  $ cat requests.vpython \n  wheel: \u003c\n    name: \"infra/python/wheels/requests-py2_py3\"\n    version: \"version:2.13.0\"\n  \u003e",
+      "parentUuid": "097af31a_2444e9aa",
+      "revId": "507229d1d26cfe9127433c52ac8b9827fcd8a79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
