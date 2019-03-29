@@ -144,6 +144,10 @@ func (p *printer) Build(b *buildbucketpb.Build) {
 	// Timing.
 	p.buildTime(b)
 	p.f("\n")
+	if b.CreatedBy != "" {
+		p.attr("By")
+		p.f("%s\n", b.CreatedBy)
+	}
 
 	// Commit, CLs and tags.
 	if c := b.Input.GetGitilesCommit(); c != nil {

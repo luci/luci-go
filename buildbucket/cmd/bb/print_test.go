@@ -154,6 +154,7 @@ var buildJSON = `
 const expectedBuildPrintedTemplate = `<green>Build 8917899588926498064 SUCCESS   'chromium/try/linux-rel/1'<reset>
 <white+b>Summary<reset>: it was ok
 <white+b>Created<reset> on 2019-03-26 at 18:33:47, <white+b>waited<reset> 4.488841s, <white+b>started<reset> at 18:33:52, <white+b>ran<reset> for 3m21.444617s, <white+b>ended<reset> at 18:37:13
+<white+b>By<reset>: user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com
 <white+b>Commit<reset>: <white+u>https://chromium.googlesource.com/infra/luci/luci-go/+/deadbeef<reset> on refs/heads/master
 <white+b>CL<reset>: <white+u>https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1<reset>
 <white+b>Tag<reset>: buildset:patch/gerrit/chromium-review.googlesource.com/1539021/1
