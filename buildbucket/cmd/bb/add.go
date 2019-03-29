@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -38,23 +40,69 @@ func cmdAdd(defaultAuthOpts auth.Options) *subcommands.Command {
 		ShortDesc: "schedule builds",
 		LongDesc: `Schedule builds.
 
-Examples:
+Example:
 	# Add linux-rel and mac-rel builds to chromium/ci bucket
 	bb add infra/ci/{linux-rel,mac-rel}
-
-	# Build a specific revision
-	bb add -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9 infra/ci/linux-rel
-
-	# Add linux-rel tryjob for a CL.
-	bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 infra/try/linux-rel
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &addRun{}
 			r.SetDefaultFlags(defaultAuthOpts)
-			r.buildFieldFlags.Register(&r.Flags)
-			r.Flags.Var(flag.StringSlice(&r.cls), "cl", "CL URL as input for the builds. Can be specified multiple times.")
-			r.Flags.StringVar(&r.commit, "commit", "", "Commit URL as input to the builds.")
-			r.Flags.StringVar(&r.ref, "ref", "refs/heads/master", "Git ref for the -commit")
+			r.Flags.Var(
+				flag.StringSlice(&r.cls),
+				"cl",
+				`CL URL as input for the builds. Can be specified multiple times.
+
+Example:
+	# Schedule a linux-rel tryjob for CL 1539021
+	bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 infra/try/linux-rel`,
+			)
+
+			r.Flags.StringVar(
+				&r.commit,
+				"commit",
+				"",
+				`Commit URL as input to the builds.
+Example:
+	# Build a specific revision
+	bb add -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9 infra/ci/linux-rel`,
+			)
+
+			r.Flags.StringVar(
+				&r.ref,
+				"ref",
+				"refs/heads/master",
+				`Git ref for the -commit`,
+			)
+
+			r.Flags.BoolVar(
+				&r.experimental,
+				"exp", false,
+				`Mark the builds as experimental.`,
+			)
+
+			r.Flags.Var(
+				flag.StringSlice(&r.tags),
+				"t",
+				`Tag for the builds, e.g. "foo:bar". Can be specified multiple times.
+
+Example:
+	bb add -t a:b -t buildset:my-builds/1234 infra/ci/linux-rel`,
+			)
+
+			r.Flags.Var(
+				flag.StringSlice(&r.properties),
+				"p",
+				`Input properties for the build.
+If starts with @, all properties are read a file that follows @.
+Example:
+	bb add -p @my_properties.json chromium/try/linux-rel
+
+Otherwise, must have A=B form, where A is a property name and B is a property value.
+If A is valid JSON, then it is parsed as JSON; otherwise treated as a string.
+Can be specified multiple times.
+Example:
+	bb add -p foo=1 -p 'bar={"a": 2}' chromium/try/linux-rel
+`)
 			return r
 		},
 	}
@@ -62,25 +110,19 @@ Examples:
 
 type addRun struct {
 	baseCommandRun
-	buildFieldFlags
-	cls    []string
-	commit string
-	ref    string
+	cls          []string
+	commit       string
+	ref          string
+	experimental bool
+	tags         []string
+	properties   []string
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
-	baseReq := &buildbucketpb.ScheduleBuildRequest{
-		RequestId: strconv.FormatInt(rand.Int63(), 10),
-	}
-
-	var err error
-	if baseReq.GerritChanges, err = r.parseCLs(ctx); err != nil {
-		return r.done(ctx, err)
-	}
-
-	if baseReq.GitilesCommit, err = r.parseCommit(); err != nil {
+	baseReq, err := r.prepareBaseRequest(ctx)
+	if err != nil {
 		return r.done(ctx, err)
 	}
 
@@ -100,6 +142,32 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 	}
 
 	return r.batchAndDone(ctx, req)
+}
+
+func (r *addRun) prepareBaseRequest(ctx context.Context) (*buildbucketpb.ScheduleBuildRequest, error) {
+	ret := &buildbucketpb.ScheduleBuildRequest{
+		RequestId: strconv.FormatInt(rand.Int63(), 10),
+		Fields:    completeBuildFieldMask,
+	}
+
+	var err error
+	if ret.GerritChanges, err = r.parseCLs(ctx); err != nil {
+		return nil, err
+	}
+
+	if ret.GitilesCommit, err = r.parseCommit(); err != nil {
+		return nil, err
+	}
+
+	if r.experimental {
+		ret.Experimental = buildbucketpb.Trinary_YES
+	}
+
+	if ret.Tags, err = r.parseTags(); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }
 
 // parseCLs parses r.cls.
@@ -138,4 +206,16 @@ func (r *addRun) parseCommit() (*buildbucketpb.GitilesCommit, error) {
 		commit.Ref = r.ref
 	}
 	return commit, nil
+}
+
+func (r *addRun) parseTags() ([]*buildbucketpb.StringPair, error) {
+	ret := make([]*buildbucketpb.StringPair, len(r.tags))
+	for i, t := range r.tags {
+		if !strings.Contains(t, ":") {
+			return nil, fmt.Errorf("invalid tag %q: no colon", t)
+		}
+		k, v := strpair.Parse(t)
+		ret[i] = &buildbucketpb.StringPair{Key: k, Value: v}
+	}
+	return ret, nil
 }
