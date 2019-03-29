@@ -69,6 +69,24 @@
       "revId": "addb9cbc17e4dd8a6204029e0597101a498d88d3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "208b5643_f0f7b309",
+        "filename": "common/data/text/color/strip_test.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-29T00:20:14Z",
+      "side": 1,
+      "message": "I didn\u0027t realize this was also a test. Yeah it\u0027s better.",
+      "parentUuid": "e41c0627_51aa4c9c",
+      "revId": "addb9cbc17e4dd8a6204029e0597101a498d88d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
