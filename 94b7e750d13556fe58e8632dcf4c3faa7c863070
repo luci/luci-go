@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0c867afe_ccd4b582",
+        "filename": "buildbucket/cmd/bb/add.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:26:02Z",
+      "side": 1,
+      "message": "confirmedRef sounds like it is already confirmed. renamed to mustConfirmRef",
+      "parentUuid": "d82ba654_dba6a31e",
+      "range": {
+        "startLine": 129,
+        "startChar": 9,
+        "endLine": 129,
+        "endChar": 19
+      },
+      "revId": "94b7e750d13556fe58e8632dcf4c3faa7c863070",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "32a78002_15f17fdf",
         "filename": "buildbucket/cmd/bb/parse.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "7c173488_473832d1",
+        "filename": "buildbucket/cmd/bb/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:26:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "32a78002_15f17fdf",
+      "range": {
+        "startLine": 76,
+        "startChar": 93,
+        "endLine": 76,
+        "endChar": 95
+      },
+      "revId": "94b7e750d13556fe58e8632dcf4c3faa7c863070",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "512802e1_91393a38",
         "filename": "buildbucket/cmd/bb/parse.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "94b7e750d13556fe58e8632dcf4c3faa7c863070",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3d6828d_353ed604",
+        "filename": "buildbucket/cmd/bb/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:26:02Z",
+      "side": 1,
+      "message": "removed for now",
+      "parentUuid": "512802e1_91393a38",
+      "range": {
+        "startLine": 110,
+        "startChar": 2,
+        "endLine": 111,
+        "endChar": 34
+      },
+      "revId": "94b7e750d13556fe58e8632dcf4c3faa7c863070",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +183,48 @@
     },
     {
       "key": {
+        "uuid": "73845e54_101420c6",
+        "filename": "buildbucket/cmd/bb/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:26:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de476160_68bf916f",
+      "range": {
+        "startLine": 120,
+        "startChar": 27,
+        "endLine": 120,
+        "endChar": 30
+      },
+      "revId": "94b7e750d13556fe58e8632dcf4c3faa7c863070",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "34ed5545_b68032cc",
+        "filename": "buildbucket/cmd/bb/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:26:02Z",
+      "side": 1,
+      "message": "you are right.\n\ni\u0027ve changed confirm() from bool to str, and required confirmation in this case. PTAL",
+      "parentUuid": "b4e92a4f_590a6ae6",
+      "revId": "94b7e750d13556fe58e8632dcf4c3faa7c863070",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "afe96185_fe09e37b",
         "filename": "buildbucket/cmd/bb/util.go",
         "patchSetId": 3
@@ -125,6 +239,24 @@
       "revId": "94b7e750d13556fe58e8632dcf4c3faa7c863070",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3ba6530_719de727",
+        "filename": "buildbucket/cmd/bb/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:26:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "afe96185_fe09e37b",
+      "revId": "94b7e750d13556fe58e8632dcf4c3faa7c863070",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
