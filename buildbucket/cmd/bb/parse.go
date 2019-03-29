@@ -22,19 +22,6 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func parseBuildIDArgs(args []string) ([]int64, error) {
-	buildIDs := make([]int64, len(args))
-	for i, arg := range args {
-		id, err := strconv.ParseInt(arg, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("invalid build id %s, expected an int64", arg)
-		}
-		buildIDs[i] = id
-	}
-
-	return buildIDs, nil
-}
-
 var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/(#/)?c/(([^\+]+)/\+/)?(\d+)(/(\d+))?`)
 
 // parseCL tries to retrieve a CL info from a string.
