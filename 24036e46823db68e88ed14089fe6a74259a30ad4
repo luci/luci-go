@@ -16,6 +16,24 @@
       "revId": "24036e46823db68e88ed14089fe6a74259a30ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "728938e9_c78f42bc",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-29T03:09:27Z",
+      "side": 1,
+      "message": "I guess check_deps.whitelist needs to be updated:\nhttps://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/check_deps.whitelist",
+      "parentUuid": "f81381de_ad90d4a1",
+      "revId": "24036e46823db68e88ed14089fe6a74259a30ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
