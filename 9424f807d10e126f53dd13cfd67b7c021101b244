@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b5c2ebc0_9197a1ad",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:08:39Z",
+      "side": 1,
+      "message": "i agree. Can it be done later? Adding it to the logdog lib would require larger package design which is outside of the scope. This code can be moved later.\n\nunless someone has concrete suggestions on API design",
+      "parentUuid": "ca6e3727_45518371",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c9eaad1e_4341c9b5",
         "filename": "buildbucket/cmd/bb/log.go",
         "patchSetId": 6
@@ -30,6 +48,24 @@
       "writtenOn": "2019-03-29T22:42:19Z",
       "side": 1,
       "message": "Suggestion: wdyt about making multiplexLogs return a channel of logAndErr?\n\nSo this turns into\n\nfor l :\u003d range multiplexLogs(chans) {\n  ...\n}\n\nI say this because I tend to think ranges are easier to follow than callbacks.",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6339463c_c6d32972",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:08:39Z",
+      "side": 1,
+      "message": "yeah, callbacks aren\u0027t super readable.\nHowever, returning a chan would require\n1) a new goroutine inside multiplexLogs to send to the channel\n2) a new type for the new channel. It would include the error that is currently returned by multiplexLogs\n\nunless I am missing something?",
+      "parentUuid": "c9eaad1e_4341c9b5",
       "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -71,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "61253a0f_cdf89126",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:08:39Z",
+      "side": 1,
+      "message": "heap version is more efficient. Also it is a classical interview question\n\nbut as i wrote this, this complexity isn\u0027t justified because we don\u0027t have hundreds or thousands of logs in a step. Most of the time i will be used with only two logs, so perhaps heap actually makes it slower.\n\nreverted to simple slice...",
+      "parentUuid": "cd2d1314_55fe04d3",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fba7a591_37d7fda7",
         "filename": "buildbucket/cmd/bb/log.go",
         "patchSetId": 6
@@ -85,6 +139,24 @@
       "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f67bbf67_e8fe8b40",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T23:08:39Z",
+      "side": 1,
+      "message": "no longer relevant",
+      "parentUuid": "fba7a591_37d7fda7",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
