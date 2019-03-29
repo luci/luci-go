@@ -16,6 +16,24 @@
       "revId": "507229d1d26cfe9127433c52ac8b9827fcd8a79e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b741912e_54f54261",
+        "filename": "vpython/options.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1181690
+      },
+      "writtenOn": "2019-03-29T01:24:10Z",
+      "side": 1,
+      "message": "The intent is to use the default spec, similar to how it\u0027d work if no spec were found for an actual script.\n\nI think that\u0027d be less predictable; running the same command from different cwds could have different results depending on the nearest vpython spec.",
+      "parentUuid": "1ed8e28f_f8621da7",
+      "revId": "507229d1d26cfe9127433c52ac8b9827fcd8a79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
