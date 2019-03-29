@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "de88735a_778790f2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 922,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T03:38:34Z",
+      "side": 1,
+      "message": "a build can specify emails to notify, with template",
+      "parentUuid": "cada7cfd_9e6747f7",
+      "revId": "ab0de9ed9f2c450c3dccd9afce04e95dfd06dc8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c6fa035_63d7cc68",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier_template.star",
         "patchSetId": 3
