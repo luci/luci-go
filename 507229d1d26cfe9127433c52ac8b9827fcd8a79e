@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ed8e28f_f8621da7",
+        "filename": "vpython/options.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-29T01:11:07Z",
+      "side": 1,
+      "message": "So the intent is to operate without ANY environment in this case? That seems a bit weird....\n\nWouldn\u0027t it be more predictable to look for a spec starting in cwd?",
+      "revId": "507229d1d26cfe9127433c52ac8b9827fcd8a79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
