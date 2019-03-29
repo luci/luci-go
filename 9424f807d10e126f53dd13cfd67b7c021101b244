@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "ca6e3727_45518371",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-29T23:05:10Z",
+      "side": 1,
+      "message": "from here onwards to the end file: I think it should be part of LogDog library, not bb-specific. This is also necessary for https://crbug.com/940069\n\nmaybe eventually LogDog should grow actual API for streaming such a log.",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c9eaad1e_4341c9b5",
         "filename": "buildbucket/cmd/bb/log.go",
         "patchSetId": 6
@@ -30,6 +47,24 @@
       "writtenOn": "2019-03-29T22:42:19Z",
       "side": 1,
       "message": "What was wrong with the slice implementation? It was easier to follow than the heap version.",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebdc050d_8b97dedf",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-29T23:05:10Z",
+      "side": 1,
+      "message": "yeah, but heap version is more efficient, it\u0027s just that Go makes it super boilerplaty.",
+      "parentUuid": "cd2d1314_55fe04d3",
       "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
