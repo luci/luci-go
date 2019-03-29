@@ -47,7 +47,7 @@ Example:
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &addRun{}
-			r.SetDefaultFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
 			r.Flags.Var(flag.StringSlice(&r.cls), "cl", "CL URL as input for the builds. Can be specified multiple times.")
 			// TODO(crbug.com/946422): add -commit flag
