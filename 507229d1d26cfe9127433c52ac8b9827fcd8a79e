@@ -34,6 +34,24 @@
       "revId": "507229d1d26cfe9127433c52ac8b9827fcd8a79e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "097af31a_2444e9aa",
+        "filename": "vpython/options.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-03-29T01:44:28Z",
+      "side": 1,
+      "message": "Yeah that makes sense to me. Can you verify that\n\n     vpython -vpython-spec path/.vpython - \u003c\u003c\u003c\"print \u0027hey\u0027\"\n\nStill works too?",
+      "parentUuid": "b741912e_54f54261",
+      "revId": "507229d1d26cfe9127433c52ac8b9827fcd8a79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
