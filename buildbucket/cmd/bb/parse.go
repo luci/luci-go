@@ -35,7 +35,7 @@ func parseBuildIDArgs(args []string) ([]int64, error) {
 	return buildIDs, nil
 }
 
-var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/c/(([^\+]+)/\+/)?(\d+)(/(\d+))?`)
+var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/(#/)?c/(([^\+]+)/\+/)?(\d+)(/(\d+))?`)
 
 // parseCL tries to retrieve a CL info from a string.
 //
@@ -51,10 +51,10 @@ func parseCL(s string) (*buildbucketpb.GerritChange, error) {
 	}
 	ret := &buildbucketpb.GerritChange{
 		Host:    m[1],
-		Project: m[3],
+		Project: m[4],
 	}
-	change := m[4]
-	patchSet := m[6]
+	change := m[5]
+	patchSet := m[7]
 
 	var err error
 	ret.Change, err = strconv.ParseInt(change, 10, 64)
