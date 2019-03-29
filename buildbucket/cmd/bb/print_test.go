@@ -16,9 +16,12 @@ package main
 
 import (
 	"bytes"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/mgutz/ansi"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 
@@ -29,10 +32,11 @@ var buildJSON = `
 {
   "id": "8917899588926498064",
   "builder": {
-    "project": "infra",
+    "project": "chromium",
     "bucket": "try",
-    "builder": "Luci-go Mac Tester"
+    "builder": "linux-rel"
   },
+  "number": 1,
   "createdBy": "user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com",
   "createTime": "2019-03-26T18:33:47.958975Z",
   "startTime": "2019-03-26T18:33:52.447816Z",
@@ -145,16 +149,15 @@ var buildJSON = `
   ]
 }`
 
-const expectedBuildPrinted = `ID: 8917899588926498064
-Builder: infra/try/Luci-go Mac Tester
-Status: SUCCESS it was ok
-Created on 2019-03-26 at 11:33:47, started at 11:33:52, ended at 11:33:52
-Commit: https://chromium.googlesource.com/infra/luci/luci-go/+/deadbeef on refs/heads/master
-CL: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1
-Tag: buildset:patch/gerrit/chromium-review.googlesource.com/1539021/1
-Tag: cq_experimental:false
-Tag: user_agent:cq
-Input properties: {
+const expectedBuildPrintedTemplate = `<green>Build 8917899588926498064 SUCCESS   'chromium/try/linux-rel/1'<reset>
+<white+b>Summary<reset>: it was ok
+<white+b>Created<reset> on 2019-03-26 at 11:33:47, <white+b>started<reset> at 11:33:52, <white+b>ended<reset> at 11:33:52
+<white+b>Commit<reset>: <white+u>https://chromium.googlesource.com/infra/luci/luci-go/+/deadbeef<reset> on refs/heads/master
+<white+b>CL<reset>: <white+u>https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1<reset>
+<white+b>Tag<reset>: buildset:patch/gerrit/chromium-review.googlesource.com/1539021/1
+<white+b>Tag<reset>: cq_experimental:false
+<white+b>Tag<reset>: user_agent:cq
+<white+b>Input properties<reset>: {
   "$recipe_engine/cq": {
     "dry_run": true
   },
@@ -168,33 +171,40 @@ Input properties: {
   "buildername": "Luci-go Mac Tester",
   "category": "cq"
 }
-Output properties: {
+<white+b>Output properties<reset>: {
   "$recipe_engine/cq": {
     "dry_run": true
   },
   "bot_id": "build234-m9"
 }
-Step "first"                            SUCCESS   58.933ms
+<green>Step "first"                                                SUCCESS   58.933ms<reset>
   first summary markdown
   summary second line
-  * stdout https://logs.example.com/first/stdout
-  * stderr https://logs.example.com/first/stderr
-
-Step "second"                           SUCCESS   58.933ms
-  * stdout https://logs.example.com/second/stdout
-  * stderr https://logs.example.com/second/stderr
+  * stdout    <white+u>https://logs.example.com/first/stdout<reset>
+  * stderr    <white+u>https://logs.example.com/first/stderr<reset>
+<green>Step "second"                                               SUCCESS   58.933ms<reset>
+  * stdout    <white+u>https://logs.example.com/second/stdout<reset>
+  * stderr    <white+u>https://logs.example.com/second/stderr<reset>
 `
 
 func TestPrint(t *testing.T) {
 	Convey("Print", t, func() {
 		buf := &bytes.Buffer{}
-		p := newPrinter(buf)
+		p := newPrinter(buf, false)
 
 		Convey("Build", func() {
 			build := &buildbucketpb.Build{}
 			So(jsonpb.UnmarshalString(buildJSON, build), ShouldBeNil)
 
+			expectedBuildPrinted := regexp.MustCompile("<[^>]+>").ReplaceAllStringFunc(
+				expectedBuildPrintedTemplate,
+				func(style string) string {
+					style = strings.TrimPrefix(style, "<")
+					style = strings.TrimSuffix(style, ">")
+					return ansi.ColorCode(style)
+				})
 			p.Build(build)
+
 			So(buf.String(), ShouldEqual, expectedBuildPrinted)
 		})
 
@@ -205,7 +215,8 @@ func TestPrint(t *testing.T) {
 				Ref:     "refs/heads/master",
 			})
 			p.tab.Flush()
-			So(buf.String(), ShouldEqual, "https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master")
+
+			So(buf.String(), ShouldEqual, ansi.Color("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master", "white+u"))
 		})
 	})
 }

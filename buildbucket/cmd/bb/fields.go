@@ -64,6 +64,7 @@ func (f *buildFieldFlags) FieldMask() *field_mask.FieldMask {
 			"start_time",
 			"status",
 			"status_details",
+			"summary_markdown",
 			"tags",
 			"update_time",
 		},
