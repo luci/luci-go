@@ -918,10 +918,16 @@ def _cq_builder_name(builder, project):
 
 def gen_notify_cfg(ctx):
   notifiers = graph.children(keys.project(), kinds.NOTIFIER)
-  if not notifiers:
+  templates = graph.children(keys.project(), kinds.NOTIFIER_TEMPLATE)
+  if not notifiers and not templates:
     return
 
   service = get_service('notify', 'using notifiers')
+
+  # Write all defined templates.
+  for t in templates:
+    path = '%s/email-templates/%s.template' % (service.app_id, t.props.name)
+    ctx.config_set[path] = t.props.body
 
   # Build the map 'builder node => [notifier node] watching it'.
   per_builder = {}
@@ -969,12 +975,19 @@ def gen_notify_cfg(ctx):
 
 def _notify_notification_pb(node):
   """Given luci.notifier node returns notify_pb.Notification."""
+  templs = graph.children(node.key, kind=kinds.NOTIFIER_TEMPLATE)
+  if len(templs) == 0:
+    template = None
+  elif len(templs) == 1:
+    template = templs[0].props.name
+  else:
+    fail('impossible')
   pb = notify_pb.Notification(
       on_change = node.props.on_status_change,
       on_failure = node.props.on_failure,
       on_new_failure = node.props.on_new_failure,
       on_success = node.props.on_success,
-      template = node.props.template,
+      template = template,
   )
   if node.props.notify_emails:
     pb.email = notify_pb.Notification.Email(recipients=node.props.notify_emails)

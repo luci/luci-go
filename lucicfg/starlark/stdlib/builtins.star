@@ -31,6 +31,7 @@ load('@stdlib//internal/luci/rules/list_view_entry.star', _list_view_entry='list
 load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
 load('@stdlib//internal/luci/rules/milo.star', _milo='milo')
 load('@stdlib//internal/luci/rules/notifier.star', _notifier='notifier')
+load('@stdlib//internal/luci/rules/notifier_template.star', _notifier_template='notifier_template')
 load('@stdlib//internal/luci/rules/project.star', _project='project')
 load('@stdlib//internal/luci/rules/recipe.star', _recipe='recipe')
 
@@ -66,6 +67,7 @@ luci = struct(
     console_view = _console_view,
     console_view_entry = _console_view_entry,
     notifier = _notifier,
+    notifier_template = _notifier_template,
     cq = _cq,
     cq_group = _cq_group,
     cq_tryjob_verifier = _cq_tryjob_verifier,

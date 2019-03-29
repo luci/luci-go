@@ -1139,8 +1139,6 @@ finishes, the builder "notifies" all [luci.notifier(...)](#luci.notifier) object
 it, and in turn each notifier filters and forwards this event to corresponding
 recipients.
 
-[Email Templates]: https://chromium.googlesource.com/infra/luci/luci-go/+/master/luci_notify/doc/email_templates.md
-
 #### Arguments {#luci.notifier-args}
 
 * **name**: name of this notifier to reference it from other rules. Required.
@@ -1151,8 +1149,105 @@ recipients.
 * **notify_emails**: an optional list of emails to send notifications to.
 * **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
 * **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
-* **template**: name of the template to use to format the notification email. If not present, `default` is used. See [Email Templates].
+* **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template named `default` is defined in the project somewhere, it is used implicitly by the notifier.
 * **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
+
+
+
+
+### luci.notifier_template {#luci.notifier_template}
+
+```python
+luci.notifier_template(name, body)
+```
+
+
+
+Defines a template to use for emails sent by [luci.notifier(...)](#luci.notifier).
+
+The main template body should have format `<subject>\n\n<body>` where
+subject is one line of [text/template] and body is an [html/template]. The
+body can either be specified inline right in the starlark script or loaded
+from an external file via [io.read_file(...)](#io.read_file).
+
+[text/template]: https://godoc.org/text/template
+[html/template]: https://godoc.org/html/template
+
+#### Template input
+
+The input to both templates is a structure with fields
+
+* [Build](https://godoc.org/go.chromium.org/luci/buildbucket/proto#Build):
+  a recently completed build for which the email is being generated.
+* [OldStatus](https://godoc.org/go.chromium.org/luci/buildbucket/proto#Status):
+  previous status of the builder. Relevant for continuous builders.
+
+#### Template functions
+
+The following functions are available to templates in addition to the
+[standard ones](https://godoc.org/text/template#hdr-Functions).
+
+* `time`: converts a
+  [Timestamp](https://godoc.org/github.com/golang/protobuf/ptypes/timestamp#Timestamp)
+  to [time.Time](https://godoc.org/time).
+  Example: `{{.Build.EndTime | time}}`
+
+#### Template example
+
+```html
+A {{.Build.Builder.Builder}} build completed
+
+<a href="https://ci.chromium.org/b/{{.Build.Id}}">Build {{.Build.Number}}</a>
+has completed with status {{.Build.Status}}
+on `{{.Build.EndTime | time}}`
+```
+
+#### Template sharing
+
+A template can "import" subtemplates defined in all other
+[luci.notifier_template(...)](#luci.notifier_template). When rendering, *all* templates defined in the
+project are merged into one. Example:
+
+```python
+# The actual email template which uses subtemplates defined below. In the real
+# life it might be better to load such large template from an external file
+# using io.read_file.
+luci.notifier_template(
+    name = 'default',
+    body = '\n'.join([
+        'A {{.Build.Builder.Builder}} completed',
+        '',
+        'A <a href="https://ci.chromium.org/b/{{.Build.Id}}">build</a> has completed.',
+        '',
+        'Steps: {{template "steps" .}}',
+        '',
+        '{{template "footer"}}',
+    ]),
+)
+
+# This template renders only steps. It is "executed" by other templates.
+luci.notifier_template(
+    name = 'steps',
+    body = '{{range $step := .Build.Steps}}<li>{{$step.name}}</li>{{end}',
+)
+
+# This template defines subtemplates used by other templates.
+luci.notifier_template(
+    name = 'common',
+    body = '{{define "footer"}}Have a nice day!{{end}}',
+)
+```
+
+#### Error handling
+
+If a user-defined template fails to render, a built-in template is used to
+generate a very short email with a link to the build and details about the
+failure.
+
+#### Arguments {#luci.notifier_template-args}
+
+* **name**: name of this template to reference it from [luci.notifier(...)](#luci.notifier) rules. A template named `default` is used by all notifiers that do not explicitly specify another template. Required.
+* **body**: string with the template body. Use [io.read_file(...)](#io.read_file) to load it from an external file, if necessary. Required.
 
 
 
