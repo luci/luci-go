@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c52516f_b4411b49",
+        "filename": "lucicfg/cli/cmds/diff/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-03-29T04:05:34Z",
+      "side": 1,
+      "message": "so much boilerplate, why not inline these into knownTypes?",
+      "range": {
+        "startLine": 280,
+        "startChar": 0,
+        "endLine": 280,
+        "endChar": 23
+      },
+      "revId": "8b95f54e54f53a40e6a63470de71d72bd4d35cea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
