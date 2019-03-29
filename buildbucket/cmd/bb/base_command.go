@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth"
@@ -272,4 +273,59 @@ func (r *baseCommandRun) retrieveCL(ctx context.Context, cl string) (*buildbucke
 	ret.Project = change.Project
 	ret.Patchset = int64(change.Revisions[change.CurrentRevision].Number)
 	return ret, nil
+}
+
+// retrieveBuildIDs converts build arguments to int64 build ids,
+// where a build argument can be an int64 build or a
+// "<project>/<bucket>/<builder>/<build_number>" string.
+func (r *baseCommandRun) retrieveBuildIDs(ctx context.Context, builds []string) (buildIDs []int64, err error) {
+	return retrieveBuildIDs(builds, func(req *buildbucketpb.BatchRequest) (*buildbucketpb.BatchResponse, error) {
+		client, err := r.newClient(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return client.Batch(ctx, req)
+	})
+}
+
+func retrieveBuildIDs(builds []string, callBatch func(*buildbucketpb.BatchRequest) (*buildbucketpb.BatchResponse, error)) (buildIDs []int64, err error) {
+	buildIDs = make([]int64, len(builds))
+	batchReq := &buildbucketpb.BatchRequest{
+		Requests: make([]*buildbucketpb.BatchRequest_Request, 0, len(builds)),
+	}
+	indexes := make([]int, 0, len(builds))
+	idFieldMask := &field_mask.FieldMask{Paths: []string{"id"}}
+	for i, b := range builds {
+		getBuild, err := protoutil.ParseGetBuildRequest(b)
+		if err != nil {
+			return nil, fmt.Errorf("invalid build %q: %s", b, err)
+		}
+		if getBuild.Builder == nil {
+			buildIDs[i] = getBuild.Id
+		} else {
+			getBuild.Fields = idFieldMask
+			batchReq.Requests = append(batchReq.Requests, &buildbucketpb.BatchRequest_Request{
+				Request: &buildbucketpb.BatchRequest_Request_GetBuild{GetBuild: getBuild},
+			})
+			indexes = append(indexes, i)
+		}
+	}
+
+	if len(batchReq.Requests) == 0 {
+		return buildIDs, nil
+	}
+
+	res, err := callBatch(batchReq)
+	for i, res := range res.Responses {
+		j := indexes[i]
+		switch codes.Code(res.GetError().GetCode()) {
+		case codes.OK:
+			buildIDs[j] = res.GetGetBuild().Id
+		case codes.NotFound:
+			return nil, fmt.Errorf("build %q not found", builds[j])
+		default:
+			return nil, err
+		}
+	}
+	return buildIDs, nil
 }
