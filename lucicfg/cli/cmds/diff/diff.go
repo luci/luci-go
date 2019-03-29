@@ -16,13 +16,11 @@
 package diff
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -30,9 +28,11 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
+	buildbucket_pb "go.chromium.org/luci/buildbucket/proto/config"
 	config_pb "go.chromium.org/luci/common/proto/config"
 	cq_pb "go.chromium.org/luci/cq/api/config/v2"
 	logdog_pb "go.chromium.org/luci/logdog/api/config/svcconfig"
+	notify_pb "go.chromium.org/luci/luci_notify/api/config"
 	milo_pb "go.chromium.org/luci/milo/api/config"
 	scheduler_pb "go.chromium.org/luci/scheduler/appengine/messages"
 
@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/lucicfg/cli/base"
+	"go.chromium.org/luci/lucicfg/normalize"
 )
 
 // Cmd is 'semantic-diff' subcommand.
@@ -136,7 +137,6 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 			if strings.HasPrefix(pair.name, desc.prefix) {
 				pair.typ = proto.MessageType(desc.proto)
 				pair.protoNormalizer = desc.protoNormalizer
-				pair.rawNormalizer = desc.rawNormalizer
 				break
 			}
 		}
@@ -224,15 +224,11 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 // e.g. sorts entries, flattens mixins, etc.
 type protoNormalizer func(context.Context, proto.Message) (proto.Message, error)
 
-// rawNormalizer takes a byte blob with a config and normalizes it.
-type rawNormalizer func(context.Context, []byte) ([]byte, error)
-
 // A pair of config files of the same type to compare.
 type configPair struct {
 	name            string          // e.g. "cr-buildbucket.cfg"
 	typ             reflect.Type    // e.g. &Config{}
 	protoNormalizer protoNormalizer // callback to normalize the protos
-	rawNormalizer   rawNormalizer   // callback to normalize raw []byte
 	original        []byte          // body of the original file
 	generated       []byte          // body of the generated file
 }
@@ -254,9 +250,6 @@ func (p *configPair) normalize(ctx context.Context) error {
 // normalizeOne deserializes the proto, passes it through normalizer, serializes
 // it back.
 func normalizeOne(ctx context.Context, in []byte, p *configPair) (out []byte, err error) {
-	if p.rawNormalizer != nil {
-		return p.rawNormalizer(ctx, in)
-	}
 	msg := reflect.New(p.typ.Elem()).Interface().(proto.Message)
 	if err = proto.UnmarshalText(string(in), msg); err != nil {
 		return
@@ -274,109 +267,26 @@ var knownTypes = []struct {
 	prefix          string
 	proto           string
 	protoNormalizer protoNormalizer
-	rawNormalizer   rawNormalizer
 }{
-	{"commit-queue", "cq.config.Config", normCommitQueueCfg, nil},
-	{"cr-buildbucket", "buildbucket.BuildbucketCfg", nil, normBuildbucketCfg},
-	{"luci-logdog", "svcconfig.ProjectConfig", normLogdogCfg, nil},
-	{"luci-milo", "milo.Project", normMiloCfg, nil},
-	{"luci-scheduler", "scheduler.config.ProjectConfig", normSchedulerCfg, nil},
-	{"project", "config.ProjectCfg", normProjectCfg, nil},
-}
-
-func normCommitQueueCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
-	pb := m.(*cq_pb.Config)
-	// TODO
-	return pb, nil
-}
-
-func normBuildbucketCfg(ctx context.Context, in []byte) (out []byte, err error) {
-	// Install or update 'flatten_buildbucket_cfg' tool.
-	bin, err := installFlattenBuildbucketCfg(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to install buildbucket config flattener: %s", err)
-	}
-
-	// 'flatten_buildbucket_cfg' wants a real file as input.
-	f, err := ioutil.TempFile("", "lucicfg")
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		f.Close()
-		os.Remove(f.Name())
-	}()
-	if _, err := f.Write(in); err != nil {
-		return nil, err
-	}
-	if err := f.Close(); err != nil {
-		return nil, err
-	}
-
-	buf := bytes.Buffer{}
-
-	cmd := exec.Command(bin, f.Name())
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = &buf
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to flatten the config - %s", err)
-	}
-
-	return buf.Bytes(), nil
-}
-
-func normLogdogCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
-	pb := m.(*logdog_pb.ProjectConfig)
-	// TODO
-	return pb, nil
-}
-
-func normMiloCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
-	pb := m.(*milo_pb.Project)
-	// TODO
-	return pb, nil
-}
-
-func normSchedulerCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
-	pb := m.(*scheduler_pb.ProjectConfig)
-	// TODO
-	return pb, nil
-}
-
-func normProjectCfg(ctx context.Context, m proto.Message) (proto.Message, error) {
-	pb := m.(*config_pb.ProjectCfg)
-	// TODO
-	return pb, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-var flattenerPath = ""
-
-func installFlattenBuildbucketCfg(ctx context.Context) (bin string, err error) {
-	// Do not install twice, just a waste of time resolving 'latest'.
-	if flattenerPath != "" {
-		return flattenerPath, nil
-	}
-
-	// Install into ~/.flatten_buildbucket_cfg because where else to keep random
-	// garbage?
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	dest := filepath.Join(usr.HomeDir, ".flatten_buildbucket_cfg")
-	logging.Infof(ctx, "Installing infra/tools/flatten_buildbucket_cfg into %s", dest)
-
-	cmd := exec.Command("cipd", "ensure", "-root", dest, "-ensure-file", "-")
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = strings.NewReader("infra/tools/flatten_buildbucket_cfg latest")
-	if err = cmd.Run(); err != nil {
-		return
-	}
-
-	flattenerPath = filepath.Join(dest, "flatten_buildbucket_cfg")
-	return flattenerPath, nil
+	{"commit-queue", "cq.config.Config", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+		return normalize.CQ(ctx, m.(*cq_pb.Config))
+	}},
+	{"cr-buildbucket", "buildbucket.BuildbucketCfg", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+		return normalize.Buildbucket(ctx, m.(*buildbucket_pb.BuildbucketCfg))
+	}},
+	{"luci-logdog", "svcconfig.ProjectConfig", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+		return normalize.Logdog(ctx, m.(*logdog_pb.ProjectConfig))
+	}},
+	{"luci-milo", "milo.Project", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+		return normalize.Milo(ctx, m.(*milo_pb.Project))
+	}},
+	{"luci-notify", "notify.ProjectConfig", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+		return normalize.Notify(ctx, m.(*notify_pb.ProjectConfig))
+	}},
+	{"luci-scheduler", "scheduler.config.ProjectConfig", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+		return normalize.Scheduler(ctx, m.(*scheduler_pb.ProjectConfig))
+	}},
+	{"project", "config.ProjectCfg", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+		return normalize.Project(ctx, m.(*config_pb.ProjectCfg))
+	}},
 }
