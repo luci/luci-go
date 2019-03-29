@@ -34,6 +34,24 @@
       "revId": "24036e46823db68e88ed14089fe6a74259a30ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab86ff70_4d5a2bee",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T03:59:57Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/infra/+/1545535/",
+      "parentUuid": "728938e9_c78f42bc",
+      "revId": "24036e46823db68e88ed14089fe6a74259a30ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
