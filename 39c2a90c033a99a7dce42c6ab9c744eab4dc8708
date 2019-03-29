@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7086c0ae_7cd4be2b",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T00:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2b7802c_0c349d74",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "141ab855_4f7d692c",
         "filename": "buildbucket/cmd/bb/log.go",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eacb7c27_8396da2e",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T00:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "141ab855_4f7d692c",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "678dd7b3_e1cd9535",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T00:29:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "551ef241_4f6c5394",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c74f40e2_3a1ce0b9",
         "filename": "buildbucket/cmd/bb/log.go",
         "patchSetId": 3
@@ -64,6 +118,24 @@
       "writtenOn": "2019-03-28T23:58:15Z",
       "side": 1,
       "message": "I\u0027ve noticed a condition (likely race condition in the butler) where timeoffsets for some streams aren\u0027t always populated for the first log chunk.\n(root cause of https://bugs.chromium.org/p/chromium/issues/detail?id\u003d908436)\nThis means in some very rare conditions, if timestamp is used for ordering, the ordering of the lines in the first chunk between streams may be unstable.\n\nTo mitigate this, the PrefixIndex can be used for ordering instead.",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6006e8d_7b6f4146",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T00:29:46Z",
+      "side": 1,
+      "message": "PrefixIndex says\n\n\u003e It is used to designate unambiguous log\n    // ordering.\n\ncan we always use it and not bother with offset then? it would be much simpler",
+      "parentUuid": "c74f40e2_3a1ce0b9",
       "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -90,6 +162,30 @@
       "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "417a49c3_bd3b2050",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T00:29:46Z",
+      "side": 1,
+      "message": "that would mean that multiplexLogs assumes the caller?",
+      "parentUuid": "4260d964_5f1e2ced",
+      "range": {
+        "startLine": 266,
+        "startChar": 36,
+        "endLine": 266,
+        "endChar": 37
+      },
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
