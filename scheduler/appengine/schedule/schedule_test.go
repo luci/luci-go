@@ -78,6 +78,12 @@ func TestAbsoluteSchedule(t *testing.T) {
 			closestMidnight.Add(6 * time.Hour),
 			closestMidnight.Add(9 * time.Hour),
 		})
+		So(timeTable("0 1/3 * * * *", epoch, 4), ShouldResemble, []time.Time{
+			closestMidnight.Add(1 * time.Hour),
+			closestMidnight.Add(4 * time.Hour),
+			closestMidnight.Add(7 * time.Hour),
+			closestMidnight.Add(10 * time.Hour),
+		})
 	})
 
 	Convey("Trailing stars are optional", t, func() {
