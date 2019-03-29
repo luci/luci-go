@@ -142,6 +142,24 @@
     },
     {
       "key": {
+        "uuid": "f390ad0a_22f4a34d",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-29T17:12:34Z",
+      "side": 1,
+      "message": "Yes, in general PrefixIndex has guarantees set by butler, and should always be used for ordering within a prefix (which is what this log subcommand is doing)",
+      "parentUuid": "b6006e8d_7b6f4146",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4260d964_5f1e2ced",
         "filename": "buildbucket/cmd/bb/log.go",
         "patchSetId": 3
@@ -177,6 +195,30 @@
       "side": 1,
       "message": "that would mean that multiplexLogs assumes the caller?",
       "parentUuid": "4260d964_5f1e2ced",
+      "range": {
+        "startLine": 266,
+        "startChar": 36,
+        "endLine": 266,
+        "endChar": 37
+      },
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ec15ffcc_e0774c09",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-03-29T17:12:34Z",
+      "side": 1,
+      "message": "That is true.  \"print\" does assume something about the caller.",
+      "parentUuid": "417a49c3_bd3b2050",
       "range": {
         "startLine": 266,
         "startChar": 36,
