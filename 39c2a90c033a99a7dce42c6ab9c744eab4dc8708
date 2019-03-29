@@ -160,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "ed54715e_601083d2",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-29T17:29:27Z",
+      "side": 1,
+      "message": "thinking about this more... i remember there were ideas to accept user-provided log timestamps. In this sense, it is better to use the offset since it may be provided by the user. PrefixIndex cannot be provided by the user. In this case, using time offset is more correct.\n\nHow realistic is the problem here? If it is only the first chunk, presumably it matches the stream creation timestamp, and that\u0027s what PS3 is doing: adds offset only if it is present",
+      "parentUuid": "f390ad0a_22f4a34d",
+      "revId": "39c2a90c033a99a7dce42c6ab9c744eab4dc8708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4260d964_5f1e2ced",
         "filename": "buildbucket/cmd/bb/log.go",
         "patchSetId": 3
