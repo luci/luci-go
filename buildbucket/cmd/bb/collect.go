@@ -44,7 +44,7 @@ Optionally writes build details into an output file as JSON array of
 bulidbucket.v2.Build proto messages.`,
 		CommandRun: func() subcommands.CommandRun {
 			r := &collectRun{}
-			r.SetDefaultFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(defaultAuthOpts)
 			r.Flags.DurationVar(
 				&r.intervalArg, "interval", time.Minute,
 				"duration to wait between requests")

@@ -44,7 +44,7 @@ Listed builds are sorted by creation time, descending.
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &lsRun{}
-			r.SetDefaultFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
 			return r
 		},

@@ -16,10 +16,8 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 
@@ -31,7 +29,6 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/cipd/version"
-	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
@@ -43,14 +40,13 @@ import (
 
 type baseCommandRun struct {
 	subcommands.CommandRunBase
-	authFlags      authcli.Flags
-	parsedAuthOpts auth.Options
-	host           string
-	json           bool
-	noColor        bool
+	authFlags authcli.Flags
+	host      string
+	json      bool
+	noColor   bool
 }
 
-func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
+func (r *baseCommandRun) RegisterGlobalFlags(defaultAuthOpts auth.Options) {
 	r.Flags.StringVar(
 		&r.host,
 		"host",
@@ -80,38 +76,11 @@ func (r *baseCommandRun) validateHost() error {
 }
 
 func (r *baseCommandRun) createHTTPClient(ctx context.Context) (*http.Client, error) {
-	var err error
-	if r.parsedAuthOpts, err = r.authFlags.Options(); err != nil {
-		return nil, err
-	}
-
-	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, r.parsedAuthOpts)
-	return authenticator.Client()
-}
-
-func (r *baseCommandRun) newLegacyClient(ctx context.Context) (*legacyClient, error) {
-	if err := r.validateHost(); err != nil {
-		return nil, err
-	}
-
-	httpClient, err := r.createHTTPClient(ctx)
+	opts, err := r.authFlags.Options()
 	if err != nil {
 		return nil, err
 	}
-
-	protocol := "https"
-	if lhttp.IsLocalHost(r.host) {
-		protocol = "http"
-	}
-
-	return &legacyClient{
-		HTTP: httpClient,
-		baseURL: &url.URL{
-			Scheme: protocol,
-			Host:   r.host,
-			Path:   "/_ah/api/buildbucket/v1/",
-		},
-	}, nil
+	return auth.NewAuthenticator(ctx, auth.SilentLogin, opts).Client()
 }
 
 func (r *baseCommandRun) newClient(ctx context.Context) (buildbucketpb.BuildsClient, error) {
@@ -211,33 +180,6 @@ func (r *baseCommandRun) done(ctx context.Context, err error) int {
 		logging.Errorf(ctx, "%s", err)
 		return 1
 	}
-	return 0
-}
-
-// callAndDone makes a buildbucket API call, prints error or response, and returns exit code.
-func (r *baseCommandRun) callAndDone(ctx context.Context, method, relURL string, body interface{}) int {
-	client, err := r.newLegacyClient(ctx)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	resBytes, err := client.call(ctx, method, relURL, body)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	var res struct {
-		Error *buildbucket.ApiErrorMessage
-	}
-	switch err := json.Unmarshal(resBytes, &res); {
-	case err != nil:
-		return r.done(ctx, err)
-	case res.Error != nil:
-		logging.Errorf(ctx, "Request error (reason: %s): %s", res.Error.Reason, res.Error.Message)
-		return 1
-	}
-
-	fmt.Printf("%s\n", resBytes)
 	return 0
 }
 
