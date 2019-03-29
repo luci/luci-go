@@ -159,6 +159,7 @@ message Job {
   //     previous invocation finishes). Some examples:
   //       "0 */3 * * * *" - each 3 hours: at 12:00 AM UTC, 3:00 AM UTC, ...
   //       "0 */3 * * *" - exact same thing (last field is optional)
+  //       "0 1/3 * * *" - each 3 hours but starting 1:00 AM UTC
   //       "0 2,10,18 * * *" - at 2 AM UTC, 10 AM UTC, 6 PM UTC
   //       "0 7 * * *" - at 7 AM UTC, once a day.
   //   - "with 10s interval": runs invocations in a loop, waiting 10s after
