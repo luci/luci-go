@@ -51,6 +51,9 @@ type getRun struct {
 
 func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
+	if err := r.initClients(ctx); err != nil {
+		return r.done(ctx, err)
+	}
 
 	req := &buildbucketpb.BatchRequest{}
 	fields := r.FieldMask()

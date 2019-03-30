@@ -58,18 +58,16 @@ type lsRun struct {
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
+	if err := r.initClients(ctx); err != nil {
+		return r.done(ctx, err)
+	}
 
 	req, err := r.parseSearchRequests(args)
 	if err != nil {
 		return r.done(ctx, err)
 	}
 
-	client, err := r.newClient(ctx)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	res, err := client.Batch(ctx, req)
+	res, err := r.client.Batch(ctx, req)
 	if err != nil {
 		return r.done(ctx, err)
 	}

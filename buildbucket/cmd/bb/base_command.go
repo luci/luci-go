@@ -44,6 +44,9 @@ type baseCommandRun struct {
 	host      string
 	json      bool
 	noColor   bool
+
+	httpClient *http.Client
+	client     buildbucketpb.BuildsClient
 }
 
 func (r *baseCommandRun) RegisterGlobalFlags(defaultAuthOpts auth.Options) {
@@ -65,58 +68,45 @@ func (r *baseCommandRun) RegisterGlobalFlags(defaultAuthOpts auth.Options) {
 	r.authFlags.Register(&r.Flags, defaultAuthOpts)
 }
 
-func (r *baseCommandRun) validateHost() error {
+// initClients validates -host flag and initializes r.httpClient and r.client.
+func (r *baseCommandRun) initClients(ctx context.Context) error {
+	// Create HTTP Client.
+	authOpts, err := r.authFlags.Options()
+	if err != nil {
+		return err
+	}
+	r.httpClient, err = auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+	if err != nil {
+		return err
+	}
+
+	// Validate -host
 	if r.host == "" {
 		return fmt.Errorf("a host for the buildbucket service must be provided")
 	}
 	if strings.ContainsRune(r.host, '/') {
 		return fmt.Errorf("invalid host %q", r.host)
 	}
-	return nil
-}
 
-func (r *baseCommandRun) createHTTPClient(ctx context.Context) (*http.Client, error) {
-	opts, err := r.authFlags.Options()
-	if err != nil {
-		return nil, err
-	}
-	return auth.NewAuthenticator(ctx, auth.SilentLogin, opts).Client()
-}
-
-func (r *baseCommandRun) newClient(ctx context.Context) (buildbucketpb.BuildsClient, error) {
-	if err := r.validateHost(); err != nil {
-		return nil, err
-	}
-
-	httpClient, err := r.createHTTPClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	opts := prpc.DefaultOptions()
-	opts.Insecure = lhttp.IsLocalHost(r.host)
-
+	// Create Buildbucket client.
+	rpcOpts := prpc.DefaultOptions()
+	rpcOpts.Insecure = lhttp.IsLocalHost(r.host)
 	info, err := version.GetCurrentVersion()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	opts.UserAgent = fmt.Sprintf("buildbucket CLI, instanceID=%q", info.InstanceID)
-
-	return buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
-		C:       httpClient,
+	rpcOpts.UserAgent = fmt.Sprintf("buildbucket CLI, instanceID=%q", info.InstanceID)
+	r.client = buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
+		C:       r.httpClient,
 		Host:    r.host,
-		Options: opts,
-	}), nil
+		Options: rpcOpts,
+	})
+	return nil
 }
 
 // batchAndDone executes req and prints the response.
 func (r *baseCommandRun) batchAndDone(ctx context.Context, req *buildbucketpb.BatchRequest) int {
-	client, err := r.newClient(ctx)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	res, err := client.Batch(ctx, req)
+	res, err := r.client.Batch(ctx, req)
 	if err != nil {
 		return r.done(ctx, err)
 	}
@@ -203,11 +193,7 @@ func (r *baseCommandRun) retrieveCL(ctx context.Context, cl string) (*buildbucke
 	}
 
 	// Fetch CL info from Gerrit.
-	httpClient, err := r.createHTTPClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	client, err := gerrit.NewRESTClient(httpClient, ret.Host, true)
+	client, err := gerrit.NewRESTClient(r.httpClient, ret.Host, true)
 	if err != nil {
 		return nil, err
 	}
@@ -229,11 +215,7 @@ func (r *baseCommandRun) retrieveCL(ctx context.Context, cl string) (*buildbucke
 // "<project>/<bucket>/<builder>/<build_number>" string.
 func (r *baseCommandRun) retrieveBuildIDs(ctx context.Context, builds []string) (buildIDs []int64, err error) {
 	return retrieveBuildIDs(builds, func(req *buildbucketpb.BatchRequest) (*buildbucketpb.BatchResponse, error) {
-		client, err := r.newClient(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return client.Batch(ctx, req)
+		return r.client.Batch(ctx, req)
 	})
 }
 
