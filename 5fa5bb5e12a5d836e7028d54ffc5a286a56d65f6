@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "d2a5bd38_b689e00d",
+        "filename": "buildbucket/cmd/bb/add.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-30T00:08:49Z",
+      "side": 1,
+      "message": "wasn\u0027t intended, but not a big deal: server responds with \n\n  gitiles_commit.ref: must start with \"refs/\"\n\ncannot reimplement https://chromium.googlesource.com/infra/infra/+/HEAD/appengine/cr-buildbucket/validation.py anyway",
+      "parentUuid": "379d7fdc_99a016bd",
+      "revId": "5fa5bb5e12a5d836e7028d54ffc5a286a56d65f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f7a69a80_9ccba9fc",
         "filename": "buildbucket/cmd/bb/util.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "5fa5bb5e12a5d836e7028d54ffc5a286a56d65f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a25c517f_272ad942",
+        "filename": "buildbucket/cmd/bb/util.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-30T00:08:49Z",
+      "side": 1,
+      "message": "this function is generic, so cannot do that. Inlined. Less code now.",
+      "parentUuid": "f7a69a80_9ccba9fc",
+      "revId": "5fa5bb5e12a5d836e7028d54ffc5a286a56d65f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
