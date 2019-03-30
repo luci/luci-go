@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "495007ba_e3a76bc0",
+        "filename": "buildbucket/cmd/bb/add.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-30T00:29:09Z",
+      "side": 1,
+      "message": "Done. Like this?",
+      "parentUuid": "07afb904_e651aa97",
+      "revId": "03ca54f547d47c9ad2d21c3ec9a60ccecbf8a0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b140872_23dcca69",
         "filename": "buildbucket/cmd/bb/add.go",
         "patchSetId": 6
@@ -33,6 +51,24 @@
       "revId": "03ca54f547d47c9ad2d21c3ec9a60ccecbf8a0c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f23e5f85_04e81e01",
+        "filename": "buildbucket/cmd/bb/add.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-30T00:29:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b140872_23dcca69",
+      "revId": "03ca54f547d47c9ad2d21c3ec9a60ccecbf8a0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "79778a8c_0472629c",
+        "filename": "buildbucket/cmd/bb/add.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-30T00:29:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81e1a0ad_fd8915f6",
+      "revId": "03ca54f547d47c9ad2d21c3ec9a60ccecbf8a0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bf531112_0822534c",
         "filename": "buildbucket/cmd/bb/add.go",
         "patchSetId": 6
@@ -67,6 +121,24 @@
       "revId": "03ca54f547d47c9ad2d21c3ec9a60ccecbf8a0c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bfb0422_26798cb5",
+        "filename": "buildbucket/cmd/bb/add.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-03-30T00:29:09Z",
+      "side": 1,
+      "message": "Done. did file IO too",
+      "parentUuid": "bf531112_0822534c",
+      "revId": "03ca54f547d47c9ad2d21c3ec9a60ccecbf8a0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
