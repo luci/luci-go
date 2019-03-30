@@ -121,6 +121,10 @@ func (r *baseCommandRun) batchAndDone(ctx context.Context, req *buildbucketpb.Ba
 		return r.done(ctx, err)
 	}
 
+	stderr := func(format string, args ...interface{}) {
+		fmt.Fprintf(os.Stderr, format, args...)
+	}
+
 	hasErr := false
 	p := newStdoutPrinter(r.noColor)
 	for i, res := range res.Responses {
@@ -130,24 +134,27 @@ func (r *baseCommandRun) batchAndDone(ctx context.Context, req *buildbucketpb.Ba
 		case *buildbucketpb.BatchResponse_Response_Error:
 			hasErr = true
 
-			var requestTitle string
-			switch req := req.Requests[i].Request.(type) {
-			case *buildbucketpb.BatchRequest_Request_GetBuild:
-				r := req.GetBuild
-				if r.Id != 0 {
-					requestTitle = fmt.Sprintf("build %d", r.Id)
-				} else {
-					requestTitle = fmt.Sprintf(`build "%s/%d"`, protoutil.FormatBuilderID(r.Builder), r.BuildNumber)
+			// If we have multiple requests, print a request title.
+			if len(req.Requests) > 1 {
+				switch req := req.Requests[i].Request.(type) {
+				case *buildbucketpb.BatchRequest_Request_GetBuild:
+					r := req.GetBuild
+					if r.Id != 0 {
+						stderr("build %d", r.Id)
+					} else {
+						stderr(`build "%s/%d"`, protoutil.FormatBuilderID(r.Builder), r.BuildNumber)
+					}
+
+				case *buildbucketpb.BatchRequest_Request_CancelBuild:
+					stderr("build %d", req.CancelBuild.Id)
+
+				default:
+					stderr("request #%d", i)
 				}
-
-			case *buildbucketpb.BatchRequest_Request_CancelBuild:
-				requestTitle = fmt.Sprintf("build %d", req.CancelBuild.Id)
-
-			default:
-				requestTitle = fmt.Sprintf("request #%d", i)
+				stderr(": ")
 			}
 
-			fmt.Fprintf(os.Stderr, "%s: %s: %s\n", requestTitle, codes.Code(res.Error.Code), res.Error.Message)
+			stderr("%s\n", res.Error.Message)
 			continue
 
 		case *buildbucketpb.BatchResponse_Response_GetBuild:
