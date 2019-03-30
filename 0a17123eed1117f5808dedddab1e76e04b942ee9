@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6582f224_6acd9608",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-03-30T00:46:20Z",
+      "side": 1,
+      "message": "Your logging appears to be configured to go to stderr though:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/6fe044b68a66630821b02c0587900a552f3d297d/buildbucket/cmd/bb/main.go#33\n\nSo now both your logging and human-friendly errors are printed to stderr.",
+      "range": {
+        "startLine": 12,
+        "startChar": 11,
+        "endLine": 12,
+        "endChar": 17
+      },
+      "revId": "0a17123eed1117f5808dedddab1e76e04b942ee9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
