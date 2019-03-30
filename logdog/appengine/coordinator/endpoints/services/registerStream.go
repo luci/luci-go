@@ -211,6 +211,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 
 				lst.TerminalIndex = req.TerminalIndex
 				lst.TerminatedTime = now
+				preTerminated = true
 			} else {
 				lst.TerminalIndex = -1
 			}
