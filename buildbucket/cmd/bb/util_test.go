@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
 	luciproto "go.chromium.org/luci/common/proto"
@@ -40,6 +41,18 @@ func shouldResembleProtoTextML(actual interface{}, expected ...interface{}) stri
 
 	expectedMsg := reflect.New(reflect.TypeOf(actual).Elem()).Interface().(proto.Message)
 	err := luciproto.UnmarshalTextML(expected[0].(string), expectedMsg)
+	So(err, ShouldBeNil)
+	So(actual, ShouldResembleProto, expectedMsg)
+	return ""
+}
+
+func shouldResembleJSONPB(actual interface{}, expected ...interface{}) string {
+	if len(expected) != 1 {
+		return fmt.Sprintf("shouldResembleProtoTextML expects 1 value, got %d", len(expected))
+	}
+
+	expectedMsg := reflect.New(reflect.TypeOf(actual).Elem()).Interface().(proto.Message)
+	err := jsonpb.UnmarshalString(expected[0].(string), expectedMsg)
 	So(err, ShouldBeNil)
 	So(actual, ShouldResembleProto, expectedMsg)
 	return ""
