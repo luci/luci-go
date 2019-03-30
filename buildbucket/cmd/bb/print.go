@@ -239,7 +239,7 @@ func (p *printer) buildTime(b *buildbucketpb.Build) {
 	p.f(" ")
 	p.dateTime(created)
 
-	if started.IsZero() && ended.IsZero() {
+	if started.IsZero() && ended.IsZero() && !p.isJustNow(created) {
 		// did not start or end yet
 		p.f(", ")
 		p.keyword("waiting")
