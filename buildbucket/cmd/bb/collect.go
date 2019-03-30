@@ -152,18 +152,16 @@ func writeBuildDetails(buildIDs []int64, buildDetails map[int64]*buildbucketpb.B
 
 func (r *collectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
+	if err := r.initClients(ctx); err != nil {
+		return r.done(ctx, err)
+	}
 
 	buildIDs, err := r.retrieveBuildIDs(ctx, args)
 	if err != nil {
 		return r.done(ctx, err)
 	}
 
-	client, err := r.newClient(ctx)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	buildDetails, err := collectBuildDetails(ctx, client, buildIDs, func() {
+	buildDetails, err := collectBuildDetails(ctx, r.client, buildIDs, func() {
 		fmt.Printf("Waiting %s before trying again...\n", r.intervalArg)
 		time.Sleep(r.intervalArg)
 	})
