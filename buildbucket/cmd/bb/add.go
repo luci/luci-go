@@ -15,11 +15,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
@@ -27,8 +25,6 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/flag"
-	"go.chromium.org/luci/common/sync/parallel"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -53,9 +49,22 @@ Examples:
 			r := &addRun{}
 			r.RegisterGlobalFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
-			r.Flags.Var(flag.StringSlice(&r.cls), "cl", "CL URL as input for the builds. Can be specified multiple times.")
-			r.Flags.StringVar(&r.commit, "commit", "", "Commit URL as input to the builds.")
-			r.Flags.StringVar(&r.ref, "ref", "refs/heads/master", "Git ref for the -commit")
+
+			r.clsFlag.Register(&r.Flags, `CL URL as input for the builds. Can be specified multiple times.
+
+Example:
+	# Schedule a linux-rel tryjob for CL 1539021
+	bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 infra/try/linux-rel`,
+			)
+
+			r.commitFlag.Register(&r.Flags, `Commit URL as input to the builds.
+Example:
+	# Build a specific revision
+	bb add -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9 infra/ci/linux-rel
+	# Build latest revision
+	bb add -commit https://chromium.googlesource.com/chromium/src/+/master infra/ci/linux-rel`)
+
+			r.Flags.StringVar(&r.ref, "ref", "refs/heads/master", "Git ref for the -commit that specifies a commit hash.")
 			return r
 		},
 	}
@@ -64,9 +73,9 @@ Examples:
 type addRun struct {
 	baseCommandRun
 	buildFieldFlags
-	cls    []string
-	commit string
-	ref    string
+	clsFlag
+	commitFlag
+	ref string
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -80,12 +89,15 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 	}
 
 	var err error
-	if baseReq.GerritChanges, err = r.parseCLs(ctx); err != nil {
+	if baseReq.GerritChanges, err = r.retrieveCLs(ctx, r.httpClient); err != nil {
 		return r.done(ctx, err)
 	}
 
-	if baseReq.GitilesCommit, err = r.parseCommit(); err != nil {
+	if baseReq.GitilesCommit, err = r.retrieveCommit(); err != nil {
 		return r.done(ctx, err)
+	}
+	if baseReq.GitilesCommit != nil && baseReq.GitilesCommit.Ref == "" {
+		baseReq.GitilesCommit.Ref = r.ref
 	}
 
 	req := &buildbucketpb.BatchRequest{}
@@ -104,48 +116,4 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 	}
 
 	return r.batchAndDone(ctx, req)
-}
-
-// parseCLs parses r.cls.
-func (r *addRun) parseCLs(ctx context.Context) ([]*buildbucketpb.GerritChange, error) {
-	ret := make([]*buildbucketpb.GerritChange, len(r.cls))
-	return ret, parallel.FanOutIn(func(work chan<- func() error) {
-		for i, cl := range r.cls {
-			i := i
-			work <- func() error {
-				change, err := r.retrieveCL(ctx, cl)
-				if err != nil {
-					return fmt.Errorf("parsing CL %q: %s", cl, err)
-				}
-				ret[i] = change
-				return nil
-			}
-		}
-	})
-}
-
-// parseCommit parses r.commit.
-func (r *addRun) parseCommit() (*buildbucketpb.GitilesCommit, error) {
-	if r.commit == "" {
-		return nil, nil
-	}
-
-	commit, mustConfirmRef, err := parseCommit(r.commit)
-	switch {
-	case err != nil:
-		return nil, fmt.Errorf("invalid -commit: %s", err)
-
-	case mustConfirmRef:
-		fmt.Printf("Please confirm the git ref [%s] ", commit.Ref)
-		var reply string
-		fmt.Scanln(&reply)
-		reply = strings.TrimSpace(reply)
-		if reply != "" {
-			commit.Ref = reply
-		}
-
-	case commit.Ref == "":
-		commit.Ref = r.ref
-	}
-	return commit, nil
 }

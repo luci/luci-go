@@ -15,49 +15,44 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/(#/)?c/(([^\+]+)/\+/)?(\d+)(/(\d+))?`)
+type commitFlag struct {
+	commit string
+}
 
-// parseCL tries to retrieve a CL info from a string.
-//
-// It is not strict and can consume noisy strings, e.g.
-// https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go
-// or incomplete strings, e.g.
-// https://chromium-review.googlesource.com/c/1541677
-// If err is nil, returned change is guaranteed to have Host and Change.
-func parseCL(s string) (*buildbucketpb.GerritChange, error) {
-	m := regexCL.FindStringSubmatch(s)
-	if m == nil {
-		return nil, fmt.Errorf("does not match regexp %q", regexCL)
-	}
-	ret := &buildbucketpb.GerritChange{
-		Host:    m[1],
-		Project: m[4],
-	}
-	change := m[5]
-	patchSet := m[7]
+func (f *commitFlag) Register(fs *flag.FlagSet, help string) {
+	fs.StringVar(&f.commit, "commit", "", help)
+}
 
-	var err error
-	ret.Change, err = strconv.ParseInt(change, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("invalid change %q: %s", change, err)
+// retrieveCommit retrieves a GitilesCommit from f.commit.
+// Interacts with the user if necessary/
+func (f *commitFlag) retrieveCommit() (*buildbucketpb.GitilesCommit, error) {
+	if f.commit == "" {
+		return nil, nil
 	}
 
-	if patchSet != "" {
-		ret.Patchset, err = strconv.ParseInt(patchSet, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("invalid patchset %q: %s", patchSet, err)
+	commit, mustConfirmRef, err := parseCommit(f.commit)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("invalid -commit: %s", err)
+
+	case mustConfirmRef:
+		fmt.Printf("Please confirm the git ref [%s] ", commit.Ref)
+		var reply string
+		fmt.Scanln(&reply)
+		reply = strings.TrimSpace(reply)
+		if reply != "" {
+			commit.Ref = reply
 		}
 	}
-
-	return ret, nil
+	return commit, nil
 }
 
 var regexCommit = regexp.MustCompile(`(\w+\.googlesource\.com)/([^\+]+)/\+/(([a-f0-9]{40})|([\w\-/]+))`)
