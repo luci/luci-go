@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
@@ -38,9 +39,12 @@ func cmdAdd(defaultAuthOpts auth.Options) *subcommands.Command {
 		ShortDesc: "schedule builds",
 		LongDesc: `Schedule builds.
 
-Example:
+Examples:
 	# Add linux-rel and mac-rel builds to chromium/ci bucket
 	bb add infra/ci/{linux-rel,mac-rel}
+
+	# Build a specific revision
+	bb add -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9 infra/ci/linux-rel
 
 	# Add linux-rel tryjob for a CL.
 	bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 infra/try/linux-rel
@@ -50,7 +54,8 @@ Example:
 			r.RegisterGlobalFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
 			r.Flags.Var(flag.StringSlice(&r.cls), "cl", "CL URL as input for the builds. Can be specified multiple times.")
-			// TODO(crbug.com/946422): add -commit flag
+			r.Flags.StringVar(&r.commit, "commit", "", "Commit URL as input to the builds.")
+			r.Flags.StringVar(&r.ref, "ref", "refs/heads/master", "Git ref for the -commit")
 			return r
 		},
 	}
@@ -59,7 +64,9 @@ Example:
 type addRun struct {
 	baseCommandRun
 	buildFieldFlags
-	cls []string
+	cls    []string
+	commit string
+	ref    string
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -71,6 +78,10 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 
 	var err error
 	if baseReq.GerritChanges, err = r.parseCLs(ctx); err != nil {
+		return r.done(ctx, err)
+	}
+
+	if baseReq.GitilesCommit, err = r.parseCommit(); err != nil {
 		return r.done(ctx, err)
 	}
 
@@ -108,4 +119,30 @@ func (r *addRun) parseCLs(ctx context.Context) ([]*buildbucketpb.GerritChange, e
 			}
 		}
 	})
+}
+
+// parseCommit parses r.commit.
+func (r *addRun) parseCommit() (*buildbucketpb.GitilesCommit, error) {
+	if r.commit == "" {
+		return nil, nil
+	}
+
+	commit, mustConfirmRef, err := parseCommit(r.commit)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("invalid -commit: %s", err)
+
+	case mustConfirmRef:
+		fmt.Printf("Please confirm the git ref [%s] ", commit.Ref)
+		var reply string
+		fmt.Scanln(&reply)
+		reply = strings.TrimSpace(reply)
+		if reply != "" {
+			commit.Ref = reply
+		}
+
+	case commit.Ref == "":
+		commit.Ref = r.ref
+	}
+	return commit, nil
 }
