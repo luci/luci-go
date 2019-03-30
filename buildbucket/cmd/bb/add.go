@@ -71,6 +71,9 @@ type addRun struct {
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
+	if err := r.initClients(ctx); err != nil {
+		return r.done(ctx, err)
+	}
 
 	baseReq := &buildbucketpb.ScheduleBuildRequest{
 		RequestId: strconv.FormatInt(rand.Int63(), 10),

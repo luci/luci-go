@@ -55,17 +55,12 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(ctx, fmt.Errorf("unexpected argument"))
 	}
 
-	client, err := r.newClient(ctx)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
 	req := &buildbucketpb.BatchRequest{}
 	if err := jsonpb.Unmarshal(os.Stdin, req); err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
 
-	res, err := client.Batch(ctx, req)
+	res, err := r.client.Batch(ctx, req)
 	if err != nil {
 		return r.done(ctx, err)
 	}
