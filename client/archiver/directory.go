@@ -105,7 +105,12 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 					return fmt.Errorf("Stat(%s): %s", l, err)
 				}
 				if strings.HasPrefix(l, dir) {
-					c <- &walkItem{fullPath: l[len(dir)+1:], relPath: relPath, info: info, inTreeSymlink: true}
+					// Readlink preserves relative paths of links; necessary to not break in tree symlinks.
+					l, err := os.Readlink(path)
+					if err != nil {
+						return fmt.Errorf("readlink(%s): %s", path, err)
+					}
+					c <- &walkItem{fullPath: l, relPath: relPath, info: info, inTreeSymlink: true}
 					return nil
 				}
 
