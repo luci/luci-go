@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "014c973a_eb7567f0",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2019-03-31T04:14:37Z",
+      "side": 1,
+      "message": "I\u0027d consider a different variable name here, this may be confusing to the reader.",
+      "range": {
+        "startLine": 109,
+        "startChar": 5,
+        "endLine": 109,
+        "endChar": 6
+      },
+      "revId": "4876f70f5cb5c5782d5c3afce7293eb947d502e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b25db09_44b1aef3",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2019-03-31T04:14:37Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be \"Readlink\" to match the case of other errors above?",
+      "range": {
+        "startLine": 111,
+        "startChar": 25,
+        "endLine": 111,
+        "endChar": 33
+      },
+      "revId": "4876f70f5cb5c5782d5c3afce7293eb947d502e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
