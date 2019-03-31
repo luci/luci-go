@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "94878474_1fd5ce0a",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-03-31T04:48:48Z",
+      "side": 1,
+      "message": "I think it makes sense to recycle the variable name err (still a linkname). I changed it though to redefine it instead of shadow it, if that looks better?",
+      "parentUuid": "014c973a_eb7567f0",
+      "range": {
+        "startLine": 109,
+        "startChar": 5,
+        "endLine": 109,
+        "endChar": 6
+      },
+      "revId": "4876f70f5cb5c5782d5c3afce7293eb947d502e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3b25db09_44b1aef3",
         "filename": "client/archiver/directory.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "4876f70f5cb5c5782d5c3afce7293eb947d502e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4ed79c6_5623e686",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-03-31T04:48:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b25db09_44b1aef3",
+      "range": {
+        "startLine": 111,
+        "startChar": 25,
+        "endLine": 111,
+        "endChar": 33
+      },
+      "revId": "4876f70f5cb5c5782d5c3afce7293eb947d502e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
