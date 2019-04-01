@@ -64,6 +64,7 @@ Example:
 Example:
 	bb add -t a:1 -t b:2 chromium/try/linux-rel`)
 
+			r.Flags.BoolVar(&r.experimental, "exp", false, `Mark the builds as experimental`)
 			return r
 		},
 	}
@@ -75,7 +76,8 @@ type addRun struct {
 	clsFlag
 	commitFlag
 	tagsFlag
-	ref string
+	ref          string
+	experimental bool
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -112,6 +114,10 @@ func (r *addRun) prepareBaseRequest(ctx context.Context) (*buildbucketpb.Schedul
 		RequestId: strconv.FormatInt(rand.Int63(), 10),
 		Tags:      r.Tags(),
 		Fields:    r.FieldMask(),
+	}
+
+	if r.experimental {
+		ret.Experimental = buildbucketpb.Trinary_YES
 	}
 
 	var err error
