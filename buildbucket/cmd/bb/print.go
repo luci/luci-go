@@ -209,19 +209,28 @@ func (p *printer) step(s *buildbucketpb.Step) {
 	start, startErr := ptypes.Timestamp(s.StartTime)
 	end, endErr := ptypes.Timestamp(s.EndTime)
 	if startErr == nil && endErr == nil {
-		p.f("%s", end.Sub(start))
+		p.fw(10, "%s", truncateDuration(end.Sub(start)))
 	}
+
+	// Print log names.
+	// Do not print log URLs because they are very long and
+	// bb has `log` subcommand.
+	if len(s.Logs) > 0 {
+		p.f("Logs: ")
+		for i, l := range s.Logs {
+			if i > 0 {
+				p.f(", ")
+			}
+			p.f("%q", l.Name)
+		}
+	}
+
 	p.f("%s\n", ansi.Reset)
 
 	p.indent.Level += 2
 	if s.SummaryMarkdown != "" {
 		// TODO(nodir): transform lists of links to look like logs
 		p.summary(s.SummaryMarkdown)
-	}
-	for _, l := range s.Logs {
-		p.f("* %s\t", l.Name)
-		p.linkf("%s", l.ViewUrl)
-		p.f("\n")
 	}
 	p.indent.Level -= 2
 }
@@ -348,4 +357,21 @@ func (p *printer) isToday(t time.Time) bool {
 	nYear, nMonth, nDay := now.Date()
 	tYear, tMonth, tDay := t.In(now.Location()).Date()
 	return tYear == nYear && tMonth == nMonth && tDay == nDay
+}
+
+var durationUnits []time.Duration = []time.Duration{
+	time.Hour,
+	time.Minute,
+	time.Second,
+	time.Millisecond,
+}
+
+// truncateDuration truncates d to make it more human-readable.
+func truncateDuration(d time.Duration) time.Duration {
+	for _, u := range durationUnits {
+		if d > u {
+			return d.Round(u / 10)
+		}
+	}
+	return d
 }
