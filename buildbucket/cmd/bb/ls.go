@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -46,6 +47,10 @@ Listed builds are sorted by creation time, descending.
 			r := &lsRun{}
 			r.RegisterGlobalFlags(defaultAuthOpts)
 			r.buildFieldFlags.Register(&r.Flags)
+
+			r.clsFlag.Register(&r.Flags, `CL URLs that builds must be associated with.
+Example:
+	bb ls -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1`)
 			return r
 		},
 	}
@@ -54,6 +59,7 @@ Listed builds are sorted by creation time, descending.
 type lsRun struct {
 	baseCommandRun
 	buildFieldFlags
+	clsFlag
 }
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -62,7 +68,7 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		return r.done(ctx, err)
 	}
 
-	req, err := r.parseSearchRequests(args)
+	req, err := r.parseSearchRequests(ctx, args)
 	if err != nil {
 		return r.done(ctx, err)
 	}
@@ -104,8 +110,8 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 
 // parseSearchRequests converts flags and arguments to a batched SearchBuilds
 // requests.
-func (r *lsRun) parseSearchRequests(args []string) (*buildbucketpb.BatchRequest, error) {
-	baseReq, err := r.parseBaseRequest()
+func (r *lsRun) parseSearchRequests(ctx context.Context, args []string) (*buildbucketpb.BatchRequest, error) {
+	baseReq, err := r.parseBaseRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +139,7 @@ func (r *lsRun) parseSearchRequests(args []string) (*buildbucketpb.BatchRequest,
 }
 
 // parseBaseRequest returns a base SearchBuildsRequest without builder filter.
-func (r *lsRun) parseBaseRequest() (*buildbucketpb.SearchBuildsRequest, error) {
+func (r *lsRun) parseBaseRequest(ctx context.Context) (*buildbucketpb.SearchBuildsRequest, error) {
 	ret := &buildbucketpb.SearchBuildsRequest{
 		Predicate: &buildbucketpb.BuildPredicate{},
 		Fields:    r.FieldMask(),
@@ -143,8 +149,10 @@ func (r *lsRun) parseBaseRequest() (*buildbucketpb.SearchBuildsRequest, error) {
 		ret.Fields.Paths[i] = "builds.*." + p
 	}
 
-	// TODO(nodir): parse flags.
-
+	var err error
+	if ret.Predicate.GerritChanges, err = r.clsFlag.retrieveCLs(ctx, r.httpClient); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
