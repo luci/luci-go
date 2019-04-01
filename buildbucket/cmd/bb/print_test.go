@@ -180,14 +180,10 @@ const expectedBuildPrintedTemplate = `<green>Build 8917899588926498064 SUCCESS  
   },
   "bot_id": "build234-m9"
 }
-<green>Step "first"                                                SUCCESS   58.933ms<reset>
+<green>Step "first"                                                SUCCESS   58.9ms    Logs: "stdout", "stderr"<reset>
   first summary markdown
   summary second line
-  * stdout    <white+u>https://logs.example.com/first/stdout<reset>
-  * stderr    <white+u>https://logs.example.com/first/stderr<reset>
-<green>Step "second"                                               SUCCESS   58.933ms<reset>
-  * stdout    <white+u>https://logs.example.com/second/stdout<reset>
-  * stderr    <white+u>https://logs.example.com/second/stderr<reset>
+<green>Step "second"                                               SUCCESS   58.9ms    Logs: "stdout", "stderr"<reset>
 `
 
 func TestPrint(t *testing.T) {
