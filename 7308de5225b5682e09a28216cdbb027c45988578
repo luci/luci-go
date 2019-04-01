@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4dd374b1_1aad5d71",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-01T20:19:40Z",
+      "side": 1,
+      "message": "return d.Round(u/10)?",
+      "revId": "7308de5225b5682e09a28216cdbb027c45988578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
