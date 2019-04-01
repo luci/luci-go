@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c46b5972_6ef4f0d9",
+        "filename": "buildbucket/cmd/bb/cl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-01T18:34:55Z",
+      "side": 1,
+      "message": "this error message goes to the user. \"Parsing\" is more standard word for this, but i agree that it is inconsistent with the function name.\n\nI\u0027ve removed the word. The goal here is to specify which CL string is wrong.",
+      "parentUuid": "e1cdb60a_bfb58e1c",
+      "revId": "975edf5f76db0346e17d36b1e0d7a5329df96d5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e38fb018_66644f99",
         "filename": "buildbucket/cmd/bb/cl.go",
         "patchSetId": 2
