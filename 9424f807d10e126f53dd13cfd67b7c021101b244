@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "9679aa76_6b79c1a4",
+        "filename": "buildbucket/cmd/bb/log.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-01T18:10:27Z",
+      "side": 1,
+      "message": "1. yeah, that is true.\n2. chan logAndErr should work, if we add \"name\" to logChan and logAndErr.\n\nThat being said, the multiplexer doesn\u0027t actually need to be asynchronous.  So there is another option, which is\nm :\u003d newMultiplexer(chans)\nfor {\n  l :\u003d m.NextLog()\n  ...\n}\n\nBy pulling out the for statement from 344, we can avoid using callbacks.",
+      "parentUuid": "6339463c_c6d32972",
+      "revId": "9424f807d10e126f53dd13cfd67b7c021101b244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cd2d1314_55fe04d3",
         "filename": "buildbucket/cmd/bb/log.go",
         "patchSetId": 6
