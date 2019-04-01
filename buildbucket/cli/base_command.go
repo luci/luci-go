@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import (
 	"context"
@@ -47,11 +47,11 @@ type baseCommandRun struct {
 	client     buildbucketpb.BuildsClient
 }
 
-func (r *baseCommandRun) RegisterGlobalFlags(defaultAuthOpts auth.Options) {
+func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
 	r.Flags.StringVar(
 		&r.host,
 		"host",
-		"cr-buildbucket.appspot.com",
+		p.DefaultBuildbucketHost,
 		"Host for the buildbucket service instance.")
 	r.Flags.BoolVar(
 		&r.json,
@@ -63,7 +63,7 @@ func (r *baseCommandRun) RegisterGlobalFlags(defaultAuthOpts auth.Options) {
 		"nocolor",
 		false,
 		"Disable coloration.")
-	r.authFlags.Register(&r.Flags, defaultAuthOpts)
+	r.authFlags.Register(&r.Flags, p.Auth)
 }
 
 // initClients validates -host flag and initializes r.httpClient and r.client.

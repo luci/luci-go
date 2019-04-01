@@ -13,4 +13,4 @@
 // limitations under the License.
 
 // Command buildbucket is a CLI client for buildbucket service.
-package main
+package cli
