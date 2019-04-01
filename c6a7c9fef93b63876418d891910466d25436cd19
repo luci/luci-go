@@ -22,6 +22,167 @@
       "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e54793d_9142f1a7",
+        "filename": "gce/vmtoken/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-01T20:26:47Z",
+      "side": 1,
+      "message": "Swarming uses \"https://\u003chost\u003e\". I think we should do this here too, for compatibility.",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 53,
+        "endChar": 21
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "863f3e91_9297fe48",
+        "filename": "gce/vmtoken/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-01T20:26:47Z",
+      "side": 1,
+      "message": "url.PathEscape(acc)",
+      "range": {
+        "startLine": 57,
+        "startChar": 48,
+        "endLine": 57,
+        "endChar": 51
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "180c12d9_844b2668",
+        "filename": "gce/vmtoken/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-01T20:26:47Z",
+      "side": 1,
+      "message": "url.QueryEscape(aud)\n\n(this one is especially important)",
+      "range": {
+        "startLine": 57,
+        "startChar": 53,
+        "endLine": 57,
+        "endChar": 56
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "236884f9_20dd227e",
+        "filename": "gce/vmtoken/client/client_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-01T20:26:47Z",
+      "side": 1,
+      "message": "I think using https://golang.org/pkg/net/http/#HandlerFunc would result in shorter code: https://cs.chromium.org/search/?q\u003d%22httptest.NewServer(%22\u0026sq\u003dpackage:chromium\u0026type\u003dcs",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 1
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d70725c2_22aad144",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-01T20:26:47Z",
+      "side": 1,
+      "message": "p, _ :\u003d c.Value(\u0026pldKey).(*Payload)\nreturn p",
+      "range": {
+        "startLine": 185,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 2
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86515aed_887d1da0",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-01T20:26:47Z",
+      "side": 1,
+      "message": "it would be nice to log all these values on mismatch, otherwise debugging HTTP 403\u0027s may be hard",
+      "range": {
+        "startLine": 205,
+        "startChar": 1,
+        "endLine": 205,
+        "endChar": 65
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b623539_7c017e20",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-01T20:26:47Z",
+      "side": 1,
+      "message": "Two issue here:\n\n1. It may be a transient error (per transient.Tag.In check), in which case the request should finish with HTTP 500. Transient error may come from FetchGoogleOAuth2Certificates, which occasionally makes HTTP requests to Google which may fail.\n\n2. I believe it is better to fail loudly with an error (HTTP 401). What can unauthenticated bots even do?",
+      "range": {
+        "startLine": 213,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 79
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
