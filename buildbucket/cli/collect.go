@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import (
 	"bytes"
@@ -27,14 +27,13 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/auth"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 )
 
-func cmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
+func cmdCollect(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `collect [flags] <BUILD> [<BUILD>...]`,
 		ShortDesc: "wait for builds to end",
@@ -47,7 +46,7 @@ Optionally writes build details into an output file as JSON array of
 bulidbucket.v2.Build proto messages.`,
 		CommandRun: func() subcommands.CommandRun {
 			r := &collectRun{}
-			r.RegisterGlobalFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(p)
 			r.Flags.DurationVar(
 				&r.intervalArg, "interval", time.Minute,
 				"duration to wait between requests")

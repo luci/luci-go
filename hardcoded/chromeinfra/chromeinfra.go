@@ -35,6 +35,10 @@ import (
 //  * tsmon network detection regexp: `^([\w-]*?-[acm]|master)(\d+)a?$`
 
 const (
+	// BuildbucketHost is the hostname of the Buildbucket service to connect to
+	// by default.
+	BuildbucketHost = "cr-buildbucket.appspot.com"
+
 	// CIPDServiceURL is URL of a CIPD backend to connect to by default.
 	CIPDServiceURL = "https://chrome-infra-packages.appspot.com"
 

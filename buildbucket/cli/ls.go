@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import (
 	"context"
@@ -24,13 +24,12 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func cmdLS(defaultAuthOpts auth.Options) *subcommands.Command {
+func cmdLS(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `ls [flags] <PATH> [<PATH>...]`,
 		ShortDesc: "lists builds under paths",
@@ -45,7 +44,7 @@ Listed builds are sorted by creation time, descending.
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &lsRun{}
-			r.RegisterGlobalFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(p)
 			r.buildFieldFlags.Register(&r.Flags)
 
 			r.clsFlag.Register(&r.Flags, `CL URLs that builds must be associated with.

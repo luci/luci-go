@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import (
 	"context"
@@ -27,7 +27,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/stringset"
@@ -42,7 +41,7 @@ import (
 	logpb "go.chromium.org/luci/logdog/api/logpb"
 )
 
-func cmdLog(defaultAuthOpts auth.Options) *subcommands.Command {
+func cmdLog(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `log [flags] <BUILD> <STEP> [<LOG>...]`,
 		ShortDesc: "prints step logs",
@@ -59,7 +58,7 @@ by time. Defaults to stdout and stderr.
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &logRun{}
-			r.RegisterGlobalFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(p)
 			return r
 		},
 	}

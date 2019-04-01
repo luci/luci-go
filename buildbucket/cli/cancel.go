@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import (
 	"fmt"
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func cmdCancel(defaultAuthOpts auth.Options) *subcommands.Command {
+func cmdCancel(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `cancel [flags] <BUILD> [<BUILD>...]`,
 		ShortDesc: "cancel builds",
@@ -41,7 +40,7 @@ buildbucket.v2.Build protobuf messages. Not an array.`,
 		CommandRun: func() subcommands.CommandRun {
 			r := &cancelRun{}
 			r.buildFieldFlags.Register(&r.Flags)
-			r.RegisterGlobalFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(p)
 			r.Flags.StringVar(&r.summary, "summary", "", "reason of cancelation; required")
 			return r
 		},

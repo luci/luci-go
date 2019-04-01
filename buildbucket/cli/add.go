@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import (
 	"context"
@@ -23,14 +23,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func cmdAdd(defaultAuthOpts auth.Options) *subcommands.Command {
+func cmdAdd(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `add [flags] builder [builder...]`,
 		ShortDesc: "schedule builds",
@@ -42,7 +41,7 @@ Example:
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &addRun{}
-			r.RegisterGlobalFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(p)
 			r.buildFieldFlags.Register(&r.Flags)
 
 			r.clsFlag.Register(&r.Flags, `CL URL as input for the builds. Can be specified multiple times.
