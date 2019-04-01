@@ -16,13 +16,42 @@ package protoutil
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/luci/common/data/strpair"
+
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
+
+// StringPairs converts a strpair.Map to a slice of StringPair messages.
+func StringPairs(m strpair.Map) []*buildbucketpb.StringPair {
+	ret := make([]*buildbucketpb.StringPair, 0, len(m))
+	for k, vs := range m {
+		for _, v := range vs {
+			ret = append(ret, &buildbucketpb.StringPair{Key: k, Value: v})
+		}
+	}
+	SortStringPairs(ret)
+	return ret
+}
+
+// SortStringPairs sorts string pairs.
+func SortStringPairs(pairs []*buildbucketpb.StringPair) {
+	sort.Slice(pairs, func(i, j int) bool {
+		switch {
+		case pairs[i].Key < pairs[j].Key:
+			return true
+		case pairs[i].Key > pairs[j].Key:
+			return false
+		default:
+			return pairs[i].Value < pairs[j].Value
+		}
+	})
+}
 
 // BuildSets returns all of the buildsets of the build.
 func BuildSets(b *buildbucketpb.Build) []string {

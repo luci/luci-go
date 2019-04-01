@@ -51,6 +51,12 @@ Listed builds are sorted by creation time, descending.
 			r.clsFlag.Register(&r.Flags, `CL URLs that builds must be associated with.
 Example:
 	bb ls -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1`)
+
+			r.tagsFlag.Register(&r.Flags, `Tags that builds must have. Can be specified multiple times.
+All tags must be present.
+
+Example:
+	bb ls -t a:1 -t b:2`)
 			return r
 		},
 	}
@@ -60,6 +66,7 @@ type lsRun struct {
 	baseCommandRun
 	buildFieldFlags
 	clsFlag
+	tagsFlag
 }
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -141,8 +148,10 @@ func (r *lsRun) parseSearchRequests(ctx context.Context, args []string) (*buildb
 // parseBaseRequest returns a base SearchBuildsRequest without builder filter.
 func (r *lsRun) parseBaseRequest(ctx context.Context) (*buildbucketpb.SearchBuildsRequest, error) {
 	ret := &buildbucketpb.SearchBuildsRequest{
-		Predicate: &buildbucketpb.BuildPredicate{},
-		Fields:    r.FieldMask(),
+		Predicate: &buildbucketpb.BuildPredicate{
+			Tags: r.Tags(),
+		},
+		Fields: r.FieldMask(),
 	}
 
 	for i, p := range ret.Fields.Paths {
