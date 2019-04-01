@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -35,15 +36,9 @@ func cmdAdd(defaultAuthOpts auth.Options) *subcommands.Command {
 		ShortDesc: "schedule builds",
 		LongDesc: `Schedule builds.
 
-Examples:
+Example:
 	# Add linux-rel and mac-rel builds to chromium/ci bucket
-	bb add infra/ci/{linux-rel,mac-rel}
-
-	# Build a specific revision
-	bb add -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9 infra/ci/linux-rel
-
-	# Add linux-rel tryjob for a CL.
-	bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 infra/try/linux-rel
+	bb add chromium/ci/{linux-rel,mac-rel}
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &addRun{}
@@ -54,17 +49,22 @@ Examples:
 
 Example:
 	# Schedule a linux-rel tryjob for CL 1539021
-	bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 infra/try/linux-rel`,
+	bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 chromium/try/linux-rel`,
 			)
 
 			r.commitFlag.Register(&r.Flags, `Commit URL as input to the builds.
 Example:
 	# Build a specific revision
-	bb add -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9 infra/ci/linux-rel
-	# Build latest revision
-	bb add -commit https://chromium.googlesource.com/chromium/src/+/master infra/ci/linux-rel`)
-
+	bb add -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9 chromium/ci/linux-rel
+	# Build latest chromium/src revision
+	bb add -commit https://chromium.googlesource.com/chromium/src/+/master chromium/ci/linux-rel`)
 			r.Flags.StringVar(&r.ref, "ref", "refs/heads/master", "Git ref for the -commit that specifies a commit hash.")
+
+			r.tagsFlag.Register(&r.Flags, `Build tags. Can be specified multiple times.
+
+Example:
+	bb add -t a:1 -t b:2 chromium/try/linux-rel`)
+
 			return r
 		},
 	}
@@ -75,6 +75,7 @@ type addRun struct {
 	buildFieldFlags
 	clsFlag
 	commitFlag
+	tagsFlag
 	ref string
 }
 
@@ -84,20 +85,9 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	baseReq := &buildbucketpb.ScheduleBuildRequest{
-		RequestId: strconv.FormatInt(rand.Int63(), 10),
-	}
-
-	var err error
-	if baseReq.GerritChanges, err = r.retrieveCLs(ctx, r.httpClient); err != nil {
+	baseReq, err := r.prepareBaseRequest(ctx)
+	if err != nil {
 		return r.done(ctx, err)
-	}
-
-	if baseReq.GitilesCommit, err = r.retrieveCommit(); err != nil {
-		return r.done(ctx, err)
-	}
-	if baseReq.GitilesCommit != nil && baseReq.GitilesCommit.Ref == "" {
-		baseReq.GitilesCommit.Ref = r.ref
 	}
 
 	req := &buildbucketpb.BatchRequest{}
@@ -116,4 +106,26 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 	}
 
 	return r.batchAndDone(ctx, req)
+}
+
+func (r *addRun) prepareBaseRequest(ctx context.Context) (*buildbucketpb.ScheduleBuildRequest, error) {
+	ret := &buildbucketpb.ScheduleBuildRequest{
+		RequestId: strconv.FormatInt(rand.Int63(), 10),
+		Tags:      r.Tags(),
+		Fields:    r.FieldMask(),
+	}
+
+	var err error
+	if ret.GerritChanges, err = r.retrieveCLs(ctx, r.httpClient); err != nil {
+		return nil, err
+	}
+
+	if ret.GitilesCommit, err = r.retrieveCommit(); err != nil {
+		return nil, err
+	}
+	if ret.GitilesCommit != nil && ret.GitilesCommit.Ref == "" {
+		ret.GitilesCommit.Ref = r.ref
+	}
+
+	return ret, nil
 }

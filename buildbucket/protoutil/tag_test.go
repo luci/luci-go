@@ -18,8 +18,10 @@ import (
 	"testing"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/strpair"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBuildSet(t *testing.T) {
@@ -73,6 +75,24 @@ func TestBuildSet(t *testing.T) {
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
 			})
 			So(bs, ShouldEqual, "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
+		})
+	})
+}
+
+func TestStringPairs(t *testing.T) {
+	t.Parallel()
+
+	Convey("StringPairs", t, func() {
+		m := strpair.Map{}
+		m.Add("a", "1")
+		m.Add("a", "2")
+		m.Add("b", "1")
+
+		pairs := StringPairs(m)
+		So(pairs, ShouldResembleProto, []*buildbucketpb.StringPair{
+			{Key: "a", Value: "1"},
+			{Key: "a", Value: "2"},
+			{Key: "b", Value: "1"},
 		})
 	})
 }
