@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1e1ca6ee_22400e30",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-01T16:38:53Z",
+      "side": 1,
+      "message": "i am not aware\nsee also https://github.com/golang/go/wiki/SliceTricks",
+      "parentUuid": "0ad22a2c_19d44ea5",
+      "range": {
+        "startLine": 89,
+        "startChar": 8,
+        "endLine": 89,
+        "endChar": 19
+      },
+      "revId": "499a726fc8ac7acb8fa35ee16924d35145d8930a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a6b08c9_406ad575",
         "filename": "buildbucket/client/cmd/buildbucket/collect.go",
         "patchSetId": 7
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "d934b44c_ec63048b",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-01T16:38:53Z",
+      "side": 1,
+      "message": "+1 to what Sana said",
+      "parentUuid": "f72877f5_7c269ff2",
+      "range": {
+        "startLine": 92,
+        "startChar": 13,
+        "endLine": 92,
+        "endChar": 23
+      },
+      "revId": "499a726fc8ac7acb8fa35ee16924d35145d8930a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0200fa92_de2f50e4",
         "filename": "buildbucket/client/cmd/buildbucket/collect.go",
         "patchSetId": 7
@@ -86,6 +134,24 @@
       "revId": "499a726fc8ac7acb8fa35ee16924d35145d8930a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eea8d2bc_b3c6c610",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-01T16:38:53Z",
+      "side": 1,
+      "message": "you are right. I\u0027ve simplified dedupInt64s to simply return a new slice",
+      "parentUuid": "0200fa92_de2f50e4",
+      "revId": "499a726fc8ac7acb8fa35ee16924d35145d8930a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

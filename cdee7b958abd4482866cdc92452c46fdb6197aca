@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f815b2a7_b70744d1",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-01T16:38:53Z",
+      "side": 1,
+      "message": "i meant array. Slices are backed by arrays. Not relevant anymore.",
+      "parentUuid": "4abc1b12_93e31c16",
+      "revId": "cdee7b958abd4482866cdc92452c46fdb6197aca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ce33654_c9fc0848",
         "filename": "buildbucket/client/cmd/buildbucket/collect.go",
         "patchSetId": 6
@@ -33,6 +51,24 @@
       "revId": "cdee7b958abd4482866cdc92452c46fdb6197aca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bbabc3f_142db1e7",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-01T16:38:53Z",
+      "side": 1,
+      "message": "the reason was to make it obvious that the underlying array will be mutated. No longer relevant.",
+      "parentUuid": "2ce33654_c9fc0848",
+      "revId": "cdee7b958abd4482866cdc92452c46fdb6197aca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
