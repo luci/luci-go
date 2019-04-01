@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e84db0d_00ce595c",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-04-01T13:09:19Z",
+      "side": 1,
+      "message": "optional nit: you can inline this in the condition below, same for line 103.",
+      "revId": "aaae01ebe907cd53c96873a09e2b39e820d3aa69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
