@@ -220,9 +220,9 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// protoNormalizer takes a proto message and converts it to normalized form,
-// e.g. sorts entries, flattens mixins, etc.
-type protoNormalizer func(context.Context, proto.Message) (proto.Message, error)
+// protoNormalizer takes a proto message and converts it (in place) to
+// a normalized form, e.g. sorts entries, flattens mixins, etc.
+type protoNormalizer func(context.Context, proto.Message) error
 
 // A pair of config files of the same type to compare.
 type configPair struct {
@@ -254,7 +254,7 @@ func normalizeOne(ctx context.Context, in []byte, p *configPair) (out []byte, er
 	if err = proto.UnmarshalText(string(in), msg); err != nil {
 		return
 	}
-	if msg, err = p.protoNormalizer(ctx, msg); err != nil {
+	if err = p.protoNormalizer(ctx, msg); err != nil {
 		return
 	}
 	return []byte(proto.MarshalTextString(msg)), nil
@@ -268,25 +268,25 @@ var knownTypes = []struct {
 	proto           string
 	protoNormalizer protoNormalizer
 }{
-	{"commit-queue", "cq.config.Config", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+	{"commit-queue", "cq.config.Config", func(ctx context.Context, m proto.Message) error {
 		return normalize.CQ(ctx, m.(*cq_pb.Config))
 	}},
-	{"cr-buildbucket", "buildbucket.BuildbucketCfg", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+	{"cr-buildbucket", "buildbucket.BuildbucketCfg", func(ctx context.Context, m proto.Message) error {
 		return normalize.Buildbucket(ctx, m.(*buildbucket_pb.BuildbucketCfg))
 	}},
-	{"luci-logdog", "svcconfig.ProjectConfig", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+	{"luci-logdog", "svcconfig.ProjectConfig", func(ctx context.Context, m proto.Message) error {
 		return normalize.Logdog(ctx, m.(*logdog_pb.ProjectConfig))
 	}},
-	{"luci-milo", "milo.Project", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+	{"luci-milo", "milo.Project", func(ctx context.Context, m proto.Message) error {
 		return normalize.Milo(ctx, m.(*milo_pb.Project))
 	}},
-	{"luci-notify", "notify.ProjectConfig", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+	{"luci-notify", "notify.ProjectConfig", func(ctx context.Context, m proto.Message) error {
 		return normalize.Notify(ctx, m.(*notify_pb.ProjectConfig))
 	}},
-	{"luci-scheduler", "scheduler.config.ProjectConfig", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+	{"luci-scheduler", "scheduler.config.ProjectConfig", func(ctx context.Context, m proto.Message) error {
 		return normalize.Scheduler(ctx, m.(*scheduler_pb.ProjectConfig))
 	}},
-	{"project", "config.ProjectCfg", func(ctx context.Context, m proto.Message) (proto.Message, error) {
+	{"project", "config.ProjectCfg", func(ctx context.Context, m proto.Message) error {
 		return normalize.Project(ctx, m.(*config_pb.ProjectCfg))
 	}},
 }

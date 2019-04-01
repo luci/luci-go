@@ -21,7 +21,7 @@ import (
 )
 
 // CQ normalizes cq.cfg config.
-func CQ(c context.Context, in *pb.Config) (*pb.Config, error) {
+func CQ(c context.Context, cfg *pb.Config) error {
 	// TODO(vadimsh): Implement.
-	return in, nil
+	return nil
 }
