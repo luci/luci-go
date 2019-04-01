@@ -56,6 +56,7 @@ All tags must be present.
 
 Example:
 	bb ls -t a:1 -t b:2`)
+			r.Flags.BoolVar(&r.includeExperimental, "exp", false, `Print experimental builds too`)
 			return r
 		},
 	}
@@ -66,6 +67,8 @@ type lsRun struct {
 	buildFieldFlags
 	clsFlag
 	tagsFlag
+
+	includeExperimental bool
 }
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -148,7 +151,8 @@ func (r *lsRun) parseSearchRequests(ctx context.Context, args []string) (*buildb
 func (r *lsRun) parseBaseRequest(ctx context.Context) (*buildbucketpb.SearchBuildsRequest, error) {
 	ret := &buildbucketpb.SearchBuildsRequest{
 		Predicate: &buildbucketpb.BuildPredicate{
-			Tags: r.Tags(),
+			Tags:                r.Tags(),
+			IncludeExperimental: r.includeExperimental,
 		},
 		Fields: r.FieldMask(),
 	}
