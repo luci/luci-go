@@ -141,6 +141,11 @@ func (p *printer) Build(b *buildbucketpb.Build) {
 		p.summary(b.SummaryMarkdown)
 	}
 
+	if b.Input.GetExperimental() {
+		p.keyword("Experimental")
+		p.f("\n")
+	}
+
 	// Timing.
 	p.buildTime(b)
 	p.f("\n")
