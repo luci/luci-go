@@ -209,19 +209,28 @@ func (p *printer) step(s *buildbucketpb.Step) {
 	start, startErr := ptypes.Timestamp(s.StartTime)
 	end, endErr := ptypes.Timestamp(s.EndTime)
 	if startErr == nil && endErr == nil {
-		p.f("%s", end.Sub(start))
+		p.fw(20, "%s", end.Sub(start))
 	}
+
+	// Print log names.
+	// Do not print log URLs because they are very long and
+	// bb has `log` subcommand.
+	if len(s.Logs) > 0 {
+		p.f("Logs: ")
+		for i, l := range s.Logs {
+			if i > 0 {
+				p.f(", ")
+			}
+			p.f("%q", l.Name)
+		}
+	}
+
 	p.f("%s\n", ansi.Reset)
 
 	p.indent.Level += 2
 	if s.SummaryMarkdown != "" {
 		// TODO(nodir): transform lists of links to look like logs
 		p.summary(s.SummaryMarkdown)
-	}
-	for _, l := range s.Logs {
-		p.f("* %s\t", l.Name)
-		p.linkf("%s", l.ViewUrl)
-		p.f("\n")
 	}
 	p.indent.Level -= 2
 }
