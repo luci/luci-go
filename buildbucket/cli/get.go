@@ -12,21 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import (
 	"fmt"
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
+func cmdGet(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `get [flags] <BUILD>`,
 		ShortDesc: "get details about a build",
@@ -37,7 +36,7 @@ Argument BUILD can be an int64 build id or a string
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &getRun{}
-			r.RegisterGlobalFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(p)
 			r.buildFieldFlags.Register(&r.Flags)
 			return r
 		},

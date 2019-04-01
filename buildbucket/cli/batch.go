@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import (
 	"fmt"
@@ -21,13 +21,12 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 )
 
-func cmdBatch(defaultAuthOpts auth.Options) *subcommands.Command {
+func cmdBatch(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `batch [flags]`,
 		ShortDesc: "calls buildbucket.v2.Builds.Batch. Suitable for scripts.",
@@ -37,7 +36,7 @@ Stdout will be buildbucket.v2.BatchResponse in JSON format.
 Exits with code 1 if at least one sub-request fails.`,
 		CommandRun: func() subcommands.CommandRun {
 			r := &batchRun{}
-			r.RegisterGlobalFlags(defaultAuthOpts)
+			r.RegisterGlobalFlags(p)
 			return r
 		},
 	}
