@@ -26,17 +26,15 @@ import (
 )
 
 type buildFieldFlags struct {
-	all              bool
-	inputProperties  bool
-	outputProperties bool
-	steps            bool
+	all        bool
+	properties bool
+	steps      bool
 }
 
 func (f *buildFieldFlags) Register(fs *flag.FlagSet) {
 	fs.BoolVar(&f.all, "A", false, "Print build entirely")
 	fs.BoolVar(&f.steps, "steps", false, "Print steps")
-	fs.BoolVar(&f.inputProperties, "ip", false, "Print input properties")
-	fs.BoolVar(&f.outputProperties, "op", false, "Print output properties")
+	fs.BoolVar(&f.properties, "p", false, "Print input/output properties")
 }
 
 func (f *buildFieldFlags) FieldMask() *field_mask.FieldMask {
@@ -70,12 +68,8 @@ func (f *buildFieldFlags) FieldMask() *field_mask.FieldMask {
 		},
 	}
 
-	if f.inputProperties {
-		ret.Paths = append(ret.Paths, "input.properties")
-	}
-
-	if f.outputProperties {
-		ret.Paths = append(ret.Paths, "output.properties")
+	if f.properties {
+		ret.Paths = append(ret.Paths, "input.properties", "output.properties")
 	}
 
 	if f.steps {
