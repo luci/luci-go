@@ -101,7 +101,9 @@ func (b *botsRun) main(a subcommands.Application) error {
 	}
 	call.Fields(b.fields...)
 	// Keep calling as long as there's a cursor indicating more bots to list.
-	var bots []*swarming.SwarmingRpcsBotInfo
+	// Create an empty array, so that if saved to b.outfile, it's an empty list,
+	// not null.
+	bots := []*swarming.SwarmingRpcsBotInfo{}
 	for {
 		result, err := call.Do()
 		if err != nil {
