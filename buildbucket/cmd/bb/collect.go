@@ -25,10 +25,13 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 func cmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -83,14 +86,31 @@ var getRequestFieldMask = &field_mask.FieldMask{
 	},
 }
 
+// dedupInt64s dedups int64s. Reuses the underlying array.
+func dedupInt64s(nums []int64) []int64 {
+	seen := make(map[int64]struct{}, len(nums))
+	res := make([]int64, 0, len(nums))
+	for _, x := range nums {
+		if _, ok := seen[x]; !ok {
+			seen[x] = struct{}{}
+			res = append(res, x)
+		}
+	}
+	return res
+}
+
 func collectBuildDetails(ctx context.Context, client buildbucketpb.BuildsClient, buildIDs []int64, sleep func()) (map[int64]*buildbucketpb.Build, error) {
-	unfinishedBuilds := buildIDs
-	endedBuildDetails := make(map[int64]*buildbucketpb.Build, len(buildIDs))
+	buildIDs = dedupInt64s(buildIDs)
+	ended := make(map[int64]*buildbucketpb.Build, len(buildIDs))
 	for {
 		breq := &buildbucketpb.BatchRequest{}
-		for _, buildID := range unfinishedBuilds {
+		for _, id := range buildIDs {
+			if _, ok := ended[id]; ok {
+				continue
+			}
+
 			getReq := &buildbucketpb.GetBuildRequest{
-				Id:     buildID,
+				Id:     id,
 				Fields: getRequestFieldMask,
 			}
 			breq.Requests = append(breq.Requests, &buildbucketpb.BatchRequest_Request{
@@ -100,33 +120,37 @@ func collectBuildDetails(ctx context.Context, client buildbucketpb.BuildsClient,
 			})
 		}
 
-		fmt.Printf("Checking build statuses... ")
+		logging.Infof(ctx, "checking build statuses...")
 		bresp, err := client.Batch(ctx, breq)
 		if err != nil {
 			return nil, err
 		}
 
-		unfinishedBuilds = nil
 		for _, resp := range bresp.Responses {
+			error := resp.GetError()
+			code := codes.Code(error.GetCode())
 			build := resp.GetGetBuild()
-			if build.Status&buildbucketpb.Status_ENDED_MASK != 0 {
-				endedBuildDetails[build.Id] = build
-			} else {
-				unfinishedBuilds = append(unfinishedBuilds, build.Id)
+			switch {
+			case grpcutil.IsTransientCode(code):
+				logging.Warningf(ctx, "transient %s error: %s", code, error.Message)
+
+			case code != codes.OK:
+				return nil, fmt.Errorf("RPC error %s: %s", code, error.Message)
+
+			case build.Status&buildbucketpb.Status_ENDED_MASK != 0:
+				ended[build.Id] = build
+				logging.Infof(ctx, "%d ended: %s", build.Id, build.Status)
 			}
 		}
 
-		if len(unfinishedBuilds) == 0 {
-			fmt.Printf("all ended\n")
+		logging.Infof(ctx, "%d are running/pending", len(buildIDs)-len(ended))
+		if len(buildIDs) == len(ended) {
 			break
 		}
-
-		fmt.Printf(
-			"%d still running/pending: %v\n", len(unfinishedBuilds), unfinishedBuilds)
 		sleep()
 	}
 
-	return endedBuildDetails, nil
+	return ended, nil
 }
 
 func writeBuildDetails(buildIDs []int64, buildDetails map[int64]*buildbucketpb.Build, outputPath string) error {
@@ -162,7 +186,7 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 
 	buildDetails, err := collectBuildDetails(ctx, r.client, buildIDs, func() {
-		fmt.Printf("Waiting %s before trying again...\n", r.intervalArg)
+		logging.Infof(ctx, "waiting %s before trying again...", r.intervalArg)
 		time.Sleep(r.intervalArg)
 	})
 	if err != nil {
