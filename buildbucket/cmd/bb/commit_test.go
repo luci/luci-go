@@ -23,64 +23,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestParseCL(t *testing.T) {
-	Convey("ParseCL", t, func() {
-
-		Convey("Perfect", func() {
-			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
-				Host:     "chromium-review.googlesource.com",
-				Project:  "infra/luci/luci-go",
-				Change:   1541677,
-				Patchset: 7,
-			})
-		})
-
-		Convey("Hash", func() {
-			actual, err := parseCL("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
-				Host:     "chromium-review.googlesource.com",
-				Project:  "infra/luci/luci-go",
-				Change:   1541677,
-				Patchset: 7,
-			})
-		})
-
-		Convey("File", func() {
-			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
-				Host:     "chromium-review.googlesource.com",
-				Project:  "infra/luci/luci-go",
-				Change:   1541677,
-				Patchset: 7,
-			})
-		})
-
-		Convey("No project", func() {
-			actual, err := parseCL("https://chromium-review.googlesource.com/c/1541677/7")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
-				Host:     "chromium-review.googlesource.com",
-				Change:   1541677,
-				Patchset: 7,
-			})
-		})
-
-		Convey("No patchset", func() {
-			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
-				Host:    "chromium-review.googlesource.com",
-				Project: "infra/luci/luci-go",
-				Change:  1541677,
-			})
-		})
-	})
-}
-
 func TestParseCommit(t *testing.T) {
 	Convey("ParseCommit", t, func() {
 
