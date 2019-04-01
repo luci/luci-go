@@ -17,16 +17,16 @@ package cli
 import (
 	"context"
 	"fmt"
-	"math/rand"
-	"strconv"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
 func cmdAdd(p Params) *subcommands.Command {
@@ -64,6 +64,21 @@ Example:
 Example:
 	bb add -t a:1 -t b:2 chromium/try/linux-rel`)
 
+			r.Flags.Var(PropertiesFlag(&r.properties), "p", `Input properties for the build.
+
+If it starts with @, properties are read from the JSON file at the path that
+follows @. Only one -p value can start with @.
+Example:
+	bb add -p @my_properties.json chromium/try/linux-rel
+
+Otherwise, must have A=B format, where A is a property name and B is a property
+value. If B is valid JSON, then it is parsed as JSON; otherwise treated as a
+string. Can be specified multiple times.
+Example:
+	bb add -p foo=1 -p 'bar={"a": 2}' chromium/try/linux-rel
+
+If both forms are used together, values specified as A=B override the ones in
+the file. `)
 			return r
 		},
 	}
@@ -75,7 +90,9 @@ type addRun struct {
 	clsFlag
 	commitFlag
 	tagsFlag
-	ref string
+
+	properties structpb.Struct
+	ref        string
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -109,9 +126,10 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 
 func (r *addRun) prepareBaseRequest(ctx context.Context) (*buildbucketpb.ScheduleBuildRequest, error) {
 	ret := &buildbucketpb.ScheduleBuildRequest{
-		RequestId: strconv.FormatInt(rand.Int63(), 10),
+		RequestId:  uuid.New().String(),
 		Tags:      r.Tags(),
-		Fields:    r.FieldMask(),
+		Fields:     completeBuildFieldMask,
+		Properties: &r.properties,
 	}
 
 	var err error
