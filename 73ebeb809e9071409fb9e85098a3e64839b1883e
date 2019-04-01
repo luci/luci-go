@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a53ae99_1a106848",
+        "filename": "lucicfg/normalize/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-01T23:21:34Z",
+      "side": 1,
+      "message": "seen.Add(dedup)",
+      "range": {
+        "startLine": 77,
+        "startChar": 32,
+        "endLine": 77,
+        "endChar": 48
+      },
+      "revId": "73ebeb809e9071409fb9e85098a3e64839b1883e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
