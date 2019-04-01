@@ -16,6 +16,24 @@
       "revId": "7308de5225b5682e09a28216cdbb027c45988578",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01126b1d_3217a479",
+        "filename": "buildbucket/cmd/bb/print.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-01T20:23:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4dd374b1_1aad5d71",
+      "revId": "7308de5225b5682e09a28216cdbb027c45988578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
