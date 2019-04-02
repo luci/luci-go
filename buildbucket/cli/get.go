@@ -27,16 +27,18 @@ import (
 
 func cmdGet(p Params) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `get [flags] <BUILD>`,
-		ShortDesc: "get details about a build",
-		LongDesc: `Get details about a build.
+		UsageLine: `get [flags] [BUILD [BUILD...]]`,
+		ShortDesc: "print builds",
+		LongDesc: doc(`
+			Print builds.
 
-Argument BUILD can be an int64 build id or a string
-<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
-`,
+			Argument BUILD can be an int64 build id or a string
+			<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
+		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &getRun{}
-			r.RegisterGlobalFlags(p)
+			r.RegisterDefaultFlags(p)
+			r.RegisterJSONFlag()
 			r.buildFieldFlags.Register(&r.Flags)
 			return r
 		},
@@ -49,6 +51,10 @@ type getRun struct {
 }
 
 func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if len(args) == 0 {
+		return 0
+	}
+
 	ctx := cli.GetContext(a, r, env)
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
