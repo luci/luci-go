@@ -292,6 +292,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	// TODO(tandrii): consider switching to validateProjectConfig because configs
 	// provided by luci-config are known to be valid and so there is little value
 	// in finding all valid jobs/triggers vs complexity of this function.
+	knownIDs := stringset.New(len(cfg.Job) + len(cfg.Trigger))
 	for _, job := range cfg.Job {
 		if job.Disabled {
 			disabledCount++
@@ -300,6 +301,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		id := "(empty)"
 		if job.Id != "" {
 			id = job.Id
+			if !knownIDs.Add(id) {
+				logging.Warningf(c, "duplicate id %q", id)
+			}
 		}
 		// Create a new validation context for each job/trigger since errors
 		// persist in context but we want to find all valid jobs/trigger.
@@ -349,6 +353,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		id := "(empty)"
 		if trigger.Id != "" {
 			id = trigger.Id
+			if !knownIDs.Add(id) {
+				logging.Warningf(c, "duplicate id %q", id)
+			}
 		}
 		ctx = &validation.Context{Context: c}
 		task := cat.validateTriggerProto(ctx, trigger, allJobIDs, false)
