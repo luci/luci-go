@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 
@@ -300,10 +299,6 @@ func TestConfigReading(t *testing.T) {
 					},
 				},
 			})
-			So(getConfiguredProjectValue(ctx, "project1"), ShouldBeTrue)
-			So(getConfiguredJobsValue(ctx, "project1", "valid"), ShouldEqual, 4)
-			So(getConfiguredJobsValue(ctx, "project1", "invalid"), ShouldEqual, 1)
-			So(getConfiguredJobsValue(ctx, "project1", "disabled"), ShouldEqual, 1)
 		})
 
 		Convey("GetProjectJobs filters unknown job IDs in triggers", func() {
@@ -352,7 +347,6 @@ func TestConfigReading(t *testing.T) {
 			defs, err := cat.GetProjectJobs(ctx, "broken")
 			So(defs, ShouldBeNil)
 			So(err, ShouldNotBeNil)
-			So(getConfiguredProjectValue(ctx, "broken"), ShouldBeFalse)
 		})
 
 		Convey("UnmarshalTask works", func() {
@@ -534,16 +528,6 @@ func testContext() context.Context {
 	c, _, _ = tsmon.WithFakes(c)
 	tsmon.GetState(c).SetStore(store.NewInMemory(&target.Task{}))
 	return c
-}
-
-func getConfiguredProjectValue(ctx context.Context, project string) bool {
-	metricValue := tsmon.GetState(ctx).Store().Get(ctx, metricConfigValid, time.Time{}, []interface{}{project})
-	return metricValue.(bool)
-}
-
-func getConfiguredJobsValue(ctx context.Context, project, status string) int64 {
-	metricValue := tsmon.GetState(ctx).Store().Get(ctx, metricConfigJobs, time.Time{}, []interface{}{project, status})
-	return metricValue.(int64)
 }
 
 ////

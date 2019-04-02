@@ -30,8 +30,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/tsmon/field"
-	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
@@ -47,25 +45,6 @@ import (
 var (
 	// jobIDRe is used to validate job ID field.
 	jobIDRe = regexp.MustCompile(`^[0-9A-Za-z_\-\. \)\(]{1,100}$`)
-
-	// TODO(tandrii): deprecate these metrics once scheduler implements validation
-	// endpoint which luci-config will use to pre-validate configs before giving
-	// them to scheduler. See https://crbug.com/761488.
-
-	metricConfigValid = metric.NewBool(
-		"luci/scheduler/config/valid",
-		"Whether project config is valid or invalid.",
-		nil,
-		field.String("project"),
-	)
-
-	metricConfigJobs = metric.NewInt(
-		"luci/scheduler/config/jobs",
-		"Number of job or trigger definitions in a project.",
-		nil,
-		field.String("project"),
-		field.String("status"), // one of "disabled", "invalid", "valid".
-	)
 )
 
 const (
@@ -249,15 +228,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		return nil, nil
 	}
 
-	// TODO(tandrii): remove this after https://crbug.com/761488 is fixed.
-	projectHasConfig := true
-	projectIsValid := false
-	defer func() {
-		if projectHasConfig {
-			metricConfigValid.Set(c, projectIsValid, projectID)
-		}
-	}()
-
 	configSet := config.ProjectSet(projectID)
 	var (
 		cfg  messages.ProjectConfig
@@ -267,9 +237,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	case nil:
 		break
 	case config.ErrNoConfig:
-		// Project is not using scheduler, so monitoring-wise pretend the project
-		// doesn't exist.
-		projectHasConfig = false
+		// Project is not using scheduler.
 		return nil, nil
 	default:
 		return nil, err
@@ -391,11 +359,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	}
 
 	// Mark project as valid even if not all its jobs/triggers are.
-	projectIsValid = true
-	invalidCount := len(cfg.Job) + len(cfg.Trigger) - len(out) - disabledCount
-	metricConfigJobs.Set(c, int64(len(out)), projectID, "valid")
-	metricConfigJobs.Set(c, int64(disabledCount), projectID, "disabled")
-	metricConfigJobs.Set(c, int64(invalidCount), projectID, "invalid")
 	return out, nil
 }
 
