@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc8b50f6_4a78f3e9",
+        "filename": "common/data/text/document.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T19:55:03Z",
+      "side": 1,
+      "message": "This will cause this package to break any appengine app that tries to import it.  (Since strings.Builder isn\u0027t on go 1.9)\n\nI don\u0027t think this is a real issue since I don\u0027t think this package is used or will be used in appengine, but may be something to note since all of our appengine apps are 1.9.",
+      "revId": "f1f2391061933791326ea0ee27f4e98045644321",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

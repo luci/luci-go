@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19ef7a62_a206b735",
+        "filename": "common/data/text/document_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T19:55:03Z",
+      "side": 1,
+      "message": "Is this meant to test anything? Or is it just for documentation?\n\nSeems like it\u0027d be pretty cheap to compare the string to a golden example.",
+      "revId": "a95fb612151c801ebd27c2676744f3eeecdb925f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
