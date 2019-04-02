@@ -21,7 +21,7 @@ import (
 )
 
 // Notify normalizes luci-notify.cfg config.
-func Notify(c context.Context, in *pb.ProjectConfig) (*pb.ProjectConfig, error) {
+func Notify(c context.Context, cfg *pb.ProjectConfig) error {
 	// TODO(vadimsh): Implement.
-	return in, nil
+	return nil
 }

@@ -21,7 +21,7 @@ import (
 )
 
 // Project normalizes project.cfg config.
-func Project(c context.Context, in *pb.ProjectCfg) (*pb.ProjectCfg, error) {
+func Project(c context.Context, cfg *pb.ProjectCfg) error {
 	// TODO(vadimsh): Implement.
-	return in, nil
+	return nil
 }
