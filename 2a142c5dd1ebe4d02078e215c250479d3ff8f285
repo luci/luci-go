@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "48e5a9cd_f212b8a8",
+        "filename": "lucicfg/normalize/milo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-02T01:17:37Z",
+      "side": 1,
+      "message": "T",
+      "range": {
+        "startLine": 61,
+        "startChar": 65,
+        "endLine": 61,
+        "endChar": 66
+      },
+      "revId": "2a142c5dd1ebe4d02078e215c250479d3ff8f285",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
