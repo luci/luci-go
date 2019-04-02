@@ -16,6 +16,24 @@
       "revId": "9bf090b6b99d251188a1f16fbcb3ae8b767c9e78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27dfd89b_e74e0f19",
+        "filename": "buildbucket/cli/prop.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-02T22:56:49Z",
+      "side": 1,
+      "message": "relatively arbitrary. added a comment.",
+      "parentUuid": "005b3428_90c412e4",
+      "revId": "9bf090b6b99d251188a1f16fbcb3ae8b767c9e78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
