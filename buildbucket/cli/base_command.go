@@ -29,12 +29,17 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+func doc(doc string) string {
+	return text.Doc(doc)
+}
 
 type baseCommandRun struct {
 	subcommands.CommandRunBase
@@ -47,23 +52,22 @@ type baseCommandRun struct {
 	client     pb.BuildsClient
 }
 
-func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
-	r.Flags.StringVar(
-		&r.host,
-		"host",
-		p.DefaultBuildbucketHost,
-		"Host for the buildbucket service instance.")
-	r.Flags.BoolVar(
-		&r.json,
-		"json",
-		false,
-		"Print information in JSON format.")
-	r.Flags.BoolVar(
-		&r.noColor,
-		"nocolor",
-		false,
-		"Disable coloration.")
+func (r *baseCommandRun) RegisterDefaultFlags(p Params) {
+	r.Flags.StringVar(&r.host, "host", p.DefaultBuildbucketHost, doc(`
+		Host for the buildbucket service instance.
+	`))
+	r.Flags.BoolVar(&r.noColor, "nocolor", false, doc(`
+		Strip ANSI color codes in the output.
+	`))
 	r.authFlags.Register(&r.Flags, p.Auth)
+}
+
+func (r *baseCommandRun) RegisterJSONFlag() {
+	r.Flags.BoolVar(&r.json, "json", false, doc(`
+		Print objects JSON format, one after another (not an array).
+
+		Designed for "jq" tool. If using bb from scripts, consider "batch" subcommand.
+	`))
 }
 
 // initClients validates -host flag and initializes r.httpClient and r.client.

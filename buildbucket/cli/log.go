@@ -45,20 +45,22 @@ func cmdLog(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `log [flags] <BUILD> <STEP> [<LOG>...]`,
 		ShortDesc: "prints step logs",
-		LongDesc: `Prints step logs.
+		LongDesc: doc(`
+			Prints step logs.
 
-Argument BUILD can be an int64 build id or a string
-<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
+			Argument BUILD can be an int64 build id or a string
+			<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
 
-Argument STEP is a build step name, e.g. "bot_update".
-Use | as parent-child separator, e.g. "parent|child".
+			Argument STEP is a build step name, e.g. "bot_update".
+			Use | as parent-child separator, e.g. "parent|child".
 
-Arguments LOG is one ore more log names of the STEP. They will be multiplexed
-by time. Defaults to stdout and stderr.
-`,
+			Arguments LOG is one ore more log names of the STEP. They will be multiplexed
+			by time. Defaults to stdout and stderr.
+		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &logRun{}
-			r.RegisterGlobalFlags(p)
+			r.RegisterDefaultFlags(p)
+			r.RegisterJSONFlag()
 			return r
 		},
 	}
@@ -239,20 +241,26 @@ func (r *logRun) printLogs(ctx context.Context, logs []*pb.Step_Log) error {
 		}()
 	}
 
+	stdout := newPrinter(os.Stdout, r.noColor, time.Now)
+	stderr := newPrinter(os.Stderr, r.noColor, time.Now)
 	for {
 		chanIndex, entry, err := m.Next()
-		out := os.Stdout
+		out := stdout
 		switch {
 		case err == io.EOF:
 			return nil
 		case err != nil:
 			return err
 		case logs[chanIndex].Name == "stderr":
-			out = os.Stderr
+			out = stderr
 		}
-		for _, line := range entry.GetText().GetLines() {
-			fmt.Fprintf(out, "%s", line.Value)
-			fmt.Fprintf(out, line.Delimiter)
+
+		if r.json {
+			out.JSONPB(entry)
+		} else {
+			for _, line := range entry.GetText().GetLines() {
+				out.f("%s%s", line.Value, line.Delimiter)
+			}
 		}
 	}
 }

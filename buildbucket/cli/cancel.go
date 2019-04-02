@@ -26,22 +26,22 @@ import (
 
 func cmdCancel(p Params) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `cancel [flags] <BUILD> [<BUILD>...]`,
+		UsageLine: `cancel [flags] [BUILD [BUILD...]]`,
 		ShortDesc: "cancel builds",
-		LongDesc: `Cancel builds.
+		LongDesc: doc(`
+			Cancel builds.
 
-Argument BUILD can be an int64 build id or a string
-<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
-
--summary is required and it should explain the reason of cancelation.
-
-If -json is true, then the stdout is a sequence of JSON objects representing
-buildbucket.v2.Build protobuf messages. Not an array.`,
+			Argument BUILD can be an int64 build id or a string
+			<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
+		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &cancelRun{}
+			r.RegisterDefaultFlags(p)
+			r.RegisterJSONFlag()
 			r.buildFieldFlags.Register(&r.Flags)
-			r.RegisterGlobalFlags(p)
-			r.Flags.StringVar(&r.summary, "summary", "", "reason of cancelation; required")
+			r.Flags.StringVar(&r.reason, "reason", "", doc(`
+				reason of cancelation in Markdown format; required
+			`))
 			return r
 		},
 	}
@@ -50,14 +50,17 @@ buildbucket.v2.Build protobuf messages. Not an array.`,
 type cancelRun struct {
 	baseCommandRun
 	buildFieldFlags
-	summary string
+	reason string
 }
 
 func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if len(args) == 0 {
+		return 0
+	}
 	ctx := cli.GetContext(a, r, env)
 
-	if r.summary == "" {
-		return r.done(ctx, fmt.Errorf("-summary is required"))
+	if r.reason == "" {
+		return r.done(ctx, fmt.Errorf("-reason is required"))
 	}
 
 	buildIDs, err := r.retrieveBuildIDs(ctx, args)
@@ -72,7 +75,7 @@ func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommand
 			Request: &pb.BatchRequest_Request_CancelBuild{
 				CancelBuild: &pb.CancelBuildRequest{
 					Id:              id,
-					SummaryMarkdown: r.summary,
+					SummaryMarkdown: r.reason,
 					Fields:          fields,
 				},
 			},

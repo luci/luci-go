@@ -47,7 +47,7 @@ func application(p Params) *cli.Application {
 	}
 
 	return &cli.Application{
-		Name:  "buildbucket",
+		Name:  "bb",
 		Title: "A CLI client for buildbucket.",
 		Context: func(ctx context.Context) context.Context {
 			return logCfg.Use(ctx)
