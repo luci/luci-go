@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"testing"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -33,13 +33,13 @@ func TestRetrieveBuildIDs(t *testing.T) {
 				"a/b/c/2",
 				"a/b/c/3",
 			}
-			var actualReq *buildbucketpb.BatchRequest
-			ids, err := retrieveBuildIDs(builds, func(req *buildbucketpb.BatchRequest) (*buildbucketpb.BatchResponse, error) {
+			var actualReq *pb.BatchRequest
+			ids, err := retrieveBuildIDs(builds, func(req *pb.BatchRequest) (*pb.BatchResponse, error) {
 				actualReq = req
-				return textpb(&buildbucketpb.BatchResponse{}, `
+				return textpb(&pb.BatchResponse{}, `
 					responses { get_build {id: 2} }
 					responses { get_build {id: 3} }
-				`).(*buildbucketpb.BatchResponse), nil
+				`).(*pb.BatchResponse), nil
 			})
 			So(err, ShouldBeNil)
 			So(actualReq, shouldResembleProtoTextML, `
@@ -63,8 +63,8 @@ func TestRetrieveBuildIDs(t *testing.T) {
 
 		Convey("No build numbers", func() {
 			builds := []string{"1", "2"}
-			var actualReq *buildbucketpb.BatchRequest
-			ids, err := retrieveBuildIDs(builds, func(req *buildbucketpb.BatchRequest) (*buildbucketpb.BatchResponse, error) {
+			var actualReq *pb.BatchRequest
+			ids, err := retrieveBuildIDs(builds, func(req *pb.BatchRequest) (*pb.BatchResponse, error) {
 				actualReq = req
 				return nil, fmt.Errorf("unexpected")
 			})

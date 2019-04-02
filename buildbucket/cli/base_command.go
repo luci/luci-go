@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 type baseCommandRun struct {
@@ -44,7 +44,7 @@ type baseCommandRun struct {
 	noColor   bool
 
 	httpClient *http.Client
-	client     buildbucketpb.BuildsClient
+	client     pb.BuildsClient
 }
 
 func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
@@ -94,7 +94,7 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return err
 	}
 	rpcOpts.UserAgent = fmt.Sprintf("buildbucket CLI, instanceID=%q", info.InstanceID)
-	r.client = buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
+	r.client = pb.NewBuildsPRPCClient(&prpc.Client{
 		C:       r.httpClient,
 		Host:    r.host,
 		Options: rpcOpts,
@@ -103,7 +103,7 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 }
 
 // batchAndDone executes req and prints the response.
-func (r *baseCommandRun) batchAndDone(ctx context.Context, req *buildbucketpb.BatchRequest) int {
+func (r *baseCommandRun) batchAndDone(ctx context.Context, req *pb.BatchRequest) int {
 	res, err := r.client.Batch(ctx, req)
 	if err != nil {
 		return r.done(ctx, err)
@@ -116,16 +116,16 @@ func (r *baseCommandRun) batchAndDone(ctx context.Context, req *buildbucketpb.Ba
 	hasErr := false
 	p := newStdoutPrinter(r.noColor)
 	for i, res := range res.Responses {
-		var build *buildbucketpb.Build
+		var build *pb.Build
 		switch res := res.Response.(type) {
 
-		case *buildbucketpb.BatchResponse_Response_Error:
+		case *pb.BatchResponse_Response_Error:
 			hasErr = true
 
 			// If we have multiple requests, print a request title.
 			if len(req.Requests) > 1 {
 				switch req := req.Requests[i].Request.(type) {
-				case *buildbucketpb.BatchRequest_Request_GetBuild:
+				case *pb.BatchRequest_Request_GetBuild:
 					r := req.GetBuild
 					if r.Id != 0 {
 						stderr("build %d", r.Id)
@@ -133,7 +133,7 @@ func (r *baseCommandRun) batchAndDone(ctx context.Context, req *buildbucketpb.Ba
 						stderr(`build "%s/%d"`, protoutil.FormatBuilderID(r.Builder), r.BuildNumber)
 					}
 
-				case *buildbucketpb.BatchRequest_Request_CancelBuild:
+				case *pb.BatchRequest_Request_CancelBuild:
 					stderr("build %d", req.CancelBuild.Id)
 
 				default:
@@ -145,11 +145,11 @@ func (r *baseCommandRun) batchAndDone(ctx context.Context, req *buildbucketpb.Ba
 			stderr("%s\n", res.Error.Message)
 			continue
 
-		case *buildbucketpb.BatchResponse_Response_GetBuild:
+		case *pb.BatchResponse_Response_GetBuild:
 			build = res.GetBuild
-		case *buildbucketpb.BatchResponse_Response_CancelBuild:
+		case *pb.BatchResponse_Response_CancelBuild:
 			build = res.CancelBuild
-		case *buildbucketpb.BatchResponse_Response_ScheduleBuild:
+		case *pb.BatchResponse_Response_ScheduleBuild:
 			build = res.ScheduleBuild
 		default:
 			panic("forgot to update batchAndDone()?")
@@ -182,15 +182,15 @@ func (r *baseCommandRun) done(ctx context.Context, err error) int {
 // where a build argument can be an int64 build or a
 // "<project>/<bucket>/<builder>/<build_number>" string.
 func (r *baseCommandRun) retrieveBuildIDs(ctx context.Context, builds []string) (buildIDs []int64, err error) {
-	return retrieveBuildIDs(builds, func(req *buildbucketpb.BatchRequest) (*buildbucketpb.BatchResponse, error) {
+	return retrieveBuildIDs(builds, func(req *pb.BatchRequest) (*pb.BatchResponse, error) {
 		return r.client.Batch(ctx, req)
 	})
 }
 
-func retrieveBuildIDs(builds []string, callBatch func(*buildbucketpb.BatchRequest) (*buildbucketpb.BatchResponse, error)) (buildIDs []int64, err error) {
+func retrieveBuildIDs(builds []string, callBatch func(*pb.BatchRequest) (*pb.BatchResponse, error)) (buildIDs []int64, err error) {
 	buildIDs = make([]int64, len(builds))
-	batchReq := &buildbucketpb.BatchRequest{
-		Requests: make([]*buildbucketpb.BatchRequest_Request, 0, len(builds)),
+	batchReq := &pb.BatchRequest{
+		Requests: make([]*pb.BatchRequest_Request, 0, len(builds)),
 	}
 	indexes := make([]int, 0, len(builds))
 	idFieldMask := &field_mask.FieldMask{Paths: []string{"id"}}
@@ -203,8 +203,8 @@ func retrieveBuildIDs(builds []string, callBatch func(*buildbucketpb.BatchReques
 			buildIDs[i] = getBuild.Id
 		} else {
 			getBuild.Fields = idFieldMask
-			batchReq.Requests = append(batchReq.Requests, &buildbucketpb.BatchRequest_Request{
-				Request: &buildbucketpb.BatchRequest_Request_GetBuild{GetBuild: getBuild},
+			batchReq.Requests = append(batchReq.Requests, &pb.BatchRequest_Request{
+				Request: &pb.BatchRequest_Request_GetBuild{GetBuild: getBuild},
 			})
 			indexes = append(indexes, i)
 		}

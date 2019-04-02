@@ -29,24 +29,24 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	isatty "github.com/mattn/go-isatty"
 	"github.com/mgutz/ansi"
 
 	"go.chromium.org/luci/common/data/text/color"
 	"go.chromium.org/luci/common/data/text/indented"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	isatty "github.com/mattn/go-isatty"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 var (
 	ansiWhiteBold      = ansi.ColorCode("white+b")
 	ansiWhiteUnderline = ansi.ColorCode("white+u")
-	ansiStatus         = map[buildbucketpb.Status]string{
-		buildbucketpb.Status_SCHEDULED:     ansi.LightWhite,
-		buildbucketpb.Status_STARTED:       ansi.Yellow,
-		buildbucketpb.Status_SUCCESS:       ansi.Green,
-		buildbucketpb.Status_FAILURE:       ansi.Red,
-		buildbucketpb.Status_INFRA_FAILURE: ansi.Magenta,
+	ansiStatus         = map[pb.Status]string{
+		pb.Status_SCHEDULED:     ansi.LightWhite,
+		pb.Status_STARTED:       ansi.Yellow,
+		pb.Status_SUCCESS:       ansi.Green,
+		pb.Status_FAILURE:       ansi.Red,
+		pb.Status_INFRA_FAILURE: ansi.Magenta,
 	}
 )
 
@@ -125,7 +125,7 @@ func (p *printer) JSONPB(pb proto.Message) {
 }
 
 // Build prints b.
-func (p *printer) Build(b *buildbucketpb.Build) {
+func (p *printer) Build(b *pb.Build) {
 	defer p.tab.Flush()
 	p.f("%sBuild %d ", ansiStatus[b.Status], b.Id)
 	p.fw(10, "%s", b.Status)
@@ -188,7 +188,7 @@ func (p *printer) Build(b *buildbucketpb.Build) {
 }
 
 // commit prints c.
-func (p *printer) commit(c *buildbucketpb.GitilesCommit) {
+func (p *printer) commit(c *pb.GitilesCommit) {
 	if c.Id == "" {
 		p.linkf("https://%s/%s/+/%s", c.Host, c.Project, c.Ref)
 		return
@@ -201,12 +201,12 @@ func (p *printer) commit(c *buildbucketpb.GitilesCommit) {
 }
 
 // change prints cl.
-func (p *printer) change(cl *buildbucketpb.GerritChange) {
+func (p *printer) change(cl *pb.GerritChange) {
 	p.linkf("https://%s/c/%s/+/%d/%d", cl.Host, cl.Project, cl.Change, cl.Patchset)
 }
 
 // step prints s.
-func (p *printer) step(s *buildbucketpb.Step) {
+func (p *printer) step(s *pb.Step) {
 	p.f("%s", ansiStatus[s.Status])
 	p.fw(60, "Step %q", s.Name)
 	p.fw(10, "%s", s.Status)
@@ -240,7 +240,7 @@ func (p *printer) step(s *buildbucketpb.Step) {
 	p.indent.Level -= 2
 }
 
-func (p *printer) buildTime(b *buildbucketpb.Build) {
+func (p *printer) buildTime(b *pb.Build) {
 	now := p.nowFn()
 	created := readTimestamp(b.CreateTime).In(now.Location())
 	started := readTimestamp(b.StartTime).In(now.Location())

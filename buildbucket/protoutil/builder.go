@@ -18,22 +18,22 @@ import (
 	"fmt"
 	"strings"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // FormatBuilderID returns "{project}/{bucket}/{builder}" string.
-func FormatBuilderID(id *buildbucketpb.BuilderID) string {
+func FormatBuilderID(id *pb.BuilderID) string {
 	return fmt.Sprintf("%s/%s/%s", id.Project, id.Bucket, id.Builder)
 }
 
 // ParseBuilderID parses a "{project}/{bucket}/{builder}" string.
 // Opposite of FormatBuilderID.
-func ParseBuilderID(s string) (*buildbucketpb.BuilderID, error) {
+func ParseBuilderID(s string) (*pb.BuilderID, error) {
 	parts := strings.Split(s, "/")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("invalid builder id; must have 2 slashes")
 	}
-	return &buildbucketpb.BuilderID{
+	return &pb.BuilderID{
 		Project: parts[0],
 		Bucket:  parts[1],
 		Builder: parts[2],

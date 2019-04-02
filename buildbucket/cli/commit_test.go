@@ -17,7 +17,7 @@ package cli
 import (
 	"testing"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -30,7 +30,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/7a63166bfab5de38ddb2cb8e29aca756bdc2a28d")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeFalse)
-			So(actual, ShouldResembleProto, &buildbucketpb.GitilesCommit{
+			So(actual, ShouldResembleProto, &pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "",
@@ -42,7 +42,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeFalse)
-			So(actual, ShouldResembleProto, &buildbucketpb.GitilesCommit{
+			So(actual, ShouldResembleProto, &pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/x",
@@ -54,7 +54,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x/y")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &buildbucketpb.GitilesCommit{
+			So(actual, ShouldResembleProto, &pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/x",
@@ -66,7 +66,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/branch-heads/x")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &buildbucketpb.GitilesCommit{
+			So(actual, ShouldResembleProto, &pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/branch-heads/x",
@@ -78,7 +78,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/master")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &buildbucketpb.GitilesCommit{
+			So(actual, ShouldResembleProto, &pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/master",
@@ -90,7 +90,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/x")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeTrue)
-			So(actual, ShouldResembleProto, &buildbucketpb.GitilesCommit{
+			So(actual, ShouldResembleProto, &pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/x",

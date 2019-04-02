@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func cmdCancel(p Params) *subcommands.Command {
@@ -65,12 +65,12 @@ func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommand
 		return r.done(ctx, err)
 	}
 
-	req := &buildbucketpb.BatchRequest{}
+	req := &pb.BatchRequest{}
 	fields := r.FieldMask()
 	for _, id := range buildIDs {
-		req.Requests = append(req.Requests, &buildbucketpb.BatchRequest_Request{
-			Request: &buildbucketpb.BatchRequest_Request_CancelBuild{
-				CancelBuild: &buildbucketpb.CancelBuildRequest{
+		req.Requests = append(req.Requests, &pb.BatchRequest_Request{
+			Request: &pb.BatchRequest_Request_CancelBuild{
+				CancelBuild: &pb.CancelBuildRequest{
 					Id:              id,
 					SummaryMarkdown: r.summary,
 					Fields:          fields,

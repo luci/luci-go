@@ -24,15 +24,15 @@ import (
 
 	"go.chromium.org/luci/common/data/strpair"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // StringPairs converts a strpair.Map to a slice of StringPair messages.
-func StringPairs(m strpair.Map) []*buildbucketpb.StringPair {
-	ret := make([]*buildbucketpb.StringPair, 0, len(m))
+func StringPairs(m strpair.Map) []*pb.StringPair {
+	ret := make([]*pb.StringPair, 0, len(m))
 	for k, vs := range m {
 		for _, v := range vs {
-			ret = append(ret, &buildbucketpb.StringPair{Key: k, Value: v})
+			ret = append(ret, &pb.StringPair{Key: k, Value: v})
 		}
 	}
 	SortStringPairs(ret)
@@ -40,7 +40,7 @@ func StringPairs(m strpair.Map) []*buildbucketpb.StringPair {
 }
 
 // SortStringPairs sorts string pairs.
-func SortStringPairs(pairs []*buildbucketpb.StringPair) {
+func SortStringPairs(pairs []*pb.StringPair) {
 	sort.Slice(pairs, func(i, j int) bool {
 		switch {
 		case pairs[i].Key < pairs[j].Key:
@@ -54,7 +54,7 @@ func SortStringPairs(pairs []*buildbucketpb.StringPair) {
 }
 
 // BuildSets returns all of the buildsets of the build.
-func BuildSets(b *buildbucketpb.Build) []string {
+func BuildSets(b *pb.Build) []string {
 	var result []string
 	for _, tag := range b.Tags {
 		if tag.Key == "buildset" {
@@ -66,35 +66,35 @@ func BuildSets(b *buildbucketpb.Build) []string {
 
 // GerritBuildSet returns a buildset representation of c,
 // e.g. "patch/gerrit/chromium-review.googlesource.com/677784/5"
-func GerritBuildSet(c *buildbucketpb.GerritChange) string {
+func GerritBuildSet(c *pb.GerritChange) string {
 	return fmt.Sprintf("patch/gerrit/%s/%d/%d", c.Host, c.Change, c.Patchset)
 }
 
 // GerritChangeURL returns URL of the change.
-func GerritChangeURL(c *buildbucketpb.GerritChange) string {
+func GerritChangeURL(c *pb.GerritChange) string {
 	return fmt.Sprintf("https://%s/c/%d/%d", c.Host, c.Change, c.Patchset)
 }
 
 // GitilesBuildSet returns a buildset representation of c.
 // e.g. "commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
-func GitilesBuildSet(c *buildbucketpb.GitilesCommit) string {
+func GitilesBuildSet(c *pb.GitilesCommit) string {
 	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", c.Host, c.Project, c.Id)
 }
 
 // GitilesRepoURL returns the URL for the gitiles repo.
 // e.g. "https://chromium.googlesource.com/chromium/src"
-func GitilesRepoURL(c *buildbucketpb.GitilesCommit) string {
+func GitilesRepoURL(c *pb.GitilesCommit) string {
 	return fmt.Sprintf("https://%s/%s", c.Host, c.Project)
 }
 
 // GitilesCommitURL returns the URL for the gitiles commit.
 // e.g. "https://chromium.googlesource.com/chromium/src/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
-func GitilesCommitURL(c *buildbucketpb.GitilesCommit) string {
+func GitilesCommitURL(c *pb.GitilesCommit) string {
 	return fmt.Sprintf("%s/+/%s", GitilesRepoURL(c), c.Id)
 }
 
 // ParseBuildSet tries to parse buildset as one of the known formats.
-// May return *buildbucketpb.GerritChange, *buildbucketpb.GitilesCommit
+// May return *pb.GerritChange, *pb.GitilesCommit
 // or nil.
 func ParseBuildSet(buildSet string) proto.Message {
 	// fmt.Sscanf cannot be used for this parsing because
@@ -111,7 +111,7 @@ func ParseBuildSet(buildSet string) proto.Message {
 	n := len(p)
 	switch {
 	case n == 5 && p[0] == "patch" && p[1] == "gerrit":
-		gerrit := &buildbucketpb.GerritChange{
+		gerrit := &pb.GerritChange{
 			Host: p[2],
 		}
 		var err error
@@ -127,7 +127,7 @@ func ParseBuildSet(buildSet string) proto.Message {
 		if p[n-2] != "+" || !looksLikeSha1(p[n-1]) {
 			return nil
 		}
-		return &buildbucketpb.GitilesCommit{
+		return &pb.GitilesCommit{
 			Host:    p[2],
 			Project: strings.Join(p[3:n-2], "/"), // exclude plus
 			Id:      p[n-1],
