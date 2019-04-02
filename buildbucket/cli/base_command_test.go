@@ -21,6 +21,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRetrieveBuildIDs(t *testing.T) {
@@ -42,7 +43,7 @@ func TestRetrieveBuildIDs(t *testing.T) {
 				`).(*pb.BatchResponse), nil
 			})
 			So(err, ShouldBeNil)
-			So(actualReq, shouldResembleProtoTextML, `
+			So(actualReq, ShouldResembleProtoText, `
 				requests {
 					get_build {
 						builder { project: "a" bucket: "b" builder: "c"}

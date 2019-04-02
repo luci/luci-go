@@ -21,6 +21,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/smartystreets/goconvey/convey"
+
+	luciproto	"go.chromium.org/luci/common/proto"
 )
 
 // ShouldResembleProto asserts that given two values that contain proto messages
@@ -85,4 +87,28 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 	return fmt.Sprintf(
 		"ShouldResembleProto doesn't know how to handle values of type %T, "+
 			"expecting a proto.Message or a slice of thereof", actual)
+}
+
+// ShouldResembleProtoText is like ShouldResembleProto, but expected
+// is protobuf text.
+// Supports multi-line proto, see https://godoc.org/go.chromium.org/luci/common/proto#UnmarshalTextML
+// Does not support a slice of messages.
+func ShouldResembleProtoText(actual interface{}, expected ...interface{}) string {
+	if _, ok := actual.(proto.Message); !ok {
+		return fmt.Sprintf("ShouldResembleProtoText expects a proto message, got %T", actual)
+	}
+
+	if len(expected) != 1 {
+		return fmt.Sprintf("ShouldResembleProtoText expects 1 value, got %d", len(expected))
+	}
+	expText, ok := expected[0].(string)
+	if !ok {
+		return fmt.Sprintf("ShouldResembleProtoText expects a string value, got %T", expected[0])
+	}
+
+	expMsg := reflect.New(reflect.TypeOf(actual).Elem()).Interface().(proto.Message)
+	if err := luciproto.UnmarshalTextML(expText, expMsg); err != nil {
+		return err.Error()
+	}
+	return ShouldResembleProto(actual, expMsg)
 }
