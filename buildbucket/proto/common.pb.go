@@ -139,20 +139,9 @@ func (Trinary) EnumDescriptor() ([]byte, []int) {
 // LogDog streamserver at $LOGDOG_STREAM_SERVER_PATH.
 // The stream MUST have a binary-encoded buildbucket.v2.Build message datagrams,
 // with content type "application/luci+proto; message=buildbucket.v2.Build".
+// All step log URLs MUST be relative to $LOGDOG_STREAM_PREFIX (only stream
+// name) and start with $LOGDOG_NAMESPACE.
 // Server-side build will be updated with the values from the latest message.
-//
-// A build step S without children in the datagram MAY have a Step.Log named
-// "$build.proto".
-// It MUST point to a LogDog datagram stream with binary-encoded
-// buildbucket.v2.Build messages and content type
-// "application/luci+proto; message=buildbucket.v2.Build".
-// The step tree from the second datagram will appear as substeps of step S.
-// This rule applies recursively, i.e. a leaf step in the datagram MAY also
-// have a "$build.proto" log.
-// The graph of datagram streams MUST be a tree, i.e. acyclic.
-//
-// All build step log urls of all Build messages MUST be relative to
-// $LOGDOG_STREAM_PREFIX (only stream name) and start with $LOGDOG_NAMESPACE.
 type Executable struct {
 	// The CIPD package containing the executable.
 	// On Linux/Mac, the executable MUST be named "run_build".
