@@ -26,7 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bp "go.chromium.org/luci/buildbucket/proto"
 )
 
 func cmdLS(p Params) *subcommands.Command {
@@ -88,7 +88,7 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 	}
 
 	seen := map[int64]struct{}{}
-	var builds []*buildbucketpb.Build
+	var builds []*bp.Build
 	for _, res := range res.Responses {
 		if err := res.GetError(); err != nil {
 			return r.done(ctx, fmt.Errorf("%s: %s", codes.Code(err.Code), err.Message))
@@ -119,28 +119,28 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 
 // parseSearchRequests converts flags and arguments to a batched SearchBuilds
 // requests.
-func (r *lsRun) parseSearchRequests(ctx context.Context, args []string) (*buildbucketpb.BatchRequest, error) {
+func (r *lsRun) parseSearchRequests(ctx context.Context, args []string) (*bp.BatchRequest, error) {
 	baseReq, err := r.parseBaseRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := &buildbucketpb.BatchRequest{}
+	ret := &bp.BatchRequest{}
 	for _, path := range args {
-		searchBuilds := proto.Clone(baseReq).(*buildbucketpb.SearchBuildsRequest)
+		searchBuilds := proto.Clone(baseReq).(*bp.SearchBuildsRequest)
 		var err error
 		if searchBuilds.Predicate.Builder, err = r.parsePath(path); err != nil {
 			return nil, fmt.Errorf("invalid path %q: %s", path, err)
 		}
-		ret.Requests = append(ret.Requests, &buildbucketpb.BatchRequest_Request{
-			Request: &buildbucketpb.BatchRequest_Request_SearchBuilds{SearchBuilds: searchBuilds},
+		ret.Requests = append(ret.Requests, &bp.BatchRequest_Request{
+			Request: &bp.BatchRequest_Request_SearchBuilds{SearchBuilds: searchBuilds},
 		})
 	}
 
 	// If no arguments were passed, search in any project.
 	if len(ret.Requests) == 0 {
-		ret.Requests = append(ret.Requests, &buildbucketpb.BatchRequest_Request{
-			Request: &buildbucketpb.BatchRequest_Request_SearchBuilds{SearchBuilds: baseReq},
+		ret.Requests = append(ret.Requests, &bp.BatchRequest_Request{
+			Request: &bp.BatchRequest_Request_SearchBuilds{SearchBuilds: baseReq},
 		})
 	}
 
@@ -148,9 +148,9 @@ func (r *lsRun) parseSearchRequests(ctx context.Context, args []string) (*buildb
 }
 
 // parseBaseRequest returns a base SearchBuildsRequest without builder filter.
-func (r *lsRun) parseBaseRequest(ctx context.Context) (*buildbucketpb.SearchBuildsRequest, error) {
-	ret := &buildbucketpb.SearchBuildsRequest{
-		Predicate: &buildbucketpb.BuildPredicate{
+func (r *lsRun) parseBaseRequest(ctx context.Context) (*bp.SearchBuildsRequest, error) {
+	ret := &bp.SearchBuildsRequest{
+		Predicate: &bp.BuildPredicate{
 			Tags:                r.Tags(),
 			IncludeExperimental: r.includeExperimental,
 		},
@@ -168,8 +168,8 @@ func (r *lsRun) parseBaseRequest(ctx context.Context) (*buildbucketpb.SearchBuil
 	return ret, nil
 }
 
-func (r *lsRun) parsePath(path string) (*buildbucketpb.BuilderID, error) {
-	bid := &buildbucketpb.BuilderID{}
+func (r *lsRun) parsePath(path string) (*bp.BuilderID, error) {
+	bid := &bp.BuilderID{}
 	switch parts := strings.Split(path, "/"); len(parts) {
 	case 3:
 		bid.Builder = parts[2]

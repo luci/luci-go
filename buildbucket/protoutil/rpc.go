@@ -19,25 +19,25 @@ import (
 	"strconv"
 	"strings"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bp "go.chromium.org/luci/buildbucket/proto"
 )
 
 // ParseGetBuildRequest parses a GetBuild request.
 // Supports two forms:
 // - <build-id>
 // - <project>/<bucket>/<builder>/<build-number>
-func ParseGetBuildRequest(s string) (*buildbucketpb.GetBuildRequest, error) {
+func ParseGetBuildRequest(s string) (*bp.GetBuildRequest, error) {
 	id, err := strconv.ParseInt(s, 10, 64)
 	if err == nil {
-		return &buildbucketpb.GetBuildRequest{Id: id}, nil
+		return &bp.GetBuildRequest{Id: id}, nil
 	}
 
 	parts := strings.Split(s, "/")
 	if len(parts) == 4 {
 		num, err := strconv.Atoi(parts[3])
 		if err == nil {
-			return &buildbucketpb.GetBuildRequest{
-				Builder: &buildbucketpb.BuilderID{
+			return &bp.GetBuildRequest{
+				Builder: &bp.BuilderID{
 					Project: parts[0],
 					Bucket:  parts[1],
 					Builder: parts[2],

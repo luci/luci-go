@@ -25,7 +25,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bp "go.chromium.org/luci/buildbucket/proto"
 	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -53,7 +53,7 @@ func TestV1(t *testing.T) {
 		// Make a Convey for each test case.
 		for i, msg := range input {
 			Convey(fmt.Sprintf("#%d", i), func() {
-				var expected buildbucketpb.Build
+				var expected bp.Build
 				err := jsonpb.Unmarshal(bytes.NewReader([]byte(expectedRawMsgs[i])), &expected)
 				So(err, ShouldBeNil)
 
@@ -70,35 +70,35 @@ func TestV1(t *testing.T) {
 	})
 
 	Convey("StatusToV2", t, func() {
-		cases := map[buildbucketpb.Status]*v1.ApiCommonBuildMessage{
+		cases := map[bp.Status]*v1.ApiCommonBuildMessage{
 			0: {},
 
-			buildbucketpb.Status_SCHEDULED: {
+			bp.Status_SCHEDULED: {
 				Status: "SCHEDULED",
 			},
 
-			buildbucketpb.Status_STARTED: {
+			bp.Status_STARTED: {
 				Status: "STARTED",
 			},
 
-			buildbucketpb.Status_SUCCESS: {
+			bp.Status_SUCCESS: {
 				Status: "COMPLETED",
 				Result: "SUCCESS",
 			},
 
-			buildbucketpb.Status_FAILURE: {
+			bp.Status_FAILURE: {
 				Status:        "COMPLETED",
 				Result:        "FAILURE",
 				FailureReason: "BUILD_FAILURE",
 			},
 
-			buildbucketpb.Status_INFRA_FAILURE: {
+			bp.Status_INFRA_FAILURE: {
 				Status:        "COMPLETED",
 				Result:        "FAILURE",
 				FailureReason: "INFRA_FAILURE",
 			},
 
-			buildbucketpb.Status_CANCELED: {
+			bp.Status_CANCELED: {
 				Status:            "COMPLETED",
 				Result:            "CANCELED",
 				CancelationReason: "CANCELED_EXPLICITLY",
