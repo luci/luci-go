@@ -35,6 +35,7 @@ func Milo(c context.Context, cfg *pb.Project) error {
 	headers := make(map[string]*pb.Header)
 	for _, h := range cfg.Headers {
 		headers[h.Id] = h
+		h.Id = ""
 	}
 	for _, c := range cfg.Consoles {
 		switch {
@@ -44,6 +45,7 @@ func Milo(c context.Context, cfg *pb.Project) error {
 			return fmt.Errorf("bad console %q - has both 'header' and 'header_id' fields", c.Id)
 		default:
 			c.Header = headers[c.HeaderId]
+			c.HeaderId = ""
 		}
 	}
 	cfg.Headers = nil

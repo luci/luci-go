@@ -74,9 +74,7 @@ consoles: <
   id: "z"
   header: <
     tree_status_host: "t1"
-    id: "h"
   >
-  header_id: "h"
 >
 `
 
