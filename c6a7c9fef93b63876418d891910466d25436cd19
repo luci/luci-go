@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6c2002a9_e1d7c369",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:23:55Z",
+      "side": 1,
+      "message": "Yes. I\u0027m going to modify the agent to ask the GCE Provider to tell it the Swarming server to avoid repetition in the configs. To authenticate that I\u0027m going to use this mechanism (VM can call Instances.Get on itself).",
+      "parentUuid": "3c245c78_f127c72f",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 11
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7e54793d_9142f1a7",
         "filename": "gce/vmtoken/client/client.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "600d3034_d39a626c",
+        "filename": "gce/vmtoken/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:23:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7e54793d_9142f1a7",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 53,
+        "endChar": 21
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "7d9a3cac_25ed6763",
+        "filename": "gce/vmtoken/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:23:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "180c12d9_844b2668",
+      "range": {
+        "startLine": 57,
+        "startChar": 53,
+        "endLine": 57,
+        "endChar": 56
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5cee90eb_d603cc98",
+        "filename": "gce/vmtoken/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:23:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "863f3e91_9297fe48",
+      "range": {
+        "startLine": 57,
+        "startChar": 48,
+        "endLine": 57,
+        "endChar": 51
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "236884f9_20dd227e",
         "filename": "gce/vmtoken/client/client_test.go",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b3a34e3_cf910a4f",
+        "filename": "gce/vmtoken/client/client_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:23:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "236884f9_20dd227e",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 1
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "0eb9f819_d3160a85",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:23:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d70725c2_22aad144",
+      "range": {
+        "startLine": 185,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 2
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86515aed_887d1da0",
         "filename": "gce/vmtoken/vmtoken.go",
         "patchSetId": 1
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "76faf707_188987e0",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:23:55Z",
+      "side": 1,
+      "message": "Done, but logged only expected values here. Actual values logged in Middleware.",
+      "parentUuid": "86515aed_887d1da0",
+      "range": {
+        "startLine": 205,
+        "startChar": 1,
+        "endLine": 205,
+        "endChar": 65
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b623539_7c017e20",
         "filename": "gce/vmtoken/vmtoken.go",
         "patchSetId": 1
@@ -174,6 +342,30 @@
       "writtenOn": "2019-04-01T20:26:47Z",
       "side": 1,
       "message": "Two issue here:\n\n1. It may be a transient error (per transient.Tag.In check), in which case the request should finish with HTTP 500. Transient error may come from FetchGoogleOAuth2Certificates, which occasionally makes HTTP requests to Google which may fail.\n\n2. I believe it is better to fail loudly with an error (HTTP 401). What can unauthenticated bots even do?",
+      "range": {
+        "startLine": 213,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 79
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc90e92d_a24adc89",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:23:55Z",
+      "side": 1,
+      "message": "We aren\u0027t sure if authentication is needed at this point. A VM may present an invalid token but be trying to access a resource that requires no authentication. Failing with 401 due to invalid token is kind of debugging the VM\u0027s token metadata.",
+      "parentUuid": "1b623539_7c017e20",
       "range": {
         "startLine": 213,
         "startChar": 2,
