@@ -16,15 +16,12 @@ package projectscope
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
@@ -36,14 +33,6 @@ import (
 )
 
 const (
-	// maxAllowedMinValidityDuration specifies the maximum project identity token validity period
-	// that a client may ask for.
-	maxAllowedMinValidityDuration = 30 * time.Minute
-
-	// A value for minimal returned token lifetime if 'min_validity_duration'
-	// field is not specified in the request.
-	defaultMinValidityDuration = 5 * time.Minute
-
 	// projectActorsGroup is a group of identities and subgroups authorized to obtain project tokens.
 	projectActorsGroup = "auth-project-actors"
 )
@@ -67,36 +56,6 @@ type MintProjectTokenRPC struct {
 	ProjectIdentities func(context.Context) projectidentity.Storage
 }
 
-// logRequest logs the body of the request.
-func (r *MintProjectTokenRPC) logRequest(c context.Context, req *minter.MintProjectTokenRequest, caller identity.Identity) {
-	if !logging.IsLogging(c, logging.Debug) {
-		return
-	}
-	m := jsonpb.Marshaler{Indent: " "}
-	dump, err := m.MarshalToString(req)
-	if err != nil {
-		panic(err)
-	}
-	logging.Debugf(c, "Identity: %s", caller)
-	logging.Debugf(c, "MintProjectTokenRequest:\n%s", dump)
-}
-
-// validateRequest validates the request fields.
-func (r *MintProjectTokenRPC) validateRequest(c context.Context, req *minter.MintProjectTokenRequest) error {
-	minDur := time.Duration(req.MinValidityDuration) * time.Second
-	switch {
-	case req.LuciProject == "":
-		return fmt.Errorf("luci_project is empty")
-	case len(req.OauthScope) <= 0:
-		return fmt.Errorf("oauth_scope is required")
-	case minDur < 0:
-		return fmt.Errorf("min_validity_duration must be positive")
-	case minDur > maxAllowedMinValidityDuration:
-		return fmt.Errorf("min_validity_duration must not exceed %d", maxAllowedMinValidityDuration/time.Second)
-	}
-	return nil
-}
-
 // MintProjectToken mints a project-scoped service account OAuth2 token.
 //
 // Project-scoped service accounts are identities tied to an individual LUCI project.
@@ -107,9 +66,14 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 	callerID := state.User().Identity
 
 	// Make sure we log the request as early as possible.
-	r.logRequest(c, req, callerID)
+	utils.LogRequest(c, r, req, callerID)
 
-	if err := r.validateRequest(c, req); err != nil {
+	// Perform bounds checking and corrections on the requested token validity lifetime.
+	if err := utils.ValidateAndNormalizeRequest(c, req.OauthScope, &req.MinValidityDuration, req.AuditTags); err != nil {
+		logging.WithError(err).Errorf(c, "invalid request %v", req)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid request: %s", err.Error())
+	}
+	if err := utils.ValidateProject(c, req.LuciProject); err != nil {
 		logging.WithError(err).Errorf(c, "invalid request %v", req)
 		return nil, status.Errorf(codes.InvalidArgument, "invalid request: %s", err.Error())
 	}
@@ -134,12 +98,6 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 		return nil, status.Errorf(codes.PermissionDenied, "access denied")
 	}
 
-	// Perform bounds checking on the requested token validity lifetime.
-	minValidityDuration := time.Duration(req.MinValidityDuration) * time.Second
-	if minValidityDuration == 0 {
-		minValidityDuration = defaultMinValidityDuration
-	}
-
 	projectIdentity, err := r.ProjectIdentities(c).LookupByProject(c, req.LuciProject)
 	if err != nil {
 		switch {
@@ -157,7 +115,7 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 	accessTok, err := r.MintAccessToken(c, auth.MintAccessTokenParams{
 		ServiceAccount: projectIdentity.Email,
 		Scopes:         req.OauthScope,
-		MinTTL:         minValidityDuration,
+		MinTTL:         time.Duration(req.MinValidityDuration) * time.Second,
 	})
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to mint project scoped oauth token for caller %q in project %q for identity %q",
@@ -180,4 +138,9 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 	}
 
 	return resp, nil
+}
+
+// Name implements utils.RPC interface.
+func (r *MintProjectTokenRPC) Name() string {
+	return "MintProjectTokenRPC"
 }
