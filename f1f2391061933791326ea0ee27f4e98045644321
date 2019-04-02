@@ -34,6 +34,24 @@
       "revId": "f1f2391061933791326ea0ee27f4e98045644321",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e73bdb6b_75ec14f9",
+        "filename": "common/data/text/document.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T20:51:22Z",
+      "side": 1,
+      "message": "It does.  It\u0027s a new runtime and the LUCI stack doesn\u0027t use it because it requires migration.",
+      "parentUuid": "259545d7_bde2e748",
+      "revId": "f1f2391061933791326ea0ee27f4e98045644321",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
