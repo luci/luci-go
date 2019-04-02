@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b997960_a8d8d24a",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T21:05:14Z",
+      "side": 1,
+      "message": "nit: group import with other luci/tokenserver/... imports",
+      "revId": "9440bb3673b5d9a67f430809a67ce0c3bbd43716",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cb58dd6_57e21dd0",
+        "filename": "tokenserver/appengine/impl/utils/rpc_utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T21:05:14Z",
+      "side": 1,
+      "message": "not used anymore",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 27
+      },
+      "revId": "9440bb3673b5d9a67f430809a67ce0c3bbd43716",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a25f89e_42c6826f",
+        "filename": "tokenserver/appengine/impl/utils/rpc_utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T21:05:14Z",
+      "side": 1,
+      "message": "nit: just \u0027if project \u003d\u003d \"\" { ... }\u0027",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 11
+      },
+      "revId": "9440bb3673b5d9a67f430809a67ce0c3bbd43716",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d99104e_ab3670fd",
+        "filename": "tokenserver/appengine/impl/utils/rpc_utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T21:05:14Z",
+      "side": 1,
+      "message": "this needs a unit test",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 32
+      },
+      "revId": "9440bb3673b5d9a67f430809a67ce0c3bbd43716",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

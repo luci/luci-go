@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2c3a08f_22479604",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T21:05:14Z",
+      "side": 0,
+      "message": "Some form of these tests are still needed, otherwise request validation is not covered.",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 130,
+        "endChar": 4
+      },
+      "revId": "3bd14eff34b1531db6f7fde086ef0c52a17fb2b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
