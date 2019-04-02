@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef92c44f_1cf5da54",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T19:46:03Z",
+      "side": 1,
+      "message": "this seems to imply BUILDER is optional",
+      "range": {
+        "startLine": 34,
+        "startChar": 27,
+        "endLine": 34,
+        "endChar": 34
+      },
+      "revId": "069437d8258c43559b856143b299245f20759c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ba91573_af78b713",
+        "filename": "buildbucket/cli/cancel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T19:46:03Z",
+      "side": 1,
+      "message": "do you want to do \u003cBUILD\u003e or BUILD everywhere?",
+      "revId": "069437d8258c43559b856143b299245f20759c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e41365c2_02ddc338",
+        "filename": "buildbucket/cli/get.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T19:46:03Z",
+      "side": 1,
+      "message": "get [flags] BUILD [BUILD...]\n\nWould be more accurate since at least one build is required",
+      "revId": "069437d8258c43559b856143b299245f20759c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
