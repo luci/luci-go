@@ -17,15 +17,15 @@ package cli
 import (
 	"context"
 	"fmt"
-	"math/rand"
-	"strconv"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -45,7 +45,6 @@ func cmdAdd(p Params) *subcommands.Command {
 			r := &addRun{}
 			r.RegisterDefaultFlags(p)
 			r.RegisterJSONFlag()
-			r.buildFieldFlags.Register(&r.Flags)
 
 			r.clsFlag.Register(&r.Flags, doc(`
 				CL URL as input for the builds. Can be specified multiple times.
@@ -72,6 +71,20 @@ func cmdAdd(p Params) *subcommands.Command {
 			r.Flags.BoolVar(&r.experimental, "exp", false, doc(`
 				Mark the builds as experimental
 			`))
+			r.Flags.Var(PropertiesFlag(&r.properties), "p", doc(`
+				Input properties for the build.
+
+				If a flag value starts with @, properties are read from the JSON file at the
+				path that follows @. Example:
+					bb add -p @my_properties.json chromium/try/linux-rel
+				This form can be used only in the first flag value.
+
+				Otherwise, a flag value must have name=value form.
+				If the property value is valid JSON, then it is parsed as JSON;
+				otherwise treated as a string. Example:
+					bb add -p foo=1 -p 'bar={"a": 2}' chromium/try/linux-rel
+				Different property names can be specified multiple times.
+			`))
 			return r
 		},
 	}
@@ -79,12 +92,13 @@ func cmdAdd(p Params) *subcommands.Command {
 
 type addRun struct {
 	baseCommandRun
-	buildFieldFlags
 	clsFlag
 	commitFlag
 	tagsFlag
+
 	ref          string
 	experimental bool
+	properties   structpb.Struct
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -122,9 +136,10 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 
 func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildRequest, error) {
 	ret := &pb.ScheduleBuildRequest{
-		RequestId: strconv.FormatInt(rand.Int63(), 10),
-		Tags:      r.Tags(),
-		Fields:    r.FieldMask(),
+		RequestId:  uuid.New().String(),
+		Tags:       r.Tags(),
+		Fields:     completeBuildFieldMask,
+		Properties: &r.properties,
 	}
 
 	if r.experimental {

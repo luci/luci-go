@@ -25,6 +25,17 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+var completeBuildFieldMask *field_mask.FieldMask
+
+func init() {
+	completeBuildFieldMask = &field_mask.FieldMask{}
+	for _, p := range proto.GetProperties(reflect.TypeOf(pb.Build{})).Prop {
+		if !strings.HasPrefix(p.OrigName, "XXX") {
+			completeBuildFieldMask.Paths = append(completeBuildFieldMask.Paths, p.OrigName)
+		}
+	}
+}
+
 type buildFieldFlags struct {
 	all        bool
 	properties bool
@@ -39,13 +50,7 @@ func (f *buildFieldFlags) Register(fs *flag.FlagSet) {
 
 func (f *buildFieldFlags) FieldMask() *field_mask.FieldMask {
 	if f.all {
-		ret := &field_mask.FieldMask{}
-		for _, p := range proto.GetProperties(reflect.TypeOf(pb.Build{})).Prop {
-			if !strings.HasPrefix(p.OrigName, "XXX") {
-				ret.Paths = append(ret.Paths, p.OrigName)
-			}
-		}
-		return ret
+		return proto.Clone(completeBuildFieldMask).(*field_mask.FieldMask)
 	}
 
 	ret := &field_mask.FieldMask{

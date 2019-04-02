@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/smartystreets/goconvey/convey"
 )
@@ -91,6 +92,17 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 // is protobuf text.
 // actual must be a message. A slice of messages is not supported.
 func ShouldResembleProtoText(actual interface{}, expected ...interface{}) string {
+	return shouldResembleProtoUnmarshal(proto.UnmarshalText, actual, expected...)
+}
+
+// ShouldResembleProtoJSON is like ShouldResembleProto, but expected
+// is protobuf text.
+// actual must be a message. A slice of messages is not supported.
+func ShouldResembleProtoJSON(actual interface{}, expected ...interface{}) string {
+	return shouldResembleProtoUnmarshal(jsonpb.UnmarshalString, actual, expected...)
+}
+
+func shouldResembleProtoUnmarshal(unmarshal func(string, proto.Message) error, actual interface{}, expected ...interface{}) string {
 	if _, ok := actual.(proto.Message); !ok {
 		return fmt.Sprintf("ShouldResembleProtoText expects a proto message, got %T", actual)
 	}
@@ -104,7 +116,8 @@ func ShouldResembleProtoText(actual interface{}, expected ...interface{}) string
 	}
 
 	expMsg := reflect.New(reflect.TypeOf(actual).Elem()).Interface().(proto.Message)
-	if err := proto.UnmarshalText(expText, expMsg); err != nil {
+
+	if err := unmarshal(expText, expMsg); err != nil {
 		return err.Error()
 	}
 	return ShouldResembleProto(actual, expMsg)
