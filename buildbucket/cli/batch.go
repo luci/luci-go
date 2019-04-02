@@ -31,13 +31,16 @@ func cmdBatch(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `batch [flags]`,
 		ShortDesc: "calls buildbucket.v2.Builds.Batch. Suitable for scripts.",
-		LongDesc: `Calls buildbucket.v2.Builds.Batch.
-Stdin must be buildbucket.v2.BatchRequest in JSON format.
-Stdout will be buildbucket.v2.BatchResponse in JSON format.
-Exits with code 1 if at least one sub-request fails.`,
+		LongDesc: doc(`
+			Calls buildbucket.v2.Builds.Batch.
+
+			Stdin must be buildbucket.v2.BatchRequest in JSON format.
+			Stdout will be buildbucket.v2.BatchResponse in JSON format.
+			Exits with code 1 if at least one sub-request fails.
+		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &batchRun{}
-			r.RegisterGlobalFlags(p)
+			r.RegisterDefaultFlags(p)
 			return r
 		},
 	}

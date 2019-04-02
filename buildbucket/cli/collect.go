@@ -38,24 +38,28 @@ func cmdCollect(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `collect [flags] <BUILD> [<BUILD>...]`,
 		ShortDesc: "wait for builds to end",
-		LongDesc: `Wait for builds to end.
+		LongDesc: doc(`
+			Wait for builds to end.
 
-Argument BUILD can be an int64 build id or a string
-<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
+			Argument BUILD can be an int64 build id or a string
+			<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
 
-Optionally writes build details into an output file as JSON array of
-bulidbucket.v2.Build proto messages.`,
+			Optionally writes build details into an output file as JSON array of
+			bulidbucket.v2.Build proto messages.
+		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &collectRun{}
-			r.RegisterGlobalFlags(p)
-			r.Flags.DurationVar(
-				&r.intervalArg, "interval", time.Minute,
-				"duration to wait between requests")
-			r.Flags.StringVar(&r.outputArg, "json-output", "", "path to the file "+
-				"into which build details are written; nothing is written if "+
-				"unspecified")
+			r.RegisterDefaultFlags(p)
+			r.Flags.DurationVar(&r.intervalArg, "interval", time.Minute, doc(`
+				duration to wait between requests
+			`))
+			r.Flags.StringVar(&r.outputArg, "json-output", "", doc(`
+					path to the file into which build details are written;
+					nothing is written if unspecified
+			`))
 			return r
 		},
+		Advanced: true,
 	}
 }
 
