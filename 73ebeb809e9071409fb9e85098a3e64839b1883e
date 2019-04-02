@@ -22,6 +22,30 @@
       "revId": "73ebeb809e9071409fb9e85098a3e64839b1883e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46513c9e_6ca9c52d",
+        "filename": "lucicfg/normalize/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T00:14:07Z",
+      "side": 1,
+      "message": "Done.\n\nMy heart still bleeds to know that Add(...) does unnecessary in general case existence check.",
+      "parentUuid": "1a53ae99_1a106848",
+      "range": {
+        "startLine": 77,
+        "startChar": 32,
+        "endLine": 77,
+        "endChar": 48
+      },
+      "revId": "73ebeb809e9071409fb9e85098a3e64839b1883e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
