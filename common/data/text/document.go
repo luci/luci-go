@@ -15,7 +15,6 @@
 package text
 
 import (
-	"bytes"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -64,7 +63,8 @@ func Doc(doc string) string {
 
 	// Combine lines, but replace ('\n' followed by non-whitespace) with one
 	// space.
-	ret := bytes.NewBuffer(make([]byte, 0, len(doc)))
+	ret := &strings.Builder{}
+	ret.Grow(len(doc))
 	newParagraph := true
 	for _, line := range lines {
 		if isBlank(line) {
