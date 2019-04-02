@@ -418,6 +418,46 @@ func TestValidateConfig(t *testing.T) {
 			rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(project2Cfg))
 			So(ctx.Finalize(), ShouldErrLike, `referencing unknown job "noop-job-2" in 'triggers' field`)
 		})
+
+		Convey("rejects duplicate ids", func() {
+			rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
+				acl_sets {
+					name: "default"
+					acls { role: OWNER granted_to: "group:admins" }
+				}
+
+				job {
+					id: "dup"
+					acl_sets: "default"
+					noop: { }
+				}
+				job {
+					id: "dup"
+					acl_sets: "default"
+					noop: { }
+				}
+			`))
+			So(ctx.Finalize(), ShouldErrLike, `duplicate id "dup"`)
+
+			rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
+				acl_sets {
+					name: "default"
+					acls { role: OWNER granted_to: "group:admins" }
+				}
+
+				job {
+					id: "dup"
+					acl_sets: "default"
+					noop: { }
+				}
+				trigger {
+					id: "dup"
+					acl_sets: "default"
+					noop: { }
+				}
+			`))
+			So(ctx.Finalize(), ShouldErrLike, `duplicate id "dup"`)
+		})
 	})
 }
 
