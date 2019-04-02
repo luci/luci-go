@@ -174,3 +174,10 @@ steps: <
   status: STARTED
   start_time: < seconds: 1500000000 >
 >
+
+steps: <
+  name: "start time is a bit greater than end time"
+  status: SUCCESS
+  start_time: < seconds: 1500000000 nanos: 1>
+  end_time: < seconds: 1500000000 nanos: 2>
+>

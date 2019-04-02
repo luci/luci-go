@@ -224,3 +224,12 @@ substep: <
    >
   >
 >
+
+substep: <
+  step: <
+    name: "start time is a bit greater than end time"
+    status: SUCCESS
+    started: < seconds: 1500000000 nanos: 2>
+    ended: < seconds: 1500000000 nanos: 1>
+  >
+>

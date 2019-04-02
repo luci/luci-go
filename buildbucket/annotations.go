@@ -113,6 +113,18 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann
 		EndTime:   ann.Ended,
 	}
 
+	// Annotee is known to produce startTime>endTime if they are very close.
+	// Correct that here.
+	if bb.StartTime != nil && bb.EndTime != nil && cmpTs(bb.StartTime, bb.EndTime) > 0 {
+		if bb.StartTime.Seconds-bb.EndTime.Seconds > 1 {
+			return nil, fmt.Errorf(
+				"step %q start time %q is much greater than end time %q",
+				ann.Name, bb.StartTime, bb.EndTime)
+		}
+		// Swap them. They are close enough.
+		bb.StartTime, bb.EndTime = bb.EndTime, bb.StartTime
+	}
+
 	// Unlike annotation step names, buildbucket step names must be unique.
 	// Choose a name.
 	stripPrefix := strings.TrimSuffix(stepPrefix, StepSep) + "."
