@@ -233,13 +233,16 @@ func (a *application) runArchivist(c context.Context) error {
 	}
 	defer st.Close()
 
-	// Initialize our Google Storage client.
-	gsClient, err := a.GSClient(c)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get Google Storage client.")
-		return err
+
+	// Defines our Google Storage client project scoped factory.
+	gsClientFactory := func(ctx context.Context, proj types.ProjectName) (gs.Client, gs.ClientCloser, error) {
+		gsClient, err := a.GSClient(ctx, proj)
+		if err != nil {
+			log.WithError(err).Errorf(c, "Failed to get Google Storage client.")
+			return nil, nil, err
+		}
+		return gsClient, func() error {return gsClient.Close()}, nil
 	}
-	defer gsClient.Close()
 
 	// Initialize a Coordinator client that bundles requests together.
 	coordClient := &bundleServicesClient.Client{
@@ -253,7 +256,7 @@ func (a *application) runArchivist(c context.Context) error {
 		Service:        coordClient,
 		SettingsLoader: a.GetSettingsLoader(acfg),
 		Storage:        st,
-		GSClient:       gsClient,
+		GSClientFactory:       gsClientFactory,
 	}
 
 	// Application shutdown will now operate by stopping the Iterator.

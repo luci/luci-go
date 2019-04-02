@@ -163,8 +163,8 @@ type Archivist struct {
 
 	// Storage is the archival source Storage instance.
 	Storage storage.Storage
-	// GSClient is the Google Storage client to for archive generation.
-	GSClient gs.Client
+	// GSClientFactory obtains a Google Storage client for archive generation.
+	GSClientFactory func(context.Context, types.ProjectName) (gs.Client, io.Closer, error)
 }
 
 // storageBufferSize is the size, in bytes, of the LogEntry buffer that is used
@@ -319,6 +319,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
 		return err
 	}
+	defer staged.Close()
 
 	// TODO(hinoka): Remove this condition after crbug.com/923557.
 	// Are we required to archive a complete log stream?
@@ -364,7 +365,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		defer staged.cleanup(c)
 
 		// Finalize the archival.
-		if err := staged.finalize(c, a.GSClient, &ar); err != nil {
+		if err := staged.finalize(c, &ar); err != nil {
 			log.WithError(err).Errorf(c, "Failed to finalize archival.")
 			return err
 		}
@@ -434,10 +435,20 @@ func (a *Archivist) loadSettings(c context.Context, project types.ProjectName) (
 func (a *Archivist) makeStagedArchival(c context.Context, project types.ProjectName,
 	st *Settings, ls *logdog.LoadStreamResponse, uid string) (*stagedArchival, error) {
 
+	gsClient, _, err := a.GSClientFactory(c, project)
+	if err != nil {
+		log.Fields{
+			log.ErrorKey:   err,
+			"protoVersion": ls.State.ProtoVersion,
+		}.Errorf(c, "Failed to obtain GSClient.")
+		return nil, err
+	}
+
 	sa := stagedArchival{
 		Archivist: a,
 		Settings:  st,
 		project:   project,
+		gsclient:  gsClient,
 
 		terminalIndex: types.MessageIndex(ls.State.TerminalIndex),
 	}
@@ -485,6 +496,8 @@ type stagedArchival struct {
 	finalized     bool
 	terminalIndex types.MessageIndex
 	logEntryCount int64
+
+	gsclient gs.Client
 }
 
 // makeStagingPaths returns a stagingPaths instance for the given path and
@@ -580,7 +593,7 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		// stream. This is a non-fatal failure, since we've already hit a fatal
 		// one.
 		if err != nil || len(terr) > 0 {
-			if ierr := sa.GSClient.Delete(path); ierr != nil {
+			if ierr := sa.gsclient.Delete(path); ierr != nil {
 				log.Fields{
 					log.ErrorKey: ierr,
 					"path":       path,
@@ -591,8 +604,8 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 
 	// createWriter is a shorthand function for creating a writer to a path and
 	// reporting an error if it failed.
-	createWriter := func(p gs.Path) (gs.Writer, error) {
-		w, ierr := sa.GSClient.NewWriter(p)
+	createWriter := func(c context.Context, p gs.Path) (gs.Writer, error) {
+		w, ierr := sa.gsclient.NewWriter(p)
 		if ierr != nil {
 			log.Fields{
 				log.ErrorKey: ierr,
@@ -604,19 +617,19 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 	}
 
 	var streamWriter, indexWriter, dataWriter gs.Writer
-	if streamWriter, err = createWriter(sa.stream.staged); err != nil {
+	if streamWriter, err = createWriter(c, sa.stream.staged); err != nil {
 		return
 	}
 	defer closeWriter(streamWriter, sa.stream.staged)
 
-	if indexWriter, err = createWriter(sa.index.staged); err != nil {
+	if indexWriter, err = createWriter(c, sa.index.staged); err != nil {
 		return err
 	}
 	defer closeWriter(indexWriter, sa.index.staged)
 
 	if sa.data.enabled() {
 		// Only emit a data stream if we are configured to do so.
-		if dataWriter, err = createWriter(sa.data.staged); err != nil {
+		if dataWriter, err = createWriter(c, sa.data.staged); err != nil {
 			return err
 		}
 		defer closeWriter(dataWriter, sa.data.staged)
@@ -688,7 +701,7 @@ func (d *stagingPaths) addMetrics(c context.Context, archiveField, streamField s
 	tsTotalBytes.Add(c, d.bytesWritten, archiveField, streamField)
 }
 
-func (sa *stagedArchival) finalize(c context.Context, client gs.Client, ar *logdog.ArchiveStreamRequest) error {
+func (sa *stagedArchival) finalize(c context.Context, ar *logdog.ArchiveStreamRequest) error {
 	err := parallel.FanOutIn(func(taskC chan<- func() error) {
 		for _, d := range sa.getStagingPaths() {
 			d := d
@@ -699,7 +712,7 @@ func (sa *stagedArchival) finalize(c context.Context, client gs.Client, ar *logd
 			}
 
 			taskC <- func() error {
-				if err := client.Rename(d.staged, d.final); err != nil {
+				if err := sa.gsclient.Rename(d.staged, d.final); err != nil {
 					log.Fields{
 						log.ErrorKey: err,
 						"stagedPath": d.staged,
@@ -731,13 +744,17 @@ func (sa *stagedArchival) finalize(c context.Context, client gs.Client, ar *logd
 	return nil
 }
 
+func (sa *stagedArchival) Close() error {
+	return sa.gsclient.Close()
+}
+
 func (sa *stagedArchival) cleanup(c context.Context) {
 	for _, d := range sa.getStagingPaths() {
 		if d.staged == "" {
 			continue
 		}
 
-		if err := sa.GSClient.Delete(d.staged); err != nil {
+		if err := sa.gsclient.Delete(d.staged); err != nil {
 			log.Fields{
 				log.ErrorKey: err,
 				"path":       d.staged,
