@@ -16,6 +16,24 @@
       "revId": "f1f2391061933791326ea0ee27f4e98045644321",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "259545d7_bde2e748",
+        "filename": "common/data/text/document.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-02T20:47:58Z",
+      "side": 1,
+      "message": "confused. gae supports go 1.11 https://cloud.google.com/appengine/docs/standard/go111/",
+      "parentUuid": "bc8b50f6_4a78f3e9",
+      "revId": "f1f2391061933791326ea0ee27f4e98045644321",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
