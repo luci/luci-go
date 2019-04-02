@@ -20,7 +20,7 @@ import (
 	"regexp"
 	"strings"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 type commitFlag struct {
@@ -33,7 +33,7 @@ func (f *commitFlag) Register(fs *flag.FlagSet, help string) {
 
 // retrieveCommit retrieves a GitilesCommit from f.commit.
 // Interacts with the user if necessary/
-func (f *commitFlag) retrieveCommit() (*buildbucketpb.GitilesCommit, error) {
+func (f *commitFlag) retrieveCommit() (*pb.GitilesCommit, error) {
 	if f.commit == "" {
 		return nil, nil
 	}
@@ -65,12 +65,12 @@ var regexCommit = regexp.MustCompile(`(\w+\.googlesource\.com)/([^\+]+)/\+/(([a-
 // either Ref or Id.
 //
 // If mustConfirmRef is true, commit.Ref needs to be confirmed.
-func parseCommit(s string) (commit *buildbucketpb.GitilesCommit, mustConfirmRef bool, err error) {
+func parseCommit(s string) (commit *pb.GitilesCommit, mustConfirmRef bool, err error) {
 	m := regexCommit.FindStringSubmatch(s)
 	if m == nil {
 		return nil, false, fmt.Errorf("does not match regexp %q", regexCommit)
 	}
-	commit = &buildbucketpb.GitilesCommit{
+	commit = &pb.GitilesCommit{
 		Host:    m[1],
 		Project: m[2],
 		Id:      m[4],

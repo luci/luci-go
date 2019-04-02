@@ -21,9 +21,10 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func cmdBatch(p Params) *subcommands.Command {
@@ -44,7 +45,7 @@ Exits with code 1 if at least one sub-request fails.`,
 
 type batchRun struct {
 	baseCommandRun
-	buildbucketpb.BatchRequest
+	pb.BatchRequest
 }
 
 func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -54,7 +55,7 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(ctx, fmt.Errorf("unexpected argument"))
 	}
 
-	req := &buildbucketpb.BatchRequest{}
+	req := &pb.BatchRequest{}
 	if err := jsonpb.Unmarshal(os.Stdin, req); err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
@@ -70,7 +71,7 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 	}
 
 	for _, r := range res.Responses {
-		if _, ok := r.Response.(*buildbucketpb.BatchResponse_Response_Error); ok {
+		if _, ok := r.Response.(*pb.BatchResponse_Response_Error); ok {
 			return 1
 		}
 	}

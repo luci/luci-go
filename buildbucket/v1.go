@@ -21,15 +21,15 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
-	structpb "github.com/golang/protobuf/ptypes/struct"
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
-
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	pb "go.chromium.org/luci/buildbucket/proto"
+	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 )
 
 // This file implements v1<->v2 interoperation.
@@ -42,28 +42,28 @@ var MalformedBuild = errors.BoolTag{Key: errors.NewTagKey("malformed buildbucket
 //
 // If build.Status is "", returns (Status_STATUS_UNSPECIFIED, nil).
 // Useful with partial buildbucket responses.
-func StatusToV2(build *v1.ApiCommonBuildMessage) (buildbucketpb.Status, error) {
+func StatusToV2(build *v1.ApiCommonBuildMessage) (pb.Status, error) {
 	switch build.Status {
 	case "":
-		return buildbucketpb.Status_STATUS_UNSPECIFIED, nil
+		return pb.Status_STATUS_UNSPECIFIED, nil
 
 	case "SCHEDULED":
-		return buildbucketpb.Status_SCHEDULED, nil
+		return pb.Status_SCHEDULED, nil
 
 	case "STARTED":
-		return buildbucketpb.Status_STARTED, nil
+		return pb.Status_STARTED, nil
 
 	case "COMPLETED":
 		switch build.Result {
 		case "SUCCESS":
-			return buildbucketpb.Status_SUCCESS, nil
+			return pb.Status_SUCCESS, nil
 
 		case "FAILURE":
 			switch build.FailureReason {
 			case "", "BUILD_FAILURE":
-				return buildbucketpb.Status_FAILURE, nil
+				return pb.Status_FAILURE, nil
 			case "INFRA_FAILURE", "BUILDBUCKET_FAILURE", "INVALID_BUILD_DEFINITION":
-				return buildbucketpb.Status_INFRA_FAILURE, nil
+				return pb.Status_INFRA_FAILURE, nil
 			default:
 				return 0, errors.Reason("unexpected failure reason %q", build.FailureReason).Tag(MalformedBuild).Err()
 			}
@@ -71,9 +71,9 @@ func StatusToV2(build *v1.ApiCommonBuildMessage) (buildbucketpb.Status, error) {
 		case "CANCELED":
 			switch build.CancelationReason {
 			case "", "CANCELED_EXPLICITLY":
-				return buildbucketpb.Status_CANCELED, nil
+				return pb.Status_CANCELED, nil
 			case "TIMEOUT":
-				return buildbucketpb.Status_INFRA_FAILURE, nil
+				return pb.Status_INFRA_FAILURE, nil
 			default:
 				return 0, errors.Reason("unexpected cancellation reason %q", build.CancelationReason).Tag(MalformedBuild).Err()
 			}
@@ -100,7 +100,7 @@ type v1Params struct {
 //
 // The returned build does not include steps.
 // Returns an error if msg is malformed.
-func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error) {
+func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *pb.Build, err error) {
 	// This implementation is a port of
 	// https://chromium.googlesource.com/infra/infra/+/d55f587c0f30b0297e4d134c698e7458baa39b7f/appengine/cr-buildbucket/v2/builds.py#21
 
@@ -144,7 +144,7 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 		return nil, err
 	}
 
-	b = &buildbucketpb.Build{
+	b = &pb.Build{
 		Id:        msg.Id,
 		Builder:   builder,
 		Number:    int32(number),
@@ -158,16 +158,16 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 		Status:          status,
 		SummaryMarkdown: resultDetails.UI.Info,
 
-		Input: &buildbucketpb.Build_Input{
+		Input: &pb.Build_Input{
 			Experimental: msg.Experimental,
 		},
-		Output: &buildbucketpb.Build_Output{},
+		Output: &pb.Build_Output{},
 
-		Infra: &buildbucketpb.BuildInfra{
-			Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+		Infra: &pb.BuildInfra{
+			Buildbucket: &pb.BuildInfra_Buildbucket{
 				Canary: msg.Canary,
 			},
-			Swarming: &buildbucketpb.BuildInfra_Swarming{
+			Swarming: &pb.BuildInfra_Swarming{
 				Hostname:           tags.Get("swarming_hostname"),
 				TaskId:             tags.Get("swarming_task_id"),
 				TaskServiceAccount: msg.ServiceAccount,
@@ -182,10 +182,10 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 		return nil, errors.Annotate(err, "invalid output properties").Tag(MalformedBuild).Err()
 	}
 
-	b.Infra.Swarming.BotDimensions = make([]*buildbucketpb.StringPair, 0, len(resultDetails.TaskResult.BotDimensions))
+	b.Infra.Swarming.BotDimensions = make([]*pb.StringPair, 0, len(resultDetails.TaskResult.BotDimensions))
 	for _, d := range resultDetails.TaskResult.BotDimensions {
 		for _, v := range d.Value {
-			b.Infra.Swarming.BotDimensions = append(b.Infra.Swarming.BotDimensions, &buildbucketpb.StringPair{
+			b.Infra.Swarming.BotDimensions = append(b.Infra.Swarming.BotDimensions, &pb.StringPair{
 				Key:   d.Key,
 				Value: v,
 			})
@@ -198,7 +198,7 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 	return b, nil
 }
 
-func tagsToV2(dest *buildbucketpb.Build, tags []string) error {
+func tagsToV2(dest *pb.Build, tags []string) error {
 	dest.Input.GitilesCommit = nil
 	for _, t := range toStringPairs(tags) {
 		switch t.Key {
@@ -207,9 +207,9 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) error {
 
 		case v1.TagBuildSet:
 			switch bs := protoutil.ParseBuildSet(t.Value).(type) {
-			case *buildbucketpb.GerritChange:
+			case *pb.GerritChange:
 				dest.Input.GerritChanges = append(dest.Input.GerritChanges, bs)
-			case *buildbucketpb.GitilesCommit:
+			case *pb.GitilesCommit:
 				if dest.Input.GitilesCommit != nil {
 					return errors.Reason("more than one gitiles commit buildset").Tag(MalformedBuild).Err()
 				}
@@ -220,7 +220,7 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) error {
 
 		case "swarming_dimension":
 			if d := toStringPair(t.Value); d != nil {
-				dest.Infra.Swarming.TaskDimensions = append(dest.Infra.Swarming.TaskDimensions, &buildbucketpb.RequestedDimension{
+				dest.Infra.Swarming.TaskDimensions = append(dest.Infra.Swarming.TaskDimensions, &pb.RequestedDimension{
 					Key:   d.Key,
 					Value: d.Value,
 				})
@@ -262,8 +262,8 @@ func BucketNameToV2(v1Bucket string) (project string, bucket string) {
 
 // builderToV2 attempts to parse as many fields into bucket and project as possible,
 // and do project name validation if the project is available.
-func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (ret *buildbucketpb.BuilderID, err error) {
-	ret = &buildbucketpb.BuilderID{Builder: params.Builder}
+func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (ret *pb.BuilderID, err error) {
+	ret = &pb.BuilderID{Builder: params.Builder}
 	if ret.Builder == "" {
 		ret.Builder = tags.Get(v1.TagBuilder) // Fallback: Grab builder name from tags.
 	}
@@ -292,16 +292,16 @@ func propertiesToV2(v1 json.RawMessage) (*structpb.Struct, error) {
 	return ret, jsonpb.UnmarshalString(string(v1), ret)
 }
 
-func toStringPair(s string) *buildbucketpb.StringPair {
+func toStringPair(s string) *pb.StringPair {
 	parts := strings.SplitN(s, ":", 2)
 	if len(parts) != 2 {
 		return nil
 	}
-	return &buildbucketpb.StringPair{Key: parts[0], Value: parts[1]}
+	return &pb.StringPair{Key: parts[0], Value: parts[1]}
 }
 
-func toStringPairs(tags []string) []*buildbucketpb.StringPair {
-	ret := make([]*buildbucketpb.StringPair, 0, len(tags))
+func toStringPairs(tags []string) []*pb.StringPair {
+	ret := make([]*pb.StringPair, 0, len(tags))
 	for _, t := range tags {
 		if p := toStringPair(t); p != nil {
 			ret = append(ret, p)

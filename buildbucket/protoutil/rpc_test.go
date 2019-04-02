@@ -17,7 +17,7 @@ package protoutil
 import (
 	"testing"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -30,14 +30,14 @@ func TestParseGetBuildRequest(t *testing.T) {
 		Convey("build id", func() {
 			req, err := ParseGetBuildRequest("1234567890")
 			So(err, ShouldBeNil)
-			So(req, ShouldResembleProto, &buildbucketpb.GetBuildRequest{Id: 1234567890})
+			So(req, ShouldResembleProto, &pb.GetBuildRequest{Id: 1234567890})
 		})
 
 		Convey("build number", func() {
 			req, err := ParseGetBuildRequest("chromium/ci/linux-rel/1")
 			So(err, ShouldBeNil)
-			So(req, ShouldResembleProto, &buildbucketpb.GetBuildRequest{
-				Builder: &buildbucketpb.BuilderID{
+			So(req, ShouldResembleProto, &pb.GetBuildRequest{
+				Builder: &pb.BuilderID{
 					Project: "chromium",
 					Bucket:  "ci",
 					Builder: "linux-rel",

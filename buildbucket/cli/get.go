@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func cmdGet(p Params) *subcommands.Command {
@@ -54,7 +54,7 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	req := &buildbucketpb.BatchRequest{}
+	req := &pb.BatchRequest{}
 	fields := r.FieldMask()
 	for _, a := range args {
 		getBuild, err := protoutil.ParseGetBuildRequest(a)
@@ -62,8 +62,8 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 			return r.done(ctx, fmt.Errorf("invalid build %q: %s", a, err))
 		}
 		getBuild.Fields = fields
-		req.Requests = append(req.Requests, &buildbucketpb.BatchRequest_Request{
-			Request: &buildbucketpb.BatchRequest_Request_GetBuild{GetBuild: getBuild},
+		req.Requests = append(req.Requests, &pb.BatchRequest_Request{
+			Request: &pb.BatchRequest_Request_GetBuild{GetBuild: getBuild},
 		})
 	}
 

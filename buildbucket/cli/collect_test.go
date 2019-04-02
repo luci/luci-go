@@ -21,7 +21,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -36,7 +37,7 @@ func TestCollect(t *testing.T) {
 			file.Close()
 			defer os.Remove(file.Name())
 
-			writeBuildDetails([]int64{123, 456}, map[int64]*buildbucketpb.Build{
+			writeBuildDetails([]int64{123, 456}, map[int64]*pb.Build{
 				123: {Id: 123},
 				456: {Id: 456},
 			}, file.Name())
@@ -49,23 +50,23 @@ func TestCollect(t *testing.T) {
 		Convey("collectBuildDetails", func() {
 			ctx := context.Background()
 			sleepCalls := 0
-			buildsMock := buildbucketpb.NewMockBuildsClient(gomock.NewController(t))
+			buildsMock := pb.NewMockBuildsClient(gomock.NewController(t))
 
 			batchMock := buildsMock.EXPECT().Batch(
 				gomock.Any(),
-				&buildbucketpb.BatchRequest{
-					Requests: []*buildbucketpb.BatchRequest_Request{
+				&pb.BatchRequest{
+					Requests: []*pb.BatchRequest_Request{
 						{
-							Request: &buildbucketpb.BatchRequest_Request_GetBuild{
-								GetBuild: &buildbucketpb.GetBuildRequest{
+							Request: &pb.BatchRequest_Request_GetBuild{
+								GetBuild: &pb.GetBuildRequest{
 									Id:     123,
 									Fields: getRequestFieldMask,
 								},
 							},
 						},
 						{
-							Request: &buildbucketpb.BatchRequest_Request_GetBuild{
-								GetBuild: &buildbucketpb.GetBuildRequest{
+							Request: &pb.BatchRequest_Request_GetBuild{
+								GetBuild: &pb.GetBuildRequest{
 									Id:     456,
 									Fields: getRequestFieldMask,
 								},
@@ -76,24 +77,24 @@ func TestCollect(t *testing.T) {
 			)
 
 			Convey("all builds are ended from the start", func() {
-				batchMock.Return(&buildbucketpb.BatchResponse{
-					Responses: []*buildbucketpb.BatchResponse_Response{
+				batchMock.Return(&pb.BatchResponse{
+					Responses: []*pb.BatchResponse_Response{
 						// The order of responses to batch request is intentionally
 						// different from the order of requests. This should still be
 						// working as builds are matched by returned ID.
 						{
-							Response: &buildbucketpb.BatchResponse_Response_GetBuild{
-								GetBuild: &buildbucketpb.Build{
+							Response: &pb.BatchResponse_Response_GetBuild{
+								GetBuild: &pb.Build{
 									Id:     456,
-									Status: buildbucketpb.Status_SUCCESS,
+									Status: pb.Status_SUCCESS,
 								},
 							},
 						},
 						{
-							Response: &buildbucketpb.BatchResponse_Response_GetBuild{
-								GetBuild: &buildbucketpb.Build{
+							Response: &pb.BatchResponse_Response_GetBuild{
+								GetBuild: &pb.Build{
 									Id:     123,
-									Status: buildbucketpb.Status_FAILURE,
+									Status: pb.Status_FAILURE,
 								},
 							},
 						},
@@ -108,21 +109,21 @@ func TestCollect(t *testing.T) {
 			})
 
 			Convey("one build ended on a second request", func() {
-				batchMock.Return(&buildbucketpb.BatchResponse{
-					Responses: []*buildbucketpb.BatchResponse_Response{
+				batchMock.Return(&pb.BatchResponse{
+					Responses: []*pb.BatchResponse_Response{
 						{
-							Response: &buildbucketpb.BatchResponse_Response_GetBuild{
-								GetBuild: &buildbucketpb.Build{
+							Response: &pb.BatchResponse_Response_GetBuild{
+								GetBuild: &pb.Build{
 									Id:     123,
-									Status: buildbucketpb.Status_SCHEDULED,
+									Status: pb.Status_SCHEDULED,
 								},
 							},
 						},
 						{
-							Response: &buildbucketpb.BatchResponse_Response_GetBuild{
-								GetBuild: &buildbucketpb.Build{
+							Response: &pb.BatchResponse_Response_GetBuild{
+								GetBuild: &pb.Build{
 									Id:     456,
-									Status: buildbucketpb.Status_SUCCESS,
+									Status: pb.Status_SUCCESS,
 								},
 							},
 						},
@@ -131,11 +132,11 @@ func TestCollect(t *testing.T) {
 
 				buildsMock.EXPECT().Batch(
 					gomock.Any(),
-					&buildbucketpb.BatchRequest{
-						Requests: []*buildbucketpb.BatchRequest_Request{
+					&pb.BatchRequest{
+						Requests: []*pb.BatchRequest_Request{
 							{
-								Request: &buildbucketpb.BatchRequest_Request_GetBuild{
-									GetBuild: &buildbucketpb.GetBuildRequest{
+								Request: &pb.BatchRequest_Request_GetBuild{
+									GetBuild: &pb.GetBuildRequest{
 										Id:     123,
 										Fields: getRequestFieldMask,
 									},
@@ -143,13 +144,13 @@ func TestCollect(t *testing.T) {
 							},
 						},
 					},
-				).Return(&buildbucketpb.BatchResponse{
-					Responses: []*buildbucketpb.BatchResponse_Response{
+				).Return(&pb.BatchResponse{
+					Responses: []*pb.BatchResponse_Response{
 						{
-							Response: &buildbucketpb.BatchResponse_Response_GetBuild{
-								GetBuild: &buildbucketpb.Build{
+							Response: &pb.BatchResponse_Response_GetBuild{
+								GetBuild: &pb.Build{
 									Id:     123,
-									Status: buildbucketpb.Status_INFRA_FAILURE,
+									Status: pb.Status_INFRA_FAILURE,
 								},
 							},
 						},

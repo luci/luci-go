@@ -14,8 +14,8 @@
 
 package buildbucket
 
-// This file contains helper functions for buildbucketpb package.
-// TODO(nodir): move existing helpers from buildbucketpb to this file.
+// This file contains helper functions for pb package.
+// TODO(nodir): move existing helpers from pb to this file.
 
 // BuildTokenHeader is the name of gRPC metadata header indicating the build
 // token (see BuildSecrets.BuildToken).

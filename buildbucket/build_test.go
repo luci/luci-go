@@ -20,9 +20,10 @@ import (
 	"testing"
 	"time"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
+	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -91,7 +92,7 @@ func TestBuild(t *testing.T) {
 				},
 			},
 			StartTime:        time.Date(2017, 9, 25, 15, 38, 19, 345070000, time.UTC),
-			Status:           buildbucketpb.Status_SUCCESS,
+			Status:           pb.Status_SUCCESS,
 			StatusChangeTime: time.Date(2017, 9, 25, 15, 44, 52, 983790000, time.UTC),
 			URL:              "https://ci.chromium.org/swarming/task/38d281e8c20fd510?server=chromium-swarm.appspot.com",
 			UpdateTime:       time.Date(2017, 9, 25, 15, 44, 52, 984620000, time.UTC),
@@ -156,7 +157,7 @@ func TestBuild(t *testing.T) {
 			var actual Build
 			err := actual.ParseMessage(msg)
 			So(err, ShouldBeNil)
-			So(actual.Status, ShouldEqual, buildbucketpb.Status_INFRA_FAILURE)
+			So(actual.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(actual.Output.Err, ShouldErrLike, "bad")
 		})
 

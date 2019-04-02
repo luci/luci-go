@@ -27,10 +27,11 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func cmdCollect(p Params) *subcommands.Command {
@@ -98,22 +99,22 @@ func dedupInt64s(nums []int64) []int64 {
 	return res
 }
 
-func collectBuildDetails(ctx context.Context, client buildbucketpb.BuildsClient, buildIDs []int64, sleep func()) (map[int64]*buildbucketpb.Build, error) {
+func collectBuildDetails(ctx context.Context, client pb.BuildsClient, buildIDs []int64, sleep func()) (map[int64]*pb.Build, error) {
 	buildIDs = dedupInt64s(buildIDs)
-	ended := make(map[int64]*buildbucketpb.Build, len(buildIDs))
+	ended := make(map[int64]*pb.Build, len(buildIDs))
 	for {
-		breq := &buildbucketpb.BatchRequest{}
+		breq := &pb.BatchRequest{}
 		for _, id := range buildIDs {
 			if _, ok := ended[id]; ok {
 				continue
 			}
 
-			getReq := &buildbucketpb.GetBuildRequest{
+			getReq := &pb.GetBuildRequest{
 				Id:     id,
 				Fields: getRequestFieldMask,
 			}
-			breq.Requests = append(breq.Requests, &buildbucketpb.BatchRequest_Request{
-				Request: &buildbucketpb.BatchRequest_Request_GetBuild{
+			breq.Requests = append(breq.Requests, &pb.BatchRequest_Request{
+				Request: &pb.BatchRequest_Request_GetBuild{
 					GetBuild: getReq,
 				},
 			})
@@ -136,7 +137,7 @@ func collectBuildDetails(ctx context.Context, client buildbucketpb.BuildsClient,
 			case code != codes.OK:
 				return nil, fmt.Errorf("RPC error %s: %s", code, error.Message)
 
-			case build.Status&buildbucketpb.Status_ENDED_MASK != 0:
+			case build.Status&pb.Status_ENDED_MASK != 0:
 				ended[build.Id] = build
 				logging.Infof(ctx, "%d ended: %s", build.Id, build.Status)
 			}
@@ -152,7 +153,7 @@ func collectBuildDetails(ctx context.Context, client buildbucketpb.BuildsClient,
 	return ended, nil
 }
 
-func writeBuildDetails(buildIDs []int64, buildDetails map[int64]*buildbucketpb.Build, outputPath string) error {
+func writeBuildDetails(buildIDs []int64, buildDetails map[int64]*pb.Build, outputPath string) error {
 	outputFile, err := os.Create(outputPath)
 	if err != nil {
 		return err

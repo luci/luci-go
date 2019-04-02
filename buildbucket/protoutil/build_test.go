@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -29,7 +29,7 @@ func TestTimestamps(t *testing.T) {
 	t.Parallel()
 
 	Convey("Durations", t, func() {
-		build := &buildbucketpb.Build{
+		build := &pb.Build{
 			CreateTime: &timestamp.Timestamp{Seconds: 1000},
 			StartTime:  &timestamp.Timestamp{Seconds: 1010},
 			EndTime:    &timestamp.Timestamp{Seconds: 1030},

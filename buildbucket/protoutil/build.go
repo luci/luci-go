@@ -21,11 +21,11 @@ import (
 
 	"go.chromium.org/luci/common/data/strpair"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // RunDuration returns duration between build start and end.
-func RunDuration(b *buildbucketpb.Build) (duration time.Duration, ok bool) {
+func RunDuration(b *pb.Build) (duration time.Duration, ok bool) {
 	start, startErr := ptypes.Timestamp(b.StartTime)
 	end, endErr := ptypes.Timestamp(b.EndTime)
 	if startErr != nil || start.IsZero() || endErr != nil || end.IsZero() {
@@ -36,7 +36,7 @@ func RunDuration(b *buildbucketpb.Build) (duration time.Duration, ok bool) {
 }
 
 // SchedulingDuration returns duration between build creation and start.
-func SchedulingDuration(b *buildbucketpb.Build) (duration time.Duration, ok bool) {
+func SchedulingDuration(b *pb.Build) (duration time.Duration, ok bool) {
 	create, createErr := ptypes.Timestamp(b.CreateTime)
 	start, startErr := ptypes.Timestamp(b.StartTime)
 	if createErr != nil || create.IsZero() || startErr != nil || start.IsZero() {
@@ -47,7 +47,7 @@ func SchedulingDuration(b *buildbucketpb.Build) (duration time.Duration, ok bool
 }
 
 // Tags parses b.Tags as a strpair.Map.
-func Tags(b *buildbucketpb.Build) strpair.Map {
+func Tags(b *pb.Build) strpair.Map {
 	m := make(strpair.Map, len(b.Tags))
 	for _, t := range b.Tags {
 		m.Add(t.Key, t.Value)

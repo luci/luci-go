@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 	luciflag "go.chromium.org/luci/common/flag"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
@@ -40,8 +40,8 @@ func (f *clsFlag) Register(fs *flag.FlagSet, help string) {
 
 // retrieveCLs retrieves GerritChange objects from f.cls.
 // Makes Gerrit RPCs if necessary, in parallel.
-func (f *clsFlag) retrieveCLs(ctx context.Context, httpClient *http.Client) ([]*buildbucketpb.GerritChange, error) {
-	ret := make([]*buildbucketpb.GerritChange, len(f.cls))
+func (f *clsFlag) retrieveCLs(ctx context.Context, httpClient *http.Client) ([]*pb.GerritChange, error) {
+	ret := make([]*pb.GerritChange, len(f.cls))
 	return ret, parallel.FanOutIn(func(work chan<- func() error) {
 		for i, cl := range f.cls {
 			i := i
@@ -59,7 +59,7 @@ func (f *clsFlag) retrieveCLs(ctx context.Context, httpClient *http.Client) ([]*
 
 // retrieveCL retrieves a GerritChange from a string.
 // Makes a Gerrit RPC if necessary.
-func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Client) (*buildbucketpb.GerritChange, error) {
+func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Client) (*pb.GerritChange, error) {
 	ret, err := parseCL(cl)
 	switch {
 	case err != nil:
@@ -95,12 +95,12 @@ var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/(#/)?c/(([^\+]
 // or incomplete strings, e.g.
 // https://chromium-review.googlesource.com/c/1541677
 // If err is nil, returned change is guaranteed to have Host and Change.
-func parseCL(s string) (*buildbucketpb.GerritChange, error) {
+func parseCL(s string) (*pb.GerritChange, error) {
 	m := regexCL.FindStringSubmatch(s)
 	if m == nil {
 		return nil, fmt.Errorf("does not match regexp %q", regexCL)
 	}
-	ret := &buildbucketpb.GerritChange{
+	ret := &pb.GerritChange{
 		Host:    m[1],
 		Project: m[4],
 	}

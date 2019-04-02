@@ -23,12 +23,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	annotpb "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/common/types"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
+	annotpb "go.chromium.org/luci/common/proto/milo"
 )
 
 // This code converts annotation steps to Buildbucket v2 steps.
@@ -61,15 +62,15 @@ func init() {
 //   * Step.link,
 //   * Link.isolate_object,
 //   * Link.dm_link.
-func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, annAddr *types.StreamAddr) ([]*buildbucketpb.Step, error) {
+func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, annAddr *types.StreamAddr) ([]*pb.Step, error) {
 	prefix, _ := annAddr.Path.Split()
 	sc := &stepConverter{
 		defaultLogdogHost:   annAddr.Host,
 		defaultLogdogPrefix: fmt.Sprintf("%s/%s", annAddr.Project, prefix),
-		steps:               map[string]*buildbucketpb.Step{},
+		steps:               map[string]*pb.Step{},
 	}
 
-	var bbSteps []*buildbucketpb.Step
+	var bbSteps []*pb.Step
 	if _, err := sc.convertSubsteps(c, &bbSteps, annSteps, ""); err != nil {
 		return nil, err
 	}
@@ -79,13 +80,13 @@ func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, annA
 type stepConverter struct {
 	defaultLogdogHost, defaultLogdogPrefix string
 
-	steps map[string]*buildbucketpb.Step
+	steps map[string]*pb.Step
 }
 
 // convertSubsteps converts substeps, which we expect to be Steps, not Logdog
 // annotation streams.
-func (p *stepConverter) convertSubsteps(c context.Context, bbSteps *[]*buildbucketpb.Step, annSubsteps []*annotpb.Step_Substep, stepPrefix string) ([]*buildbucketpb.Step, error) {
-	bbSubsteps := make([]*buildbucketpb.Step, 0, len(annSubsteps))
+func (p *stepConverter) convertSubsteps(c context.Context, bbSteps *[]*pb.Step, annSubsteps []*annotpb.Step_Substep, stepPrefix string) ([]*pb.Step, error) {
+	bbSubsteps := make([]*pb.Step, 0, len(annSubsteps))
 	for _, annSubstep := range annSubsteps {
 		annStep := annSubstep.GetStep()
 		if annStep == nil {
@@ -105,9 +106,9 @@ func (p *stepConverter) convertSubsteps(c context.Context, bbSteps *[]*buildbuck
 
 // convertSteps converts [non-root] steps.
 // Mutates p.steps.
-func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketpb.Step, ann *annotpb.Step, stepPrefix string) (*buildbucketpb.Step, error) {
+func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann *annotpb.Step, stepPrefix string) (*pb.Step, error) {
 	// Set up Buildbucket v2 step.
-	bb := &buildbucketpb.Step{
+	bb := &pb.Step{
 		StartTime: ann.Started,
 		EndTime:   ann.Ended,
 	}
@@ -184,28 +185,28 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 	// First of all, honor start/end times.
 
 	case bb.StartTime == nil:
-		bb.Status = buildbucketpb.Status_SCHEDULED
+		bb.Status = pb.Status_SCHEDULED
 
 	case bb.EndTime == nil:
-		bb.Status = buildbucketpb.Status_STARTED
+		bb.Status = pb.Status_STARTED
 
 	// Secondly, honor current status.
 
 	case ann.Status == annotpb.Status_SUCCESS:
-		bb.Status = buildbucketpb.Status_SUCCESS
+		bb.Status = pb.Status_SUCCESS
 
 	case ann.Status == annotpb.Status_FAILURE:
 		if fd := ann.GetFailureDetails(); fd != nil {
 			switch fd.Type {
 			case annotpb.FailureDetails_GENERAL:
-				bb.Status = buildbucketpb.Status_FAILURE
+				bb.Status = pb.Status_FAILURE
 			case annotpb.FailureDetails_CANCELLED:
-				bb.Status = buildbucketpb.Status_CANCELED
+				bb.Status = pb.Status_CANCELED
 			default:
-				bb.Status = buildbucketpb.Status_INFRA_FAILURE
+				bb.Status = pb.Status_INFRA_FAILURE
 			}
 		} else {
-			bb.Status = buildbucketpb.Status_FAILURE
+			bb.Status = pb.Status_FAILURE
 		}
 
 	default:
@@ -242,14 +243,14 @@ func cmpTs(a, b *timestamp.Timestamp) int {
 	return int(a.Nanos - b.Nanos)
 }
 
-var statusPrecedence = map[buildbucketpb.Status]int{
-	buildbucketpb.Status_CANCELED:      0,
-	buildbucketpb.Status_INFRA_FAILURE: 1,
-	buildbucketpb.Status_FAILURE:       2,
-	buildbucketpb.Status_SUCCESS:       3,
+var statusPrecedence = map[pb.Status]int{
+	pb.Status_CANCELED:      0,
+	pb.Status_INFRA_FAILURE: 1,
+	pb.Status_FAILURE:       2,
+	pb.Status_SUCCESS:       3,
 }
 
-func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*buildbucketpb.Step_Log, []string) {
+func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*pb.Step_Log, []string) {
 	aLinks := make([]*annotpb.Link, 0, len(ann.OtherLinks)+2)
 
 	// Get stdout, stderr Logdog links.
@@ -277,7 +278,7 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*b
 	aLinks = append(aLinks, ann.OtherLinks...)
 
 	// Convert each link to a Buildbucket v2 log.
-	bbLogs := make([]*buildbucketpb.Step_Log, 0, len(aLinks))
+	bbLogs := make([]*pb.Step_Log, 0, len(aLinks))
 	summary := make([]string, 0, len(aLinks))
 	logNames := stringset.New(len(aLinks))
 	for _, l := range aLinks {
@@ -288,7 +289,7 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*b
 			} else {
 				logNames.Add(l.Label)
 				bbLogs = append(bbLogs,
-					&buildbucketpb.Step_Log{
+					&pb.Step_Log{
 						Name:    l.Label,
 						ViewUrl: p.convertLogdogLink(l.GetLogdogStream(), true),
 						Url:     p.convertLogdogLink(l.GetLogdogStream(), false),

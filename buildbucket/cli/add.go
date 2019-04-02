@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func cmdAdd(p Params) *subcommands.Command {
@@ -91,9 +91,9 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	req := &buildbucketpb.BatchRequest{}
+	req := &pb.BatchRequest{}
 	for i, a := range args {
-		schedReq := proto.Clone(baseReq).(*buildbucketpb.ScheduleBuildRequest)
+		schedReq := proto.Clone(baseReq).(*pb.ScheduleBuildRequest)
 		schedReq.RequestId += fmt.Sprintf("-%d", i)
 
 		var err error
@@ -101,23 +101,23 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 		if err != nil {
 			return r.done(ctx, fmt.Errorf("invalid builder %q: %s", a, err))
 		}
-		req.Requests = append(req.Requests, &buildbucketpb.BatchRequest_Request{
-			Request: &buildbucketpb.BatchRequest_Request_ScheduleBuild{ScheduleBuild: schedReq},
+		req.Requests = append(req.Requests, &pb.BatchRequest_Request{
+			Request: &pb.BatchRequest_Request_ScheduleBuild{ScheduleBuild: schedReq},
 		})
 	}
 
 	return r.batchAndDone(ctx, req)
 }
 
-func (r *addRun) prepareBaseRequest(ctx context.Context) (*buildbucketpb.ScheduleBuildRequest, error) {
-	ret := &buildbucketpb.ScheduleBuildRequest{
+func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildRequest, error) {
+	ret := &pb.ScheduleBuildRequest{
 		RequestId: strconv.FormatInt(rand.Int63(), 10),
 		Tags:      r.Tags(),
 		Fields:    r.FieldMask(),
 	}
 
 	if r.experimental {
-		ret.Experimental = buildbucketpb.Trinary_YES
+		ret.Experimental = pb.Trinary_YES
 	}
 
 	var err error

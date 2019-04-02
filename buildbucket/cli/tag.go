@@ -19,9 +19,9 @@ import (
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/strpair"
-	luciflag "go.chromium.org/luci/common/flag"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
+	luciflag "go.chromium.org/luci/common/flag"
 )
 
 type tagsFlag struct {
@@ -33,6 +33,6 @@ func (f *tagsFlag) Register(fs *flag.FlagSet, help string) {
 	fs.Var(luciflag.StringPairs(f.tags), "t", help)
 }
 
-func (f *tagsFlag) Tags() []*buildbucketpb.StringPair {
+func (f *tagsFlag) Tags() []*pb.StringPair {
 	return protoutil.StringPairs(f.tags)
 }
