@@ -35,27 +35,27 @@ const (
 )
 
 // Buildbucket normalizes cr-buildbucket.cfg config.
-func Buildbucket(c context.Context, in *pb.BuildbucketCfg) (*pb.BuildbucketCfg, error) {
+func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
 	// Install or update 'flatten_buildbucket_cfg' tool.
 	bin, err := installFlattenBuildbucketCfg(c)
 	if err != nil {
-		return nil, fmt.Errorf("failed to install buildbucket config flattener: %s", err)
+		return fmt.Errorf("failed to install buildbucket config flattener: %s", err)
 	}
 
 	// 'flatten_buildbucket_cfg' wants a real file as input.
 	f, err := ioutil.TempFile("", "lucicfg")
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer func() {
 		f.Close()
 		os.Remove(f.Name())
 	}()
-	if err := proto.MarshalText(f, in); err != nil {
-		return nil, err
+	if err := proto.MarshalText(f, cfg); err != nil {
+		return err
 	}
 	if err := f.Close(); err != nil {
-		return nil, err
+		return err
 	}
 
 	buf := bytes.Buffer{}
@@ -65,14 +65,14 @@ func Buildbucket(c context.Context, in *pb.BuildbucketCfg) (*pb.BuildbucketCfg, 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = &buf
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to flatten the config - %s", err)
+		return fmt.Errorf("failed to flatten the config - %s", err)
 	}
 
-	out := &pb.BuildbucketCfg{}
-	if err := proto.UnmarshalText(buf.String(), out); err != nil {
-		return nil, err
+	*cfg = pb.BuildbucketCfg{}
+	if err := proto.UnmarshalText(buf.String(), cfg); err != nil {
+		return err
 	}
-	return out, nil
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

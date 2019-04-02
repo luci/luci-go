@@ -21,7 +21,7 @@ import (
 )
 
 // Milo normalizes luci-milo.cfg config.
-func Milo(c context.Context, in *pb.Project) (*pb.Project, error) {
+func Milo(c context.Context, cfg *pb.Project) error {
 	// TODO(vadimsh): Implement.
-	return in, nil
+	return nil
 }

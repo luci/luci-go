@@ -21,7 +21,7 @@ import (
 )
 
 // Logdog normalizes logdog.cfg config.
-func Logdog(c context.Context, in *pb.ProjectConfig) (*pb.ProjectConfig, error) {
+func Logdog(c context.Context, cfg *pb.ProjectConfig) error {
 	// TODO(vadimsh): Implement.
-	return in, nil
+	return nil
 }
