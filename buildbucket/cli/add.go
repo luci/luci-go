@@ -31,37 +31,35 @@ import (
 
 func cmdAdd(p Params) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `add [flags] builder [builder...]`,
-		ShortDesc: "schedule builds",
-		LongDesc: `Schedule builds.
+		UsageLine: `add [flags] [BUILDER [[BUILDER...]]`,
+		ShortDesc: "add builds",
+		LongDesc: `Add a build for each BUILDER argument.
 
-Example:
-	# Add linux-rel and mac-rel builds to chromium/ci bucket
+A BUILDER must have format "<project>/<bucket>/<builder>", for example "chromium/try/linux-rel".
+
+Example. Add linux-rel and mac-rel builds to chromium/ci bucket using Shell expansion.
 	bb add chromium/ci/{linux-rel,mac-rel}
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &addRun{}
-			r.RegisterGlobalFlags(p)
+			r.RegisterDefaultFlags(p)
+			r.RegisterJSONFlag()
 			r.buildFieldFlags.Register(&r.Flags)
 
 			r.clsFlag.Register(&r.Flags, `CL URL as input for the builds. Can be specified multiple times.
-
-Example:
-	# Schedule a linux-rel tryjob for CL 1539021
+Example. Add a linux-rel tryjob for CL 1539021
 	bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 chromium/try/linux-rel`,
 			)
 
 			r.commitFlag.Register(&r.Flags, `Commit URL as input to the builds.
-Example:
-	# Build a specific revision
+Example. Build a specific revision
 	bb add -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9 chromium/ci/linux-rel
-	# Build latest chromium/src revision
+Example. Build latest chromium/src revision
 	bb add -commit https://chromium.googlesource.com/chromium/src/+/master chromium/ci/linux-rel`)
 			r.Flags.StringVar(&r.ref, "ref", "refs/heads/master", "Git ref for the -commit that specifies a commit hash.")
 
 			r.tagsFlag.Register(&r.Flags, `Build tags. Can be specified multiple times.
-
-Example:
+Example. Add a build with tags "a:1" and "b:2".
 	bb add -t a:1 -t b:2 chromium/try/linux-rel`)
 
 			r.Flags.BoolVar(&r.experimental, "exp", false, `Mark the builds as experimental`)
@@ -81,6 +79,10 @@ type addRun struct {
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if len(args) == 0 {
+		return 0
+	}
+
 	ctx := cli.GetContext(a, r, env)
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
