@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9af6e24e_57f35757",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-02T02:57:48Z",
+      "side": 1,
+      "message": "I wish we didn\u0027t them at all, makes life harder with different languages.",
+      "revId": "5968609e64fc7c1dadd00f846839cf218c33b995",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
