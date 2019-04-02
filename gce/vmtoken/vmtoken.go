@@ -26,14 +26,22 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"net/http"
 	"strings"
 
+	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/warmup"
 )
+
+// Header is the name of the HTTP header where the GCE VM metadata token is
+// expected.
+const Header = "X-Luci-Gce-Vm-Token"
 
 // Payload is extracted from a verified GCE VM metadata token.
 //
@@ -164,6 +172,56 @@ func unmarshalB64JSON(blob string, out interface{}) error {
 		return errors.Annotate(err, "not JSON").Err()
 	}
 	return nil
+}
+
+// pldKey is the key to a *Payload in the context.
+var pldKey = "pld"
+
+// withPayload returns a new context with the given *Payload installed.
+func withPayload(c context.Context, p *Payload) context.Context {
+	return context.WithValue(c, &pldKey, p)
+}
+
+// getPayload returns the *Payload installed in the current context. May be nil.
+func getPayload(c context.Context) *Payload {
+	p, _ := c.Value(&pldKey).(*Payload)
+	return p
+}
+
+// Matches returns whether the current context contains a GCE VM metadata
+// token matching the given identity and current service name.
+func Matches(c context.Context, host, zone, proj string) bool {
+	p := getPayload(c)
+	if p == nil {
+		return false
+	}
+	// TODO(smut): Support requests made to other modules and versions.
+	aud := info.DefaultVersionHostname(c)
+	if p.Audience != "https://"+aud {
+		logging.Debugf(c, "received VM token intended for: %s", p.Audience)
+		return false
+	}
+	logging.Debugf(c, "expecting VM token from %q in %q in %q", host, zone, proj)
+	return p.Instance == host && p.Zone == zone && p.Project == proj
+}
+
+// Middleware embeds a Payload in the context if the request contains a GCE VM
+// metadata token.
+func Middleware(c *router.Context, next router.Handler) {
+	if tok := c.Request.Header.Get(Header); tok != "" {
+		switch p, err := Verify(c.Context, tok); {
+		case transient.Tag.In(err):
+			logging.Errorf(c.Context, "transient error verifying VM token")
+			http.Error(c.Writer, "error: failed to verify VM token", http.StatusInternalServerError)
+			return
+		case err != nil:
+			logging.Debugf(c.Context, "ignoring invalid VM token: %s", err)
+		default:
+			logging.Debugf(c.Context, "received VM token from %q in %q in %q for: %s", p.Instance, p.Zone, p.Project, p.Audience)
+			c.Context = withPayload(c.Context, p)
+		}
+	}
+	next(c)
 }
 
 func init() {
