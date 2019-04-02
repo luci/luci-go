@@ -31,11 +31,11 @@ import (
 
 func cmdLS(p Params) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `ls [flags] <PATH> [<PATH>...]`,
+		UsageLine: `ls [flags] [PATH [PATH...]]`,
 		ShortDesc: "lists builds under paths",
 		LongDesc: `Lists builds under paths.
 
-A PATH can be one of
+A PATH argument can be one of
 - "<project>"
 - "<project>/<bucket>"
 - "<project>/<bucket>/<builder>"
@@ -44,17 +44,17 @@ Listed builds are sorted by creation time, descending.
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &lsRun{}
-			r.RegisterGlobalFlags(p)
+			r.RegisterDefaultFlags(p)
+			r.RegisterJSONFlag()
 			r.buildFieldFlags.Register(&r.Flags)
 
 			r.clsFlag.Register(&r.Flags, `CL URLs that builds must be associated with.
-Example:
+Example. List builds of CL 1539021.
 	bb ls -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1`)
 
 			r.tagsFlag.Register(&r.Flags, `Tags that builds must have. Can be specified multiple times.
 All tags must be present.
-
-Example:
+Example. List builds with tags "a:1" and "b:2".
 	bb ls -t a:1 -t b:2`)
 			r.Flags.BoolVar(&r.includeExperimental, "exp", false, `Print experimental builds too`)
 			return r
@@ -72,6 +72,10 @@ type lsRun struct {
 }
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if len(args) == 0 {
+		return 0
+	}
+
 	ctx := cli.GetContext(a, r, env)
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)

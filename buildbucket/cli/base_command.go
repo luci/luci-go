@@ -47,23 +47,27 @@ type baseCommandRun struct {
 	client     buildbucketpb.BuildsClient
 }
 
-func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
+func (r *baseCommandRun) RegisterDefaultFlags(p Params) {
 	r.Flags.StringVar(
 		&r.host,
 		"host",
 		p.DefaultBuildbucketHost,
 		"Host for the buildbucket service instance.")
-	r.Flags.BoolVar(
-		&r.json,
-		"json",
-		false,
-		"Print information in JSON format.")
+	r.authFlags.Register(&r.Flags, p.Auth)
 	r.Flags.BoolVar(
 		&r.noColor,
 		"nocolor",
 		false,
-		"Disable coloration.")
-	r.authFlags.Register(&r.Flags, p.Auth)
+		"Strip ANSI color codes in the output.")
+}
+
+func (r *baseCommandRun) RegisterJSONFlag() {
+	r.Flags.BoolVar(
+		&r.json,
+		"json",
+		false,
+		`Print builds in JSON format, one after another (not an array).
+Designed for "jq" tool. If using bb from scripts, consider "batch" subcommand.`)
 }
 
 // initClients validates -host flag and initializes r.httpClient and r.client.
