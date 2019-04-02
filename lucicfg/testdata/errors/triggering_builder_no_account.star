@@ -15,18 +15,18 @@ luci.bucket(name = 'ci')
 luci.builder(
     name = 'b1',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
     triggers = ['b2', 'b3'],
 )
 luci.builder(
     name = 'b2',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
 )
 luci.builder(
     name = 'b3',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
 )
 
 # Expect errors like:

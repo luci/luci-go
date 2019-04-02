@@ -27,7 +27,7 @@ luci.gitiles_poller(
 luci.builder(
     name = 'b1-p',
     bucket = 'b1',
-    recipe = 'noop',
+    executable = 'noop',
     triggered_by = ['b1/p'] # need to be triggered but something to get job{...}
 )
 

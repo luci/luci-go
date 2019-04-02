@@ -34,7 +34,7 @@ luci.gitiles_poller(
 luci.builder(
     name = 'poller-builder',
     bucket = 'b2',
-    recipe = 'noop',
+    executable = 'noop',
     triggered_by = ['b1/poller-builder'],
 )
 
@@ -47,13 +47,13 @@ luci.gitiles_poller(
 luci.builder(
     name = 'builder-builder',
     bucket = 'b1',
-    recipe = 'noop',
+    executable = 'noop',
     triggered_by = ['some poller'],
 )
 luci.builder(
     name = 'builder-builder',
     bucket = 'b2',
-    recipe = 'noop',
+    executable = 'noop',
     triggered_by = ['some poller'],
 )
 

@@ -15,7 +15,7 @@ luci.recipe(
 luci.builder(
     name = 'b',
     bucket = 'ci',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
 )
 
 luci.list_view(

@@ -15,13 +15,13 @@ luci.recipe(
 luci.builder(
     name = 'b1',
     bucket = 'ci',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
 )
 
 luci.builder(
     name = 'b2',
     bucket = 'ci',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
 )
 
 luci.list_view(
@@ -33,12 +33,12 @@ luci.list_view(
         luci.builder(
             name = 'b3',
             bucket = 'ci',
-            recipe = 'main/recipe',
+            executable = 'main/recipe',
         ),
         luci.list_view_entry(luci.builder(
             name = 'b4',
             bucket = 'ci',
-            recipe = 'main/recipe',
+            executable = 'main/recipe',
         )),
         # Wrong kind.
         luci.recipe(

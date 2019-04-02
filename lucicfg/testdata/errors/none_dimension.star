@@ -9,7 +9,7 @@ luci.bucket(name = 'ci')
 luci.builder(
     name = 'b',
     bucket = 'ci',
-    recipe = luci.recipe(
+    executable = luci.recipe(
         name = 'noop',
         cipd_package = 'noop',
     ),
