@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "22da0767_35ae598b",
+        "filename": "buildbucket/cmd/bb/add.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:50:49Z",
+      "side": 1,
+      "message": "Yeah.",
+      "parentUuid": "495007ba_e3a76bc0",
+      "revId": "03ca54f547d47c9ad2d21c3ec9a60ccecbf8a0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b140872_23dcca69",
         "filename": "buildbucket/cmd/bb/add.go",
         "patchSetId": 6

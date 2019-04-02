@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "005b3428_90c412e4",
+        "filename": "buildbucket/cli/prop.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-02T22:50:49Z",
+      "side": 1,
+      "message": "Why 5?",
+      "revId": "9bf090b6b99d251188a1f16fbcb3ae8b767c9e78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
