@@ -22,7 +22,7 @@ luci.gitiles_poller(
 luci.builder(
     name = 'builder',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
 )
 
 # Expect configs:

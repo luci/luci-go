@@ -35,14 +35,14 @@ luci.bucket(name = 'ci')
 luci.builder(
     name = 'b1',
     bucket = 'ci',
-    recipe = luci.recipe(name = 'recipe1'),
+    executable = luci.recipe(name = 'recipe1'),
 )
 
 # Pick defaults and merge with provided values.
 luci.builder(
     name = 'b2',
     bucket = 'ci',
-    recipe = 'recipe1',
+    executable = 'recipe1',
     properties = {
         'base': None,  # won't override the default
         'overridden': 'new',
@@ -61,7 +61,7 @@ luci.builder(
 luci.builder(
     name = 'b3',
     bucket = 'ci',
-    recipe = luci.recipe(
+    executable = luci.recipe(
         name = 'recipe2',
         cipd_package = 'cipd/another',
         cipd_version = 'refs/another',

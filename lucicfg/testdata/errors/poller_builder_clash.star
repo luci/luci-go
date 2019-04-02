@@ -12,7 +12,7 @@ luci.bucket(name = 'b')
 luci.builder(
     name = 'clashing name',
     bucket = 'b',
-    recipe = 'noop',
+    executable = 'noop',
 )
 luci.gitiles_poller(
     name = 'clashing name',

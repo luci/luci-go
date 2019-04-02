@@ -9,7 +9,7 @@ luci.recipe(name = 'noop', cipd_package = 'noop')
 luci.builder(
     name = 'builder 1',
     bucket = 'bucket',
-    recipe = 'noop',
+    executable = 'noop',
     notifies = [
         luci.notifier(
             name = 'email notifier',
@@ -21,7 +21,7 @@ luci.builder(
 luci.builder(
     name = 'builder 2',
     bucket = 'bucket',
-    recipe = 'noop',
+    executable = 'noop',
     repo = 'https://repo.example.com',
     notifies = [
         luci.notifier(

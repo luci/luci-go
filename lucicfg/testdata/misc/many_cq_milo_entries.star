@@ -24,7 +24,7 @@ def one(name):
   luci.builder(
       name = name,
       bucket = 'bucket',
-      recipe = 'noop',
+      executable = 'noop',
       service_account = 'noop@example.com',
   )
   luci.cq_tryjob_verifier(

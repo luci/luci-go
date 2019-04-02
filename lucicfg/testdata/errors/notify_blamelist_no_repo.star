@@ -45,7 +45,7 @@ luci.gitiles_poller(
 luci.builder(
     name = 'explicit repo',
     bucket = 'bucket',
-    recipe = 'noop',
+    executable = 'noop',
     repo = 'https://repo.example.com',
     notifies = ['blamelist notifier', 'email notifier'],
 )
@@ -53,7 +53,7 @@ luci.builder(
 luci.builder(
     name = 'derived through poller',
     bucket = 'bucket',
-    recipe = 'noop',
+    executable = 'noop',
     triggered_by = ['p1', 'p2'],
     notifies = ['blamelist notifier', 'email notifier'],
 )
@@ -61,7 +61,7 @@ luci.builder(
 luci.builder(
     name = 'ambiguous pollers',
     bucket = 'bucket',
-    recipe = 'noop',
+    executable = 'noop',
     triggered_by = ['p1', 'p2', 'p3'],
     notifies = ['blamelist notifier', 'email notifier'],
 )
@@ -69,7 +69,7 @@ luci.builder(
 luci.builder(
     name = 'no repo at all',
     bucket = 'bucket',
-    recipe = 'noop',
+    executable = 'noop',
     notifies = ['blamelist notifier', 'email notifier'],
 )
 

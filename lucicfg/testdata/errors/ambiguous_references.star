@@ -19,23 +19,23 @@ luci.bucket(name = 'b2')
 luci.builder(
     name = 'b1 builder',
     bucket = 'b1',
-    recipe = 'noop',
+    executable = 'noop',
     service_account = 'noop@example.com',
 )
 luci.builder(
     name = 'ambiguous builder',
     bucket = 'b1',
-    recipe = 'noop',
+    executable = 'noop',
 )
 luci.builder(
     name = 'b2 builder',
     bucket = 'b2',
-    recipe = 'noop',
+    executable = 'noop',
 )
 luci.builder(
     name = 'ambiguous builder',
     bucket = 'b2',
-    recipe = 'noop',
+    executable = 'noop',
 )
 
 
@@ -65,7 +65,7 @@ luci.gitiles_poller(
 luci.builder(
     name = 'triggered',
     bucket = 'b1',
-    recipe = 'noop',
+    executable = 'noop',
     triggered_by = [
         'b1 builder',
         'ambiguous builder',  # error: is it b1 or b2?

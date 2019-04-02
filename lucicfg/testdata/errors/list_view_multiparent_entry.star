@@ -15,13 +15,13 @@ luci.recipe(
 luci.builder(
     name = 'b1',
     bucket = 'ci',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
 )
 
 luci.builder(
     name = 'b2',
     bucket = 'ci',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
 )
 
 b2_entry = luci.list_view_entry('b2')

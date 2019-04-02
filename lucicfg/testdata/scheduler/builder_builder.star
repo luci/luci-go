@@ -15,14 +15,14 @@ luci.bucket(name = 'ci')
 luci.builder(
     name = 'b1',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
     service_account = 'noop@example.com',
     triggers = ['b2'],
 )
 luci.builder(
     name = 'b2',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
 )
 
 # Expect configs:

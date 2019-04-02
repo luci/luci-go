@@ -28,21 +28,21 @@ luci.gitiles_poller(
 luci.builder(
     name = 'b1',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
     service_account = 'noop1@example.com',
     triggers = ['b2', 'b3'],
 )
 luci.builder(
     name = 'b2',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
     service_account = 'noop2@example.com',
     triggers = ['b3'],
 )
 luci.builder(
     name = 'b3',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
 )
 
 # Expect configs:

@@ -92,7 +92,7 @@ luci.gitiles_poller(
 luci.builder(
     name = 'linux ci builder',
     bucket = 'ci',
-    recipe = luci.recipe(
+    executable = luci.recipe(
         name = 'main/recipe',
         cipd_package = 'recipe/bundles/main',
     ),
@@ -135,7 +135,7 @@ luci.builder(
 luci.builder(
     name = 'generically named builder',
     bucket = 'ci',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
 
     triggered_by = ['master-poller'],
 )
@@ -143,7 +143,7 @@ luci.builder(
 luci.builder(
     name = 'cron builder',
     bucket = 'ci',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
     schedule = '0 6 * * *',
     repo = 'https://cron.repo.example.com',
 )
@@ -164,13 +164,13 @@ luci.bucket(
 luci.builder(
     name = 'linux try builder',
     bucket = 'try',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
 )
 
 luci.builder(
     name = 'generically named builder',
     bucket = 'try',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
 )
 
 
@@ -194,7 +194,7 @@ def inline_poller():
 luci.builder(
     name = 'triggerer builder',
     bucket = luci.bucket(name = 'inline'),
-    recipe = luci.recipe(
+    executable = luci.recipe(
         name = 'inline/recipe',
         cipd_package = 'recipe/bundles/inline',
     ),
@@ -205,7 +205,7 @@ luci.builder(
         luci.builder(
             name = 'triggered builder',
             bucket = 'inline',
-            recipe = 'inline/recipe',
+            executable = 'inline/recipe',
         ),
     ],
 
@@ -216,7 +216,7 @@ luci.builder(
 luci.builder(
     name = 'another builder',
     bucket = 'inline',
-    recipe = luci.recipe(
+    executable = luci.recipe(
         name = 'inline/recipe',
         cipd_package = 'recipe/bundles/inline',
     ),
@@ -321,7 +321,7 @@ luci.notifier_template(
 luci.builder(
     name = 'watched builder',
     bucket = 'ci',
-    recipe = 'main/recipe',
+    executable = 'main/recipe',
     repo = 'https://custom.example.com/repo',
     notifies = ['main notifier'],
 )
@@ -378,12 +378,12 @@ luci.cq_tryjob_verifier(
     builder = luci.builder(
         name = 'main cq builder',
         bucket = 'try',
-        recipe = 'main/recipe',
+        executable = 'main/recipe',
     ),
     equivalent_builder = luci.builder(
         name = 'equivalent cq builder',
         bucket = 'try',
-        recipe = 'main/recipe',
+        executable = 'main/recipe',
     ),
     equivalent_builder_percentage = 60,
     equivalent_builder_whitelist = 'owners',

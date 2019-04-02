@@ -10,18 +10,18 @@ luci.recipe(name = 'noop', cipd_package = 'noop')
 luci.builder(
     name = 'triggered',
     bucket = 'bucket',
-    recipe = 'noop',
+    executable = 'noop',
     triggered_by = [
         luci.builder(
             name = 'triggerer 1',
             bucket = 'bucket',
-            recipe = 'noop',
+            executable = 'noop',
             service_account = 'noop@example.com',
         ),
         luci.builder(
             name = 'triggerer 2',
             bucket = 'bucket',
-            recipe = 'noop',
+            executable = 'noop',
             service_account = 'noop@example.com',
         ),
     ],

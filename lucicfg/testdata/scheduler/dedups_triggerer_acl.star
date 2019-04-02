@@ -15,20 +15,20 @@ luci.bucket(name = 'ci')
 luci.builder(
     name = 'b1',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
     service_account = 'account@example.com',
 )
 luci.builder(
     name = 'b2',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
     service_account = 'account@example.com',
 )
 
 luci.builder(
     name = 'b3',
     bucket = 'ci',
-    recipe = 'noop',
+    executable = 'noop',
     triggered_by = ['b1', 'b2'],
 )
 

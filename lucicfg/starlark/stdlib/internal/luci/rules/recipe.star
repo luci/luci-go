@@ -27,11 +27,14 @@ def _recipe(
       cipd_version=None,
       recipe=None
   ):
-  """Defines where to locate a particular recipe.
+  """Defines an executable that runs a particular recipe.
 
-  Builders refer to recipes in their `recipe` field, see luci.builder(...).
-  Multiple builders can execute the same recipe (perhaps passing different
-  properties to it).
+  Recipes are python-based DSL for defining what a builder should do, see
+  [recipes-py](https://chromium.googlesource.com/infra/luci/recipes-py/).
+
+  Builders refer to such executable recipes in their `executable` field, see
+  luci.builder(...). Multiple builders can execute the same recipe (perhaps
+  passing different properties to it).
 
   Recipes are located inside cipd packages called "recipe bundles". Typically
   the cipd package name with the recipe bundle will look like:
