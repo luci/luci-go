@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "46b9dd2b_069f002a",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T23:28:20Z",
+      "side": 1,
+      "message": "Strictly speaking this check should be done in Middleware. A token not intended for us is *totally invalid* from our point of view. It should be treated in same way as expired or unsigned tokens (well, perhaps with different logging expaining why it is invalid).\n\nDoing otherwise increases a chance of accidentally using tokens with wrong audience.",
+      "range": {
+        "startLine": 200,
+        "startChar": 1,
+        "endLine": 203,
+        "endChar": 2
+      },
+      "revId": "78b35316a9fabf13d56a2c47e2d3591b7b3347be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee579d8e_95208da2",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T23:28:20Z",
+      "side": 1,
+      "message": "logging.WithError(err).Errorf(...)\n\nor print the error via format string",
+      "range": {
+        "startLine": 214,
+        "startChar": 3,
+        "endLine": 214,
+        "endChar": 17
+      },
+      "revId": "78b35316a9fabf13d56a2c47e2d3591b7b3347be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

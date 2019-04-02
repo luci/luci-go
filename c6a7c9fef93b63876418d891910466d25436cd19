@@ -375,6 +375,30 @@
       "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0082871_6f36ae7e",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T23:28:20Z",
+      "side": 1,
+      "message": "It is more or less standard to use HTTP 401 for the case when credentials are present, but invalid, even if the resource being accessed allows anonymous access. Anonymous calls should be indicated by absence of credentials.\n\nIn practical terms, if something breaks, it is easier to spot HTTP 401 errors instead of callers silently loosing access to resources. This is important, for example, in various ListSomething(...) APIs where each entry has an ACL. An ignored broken token will result in the list suddenly and silently becoming shorter with no apparent reason.\n\n(I understand ListSomething(...) is not the case here, just arguing why HTTP 401 for broken credentials is a good thing in general).\n\nAlso, what GCE Provider endpoints allow anonymous access? This seems strange... Random internet people should not have ability to see our bots or even probe for their existence.",
+      "parentUuid": "bc90e92d_a24adc89",
+      "range": {
+        "startLine": 213,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 79
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
