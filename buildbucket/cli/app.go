@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging/gologger"
 )
 
@@ -37,9 +38,9 @@ var logCfg = gologger.LoggerConfig{
 	Out:    os.Stderr,
 }
 
-// Application creates the application and configures its subcommands.
+// application creates the application and configures its subcommands.
 // Ignores p.Auth.Scopes.
-func Application(p Params) *cli.Application {
+func application(p Params) *cli.Application {
 	p.Auth.Scopes = []string{
 		auth.OAuthScopeEmail,
 		gerrit.OAuthScope,
@@ -69,4 +70,8 @@ func Application(p Params) *cli.Application {
 			subcommands.CmdHelp,
 		},
 	}
+}
+
+func Main(p Params, args []string) int {
+	return subcommands.Run(application(p), fixflagpos.FixSubcommands(args))
 }
