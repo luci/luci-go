@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1afd1f1_d9e98569",
+        "filename": "scheduler/appengine/task/gitiles/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T23:29:55Z",
+      "side": 1,
+      "message": "nit: log the error too",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 127,
+        "endChar": 19
+      },
+      "revId": "07fe6be8f71e47b70341def5d58312cad409e959",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
