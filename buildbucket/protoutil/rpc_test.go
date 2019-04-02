@@ -36,14 +36,14 @@ func TestParseGetBuildRequest(t *testing.T) {
 		Convey("build number", func() {
 			req, err := ParseGetBuildRequest("chromium/ci/linux-rel/1")
 			So(err, ShouldBeNil)
-			So(req, ShouldResembleProto, &pb.GetBuildRequest{
-				Builder: &pb.BuilderID{
-					Project: "chromium",
-					Bucket:  "ci",
-					Builder: "linux-rel",
-				},
-				BuildNumber: 1,
-			})
+			So(req, ShouldResembleProtoText, `
+				builder {
+					project: "chromium"
+					bucket: "ci"
+					builder: "linux-rel"
+				}
+				build_number: 1
+			`)
 		})
 	})
 }
