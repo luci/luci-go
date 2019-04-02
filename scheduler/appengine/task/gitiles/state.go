@@ -27,6 +27,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -78,15 +79,62 @@ type Repository struct {
 	CompressedState []byte `gae:",noindex"`
 }
 
-func repositoryID(jobID string, u *url.URL) string {
-	return fmt.Sprintf("%s:%s", jobID, u)
+func legacyRepositoryID(jobID, repo string) (string, error) {
+	u, err := url.Parse(repo)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s:%s", jobID, u), nil
 }
 
-func loadState(c context.Context, jobID string, u *url.URL) (map[string]string, error) {
-	stored := Repository{ID: repositoryID(jobID, u)}
-	err := ds.Get(c, &stored)
-	switch {
-	case err != nil && err != ds.ErrNoSuchEntity:
+func repositoryID(jobID, repo string) (string, error) {
+	host, proj, err := gitiles.ParseRepoURL(repo)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{jobID, host, proj}, "\x00 "), nil
+}
+
+// loadStateEntry loads Repository instance from datastore,
+// migrating from legacy to modern key on the fly.
+func loadStateEntry(c context.Context, jobID, repo string) (*Repository, error) {
+	modernID, err := repositoryID(jobID, repo)
+	if err != nil {
+		return nil, err
+	}
+	modern := &Repository{ID: modernID}
+	if err := ds.Get(c, modern); err != ds.ErrNoSuchEntity {
+		return modern, transient.Tag.Apply(err)
+	}
+
+	legacyID, err := legacyRepositoryID(jobID, repo)
+	if err != nil {
+		return nil, err
+	}
+	legacy := Repository{ID: legacyID}
+	switch err := ds.Get(c, &legacy); {
+	case err == ds.ErrNoSuchEntity:
+		return nil, err
+	case err != nil:
+		return nil, transient.Tag.Apply(err)
+	}
+	// Replace modern record with legacy one atomically.
+	*modern = legacy
+	modern.ID = modernID
+	err = ds.RunInTransaction(c, func(c context.Context) error {
+		if err := ds.Put(c, modern); err != nil {
+			return err
+		}
+		return ds.Delete(c, &legacy)
+	}, &ds.TransactionOptions{})
+	return modern, transient.Tag.Apply(err)
+}
+
+func loadState(c context.Context, jobID, repo string) (map[string]string, error) {
+	switch stored, err := loadStateEntry(c, jobID, repo); {
+	case err == ds.ErrNoSuchEntity:
+		return map[string]string{}, nil
+	case err != nil:
 		return nil, err
 
 	case len(stored.References) > 0:
@@ -128,7 +176,7 @@ func loadState(c context.Context, jobID string, u *url.URL) (map[string]string, 
 	}
 }
 
-func saveState(c context.Context, jobID string, u *url.URL, refTips map[string]string) error {
+func saveState(c context.Context, jobID, repo string, refTips map[string]string) error {
 	// There could be many refTips in repos, though most will share some prefix.
 	// So we trade CPU to save this efficiently.
 
@@ -174,8 +222,13 @@ func saveState(c context.Context, jobID string, u *url.URL, refTips map[string]s
 
 	metricTaskGitilesStoredRefs.Set(c, int64(len(refTips)), jobID)
 	metricTaskGitilesStoredSize.Set(c, int64(compressed.Len()), jobID)
+
+	id, err := repositoryID(jobID, repo)
+	if err != nil {
+		return err
+	}
 	return transient.Tag.Apply(ds.Put(c, &Repository{
-		ID:              repositoryID(jobID, u),
+		ID:              id,
 		CompressedState: compressed.Bytes(),
 	}))
 }
