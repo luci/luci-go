@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "07177164_feeb7720",
+        "filename": "buildbucket/cli/base_command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T17:31:43Z",
+      "side": 1,
+      "message": "extra (L62)",
+      "revId": "850a39f978aa44ede9b420c718bd2229383111cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3dba0ac4_50e2bc41",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T17:31:43Z",
+      "side": 1,
+      "message": "I thought ls without path args is fine.  Both examples have no args",
+      "revId": "850a39f978aa44ede9b420c718bd2229383111cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
