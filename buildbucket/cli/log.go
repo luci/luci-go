@@ -58,7 +58,8 @@ by time. Defaults to stdout and stderr.
 `,
 		CommandRun: func() subcommands.CommandRun {
 			r := &logRun{}
-			r.RegisterGlobalFlags(p)
+			r.RegisterDefaultFlags(p)
+			r.RegisterJSONFlag()
 			return r
 		},
 	}
@@ -239,20 +240,26 @@ func (r *logRun) printLogs(ctx context.Context, logs []*buildbucketpb.Step_Log) 
 		}()
 	}
 
+	stdout := newPrinter(os.Stdout, r.noColor, time.Now)
+	stderr := newPrinter(os.Stderr, r.noColor, time.Now)
 	for {
 		chanIndex, entry, err := m.Next()
-		out := os.Stdout
+		out := stdout
 		switch {
 		case err == io.EOF:
 			return nil
 		case err != nil:
 			return err
 		case logs[chanIndex].Name == "stderr":
-			out = os.Stderr
+			out = stderr
 		}
-		for _, line := range entry.GetText().GetLines() {
-			fmt.Fprintf(out, "%s", line.Value)
-			fmt.Fprintf(out, line.Delimiter)
+
+		if r.json {
+			out.JSONPB(entry)
+		} else {
+			for _, line := range entry.GetText().GetLines() {
+				out.f("%s%s", line.Value, line.Delimiter)
+			}
 		}
 	}
 }

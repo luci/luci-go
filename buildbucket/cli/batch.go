@@ -36,7 +36,7 @@ Stdout will be buildbucket.v2.BatchResponse in JSON format.
 Exits with code 1 if at least one sub-request fails.`,
 		CommandRun: func() subcommands.CommandRun {
 			r := &batchRun{}
-			r.RegisterGlobalFlags(p)
+			r.RegisterDefaultFlags(p)
 			return r
 		},
 	}
