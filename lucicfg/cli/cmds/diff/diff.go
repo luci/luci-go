@@ -38,6 +38,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
+	luciproto "go.chromium.org/luci/common/proto"
 
 	"go.chromium.org/luci/lucicfg/cli/base"
 	"go.chromium.org/luci/lucicfg/normalize"
@@ -251,7 +252,7 @@ func (p *configPair) normalize(ctx context.Context) error {
 // it back.
 func normalizeOne(ctx context.Context, in []byte, p *configPair) (out []byte, err error) {
 	msg := reflect.New(p.typ.Elem()).Interface().(proto.Message)
-	if err = proto.UnmarshalText(string(in), msg); err != nil {
+	if err = luciproto.UnmarshalTextML(string(in), msg); err != nil {
 		return
 	}
 	if err = p.protoNormalizer(ctx, msg); err != nil {
