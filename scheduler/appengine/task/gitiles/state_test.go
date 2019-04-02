@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"net/url"
 	"strconv"
 	"testing"
 	"time"
@@ -38,12 +37,11 @@ func TestLoadSave(t *testing.T) {
 
 	Convey("storeState/loadState work", t, func() {
 		c := memory.Use(context.Background())
-		u, err := url.Parse("https://repo/whatever.git")
-		So(err, ShouldBeNil)
+		repo := "https://example.googlesource.com/what/ever.git"
 		jobID := "job"
 
-		loadNoError := func() map[string]string {
-			r, err := loadState(c, jobID, u)
+		loadNoError := func(repo string) map[string]string {
+			r, err := loadState(c, jobID, repo)
 			if err != nil {
 				panic(err)
 			}
@@ -51,21 +49,20 @@ func TestLoadSave(t *testing.T) {
 		}
 
 		Convey("load first time ever", func() {
-			So(loadNoError(), ShouldResemble, map[string]string{})
-			So(loadNoError(), ShouldNotBeNil)
+			So(loadNoError(repo), ShouldResemble, map[string]string{})
+			So(loadNoError(repo), ShouldNotBeNil)
 		})
 
 		Convey("save/load/save/load", func() {
-			So(saveState(c, jobID, u, map[string]string{"refs/heads/master": "beefcafe"}), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, map[string]string{"refs/heads/master": "beefcafe"})
-			So(saveState(c, jobID, u, map[string]string{"refs/tails/master": "efacfeeb"}), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, map[string]string{"refs/tails/master": "efacfeeb"})
+			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), ShouldBeNil)
+			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master": "beefcafe"})
+			So(saveState(c, jobID, repo, map[string]string{"refs/tails/master": "efacfeeb"}), ShouldBeNil)
+			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/tails/master": "efacfeeb"})
 		})
 
 		Convey("save/change repo name/load", func() {
-			So(saveState(c, jobID, u, map[string]string{"refs/heads/master": "beefcafe"}), ShouldBeNil)
-			u.Host = "some-other.googlesource.com"
-			So(loadNoError(), ShouldResemble, map[string]string{})
+			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), ShouldBeNil)
+			So(loadNoError("https://some-other.googlesource.com/repo"), ShouldResemble, map[string]string{})
 		})
 
 		Convey("save/load with deeply nested refs", func() {
@@ -78,23 +75,46 @@ func TestLoadSave(t *testing.T) {
 				"refs/heads/infra/configs/why": "55",
 				"refs/heads/infra/configs/not": "66",
 			}
-			So(saveState(c, jobID, u, nested), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, nested)
+			So(saveState(c, jobID, repo, nested), ShouldBeNil)
+			So(loadNoError(repo), ShouldResemble, nested)
 		})
 
 		Convey("loadState old data and update it", func() {
+			id, err := repositoryID(jobID, repo)
+			So(err, ShouldBeNil)
 			So(ds.Put(c, &Repository{
-				ID:         repositoryID(jobID, u),
+				ID:         id,
 				References: []Reference{{Name: "refs/heads/master", Revision: "deadbeef"}},
 			}), ShouldBeNil)
 
-			So(loadNoError(), ShouldResemble, map[string]string{"refs/heads/master": "deadbeef"})
-			So(saveState(c, jobID, u, map[string]string{"refs/heads/master2": "beefcafe"}), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, map[string]string{"refs/heads/master2": "beefcafe"})
+			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master": "deadbeef"})
+			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master2": "beefcafe"}), ShouldBeNil)
+			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master2": "beefcafe"})
 
-			stored := Repository{ID: repositoryID(jobID, u)}
+			stored := Repository{ID: id}
 			So(ds.Get(c, &stored), ShouldBeNil)
 			So(stored.References, ShouldBeNil)
+		})
+
+		Convey("load fallback to legacy id, save to both", func() {
+			legacyID, err := legacyRepositoryID(jobID, repo)
+			So(err, ShouldBeNil)
+			So(ds.Put(c, &Repository{
+				ID:         legacyID,
+				References: []Reference{{Name: "refs/heads/master", Revision: "deadbeef"}},
+			}), ShouldBeNil)
+
+			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master": "deadbeef"})
+			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master2": "beefcafe"}), ShouldBeNil)
+			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master2": "beefcafe"})
+
+			modernID, err := repositoryID(jobID, repo)
+			So(err, ShouldBeNil)
+			storedLegacy := Repository{ID: legacyID}
+			storedModern := Repository{ID: modernID}
+			So(ds.Get(c, &storedLegacy), ShouldBeNil)
+			So(ds.Get(c, &storedModern), ShouldBeNil)
+			So(storedLegacy.CompressedState, ShouldResemble, storedModern.CompressedState)
 		})
 	})
 }
@@ -107,8 +127,7 @@ func TestLoadSaveCompression(t *testing.T) {
 		c, _, _ = tsmon.WithFakes(c)
 		tsmon.GetState(c).SetStore(store.NewInMemory(&target.Task{}))
 
-		u, err := url.Parse("https://repo/whatever.git")
-		So(err, ShouldBeNil)
+		repo := "https://example.googlesource.com/what/ever.git"
 		jobID := "job"
 
 		many16Ki := 16 * 1024
@@ -119,8 +138,10 @@ func TestLoadSaveCompression(t *testing.T) {
 			tags[ref] = hsh
 		}
 
-		So(saveState(c, jobID, u, tags), ShouldBeNil)
-		stored := Repository{ID: repositoryID(jobID, u)}
+		So(saveState(c, jobID, repo, tags), ShouldBeNil)
+		id, err := repositoryID(jobID, repo)
+		So(err, ShouldBeNil)
+		stored := Repository{ID: id}
 		So(ds.Get(c, &stored), ShouldBeNil)
 		// Given that SHA1 must have high entropy and hence shouldn't be
 		// compressible. Thus, we can't go below 20 bytes (len of SHA1) per ref,

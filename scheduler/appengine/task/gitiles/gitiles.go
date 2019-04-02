@@ -149,14 +149,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	if err != nil {
 		return err
 	}
-	// TODO(tandrii): use g.host, g.project for saving/loading state
-	// instead of repoURL.
-	repoURL, err := url.Parse(cfg.Repo)
-	if err != nil {
-		return err
-	}
-
-	refs, err := m.fetchRefsState(c, ctl, cfg, g, repoURL)
+	refs, err := m.fetchRefsState(c, ctl, cfg, g)
 	if err != nil {
 		ctl.DebugLog("Error fetching state of the world: %s", err)
 		return err
@@ -196,7 +189,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		// the refs' heads newest values.
 		return err
 	}
-	if err := saveState(c, ctl.JobID(), repoURL, refs.known); err != nil {
+	if err := saveState(c, ctl.JobID(), cfg.Repo, refs.known); err != nil {
 		return err
 	}
 	ctl.DebugLog("Saved %d known refs", len(refs.known))
@@ -226,14 +219,8 @@ func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnl
 	if err != nil {
 		return nil, err
 	}
-	// TODO(tandrii): use g.host, g.project for saving/loading state
-	// instead of repoURL.
-	repoURL, err := url.Parse(cfg.Repo)
-	if err != nil {
-		return nil, err
-	}
 
-	refs, err := m.fetchRefsState(c, ctl, cfg, g, repoURL)
+	refs, err := m.fetchRefsState(c, ctl, cfg, g)
 	if err != nil {
 		ctl.DebugLog("Error fetching state of the world: %s", err)
 		return nil, err
@@ -260,13 +247,13 @@ func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnl
 	}, nil
 }
 
-func (m TaskManager) fetchRefsState(c context.Context, ctl task.ControllerReadOnly, cfg *messages.GitilesTask, g *gitilesClient, repoURL *url.URL) (*refsState, error) {
+func (m TaskManager) fetchRefsState(c context.Context, ctl task.ControllerReadOnly, cfg *messages.GitilesTask, g *gitilesClient) (*refsState, error) {
 	refs := &refsState{}
 	refs.watched = gitiles.NewRefSet(cfg.GetRefs())
 	var missingRefs []string
 	err := parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (loadErr error) {
-			refs.known, loadErr = loadState(c, ctl.JobID(), repoURL)
+			refs.known, loadErr = loadState(c, ctl.JobID(), cfg.Repo)
 			return
 		}
 		work <- func() (resolveErr error) {

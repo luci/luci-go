@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -56,13 +55,11 @@ func TestTriggerBuild(t *testing.T) {
 			Repo: "https://a.googlesource.com/b.git",
 		}
 		jobID := "proj/gitiles"
-		parsedURL, err := url.Parse(cfg.Repo)
-		So(err, ShouldBeNil)
 
 		type strmap map[string]string
 
 		loadNoError := func() strmap {
-			state, err := loadState(c, jobID, parsedURL)
+			state, err := loadState(c, jobID, cfg.Repo)
 			if err != nil {
 				panic(err)
 			}
@@ -197,7 +194,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		Convey("regexp refs are matched correctly", func() {
 			cfg.Refs = []string{`regexp:refs/branch-heads/1\.\d+`}
-			So(saveState(c, jobID, parsedURL, strmap{
+			So(saveState(c, jobID, cfg.Repo, strmap{
 				"refs/branch-heads/1.0": "deadcafe00",
 				"refs/branch-heads/1.1": "beefcafe02",
 			}), ShouldBeNil)
@@ -227,7 +224,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		Convey("do not trigger if there are no new commits", func() {
 			cfg.Refs = []string{"regexp:refs/branch-heads/[^/]+"}
-			So(saveState(c, jobID, parsedURL, strmap{
+			So(saveState(c, jobID, cfg.Repo, strmap{
 				"refs/branch-heads/beta": "deadbeef00",
 			}), ShouldBeNil)
 			expectRefs("refs/branch-heads", strmap{"refs/branch-heads/beta": "deadbeef00"})
@@ -240,7 +237,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		Convey("New, updated, and deleted refs", func() {
 			cfg.Refs = []string{"refs/heads/master", "regexp:refs/branch-heads/[^/]+"}
-			So(saveState(c, jobID, parsedURL, strmap{
+			So(saveState(c, jobID, cfg.Repo, strmap{
 				"refs/heads/master":   "deadbeef03",
 				"refs/branch-heads/x": "1234567890",
 				"refs/was/watched":    "0987654321",
@@ -278,7 +275,7 @@ func TestTriggerBuild(t *testing.T) {
 			cfg.Refs = []string{"refs/heads/master"}
 			cfg.PathRegexps = []string{`.+\.emit`}
 			cfg.PathRegexpsExclude = []string{`skip/.+`}
-			So(saveState(c, jobID, parsedURL, strmap{"refs/heads/master": "deadbeef04"}), ShouldBeNil)
+			So(saveState(c, jobID, cfg.Repo, strmap{"refs/heads/master": "deadbeef04"}), ShouldBeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 			expectLogWithDiff("deadbeef00", "deadbeef04", 50,
 				"deadbeef00:skip/commit",
@@ -298,7 +295,7 @@ func TestTriggerBuild(t *testing.T) {
 		Convey("Updated ref without matched commits", func() {
 			cfg.Refs = []string{"refs/heads/master"}
 			cfg.PathRegexps = []string{`must-match`}
-			So(saveState(c, jobID, parsedURL, strmap{"refs/heads/master": "deadbeef04"}), ShouldBeNil)
+			So(saveState(c, jobID, cfg.Repo, strmap{"refs/heads/master": "deadbeef04"}), ShouldBeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 
 			Convey("results in no emitted triggers if we examine each commit", func() {
@@ -329,7 +326,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		Convey("do nothing at all if there are no changes", func() {
 			cfg.Refs = []string{"refs/heads/master"}
-			So(saveState(c, jobID, parsedURL, strmap{
+			So(saveState(c, jobID, cfg.Repo, strmap{
 				"refs/heads/master": "deadbeef",
 			}), ShouldBeNil)
 			expectRefs("refs/heads", strmap{
@@ -347,7 +344,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		Convey("Avoid choking on too many refs", func() {
 			cfg.Refs = []string{"refs/heads/master", "regexp:refs/branch-heads/[^/]+"}
-			So(saveState(c, jobID, parsedURL, strmap{
+			So(saveState(c, jobID, cfg.Repo, strmap{
 				"refs/heads/master": "deadbeef",
 			}), ShouldBeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef"}).AnyTimes()
@@ -441,7 +438,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		Convey("distinguish force push from transient weirdness", func() {
 			cfg.Refs = []string{"refs/heads/master"}
-			So(saveState(c, jobID, parsedURL, strmap{
+			So(saveState(c, jobID, cfg.Repo, strmap{
 				"refs/heads/master": "001d", // old.
 			}), ShouldBeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "1111"})
