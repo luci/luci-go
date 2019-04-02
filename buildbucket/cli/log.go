@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/logdog/common/fetcher"
 	"go.chromium.org/luci/logdog/common/types"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 	logpb "go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -70,7 +70,7 @@ type logRun struct {
 	// args
 
 	build    string
-	getBuild *buildbucketpb.GetBuildRequest
+	getBuild *pb.GetBuildRequest
 	step     string
 	logs     stringset.Set
 }
@@ -90,7 +90,7 @@ func (r *logRun) Run(a subcommands.Application, args []string, env subcommands.E
 	if err != nil {
 		return r.done(ctx, err)
 	}
-	var step *buildbucketpb.Step
+	var step *pb.Step
 	for _, s := range steps {
 		if s.Name == r.step {
 			step = s
@@ -106,15 +106,15 @@ func (r *logRun) Run(a subcommands.Application, args []string, env subcommands.E
 	}
 
 	// Find the logs.
-	logByName := map[string]*buildbucketpb.Step_Log{}
+	logByName := map[string]*pb.Step_Log{}
 	for _, l := range step.Logs {
 		logByName[l.Name] = l
 	}
-	var logs []*buildbucketpb.Step_Log
+	var logs []*pb.Step_Log
 	if len(r.logs) == 0 {
 		logs = r.defaultLogs(logByName)
 	} else {
-		logs = make([]*buildbucketpb.Step_Log, 0, len(r.logs))
+		logs = make([]*pb.Step_Log, 0, len(r.logs))
 		for name := range r.logs {
 			l, ok := logByName[name]
 			if !ok {
@@ -144,8 +144,8 @@ func (r *logRun) parseArgs(args []string) error {
 	return err
 }
 
-func (r *logRun) defaultLogs(available map[string]*buildbucketpb.Step_Log) []*buildbucketpb.Step_Log {
-	logs := make([]*buildbucketpb.Step_Log, 0, 2)
+func (r *logRun) defaultLogs(available map[string]*pb.Step_Log) []*pb.Step_Log {
+	logs := make([]*pb.Step_Log, 0, 2)
 	if log, ok := available["stdout"]; ok {
 		logs = append(logs, log)
 	}
@@ -156,7 +156,7 @@ func (r *logRun) defaultLogs(available map[string]*buildbucketpb.Step_Log) []*bu
 }
 
 // getSteps fetches steps of the build.
-func (r *logRun) getSteps(ctx context.Context) ([]*buildbucketpb.Step, error) {
+func (r *logRun) getSteps(ctx context.Context) ([]*pb.Step, error) {
 	r.getBuild.Fields = &field_mask.FieldMask{Paths: []string{"steps"}}
 	build, err := r.client.GetBuild(ctx, r.getBuild, prpc.ExpectedCode(codes.NotFound))
 	switch status.Code(err) {
@@ -171,7 +171,7 @@ func (r *logRun) getSteps(ctx context.Context) ([]*buildbucketpb.Step, error) {
 
 // printLogs fetches and prints the logs to io.Stdout/io.Stderr.
 // Entries from different logs are multiplexed by timestamps.
-func (r *logRun) printLogs(ctx context.Context, logs []*buildbucketpb.Step_Log) error {
+func (r *logRun) printLogs(ctx context.Context, logs []*pb.Step_Log) error {
 	if len(logs) == 0 {
 		return nil
 	}

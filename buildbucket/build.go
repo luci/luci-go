@@ -23,10 +23,11 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
+	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 )
 
 // Build is a buildbucket build.
@@ -53,7 +54,7 @@ type Build struct {
 
 	// fields that can change during build lifetime
 
-	Status           buildbucketpb.Status
+	Status           pb.Status
 	StatusChangeTime time.Time
 	URL              string
 	StartTime        time.Time

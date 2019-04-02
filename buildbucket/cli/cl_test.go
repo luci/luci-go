@@ -17,7 +17,7 @@ package cli
 import (
 	"testing"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -29,7 +29,7 @@ func TestParseCL(t *testing.T) {
 		Convey("Perfect", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7")
 			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
+			So(actual, ShouldResembleProto, &pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
 				Change:   1541677,
@@ -40,7 +40,7 @@ func TestParseCL(t *testing.T) {
 		Convey("Hash", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7")
 			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
+			So(actual, ShouldResembleProto, &pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
 				Change:   1541677,
@@ -51,7 +51,7 @@ func TestParseCL(t *testing.T) {
 		Convey("File", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go")
 			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
+			So(actual, ShouldResembleProto, &pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
 				Change:   1541677,
@@ -62,7 +62,7 @@ func TestParseCL(t *testing.T) {
 		Convey("No project", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/1541677/7")
 			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
+			So(actual, ShouldResembleProto, &pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   1541677,
 				Patchset: 7,
@@ -72,7 +72,7 @@ func TestParseCL(t *testing.T) {
 		Convey("No patchset", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677")
 			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &buildbucketpb.GerritChange{
+			So(actual, ShouldResembleProto, &pb.GerritChange{
 				Host:    "chromium-review.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Change:  1541677,

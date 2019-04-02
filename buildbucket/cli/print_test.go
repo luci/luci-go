@@ -24,8 +24,9 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/mgutz/ansi"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -196,7 +197,7 @@ func TestPrint(t *testing.T) {
 		})
 
 		Convey("Build", func() {
-			build := &buildbucketpb.Build{}
+			build := &pb.Build{}
 			So(jsonpb.UnmarshalString(buildJSON, build), ShouldBeNil)
 
 			expectedBuildPrinted := regexp.MustCompile("<[^>]+>").ReplaceAllStringFunc(
@@ -212,7 +213,7 @@ func TestPrint(t *testing.T) {
 		})
 
 		Convey("Commit without id", func() {
-			p.commit(&buildbucketpb.GitilesCommit{
+			p.commit(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/master",

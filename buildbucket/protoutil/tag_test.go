@@ -17,8 +17,9 @@ package protoutil
 import (
 	"testing"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/strpair"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -30,14 +31,14 @@ func TestBuildSet(t *testing.T) {
 	Convey("Gerrit", t, func() {
 		Convey("ParseBuildSet", func() {
 			actual := ParseBuildSet("patch/gerrit/chromium-review.googlesource.com/678507/3")
-			So(actual, ShouldResemble, &buildbucketpb.GerritChange{
+			So(actual, ShouldResemble, &pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   678507,
 				Patchset: 3,
 			})
 		})
 		Convey("BuildSet", func() {
-			bs := GerritBuildSet(&buildbucketpb.GerritChange{
+			bs := GerritBuildSet(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   678507,
 				Patchset: 3,
@@ -49,7 +50,7 @@ func TestBuildSet(t *testing.T) {
 	Convey("Gitiles", t, func() {
 		Convey("ParseBuildSet", func() {
 			actual := ParseBuildSet("commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
-			So(actual, ShouldResemble, &buildbucketpb.GitilesCommit{
+			So(actual, ShouldResemble, &pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
@@ -69,7 +70,7 @@ func TestBuildSet(t *testing.T) {
 			So(bs, ShouldBeNil)
 		})
 		Convey("BuildSet", func() {
-			bs := GitilesBuildSet(&buildbucketpb.GitilesCommit{
+			bs := GitilesBuildSet(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
@@ -89,7 +90,7 @@ func TestStringPairs(t *testing.T) {
 		m.Add("b", "1")
 
 		pairs := StringPairs(m)
-		So(pairs, ShouldResembleProto, []*buildbucketpb.StringPair{
+		So(pairs, ShouldResembleProto, []*pb.StringPair{
 			{Key: "a", Value: "1"},
 			{Key: "a", Value: "2"},
 			{Key: "b", Value: "1"},

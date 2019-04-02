@@ -22,7 +22,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 type buildFieldFlags struct {
@@ -40,7 +40,7 @@ func (f *buildFieldFlags) Register(fs *flag.FlagSet) {
 func (f *buildFieldFlags) FieldMask() *field_mask.FieldMask {
 	if f.all {
 		ret := &field_mask.FieldMask{}
-		for _, p := range proto.GetProperties(reflect.TypeOf(buildbucketpb.Build{})).Prop {
+		for _, p := range proto.GetProperties(reflect.TypeOf(pb.Build{})).Prop {
 			if !strings.HasPrefix(p.OrigName, "XXX") {
 				ret.Paths = append(ret.Paths, p.OrigName)
 			}

@@ -22,10 +22,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/logdog/common/types"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 	luci "go.chromium.org/luci/common/proto"
 	annotpb "go.chromium.org/luci/common/proto/milo"
-	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -48,7 +49,7 @@ func TestAnnotations(t *testing.T) {
 		wantFile, err := ioutil.ReadFile(wantPath)
 		So(err, ShouldBeNil)
 
-		var want buildbucketpb.Build
+		var want pb.Build
 		err = luci.UnmarshalTextML(string(wantFile), &want)
 		So(err, ShouldBeNil)
 
@@ -57,9 +58,9 @@ func TestAnnotations(t *testing.T) {
 			defaultLogdogHost:   "logdog.example.com",
 			defaultLogdogPrefix: "project/prefix",
 
-			steps: map[string]*buildbucketpb.Step{},
+			steps: map[string]*pb.Step{},
 		}
-		var got []*buildbucketpb.Step
+		var got []*pb.Step
 		_, err = p.convertSubsteps(c, &got, ann.Substep, "")
 		So(err, ShouldBeNil)
 
