@@ -413,6 +413,7 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 	knownACLSets := acl.ValidateACLSets(ctx, cfg.GetAclSets())
 	ctx.Exit()
 
+	knownIDs := stringset.New(len(cfg.Job) + len(cfg.Trigger))
 	// Jobs.
 	ctx.Enter("job")
 	for _, job := range cfg.Job {
@@ -421,6 +422,9 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 			id = job.Id
 		}
 		ctx.Enter(id)
+		if job.Id != "" && !knownIDs.Add(job.Id) {
+			ctx.Errorf("duplicate id %q", job.Id)
+		}
 		cat.validateJobProto(ctx, job)
 		acl.ValidateTaskACLs(ctx, knownACLSets, job.GetAclSets(), job.GetAcls())
 		ctx.Exit()
@@ -436,6 +440,9 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 			id = trigger.Id
 		}
 		ctx.Enter(id)
+		if trigger.Id != "" && !knownIDs.Add(trigger.Id) {
+			ctx.Errorf("duplicate id %q", trigger.Id)
+		}
 		cat.validateTriggerProto(ctx, trigger, allJobIDs, true)
 		acl.ValidateTaskACLs(ctx, knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
 		ctx.Exit()
