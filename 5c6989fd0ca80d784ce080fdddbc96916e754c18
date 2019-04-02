@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9cbc0db3_66caf477",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T23:16:56Z",
+      "side": 1,
+      "message": "nit: extra newline",
+      "revId": "5c6989fd0ca80d784ce080fdddbc96916e754c18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b817819_867785d5",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 607,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-02T23:16:56Z",
+      "side": 1,
+      "message": "what\u0027s this for?  Doesn\u0027t look necessary.",
+      "range": {
+        "startLine": 607,
+        "startChar": 22,
+        "endLine": 607,
+        "endChar": 39
+      },
+      "revId": "5c6989fd0ca80d784ce080fdddbc96916e754c18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
