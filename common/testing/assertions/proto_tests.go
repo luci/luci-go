@@ -86,3 +86,26 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 		"ShouldResembleProto doesn't know how to handle values of type %T, "+
 			"expecting a proto.Message or a slice of thereof", actual)
 }
+
+// ShouldResembleProtoText is like ShouldResembleProto, but expected
+// is protobuf text.
+// actual must be a message. A slice of messages is not supported.
+func ShouldResembleProtoText(actual interface{}, expected ...interface{}) string {
+	if _, ok := actual.(proto.Message); !ok {
+		return fmt.Sprintf("ShouldResembleProtoText expects a proto message, got %T", actual)
+	}
+
+	if len(expected) != 1 {
+		return fmt.Sprintf("ShouldResembleProtoText expects 1 value, got %d", len(expected))
+	}
+	expText, ok := expected[0].(string)
+	if !ok {
+		return fmt.Sprintf("ShouldResembleProtoText expects a string value, got %T", expected[0])
+	}
+
+	expMsg := reflect.New(reflect.TypeOf(actual).Elem()).Interface().(proto.Message)
+	if err := proto.UnmarshalText(expText, expMsg); err != nil {
+		return err.Error()
+	}
+	return ShouldResembleProto(actual, expMsg)
+}
