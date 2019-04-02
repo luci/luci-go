@@ -22,6 +22,30 @@
       "revId": "92d98bacb7cef958e6e1200ac147689f188ec42c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3cb0a55d_2f7fe70e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-02T23:00:22Z",
+      "side": 1,
+      "message": "Yes, this is not in the API, and this will change once we actually implement support for different kind of \nan executable. This CL only makes minimal API change, so we don\u0027t have to migrate a lot of configs later.",
+      "parentUuid": "9ab06d40_e0a74a47",
+      "range": {
+        "startLine": 194,
+        "startChar": 2,
+        "endLine": 194,
+        "endChar": 12
+      },
+      "revId": "92d98bacb7cef958e6e1200ac147689f188ec42c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
