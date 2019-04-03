@@ -90,7 +90,7 @@ var getRequestFieldMask = &field_mask.FieldMask{
 	},
 }
 
-// dedupInt64s dedups int64s. Reuses the underlying array.
+// dedupInt64s dedups int64s.
 func dedupInt64s(nums []int64) []int64 {
 	seen := make(map[int64]struct{}, len(nums))
 	res := make([]int64, 0, len(nums))
