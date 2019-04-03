@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c0dc7ffc_e06574ec",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-04-03T17:03:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cbc0db3_66caf477",
+      "revId": "5c6989fd0ca80d784ce080fdddbc96916e754c18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0b817819_867785d5",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "5c6989fd0ca80d784ce080fdddbc96916e754c18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8a37967_098a3731",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 607,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-04-03T17:03:06Z",
+      "side": 1,
+      "message": "thanks for paying attention to this!",
+      "parentUuid": "0b817819_867785d5",
+      "range": {
+        "startLine": 607,
+        "startChar": 22,
+        "endLine": 607,
+        "endChar": 39
+      },
+      "revId": "5c6989fd0ca80d784ce080fdddbc96916e754c18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
