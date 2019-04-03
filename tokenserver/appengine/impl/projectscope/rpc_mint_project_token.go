@@ -17,6 +17,8 @@ package projectscope
 import (
 	"context"
 	"fmt"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/server/auth/authdb"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -65,6 +67,9 @@ type MintProjectTokenRPC struct {
 	//
 	// In  prod it is projectscope.persistentIdentityManager
 	ProjectIdentities func(context.Context) projectidentity.Storage
+
+	// LogToken is mocked in tests.
+	LogToken func(context.Context, *MintedTokenInfo) error
 }
 
 // logRequest logs the body of the request.
@@ -177,6 +182,23 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 		AccessToken:         accessTok.AccessToken,
 		Expiry:              google.NewTimestamp(accessTok.Expiry),
 		ServiceVersion:      serviceVer,
+	}
+
+	if r.LogToken != nil {
+		// Errors during logging are considered not fatal. bqlog library has
+		// a monitoring counter that tracks number of errors, so they are not
+		// totally invisible.
+		tokInfo := MintedTokenInfo{
+			Request:      req,
+			Response:     resp,
+			PeerIP:       state.PeerIP(),
+			PeerIdentity: state.PeerIdentity(),
+			RequestID:    info.RequestID(c),
+			AuthDBRev:    authdb.Revision(state.DB()),
+		}
+		if logErr := r.LogToken(c, &tokInfo); logErr != nil {
+			logging.WithError(logErr).Errorf(c, "Failed to insert the delegation token into the BigQuery log")
+		}
 	}
 
 	return resp, nil
