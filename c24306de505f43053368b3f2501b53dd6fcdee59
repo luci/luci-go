@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c8c1930b_25a5f9b2",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 14
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-03T10:26:53Z",
+      "side": 1,
+      "message": "Is this an environment variable. How does executable read LUCI context? Perhaps a link to relevant doc?",
+      "range": {
+        "startLine": 70,
+        "startChar": 5,
+        "endLine": 70,
+        "endChar": 43
+      },
+      "revId": "c24306de505f43053368b3f2501b53dd6fcdee59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b70ae95c_0b79f4d8",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 14
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-03T10:26:53Z",
+      "side": 1,
+      "message": "This seems to describe the LogDog Butler protocol. Can you please add a link to relevant documentation w/ more details? In particular, it\u0027s not clear whether executable needs to set up a TCP connection and send encoded protobufs or whether this is a sequence of HTTP requests. Also not clear how to use all LOGDOG_* environment variables above.",
+      "revId": "c24306de505f43053368b3f2501b53dd6fcdee59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
