@@ -32,13 +32,15 @@ func cmdCancel(p Params) *subcommands.Command {
 			Cancel builds.
 
 			Argument BUILD can be an int64 build id or a string
-			<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
+			<project>/<bucket>/<builder>/<build_number>, e.g.
+			chromium/ci/linux-rel/1.
+			If no build was specified on the command line, they are read
+			from stdin.
 		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &cancelRun{}
 			r.RegisterDefaultFlags(p)
-			r.RegisterJSONFlag()
-			r.buildFieldFlags.Register(&r.Flags)
+			r.RegisterFieldFlags()
 			r.Flags.StringVar(&r.reason, "reason", "", doc(`
 				reason of cancelation in Markdown format; required
 			`))
@@ -48,15 +50,11 @@ func cmdCancel(p Params) *subcommands.Command {
 }
 
 type cancelRun struct {
-	baseCommandRun
-	buildFieldFlags
+	printRun
 	reason string
 }
 
 func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if len(args) == 0 {
-		return 0
-	}
 	ctx := cli.GetContext(a, r, env)
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
@@ -66,24 +64,23 @@ func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommand
 		return r.done(ctx, fmt.Errorf("-reason is required"))
 	}
 
-	buildIDs, err := r.retrieveBuildIDs(ctx, args)
+	// TODO: test presentation
+	fields, err := r.FieldMask()
 	if err != nil {
 		return r.done(ctx, err)
 	}
 
-	req := &pb.BatchRequest{}
-	fields := r.FieldMask()
-	for _, id := range buildIDs {
-		req.Requests = append(req.Requests, &pb.BatchRequest_Request{
-			Request: &pb.BatchRequest_Request_CancelBuild{
-				CancelBuild: &pb.CancelBuildRequest{
-					Id:              id,
-					SummaryMarkdown: r.reason,
-					Fields:          fields,
-				},
-			},
-		})
-	}
+	return r.printAndDone(args, func(arg string) (*pb.Build, error) {
+		id, err := r.retrieveBuildID(ctx, arg)
+		if err != nil {
+			return nil, err
+		}
 
-	return r.batchAndDone(ctx, req)
+		req := &pb.CancelBuildRequest{
+			Id:              id,
+			SummaryMarkdown: r.reason,
+			Fields:          fields,
+		}
+		return r.client.CancelBuild(ctx, req, expectedCodeRPCOption)
+	})
 }
