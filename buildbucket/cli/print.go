@@ -74,11 +74,13 @@ func newPrinter(w io.Writer, disableColor bool, nowFn func() time.Time) *printer
 	return p
 }
 
-func newStdoutPrinter(disableColor bool) *printer {
+func newStdioPrinters(disableColor bool) (stdout, stderr *printer) {
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		disableColor = true
 	}
-	return newPrinter(os.Stdout, disableColor, time.Now)
+	stdout = newPrinter(os.Stdout, disableColor, time.Now)
+	stderr = newPrinter(os.Stderr, disableColor, time.Now)
+	return
 }
 
 // f prints a formatted message. Panics if writing fails.
