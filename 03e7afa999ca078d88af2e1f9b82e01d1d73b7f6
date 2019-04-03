@@ -16,6 +16,24 @@
       "revId": "03e7afa999ca078d88af2e1f9b82e01d1d73b7f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6c78a61_a6dc8042",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-03T02:43:49Z",
+      "side": 1,
+      "message": "you are right, startErr can be non-nil. I\u0027ve added check. In that case, duration is not displayed (but we still need to print blank space)\n\ni think \"ongoing\" is unnecessary. Here is how output looks now\n\n  ...\n  Step \"preprocess_for_goma|start cloudtail\"        SUCCESS   1.5s      Logs: \"stdout\"\n  Step \"compile\"                                    STARTED   1m6s      Logs: \"stdout\"\n  ...\n\nthe status is STARTED and it is yellow. It is clear that it is ongoing.\nAlso it is consistent with milo presentation.",
+      "parentUuid": "c5559438_46ec1444",
+      "revId": "03e7afa999ca078d88af2e1f9b82e01d1d73b7f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
