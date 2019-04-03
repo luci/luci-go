@@ -28,9 +28,6 @@ package git
 import (
 	"context"
 	"net/http"
-	"strings"
-
-	"go.chromium.org/luci/common/logging"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -143,12 +140,7 @@ var _ Client = (*implementation)(nil)
 func (p *implementation) transport(c context.Context) (transport http.RoundTripper, err error) {
 	luciProject, err := ProjectFromContext(c)
 	if err != nil {
-		// TODO(fmatenaar): Remove recovery handler after "context missing luci project" issue
-		// has been resolved.
-		logging.Errorf(c, "PROJECT SCOPED STACK TRACE:\n %s",
-			strings.Join(errors.RenderStack(err), "\n"))
-		logging.Errorf(c, "fallback to AsSelf")
-		return auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+		return nil, err
 	}
 	opts := []auth.RPCOption{
 		auth.WithProject(luciProject),
