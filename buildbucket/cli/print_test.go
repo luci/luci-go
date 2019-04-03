@@ -183,10 +183,10 @@ const expectedBuildPrintedTemplate = `<green>Build 8917899588926498064 SUCCESS  
   },
   "bot_id": "build234-m9"
 }
-<green>Step "first"                                                SUCCESS   58.9ms    Logs: "stdout", "stderr"<reset>
+<green>Step "first"    SUCCESS   58.9ms    Logs: "stdout", "stderr"<reset>
   first summary markdown
   summary second line
-<green>Step "second"                                               SUCCESS   58.9ms    Logs: "stdout", "stderr"<reset>
+<green>Step "second"   SUCCESS   58.9ms    Logs: "stdout", "stderr"<reset>
 `
 
 func TestPrint(t *testing.T) {
@@ -218,7 +218,6 @@ func TestPrint(t *testing.T) {
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/master",
 			})
-			p.tab.Flush()
 
 			So(buf.String(), ShouldEqual, ansi.Color("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master", "white+u"))
 		})
