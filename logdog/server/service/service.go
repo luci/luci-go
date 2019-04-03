@@ -568,10 +568,10 @@ func (s *Service) IntermediateStorage(c context.Context, rw bool) (storage.Stora
 }
 
 // GSClient returns an authenticated Google Storage client instance.
-func (s *Service) GSClient(c context.Context) (gs.Client, error) {
+func (s *Service) GSClient(c context.Context, proj types.ProjectName) (gs.Client, error) {
 	// Get an Authenticator bound to the token scopes that we need for
 	// authenticated Cloud Storage access.
-	transport, err := serverAuth.GetRPCTransport(c, serverAuth.AsSelf, serverAuth.WithScopes(gs.ReadWriteScopes...))
+	transport, err := serverAuth.GetRPCTransport(c, serverAuth.AsProject, serverAuth.WithProject(string(proj)), serverAuth.WithScopes(gs.ReadWriteScopes...))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create authenticated transport for Google Storage client.")
 		return nil, err

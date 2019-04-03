@@ -191,6 +191,9 @@ func TestHandleArchive(t *testing.T) {
 
 		st := memory.Storage{}
 		gsc := testGSClient{}
+		gscFactory := func(context.Context, types.ProjectName) (gs.Client, error) {
+			return &gsc, nil
+		}
 
 		// Set up our test log stream.
 		project := "test-project"
@@ -288,8 +291,8 @@ func TestHandleArchive(t *testing.T) {
 				st.GSStagingBase = gs.Path(fmt.Sprintf("gs://archival-staging/%s/path/to/archive/", proj))
 				return &st, nil
 			},
-			Storage:  &st,
-			GSClient: &gsc,
+			Storage:         &st,
+			GSClientFactory: gscFactory,
 		}
 
 		gsURL := func(project, name string) string {
