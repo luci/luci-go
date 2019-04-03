@@ -28,6 +28,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -106,13 +107,26 @@ func loadStateEntry(c context.Context, jobID, repo string) (*Repository, error) 
 		return entry, transient.Tag.Apply(err)
 	}
 
+	// TODO(crbug/948900): remove legacy ID scheme support.
 	if entry.ID, err = legacyRepositoryID(jobID, repo); err != nil {
 		return nil, err
 	}
-	if err := ds.Get(c, entry); err == ds.ErrNoSuchEntity {
+	switch err := ds.Get(c, entry); {
+	case err == ds.ErrNoSuchEntity:
 		return nil, err
-	} else {
-		return entry, transient.Tag.Apply(err)
+	case err != nil:
+		return nil, transient.Tag.Apply(err)
+	default:
+		logging.Warningf(c, "cbrug/948900 loaded entry with legacyID %q", entry.ID)
+		// try immediately saving the new format. This is racy, ie it's possible
+		// we'll overwrite with older data a record inserted by concurrent
+		// saveStateEntry, but worst case effect would be the same triggers emitted
+		// several times, which is OK as they de-duplicated.
+		entry.ID = id
+		if err := ds.Put(c, entry); err != nil {
+			logging.WithError(err).Warningf(c, "cbrug/948900 failed to save non-legacy entry %q", id)
+		}
+		return entry, nil
 	}
 }
 
@@ -121,6 +135,7 @@ func saveStateEntry(c context.Context, jobID, repo string, compressedBytes []byt
 	if err != nil {
 		return err
 	}
+	// TODO(crbug/948900): remove legacy ID scheme support.
 	legacyID, err := legacyRepositoryID(jobID, repo)
 	if err != nil {
 		return err
@@ -144,7 +159,7 @@ func loadState(c context.Context, jobID, repo string) (map[string]string, error)
 		return nil, err
 
 	case len(stored.References) > 0:
-		// Load old way of storing refs.
+		// TODO(crbug/948900): remove support for loading legacy uncompressed data.
 		refTips := make(map[string]string, len(stored.References))
 		for _, b := range stored.References {
 			refTips[b.Name] = b.Revision
