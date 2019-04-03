@@ -22,6 +22,30 @@
       "revId": "3bd14eff34b1531db6f7fde086ef0c52a17fb2b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c54f2fd7_76c3147d",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-04-03T17:54:48Z",
+      "side": 0,
+      "message": "thanks for bringing this up! Added requivalent tests in rpc_utils_test.go",
+      "parentUuid": "a2c3a08f_22479604",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 130,
+        "endChar": 4
+      },
+      "revId": "3bd14eff34b1531db6f7fde086ef0c52a17fb2b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
