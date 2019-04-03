@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "577cb182_6fbc3796",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-03T07:40:34Z",
+      "side": 1,
+      "message": "this always set now, i believe",
+      "revId": "7b79d969aca9a00e0db98399b2c03ad526c541a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
