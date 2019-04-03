@@ -77,7 +77,7 @@ func stripEmptyDimensions(dims []string) []string {
 // processBuilders parses out all of the builder pools from the Swarmbucket get_builders response,
 // and saves the BuilderPool information into the datastore.
 // It returns a list of PoolDescriptors that needs to be fetched and saved.
-func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApiGetBuildersResponseMessage) ([]model.PoolDescriptor, error) {
+func processBuilders(c context.Context, r *swarmbucketAPI.LegacySwarmbucketApiGetBuildersResponseMessage) ([]model.PoolDescriptor, error) {
 	var builderPools []model.BuilderPool
 	var descriptors []model.PoolDescriptor
 	seen := stringset.New(0)
@@ -92,7 +92,7 @@ func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApi
 			}
 			id := bid.String()
 			dimensions := stripEmptyDimensions(builder.SwarmingDimensions)
-			descriptor := model.NewPoolDescriptor(bucket.SwarmingHostname, dimensions)
+			descriptor := model.NewPoolDescriptor(builder.SwarmingHostname, dimensions)
 			dID := descriptor.PoolID()
 			builderPools = append(builderPools, model.BuilderPool{
 				BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, id),
