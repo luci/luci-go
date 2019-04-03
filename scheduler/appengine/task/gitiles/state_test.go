@@ -78,54 +78,6 @@ func TestLoadSave(t *testing.T) {
 			So(saveState(c, jobID, repo, nested), ShouldBeNil)
 			So(loadNoError(repo), ShouldResemble, nested)
 		})
-
-		Convey("loadState old data and update it", func() {
-			id, err := repositoryID(jobID, repo)
-			So(err, ShouldBeNil)
-			So(ds.Put(c, &Repository{
-				ID:         id,
-				References: []Reference{{Name: "refs/heads/master", Revision: "deadbeef"}},
-			}), ShouldBeNil)
-
-			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master": "deadbeef"})
-			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master2": "beefcafe"}), ShouldBeNil)
-			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master2": "beefcafe"})
-
-			stored := Repository{ID: id}
-			So(ds.Get(c, &stored), ShouldBeNil)
-			So(stored.References, ShouldBeNil)
-		})
-
-		Convey("load fallback to legacy id, saving new one on the fly", func() {
-			legacyID, err := legacyRepositoryID(jobID, repo)
-			So(err, ShouldBeNil)
-			So(ds.Put(c, &Repository{
-				ID:         legacyID,
-				References: []Reference{{Name: "refs/heads/master", Revision: "deadbeef"}},
-			}), ShouldBeNil)
-
-			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master": "deadbeef"})
-			modernID, err := repositoryID(jobID, repo)
-			So(err, ShouldBeNil)
-			storedLegacy := Repository{ID: legacyID}
-			storedModern := Repository{ID: modernID}
-			So(ds.Get(c, &storedLegacy), ShouldBeNil)
-			So(ds.Get(c, &storedModern), ShouldBeNil)
-			So(storedLegacy.CompressedState, ShouldResemble, storedModern.CompressedState)
-		})
-
-		Convey("save puts 2 entries", func() {
-			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), ShouldBeNil)
-			legacyID, err := legacyRepositoryID(jobID, repo)
-			So(err, ShouldBeNil)
-			modernID, err := repositoryID(jobID, repo)
-			So(err, ShouldBeNil)
-			storedLegacy := Repository{ID: legacyID}
-			storedModern := Repository{ID: modernID}
-			So(ds.Get(c, &storedLegacy), ShouldBeNil)
-			So(ds.Get(c, &storedModern), ShouldBeNil)
-			So(storedLegacy.CompressedState, ShouldResemble, storedModern.CompressedState)
-		})
 	})
 }
 
