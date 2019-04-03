@@ -5,11 +5,10 @@ package buildbucketpb
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -130,10 +129,13 @@ func (Trinary) EnumDescriptor() ([]byte, []int) {
 //   $LOGDOG_NAMESPACE, $LOGDOG_STREAM_SERVER_PATH: env variables describing
 //   LogDog context, part of the LogDog Butler protocol.
 //   The executable MAY create logdog streams using these variables.
+//   Read more at https://godoc.org/go.chromium.org/luci/logdog/client/butlerlib/bootstrap
 // - LUCI_CONTEXT["run_build"]["cache_dir"]: a LUCI context value pointing to
 //   the root directory of Swarming named caches.
 //   MAY be on the same file system as CWD.
 //   For example, builder cache is available at "<cache_dir>/builder".
+//   For LUCI Context doc, see
+//   https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md
 //   See also CacheEntry.
 //
 // The executable MUST write "$LOGDOG_NAMESPACE/build.proto" stream using the
