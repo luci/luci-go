@@ -21,7 +21,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"text/tabwriter"
 	"time"
 	"unicode/utf8"
 
@@ -56,9 +55,6 @@ var (
 type printer struct {
 	nowFn func() time.Time
 
-	// used to align lines that have tabs
-	// tab.Flush() must be called before exiting public methods.
-	tab *tabwriter.Writer
 	// used to indent text. printer.f always writes to this writer.
 	indent indented.Writer
 }
@@ -68,12 +64,8 @@ func newPrinter(w io.Writer, disableColor bool, nowFn func() time.Time) *printer
 	// w always points to the stack top.
 
 	p := &printer{nowFn: nowFn}
-	p.tab = tabwriter.NewWriter(w, 0, 1, 4, ' ', 0)
-	w = p.tab
 
 	if disableColor {
-		// note: tabwriter does not like stripwriter,
-		// so strip writer must come after tabwriter.
 		w = &color.StripWriter{Writer: w}
 	}
 
@@ -126,7 +118,6 @@ func (p *printer) JSONPB(pb proto.Message) {
 
 // Build prints b.
 func (p *printer) Build(b *pb.Build) {
-	defer p.tab.Flush()
 	p.f("%sBuild %d ", ansiStatus[b.Status], b.Id)
 	p.fw(10, "%s", b.Status)
 	p.f("'%s/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
@@ -182,9 +173,7 @@ func (p *printer) Build(b *pb.Build) {
 	}
 
 	// Steps
-	for _, s := range b.Steps {
-		p.step(s)
-	}
+	p.steps(b.Steps)
 }
 
 // commit prints c.
@@ -205,39 +194,56 @@ func (p *printer) change(cl *pb.GerritChange) {
 	p.linkf("https://%s/c/%s/+/%d/%d", cl.Host, cl.Project, cl.Change, cl.Patchset)
 }
 
-// step prints s.
-func (p *printer) step(s *pb.Step) {
-	p.f("%s", ansiStatus[s.Status])
-	p.fw(60, "Step %q", s.Name)
-	p.fw(10, "%s", s.Status)
-
-	start, startErr := ptypes.Timestamp(s.StartTime)
-	end, endErr := ptypes.Timestamp(s.EndTime)
-	if startErr == nil && endErr == nil {
-		p.fw(10, "%s", truncateDuration(end.Sub(start)))
-	}
-
-	// Print log names.
-	// Do not print log URLs because they are very long and
-	// bb has `log` subcommand.
-	if len(s.Logs) > 0 {
-		p.f("Logs: ")
-		for i, l := range s.Logs {
-			if i > 0 {
-				p.f(", ")
-			}
-			p.f("%q", l.Name)
+// steps print steps.
+func (p *printer) steps(steps []*pb.Step) {
+	maxNameWidth := 0
+	for _, s := range steps {
+		if w := utf8.RuneCountInString(s.Name); w > maxNameWidth {
+			maxNameWidth = w
 		}
 	}
 
-	p.f("%s\n", ansi.Reset)
+	for _, s := range steps {
+		p.f("%sStep ", ansiStatus[s.Status])
+		p.fw(maxNameWidth+5, "%q", s.Name)
+		p.fw(10, "%s", s.Status)
 
-	p.indent.Level += 2
-	if s.SummaryMarkdown != "" {
-		// TODO(nodir): transform lists of links to look like logs
-		p.summary(s.SummaryMarkdown)
+		// Print duration.
+		durString := ""
+		if start, err := ptypes.Timestamp(s.StartTime); err == nil {
+			var stepDur time.Duration
+			if end, err := ptypes.Timestamp(s.EndTime); err == nil {
+				stepDur = end.Sub(start)
+			} else {
+				now := p.nowFn()
+				stepDur = now.Sub(start.In(now.Location()))
+			}
+			durString = truncateDuration(stepDur).String()
+		}
+		p.fw(10, "%s", durString)
+
+		// Print log names.
+		// Do not print log URLs because they are very long and
+		// bb has `log` subcommand.
+		if len(s.Logs) > 0 {
+			p.f("Logs: ")
+			for i, l := range s.Logs {
+				if i > 0 {
+					p.f(", ")
+				}
+				p.f("%q", l.Name)
+			}
+		}
+
+		p.f("%s\n", ansi.Reset)
+
+		p.indent.Level += 2
+		if s.SummaryMarkdown != "" {
+			// TODO(nodir): transform lists of links to look like logs
+			p.summary(s.SummaryMarkdown)
+		}
+		p.indent.Level -= 2
 	}
-	p.indent.Level -= 2
 }
 
 func (p *printer) buildTime(b *pb.Build) {
