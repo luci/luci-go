@@ -64,6 +64,8 @@ func cmdLS(p Params) *subcommands.Command {
 			r.Flags.BoolVar(&r.includeExperimental, "exp", false, doc(`
 				Print experimental builds too
 			`))
+			r.Flags.Var(StatusFlag(&r.status), "status",
+				fmt.Sprintf("Build status. Valid values: %s.", strings.Join(StatusFlagValues, ", ")))
 			return r
 		},
 	}
@@ -75,6 +77,7 @@ type lsRun struct {
 	clsFlag
 	tagsFlag
 
+	status              pb.Status
 	includeExperimental bool
 }
 
@@ -159,6 +162,7 @@ func (r *lsRun) parseBaseRequest(ctx context.Context) (*pb.SearchBuildsRequest, 
 	ret := &pb.SearchBuildsRequest{
 		Predicate: &pb.BuildPredicate{
 			Tags:                r.Tags(),
+			Status:              r.status,
 			IncludeExperimental: r.includeExperimental,
 		},
 		Fields: r.FieldMask(),

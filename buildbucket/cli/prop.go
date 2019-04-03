@@ -32,7 +32,7 @@ type propertiesFlag struct {
 	explicitlySet stringset.Set
 }
 
-// PropertiesFlag returns a flag.Value that can read property values into props.
+// PropertiesFlag returns a flag.Getter that can read property values into props.
 //
 // If a flag value starts with @, properties are read from the JSON file at the
 // path that follows @. Example:
@@ -47,7 +47,7 @@ type propertiesFlag struct {
 //
 // Panics if props is nil.
 // String() of the return value panics if marshaling of props to JSON fails.
-func PropertiesFlag(props *structpb.Struct) flag.Value {
+func PropertiesFlag(props *structpb.Struct) flag.Getter {
 	if props == nil {
 		panic("props is nil")
 	}
