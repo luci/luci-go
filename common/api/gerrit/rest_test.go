@@ -75,6 +75,15 @@ func TestGetChange(t *testing.T) {
 				Revisions: map[string]*gerritpb.RevisionInfo{
 					"deadbeef": {
 						Number: 1,
+						Ref:    "refs/changes/123",
+						Files: map[string]*gerritpb.FileInfo{
+							"go/to/file.go": {
+								LinesInserted: 32,
+								LinesDeleted:  44,
+								SizeDelta:     -567,
+								Size:          11984,
+							},
+						},
 					},
 				},
 			}
@@ -96,7 +105,16 @@ func TestGetChange(t *testing.T) {
 					"current_revision": "deadbeef",
 					"revisions": {
 						"deadbeef": {
-							"_number": 1
+							"_number": 1,
+							"ref": "refs/changes/123",
+							"files": {
+								"go/to/file.go": {
+									"lines_inserted": 32,
+									"lines_deleted": 44,
+									"size_delta": -567,
+									"size": 11984
+								}
+							}
 						}
 					}
 				}`)

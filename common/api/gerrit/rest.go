@@ -52,6 +52,9 @@ const (
 
 // This file implements Gerrit proto service client
 // on top of Gerrit REST API.
+// WARNING: The returned client is incomplete, so if you want access to
+// a particular field from this API, you may need to update rest.go to add
+// unmarshalling of that field.
 
 // NewRESTClient creates a new Gerrit client based on Gerrit's REST API.
 //
@@ -104,8 +107,17 @@ type changeInfo struct {
 	Revisions       map[string]*revisionInfo `json:"revisions"`
 }
 
+type fileInfo struct {
+	LinesInserted int32 `json:"lines_inserted"`
+	LinesDeleted  int32 `json:"lines_deleted"`
+	SizeDelta     int64 `json:"size_delta"`
+	Size          int64 `json:"size"`
+}
+
 type revisionInfo struct {
-	Number int `json:"_number"`
+	Number int                  `json:"_number"`
+	Ref    string               `json:"ref"`
+	Files  map[string]*fileInfo `json:"files"`
 }
 
 func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
@@ -127,7 +139,23 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 }
 
 func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
-	return &gerritpb.RevisionInfo{Number: int32(ri.Number)}
+	ret := &gerritpb.RevisionInfo{Number: int32(ri.Number), Ref: ri.Ref}
+	if ri.Files != nil {
+		ret.Files = make(map[string]*gerritpb.FileInfo, len(ri.Files))
+		for i, fi := range ri.Files {
+			ret.Files[i] = fi.ToProto()
+		}
+	}
+	return ret
+}
+
+func (fi *fileInfo) ToProto() *gerritpb.FileInfo {
+	return &gerritpb.FileInfo{
+		LinesInserted: fi.LinesInserted,
+		LinesDeleted:  fi.LinesDeleted,
+		SizeDelta:     fi.SizeDelta,
+		Size:          fi.Size,
+	}
 }
 
 func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
