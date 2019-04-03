@@ -96,7 +96,7 @@ func TestLoadSave(t *testing.T) {
 			So(stored.References, ShouldBeNil)
 		})
 
-		Convey("load fallback to legacy id, save to both", func() {
+		Convey("load fallback to legacy id, saving new one on the fly", func() {
 			legacyID, err := legacyRepositoryID(jobID, repo)
 			So(err, ShouldBeNil)
 			So(ds.Put(c, &Repository{
@@ -105,9 +105,19 @@ func TestLoadSave(t *testing.T) {
 			}), ShouldBeNil)
 
 			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master": "deadbeef"})
-			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master2": "beefcafe"}), ShouldBeNil)
-			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master2": "beefcafe"})
+			modernID, err := repositoryID(jobID, repo)
+			So(err, ShouldBeNil)
+			storedLegacy := Repository{ID: legacyID}
+			storedModern := Repository{ID: modernID}
+			So(ds.Get(c, &storedLegacy), ShouldBeNil)
+			So(ds.Get(c, &storedModern), ShouldBeNil)
+			So(storedLegacy.CompressedState, ShouldResemble, storedModern.CompressedState)
+		})
 
+		Convey("save puts 2 entries", func() {
+			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), ShouldBeNil)
+			legacyID, err := legacyRepositoryID(jobID, repo)
+			So(err, ShouldBeNil)
 			modernID, err := repositoryID(jobID, repo)
 			So(err, ShouldBeNil)
 			storedLegacy := Repository{ID: legacyID}
