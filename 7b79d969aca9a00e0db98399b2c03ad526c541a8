@@ -16,6 +16,24 @@
       "revId": "7b79d969aca9a00e0db98399b2c03ad526c541a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e896f15d_d68bf4ed",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-03T18:33:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "577cb182_6fbc3796",
+      "revId": "7b79d969aca9a00e0db98399b2c03ad526c541a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
