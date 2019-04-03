@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "de9e3b52_afe56e8c",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-03T02:52:59Z",
+      "side": 1,
+      "message": "Can\u0027t you just use \"err\" now? It shouldn\u0027t matter that L215\u0027s \"err\" will shadow L213\u0027s.",
+      "range": {
+        "startLine": 213,
+        "startChar": 12,
+        "endLine": 213,
+        "endChar": 20
+      },
+      "revId": "e38a18d84f916e182ab0d210f43dd4f605f3641d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
