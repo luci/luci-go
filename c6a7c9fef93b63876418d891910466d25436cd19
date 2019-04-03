@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "923378f3_0c22f917",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-03T00:40:30Z",
+      "side": 1,
+      "message": "Forgot to resolve this.",
+      "parentUuid": "6c2002a9_e1d7c369",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 11
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7e54793d_9142f1a7",
         "filename": "gce/vmtoken/client/client.go",
         "patchSetId": 1
@@ -399,6 +423,30 @@
       "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "326be228_53c10f05",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-03T00:40:30Z",
+      "side": 1,
+      "message": "I didn\u0027t say GCE Provider endpoints allow anonymous access, I just meant it as an example for why I didn\u0027t think 401 is the right error for invalid tokens. Another example is if a VM presents a valid OAuth2 token for an authorized service account along with an invalid VM token. Returning 401 is debugging the client, we could just return the response they\u0027re authorized to see.\n\nHowever, I see the point about ListSomething, which may begin silently returning different results, so done.",
+      "parentUuid": "f0082871_6f36ae7e",
+      "range": {
+        "startLine": 213,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 79
+      },
+      "revId": "c6a7c9fef93b63876418d891910466d25436cd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
