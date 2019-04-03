@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package roundtripper contains an http.RoundTripper implementation suitable for testing.
+// Package roundtripper contains http.RoundTripper implementations suitable for
+// testing.
 package roundtripper
 
 import (
@@ -21,14 +22,39 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 )
 
+// Ensure *StringRoundTripper implements http.RoundTripper.
+var _ http.RoundTripper = &StringRoundTripper{}
+
+// StringRoundTripper implements http.RoundTripper to handle *http.Requests.
+type StringRoundTripper struct {
+	// Handler is called by RoundTrip.
+	// Returns an HTTP status code and a string to return in an *http.Response.
+	Handler func(*http.Request) (int, string)
+}
+
+// RoundTrip handles an *http.Request, returning an *http.Response with a string
+// body. Panics on error. Implements http.RoundTripper.
+func (t *StringRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	if t.Handler == nil {
+		panic("handler is required")
+	}
+	code, rsp := t.Handler(req)
+	return &http.Response{
+		Body:       ioutil.NopCloser(strings.NewReader(rsp)),
+		StatusCode: code,
+	}, nil
+}
+
 // Ensure *JSONRoundTripper implements http.RoundTripper.
 var _ http.RoundTripper = &JSONRoundTripper{}
 
-// JSONRoundTripper implements http.RoundTripper to handle *http.Requests with a JSON body.
+// JSONRoundTripper implements http.RoundTripper to handle *http.Requests with a
+// JSON body.
 type JSONRoundTripper struct {
 	// Handler is called by RoundTrip with the unmarshalled JSON from an *http.Request.
 	// Returns an HTTP status code and an interface{} to marshal as JSON in an *http.Response.
@@ -38,8 +64,9 @@ type JSONRoundTripper struct {
 	Type reflect.Type
 }
 
-// RoundTrip handles an *http.Request with a JSON body, returning an *http.Response with a JSON body.
-// Panics on error. Implements http.RoundTripper.
+// RoundTrip handles an *http.Request with a JSON body, returning an
+// *http.Response with a JSON body. Panics on error. Implements
+// http.RoundTripper.
 func (t *JSONRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Unmarshal *http.Request.Body.
 	if t.Type == nil {

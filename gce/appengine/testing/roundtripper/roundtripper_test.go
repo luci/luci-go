@@ -15,6 +15,7 @@
 package roundtripper
 
 import (
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
@@ -60,5 +61,25 @@ func TestJSONRoundTripper(t *testing.T) {
 			So(err.(*googleapi.Error).Code, ShouldEqual, http.StatusNotFound)
 			So(rsp, ShouldBeNil)
 		})
+	})
+}
+
+func TestStringRoundTripper(t *testing.T) {
+	t.Parallel()
+
+	Convey("RoundTrip", t, func() {
+		rt := &StringRoundTripper{}
+		cli := &http.Client{Transport: rt}
+		rt.Handler = func(req *http.Request) (int, string) {
+			So(req, ShouldNotBeNil)
+			return http.StatusOK, "test"
+		}
+		rsp, err := cli.Get("https://example.com")
+		So(err, ShouldBeNil)
+		So(rsp, ShouldNotBeNil)
+		So(rsp.StatusCode, ShouldEqual, http.StatusOK)
+		b, err := ioutil.ReadAll(rsp.Body)
+		So(err, ShouldBeNil)
+		So(string(b), ShouldEqual, "test")
 	})
 }

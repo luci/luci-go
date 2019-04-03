@@ -27,6 +27,35 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestMatches(t *testing.T) {
+	t.Parallel()
+
+	Convey("Matches", t, func() {
+		Convey("no payload", func() {
+			c := context.Background()
+			So(Matches(c, "instance", "zone", "project"), ShouldBeFalse)
+		})
+
+		Convey("payload", func() {
+			c := withPayload(context.Background(), &Payload{
+				Instance: "instance",
+				Project:  "project",
+				Zone:     "zone",
+			})
+
+			Convey("mismatch", func() {
+				So(Matches(c, "mismatch", "zone", "project"), ShouldBeFalse)
+				So(Matches(c, "instance", "mismatch", "project"), ShouldBeFalse)
+				So(Matches(c, "instance", "zone", "mismatch"), ShouldBeFalse)
+			})
+
+			Convey("match", func() {
+				So(Matches(c, "instance", "zone", "project"), ShouldBeTrue)
+			})
+		})
+	})
+}
+
 func TestVerify(t *testing.T) {
 	t.Parallel()
 
