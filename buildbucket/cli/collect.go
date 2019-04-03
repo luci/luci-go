@@ -184,6 +184,8 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		return r.done(ctx, err)
 	}
 
+	// TODO(nodir): switch from Batch to concurrent requests.
+	// Delete baseCommandRun.retrieveBuildIDs.
 	buildIDs, err := r.retrieveBuildIDs(ctx, args)
 	if err != nil {
 		return r.done(ctx, err)

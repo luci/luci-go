@@ -36,7 +36,10 @@ func cmdAdd(p Params) *subcommands.Command {
 		LongDesc: doc(`
 			Add a build for each BUILDER argument.
 
-			A BUILDER must have format "<project>/<bucket>/<builder>", for example "chromium/try/linux-rel".
+			A BUILDER must have format "<project>/<bucket>/<builder>", for
+			example "chromium/try/linux-rel".
+			If no builders were specified on the command line, they are read
+			from stdin.
 
 			Example: add linux-rel and mac-rel builds to chromium/ci bucket using Shell expansion.
 				bb add chromium/ci/{linux-rel,mac-rel}
@@ -44,29 +47,28 @@ func cmdAdd(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &addRun{}
 			r.RegisterDefaultFlags(p)
-			r.RegisterJSONFlag()
 
 			r.clsFlag.Register(&r.Flags, doc(`
 				CL URL as input for the builds. Can be specified multiple times.
 
 				Example: add a linux-rel tryjob for CL 1539021
-					bb add -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1 chromium/try/linux-rel
+					bb add chromium/try/linux-rel -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1
 			`))
 			r.commitFlag.Register(&r.Flags, doc(`
 				Commit URL as input to the builds.
 
 				Example: build a specific revision
-					bb add -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9 chromium/ci/linux-rel
+					bb add chromium/ci/linux-rel -commit https://chromium.googlesource.com/chromium/src/+/7dab11d0e282bfa1d6f65cc52195f9602921d5b9
 
 				Example: build latest chromium/src revision
-					bb add -commit https://chromium.googlesource.com/chromium/src/+/master chromium/ci/linux-rel
+					bb add chromium/ci/linux-rel -commit https://chromium.googlesource.com/chromium/src/+/master
 			`))
 			r.Flags.StringVar(&r.ref, "ref", "refs/heads/master", "Git ref for the -commit that specifies a commit hash.")
 			r.tagsFlag.Register(&r.Flags, doc(`
 				Build tags. Can be specified multiple times.
 
 				Example: add a build with tags "a:1" and "b:2".
-					bb add -t a:1 -t b:2 chromium/try/linux-rel
+					bb add chromium/try/linux-rel -t a:1 -t b:2
 			`))
 			r.Flags.BoolVar(&r.experimental, "exp", false, doc(`
 				Mark the builds as experimental
@@ -91,7 +93,7 @@ func cmdAdd(p Params) *subcommands.Command {
 }
 
 type addRun struct {
-	baseCommandRun
+	printRun
 	clsFlag
 	commitFlag
 	tagsFlag
@@ -102,10 +104,6 @@ type addRun struct {
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if len(args) == 0 {
-		return 0
-	}
-
 	ctx := cli.GetContext(a, r, env)
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
@@ -116,22 +114,19 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	req := &pb.BatchRequest{}
-	for i, a := range args {
-		schedReq := proto.Clone(baseReq).(*pb.ScheduleBuildRequest)
-		schedReq.RequestId += fmt.Sprintf("-%d", i)
+	i := 0
+	return r.printAndDone(args, func(builder string) (*pb.Build, error) {
+		i++
+		req := proto.Clone(baseReq).(*pb.ScheduleBuildRequest)
+		req.RequestId += fmt.Sprintf("-%d", i)
 
 		var err error
-		schedReq.Builder, err = protoutil.ParseBuilderID(a)
+		req.Builder, err = protoutil.ParseBuilderID(builder)
 		if err != nil {
-			return r.done(ctx, fmt.Errorf("invalid builder %q: %s", a, err))
+			return nil, err
 		}
-		req.Requests = append(req.Requests, &pb.BatchRequest_Request{
-			Request: &pb.BatchRequest_Request_ScheduleBuild{ScheduleBuild: schedReq},
-		})
-	}
-
-	return r.batchAndDone(ctx, req)
+		return r.client.ScheduleBuild(ctx, req, expectedCodeRPCOption)
+	})
 }
 
 func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildRequest, error) {
