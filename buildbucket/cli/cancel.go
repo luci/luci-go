@@ -58,6 +58,9 @@ func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommand
 		return 0
 	}
 	ctx := cli.GetContext(a, r, env)
+	if err := r.initClients(ctx); err != nil {
+		return r.done(ctx, err)
+	}
 
 	if r.reason == "" {
 		return r.done(ctx, fmt.Errorf("-reason is required"))
