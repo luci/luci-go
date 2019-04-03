@@ -47,21 +47,23 @@ func TestPools(t *testing.T) {
 		})
 		dim1 := []string{"egg:white", "pants:green"}
 		dim2 := []string{"egg:blue", "pants:green"}
-		getBuilderMsg := &swarmbucket.SwarmingSwarmbucketApiGetBuildersResponseMessage{
-			Buckets: []*swarmbucket.SwarmingSwarmbucketApiBucketMessage{
+		getBuilderMsg := &swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage{
+			Buckets: []*swarmbucket.LegacySwarmbucketApiBucketMessage{
 				{
-					SwarmingHostname: "swarming.example.com",
-					Name:             "luci.infra.foobucket",
-					Builders: []*swarmbucket.SwarmingSwarmbucketApiBuilderMessage{
+					Name: "luci.infra.foobucket",
+					Builders: []*swarmbucket.LegacySwarmbucketApiBuilderMessage{
 						{
+							SwarmingHostname:   "swarming.example.com",
 							Name:               "foobuilder",
 							SwarmingDimensions: dim1,
 						},
 						{
+							SwarmingHostname:   "swarming.example.com",
 							Name:               "foobuilder2",
 							SwarmingDimensions: dim1,
 						},
 						{
+							SwarmingHostname:   "swarming.example.com",
 							Name:               "foobuilder3",
 							SwarmingDimensions: dim2,
 						},

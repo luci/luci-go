@@ -33,7 +33,7 @@
       },
       "path": "builders",
       "response": {
-        "$ref": "SwarmingSwarmbucketApiGetBuildersResponseMessage"
+        "$ref": "LegacySwarmbucketApiGetBuildersResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -45,11 +45,11 @@
       "id": "swarmbucket.get_task_def",
       "path": "get_task_def",
       "request": {
-        "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
+        "$ref": "LegacySwarmbucketApiGetTaskDefinitionRequestMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage"
+        "$ref": "LegacySwarmbucketApiGetTaskDefinitionResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -61,7 +61,7 @@
       "id": "swarmbucket.set_next_build_number",
       "path": "set_next_build_number",
       "request": {
-        "$ref": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
+        "$ref": "LegacySwarmbucketApiSetNextBuildNumberRequest",
         "parameterName": "resource"
       },
       "scopes": [
@@ -118,8 +118,8 @@
   "protocol": "rest",
   "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
   "schemas": {
-    "ApiPubSubCallbackMessage": {
-      "id": "ApiPubSubCallbackMessage",
+    "LegacyApiPubSubCallbackMessage": {
+      "id": "LegacyApiPubSubCallbackMessage",
       "properties": {
         "auth_token": {
           "type": "string"
@@ -134,8 +134,8 @@
       },
       "type": "object"
     },
-    "ApiPutRequestMessage": {
-      "id": "ApiPutRequestMessage",
+    "LegacyApiPutRequestMessage": {
+      "id": "LegacyApiPutRequestMessage",
       "properties": {
         "bucket": {
           "required": true,
@@ -168,7 +168,7 @@
           "type": "string"
         },
         "pubsub_callback": {
-          "$ref": "ApiPubSubCallbackMessage"
+          "$ref": "LegacyApiPubSubCallbackMessage"
         },
         "tags": {
           "items": {
@@ -179,12 +179,12 @@
       },
       "type": "object"
     },
-    "SwarmingSwarmbucketApiBucketMessage": {
-      "id": "SwarmingSwarmbucketApiBucketMessage",
+    "LegacySwarmbucketApiBucketMessage": {
+      "id": "LegacySwarmbucketApiBucketMessage",
       "properties": {
         "builders": {
           "items": {
-            "$ref": "SwarmingSwarmbucketApiBuilderMessage"
+            "$ref": "LegacySwarmbucketApiBuilderMessage"
           },
           "type": "array"
         },
@@ -197,8 +197,8 @@
       },
       "type": "object"
     },
-    "SwarmingSwarmbucketApiBuilderMessage": {
-      "id": "SwarmingSwarmbucketApiBuilderMessage",
+    "LegacySwarmbucketApiBuilderMessage": {
+      "id": "LegacySwarmbucketApiBuilderMessage",
       "properties": {
         "category": {
           "type": "string"
@@ -214,34 +214,37 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "swarming_hostname": {
+          "type": "string"
         }
       },
       "type": "object"
     },
-    "SwarmingSwarmbucketApiGetBuildersResponseMessage": {
-      "id": "SwarmingSwarmbucketApiGetBuildersResponseMessage",
+    "LegacySwarmbucketApiGetBuildersResponseMessage": {
+      "id": "LegacySwarmbucketApiGetBuildersResponseMessage",
       "properties": {
         "buckets": {
           "items": {
-            "$ref": "SwarmingSwarmbucketApiBucketMessage"
+            "$ref": "LegacySwarmbucketApiBucketMessage"
           },
           "type": "array"
         }
       },
       "type": "object"
     },
-    "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage": {
-      "id": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
+    "LegacySwarmbucketApiGetTaskDefinitionRequestMessage": {
+      "id": "LegacySwarmbucketApiGetTaskDefinitionRequestMessage",
       "properties": {
         "build_request": {
-          "$ref": "ApiPutRequestMessage",
+          "$ref": "LegacyApiPutRequestMessage",
           "required": true
         }
       },
       "type": "object"
     },
-    "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage": {
-      "id": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage",
+    "LegacySwarmbucketApiGetTaskDefinitionResponseMessage": {
+      "id": "LegacySwarmbucketApiGetTaskDefinitionResponseMessage",
       "properties": {
         "swarming_host": {
           "type": "string"
@@ -252,8 +255,8 @@
       },
       "type": "object"
     },
-    "SwarmingSwarmbucketApiSetNextBuildNumberRequest": {
-      "id": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
+    "LegacySwarmbucketApiSetNextBuildNumberRequest": {
+      "id": "LegacySwarmbucketApiSetNextBuildNumberRequest",
       "properties": {
         "bucket": {
           "required": true,

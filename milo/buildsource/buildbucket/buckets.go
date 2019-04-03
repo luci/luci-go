@@ -32,7 +32,7 @@ import (
 )
 
 // GetBuilders returns all Swarmbucket builders, cached for current identity.
-func GetBuilders(c context.Context) (*swarmbucket.SwarmingSwarmbucketApiGetBuildersResponseMessage, error) {
+func GetBuilders(c context.Context) (*swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage, error) {
 	host := common.GetSettings(c).GetBuildbucket().GetHost()
 	if host == "" {
 		return nil, errors.New("buildbucket host is missing in config")
@@ -40,14 +40,14 @@ func GetBuilders(c context.Context) (*swarmbucket.SwarmingSwarmbucketApiGetBuild
 	return getBuilders(c, host)
 }
 
-func getBuilders(c context.Context, host string) (*swarmbucket.SwarmingSwarmbucketApiGetBuildersResponseMessage, error) {
+func getBuilders(c context.Context, host string) (*swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage, error) {
 	mc := memcache.NewItem(c, fmt.Sprintf("swarmbucket-builders-%q-%q", host, auth.CurrentIdentity(c)))
 	switch err := memcache.Get(c, mc); {
 	case err == memcache.ErrCacheMiss:
 	case err != nil:
 		logging.WithError(err).Warningf(c, "memcache.get failed while loading swarmbucket builders")
 	default:
-		var res swarmbucket.SwarmingSwarmbucketApiGetBuildersResponseMessage
+		var res swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage
 		if err := json.Unmarshal(mc.Value(), &res); err != nil {
 			logging.WithError(err).Warningf(c, "corrupted swarmbucket builders cache")
 		} else {
