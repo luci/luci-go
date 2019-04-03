@@ -98,17 +98,8 @@ func validateBuilder(c *validation.Context, cfgBuilder *notifypb.Builder, builde
 	}
 }
 
-// validateNotifier is a helper function for validateConfig which validates
-// a Notifier.
-func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, notifierNames, builderNames stringset.Set) {
-	switch {
-	case cfgNotifier.Name == "":
-		c.Errorf(requiredFieldError, "name")
-	case !notifierNameRegexp.MatchString(cfgNotifier.Name):
-		c.Errorf(invalidFieldError, "name")
-	case !notifierNames.Add(cfgNotifier.Name):
-		c.Errorf(uniqueFieldError, "name", "project")
-	}
+// validateNotifier validates a Notifier.
+func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, builderNames stringset.Set) {
 	for i, cfgNotification := range cfgNotifier.Notifications {
 		c.Enter("notification #%d", i+1)
 		validateNotification(c, cfgNotification)
@@ -124,11 +115,10 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, not
 // validateProjectConfig returns an error if the configuration violates any of the
 // requirements in the proto definition.
 func validateProjectConfig(ctx *validation.Context, projectCfg *notifypb.ProjectConfig) {
-	notifierNames := stringset.New(len(projectCfg.Notifiers))
 	builderNames := stringset.New(len(projectCfg.Notifiers)) // At least one builder per notifier
 	for i, cfgNotifier := range projectCfg.Notifiers {
 		ctx.Enter("notifier #%d", i+1)
-		validateNotifier(ctx, cfgNotifier, notifierNames, builderNames)
+		validateNotifier(ctx, cfgNotifier, builderNames)
 		ctx.Exit()
 	}
 }

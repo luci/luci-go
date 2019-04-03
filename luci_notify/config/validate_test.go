@@ -50,23 +50,6 @@ func TestValidation(t *testing.T) {
 		}
 		testValidation(`empty`, ``, "")
 
-		testValidation(`notifier missing name`, `notifiers {}`, requiredFieldError, "name")
-
-		testValidation(`notifier bad name`, `
-			notifiers {
-				name: "A_fnbA*G2n"
-			}`,
-			invalidFieldError, "name")
-
-		testValidation(`notifier dup name`, `
-			notifiers {
-				name: "good-name"
-			}
-			notifiers {
-				name: "good-name"
-			}`,
-			uniqueFieldError, "name", "project")
-
 		testValidation(`builder missing name`, `
 			notifiers {
 				name: "good-name"
