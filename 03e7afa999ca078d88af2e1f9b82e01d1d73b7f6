@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c5559438_46ec1444",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-03T02:22:10Z",
+      "side": 1,
+      "message": "I assume this else block is for steps that are ongoing (hence now in place of end). If so, consider p.fw(10, \"%s (ongoing)\", now.Sub(...)) or similar.\n\nCan ptypes.Timestamp fail on the start time only? If it can, then you may be using some weird time like the zero time for this subtraction. If it\u0027s impossible or irrelevant, add a comment explaining why, otherwise consider something like:\n\nif s.StartTime is specified:\n  start, err :\u003d ptypes.Timestamp(s.StartTime)\n  if err !\u003d nil:\n    panic(err)\n  if s.EndTime is specified:\n    end, err :\u003d ptypes.Timestamp(s.EndTime)\n    if err !\u003d nil:\n      panic(err)\n    p.fw(10, \"%s\", end.Sub(start))\n  else:\n    now :\u003d p.nowFn()\n    p.fw(10, \"%s (ongoing)\", now.Sub(...))",
+      "revId": "03e7afa999ca078d88af2e1f9b82e01d1d73b7f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
