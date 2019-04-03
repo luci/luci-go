@@ -83,7 +83,7 @@ type BotPool struct {
 	Descriptor PoolDescriptor
 
 	// Bots is a slice of bots in the pool, along with their statuses.
-	Bots []Bot
+	Bots []Bot `gae:",noindex"`
 
 	// LastUpdate is when this entity was last updated.
 	LastUpdate time.Time
