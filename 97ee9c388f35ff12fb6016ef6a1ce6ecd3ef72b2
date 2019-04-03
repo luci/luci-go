@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1fde365f_420080b7",
+        "filename": "buildbucket/cmd/bb/collect.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-03T10:49:49Z",
+      "side": 1,
+      "message": "This is not accurate anymore.",
+      "range": {
+        "startLine": 89,
+        "startChar": 30,
+        "endLine": 89,
+        "endChar": 58
+      },
+      "revId": "97ee9c388f35ff12fb6016ef6a1ce6ecd3ef72b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

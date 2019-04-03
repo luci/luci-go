@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "587b322b_bce8a010",
+        "filename": "buildbucket/client/cmd/buildbucket/collect.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-03T10:49:49Z",
+      "side": 1,
+      "message": "Ah, 0 bytes is even better.",
+      "parentUuid": "d934b44c_ec63048b",
+      "range": {
+        "startLine": 92,
+        "startChar": 13,
+        "endLine": 92,
+        "endChar": 23
+      },
+      "revId": "499a726fc8ac7acb8fa35ee16924d35145d8930a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0200fa92_de2f50e4",
         "filename": "buildbucket/client/cmd/buildbucket/collect.go",
         "patchSetId": 7
