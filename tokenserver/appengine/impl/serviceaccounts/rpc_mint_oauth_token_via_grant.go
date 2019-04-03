@@ -1,6 +1,16 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package serviceaccounts
 
@@ -26,30 +36,9 @@ import (
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
-)
-
-const (
-	// Maximum allowed value for a duration conveyed via 'min_validity_duration'
-	// field in MintOAuthTokenViaGrant RPC call.
-	//
-	// We restrict it because setting values close to 1h reduces effectiveness of
-	// the OAuth token cache (maintained by the token server). For example, if
-	// the client requests a token with min_validity_duration 59 min, we can reuse
-	// cached tokens generated only within last minute. All older tokens will be
-	// considered too old for this client.
-	//
-	// It is assumed that clients are calling MintOAuthTokenViaGrant right before
-	// an OAuth token is needed (instead of preparing tokens far in advance). This
-	// permits usage of small 'min_validity_duration' (on order of minutes), which
-	// is good for the cache effectiveness.
-	maxAllowedMinValidityDuration = 30 * time.Minute
-
-	// A value for minimal returned token lifetime if 'min_validity_duration'
-	// field is not specified in the request.
-	defaultMinValidityDuration = 5 * time.Minute
 )
 
 // MintOAuthTokenViaGrantRPC implements TokenMinter.MintOAuthTokenViaGrant
@@ -88,21 +77,29 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 		return nil, status.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
 	}
 
+	// Prevent GrantToken from leaking into the logs.
+	reqcpy := *req
+	if reqcpy.GrantToken != "" {
+		reqcpy.GrantToken = "..."
+	}
+	utils.LogRequest(c, r, &reqcpy, callerID)
+
+	if err := utils.ValidateAndNormalizeRequest(c, req.OauthScope, &req.MinValidityDuration, req.AuditTags); err != nil {
+		if status.Code(err) == codes.Unknown {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid request: %q", err)
+		}
+		return nil, err
+	}
 	grantBody, rule, err := r.validateRequest(c, req, callerID)
 	if err != nil {
-		return nil, err // the error is already logged
+		// err was already logged.
+		return nil, err
 	}
 
-	// Now that the request is verified, use parameters contained there to
-	// generate the requested OAuth token.
-	minValidityDuration := time.Duration(req.MinValidityDuration) * time.Second
-	if minValidityDuration == 0 {
-		minValidityDuration = defaultMinValidityDuration
-	}
 	accessTok, err := r.MintAccessToken(c, auth.MintAccessTokenParams{
 		ServiceAccount: grantBody.ServiceAccount,
 		Scopes:         req.OauthScope,
-		MinTTL:         minValidityDuration,
+		MinTTL:         time.Duration(req.MinValidityDuration) * time.Second,
 	})
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to mint oauth token for %q", grantBody.ServiceAccount)
@@ -156,15 +153,6 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 // Logs and returns verified deserialized token body and corresponding rule on
 // success or a grpc error on error.
 func (r *MintOAuthTokenViaGrantRPC) validateRequest(c context.Context, req *minter.MintOAuthTokenViaGrantRequest, caller identity.Identity) (*tokenserver.OAuthTokenGrantBody, *Rule, error) {
-	// Log everything but the token. It'll be logged later after base64 decoding.
-	r.logRequest(c, req, caller)
-
-	// Reject obviously bad requests.
-	if err := r.checkRequestFormat(req); err != nil {
-		logging.WithError(err).Errorf(c, "Bad request")
-		return nil, nil, status.Errorf(codes.InvalidArgument, "bad request - %s", err)
-	}
-
 	// Grab the token body, if it is valid.
 	grantBody, err := r.decodeAndValidateToken(c, req.GrantToken)
 	if err != nil {
@@ -193,39 +181,6 @@ func (r *MintOAuthTokenViaGrantRPC) validateRequest(c context.Context, req *mint
 	}
 
 	return grantBody, rule, nil
-}
-
-// logRequest logs the body of the request, omitting the grant token.
-//
-// The token is logged later after base64 decoding.
-func (r *MintOAuthTokenViaGrantRPC) logRequest(c context.Context, req *minter.MintOAuthTokenViaGrantRequest, caller identity.Identity) {
-	if !logging.IsLogging(c, logging.Debug) {
-		return
-	}
-	cpy := *req
-	if cpy.GrantToken != "" {
-		cpy.GrantToken = "..."
-	}
-	m := jsonpb.Marshaler{Indent: "  "}
-	dump, _ := m.MarshalToString(&cpy)
-	logging.Debugf(c, "Identity: %s", caller)
-	logging.Debugf(c, "MintOAuthTokenViaGrant:\n%s", dump)
-}
-
-// checkRequestFormat returns an error if the request is obviously wrong.
-func (r *MintOAuthTokenViaGrantRPC) checkRequestFormat(req *minter.MintOAuthTokenViaGrantRequest) error {
-	switch minDur := time.Duration(req.MinValidityDuration) * time.Second; {
-	case minDur < 0:
-		return fmt.Errorf("min_validity_duration must be positive")
-	case minDur > maxAllowedMinValidityDuration:
-		return fmt.Errorf("min_validity_duration must not exceed %d", maxAllowedMinValidityDuration/time.Second)
-	case len(req.OauthScope) == 0:
-		return fmt.Errorf("oauth_scope is required")
-	}
-	if err := utils.ValidateTags(req.AuditTags); err != nil {
-		return fmt.Errorf("bad audit_tags - %s", err)
-	}
-	return nil
 }
 
 // decodeAndValidateToken checks the token signature, expiration time and
@@ -287,4 +242,9 @@ func (r *MintOAuthTokenViaGrantRPC) recheckRules(c context.Context, grantBody *t
 		Proxy:          identity.Identity(grantBody.Proxy),
 		EndUser:        identity.Identity(grantBody.EndUser),
 	})
+}
+
+// Name implements utils.RPC interface.
+func (r *MintOAuthTokenViaGrantRPC) Name() string {
+	return "MintOAuthTokenViaGrantRPC"
 }
