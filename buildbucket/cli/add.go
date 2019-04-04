@@ -36,7 +36,10 @@ func cmdAdd(p Params) *subcommands.Command {
 		LongDesc: doc(`
 			Add a build for each BUILDER argument.
 
-			A BUILDER must have format "<project>/<bucket>/<builder>", for example "chromium/try/linux-rel".
+			A BUILDER must have format "<project>/<bucket>/<builder>", for
+			example "chromium/try/linux-rel".
+			If no builders were specified on the command line, they are read
+			from stdin.
 
 			Example: add linux-rel and mac-rel builds to chromium/ci bucket using Shell expansion.
 				bb add chromium/ci/{linux-rel,mac-rel}
@@ -44,7 +47,6 @@ func cmdAdd(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &addRun{}
 			r.RegisterDefaultFlags(p)
-			r.RegisterJSONFlag()
 
 			r.clsFlag.Register(&r.Flags, doc(`
 				CL URL as input for the builds. Can be specified multiple times.
@@ -91,7 +93,7 @@ func cmdAdd(p Params) *subcommands.Command {
 }
 
 type addRun struct {
-	baseCommandRun
+	printRun
 	clsFlag
 	commitFlag
 	tagsFlag
@@ -102,10 +104,6 @@ type addRun struct {
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if len(args) == 0 {
-		return 0
-	}
-
 	ctx := cli.GetContext(a, r, env)
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
@@ -116,22 +114,19 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	req := &pb.BatchRequest{}
-	for i, a := range args {
-		schedReq := proto.Clone(baseReq).(*pb.ScheduleBuildRequest)
-		schedReq.RequestId += fmt.Sprintf("-%d", i)
+	i := 0
+	return r.PrintAndDone(args, func(builder string) (*pb.Build, error) {
+		i++
+		req := proto.Clone(baseReq).(*pb.ScheduleBuildRequest)
+		req.RequestId += fmt.Sprintf("-%d", i)
 
 		var err error
-		schedReq.Builder, err = protoutil.ParseBuilderID(a)
+		req.Builder, err = protoutil.ParseBuilderID(builder)
 		if err != nil {
-			return r.done(ctx, fmt.Errorf("invalid builder %q: %s", a, err))
+			return nil, err
 		}
-		req.Requests = append(req.Requests, &pb.BatchRequest_Request{
-			Request: &pb.BatchRequest_Request_ScheduleBuild{ScheduleBuild: schedReq},
-		})
-	}
-
-	return r.batchAndDone(ctx, req)
+		return r.client.ScheduleBuild(ctx, req, expectedCodeRPCOption)
+	})
 }
 
 func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildRequest, error) {
