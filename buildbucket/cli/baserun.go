@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/maruel/subcommands"
@@ -37,10 +36,15 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+var expectedCodeRPCOption = prpc.ExpectedCode(
+	codes.InvalidArgument, codes.NotFound, codes.PermissionDenied)
+
 func doc(doc string) string {
 	return text.Doc(doc)
 }
 
+// baseCommandRun provides common command run functionality.
+// All bb subcommands must embed it directly or indirectly.
 type baseCommandRun struct {
 	subcommands.CommandRunBase
 	authFlags authcli.Flags
@@ -64,9 +68,9 @@ func (r *baseCommandRun) RegisterDefaultFlags(p Params) {
 
 func (r *baseCommandRun) RegisterJSONFlag() {
 	r.Flags.BoolVar(&r.json, "json", false, doc(`
-		Print objects JSON format, one after another (not an array).
+		Print objects in JSON format, one after another (not an array).
 
-		Designed for "jq" tool. If using bb from scripts, consider "batch" subcommand.
+		Intended for "jq" tool. If using bb from scripts, consider "batch" subcommand.
 	`))
 }
 
@@ -104,74 +108,6 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		Options: rpcOpts,
 	})
 	return nil
-}
-
-// batchAndDone executes req and prints the response.
-func (r *baseCommandRun) batchAndDone(ctx context.Context, req *pb.BatchRequest) int {
-	res, err := r.client.Batch(ctx, req)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	stderr := func(format string, args ...interface{}) {
-		fmt.Fprintf(os.Stderr, format, args...)
-	}
-
-	hasErr := false
-	p := newStdoutPrinter(r.noColor)
-	for i, res := range res.Responses {
-		var build *pb.Build
-		switch res := res.Response.(type) {
-
-		case *pb.BatchResponse_Response_Error:
-			hasErr = true
-
-			// If we have multiple requests, print a request title.
-			if len(req.Requests) > 1 {
-				switch req := req.Requests[i].Request.(type) {
-				case *pb.BatchRequest_Request_GetBuild:
-					r := req.GetBuild
-					if r.Id != 0 {
-						stderr("build %d", r.Id)
-					} else {
-						stderr(`build "%s/%d"`, protoutil.FormatBuilderID(r.Builder), r.BuildNumber)
-					}
-
-				case *pb.BatchRequest_Request_CancelBuild:
-					stderr("build %d", req.CancelBuild.Id)
-
-				default:
-					stderr("request #%d", i)
-				}
-				stderr(": ")
-			}
-
-			stderr("%s\n", res.Error.Message)
-			continue
-
-		case *pb.BatchResponse_Response_GetBuild:
-			build = res.GetBuild
-		case *pb.BatchResponse_Response_CancelBuild:
-			build = res.CancelBuild
-		case *pb.BatchResponse_Response_ScheduleBuild:
-			build = res.ScheduleBuild
-		default:
-			panic("forgot to update batchAndDone()?")
-		}
-
-		if r.json {
-			p.JSONPB(build)
-		} else {
-			if i > 0 {
-				p.f("\n")
-			}
-			p.Build(build)
-		}
-	}
-	if hasErr {
-		return 1
-	}
-	return 0
 }
 
 func (r *baseCommandRun) done(ctx context.Context, err error) int {
@@ -231,4 +167,23 @@ func retrieveBuildIDs(builds []string, callBatch func(*pb.BatchRequest) (*pb.Bat
 		}
 	}
 	return buildIDs, nil
+}
+
+// retrieveBuildID converts a build string into a build id.
+// May make a GetBuild RPC.
+func (r *baseCommandRun) retrieveBuildID(ctx context.Context, build string) (int64, error) {
+	getBuild, err := protoutil.ParseGetBuildRequest(build)
+	if err != nil {
+		return 0, err
+	}
+
+	if getBuild.Id != 0 {
+		return getBuild.Id, nil
+	}
+
+	res, err := r.client.GetBuild(ctx, getBuild)
+	if err != nil {
+		return 0, err
+	}
+	return res.Id, nil
 }
