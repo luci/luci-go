@@ -10,3 +10,6 @@ queue:
 
 - name: bqlog-oauth-tokens
   mode: pull
+
+- name: bqlog-project-tokens
+  mode: pull
