@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/datastore"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -47,6 +48,23 @@ func TestLoadSave(t *testing.T) {
 			}
 			return r
 		}
+
+		Convey("convert remaining legacy entities", func() {
+			lID1, _ := legacyRepositoryID("proj1/job1", repo)
+			lID2, _ := legacyRepositoryID("proj2/job2", repo)
+			mID1, _ := repositoryID("proj1/job1", repo)
+			mID2, _ := repositoryID("proj2/job2", repo)
+			l1 := Repository{ID: lID1, CompressedState: []byte(`blah1`)}
+			m1 := Repository{ID: mID1, CompressedState: []byte(`blah1`)}
+			l2 := Repository{ID: lID2, CompressedState: []byte(`blah2`)}
+			So(ds.Put(c, &l1, &m1, &l2), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			So(upgradeLegacyCrbug948900(c), ShouldBeNil)
+			m2 := Repository{ID: mID2}
+			So(ds.Get(c, &m2), ShouldBeNil)
+			So(m2.CompressedState, ShouldResemble, l2.CompressedState)
+		})
 
 		Convey("load first time ever", func() {
 			So(loadNoError(repo), ShouldResemble, map[string]string{})

@@ -220,6 +220,9 @@ func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnl
 		return nil, err
 	}
 
+	// TODO(tandrii): remove this hack once executed, see crbug/948900
+	_ = upgradeLegacyCrbug948900(c)
+
 	refs, err := m.fetchRefsState(c, ctl, cfg, g)
 	if err != nil {
 		ctl.DebugLog("Error fetching state of the world: %s", err)

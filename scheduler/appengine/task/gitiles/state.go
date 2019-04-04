@@ -28,8 +28,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
@@ -78,6 +80,46 @@ type Repository struct {
 	// CompressedState stores gzip-compressed proto-serialized list of watched
 	// refs with hashes of their tips.
 	CompressedState []byte `gae:",noindex"`
+}
+
+func upgradeLegacyCrbug948900(c context.Context) error {
+	var rs []*Repository
+	q := ds.NewQuery("gitiles.Repository").KeysOnly(true)
+	if err := ds.GetAll(c, q, &rs); err != nil {
+		return err
+	}
+	ids := stringset.New(len(rs))
+	for _, r := range rs {
+		ids.Add(r.ID)
+	}
+	return parallel.WorkPool(10, func(work chan<- func() error) {
+		for _, r := range rs {
+			if parts := strings.SplitN(r.ID, ":", 2); len(parts) == 2 {
+				jobID, repo := parts[0], parts[1]
+				r := r
+				work <- func() error {
+					if expID, err := legacyRepositoryID(jobID, repo); err != nil || expID != r.ID {
+						logging.Warningf(c, "irreversable ID %q != %q err %s", r.ID, expID, err)
+						return err
+					}
+					modernID, err := repositoryID(jobID, repo)
+					if err != nil {
+						logging.WithError(err).Warningf(c, "unconvertable ID %q", r.ID)
+						return err
+					}
+					if ids.Has(modernID) {
+						// already converted.
+						return nil
+					}
+					if _, err = loadStateEntry(c, jobID, repo); err != nil {
+						logging.WithError(err).Warningf(c, "failed to migrate %q to %q", r.ID, modernID)
+						return err
+					}
+					return nil
+				}
+			}
+		}
+	})
 }
 
 func legacyRepositoryID(jobID, repo string) (string, error) {
