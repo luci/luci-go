@@ -30,7 +30,7 @@ def _to_jsonpb(msg, emit_defaults=False):
 
   Args:
     msg: a proto message to serialize. Required.
-    emit_defaults: if True, do not omit fields with default values.
+    emit_defaults: if True, include proto default values in the output.
   """
 
 
