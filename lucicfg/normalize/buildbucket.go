@@ -26,7 +26,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	pb "go.chromium.org/luci/buildbucket/proto/config"
+	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 )
 

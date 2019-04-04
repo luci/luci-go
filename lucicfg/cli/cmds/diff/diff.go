@@ -28,7 +28,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
-	buildbucket_pb "go.chromium.org/luci/buildbucket/proto/config"
+	buildbucket_pb "go.chromium.org/luci/buildbucket/proto"
 	config_pb "go.chromium.org/luci/common/proto/config"
 	cq_pb "go.chromium.org/luci/cq/api/config/v2"
 	logdog_pb "go.chromium.org/luci/logdog/api/config/svcconfig"
