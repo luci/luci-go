@@ -22,6 +22,30 @@
       "revId": "4be78247fe6a457002092568b5a5aa8ecb9a2d4c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a92b41f6_86d2ecee",
+        "filename": "vpython/system_windows.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1181690
+      },
+      "writtenOn": "2019-04-04T00:33:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29c4a9c8_8f7365e5",
+      "range": {
+        "startLine": 49,
+        "startChar": 14,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "4be78247fe6a457002092568b5a5aa8ecb9a2d4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
