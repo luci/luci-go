@@ -22,6 +22,30 @@
       "revId": "1765875e9c142d57f5f70f62d6dd3fd912783753",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf4eec02_bae59260",
+        "filename": "buildbucket/protoutil/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-04T22:08:53Z",
+      "side": 1,
+      "message": "\"a build has ended\" makes sense to me.\n\"STARTED has ended\" makes less sense to me. The argument here is a status.",
+      "parentUuid": "6be4b448_9bf757dc",
+      "range": {
+        "startLine": 22,
+        "startChar": 5,
+        "endLine": 22,
+        "endChar": 12
+      },
+      "revId": "1765875e9c142d57f5f70f62d6dd3fd912783753",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
