@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "00dee8a9_aa9703c4",
+        "filename": "tokenserver/api/bq/bq.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-04T18:05:39Z",
+      "side": 1,
+      "message": "just noticed \u00272\u0027 was skipped, it probably shoulnd\u0027t",
+      "range": {
+        "startLine": 174,
+        "startChar": 27,
+        "endLine": 174,
+        "endChar": 28
+      },
+      "revId": "45c8c2ef4db053250e744534b4bf139b637abda9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
