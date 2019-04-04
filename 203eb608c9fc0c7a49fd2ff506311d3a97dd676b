@@ -1,0 +1,141 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1b3893a5_bd7d892a",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T00:18:27Z",
+      "side": 1,
+      "message": "wait why? this is reverse of the UsageLine above, and also against the posix utility conventions of putting operands at the end",
+      "range": {
+        "startLine": 55,
+        "startChar": 12,
+        "endLine": 55,
+        "endChar": 34
+      },
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e35737ec_e91672a5",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T00:18:27Z",
+      "side": 1,
+      "message": "Suggestion for followup: Can we default this to true if we detect the output device is a pipe?\n\nhttps://stackoverflow.com/questions/43947363/detect-if-a-command-is-piped-or-not",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6c0ab22b_c4be1b42",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T00:18:27Z",
+      "side": 1,
+      "message": "\"Print builds in their entirety\" \nor\n\"Print all fields (attributes? properties?) in builds\"",
+      "range": {
+        "startLine": 67,
+        "startChar": 51,
+        "endLine": 67,
+        "endChar": 59
+      },
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "476ea4fb_44de01ee",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T00:18:27Z",
+      "side": 1,
+      "message": "printRun can keep state instead of having it passed in",
+      "range": {
+        "startLine": 119,
+        "startChar": 59,
+        "endLine": 119,
+        "endChar": 64
+      },
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33d1eda4_76fbc8b5",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T00:18:27Z",
+      "side": 1,
+      "message": "suggestion: a r.printError(stderr, res) might be useful here.",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adae2bd0_f8b14b2f",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T00:18:27Z",
+      "side": 1,
+      "message": "This is a bit confusing.  I don\u0027t think we gain much from making stdin reading concurrently.  It would be much simpler to resolve all args first and then start working.  I don\u0027t think most utilities that read from stdin start doing work until the stdin is closed.\n\nled does it\nhttps://cs.chromium.org/chromium/infra/go/src/infra/tools/led/cmd_edit.go?sq\u003dpackage:chromium\u0026dr\u0026q\u003dstdin+file:%5Einfra/go/src/infra/tools/led/+package:%5Echromium$\u0026g\u003d0\u0026l\u003d107",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98be4339_3cb69c31",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T00:18:27Z",
+      "side": 1,
+      "message": "return?",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
