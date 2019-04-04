@@ -24,8 +24,13 @@ cron:
   schedule: every 1 minutes
   target: backend
 
-- description: Uploads OAuth tokens logs to BigQuery
+- description: Uploads OAuth token logs to BigQuery
   url: /internal/cron/bqlog/oauth-tokens-flush
+  schedule: every 1 minutes
+  target: backend
+
+- description: Uploads Project token logs to BigQuery
+  url: /internal/cron/bqlog/project-tokens-flush
   schedule: every 1 minutes
   target: backend
 
@@ -33,3 +38,4 @@ cron:
   url: /internal/cron/ts_mon/housekeeping
   schedule: every 1 minutes
   target: backend
+

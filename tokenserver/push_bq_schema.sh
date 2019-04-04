@@ -31,3 +31,10 @@ bqschemaupdater \
   -message-dir "$THIS_DIR/api/bq" \
   -message "tokenserver.bq.OAuthToken" \
   -partitioning-expiration "8760h"  # 1y
+
+bqschemaupdater \
+  -table "$PROJECT_ID.tokens.project_tokens" \
+  -friendly-name "Issued project tokens." \
+  -message-dir "$THIS_DIR/api/bq" \
+  -message "tokenserver.bq.ProjectToken" \
+  -partitioning-expiration "8760h"  # 1y
