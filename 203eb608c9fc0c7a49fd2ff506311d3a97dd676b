@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "98a69381_6780050c",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-04T18:02:25Z",
+      "side": 1,
+      "message": "undone",
+      "parentUuid": "1b3893a5_bd7d892a",
+      "range": {
+        "startLine": 55,
+        "startChar": 12,
+        "endLine": 55,
+        "endChar": 34
+      },
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e35737ec_e91672a5",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 6
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "24491d9e_33b0d677",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-04T18:02:25Z",
+      "side": 1,
+      "message": "what if the sink is jq? then we want -json",
+      "parentUuid": "e35737ec_e91672a5",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c0ab22b_c4be1b42",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 6
@@ -53,6 +95,30 @@
       "writtenOn": "2019-04-04T00:18:27Z",
       "side": 1,
       "message": "\"Print builds in their entirety\" \nor\n\"Print all fields (attributes? properties?) in builds\"",
+      "range": {
+        "startLine": 67,
+        "startChar": 51,
+        "endLine": 67,
+        "endChar": 59
+      },
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d96cdd45_db134a01",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-04T18:02:25Z",
+      "side": 1,
+      "message": "unpacked. PTAL",
+      "parentUuid": "6c0ab22b_c4be1b42",
       "range": {
         "startLine": 67,
         "startChar": 51,
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "004bccf1_49e2bf7c",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-04T18:02:25Z",
+      "side": 1,
+      "message": "it can, i even started changing this, but it makes printAndDone confusing: same state is stored twice and may accidentally diverge.\n\nbesides keeping the state here would assume that same printer is used across printBuild calls, which is not necessarily true",
+      "parentUuid": "476ea4fb_44de01ee",
+      "range": {
+        "startLine": 119,
+        "startChar": 59,
+        "endLine": 119,
+        "endChar": 64
+      },
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33d1eda4_76fbc8b5",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 6
@@ -102,6 +192,24 @@
       "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad9f1e2e_5745f9fc",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-04T18:02:25Z",
+      "side": 1,
+      "message": "good idea, done",
+      "parentUuid": "33d1eda4_76fbc8b5",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -122,6 +230,24 @@
     },
     {
       "key": {
+        "uuid": "3458ad92_a3f27407",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-04T18:02:25Z",
+      "side": 1,
+      "message": "i don\u0027t think so. Try:\n\n  yes | xargs echo\n  yes | grep y\n\njq has a special flag to enable buffering --slurp\n\nby default tools do not buffer stdin. This would be very inefficient. Imagine catting hundreds of files into grep.\n\nIf this code is removed, then `bb ls -id | bb cancel` would not start canceling builds until ls finishes completely. This would be undesierable.",
+      "parentUuid": "adae2bd0_f8b14b2f",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "98be4339_3cb69c31",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 6
@@ -136,6 +262,24 @@
       "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "219adc33_96af7f35",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-04T18:02:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98be4339_3cb69c31",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
