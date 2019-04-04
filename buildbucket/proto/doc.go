@@ -16,9 +16,5 @@
 //
 // It contains pRPC and mock implementations of Builds RPC service.
 //
-// The package also contains helper functions for some types, e.g.
-//   (Status) Ended() bool
-//   (*Build) RunDuration() (duration time.Duration, ok bool)
-//   (*Build) SchedulingDuration() (duration time.Duration, ok bool)
-//   (*Build) ParseTags() strpair.Map
+// See also ../protoutil for utility functions for types in this package.
 package buildbucketpb
