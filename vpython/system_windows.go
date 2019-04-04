@@ -46,7 +46,7 @@ func systemSpecificLaunch(c context.Context, ve *venv.Env, cl *python.CommandLin
 func execImpl(c context.Context, argv []string, env environ.Env, dir string, setupFn func() error) error {
 	cmd := exec.Cmd{
 		Path:   argv[0],
-		Args:   argv[1:],
+		Args:   argv,
 		Env:    env.Sorted(),
 		Dir:    dir,
 		Stdin:  os.Stdin,
