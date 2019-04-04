@@ -46,6 +46,30 @@
       "revId": "3bd14eff34b1531db6f7fde086ef0c52a17fb2b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "72f92501_cbdea815",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-04T00:10:02Z",
+      "side": 0,
+      "message": "This still needs some unit tests. E.g. imagine you forgot to call ValidateProject. Tests would pass. Please add couple of test cases: one hitting an error in ValidateAndNormalizeRequest, another hitting an error in ValidateProject.",
+      "parentUuid": "c54f2fd7_76c3147d",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 130,
+        "endChar": 4
+      },
+      "revId": "3bd14eff34b1531db6f7fde086ef0c52a17fb2b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
