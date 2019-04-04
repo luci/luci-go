@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d6908f1_2d92e6d0",
+        "filename": "buildbucket/cli/baserun.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T23:05:09Z",
+      "side": 1,
+      "message": "Consider adding in a helpful message like \"did you mean to pass in -id\"?",
+      "revId": "b6ca05760e4d0f1d00970b9380d6f1ba5dcd5688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bdb3c9f_4580e0ea",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T23:05:09Z",
+      "side": 1,
+      "message": "what\u0027s the point of this newline?  Why don\u0027t we always print it regardless of first or not? (Best answered as code comments)",
+      "revId": "b6ca05760e4d0f1d00970b9380d6f1ba5dcd5688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5cebccfa_8487a681",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T23:05:09Z",
+      "side": 1,
+      "message": "consider, so that there is one less type to keep track of.\n\n// A workItem is an item of work that may resolve into a build.\n// A workItem is processed by a worker, which resolves the input args into result build.\n// The resulting build is not valid until a nil is received through done.\ntype workItem struct {\n  arg string\n  done chan error\n  build *pb.Build\n}\n\nwork :\u003d make(chan *workItem)\n\n...\n\nL192: \nerr \u003c- i.done\nif err !\u003d nil {\n...\n} else {\n  r.printBuild(stdout, i.build, first)\n}",
+      "revId": "b6ca05760e4d0f1d00970b9380d6f1ba5dcd5688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

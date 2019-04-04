@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "b5198be2_f52e6663",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T23:05:09Z",
+      "side": 1,
+      "message": "then the user can explicitly pass in -json.\n\nI think the use case for bb | bb is more common and prone to people forgetting to pass in a magical flag that is required to make it work.\n\nCurrently there are no cases where \"bb (without -id) | anything\" should be valid.  Defaulting to detection (with override maybe, like -summary) will make it work by default for 1 out of the 2 known cases, which I think is better than 0 out of the 2 known cases.",
+      "parentUuid": "24491d9e_33b0d677",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c0ab22b_c4be1b42",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 6
@@ -128,6 +146,30 @@
       "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be1823e1_bbc94268",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T23:05:09Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d96cdd45_db134a01",
+      "range": {
+        "startLine": 67,
+        "startChar": 51,
+        "endLine": 67,
+        "endChar": 59
+      },
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -242,6 +284,24 @@
       "side": 1,
       "message": "i don\u0027t think so. Try:\n\n  yes | xargs echo\n  yes | grep y\n\njq has a special flag to enable buffering --slurp\n\nby default tools do not buffer stdin. This would be very inefficient. Imagine catting hundreds of files into grep.\n\nIf this code is removed, then `bb ls -id | bb cancel` would not start canceling builds until ls finishes completely. This would be undesierable.",
       "parentUuid": "adae2bd0_f8b14b2f",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2b8d1509_52c56ceb",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-04T23:05:09Z",
+      "side": 1,
+      "message": "In theory if bb is meant to cancel an unbounded amount of data like xargs or grep, I think this would make sense.\nBut ls is synchronous - It makes 1 request and all of it is printed at once, so a concurrent processing pipeline actually doesn\u0027t buy us any gains.\nThis would be more useful if ls was paged.  But I noticed there is a TODO in ls, so maybe this will be useful one day.\n\nI think this pipeline is clever, but it took me 10-15 min to read, and I expect it would take future readers about the same amount of time, and I think that is the main cost.  It would be good to make sure this complexity is well justified.",
+      "parentUuid": "3458ad92_a3f27407",
       "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
