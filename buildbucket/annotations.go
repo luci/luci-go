@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -228,7 +229,7 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann
 	// When parent step finishes running, compute its final status as worst
 	// status, as determined by statusPrecedence map below, among direct children
 	// and its own status.
-	if bb.Status.Ended() {
+	if protoutil.IsEnded(bb.Status) {
 		for _, bbSubstep := range bbSubsteps {
 			substepStatusPrecedence, ok := statusPrecedence[bbSubstep.Status]
 			if ok && substepStatusPrecedence < statusPrecedence[bb.Status] {

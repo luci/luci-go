@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucketpb
+package protoutil
 
-// Ended returns true if s is final.
-func (s Status) Ended() bool {
-	return s&Status_ENDED_MASK == Status_ENDED_MASK
+import (
+	pb "go.chromium.org/luci/buildbucket/proto"
+)
+
+// IsEnded returns true if s is final.
+func IsEnded(s pb.Status) bool {
+	return s&pb.Status_ENDED_MASK == pb.Status_ENDED_MASK
 }
