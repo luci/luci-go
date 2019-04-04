@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"
@@ -30,9 +29,10 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
+
+	tokenserverapi "go.chromium.org/luci/tokenserver/api"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -71,7 +71,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		},
 	}
 
-	grantBody := &tokenserver.OAuthTokenGrantBody{
+	grantBody := &tokenserverapi.OAuthTokenGrantBody{
 		TokenId:          123,
 		ServiceAccount:   "serviceaccount@robots.com",
 		Proxy:            "user:proxy@example.com",
@@ -97,7 +97,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		So(lastMintParams, ShouldResemble, auth.MintAccessTokenParams{
 			ServiceAccount: "serviceaccount@robots.com",
 			Scopes:         []string{"https://www.googleapis.com/scope1"},
-			MinTTL:         defaultMinValidityDuration,
+			MinTTL:         utils.DefaultMinValidityDuration,
 		})
 
 		// LogOAuthToken called.
