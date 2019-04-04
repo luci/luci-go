@@ -70,6 +70,30 @@
       "revId": "3bd14eff34b1531db6f7fde086ef0c52a17fb2b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e89f1a3c_7c794bf3",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-04-04T17:08:05Z",
+      "side": 0,
+      "message": "Ah makes sense! Added them back as tests hitting the RPC.",
+      "parentUuid": "72f92501_cbdea815",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 130,
+        "endChar": 4
+      },
+      "revId": "3bd14eff34b1531db6f7fde086ef0c52a17fb2b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
