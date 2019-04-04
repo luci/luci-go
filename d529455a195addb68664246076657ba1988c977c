@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "29bef768_7545abc0",
+        "filename": "tokenserver/api/bq/bq.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-04T00:23:49Z",
+      "side": 1,
+      "message": "also need to include the LUCI project name",
+      "range": {
+        "startLine": 170,
+        "startChar": 8,
+        "endLine": 170,
+        "endChar": 20
+      },
+      "revId": "d529455a195addb68664246076657ba1988c977c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "881558c1_6cc1a7a9",
+        "filename": "tokenserver/api/bq/bq.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-04T00:23:49Z",
+      "side": 1,
+      "message": "\"a LUCI service\"\n\nthere\u0027s no end user here",
+      "range": {
+        "startLine": 173,
+        "startChar": 27,
+        "endLine": 173,
+        "endChar": 39
+      },
+      "revId": "d529455a195addb68664246076657ba1988c977c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ae41d71_7056bd8c",
+        "filename": "tokenserver/appengine/backend/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-04T00:23:49Z",
+      "side": 1,
+      "message": "move it to the import group with all other impl/... imports (see below)",
+      "range": {
+        "startLine": 25,
+        "startChar": 1,
+        "endLine": 25,
+        "endChar": 63
+      },
+      "revId": "d529455a195addb68664246076657ba1988c977c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad818af2_238a6b19",
+        "filename": "tokenserver/appengine/backend/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-04T00:23:49Z",
+      "side": 1,
+      "message": "flushProjectTokensLogCron",
+      "range": {
+        "startLine": 182,
+        "startChar": 3,
+        "endLine": 182,
+        "endChar": 26
+      },
+      "revId": "d529455a195addb68664246076657ba1988c977c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61369e5b_be85fd31",
+        "filename": "tokenserver/appengine/frontend/cron.yaml",
+        "patchSetId": 8
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-04T00:23:49Z",
+      "side": 1,
+      "message": "please place it before \"tsmon house keeping\" entry, together with the rest of flush crons",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 17
+      },
+      "revId": "d529455a195addb68664246076657ba1988c977c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c7780ee_a7ebdc4e",
+        "filename": "tokenserver/appengine/impl/projectscope/rpc_mint_project_token.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-04T00:23:49Z",
+      "side": 1,
+      "message": "google.NewTimestamp(clock.Now(c))",
+      "range": {
+        "startLine": 195,
+        "startChar": 17,
+        "endLine": 195,
+        "endChar": 75
+      },
+      "revId": "d529455a195addb68664246076657ba1988c977c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
