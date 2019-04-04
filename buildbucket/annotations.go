@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	annotpb "go.chromium.org/luci/common/proto/milo"
 )
 
@@ -228,7 +229,7 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann
 	// When parent step finishes running, compute its final status as worst
 	// status, as determined by statusPrecedence map below, among direct children
 	// and its own status.
-	if bb.Status.Ended() {
+	if protoutil.IsEnded(bb.Status) {
 		for _, bbSubstep := range bbSubsteps {
 			substepStatusPrecedence, ok := statusPrecedence[bbSubstep.Status]
 			if ok && substepStatusPrecedence < statusPrecedence[bb.Status] {
