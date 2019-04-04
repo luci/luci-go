@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "be003e76_e709069e",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-04T22:34:31Z",
+      "side": 1,
+      "message": "yeah, i know, that\u0027s what \n  _ :\u003d \nwas for",
+      "parentUuid": "3a1996d5_86d7e2f2",
+      "range": {
+        "startLine": 224,
+        "startChar": 0,
+        "endLine": 224,
+        "endChar": 1
+      },
+      "revId": "0e0b0493667fc5cda48485ce4b9a5a1f5d69a922",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
