@@ -30,7 +30,7 @@ import (
 
 	_ "go.chromium.org/chromiumos/infra/proto/go/chromiumos"
 	_ "go.chromium.org/chromiumos/infra/proto/go/testplans"
-	_ "go.chromium.org/luci/buildbucket/proto/config"
+	_ "go.chromium.org/luci/buildbucket/proto"
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/cq/api/config/v2"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
@@ -58,7 +58,7 @@ var publicProtos = map[string]struct {
 	// load("@proto//luci/buildbucket/project_config.proto", buildbucket_pb="buildbucket")
 	"luci/buildbucket/project_config.proto": {
 		"buildbucket",
-		"go.chromium.org/luci/buildbucket/proto/config/project_config.proto",
+		"go.chromium.org/luci/buildbucket/proto/project_config.proto",
 	},
 
 	// "LUCI Config" project config.
