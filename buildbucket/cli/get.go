@@ -15,8 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -33,45 +31,41 @@ func cmdGet(p Params) *subcommands.Command {
 			Print builds.
 
 			Argument BUILD can be an int64 build id or a string
-			<project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1
+			<project>/<bucket>/<builder>/<build_number>, e.g.
+			chromium/ci/linux-rel/1.
+			If no builds were specified on the command line, they are read
+			from stdin.
 		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &getRun{}
 			r.RegisterDefaultFlags(p)
-			r.RegisterJSONFlag()
-			r.buildFieldFlags.Register(&r.Flags)
+			r.RegisterFieldFlags()
 			return r
 		},
 	}
 }
 
 type getRun struct {
-	baseCommandRun
-	buildFieldFlags
+	printRun
 }
 
 func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if len(args) == 0 {
-		return 0
-	}
-
 	ctx := cli.GetContext(a, r, env)
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
 	}
 
-	req := &pb.BatchRequest{}
-	fields := r.FieldMask()
-	for _, a := range args {
-		getBuild, err := protoutil.ParseGetBuildRequest(a)
-		if err != nil {
-			return r.done(ctx, fmt.Errorf("invalid build %q: %s", a, err))
-		}
-		getBuild.Fields = fields
-		req.Requests = append(req.Requests, &pb.BatchRequest_Request{
-			Request: &pb.BatchRequest_Request_GetBuild{GetBuild: getBuild},
-		})
+	fields, err := r.FieldMask()
+	if err != nil {
+		return r.done(ctx, err)
 	}
 
-	return r.batchAndDone(ctx, req)
+	return r.PrintAndDone(args, func(arg string) (*pb.Build, error) {
+		req, err := protoutil.ParseGetBuildRequest(arg)
+		if err != nil {
+			return nil, err
+		}
+		req.Fields = fields
+		return r.client.GetBuild(ctx, req, expectedCodeRPCOption)
+	})
 }

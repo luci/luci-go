@@ -241,8 +241,7 @@ func (r *logRun) printLogs(ctx context.Context, logs []*pb.Step_Log) error {
 		}()
 	}
 
-	stdout := newPrinter(os.Stdout, r.noColor, time.Now)
-	stderr := newPrinter(os.Stderr, r.noColor, time.Now)
+	stdout, stderr := newStdioPrinters(r.noColor)
 	for {
 		chanIndex, entry, err := m.Next()
 		out := stdout
