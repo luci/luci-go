@@ -165,3 +165,31 @@ message OAuthToken {
   // Revision of groups database used to authorize this call.
   int64 auth_db_rev = 15;
 }
+
+// Issued Project tokens.
+message ProjectToken {
+  // First 16 bytes of SHA256 of the token body, hex-encoded.
+  string fingerprint = 1;
+  // Service account email the luci service wants to act as.
+  string service_account = 2;
+  // Requested OAuth scopes.
+  repeated string oauth_scopes = 3;
+  // LUCI project for which token is requested.
+  string luci_project = 4;
+  // Who requested and who can use this token.
+  string service_identity = 5;
+  // When this request happened.
+  google.protobuf.Timestamp requested_at = 6;
+  // When the token expires.
+  google.protobuf.Timestamp expiration = 7;
+  // Arbitrary key:value pairs provided by the caller.
+  repeated string audit_tags = 8;
+  // IP address of the caller.
+  string peer_ip = 9;
+  // Identifier of the token server GAE app and version.
+  string service_version = 10;
+  // ID of the GAE request that handled the call.
+  string gae_request_id = 11;
+  // Revision of groups database used to authorize this call.
+  int64 auth_db_rev = 12;
+}

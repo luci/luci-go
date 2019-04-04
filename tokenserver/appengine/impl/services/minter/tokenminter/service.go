@@ -72,6 +72,7 @@ func NewServer() minter.TokenMinterServer {
 			Signer:            gaesigner.Signer{},
 			MintAccessToken:   auth.MintAccessTokenForServiceAccount,
 			ProjectIdentities: projectidentity.ProjectIdentities,
+			LogToken:          projectscope.LogToken,
 		},
 	}
 }

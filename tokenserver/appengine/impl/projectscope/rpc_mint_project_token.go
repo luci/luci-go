@@ -22,11 +22,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
-
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
@@ -54,6 +56,9 @@ type MintProjectTokenRPC struct {
 	//
 	// In  prod it is projectscope.persistentIdentityManager
 	ProjectIdentities func(context.Context) projectidentity.Storage
+
+	// LogToken is mocked in tests.
+	LogToken func(context.Context, *MintedTokenInfo) error
 }
 
 // MintProjectToken mints a project-scoped service account OAuth2 token.
@@ -135,6 +140,25 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 		AccessToken:         accessTok.AccessToken,
 		Expiry:              google.NewTimestamp(accessTok.Expiry),
 		ServiceVersion:      serviceVer,
+	}
+
+	if r.LogToken != nil {
+		// Errors during logging are considered not fatal. bqlog library has
+		// a monitoring counter that tracks number of errors, so they are not
+		// totally invisible.
+		tokInfo := MintedTokenInfo{
+			Request:      req,
+			Response:     resp,
+			RequestedAt:  google.NewTimestamp(clock.Now(c)),
+			Expiration:   resp.Expiry,
+			PeerIP:       state.PeerIP(),
+			PeerIdentity: state.PeerIdentity(),
+			RequestID:    info.RequestID(c),
+			AuthDBRev:    authdb.Revision(state.DB()),
+		}
+		if logErr := r.LogToken(c, &tokInfo); logErr != nil {
+			logging.WithError(logErr).Errorf(c, "Failed to insert the delegation token into the BigQuery log")
+		}
 	}
 
 	return resp, nil
