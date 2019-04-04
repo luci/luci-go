@@ -46,8 +46,8 @@ func cmdLS(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &lsRun{}
 			r.RegisterDefaultFlags(p)
-			r.RegisterJSONFlag()
-			r.buildFieldFlags.Register(&r.Flags)
+			r.RegisterIDFlag()
+			r.RegisterFieldFlags()
 			r.clsFlag.Register(&r.Flags, doc(`
 				CL URLs that builds must be associated with.
 
@@ -72,8 +72,7 @@ func cmdLS(p Params) *subcommands.Command {
 }
 
 type lsRun struct {
-	baseCommandRun
-	buildFieldFlags
+	printRun
 	clsFlag
 	tagsFlag
 
@@ -97,6 +96,8 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		return r.done(ctx, err)
 	}
 
+	// TODO(nodir): switch from Batch request to concurrent searches, streaming
+	// of results with paging.
 	seen := map[int64]struct{}{}
 	var builds []*pb.Build
 	for _, res := range res.Responses {
@@ -115,14 +116,9 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 	// Build IDs are monotonically decreasing.
 	sort.Slice(builds, func(i, j int) bool { return builds[i].Id < builds[j].Id })
 
-	p := newStdoutPrinter(r.noColor)
-	for _, b := range builds {
-		if r.json {
-			p.JSONPB(b)
-		} else {
-			p.Build(b)
-			fmt.Println()
-		}
+	stdout, _ := newStdioPrinters(r.noColor)
+	for i, b := range builds {
+		r.printBuild(stdout, b, i == 0)
 	}
 	return 0
 }
@@ -165,14 +161,18 @@ func (r *lsRun) parseBaseRequest(ctx context.Context) (*pb.SearchBuildsRequest, 
 			Status:              r.status,
 			IncludeExperimental: r.includeExperimental,
 		},
-		Fields: r.FieldMask(),
 	}
 
+	// Prepare a field mask.
+	var err error
+	ret.Fields, err = r.FieldMask()
+	if err != nil {
+		return nil, err
+	}
 	for i, p := range ret.Fields.Paths {
 		ret.Fields.Paths[i] = "builds.*." + p
 	}
 
-	var err error
 	if ret.Predicate.GerritChanges, err = r.clsFlag.retrieveCLs(ctx, r.httpClient); err != nil {
 		return nil, err
 	}
