@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 
@@ -79,9 +78,10 @@ func newTestMintProjectTokenRPC() *MintProjectTokenRPC {
 func TestMintProjectToken(t *testing.T) {
 
 	t.Parallel()
+	ctx := testingContext("service@example.com")
+	member, err := auth.IsMember(ctx, projectActorsGroup)
 
 	Convey("initialize rpc handler", t, func() {
-		ctx := gaetesting.TestingContext()
 		rpc := newTestMintProjectTokenRPC()
 
 		Convey("validateRequest works", func() {
@@ -92,7 +92,7 @@ func TestMintProjectToken(t *testing.T) {
 					OauthScope:          []string{},
 					MinValidityDuration: 7200,
 				}
-				err := rpc.validateRequest(ctx, req)
+				_, err := rpc.MintProjectToken(ctx, req)
 				So(err, ShouldNotBeNil)
 			})
 
@@ -103,7 +103,7 @@ func TestMintProjectToken(t *testing.T) {
 					OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
 					MinValidityDuration: 1800,
 				}
-				err := rpc.validateRequest(ctx, req)
+				_, err := rpc.MintProjectToken(ctx, req)
 				So(err, assertions.ShouldErrLike, `luci_project is empty`)
 			})
 
@@ -114,7 +114,8 @@ func TestMintProjectToken(t *testing.T) {
 					OauthScope:          []string{},
 					MinValidityDuration: 1800,
 				}
-				err := rpc.validateRequest(ctx, req)
+
+				_, err := rpc.MintProjectToken(ctx, req)
 				So(err, assertions.ShouldErrLike, `oauth_scope is required`)
 			})
 
@@ -124,14 +125,12 @@ func TestMintProjectToken(t *testing.T) {
 					OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
 					MinValidityDuration: 3600,
 				}
-				err := rpc.validateRequest(ctx, req)
+				_, err := rpc.MintProjectToken(ctx, req)
 				So(err, assertions.ShouldErrLike, "min_validity_duration must not exceed 1800")
 			})
 		})
 
 		Convey("MintProjectToken does not return errors with valid input", func() {
-			ctx := testingContext("service@example.com")
-			member, err := auth.IsMember(ctx, projectActorsGroup)
 			So(err, ShouldBeNil)
 			So(member, ShouldBeTrue)
 
