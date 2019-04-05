@@ -83,7 +83,7 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 	for _, bs := range b.Tags[bbv1.TagBuildSet] {
 		commit, ok := protoutil.ParseBuildSet(bs).(*buildbucketpb.GitilesCommit)
 		if ok {
-			res.Sourcestamp.Repository = protoutil.GitilesCommitURL(commit)
+			res.Sourcestamp.Repository = protoutil.GitilesRepoURL(commit)
 			res.Sourcestamp.Revision = commit.Id
 			break
 		}
