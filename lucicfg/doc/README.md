@@ -28,10 +28,25 @@
 ### Working with lucicfg
 
 lucicfg is a tool for generating low-level LUCI configuration files based on a
-high-level config given as a [Starlark] script using API exposed by lucicfg
-(which is extensively documented in this doc).
+high-level configuration given as a [Starlark] script that uses APIs exposed by
+lucicfg. In other words, it takes a `*.star` file (or files) as input and spits
+out a bunch of `*.cfg` files (such us `cr-buildbucket.cfg` and
+`luci-scheduler.cfg`) as output. A single entity (such as a
+[luci.builder(...)](#luci.builder) definition) in the input is "expanded"
+into multiple entities (such as Buildbucket `builder{...}` and Scheduler
+`job{...}`) in the output. This ensures internal consistency of all low-level
+configs.
+
+Using Starlark allows to further reduce duplication and enforce invariants in
+the configs. The common pattern is to use Starlark functions that wrap one or
+more basic lucicfg rules (e.g. [luci.builder(...)](#luci.builder) and
+[luci.console_view_entry(...)](#luci.console_view_entry)) to define a more "concrete"
+entity, like, for example, "a CI builder" or "a Try builder". The rest of the
+config script then uses such functions to build up the actual configuration.
+
 
 [Starlark]: https://github.com/google/starlark-go
+
 
 ### Concepts
 
