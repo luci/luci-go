@@ -28,10 +28,40 @@
 ### Working with lucicfg
 
 lucicfg is a tool for generating low-level LUCI configuration files based on a
-high-level config given as a [Starlark] script using API exposed by lucicfg
-(which is extensively documented in this doc).
+high-level configuration given as a [Starlark] script that uses APIs exposed by
+lucicfg. In other words, it takes a `*.star` file (or files) as input and spits
+out a bunch of `*.cfg` files (such us `cr-buildbucket.cfg` and
+`luci-scheduler.cfg`) as output. A single entity (such as a
+[luci.builder(...)](#luci.builder) definition) in the input is "expanded"
+into multiple entities (such as Buildbucket `builder{...}` and Scheduler
+`job{...}`) in the output. This ensures internal consistency of all low-level
+configs.
+
+Using Starlark allows to further reduce duplication and enforce invariants in
+the configs. The common pattern is to use Starlark functions that wrap one or
+more basic lucicfg rules (e.g. [luci.builder(...)](#luci.builder) and
+[luci.console_view_entry(...)](#luci.console_view_entry)) to define a more "concrete"
+entity, like, for example, "a CI builder" or "a Try builder". The rest of the
+config script then uses such functions to build up the actual configuration.
+
+#### Getting luccifg
+
+luccifg is distributed as a single self-contained binary as part of
+[depot_tools], so if you use them, you already have it.
+
+Additionally it is available in `PATH` on all LUCI builders.
+
+If you don't use depot_tools, lucicfg can be installed through CIPD. The package
+is [infra/tools/luci/lucicfg/${platform}](https://chrome-infra-packages.appspot.com/p/infra/tools/luci/lucicfg), and the canonical stable version can be looked up in the
+depot_tools [CIPD manifest](https://chromium.googlesource.com/chromium/tools/depot_tools/+/refs/heads/master/cipd_manifest.txt).
+
+Finally, you can always try to build it from source code. But this would be your
+own adventure, the officially supported distribution mechanism is CIPD package.
+
 
 [Starlark]: https://github.com/google/starlark-go
+[depot_tools]: https://chromium.googlesource.com/chromium/tools/depot_tools/
+
 
 ### Concepts
 
