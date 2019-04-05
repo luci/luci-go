@@ -177,7 +177,19 @@ func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Com
 	})
 }
 
+var clientContextKey = "context key for builds client"
+
+// withClient installs a builds client in the context.
+// This is useful for tests.
+func withClient(c context.Context, client buildbucketpb.BuildsClient) context.Context {
+	return context.WithValue(c, &clientContextKey, client)
+}
+
 func buildbucketClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+	// Check for test clients.
+	if client, ok := c.Value(&clientContextKey).(buildbucketpb.BuildsClient); ok {
+		return client, nil
+	}
 	t, err := auth.GetRPCTransport(c, as, opts...)
 	if err != nil {
 		return nil, err
