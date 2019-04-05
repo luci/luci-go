@@ -21,7 +21,7 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
-// fieldSliceFlag is a flag.Value implementation representing a []googleapi.Field.
+// fieldSliceFlag is a flag.Getter implementation representing a []googleapi.Field.
 type fieldSliceFlag []googleapi.Field
 
 // String returns a comma-separated string representation of the flag values.
@@ -39,16 +39,12 @@ func (f *fieldSliceFlag) Set(val string) error {
 	return nil
 }
 
-// Get retrieves the flag values.
+// Get retrieves the flag value.
 func (f fieldSliceFlag) Get() interface{} {
-	r := make([]googleapi.Field, len(f))
-	for i, s := range f {
-		r[i] = s
-	}
-	return r
+	return []googleapi.Field(f)
 }
 
-// FieldSlice returns a flag.Value which reads flags into the given []googleapi.Field pointer.
-func FieldSlice(f *[]googleapi.Field) flag.Value {
+// FieldSlice returns a flag.Getter which reads flags into the given []googleapi.Field pointer.
+func FieldSlice(f *[]googleapi.Field) flag.Getter {
 	return (*fieldSliceFlag)(f)
 }

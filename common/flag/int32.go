@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// int32Flag is a flag.Value implementation representing an int32.
+// int32Flag is a flag.Getter implementation representing an int32.
 type int32Flag int32
 
 // String returns a string representation of the flag value.
@@ -40,11 +40,11 @@ func (f *int32Flag) Set(s string) error {
 }
 
 // Get retrieves the flag value.
-func (f *int32Flag) Get() interface{} {
-	return int32(*f)
+func (f int32Flag) Get() interface{} {
+	return int32(f)
 }
 
-// Int32 returns a flag.Value which reads flags into the given int32 pointer.
-func Int32(i *int32) flag.Value {
+// Int32 returns a flag.Getter which reads flags into the given int32 pointer.
+func Int32(i *int32) flag.Getter {
 	return (*int32Flag)(i)
 }

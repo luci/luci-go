@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// int64SliceFlag is a flag.Value implementation representing an []int64.
+// int64SliceFlag is a flag.Getter implementation representing an []int64.
 type int64SliceFlag []int64
 
 // String returns a comma-separated string representation of the flag values.
@@ -44,16 +44,12 @@ func (f *int64SliceFlag) Set(val string) error {
 	return nil
 }
 
-// Get retrieves the flag values.
+// Get retrieves the flag value.
 func (f int64SliceFlag) Get() interface{} {
-	r := make([]int64, len(f))
-	for n, i := range f {
-		r[n] = i
-	}
-	return r
+	return []int64(f)
 }
 
-// Int64Slice returns a flag.Value which reads flags into the given []int64 pointer.
-func Int64Slice(i *[]int64) flag.Value {
+// Int64Slice returns a flag.Getter which reads flags into the given []int64 pointer.
+func Int64Slice(i *[]int64) flag.Getter {
 	return (*int64SliceFlag)(i)
 }
