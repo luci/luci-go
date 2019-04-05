@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// boolSliceFlag is a flag.Value implementation representing an []bool.
+// boolSliceFlag is a flag.Getter implementation representing an []bool.
 type boolSliceFlag []bool
 
 // String returns a comma-separated string representation of the flag values.
@@ -44,16 +44,12 @@ func (f *boolSliceFlag) Set(val string) error {
 	return nil
 }
 
-// Get retrieves the flag values.
+// Get retrieves the flag value.
 func (f boolSliceFlag) Get() interface{} {
-	r := make([]bool, len(f))
-	for n, b := range f {
-		r[n] = b
-	}
-	return r
+	return []bool(f)
 }
 
-// BoolSlice returns a flag.Value which reads flags into the given []bool pointer.
-func BoolSlice(b *[]bool) flag.Value {
+// BoolSlice returns a flag.Getter which reads flags into the given []bool pointer.
+func BoolSlice(b *[]bool) flag.Getter {
 	return (*boolSliceFlag)(b)
 }

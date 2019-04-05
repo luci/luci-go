@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-// stringSliceFlag is a flag.Value implementation representing a []string.
+// stringSliceFlag is a flag.Getter implementation representing a []string.
 type stringSliceFlag []string
 
 // String returns a comma-separated string representation of the flag values.
@@ -33,16 +33,12 @@ func (f *stringSliceFlag) Set(val string) error {
 	return nil
 }
 
-// Get retrieves the flag values.
+// Get retrieves the flag value.
 func (f stringSliceFlag) Get() interface{} {
-	r := make([]string, len(f))
-	for n, s := range f {
-		r[n] = s
-	}
-	return r
+	return []string(f)
 }
 
-// StringSlice returns a flag.Value which reads flags into the given []string pointer.
-func StringSlice(s *[]string) flag.Value {
+// StringSlice returns a flag.Getter which reads flags into the given []string pointer.
+func StringSlice(s *[]string) flag.Getter {
 	return (*stringSliceFlag)(s)
 }

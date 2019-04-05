@@ -21,12 +21,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// commaListFlag implements the flag.Value returned by CommaList.
+// commaListFlag implements the flag.Getter returned by CommaList.
 type commaListFlag []string
 
-// CommaList returns a flag.Value for parsing a comma
+// CommaList returns a flag.Getter for parsing a comma
 // separated flag argument into a string slice.
-func CommaList(s *[]string) flag.Value {
+func CommaList(s *[]string) flag.Getter {
 	return (*commaListFlag)(s)
 }
 
@@ -42,6 +42,11 @@ func (f *commaListFlag) Set(s string) error {
 	}
 	*f = splitCommaList(s)
 	return nil
+}
+
+// Get retrieves the flag value.
+func (f commaListFlag) Get() interface{} {
+	return []string(f)
 }
 
 // splitCommaList splits a comma separated string into a slice of
