@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -78,17 +77,6 @@ func TestLoadSave(t *testing.T) {
 			}
 			So(saveState(c, jobID, repo, nested), ShouldBeNil)
 			So(loadNoError(repo), ShouldResemble, nested)
-		})
-
-		Convey("wipeoutLegacyEntriesCrbug948900", func() {
-			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), ShouldBeNil)
-			r := Repository{ID: jobID + ":" + repo, CompressedState: []byte("blah")}
-			So(ds.Put(c, &r), ShouldBeNil)
-			datastore.GetTestable(c).CatchupIndexes()
-			wipeoutLegacyEntriesCrbug948900(c)
-
-			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master": "beefcafe"})
-			So(ds.Get(c, &r), ShouldEqual, ds.ErrNoSuchEntity)
 		})
 	})
 }
