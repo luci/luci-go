@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7ac15294_3d003320",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T02:06:03Z",
+      "side": 1,
+      "message": "do you really indexes on these?",
+      "range": {
+        "startLine": 154,
+        "startChar": 1,
+        "endLine": 159,
+        "endChar": 38
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86e05401_800fe56b",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T02:06:03Z",
+      "side": 1,
+      "message": "what will happen if 2 InstanceCount entities are available within last 10 minutes?\n\ni suspect we\u0027d want to set metrics for oldest items first and latest last. Currently, i don\u0027t think that\u0027s the case.",
+      "range": {
+        "startLine": 170,
+        "startChar": 65,
+        "endLine": 170,
+        "endChar": 89
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4148d1fa_384a5d4f",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T02:06:03Z",
+      "side": 1,
+      "message": "should be above for loop.",
+      "range": {
+        "startLine": 172,
+        "startChar": 3,
+        "endLine": 172,
+        "endChar": 44
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "320ed74b_6ceb3d48",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T02:06:03Z",
+      "side": 1,
+      "message": "what\u0027s the point of annotating it here?\nie why not just logging.Errorf  ?",
+      "range": {
+        "startLine": 177,
+        "startChar": 12,
+        "endLine": 177,
+        "endChar": 40
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "569d5f9c_e6375e2a",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T02:06:03Z",
+      "side": 1,
+      "message": "can be private now",
+      "range": {
+        "startLine": 190,
+        "startChar": 30,
+        "endLine": 190,
+        "endChar": 45
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
