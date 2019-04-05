@@ -16,6 +16,7 @@ package buildbucket
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/config/impl/memory"
@@ -39,8 +41,19 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 
+	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/ptypes"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func newMockClient(c context.Context, t *testing.T) (context.Context, *gomock.Controller, *buildbucketpb.MockBuildsClient) {
+	ctrl := gomock.NewController(t)
+	client := buildbucketpb.NewMockBuildsClient(ctrl)
+	factory := func(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+		return client, nil
+	}
+	return WithClientFactory(c, factory), ctrl, client
+}
 
 // Buildbucket timestamps round off to milliseconds, so define a reference.
 var RefTime = time.Date(2016, time.February, 3, 4, 5, 6, 0, time.UTC)
@@ -76,6 +89,8 @@ func TestPubSub(t *testing.T) {
 			IdentityGroups: []string{"all"},
 		})
 		c = caching.WithRequestCache(c)
+		c, ctrl, mbc := newMockClient(c, t)
+		defer ctrl.Finish()
 
 		// Initialize the appropriate builder.
 		builderSummary := &model.BuilderSummary{
@@ -95,11 +110,25 @@ func TestPubSub(t *testing.T) {
 			bKey := MakeBuildKey(c, "hostname", "1234")
 			buildExp := buildBase
 			buildExp.Id = 1234
-			buildExp.Status = "STARTED"
-			buildExp.CreatedTs = bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour))
-			buildExp.StartedTs = bbv1.FormatTimestamp(RefTime.Add(3 * time.Hour))
-			buildExp.UpdatedTs = bbv1.FormatTimestamp(RefTime.Add(5 * time.Hour))
-			buildExp.Experimental = true
+			created, _ := ptypes.TimestampProto(RefTime.Add(2 * time.Hour))
+			started, _ := ptypes.TimestampProto(RefTime.Add(3 * time.Hour))
+			updated, _ := ptypes.TimestampProto(RefTime.Add(5 * time.Hour))
+
+			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id:         1234,
+				Status:     buildbucketpb.Status_STARTED,
+				CreateTime: created,
+				StartTime:  started,
+				UpdateTime: updated,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "fake",
+					Bucket:  "bucket",
+					Builder: "fake_builder",
+				},
+				Input: &buildbucketpb.Build_Input{
+					Experimental: true,
+				},
+			}, nil).AnyTimes()
 
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: makeReq(buildExp)}
@@ -109,6 +138,7 @@ func TestPubSub(t *testing.T) {
 				Request: r,
 			})
 			So(h.Code, ShouldEqual, 200)
+			datastore.GetTestable(c).CatchupIndexes()
 
 			Convey("stores BuildSummary and BuilderSummary", func() {
 				buildAct := model.BuildSummary{BuildKey: bKey}
@@ -135,12 +165,25 @@ func TestPubSub(t *testing.T) {
 			bKey := MakeBuildKey(c, "hostname", "2234")
 			buildExp := buildBase
 			buildExp.Id = 2234
-			buildExp.Status = "COMPLETED"
-			buildExp.Result = "SUCCESS"
-			buildExp.CreatedTs = bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour))
-			buildExp.StartedTs = bbv1.FormatTimestamp(RefTime.Add(3 * time.Hour))
-			buildExp.UpdatedTs = bbv1.FormatTimestamp(RefTime.Add(6 * time.Hour))
-			buildExp.CompletedTs = bbv1.FormatTimestamp(RefTime.Add(6 * time.Hour))
+			created, _ := ptypes.TimestampProto(RefTime.Add(2 * time.Hour))
+			started, _ := ptypes.TimestampProto(RefTime.Add(3 * time.Hour))
+			updated, _ := ptypes.TimestampProto(RefTime.Add(6 * time.Hour))
+			completed, _ := ptypes.TimestampProto(RefTime.Add(6 * time.Hour))
+
+			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id:         2234,
+				Status:     buildbucketpb.Status_SUCCESS,
+				CreateTime: created,
+				StartTime:  started,
+				EndTime:    completed,
+				UpdateTime: updated,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "fake",
+					Bucket:  "bucket",
+					Builder: "fake_builder",
+				},
+				Input: &buildbucketpb.Build_Input{},
+			}, nil).AnyTimes()
 
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: makeReq(buildExp)}
