@@ -19,16 +19,13 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
-	"net/url"
 	"sort"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/api/gitiles"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -53,39 +50,17 @@ var (
 	)
 )
 
-// Reference [DEPRECATED] is used to store the revision of a ref.
-type Reference struct {
-	// Name is the reference name.
-	Name string `gae:",noindex"`
-
-	// Revision is the ref commit.
-	Revision string `gae:",noindex"`
-}
-
 // Repository is used to store the repository status.
 type Repository struct {
 	_kind  string         `gae:"$kind,gitiles.Repository"`
 	_extra ds.PropertyMap `gae:"-,extra"`
 
-	// ID is "<job ID>:<repository URL>".
+	// ID is uniquely derived from jobID and repository URL, see repositoryID().
 	ID string `gae:"$id"`
-
-	// References is the slice of all the tracked refs within repository.
-	// DEPRECATED. Used only for reading data from store. Remains here to recover state
-	// TODO(tandrii): remove after Nov 30 2017.
-	References []Reference `gae:",noindex"`
 
 	// CompressedState stores gzip-compressed proto-serialized list of watched
 	// refs with hashes of their tips.
 	CompressedState []byte `gae:",noindex"`
-}
-
-func legacyRepositoryID(jobID, repo string) (string, error) {
-	u, err := url.Parse(repo)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s:%s", jobID, u), nil
 }
 
 func repositoryID(jobID, repo string) (string, error) {
@@ -103,30 +78,10 @@ func loadStateEntry(c context.Context, jobID, repo string) (*Repository, error) 
 		return nil, err
 	}
 	entry := &Repository{ID: id}
-	if err := ds.Get(c, entry); err != ds.ErrNoSuchEntity {
+	if err := ds.Get(c, entry); err == ds.ErrNoSuchEntity {
+		return nil, err
+	} else {
 		return entry, transient.Tag.Apply(err)
-	}
-
-	// TODO(crbug/948900): remove legacy ID scheme support.
-	if entry.ID, err = legacyRepositoryID(jobID, repo); err != nil {
-		return nil, err
-	}
-	switch err := ds.Get(c, entry); {
-	case err == ds.ErrNoSuchEntity:
-		return nil, err
-	case err != nil:
-		return nil, transient.Tag.Apply(err)
-	default:
-		logging.Warningf(c, "cbrug/948900 loaded entry with legacyID %q", entry.ID)
-		// try immediately saving the new format. This is racy, ie it's possible
-		// we'll overwrite with older data a record inserted by concurrent
-		// saveStateEntry, but worst case effect would be the same triggers emitted
-		// several times, which is OK as they de-duplicated.
-		entry.ID = id
-		if err := ds.Put(c, entry); err != nil {
-			logging.WithError(err).Warningf(c, "cbrug/948900 failed to save non-legacy entry %q", id)
-		}
-		return entry, nil
 	}
 }
 
@@ -135,20 +90,8 @@ func saveStateEntry(c context.Context, jobID, repo string, compressedBytes []byt
 	if err != nil {
 		return err
 	}
-	// TODO(crbug/948900): remove legacy ID scheme support.
-	legacyID, err := legacyRepositoryID(jobID, repo)
-	if err != nil {
-		return err
-	}
-	entry := Repository{CompressedState: compressedBytes}
-	return transient.Tag.Apply(ds.RunInTransaction(c, func(c context.Context) error {
-		entry.ID = id
-		if err := ds.Put(c, &entry); err != nil {
-			return err
-		}
-		entry.ID = legacyID
-		return ds.Put(c, &entry)
-	}, &ds.TransactionOptions{XG: true}))
+	entry := Repository{ID: id, CompressedState: compressedBytes}
+	return transient.Tag.Apply(ds.Put(c, &entry))
 }
 
 func loadState(c context.Context, jobID, repo string) (map[string]string, error) {
@@ -157,15 +100,6 @@ func loadState(c context.Context, jobID, repo string) (map[string]string, error)
 		return map[string]string{}, nil
 	case err != nil:
 		return nil, err
-
-	case len(stored.References) > 0:
-		// TODO(crbug/948900): remove support for loading legacy uncompressed data.
-		refTips := make(map[string]string, len(stored.References))
-		for _, b := range stored.References {
-			refTips[b.Name] = b.Revision
-		}
-		return refTips, nil
-
 	case len(stored.CompressedState) > 0:
 		unGzip, err := gzip.NewReader(bytes.NewBuffer(stored.CompressedState))
 		if err != nil {
