@@ -102,6 +102,24 @@
     },
     {
       "key": {
+        "uuid": "48bdbb90_e50c98fc",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-05T02:32:48Z",
+      "side": 1,
+      "message": "\u003e I think the use case for bb | bb is more common and prone to people forgetting to pass in a magical flag that is required to make it work.\n\nwhy do you think so? There is only use case for using -id right now: massive cancelation. This will be used only in outages. \n\non the other hand, -json is for any ad-hoc jq-based queries. I expect this to be used much more often. David actually reached out to me that he is excited about this tool being jq-friendly.\n\n\u003e Currently there are no cases where \"bb (without -id) | anything\" should be valid. \n\nI disagree.\n\n  bb -json | jq\n\nis valid and it does not have -id.\n\nI often use\n\n  bb something | less\n\nI wouldn\u0027t want to see json there.",
+      "parentUuid": "b5198be2_f52e6663",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c0ab22b_c4be1b42",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 6
@@ -302,6 +320,24 @@
       "side": 1,
       "message": "In theory if bb is meant to cancel an unbounded amount of data like xargs or grep, I think this would make sense.\nBut ls is synchronous - It makes 1 request and all of it is printed at once, so a concurrent processing pipeline actually doesn\u0027t buy us any gains.\nThis would be more useful if ls was paged.  But I noticed there is a TODO in ls, so maybe this will be useful one day.\n\nI think this pipeline is clever, but it took me 10-15 min to read, and I expect it would take future readers about the same amount of time, and I think that is the main cost.  It would be good to make sure this complexity is well justified.",
       "parentUuid": "3458ad92_a3f27407",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f675bce4_f0594f78",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-05T02:32:48Z",
+      "side": 1,
+      "message": "the justification is mitigation of outages when we need to cancel a lot of builds. +Ben Pastene can tell you more about this if justification is unclear.\n\nAlso this is meant to close crbug.com/747322 and replace delete_many_builds API. Its is existence is clearly justified because we relied on it a few times.",
+      "parentUuid": "2b8d1509_52c56ceb",
       "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false

@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "dab3680f_443b83a4",
+        "filename": "buildbucket/cli/baserun.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-05T02:32:48Z",
+      "side": 1,
+      "message": "so i faithfully tried to implement this suggestion, but the outcome wasn\u0027t great: a ton of messages \"did you mean to pass in -id\". If the program is already suspects this, why not just halt. I think this become self-inconsistent.\n\nalso it definitely shouldn\u0027t print this if args are passed on the command line. otherwise it would be very confusing:\n\n  $ bb cancel foobar\n  did you mean to pass in -id: invalid bulid foobar\n\nwat?",
+      "parentUuid": "9d6908f1_2d92e6d0",
+      "revId": "b6ca05760e4d0f1d00970b9380d6f1ba5dcd5688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6bdb3c9f_4580e0ea",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 10
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "2e11d152_039c2d36",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-05T02:32:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6bdb3c9f_4580e0ea",
+      "revId": "b6ca05760e4d0f1d00970b9380d6f1ba5dcd5688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5cebccfa_8487a681",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 10
@@ -50,6 +86,24 @@
       "revId": "b6ca05760e4d0f1d00970b9380d6f1ba5dcd5688",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ac9284f_8a6c2d11",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-05T02:32:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5cebccfa_8487a681",
+      "revId": "b6ca05760e4d0f1d00970b9380d6f1ba5dcd5688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
