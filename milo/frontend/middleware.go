@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
@@ -454,6 +455,12 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 		},
 		FuncMap: funcMap,
 	}
+}
+
+// withBuildbucketClient is a middleware that installs a production buildbucket RPC client into the context.
+func withBuildbucketClient(c *router.Context, next router.Handler) {
+	c.Context = buildbucket.WithClientFactory(c.Context, buildbucket.ProdClientFactory)
+	next(c)
 }
 
 // withGitMiddleware is a middleware that installs a prod Gerrit and Gitiles client
