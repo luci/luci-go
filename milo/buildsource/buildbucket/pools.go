@@ -172,6 +172,13 @@ func processBot(c context.Context, desc model.PoolDescriptor) error {
 		}
 		bl = bl.Cursor(botList.Cursor)
 	}
+	// If there are too many bots, then it won't fit in datastore.
+	// Only store a subset of the bots.
+	// TODO(hinoka): This is inaccurate, but will only affect few builders.
+	// Instead of chopping this list off, just store the statistics.
+	if len(bots) > 1000 {
+		bots = bots[:1000]
+	}
 	// This is a large RPC, don't try to batch it.
 	return datastore.Put(c, &model.BotPool{
 		PoolID:     desc.PoolID(),
