@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b6377d14_44aebb36",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-05T22:39:20Z",
+      "side": 1,
+      "message": "Done.\n\nIt feels like turning this into a factory adds a lot of boilerplate code.  Does this look right?",
+      "parentUuid": "2f125170_4489f545",
+      "revId": "6f6ebbcef483e2c937213cc0e656e9f1820595c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "036b8ec3_d48fb365",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "6f6ebbcef483e2c937213cc0e656e9f1820595c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8b340bf_585b2709",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-05T22:39:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "036b8ec3_d48fb365",
+      "revId": "6f6ebbcef483e2c937213cc0e656e9f1820595c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
