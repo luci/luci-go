@@ -24,8 +24,6 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -149,59 +147,6 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 	return bs, nil
 }
 
-// generateSummary takes a decoded buildbucket event and generates
-// a model.BuildSummary from it.
-//
-// This is the portion of the summarization process which cannot fail (i.e. is
-// pure-data).
-func generateSummary(c context.Context, hostname string, build buildbucket.Build) (*model.BuildSummary, error) {
-	bs, err := getSummary(c, hostname, build.Project, build.ID)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "got error while getting summary")
-	}
-
-	buildset := build.Tags[bbv1.TagBuildSet]
-	if buildset == nil {
-		buildset = []string{}
-	}
-	ret := &model.BuildSummary{
-		ProjectID: build.Project,
-		BuildKey:  MakeBuildKey(c, hostname, build.Address()),
-		BuilderID: NewBuilderID(build.Bucket, build.Builder).String(),
-		BuildID:   "buildbucket/" + build.Address(),
-		BuildSet:  buildset,
-		ContextURI: []string{
-			fmt.Sprintf("buildbucket://%s/build/%d", hostname, build.ID),
-		},
-
-		Created: build.CreationTime,
-		Summary: model.Summary{
-			Start:  build.StartTime,
-			End:    build.CompletionTime,
-			Status: parseStatus(build.Status),
-		},
-
-		Version: build.UpdateTime.UnixNano(),
-
-		Experimental: build.Experimental,
-	}
-
-	if shost, sid := build.Tags.Get("swarming_hostname"), build.Tags.Get("swarming_task_id"); shost != "" && sid != "" {
-		ret.ContextURI = append(ret.ContextURI, fmt.Sprintf("swarming://%s/task/%s", shost, sid))
-	}
-
-	// Informational compare of v1 and v2 API result.
-	if diff := cmp.Diff(ret, bs, cmpopts.IgnoreUnexported(model.BuildSummary{})); diff != "" {
-		logging.Errorf(c, "BuildSummary of v2 has Diff (-v1, +v2)\n%s", diff)
-	} else {
-		logging.Debugf(c, "BuildSummary between v1 and v2 are the same.")
-	}
-	// TODO(iannucci,nodir): get the bot context too
-
-	// TODO(iannucci,nodir): support manifests/got_revision
-	return ret, ret.AddManifestKeysFromBuildSets(c)
-}
-
 // pubSubHandlerImpl takes the http.Request, expects to find
 // a common.PubSubSubscription JSON object in the Body, containing a bbPSEvent,
 // and handles the contents with generateSummary.
@@ -256,8 +201,13 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return nil
 	}
 
-	bs, err := generateSummary(c, event.Hostname, build)
+	// TODO(iannucci,nodir): get the bot context too
+	// TODO(iannucci,nodir): support manifests/got_revision
+	bs, err := getSummary(c, event.Hostname, build.Project, build.ID)
 	if err != nil {
+		return err
+	}
+	if err := bs.AddManifestKeysFromBuildSets(c); err != nil {
 		return err
 	}
 
@@ -272,9 +222,9 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 			return errors.Annotate(err, "reading current BuildSummary").Err()
 		}
 
-		if build.UpdateTime.UnixNano() <= curBS.Version {
+		if bs.Version <= curBS.Version {
 			logging.Warningf(c, "current BuildSummary is newer: %d <= %d",
-				build.UpdateTime.UnixNano(), curBS.Version)
+				bs.Version, curBS.Version)
 			return nil
 		}
 

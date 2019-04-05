@@ -17,7 +17,6 @@ package buildbucket
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,7 +39,6 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -175,17 +173,6 @@ func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Com
 		BuildSet:  []string{protoutil.GitilesBuildSet(commit)},
 		BuilderID: BuilderID{BuilderID: *b.Builder}.String(),
 	})
-}
-
-func buildbucketClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
-	t, err := auth.GetRPCTransport(c, as, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
-		C:    &http.Client{Transport: t},
-		Host: host,
-	}), nil
 }
 
 // getBugLink attempts to formulate and return the build page bug link

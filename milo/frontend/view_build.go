@@ -32,6 +32,7 @@ import (
 )
 
 // handleDevBuild renders a canned build for development.
+// TODO(hinoka): Use a mock buildbucket rpc client instead.
 func handleDevBuild(c *router.Context) error {
 	name := c.Params.ByName("name")
 	b, err := buildbucket.GetTestBuild(c.Context, "../../buildsource/buildbucket", name)
