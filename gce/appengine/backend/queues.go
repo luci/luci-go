@@ -35,41 +35,6 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
-// count encapsulates a count of connected and created VMs.
-type count struct {
-	connected int
-	created   int
-}
-
-// countMap maps project to server to zone to *count.
-type countMap map[string]map[string]map[string]*count
-
-// get returns the *count associated with the given project, server, and zone,
-// creating it if it doesn't exist.
-func (m countMap) get(project, server, zone string) *count {
-	if _, ok := m[project]; !ok {
-		m[project] = make(map[string]map[string]*count)
-	}
-	if _, ok := m[project][server]; !ok {
-		m[project][server] = make(map[string]*count)
-	}
-	if _, ok := m[project][server][zone]; !ok {
-		m[project][server][zone] = &count{}
-	}
-	return m[project][server][zone]
-}
-
-// update updates metrics for all known counts of VMs for the given prefix.
-func (m countMap) update(c context.Context, prefix string) {
-	for proj, srvs := range m {
-		for srv, zones := range srvs {
-			for zone, count := range zones {
-				metrics.UpdateInstances(c, count.connected, count.created, prefix, proj, srv, zone)
-			}
-		}
-	}
-}
-
 // countVMsQueue is the name of the count VMs task handler queue.
 const countVMsQueue = "count-vms"
 
@@ -87,10 +52,10 @@ func countVMs(c context.Context, payload proto.Message) error {
 	if err := datastore.GetAll(c, q, &keys); err != nil {
 		return errors.Annotate(err, "failed to fetch VMs").Err()
 	}
-	// Map project, server, zone to number of connected and created VMs.
+	// Count VMs per project, server and zone.
 	// VMs created from the same config eventually have the same project,
 	// server, and zone but may currently exist for a previous config.
-	m := make(countMap)
+	vms := make(metrics.InstanceCounter)
 	vm := &model.VM{}
 	for _, k := range keys {
 		id := k.StringID()
@@ -100,16 +65,17 @@ func countVMs(c context.Context, payload proto.Message) error {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
 		default:
-			count := m.get(vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
 			if vm.Connected > 0 {
-				count.connected++
+				vms.Connected(vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
 			}
 			if vm.Created > 0 {
-				count.created++
+				vms.Created(vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
 			}
 		}
 	}
-	m.update(c, task.Id)
+	if err := vms.Update(c, task.Id); err != nil {
+		return errors.Annotate(err, "failed to update count").Err()
+	}
 	return nil
 }
 
