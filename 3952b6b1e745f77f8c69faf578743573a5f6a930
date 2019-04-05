@@ -1,0 +1,251 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5b0e1c3_ae11a2cb",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "nit: `...`",
+      "range": {
+        "startLine": 68,
+        "startChar": 38,
+        "endLine": 68,
+        "endChar": 45
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43ea697c_ca99be9e",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "what\u0027s wrong with literal meaning of expanded?\n\nalso, consider\ns/expanded/translated",
+      "range": {
+        "startLine": 71,
+        "startChar": 67,
+        "endLine": 71,
+        "endChar": 77
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06c4a6c8_256cc480",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "A",
+      "range": {
+        "startLine": 77,
+        "startChar": 13,
+        "endLine": 77,
+        "endChar": 16
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff7252d0_23ae1897",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 80,
+        "startChar": 7,
+        "endLine": 80,
+        "endChar": 14
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d26e8b22_ecf5706b",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "s/But this would be your own adventure/However,\n\nshorter yet implies the same :)",
+      "range": {
+        "startLine": 93,
+        "startChar": 68,
+        "endLine": 94,
+        "endChar": 29
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcc6b62f_87cc1529",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "only",
+      "range": {
+        "startLine": 94,
+        "startChar": 32,
+        "endLine": 94,
+        "endChar": 33
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5fb58ff_63ff91d2",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 134,
+        "startChar": 17,
+        "endLine": 134,
+        "endChar": 18
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ceb356f_0b3c9e3f",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "nitty: del\n(or add comma before \"in addition\")",
+      "range": {
+        "startLine": 138,
+        "startChar": 60,
+        "endLine": 138,
+        "endChar": 61
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c37a7bf2_a1858be0",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 138,
+        "startChar": 30,
+        "endLine": 138,
+        "endChar": 32
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad14540b_07741231",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "re-run",
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63074767_82043b77",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:09:56Z",
+      "side": 1,
+      "message": "begs for a verb, say \"... is ready\"",
+      "range": {
+        "startLine": 145,
+        "startChar": 12,
+        "endLine": 145,
+        "endChar": 39
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
