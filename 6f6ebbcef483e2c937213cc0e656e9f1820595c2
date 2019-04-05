@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f125170_4489f545",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-05T22:10:28Z",
+      "side": 1,
+      "message": "if a test forgets to call withClient, it will start to make actual requests\n\nconsider changing withClient to withClientFactory where the factory accepts parameter from this func. Then require the factory here. Then this function will not silently make requests. \nmiddleware would install a factory that creates a real client",
+      "revId": "6f6ebbcef483e2c937213cc0e656e9f1820595c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "036b8ec3_d48fb365",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-05T22:10:28Z",
+      "side": 1,
+      "message": "consider moving this to a separate file. This is not related to \"build\"",
+      "revId": "6f6ebbcef483e2c937213cc0e656e9f1820595c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
