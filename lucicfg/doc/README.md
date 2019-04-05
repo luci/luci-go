@@ -27,10 +27,11 @@
 
 ### Working with lucicfg
 
-*** note
-TODO: To be written.
-***
+lucicfg is a tool for generating low-level LUCI configuration files based on a
+high-level config given as a [Starlark] script using API exposed by lucicfg
+(which is extensively documented in this doc).
 
+[Starlark]: https://github.com/google/starlark-go
 
 ### Concepts
 
@@ -53,11 +54,47 @@ TODO: To be written.
 ***
 
 
+
 ### Defining cron schedules {#schedules_doc}
 
-*** note
-TODO: To be written.
-***
+[luci.builder(...)](#luci.builder) and
+[luci.gitiles_poller(...)](#luci.gitiles_poller) rules have `schedule` field that
+defines how often the builder or poller should run. Schedules are given as
+strings. Supported kinds of schedules (illustrated via examples):
+
+  - `* 0 * * * *`: a crontab expression, in a syntax supported by
+    https://github.com/gorhill/cronexpr (see its docs for full reference).
+    LUCI will attempt to start the job at specified moments in time (based on
+    **UTC clock**). Some examples:
+      - `0 */3 * * * *` - every 3 hours: at 12:00 AM UTC, 3:00 AM UTC, ...
+      - `0 */3 * * *` - the exact same thing (the last field is optional).
+      - `0 1/3 * * *` - every 3 hours but starting 1:00 AM UTC.
+      - `0 2,10,18 * * *` - at 2 AM UTC, 10 AM UTC, 6 PM UTC.
+      - `0 7 * * *` - at 7 AM UTC, once a day.
+
+    If a previous invocation is still running when triggering a new one,
+    an overrun is recorded and the new scheduled invocation is skipped. The next
+    attempt to start the job happens based on the schedule (not when the
+    currently running invocation finishes).
+
+  - `with 10s interval`: run the job in a loop, waiting 10s after finishing
+     an invocation before starting a new one. Moments when the job starts aren't
+     synchronized with the wall clock at all.
+
+  - `with 1m interval`, `with 1h interval`: same format, just using minutes and
+    hours instead of seconds.
+
+  - `continuously` is alias for `with 0s interval`, meaning to run the job in
+    a loop without any pauses at all.
+
+  - `triggered` schedule indicates that the job is only started via some
+    external triggering event (e.g. via LUCI Scheduler API), not periodically.
+      - in [luci.builder(...)](#luci.builder) this schedule is useful to
+        make lucicfg setup a scheduler job associated with the builder (even if
+        the builder is not triggered by anything else in the configs). This
+        exposes the builder in LUCI Scheduler API.
+      - in [luci.gitiles_poller(...)](#luci.gitiles_poller) this is useful to setup
+        a poller that polls only on manual requests, not periodically.
 
 
 ## Interfacing with lucicfg internals
