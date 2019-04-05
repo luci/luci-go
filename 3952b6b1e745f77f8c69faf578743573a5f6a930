@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8db319cd_d2d0d184",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "I specifically removed `` because there were too many of them, the paragraph looked very colorful with constant background changes.",
+      "parentUuid": "b5b0e1c3_ae11a2cb",
+      "range": {
+        "startLine": 68,
+        "startChar": 38,
+        "endLine": 68,
+        "endChar": 45
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43ea697c_ca99be9e",
         "filename": "lucicfg/doc/templates/README.mdt",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df8ef6a3_d1c7a694",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "replaced with translated",
+      "parentUuid": "43ea697c_ca99be9e",
+      "range": {
+        "startLine": 71,
+        "startChar": 67,
+        "endLine": 71,
+        "endChar": 77
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "f0edcfda_c30a4bd6",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06c4a6c8_256cc480",
+      "range": {
+        "startLine": 77,
+        "startChar": 13,
+        "endLine": 77,
+        "endChar": 16
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff7252d0_23ae1897",
         "filename": "lucicfg/doc/templates/README.mdt",
         "patchSetId": 6
@@ -91,6 +163,30 @@
       "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60f86e78_0c2900b3",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff7252d0_23ae1897",
+      "range": {
+        "startLine": 80,
+        "startChar": 7,
+        "endLine": 80,
+        "endChar": 14
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +236,54 @@
     },
     {
       "key": {
+        "uuid": "d05b11ff_6534340a",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "I wanted to be sarcastic and imply that questions \"how to build this from source\" are NOT welcomed.\n\nFine...",
+      "parentUuid": "d26e8b22_ecf5706b",
+      "range": {
+        "startLine": 93,
+        "startChar": 68,
+        "endLine": 94,
+        "endChar": 29
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ece4319f_6362b3d9",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dcc6b62f_87cc1529",
+      "range": {
+        "startLine": 94,
+        "startChar": 32,
+        "endLine": 94,
+        "endChar": 33
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b5fb58ff_63ff91d2",
         "filename": "lucicfg/doc/templates/README.mdt",
         "patchSetId": 6
@@ -160,6 +304,30 @@
       "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d2dc01b_17560b59",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b5fb58ff_63ff91d2",
+      "range": {
+        "startLine": 134,
+        "startChar": 17,
+        "endLine": 134,
+        "endChar": 18
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +377,54 @@
     },
     {
       "key": {
+        "uuid": "fec9cc7d_443d0215",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ceb356f_0b3c9e3f",
+      "range": {
+        "startLine": 138,
+        "startChar": 60,
+        "endLine": 138,
+        "endChar": 61
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ffd14aee_9ab1f547",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c37a7bf2_a1858be0",
+      "range": {
+        "startLine": 138,
+        "startChar": 30,
+        "endLine": 138,
+        "endChar": 32
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ad14540b_07741231",
         "filename": "lucicfg/doc/templates/README.mdt",
         "patchSetId": 6
@@ -223,6 +439,24 @@
       "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc906104_e2922381",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad14540b_07741231",
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -246,6 +480,30 @@
       "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e7f5605_5ef62715",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-05T21:37:39Z",
+      "side": 1,
+      "message": "No. The sentence structurally is \"This is ... your first generated config\" with a bit more emotion :)",
+      "parentUuid": "63074767_82043b77",
+      "range": {
+        "startLine": 145,
+        "startChar": 12,
+        "endLine": 145,
+        "endChar": 39
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
