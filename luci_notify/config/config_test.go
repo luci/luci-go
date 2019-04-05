@@ -52,7 +52,7 @@ func TestConfigIngestion(t *testing.T) {
 							}
 						}
 						builders {
-							bucket: "luci.chromium.ci"
+							bucket: "ci"
 							name: "linux"
 							repository: "https://chromium.googlesource.com/chromium/src"
 						}
@@ -73,7 +73,7 @@ func TestConfigIngestion(t *testing.T) {
 							}
 						}
 						builders {
-							bucket: "luci.v8.ci"
+							bucket: "ci"
 							name: "win"
 						}
 					}
@@ -100,7 +100,7 @@ func TestConfigIngestion(t *testing.T) {
 		So(builders, ShouldResemble, []*Builder{
 			{
 				ProjectKey: datastore.MakeKey(c, "Project", "chromium"),
-				ID:         "luci.chromium.ci/linux",
+				ID:         "ci/linux",
 				Repository: "https://chromium.googlesource.com/chromium/src",
 				Notifications: notifypb.Notifications{
 					Notifications: []*notifypb.Notification{
@@ -115,7 +115,7 @@ func TestConfigIngestion(t *testing.T) {
 			},
 			{
 				ProjectKey: datastore.MakeKey(c, "Project", "v8"),
-				ID:         "luci.v8.ci/win",
+				ID:         "ci/win",
 				Notifications: notifypb.Notifications{
 					Notifications: []*notifypb.Notification{
 						{

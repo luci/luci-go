@@ -19,6 +19,7 @@ import (
 	html "html/template"
 	"net/mail"
 	"regexp"
+	"strings"
 	text "text/template"
 
 	"github.com/golang/protobuf/proto"
@@ -83,6 +84,10 @@ func validateNotification(c *validation.Context, cfgNotification *notifypb.Notif
 func validateBuilder(c *validation.Context, cfgBuilder *notifypb.Builder, builderNames stringset.Set) {
 	if cfgBuilder.Bucket == "" {
 		c.Errorf(requiredFieldError, "bucket")
+	}
+	if strings.HasPrefix(cfgBuilder.Bucket, "luci.") {
+		// TODO(tandrii): change to warning once our validation library supports it.
+		c.Errorf(`field "bucket" should not include legacy "luci.<project_name>." prefix, given %q`, cfgBuilder.Bucket)
 	}
 	if cfgBuilder.Name == "" {
 		c.Errorf(requiredFieldError, "name")
