@@ -67,6 +67,9 @@
       </table>
       <details>
         <summary>{{ .Total }} bots</summary>
+        {{ if eq (len .Bots) 1000 }}
+          Note: This list may be incomplete, click on the Machine Pool link above to see all bots.
+        {{ end }}
         <table class="info">
           <tr><th>Name</th><th>Status</th><th>Last Seen</th></tr>
           {{ range .Bots }}
