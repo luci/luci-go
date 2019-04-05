@@ -63,18 +63,114 @@ TODO: To be written.
 
 ## Overview
 
-### Working with lucicfg
+`lucicfg` is a tool for generating low-level LUCI configuration files based on a
+high-level configuration given as a [Starlark] script that uses APIs exposed by
+`lucicfg`. In other words, it takes a \*.star file (or files) as input and
+spits out a bunch of \*.cfg files (such us `cr-buildbucket.cfg` and
+`luci-scheduler.cfg`) as outputs. A single entity (such as a
+{{LinkifySymbols "luci.builder(...)"}} definition) in the input is translated
+into multiple entities (such as Buildbucket's builder{...} and Scheduler's
+job{...}) in the output. This ensures internal consistency of all low-level
+configs.
 
-lucicfg is a tool for generating low-level LUCI configuration files based on a
-high-level config given as a [Starlark] script using API exposed by lucicfg
-(which is extensively documented in this doc).
+Using Starlark allows to further reduce duplication and enforce invariants in
+the configs. A common pattern is to use Starlark functions that wrap one or
+more basic rules (e.g. {{LinkifySymbols "luci.builder(...)"}} and
+{{LinkifySymbols "luci.console_view_entry(...)"}}) to define more "concrete"
+entities (for example "a CI builder" or "a Try builder"). The rest of the
+config script then uses such functions to build up the actual configuration.
 
-[Starlark]: https://github.com/google/starlark-go
+### Getting lucicfg
 
-### Concepts
+`lucicfg` is distributed as a single self-contained binary as part of
+[depot_tools], so if you use them, you already have it. Additionally it is
+available in PATH on all LUCI builders. The rest of this doc also assumes that
+`lucicfg` is in PATH.
+
+If you don't use depot_tools, `lucicfg` can be installed through CIPD. The
+package is [infra/tools/luci/lucicfg/${platform}], and the canonical stable
+version can be looked up in the depot_tools [CIPD manifest].
+
+Finally, you can always try to build `lucicfg` from the source code. However,
+the only officially supported distribution mechanism is CIPD packages.
+
+### Getting started with a simple config
+
+Create a new directory, create a new `main.star` file there with the following
+content:
+
+```python
+#!/usr/bin/env lucicfg
+
+luci.project(
+    name = "hello-world",
+    buildbucket = "cr-buildbucket.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
+)
+
+luci.bucket(name = "my-bucket")
+
+luci.builder(
+    name = "my-builder",
+    bucket = "my-bucket",
+    executable = luci.recipe(
+        name = "my-recipe",
+        cipd_package = "recipe/bundle/package",
+    ),
+)
+```
+
+Now run `lucicfg generate main.star`. It will create a new directory `generated`
+side-by-side with `main.star` file. This directory contains `project.cfg` and
+`cr-buildbucket.cfg` files, generated based on the script above.
+
+Equivalently, make the script executable (`chmod a+x main.star`) and then just
+execute it (`./main.star`). This is the exact same thing as running `generate`
+subcommand.
+
+Now make some change in `main.star` (for example, rename the builder), but do
+not regenerate the configs yet. Instead run `lucicfg validate main.star`. It
+will produce an error, telling you that files on disk (in `generated/*`) are
+stale. Regenerate them (`./main.star`), and run the validation again.
+
+If you have never done this before or haven't used any other LUCI tools, you are
+now asked to authenticate by running `lucicfg auth-login`. This is because
+`lucicfg validate` in addition to checking configs locally also sends them for a
+more thorough validation to the LUCI Config service, and this requires you to be
+authenticated. Do `lucicfg auth-login` and re-run `lucicfg validate main.star`.
+It should succeed now. If it still fails with permissions issues, you are
+probably not in `config-validation` group (this should be rare, please contact
+luci-eng@google.com if this is happening).
+
+`lucicfg validate` is meant to be used from presubmit tests. If you use
+depot_tools' `PRESUBMIT.py`, there's a [canned check] that wraps
+`lucicfg validate`.
+
+This is it, your first generated config! It is not very functional yet (e.g.
+builders without Swarming dimensions are useless), but a good place to start.
+Keep iterating on it, modifying the script, regenerating configs, and examining
+the output in `generated` directory. Once you are satisfied with the result,
+commit **both** Starlark scripts and generated configs into the repository, and
+then configure LUCI Config service to pull configuration from `generated`
+directory (how to do it is outside the scope of this doc).
+
+### Migrating from existing configs to lucicfg
+
 {{template "todo"}}
 
+[Starlark]: https://github.com/google/starlark-go
+[depot_tools]: https://chromium.googlesource.com/chromium/tools/depot_tools/
+[infra/tools/luci/lucicfg/${platform}]: https://chrome-infra-packages.appspot.com/p/infra/tools/luci/lucicfg
+[CIPD manifest]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/refs/heads/master/cipd_manifest.txt
+[canned check]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/39b0b8e32a4ed0675a38d97799e8a219cc549910/presubmit_canned_checks.py#1437
+
+
+## Concepts
+
 ### Execution model {#execution_doc}
+{{template "todo"}}
+
+### Rules, nodes, relations
 {{template "todo"}}
 
 ### Resolving naming ambiguities
