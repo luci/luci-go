@@ -50,6 +50,10 @@ The following functions are available to templates in addition to the
   [Timestamp](https://godoc.org/github.com/golang/protobuf/ptypes/timestamp#Timestamp)
   to [time.Time](https://godoc.org/time).
   Example: `{{.Build.EndTime | time}}`
+* `formatBuilderID`: converts a
+  [BuilderID](https://godoc.org/go.chromium.org/luci/buildbucket/proto#BuilderID)
+  to a `<project>/<bucket>/<builder>` string.
+  Example: `{{.Build.Builder | formatBuilderID}}`
 
 ## Template example
 
