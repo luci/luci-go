@@ -29,6 +29,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/mgutz/ansi"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/text/color"
 	"go.chromium.org/luci/common/data/text/indented"
@@ -74,11 +75,13 @@ func newPrinter(w io.Writer, disableColor bool, nowFn func() time.Time) *printer
 	return p
 }
 
-func newStdoutPrinter(disableColor bool) *printer {
+func newStdioPrinters(disableColor bool) (stdout, stderr *printer) {
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		disableColor = true
 	}
-	return newPrinter(os.Stdout, disableColor, time.Now)
+	stdout = newPrinter(os.Stdout, disableColor, time.Now)
+	stderr = newPrinter(os.Stderr, disableColor, time.Now)
+	return
 }
 
 // f prints a formatted message. Panics if writing fails.
@@ -351,6 +354,13 @@ func (p *printer) linkf(format string, args ...interface{}) {
 	p.f("%s", ansiWhiteUnderline)
 	p.f(format, args...)
 	p.f("%s", ansi.Reset)
+}
+
+// Error prints the err. If err is a gRPC error, then prints only the message
+// without the code.
+func (p *printer) Error(err error) {
+	st, _ := status.FromError(err)
+	p.f("%s", st.Message())
 }
 
 // readTimestamp converts ts to time.Time.
