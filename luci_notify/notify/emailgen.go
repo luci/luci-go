@@ -40,9 +40,11 @@ type EmailTemplateInput struct {
 }
 
 // errorBodyTemplate is used when a user-defined email template fails.
-var errorBodyTemplate = html.Must(html.New("error").Parse(strings.TrimSpace(`
+var errorBodyTemplate = html.Must(html.New("error").
+	Funcs(config.EmailTemplateFuncs).
+	Parse(strings.TrimSpace(`
 <p>A <a href="https://ci.chromium.org/b/{{.Build.Id}}">build</a>
-  on builder <code>{{ .Build.Builder.Project }}/{{ .Build.Builder.Bucket }}/{{ .Build.Builder.Builder }}</code>
+  on builder <code>{{ .Build.Builder | formatBuilderID }}</code>
   completed with status <code>{{.Build.Status}}</code>.</p>
 
 <p>This email is so spartan because the actual
@@ -56,8 +58,8 @@ has failed on this build:
 // this.
 var defaultTemplate = config.EmailTemplate{
 	Name:                "default",
-	SubjectTextTemplate: `[Build Status] Builder "{{ .Build.Builder.IDString }}"`,
-	BodyHTMLTemplate: `luci-notify detected a status change for builder "{{ .Build.Builder.Project }}/{{ .Build.Builder.Bucket }}/{{ .Build.Builder.Builder }}"
+	SubjectTextTemplate: `[Build Status] Builder "{{ .Build.Builder | formatBuilderID }}"`,
+	BodyHTMLTemplate: `luci-notify detected a status change for builder "{{ .Build.Builder | formatBuilderID }}"
 at {{ .Build.EndTime | time }}.
 
 <table>
@@ -71,7 +73,7 @@ at {{ .Build.EndTime | time }}.
   </tr>
   <tr>
     <td>Builder:</td>
-    <td>{{ .Build.Builder.IDString }}</td>
+    <td>{{ .Build.Builder | formatBuilderID }}</td>
   </tr>
   <tr>
     <td>Created by:</td>

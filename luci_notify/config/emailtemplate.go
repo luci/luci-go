@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	configInterface "go.chromium.org/luci/config"
@@ -36,6 +37,7 @@ var EmailTemplateFuncs = map[string]interface{}{
 		t, _ := ptypes.Timestamp(ts)
 		return t
 	},
+	"formatBuilderID": protoutil.FormatBuilderID,
 }
 
 // emailTemplateFilenameRegexp returns a regular expression for email template
