@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "c69212d9_94252085",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-04-05T16:26:33Z",
+      "side": 1,
+      "message": "QQ: Does `bb ls` support time range filtering? eg: `give me all scheduled build for this builder triggered (after|before) $TIMESTAMP`?\n\nIf we had that + everything here, I think it\u0027d pretty much cover every use case I can think of :)",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1b3893a5_bd7d892a",
         "filename": "buildbucket/cli/add.go",
         "patchSetId": 6
@@ -338,6 +355,24 @@
       "side": 1,
       "message": "the justification is mitigation of outages when we need to cancel a lot of builds. +Ben Pastene can tell you more about this if justification is unclear.\n\nAlso this is meant to close crbug.com/747322 and replace delete_many_builds API. Its is existence is clearly justified because we relied on it a few times.",
       "parentUuid": "2b8d1509_52c56ceb",
+      "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "af5da829_f5b6788c",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-04-05T16:26:33Z",
+      "side": 1,
+      "message": "\u003e Also this is meant to close crbug.com/747322 and replace delete_many_builds API. Its is existence is clearly justified because we relied on it a few times.\n\nTwice now in the past few weeks I\u0027ve had to mass cancel ~100s of builds at a time. So anything to make that easier would definitely come in handy in the future.",
+      "parentUuid": "f675bce4_f0594f78",
       "revId": "203eb608c9fc0c7a49fd2ff506311d3a97dd676b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
