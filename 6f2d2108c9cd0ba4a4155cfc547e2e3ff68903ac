@@ -46,6 +46,30 @@
       "revId": "6f2d2108c9cd0ba4a4155cfc547e2e3ff68903ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4934412f_b80e344f",
+        "filename": "luci_notify/notify/emailgen.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-05T15:13:30Z",
+      "side": 1,
+      "message": "sorry for a breakage, Oleh. I totally dropped the ball here..\n\nare you using \"Ended()\"?\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1554010",
+      "parentUuid": "4a513f50_4a5dd03b",
+      "range": {
+        "startLine": 45,
+        "startChar": 19,
+        "endLine": 45,
+        "endChar": 104
+      },
+      "revId": "6f2d2108c9cd0ba4a4155cfc547e2e3ff68903ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
