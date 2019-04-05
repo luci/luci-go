@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6eea1159_e455ec66",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-05T02:24:42Z",
+      "side": 1,
+      "message": "Maybe not on Counts, but I like to be able to sort and filter in the datastore. I don\u0027t see any reason to explicitly noindex. At any rate, now I\u0027ve changed the query to require a Computed\u0027s index.",
+      "parentUuid": "7ac15294_3d003320",
+      "range": {
+        "startLine": 154,
+        "startChar": 1,
+        "endLine": 159,
+        "endChar": 38
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86e05401_800fe56b",
         "filename": "gce/appengine/backend/internal/metrics/metrics.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c35f9cc_c1a2ecf7",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-05T02:24:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86e05401_800fe56b",
+      "range": {
+        "startLine": 170,
+        "startChar": 65,
+        "endLine": 170,
+        "endChar": 89
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "e57e610c_2d7e3194",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-05T02:24:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4148d1fa_384a5d4f",
+      "range": {
+        "startLine": 172,
+        "startChar": 3,
+        "endLine": 172,
+        "endChar": 44
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "320ed74b_6ceb3d48",
         "filename": "gce/appengine/backend/internal/metrics/metrics.go",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "e185cc5b_2a904636",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-05T02:24:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "320ed74b_6ceb3d48",
+      "range": {
+        "startLine": 177,
+        "startChar": 12,
+        "endLine": 177,
+        "endChar": 40
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "569d5f9c_e6375e2a",
         "filename": "gce/appengine/backend/internal/metrics/metrics.go",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34d76adf_85128ba2",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-05T02:24:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "569d5f9c_e6375e2a",
+      "range": {
+        "startLine": 190,
+        "startChar": 30,
+        "endLine": 190,
+        "endChar": 45
+      },
+      "revId": "faadee7b2e58f68485fa1f679cb4a73f36ba4b5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
