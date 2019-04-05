@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/tsmon"
 
 	"go.chromium.org/luci/gce/api/config/v1"
@@ -33,7 +34,43 @@ func TestMetrics(t *testing.T) {
 
 	Convey("Metrics", t, func() {
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
+		datastore.GetTestable(c).AutoIndex(true)
+		datastore.GetTestable(c).Consistent(true)
 		s := tsmon.Store(c)
+
+		Convey("InstanceCounter", func() {
+			ic := make(InstanceCounter)
+			So(ic, ShouldBeEmpty)
+
+			ic.Connected("project", "server", "zone-1")
+			ic.Created("project", "server", "zone-1")
+			ic.Created("project", "server", "zone-1")
+			ic.Created("project", "server", "zone-2")
+			So(ic.get("project", "server", "zone-1").Connected, ShouldEqual, 1)
+			So(ic.get("project", "server", "zone-1").Created, ShouldEqual, 2)
+			So(ic.get("project", "server", "zone-2").Created, ShouldEqual, 1)
+
+			So(ic.Update(c, "prefix"), ShouldBeNil)
+			n := &InstanceCount{
+				ID: "prefix",
+			}
+			So(datastore.Get(c, n), ShouldBeNil)
+			So(n.Counts, ShouldHaveLength, 2)
+			So(n.Counts, ShouldContain, instanceCount{
+				Connected: 1,
+				Created:   2,
+				Project:   "project",
+				Server:    "server",
+				Zone:      "zone-1",
+			})
+			So(n.Counts, ShouldContain, instanceCount{
+				Connected: 0,
+				Created:   1,
+				Project:   "project",
+				Server:    "server",
+				Zone:      "zone-2",
+			})
+		})
 
 		Convey("UpdateFailures", func() {
 			fields := []interface{}{"prefix", "project", "zone"}
@@ -69,17 +106,79 @@ func TestMetrics(t *testing.T) {
 			So(s.Get(c, configuredInstances, time.Time{}, fields).(int64), ShouldEqual, 200)
 		})
 
-		Convey("UpdateInstances", func() {
+		Convey("updateInstances", func() {
 			connectedFields := []interface{}{"prefix", "project", "server", "zone"}
 			createdFields := []interface{}{"prefix", "project", "zone"}
 
-			UpdateInstances(c, 1, 3, "prefix", "project", "server", "zone")
-			So(s.Get(c, connectedInstances, time.Time{}, connectedFields).(int64), ShouldEqual, 1)
-			So(s.Get(c, createdInstances, time.Time{}, createdFields).(int64), ShouldEqual, 3)
+			Convey("expired", func() {
+				datastore.Put(c, &InstanceCount{
+					ID:       "prefix",
+					Computed: time.Time{},
+					Counts: []instanceCount{
+						{
+							Connected: 1,
+							Created:   3,
+							Project:   "project",
+							Server:    "server",
+							Zone:      "zone",
+						},
+					},
+					Prefix: "prefix",
+				})
+				updateInstances(c)
+				So(s.Get(c, connectedInstances, time.Time{}, connectedFields), ShouldBeNil)
+				So(s.Get(c, createdInstances, time.Time{}, createdFields), ShouldBeNil)
+				n := &InstanceCount{
+					ID: "prefix",
+				}
+				So(datastore.Get(c, n), ShouldEqual, datastore.ErrNoSuchEntity)
+			})
 
-			UpdateInstances(c, 0, 2, "prefix", "project", "server", "zone")
-			So(s.Get(c, connectedInstances, time.Time{}, connectedFields).(int64), ShouldEqual, 0)
-			So(s.Get(c, createdInstances, time.Time{}, createdFields).(int64), ShouldEqual, 2)
+			Convey("valid", func() {
+				datastore.Put(c, &InstanceCount{
+					ID:       "prefix",
+					Computed: time.Now().UTC(),
+					Counts: []instanceCount{
+						{
+							Connected: 1,
+							Created:   3,
+							Project:   "project",
+							Server:    "server",
+							Zone:      "zone",
+						},
+					},
+					Prefix: "prefix",
+				})
+				updateInstances(c)
+				So(s.Get(c, connectedInstances, time.Time{}, connectedFields).(int64), ShouldEqual, 1)
+				So(s.Get(c, createdInstances, time.Time{}, createdFields).(int64), ShouldEqual, 3)
+				n := &InstanceCount{
+					ID: "prefix",
+				}
+				So(datastore.Get(c, n), ShouldBeNil)
+
+				datastore.Put(c, &InstanceCount{
+					ID:       "prefix",
+					Computed: time.Now().UTC(),
+					Counts: []instanceCount{
+						{
+							Connected: 0,
+							Created:   2,
+							Project:   "project",
+							Server:    "server",
+							Zone:      "zone",
+						},
+					},
+					Prefix: "prefix",
+				})
+				updateInstances(c)
+				So(s.Get(c, connectedInstances, time.Time{}, connectedFields).(int64), ShouldEqual, 0)
+				So(s.Get(c, createdInstances, time.Time{}, createdFields).(int64), ShouldEqual, 2)
+				n = &InstanceCount{
+					ID: "prefix",
+				}
+				So(datastore.Get(c, n), ShouldBeNil)
+			})
 		})
 
 		Convey("UpdateQuota", func() {
