@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0855a545_2d50dff4",
+        "filename": "luci_notify/notify/emailgen.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1179484
+      },
+      "writtenOn": "2019-04-05T12:58:55Z",
+      "side": 1,
+      "message": "I really don\u0027t like these silent backwards-incompatible changes to lucicfg. It has happened for the 2nd time in the same area.",
+      "range": {
+        "startLine": 45,
+        "startChar": 19,
+        "endLine": 45,
+        "endChar": 104
+      },
+      "revId": "6f2d2108c9cd0ba4a4155cfc547e2e3ff68903ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
