@@ -22,6 +22,30 @@
       "revId": "6f2d2108c9cd0ba4a4155cfc547e2e3ff68903ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a513f50_4a5dd03b",
+        "filename": "luci_notify/notify/emailgen.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1179484
+      },
+      "writtenOn": "2019-04-05T12:59:31Z",
+      "side": 1,
+      "message": "Correction:\n\nI really don\u0027t like these silent backwards-incompatible changes to *luci-notify*. It has happened for the 2nd time in the same area.",
+      "parentUuid": "0855a545_2d50dff4",
+      "range": {
+        "startLine": 45,
+        "startChar": 19,
+        "endLine": 45,
+        "endChar": 104
+      },
+      "revId": "6f2d2108c9cd0ba4a4155cfc547e2e3ff68903ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
