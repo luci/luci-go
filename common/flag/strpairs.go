@@ -22,14 +22,14 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 )
 
-// strpairsFlag implements the flag.Value returned by StrPairs.
+// strpairsFlag implements the flag.Getter returned by StrPairs.
 type stringPairsFlag strpair.Map
 
-// StrPairs returns a flag.Value for parsing strpair.Map from a
+// StrPairs returns a flag.Getter for parsing strpair.Map from a
 // a set of colon-separated strings.
 // Example: -f a:1 -f a:2 -f b:3
 // Panics if m is nil.
-func StringPairs(m strpair.Map) flag.Value {
+func StringPairs(m strpair.Map) flag.Getter {
 	if m == nil {
 		panic("m is nil")
 	}
@@ -51,7 +51,7 @@ func (f stringPairsFlag) Set(s string) error {
 	return nil
 }
 
-// Set implements the flag.Getter interface.
+// Get retrieves the flag value.
 func (f stringPairsFlag) Get() interface{} {
 	return strpair.Map(f)
 }
