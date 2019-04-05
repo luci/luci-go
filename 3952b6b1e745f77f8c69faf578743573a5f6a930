@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "c12651b0_836d5f5b",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:56:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8db319cd_d2d0d184",
+      "range": {
+        "startLine": 68,
+        "startChar": 38,
+        "endLine": 68,
+        "endChar": 45
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43ea697c_ca99be9e",
         "filename": "lucicfg/doc/templates/README.mdt",
         "patchSetId": 6
@@ -495,6 +519,30 @@
       "side": 1,
       "message": "No. The sentence structurally is \"This is ... your first generated config\" with a bit more emotion :)",
       "parentUuid": "63074767_82043b77",
+      "range": {
+        "startLine": 145,
+        "startChar": 12,
+        "endLine": 145,
+        "endChar": 39
+      },
+      "revId": "3952b6b1e745f77f8c69faf578743573a5f6a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "56aded08_de199095",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 6
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T21:56:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "3e7f5605_5ef62715",
       "range": {
         "startLine": 145,
         "startChar": 12,
