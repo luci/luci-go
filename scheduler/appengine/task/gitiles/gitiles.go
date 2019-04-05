@@ -220,9 +220,6 @@ func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnl
 		return nil, err
 	}
 
-	// TODO(tandrii): hack to wipe out legacy entries.
-	wipeoutLegacyEntriesCrbug948900(c)
-
 	refs, err := m.fetchRefsState(c, ctl, cfg, g)
 	if err != nil {
 		ctl.DebugLog("Error fetching state of the world: %s", err)

@@ -63,21 +63,6 @@ type Repository struct {
 	CompressedState []byte `gae:",noindex"`
 }
 
-func wipeoutLegacyEntriesCrbug948900(c context.Context) error {
-	var rs []*Repository
-	q := ds.NewQuery("gitiles.Repository").KeysOnly(true)
-	if err := ds.GetAll(c, q, &rs); err != nil {
-		return err
-	}
-	del := rs[:0]
-	for _, r := range rs {
-		if parts := strings.SplitN(r.ID, ":", 2); len(parts) == 2 {
-			del = append(del, r)
-		}
-	}
-	return ds.Delete(c, del)
-}
-
 func repositoryID(jobID, repo string) (string, error) {
 	host, proj, err := gitiles.ParseRepoURL(repo)
 	if err != nil {
