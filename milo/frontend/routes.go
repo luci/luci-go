@@ -58,12 +58,14 @@ func Run(templatePath string) {
 	apiMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
 		withGitMiddleware,
+		withBuildbucketClient,
 	)
 	htmlMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
 		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
 		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		withGitMiddleware,
+		withBuildbucketClient,
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
 	devHtmlMW := baseMW.Extend(
@@ -73,8 +75,10 @@ func Run(templatePath string) {
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
 	projectMW := htmlMW.Extend(projectACLMiddleware)
-	backendMW := baseMW.Extend(middleware.WithContextTimeout(10 * time.Minute))
-	cronMW := backendMW.Extend(gaemiddleware.RequireCron)
+	backendMW := baseMW.Extend(
+		middleware.WithContextTimeout(10*time.Minute),
+		withBuildbucketClient)
+	cronMW := backendMW.Extend(gaemiddleware.RequireCron, withBuildbucketClient)
 
 	r.GET("/", htmlMW, frontpageHandler)
 	r.GET("/p", baseMW, movedPermanently("/"))
