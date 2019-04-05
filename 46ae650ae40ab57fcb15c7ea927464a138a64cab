@@ -22,6 +22,30 @@
       "revId": "46ae650ae40ab57fcb15c7ea927464a138a64cab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe3a8a7d_c6beb922",
+        "filename": "scheduler/appengine/task/gitiles/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-05T00:13:29Z",
+      "side": 1,
+      "message": "I need else{} to have reference to `err`. Otherwise, I\u0027d need to split L81 into 2.Is that what you want?",
+      "parentUuid": "6f5eeb0e_1fe744f7",
+      "range": {
+        "startLine": 83,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 9
+      },
+      "revId": "46ae650ae40ab57fcb15c7ea927464a138a64cab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
