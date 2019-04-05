@@ -2135,7 +2135,7 @@ Serializes a protobuf message to a string using JSONPB serialization.
 #### Arguments {#proto.to_jsonpb-args}
 
 * **msg**: a proto message to serialize. Required.
-* **emit_defaults**: if True, do not omit fields with default values.
+* **emit_defaults**: if True, include proto default values in the output.
 
 
 
