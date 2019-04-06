@@ -951,7 +951,12 @@ func mustReleaseLock(c context.Context, lock fslock.Handle, fn func() error) err
 	defer func() {
 		if err := lock.Unlock(); err != nil {
 			errors.Log(c, errors.Annotate(err, "failed to release lock").Err())
-			panic(err)
+			// TODO(maruel): There's a bug somewhere here that cases failures on
+			// Swarming tasks. Since they are running in a contained environment, it
+			// is not as much as a big deal. Experimenting if a Swarming task can
+			// survive the fact that the lock is not released.
+			// https://crbug.com/869227
+			//panic(err)
 		}
 	}()
 	return fn()
