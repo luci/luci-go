@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1295fd6a_2223d6f3",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-06T02:09:59Z",
+      "side": 1,
+      "message": "I considered deduping with readOnlyAuthPrelude using an authPrelude factory that generates read-only or read-write+VM access at runtime, but I didn\u0027t like how it looked.",
+      "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f736038_897a84c4",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-06T02:09:59Z",
+      "side": 1,
+      "message": "One user of GCE Provider doesn\u0027t use our stuff to run the agent binary at GCE instance startup, so we can\u0027t vary the -provider argument for them in configs.",
+      "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
