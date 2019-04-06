@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/gce/api/instances/v1"
 )
 
 // connectCmd is the command to connect to a Swarming server.
@@ -31,6 +33,8 @@ type connectCmd struct {
 	dir string
 	// server is the Swarming server URL to connect to.
 	server string
+	// provider is the Provider server URL to retrieve the Swarming server URL from.
+	provider string
 	// user is the name of the local user to start the Swarming bot process as.
 	user string
 }
@@ -40,8 +44,9 @@ func (cmd *connectCmd) validateFlags(c context.Context) error {
 	switch {
 	case cmd.dir == "":
 		return errors.New("-dir is required")
-	case cmd.server == "":
-		return errors.New("-server is required")
+	// TODO(crbug/945063): Remove -server.
+	case cmd.provider == "" && cmd.server == "":
+		return errors.New("-provider or -server is required")
 	case cmd.user == "":
 		return errors.New("-user is required")
 	}
@@ -64,6 +69,30 @@ func (cmd *connectCmd) Run(app subcommands.Application, args []string, env subco
 		}
 		cmd.server = srv
 	}
+	if cmd.provider != "" {
+		meta := getMetadata(c)
+		name, err := meta.InstanceName()
+		if err != nil {
+			logging.Errorf(c, "%s", err.Error())
+			return 1
+		}
+		if cmd.provider == ":metadata" {
+			cmd.provider, err = meta.Get("instance/attributes/provider")
+			if err != nil {
+				logging.Errorf(c, "%s", err.Error())
+				return 1
+			}
+		}
+		prov := newInstances(c, cmd.serviceAccount, cmd.provider)
+		inst, err := prov.Get(c, &instances.GetRequest{
+			Hostname: name,
+		})
+		if err != nil {
+			logging.Errorf(c, "%s", err.Error())
+			return 1
+		}
+		cmd.server = inst.Swarming
+	}
 
 	swr := getSwarming(c)
 	swr.server = cmd.server
@@ -84,7 +113,8 @@ func newConnectCmd() *subcommands.Command {
 			cmd := &connectCmd{}
 			cmd.Initialize()
 			cmd.Flags.StringVar(&cmd.dir, "dir", "", "Path to use as the Swarming bot directory.")
-			cmd.Flags.StringVar(&cmd.server, "server", "", "Swarming server URL to connect to, or :metadata to read it from metadata.")
+			cmd.Flags.StringVar(&cmd.provider, "provider", "", "Provider server URL to retrieve Swarming server URL from.")
+			cmd.Flags.StringVar(&cmd.server, "server", "", "Deprecated. Use -provider.")
 			cmd.Flags.StringVar(&cmd.user, "user", "", "Name of the local user to start the Swarming bot process as.")
 			return cmd
 		},
