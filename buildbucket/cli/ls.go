@@ -17,16 +17,15 @@ package cli
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/cli"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 func cmdLS(p Params) *subcommands.Command {
@@ -66,6 +65,9 @@ func cmdLS(p Params) *subcommands.Command {
 			`))
 			r.Flags.Var(StatusFlag(&r.status), "status",
 				fmt.Sprintf("Build status. Valid values: %s.", strings.Join(StatusFlagValues, ", ")))
+			r.Flags.IntVar(&r.limit, "n", 0, doc(`
+				Limit the number of builds to print. If 0, then unlimited.
+			`))
 			return r
 		},
 	}
@@ -78,6 +80,7 @@ type lsRun struct {
 
 	status              pb.Status
 	includeExperimental bool
+	limit               int
 }
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -86,70 +89,55 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		return r.done(ctx, err)
 	}
 
-	req, err := r.parseSearchRequests(ctx, args)
+	if r.limit < 0 {
+		return r.done(ctx, fmt.Errorf("-n must be non-negative"))
+	}
+
+	reqs, err := r.parseSearchRequests(ctx, args)
 	if err != nil {
 		return r.done(ctx, err)
 	}
 
-	res, err := r.client.Batch(ctx, req)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	// TODO(nodir): switch from Batch request to concurrent searches, streaming
-	// of results with paging.
-	seen := map[int64]struct{}{}
-	var builds []*pb.Build
-	for _, res := range res.Responses {
-		if err := res.GetError(); err != nil {
-			return r.done(ctx, fmt.Errorf("%s: %s", codes.Code(err.Code), err.Message))
-		}
-		for _, b := range res.GetSearchBuilds().Builds {
-			if _, ok := seen[b.Id]; ok {
-				continue
-			}
-			seen[b.Id] = struct{}{}
-			builds = append(builds, b)
-		}
-	}
-	// Sort by creation time, descending.
-	// Build IDs are monotonically decreasing.
-	sort.Slice(builds, func(i, j int) bool { return builds[i].Id < builds[j].Id })
+	builds := make(chan protoutil.BuildErr)
+	go protoutil.SearchMulti(ctx, builds, r.client, reqs)
 
 	stdout, _ := newStdioPrinters(r.noColor)
-	for i, b := range builds {
-		r.printBuild(stdout, b, i == 0)
+
+	count := 0
+	for be := range builds {
+		if be.Build == nil {
+			return r.done(ctx, be.Err)
+		}
+		r.printBuild(stdout, be.Build, count == 0)
+		count++
+		if count == r.limit {
+			return 0
+		}
 	}
-	return 0
+	panic("no terminal BuildErr")
 }
 
-// parseSearchRequests converts flags and arguments to a batched SearchBuilds
-// requests.
-func (r *lsRun) parseSearchRequests(ctx context.Context, args []string) (*pb.BatchRequest, error) {
+// parseSearchRequests converts flags and arguments to search requests.
+func (r *lsRun) parseSearchRequests(ctx context.Context, args []string) ([]*pb.SearchBuildsRequest, error) {
 	baseReq, err := r.parseBaseRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := &pb.BatchRequest{}
+	var ret []*pb.SearchBuildsRequest
 	for _, path := range args {
-		searchBuilds := proto.Clone(baseReq).(*pb.SearchBuildsRequest)
+		req := proto.Clone(baseReq).(*pb.SearchBuildsRequest)
 		var err error
-		if searchBuilds.Predicate.Builder, err = r.parsePath(path); err != nil {
+		if req.Predicate.Builder, err = r.parsePath(path); err != nil {
 			return nil, fmt.Errorf("invalid path %q: %s", path, err)
 		}
-		ret.Requests = append(ret.Requests, &pb.BatchRequest_Request{
-			Request: &pb.BatchRequest_Request_SearchBuilds{SearchBuilds: searchBuilds},
-		})
+		ret = append(ret, req)
 	}
 
 	// If no arguments were passed, search in any project.
-	if len(ret.Requests) == 0 {
-		ret.Requests = append(ret.Requests, &pb.BatchRequest_Request{
-			Request: &pb.BatchRequest_Request_SearchBuilds{SearchBuilds: baseReq},
-		})
+	if len(ret) == 0 {
+		ret = append(ret, baseReq)
 	}
-
 	return ret, nil
 }
 
@@ -161,6 +149,11 @@ func (r *lsRun) parseBaseRequest(ctx context.Context) (*pb.SearchBuildsRequest, 
 			Status:              r.status,
 			IncludeExperimental: r.includeExperimental,
 		},
+		PageSize: 100,
+	}
+
+	if r.limit > 0 && r.limit < int(ret.PageSize) {
+		ret.PageSize = int32(r.limit)
 	}
 
 	// Prepare a field mask.
