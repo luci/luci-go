@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -101,7 +102,7 @@ func TestACL(t *testing.T) {
 					ok, err := IsAllowed(c, "misconfigured")
 					So(ok, ShouldEqual, false)
 					So(err, ShouldNotBeNil)
-					So(ErrorCodeIn(err), ShouldEqual, CodeNotFound)
+					So(ErrorCodeIn(err), ShouldEqual, codes.NotFound)
 				})
 			})
 

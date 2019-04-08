@@ -18,6 +18,8 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"google.golang.org/grpc/codes"
 )
 
 // ErrorCode represents milo's internal error code system. The subsystems in
@@ -60,6 +62,15 @@ var httpCode = map[ErrorCode]int{
 	CodeOK:             http.StatusOK,
 }
 
+var grpcCode = map[ErrorCode]codes.Code{
+	CodeUnauthorized:   codes.Unauthenticated,
+	CodeNoAccess:       codes.PermissionDenied,
+	CodeNotFound:       codes.NotFound,
+	CodeParameterError: codes.InvalidArgument,
+	CodeOK:             codes.OK,
+	CodeUnknown:        codes.Unknown,
+}
+
 // HTTPStatus returns an HTTP Status code corresponding to this ErrorCode.
 func (c ErrorCode) HTTPStatus() int {
 	if ret, ok := httpCode[c]; ok {
@@ -83,14 +94,14 @@ func (c ErrorCode) GenerateErrorTagValue() errors.TagValue {
 	return c.Tag()
 }
 
-// ErrorCodeIn returns the ErrorCode in err. If err is nil, returns CodeOK.
-// If not present, returns CodeUnknown.
-func ErrorCodeIn(err error) ErrorCode {
+// ErrorCodeIn returns the codes.Code in err. If err is nil, returns codes.OK.
+// If not present, returns codes.Unknown.
+func ErrorCodeIn(err error) codes.Code {
 	if err == nil {
-		return CodeOK
+		return codes.OK
 	}
 	if v, ok := errors.TagValueIn(errorCodeTagKey, err); ok {
-		return v.(ErrorCode)
+		return grpcCode[v.(ErrorCode)]
 	}
-	return CodeUnknown
+	return grpcutil.Code(err)
 }

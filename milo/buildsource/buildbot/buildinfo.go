@@ -56,7 +56,7 @@ func GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_BuildBot,
 	}
 	build, err := buildstore.GetBuild(c, buildID)
 	switch code := common.ErrorCodeIn(err); {
-	case code == common.CodeUnauthorized:
+	case code == codes.Unauthenticated:
 		return nil, grpcutil.Unauthenticated
 
 	case err != nil:
