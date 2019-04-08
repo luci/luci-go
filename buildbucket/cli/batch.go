@@ -30,7 +30,7 @@ import (
 func cmdBatch(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `batch [flags]`,
-		ShortDesc: "calls buildbucket.v2.Builds.Batch. Suitable for scripts.",
+		ShortDesc: "calls buildbucket.v2.Builds.Batch",
 		LongDesc: doc(`
 			Calls buildbucket.v2.Builds.Batch.
 
