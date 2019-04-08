@@ -60,7 +60,6 @@ func cmdLog(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &logRun{}
 			r.RegisterDefaultFlags(p)
-			r.RegisterJSONFlag()
 			return r
 		},
 	}
@@ -254,12 +253,8 @@ func (r *logRun) printLogs(ctx context.Context, logs []*pb.Step_Log) error {
 			out = stderr
 		}
 
-		if r.json {
-			out.JSONPB(entry)
-		} else {
-			for _, line := range entry.GetText().GetLines() {
-				out.f("%s%s", line.Value, line.Delimiter)
-			}
+		for _, line := range entry.GetText().GetLines() {
+			out.f("%s%s", line.Value, line.Delimiter)
 		}
 	}
 }
