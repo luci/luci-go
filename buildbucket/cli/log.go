@@ -56,6 +56,7 @@ func cmdLog(p Params) *subcommands.Command {
 
 			Arguments LOG is one ore more log names of the STEP. They will be multiplexed
 			by time. Defaults to stdout and stderr.
+			Log "stderr" is printed to stderr.
 		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &logRun{}
