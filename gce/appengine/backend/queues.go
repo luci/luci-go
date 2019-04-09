@@ -47,15 +47,33 @@ func countVMs(c context.Context, payload proto.Message) error {
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
+	// Count VMs per project, server and zone.
+	// VMs created from the same config eventually have the same project,
+	// server, and zone but may currently exist for a previous config.
+	vms := make(metrics.InstanceCounter)
+
+	// Get the configured count.
+	cfg := &model.Config{
+		ID: task.Id,
+	}
+	switch err := datastore.Get(c, cfg); {
+	case err == datastore.ErrNoSuchEntity:
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch config").Err()
+	default:
+		amt, err := cfg.Config.Amount.GetAmount(clock.Now(c))
+		if err != nil {
+			return errors.Annotate(err, "failed to parse amount").Err()
+		}
+		vms.Configured(int(amt), cfg.Config.Attributes.Project)
+	}
+
+	// Get the actual (connected, created) counts.
 	var keys []*datastore.Key
 	q := datastore.NewQuery(model.VMKind).Eq("config", task.Id)
 	if err := datastore.GetAll(c, q, &keys); err != nil {
 		return errors.Annotate(err, "failed to fetch VMs").Err()
 	}
-	// Count VMs per project, server and zone.
-	// VMs created from the same config eventually have the same project,
-	// server, and zone but may currently exist for a previous config.
-	vms := make(metrics.InstanceCounter)
 	vm := &model.VM{}
 	for _, k := range keys {
 		id := k.StringID()
@@ -66,10 +84,10 @@ func countVMs(c context.Context, payload proto.Message) error {
 			return errors.Annotate(err, "failed to fetch VM").Err()
 		default:
 			if vm.Connected > 0 {
-				vms.Connected(vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
+				vms.Connected(1, vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
 			}
 			if vm.Created > 0 {
-				vms.Created(vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
+				vms.Created(1, vm.Attributes.Project, vm.Attributes.Zone)
 			}
 		}
 	}
@@ -222,7 +240,6 @@ func expandConfig(c context.Context, payload proto.Message) error {
 			},
 		}
 	}
-	metrics.UpdateConfiguredInstances(c, len(t), cfg.Prefix, cfg.Attributes.Project)
 	logging.Debugf(c, "creating %d VMs", len(t))
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
 		return errors.Annotate(err, "failed to schedule tasks").Err()

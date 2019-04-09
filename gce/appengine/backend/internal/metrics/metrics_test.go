@@ -42,33 +42,37 @@ func TestMetrics(t *testing.T) {
 			ic := make(InstanceCounter)
 			So(ic, ShouldBeEmpty)
 
-			ic.Connected("project", "server", "zone-1")
-			ic.Created("project", "server", "zone-1")
-			ic.Created("project", "server", "zone-1")
-			ic.Created("project", "server", "zone-2")
-			So(ic.get("project", "server", "zone-1").Connected, ShouldEqual, 1)
-			So(ic.get("project", "server", "zone-1").Created, ShouldEqual, 2)
-			So(ic.get("project", "server", "zone-2").Created, ShouldEqual, 1)
-
+			ic.Configured(3, "project")
+			ic.Created(1, "project", "zone-1")
+			ic.Created(1, "project", "zone-1")
+			ic.Created(1, "project", "zone-2")
+			ic.Connected(1, "project", "server", "zone-1")
 			So(ic.Update(c, "prefix"), ShouldBeNil)
+
 			n := &InstanceCount{
 				ID: "prefix",
 			}
 			So(datastore.Get(c, n), ShouldBeNil)
-			So(n.Counts, ShouldHaveLength, 2)
+			So(n.Counts, ShouldHaveLength, 4)
+			So(n.Counts, ShouldContain, instanceCount{
+				Configured: 3,
+				Project:    "project",
+			})
+			So(n.Counts, ShouldContain, instanceCount{
+				Created: 2,
+				Project: "project",
+				Zone:    "zone-1",
+			})
+			So(n.Counts, ShouldContain, instanceCount{
+				Created: 1,
+				Project: "project",
+				Zone:    "zone-2",
+			})
 			So(n.Counts, ShouldContain, instanceCount{
 				Connected: 1,
-				Created:   2,
 				Project:   "project",
 				Server:    "server",
 				Zone:      "zone-1",
-			})
-			So(n.Counts, ShouldContain, instanceCount{
-				Connected: 0,
-				Created:   1,
-				Project:   "project",
-				Server:    "server",
-				Zone:      "zone-2",
 			})
 		})
 
@@ -94,16 +98,6 @@ func TestMetrics(t *testing.T) {
 				Prefix:   "prefix",
 			})
 			So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 2)
-		})
-
-		Convey("UpdateConfiguredInstances", func() {
-			fields := []interface{}{"prefix", "project"}
-
-			UpdateConfiguredInstances(c, 100, "prefix", "project")
-			So(s.Get(c, configuredInstances, time.Time{}, fields).(int64), ShouldEqual, 100)
-
-			UpdateConfiguredInstances(c, 200, "prefix", "project")
-			So(s.Get(c, configuredInstances, time.Time{}, fields).(int64), ShouldEqual, 200)
 		})
 
 		Convey("updateInstances", func() {
