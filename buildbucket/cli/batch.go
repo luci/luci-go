@@ -53,6 +53,9 @@ type batchRun struct {
 
 func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
+	if err := r.initClients(ctx); err != nil {
+		return 0
+	}
 
 	if len(args) != 0 {
 		return r.done(ctx, fmt.Errorf("unexpected argument"))
