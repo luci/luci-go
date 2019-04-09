@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4731bf8f_a6546d60",
+        "filename": "buildbucket/cli/app.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-09T20:27:57Z",
+      "side": 1,
+      "message": "git does this \u003d\u003e standard enough?\ni like because it is concise",
+      "parentUuid": "d94bb1ad_42c4e84b",
+      "range": {
+        "startLine": 76,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 2
+      },
+      "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "117bdffe_edd9bc83",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c83bdc8_8db0c776",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-09T20:27:57Z",
+      "side": 1,
+      "message": "it exits the program, so yes",
+      "parentUuid": "117bdffe_edd9bc83",
+      "range": {
+        "startLine": 90,
+        "startChar": 16,
+        "endLine": 90,
+        "endChar": 19
+      },
+      "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "6ca39b95_4e421ac0",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-09T20:27:57Z",
+      "side": 1,
+      "message": "the whole program exits, so the goroutine goes down as well\n\nr.done(ctx, nil) is noop. done just checks error",
+      "parentUuid": "2d193d8a_9216d3bf",
+      "range": {
+        "startLine": 122,
+        "startChar": 3,
+        "endLine": 122,
+        "endChar": 11
+      },
+      "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "516dcc7e_cc24aba8",
         "filename": "buildbucket/protoutil/search.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9f16ff9_5602383f",
+        "filename": "buildbucket/protoutil/search.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-09T20:27:57Z",
+      "side": 1,
+      "message": "considered. I think it is not worth the complexity. This code is quite complex.",
+      "parentUuid": "516dcc7e_cc24aba8",
+      "range": {
+        "startLine": 35,
+        "startChar": 5,
+        "endLine": 35,
+        "endChar": 11
+      },
+      "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
