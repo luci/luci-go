@@ -209,6 +209,7 @@ func TestPrint(t *testing.T) {
 				})
 			p.Build(build)
 
+			So(p.Err, ShouldBeNil)
 			So(buf.String(), ShouldEqual, expectedBuildPrinted)
 		})
 
@@ -219,6 +220,7 @@ func TestPrint(t *testing.T) {
 				Ref:     "refs/heads/master",
 			})
 
+			So(p.Err, ShouldBeNil)
 			So(buf.String(), ShouldEqual, ansi.Color("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master", "white+u"))
 		})
 	})

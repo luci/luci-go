@@ -15,6 +15,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -71,7 +72,7 @@ func (r *cancelRun) Run(a subcommands.Application, args []string, env subcommand
 		return r.done(ctx, err)
 	}
 
-	return r.PrintAndDone(args, func(arg string) (*pb.Build, error) {
+	return r.PrintAndDone(ctx, args, func(ctx context.Context, arg string) (*pb.Build, error) {
 		id, err := r.retrieveBuildID(ctx, arg)
 		if err != nil {
 			return nil, err
