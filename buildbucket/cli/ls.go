@@ -17,7 +17,11 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"os/signal"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
@@ -88,8 +92,7 @@ type lsRun struct {
 }
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	ctx, cancel := context.WithCancel(cli.GetContext(a, r, env))
-	defer cancel()
+	ctx := cli.GetContext(a, r, env)
 
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
@@ -104,27 +107,74 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		return r.done(ctx, err)
 	}
 
+	searchCtx, cancelSearch := context.WithCancel(ctx)
 	buildC := make(chan *pb.Build)
-	errC := make(chan error)
+	searchErrC := make(chan error)
 	go func() {
-		err := protoutil.Search(ctx, buildC, r.client, reqs...)
+		err := protoutil.Search(searchCtx, buildC, r.client, reqs...)
 		close(buildC)
-		errC <- err
+		searchErrC <- err
 	}()
 
-	stdout, _ := newStdioPrinters(r.noColor)
+	// Create a pager. Exit when it exits.
+	var printDest io.Writer = os.Stdout
+	less, err := r.startLess()
+	// exitCodeForLess contains an exit code corresponding to the less outcome
+	// when it exits.
+	var exitCodeForLess chan int
+	switch {
+	case err == errLessUnavailable:
+	case err != nil:
+		return r.done(ctx, err)
+	default:
+		printDest = less
 
+		// Swallow interrupts. Less is supposed to be quit by pressing q.
+		// In particular, it does not respond to Ctrl+C.
+		signal.Notify(make(chan os.Signal), os.Interrupt, os.Kill)
+
+		exitCodeForLess = make(chan int)
+		lessDone := make(chan struct{})
+		go func() {
+			exitCode, err := less.Wait()
+			close(lessDone)
+			// Stop searching if the user quit less.
+			// This will cause buildC to close eventually.
+			cancelSearch()
+			if err != nil {
+				exitCodeForLess <- r.done(ctx, err)
+			} else {
+				exitCodeForLess <- exitCode
+			}
+		}()
+		// Do not exit before less.
+		defer func() { <-lessDone }()
+	}
+
+	printer := newPrinter(printDest, false, time.Now)
 	count := 0
 	for b := range buildC {
-		if err := r.printBuild(stdout, b, count == 0); err != nil {
+		if err := r.printBuild(printer, b, count == 0); err != nil {
+			if less != nil && !less.Alive() {
+				// Most likely the user quit less by pressing q.
+				// Just exit with its exit code.
+				return <-exitCodeForLess
+			}
 			return r.done(ctx, err)
 		}
+
 		count++
 		if count == r.limit {
+			// We've reached the user-specified limit.
 			return 0
 		}
 	}
-	return r.done(ctx, <-errC)
+
+	if err := <-searchErrC; err != nil && err != context.Canceled {
+		return r.done(ctx, err)
+	}
+
+	return 0
 }
 
 // parseSearchRequests converts flags and arguments to search requests.

@@ -218,6 +218,10 @@ func (r *printRun) printAndDone(ctx context.Context, stdout, stderr *printer, ar
 	return 0
 }
 
+func (r *printRun) startLess() (*less, error) {
+	return startLess(os.Stdout, r.noColor)
+}
+
 // argChan returns a channel of args.
 //
 // If args is empty, reads from stdin. Trims whitespace and skips blank lines.
