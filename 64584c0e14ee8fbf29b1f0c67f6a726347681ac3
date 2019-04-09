@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d94bb1ad_42c4e84b",
+        "filename": "buildbucket/cli/app.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T17:55:38Z",
+      "side": 1,
+      "message": "Why? What\u0027s wrong with \"-n 100\"? -100 is quite non-standard and weird.",
+      "range": {
+        "startLine": 76,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 2
+      },
+      "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "117bdffe_edd9bc83",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T17:55:38Z",
+      "side": 1,
+      "message": "how does it handle Ctrl+C? E.g. if I ask to list 10000 builds, will I be able to abort the listing?",
+      "range": {
+        "startLine": 90,
+        "startChar": 16,
+        "endLine": 90,
+        "endChar": 19
+      },
+      "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d193d8a_9216d3bf",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T17:55:38Z",
+      "side": 1,
+      "message": "Note that this leaks the goroutine above. It will get stuck on writing to \u0027errC\u0027 that no one reads. Probably not a big deal with a CLI tool though.\n\nAlso it should still probably be r.done(ctx, nil) (but I don\u0027t know what done(...) does here, maybe it\u0027s not important).",
+      "range": {
+        "startLine": 122,
+        "startChar": 3,
+        "endLine": 122,
+        "endChar": 11
+      },
+      "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "516dcc7e_cc24aba8",
+        "filename": "buildbucket/protoutil/search.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T17:55:38Z",
+      "side": 1,
+      "message": "It may be slightly more efficient to pass the limit here as well. E.g. if the limit is 110, and we use 100-build pages, the last page can be reduced to just 10 builds.",
+      "range": {
+        "startLine": 35,
+        "startChar": 5,
+        "endLine": 35,
+        "endChar": 11
+      },
+      "revId": "64584c0e14ee8fbf29b1f0c67f6a726347681ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
