@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2fe65992_0d2894d6",
+        "filename": "buildbucket/protoutil/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-09T01:01:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41b7cef9_3f85f6dc",
+      "revId": "ed4561c3d65d61ca41860002ff35417fd3ad6acf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "018d8fe6_f284f0d5",
         "filename": "buildbucket/protoutil/search.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "ed4561c3d65d61ca41860002ff35417fd3ad6acf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d923c6de_02bff92a",
+        "filename": "buildbucket/protoutil/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-09T01:01:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "018d8fe6_f284f0d5",
+      "range": {
+        "startLine": 141,
+        "startChar": 13,
+        "endLine": 141,
+        "endChar": 17
+      },
+      "revId": "ed4561c3d65d61ca41860002ff35417fd3ad6acf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
