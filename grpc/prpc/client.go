@@ -314,11 +314,11 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 	// functions do not work with error wrappers.
 	// https://github.com/grpc/grpc-go/issues/494
 	if err != nil {
-		grpcErr := errors.Unwrap(err)
-		code := grpc.Code(grpcErr)
+		innerErr := errors.Unwrap(err)
+		code := grpc.Code(innerErr)
 
 		// Log only unexpected codes.
-		ignore := false
+		ignore := innerErr == context.Canceled
 		for _, expected := range options.expectedCodes {
 			if code == expected {
 				ignore = true
@@ -329,7 +329,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 			logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
 		}
 
-		return nil, grpcErr
+		return nil, innerErr
 	}
 
 	// Parse the response content type.
