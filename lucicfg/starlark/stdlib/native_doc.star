@@ -23,10 +23,6 @@ def __load(module, *args, **kwargs):
   """Loads another Starlark module (if it haven't been loaded before), extracts
   one or more values from it, and binds them to names in the current module.
 
-  This is not actually a function, but a core Starlark statement. We give it
-  additional meaning (related to [the execution model](#execution_doc)) worthy
-  of additional documentation.
-
   A load statement requires at least two "arguments". The first must be a
   literal string, it identifies the module to load. The remaining arguments are
   a mixture of literal strings, such as `'x'`, or named literal strings, such as
@@ -44,8 +40,8 @@ def __load(module, *args, **kwargs):
 
   A load statement within a function is a static error.
 
-  TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
-  'exec' interact with each other.
+  See also [Modules and packages](#modules_and_packages) for how load(...)
+  interacts with exec(...).
 
   Args:
     module: module to load, i.e. `//path/within/current/package.star` or
@@ -56,8 +52,8 @@ def __load(module, *args, **kwargs):
 def exec(module):
   """Executes another Starlark module for its side effects.
 
-  TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
-  'exec' interact with each other.
+  See also [Modules and packages](#modules_and_packages) for how load(...)
+  interacts with exec(...).
 
   Args:
     module: module to execute, i.e. `//path/within/current/package.star` or
