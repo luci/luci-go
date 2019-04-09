@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 
@@ -25,19 +26,65 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/gce/vmtoken"
 )
 
-// authPrelude ensures the user is authorized to use the API.
-func authPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	groups := []string{"administrators"}
+const (
+	admins  = "gce-provider-administrators"
+	readers = "gce-provider-readers"
+	writers = "gce-provider-writers"
+)
+
+// isReadOnly returns whether the given method name is for a read-only method.
+func isReadOnly(methodName string) bool {
+	return strings.HasPrefix(methodName, "Get") || strings.HasPrefix(methodName, "List")
+}
+
+// readOnlyAuthPrelude ensures the user is authorized to use read API methods.
+// Always returns permission denied for write API methods.
+func readOnlyAuthPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+	if !isReadOnly(methodName) {
+		return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
+	}
+	switch is, err := auth.IsMember(c, admins, writers, readers); {
+	case err != nil:
+		return c, err
+	case is:
+		logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
+		return c, nil
+	}
+	return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
+}
+
+// isVMAccessible returns whether the given method name may be accessed by VMs.
+// Methods here must perform additional authorization checks if vmtoken.Has
+// returns true.
+func isVMAccessible(methodName string) bool {
+	return methodName == "Get"
+}
+
+// vmAccessPrelude ensures the user is authorized to use the API or has
+// presented a valid GCE VM token and is attempting to use VM-accessible API.
+// Users of this prelude must perform additional authorization checks in methods
+// accepted by isVMAccessible.
+func vmAccessPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+	groups := []string{admins, writers}
+	if isReadOnly(methodName) {
+		groups = append(groups, readers)
+	}
 	switch is, err := auth.IsMember(c, groups...); {
 	case err != nil:
 		return c, err
-	case !is:
-		return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
+	case is:
+		logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
+		// Remove the VM token to avoid restricting the user's broad access.
+		return vmtoken.Clear(c), nil
+	case isVMAccessible(methodName) && vmtoken.Has(c):
+		logging.Debugf(c, "%s called %q:\n%s", vmtoken.CurrentIdentity(c), methodName, req)
+		return c, nil
 	}
-	logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
-	return c, nil
+	return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
 }
 
 // gRPCifyAndLogErr ensures any error being returned is a gRPC error, logging Internal and Unknown errors.
