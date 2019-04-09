@@ -33,8 +33,8 @@ import (
 
 	"go.chromium.org/luci/common/data/text/color"
 	"go.chromium.org/luci/common/data/text/indented"
+	"go.chromium.org/luci/common/system/terminal"
 
-	isatty "github.com/mattn/go-isatty"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -82,7 +82,7 @@ func newPrinter(w io.Writer, disableColor bool, nowFn func() time.Time) *printer
 }
 
 func newStdioPrinters(disableColor bool) (stdout, stderr *printer) {
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
+	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
 		disableColor = true
 	}
 	stdout = newPrinter(os.Stdout, disableColor, time.Now)
