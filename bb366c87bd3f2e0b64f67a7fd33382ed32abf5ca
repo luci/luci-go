@@ -124,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "d4c9c1c3_ac7faa67",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T20:54:43Z",
+      "side": 1,
+      "message": "yeah, this sounds good.",
+      "parentUuid": "b3f8e433_51b342c9",
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "525ec2dc_27dc9096",
         "filename": "lucicfg/examples/02-ci-and-try/main.star",
         "patchSetId": 5
