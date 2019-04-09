@@ -257,6 +257,9 @@ func (r *logRun) printLogs(ctx context.Context, logs []*pb.Step_Log) error {
 		for _, line := range entry.GetText().GetLines() {
 			out.f("%s%s", line.Value, line.Delimiter)
 		}
+		if out.Err != nil {
+			return out.Err
+		}
 	}
 }
 
