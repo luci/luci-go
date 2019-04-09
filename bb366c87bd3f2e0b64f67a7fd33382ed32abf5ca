@@ -65,6 +65,30 @@
     },
     {
       "key": {
+        "uuid": "b879a262_79702f28",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T18:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ae13768_a43229e3",
+      "range": {
+        "startLine": 11,
+        "startChar": 53,
+        "endLine": 11,
+        "endChar": 68
+      },
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d8b6523b_f0deb9ba",
         "filename": "lucicfg/examples/02-ci-and-try/main.star",
         "patchSetId": 5
@@ -82,6 +106,24 @@
     },
     {
       "key": {
+        "uuid": "b3f8e433_51b342c9",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T18:16:46Z",
+      "side": 1,
+      "message": "What are our general recommendation for non-chromium teams that use LUCI? Setup their own bundlers?\n\nI prefer to keep this example focused on CI/Try builders. There\u0027ll probably be a separate example for how to setup a recipe bundler.",
+      "parentUuid": "d8b6523b_f0deb9ba",
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "525ec2dc_27dc9096",
         "filename": "lucicfg/examples/02-ci-and-try/main.star",
         "patchSetId": 5
@@ -93,6 +135,30 @@
       "writtenOn": "2019-04-09T02:08:46Z",
       "side": 1,
       "message": "I really hate myself for suggesting \"ci\" a few years ago. WDYT about using \"post\" here?",
+      "range": {
+        "startLine": 72,
+        "startChar": 20,
+        "endLine": 72,
+        "endChar": 22
+      },
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eed696c2_6fc16de3",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T18:16:46Z",
+      "side": 1,
+      "message": "I think the ship has sailed and it is better to keep using \"ci\" for consistency.",
+      "parentUuid": "525ec2dc_27dc9096",
       "range": {
         "startLine": 72,
         "startChar": 20,
@@ -125,6 +191,30 @@
       "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7c44317_c7b24938",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T18:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df385147_36c14c19",
+      "range": {
+        "startLine": 94,
+        "startChar": 63,
+        "endLine": 94,
+        "endChar": 64
+      },
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -165,6 +255,30 @@
       "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eeed7493_9047705b",
+        "filename": "lucicfg/examples_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T18:16:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cf7c1182_5ddd9adb",
+      "range": {
+        "startLine": 75,
+        "startChar": 20,
+        "endLine": 75,
+        "endChar": 21
+      },
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
