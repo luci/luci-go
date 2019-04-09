@@ -52,8 +52,14 @@ var (
 
 // printer can print a buildbucket build to a io.Writer in a human-friendly
 // format.
-// Panics if writing fails.
+//
+// First time writing fails, the error is saved to Err.
+// Further attempts to write are noop.
 type printer struct {
+	// Err is not nil if printing to the writer failed.
+	// If it is not nil, methods are noop.
+	Err error
+
 	nowFn func() time.Time
 
 	// used to indent text. printer.f always writes to this writer.
@@ -84,10 +90,13 @@ func newStdioPrinters(disableColor bool) (stdout, stderr *printer) {
 	return
 }
 
-// f prints a formatted message. Panics if writing fails.
+// f prints a formatted message.
 func (p *printer) f(format string, args ...interface{}) {
+	if p.Err != nil {
+		return
+	}
 	if _, err := fmt.Fprintf(&p.indent, format, args...); err != nil && err != io.ErrShortWrite {
-		panic(err)
+		p.Err = err
 	}
 }
 
