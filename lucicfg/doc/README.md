@@ -58,6 +58,10 @@ the only officially supported distribution mechanism is CIPD packages.
 
 ### Getting started with a simple config
 
+*** note
+More examples of using `lucicfg` can be found [here](../examples).
+***
+
 Create a new directory, create a new `main.star` file there with the following
 content:
 
