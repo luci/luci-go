@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b37a74d8_5a69f640",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T23:28:28Z",
+      "side": 1,
+      "message": "why this instead of adding server field to metric?",
+      "range": {
+        "startLine": 10,
+        "startChar": 43,
+        "endLine": 12,
+        "endChar": 21
+      },
+      "revId": "921d9ff6156b1c71455fce2c679228623b760f21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37acdff8_d9466e75",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T23:28:28Z",
+      "side": 1,
+      "message": ".",
+      "range": {
+        "startLine": 116,
+        "startChar": 72,
+        "endLine": 116,
+        "endChar": 73
+      },
+      "revId": "921d9ff6156b1c71455fce2c679228623b760f21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85d595c2_c8dcd2ef",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T23:28:28Z",
+      "side": 1,
+      "message": ".\n\nI previously attributed seeing \",\" to dirty laptop screen :P",
+      "range": {
+        "startLine": 122,
+        "startChar": 77,
+        "endLine": 122,
+        "endChar": 78
+      },
+      "revId": "921d9ff6156b1c71455fce2c679228623b760f21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
