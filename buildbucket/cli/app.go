@@ -73,5 +73,18 @@ func application(p Params) *cli.Application {
 }
 
 func Main(p Params, args []string) int {
+	// if subcommand is ls, transform "-$N" into "-n $N".
+	if len(args) > 1 && args[0] == "ls" {
+		for i, a := range args {
+			if len(a) >= 2 && a[0] == '-' && a[1] >= '0' && a[1] <= '9' {
+				args = append(args, "")
+				copy(args[i+1:], args[i:])
+				args[i+1] = args[i][1:]
+				args[i] = "-n"
+				break
+			}
+		}
+	}
+
 	return subcommands.Run(application(p), fixflagpos.FixSubcommands(args))
 }
