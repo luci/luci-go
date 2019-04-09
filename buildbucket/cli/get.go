@@ -15,6 +15,8 @@
 package cli
 
 import (
+	"context"
+
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -60,7 +62,7 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	return r.PrintAndDone(args, func(arg string) (*pb.Build, error) {
+	return r.PrintAndDone(ctx, args, func(ctx context.Context, arg string) (*pb.Build, error) {
 		req, err := protoutil.ParseGetBuildRequest(arg)
 		if err != nil {
 			return nil, err

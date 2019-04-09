@@ -16,6 +16,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strconv"
 	"sync"
@@ -34,15 +35,21 @@ func TestPrintAndDone(t *testing.T) {
 	t.Parallel()
 
 	Convey("printAndDone", t, func(c C) {
+		ctx := context.Background()
 		stdout := &bytes.Buffer{}
 		stderr := &bytes.Buffer{}
 		nowFn := func() time.Time { return testclock.TestRecentTimeUTC }
 		stdoutPrinter := newPrinter(stdout, true, nowFn)
 		stderrPrinter := newPrinter(stderr, true, nowFn)
 
-		call := func(args []string, fn func(string) (*pb.Build, error)) int {
+		call := func(args []string, fn func(string) (*pb.Build, error)) (exitCode int) {
 			run := &printRun{id: true}
-			return run.printAndDone(stdoutPrinter, stderrPrinter, args, fn)
+			exitCode = run.printAndDone(ctx, stdoutPrinter, stderrPrinter, args, func(ctx context.Context, arg string) (*pb.Build, error) {
+				return fn(arg)
+			})
+			So(stdoutPrinter.Err, ShouldBeNil)
+			So(stderrPrinter.Err, ShouldBeNil)
+			return
 		}
 
 		Convey("actual args", func() {

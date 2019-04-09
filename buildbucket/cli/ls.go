@@ -116,7 +116,9 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 
 	count := 0
 	for b := range buildC {
-		r.printBuild(stdout, b, count == 0)
+		if err := r.printBuild(stdout, b, count == 0); err != nil {
+			return r.done(ctx, err)
+		}
 		count++
 		if count == r.limit {
 			return 0

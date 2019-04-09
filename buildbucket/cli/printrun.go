@@ -16,6 +16,7 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -123,7 +124,7 @@ func (r *printRun) FieldMask() (*field_mask.FieldMask, error) {
 	return ret, nil
 }
 
-func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) {
+func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) error {
 	if r.json {
 		if r.id {
 			p.f(`{"id": "%d"}`, build.Id)
@@ -142,17 +143,18 @@ func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) {
 			p.Build(build)
 		}
 	}
+	return p.Err
 }
 
 // PrintAndDone calls fn for each argument, prints builds and returns exit code.
 // fn is called concurrently, but builds are printed in the same order
 // as args.
-func (r *printRun) PrintAndDone(args []string, fn func(string) (*pb.Build, error)) int {
+func (r *printRun) PrintAndDone(ctx context.Context, args []string, fn func(context.Context, string) (*pb.Build, error)) int {
 	stdout, stderr := newStdioPrinters(r.noColor)
-	return r.printAndDone(stdout, stderr, args, fn)
+	return r.printAndDone(ctx, stdout, stderr, args, fn)
 }
 
-func (r *printRun) printAndDone(stdout, stderr *printer, args []string, fn func(string) (*pb.Build, error)) int {
+func (r *printRun) printAndDone(ctx context.Context, stdout, stderr *printer, args []string, fn func(context.Context, string) (*pb.Build, error)) int {
 	// Prepare workspace.
 	type workItem struct {
 		arg   string
@@ -167,7 +169,7 @@ func (r *printRun) printAndDone(stdout, stderr *printer, args []string, fn func(
 		go func() {
 			for item := range work {
 				var err error
-				item.build, err = fn(item.arg)
+				item.build, err = fn(ctx, item.arg)
 				item.done <- err
 			}
 		}()
@@ -176,6 +178,9 @@ func (r *printRun) printAndDone(stdout, stderr *printer, args []string, fn func(
 	// Add work. Close the work space when work is done.
 	go func() {
 		for a := range argChan(args) {
+			if ctx.Err() != nil {
+				break
+			}
 			item := &workItem{arg: a, done: make(chan error)}
 			work <- item
 			results <- item
@@ -197,8 +202,13 @@ func (r *printRun) printAndDone(stdout, stderr *printer, args []string, fn func(
 			stderr.f("arg %q: ", i.arg)
 			stderr.Error(err)
 			stderr.f("\n")
+			if stderr.Err != nil {
+				return r.done(ctx, stderr.Err)
+			}
 		} else {
-			r.printBuild(stdout, i.build, first)
+			if err := r.printBuild(stdout, i.build, first); err != nil {
+				return r.done(ctx, err)
+			}
 		}
 		first = false
 	}
