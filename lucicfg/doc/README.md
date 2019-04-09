@@ -158,21 +158,152 @@ until old and new configs match:
 
 ## Concepts
 
-### Execution model {#execution_doc}
-
 *** note
-TODO: To be written.
+Most of information in this section is specific to `lucicfg`, **not** a generic
+Starlark interpreter. Also this is **advanced stuff**. Its full understanding is
+not required to use `lucicfg` effectively.
 ***
 
 
-### Rules, nodes, relations
-
-*** note
-TODO: To be written.
-***
 
 
-### Resolving naming ambiguities
+
+
+
+### Modules and packages {#modules_and_packages}
+
+Each individual Starlark file is called a module. Several modules under the same
+root directory form a package. Modules within a single package can refer to each
+other (in load(...) and [exec(...)](#exec)) using their root-relative paths that
+start with `//`. The root of the main package is taken to be the directory that
+contains the entry point script (usually `main.star`) passed to `lucicfg`, i.e.
+`main.star` itself can be referred to as `//main.star`.
+
+
+
+Modules can either be "library-like" (executed via load(...) statement) or
+"script-like" (executed via [exec(...)](#exec) function). Library-like modules can
+load other library-like modules via load(...), but may not call
+[exec(...)](#exec). Script-like modules may use both load(...) and [exec(...)](#exec).
+
+Dicts of modules loaded via load(...) are reused, e.g. if two different
+scripts load the exact same module, they'll get the exact same symbols as a
+result. The loaded code always executes only once. The interpreter *may* load
+modules in parallel in the future, libraries must not rely on their loading
+order and must not have side effects.
+
+On the other hand, modules executed via [exec(...)](#exec) are guaranteed to be
+processed sequentially, and only once. Thus 'exec'-ed scripts essentially form
+a tree, traversed exactly once in the depth first order.
+
+### Rules, state representation
+
+All entities manipulated by `lucicfg` are represented by nodes in a directed
+acyclic graph. One entity (such as a builder) can internally be represented by
+multiple nodes. A function that adds nodes and edges to the graph is called
+**a rule** (e.g. [luci.builder(...)](#luci.builder) is a rule).
+
+Each node has a unique hierarchical key, usually constructed from entity's
+properties. For example, a builder name and its bucket name are used to
+construct a unique key for this builder (roughly `<bucket>/<builder>`). These
+keys are used internally by rules when adding edges to the graph.
+
+To refer to entities from public API, one just usually uses strings (e.g.
+a builder name to refer to the builder). Rules' implementation usually have
+enough context to construct correct node keys from such strings. Sometimes they
+need some help, see [Resolving naming ambiguities](#resolving_ambiguities).
+Other times entities have no meaningful global names at all (for example,
+[luci.console_view_entry(...)](#luci.console_view_entry)). For such cases, one uses a return value of the
+corresponding rule: rules return opaque pointer-like objects that can be passed
+to other rules as an input in place of a string identifiers. This allows to
+"chain" definitions, e.g.
+
+```python
+luci.console_view(
+    ...
+    entries = [
+        luci.console_view_entry(...),
+        luci.console_view_entry(...),
+        ...
+    ],
+)
+```
+
+It is strongly preferred to either use string names to refer to entities **or**
+define them inline where they are needed. Please **avoid** storing return values
+of rules in variables to refer to them later. Using string names is as powerful
+(`lucicfg` verifies referential integrity), and it offers additional advantages
+(like referring to entities across file boundaries).
+
+To aid in using inline definitions where makes sense, many rules allow entities
+to be defines multiple times as long as all definitions are identical (this is
+internally referred to as "idempotent nodes"). It allows following usage style:
+
+```python
+def my_recipe(name):
+  return luci.recipe(
+      name = name,
+      cipd_package = 'my/recipe/bundle',
+  )
+
+luci.builder(
+    name = 'builder 1',
+    executable = my_recipe('some-recipe'),
+    ...
+)
+
+luci.builder(
+    name = 'builder 2',
+    executable = my_recipe('some-recipe'),
+    ...
+)
+```
+
+Here `some-recipe` is formally defined twice, but both definitions are
+identical, so it doesn't cause ambiguities. See the documentation of individual
+rules to see whether they allow such redefinitions.
+
+### Execution stages
+
+There are 3 stages of `lucicfg gen` execution:
+
+  1. **Building the state** by executing the given entry `main.star` code and
+     all modules it exec's. This builds a graph in memory (via calls to rules),
+     and registers a bunch of generator callbacks (via [lucicfg.generator(...)](#lucicfg.generator)) that
+     will traverse this graph in the stage 3.
+       - Validation of the format of parameters happens during this stage (e.g.
+         checking types, ranges, regexps, etc). This is done by rules'
+         implementations. A frozen copy of validated parameters is put into
+         the corresponding added nodes to be used from the stage 3.
+       - Rules can mutate the graph, but **may not** examine or traverse it.
+       - Nodes and edges can be added out of order, e.g. an edge may be added
+         before nodes it connects. Together with the previous constraint, it
+         makes most lucicfg statements position independent.
+       - The stage ends after reaching the end of the entry `main.star` code. At
+         this point we have a (potentially incomplete) graph and a list of
+         registered generator callbacks.
+  1. **Checking the referential consistency** by verifying all edges of the
+     graph actually connect existing nodes. Since we have a lot of information
+     about the graph structure, we can emit helpful error messages here, e.g
+     `luci.builder("name") refers to undefined luci.bucket("bucket") at <stack
+     trace of the corresponding luci.builder(...) definition>`.
+       - This stage is performed purely by `lucicfg` core code, not touching
+         Starlark at all. It doesn't need to understand the semantics of graph
+         nodes, and thus used for all sorts of configs (LUCI configs are just
+         one specific application).
+       - At the end of the stage we have a consistent graph with no dangling
+         edges. It still may be semantically wrong.
+  1. **Checking the semantics and generating actual configs** by calling all
+     registered generator callbacks sequentially. They can examine and traverse
+     the graph in whatever way they want and either emit errors or emit
+     generated configs. They **may not** modify the graph at this stage.
+
+At this time all this machinery is mostly hidden from the end user. It will
+become available in future versions of `lucicfg` as an API for **extending**
+`lucicfg` (e.g. adding new entity types to LUCI), or for repurposing `lucicfg`
+for generating non-LUCI conifgs.
+
+### Resolving naming ambiguities {#resolving_ambiguities}
 
 *** note
 TODO: To be written.
@@ -2115,10 +2246,6 @@ __load(module)
 Loads another Starlark module (if it haven't been loaded before), extracts
 one or more values from it, and binds them to names in the current module.
 
-This is not actually a function, but a core Starlark statement. We give it
-additional meaning (related to [the execution model](#execution_doc)) worthy
-of additional documentation.
-
 A load statement requires at least two "arguments". The first must be a
 literal string, it identifies the module to load. The remaining arguments are
 a mixture of literal strings, such as `'x'`, or named literal strings, such as
@@ -2136,8 +2263,8 @@ load('//module.star', 'x', y2='y', 'z')    # assigns x, y2, and z
 
 A load statement within a function is a static error.
 
-TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
-'exec' interact with each other.
+See also [Modules and packages](#modules_and_packages) for how load(...)
+interacts with [exec(...)](#exec).
 
 #### Arguments {#__load-args}
 
@@ -2156,8 +2283,8 @@ exec(module)
 
 Executes another Starlark module for its side effects.
 
-TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
-'exec' interact with each other.
+See also [Modules and packages](#modules_and_packages) for how load(...)
+interacts with [exec(...)](#exec).
 
 #### Arguments {#exec-args}
 
