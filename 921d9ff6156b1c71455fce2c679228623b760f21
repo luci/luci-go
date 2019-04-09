@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ef71aa01_10fa7393",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-09T23:32:53Z",
+      "side": 1,
+      "message": "Because whether a VM is created or not is orthogonal with the server it\u0027s going to connect to. Server only provides useful information in \"connected\" (e.g. all VMs with server:x are disconnected).",
+      "parentUuid": "b37a74d8_5a69f640",
+      "range": {
+        "startLine": 10,
+        "startChar": 43,
+        "endLine": 12,
+        "endChar": 21
+      },
+      "revId": "921d9ff6156b1c71455fce2c679228623b760f21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "37acdff8_d9466e75",
         "filename": "gce/appengine/backend/internal/metrics/metrics.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "ae6ee891_3dec1b96",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-09T23:32:53Z",
+      "side": 1,
+      "message": "No, this is right, it\u0027s continued on the next line.",
+      "parentUuid": "37acdff8_d9466e75",
+      "range": {
+        "startLine": 116,
+        "startChar": 72,
+        "endLine": 116,
+        "endChar": 73
+      },
+      "revId": "921d9ff6156b1c71455fce2c679228623b760f21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "85d595c2_c8dcd2ef",
         "filename": "gce/appengine/backend/internal/metrics/metrics.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "921d9ff6156b1c71455fce2c679228623b760f21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "716d7d64_f7dc8106",
+        "filename": "gce/appengine/backend/internal/metrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-09T23:32:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85d595c2_c8dcd2ef",
+      "range": {
+        "startLine": 122,
+        "startChar": 77,
+        "endLine": 122,
+        "endChar": 78
+      },
+      "revId": "921d9ff6156b1c71455fce2c679228623b760f21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
