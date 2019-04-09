@@ -22,6 +22,30 @@
       "revId": "bba50e2ce164c83fe9b5a270de03c3d3d354fffe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82124cc4_157a5a1e",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-09T23:01:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ffb441b_e21d01fc",
+      "range": {
+        "startLine": 168,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 4
+      },
+      "revId": "bba50e2ce164c83fe9b5a270de03c3d3d354fffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
