@@ -116,6 +116,8 @@ commit **both** Starlark scripts and generated configs into the repository, and
 then configure LUCI Config service to pull configuration from `generated`
 directory (how to do it is outside the scope of this doc).
 
+More examples of using `lucicfg` can be found [here](../examples).
+
 ### Migrating from existing configs to lucicfg
 
 
