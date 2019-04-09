@@ -122,11 +122,32 @@ directory (how to do it is outside the scope of this doc).
 
 ### Migrating from existing configs to lucicfg
 
+This process is mostly manual, but it is aided by `lucicfg semantic-diff`
+command that can be used to verify the generated configs match the original
+ones. Roughly, the idea is to start with broad strokes, and then refine details
+until old and new configs match:
 
-*** note
-TODO: To be written.
-***
-
+  1. Create new `main.star`, add luci.project(...) and all luci.bucket(...)
+     definitions there. We assume `main.star` is located in the same directory
+     as existing conifgs (like `cr-buildbucket.cfg`), and generated configs are
+     stored in `generated` subdirectory, which is not yet really used for
+     anything.
+  1. Add rough definitions of all existing builders, focusing on identifying
+     common patterns in the existing configs and representing them as Starlark
+     functions. At this stage we want to make sure the generated
+     `cr-buildbucket.cfg` contains all builders (but their details are not
+     necessarily are correct yet).
+  1. Run `lucicfg semantic-diff main.star cr-buildbucket.cfg`. It will normalize
+     the original and the generated Buildbucket configs (by expanding all
+     mixins, sorting fields, etc) and run `git diff ...` to compare them. Our
+     goal is to reduce this diff to zero.
+  1. Keep iterating by modifying Starlark configs or, if appropriate, original
+     configs until the diff to `cr-buildbucket.cfg` is zero.
+  1. Do the same for the rest of the configs: `luci-scheduler.cfg`,
+     `luci-milo.cfg`, `commit-queue.cfg`, etc.
+  1. Eventually, all generated configs in `generated` directory are semantically
+     identical to the existing configs. Switch LUCI Config to use `generated` as
+     source of configs, deleted old configs.
 
 [Starlark]: https://github.com/google/starlark-go
 [depot_tools]: https://chromium.googlesource.com/chromium/tools/depot_tools/
