@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef86dd4f_ba1823d3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T02:08:46Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 12,
+        "startChar": 73,
+        "endLine": 13,
+        "endChar": 63
+      },
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6a7585d7_5d1ce878",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T02:08:46Z",
+      "side": 1,
+      "message": "YES! Now i need to link to it from go/we-need-cq!",
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ae13768_a43229e3",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T02:08:46Z",
+      "side": 1,
+      "message": "mind changing \u0027-\u0027 to \u0027/\u0027 for more realism?",
+      "range": {
+        "startLine": 11,
+        "startChar": 53,
+        "endLine": 11,
+        "endChar": 68
+      },
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8b6523b_f0deb9ba",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T02:08:46Z",
+      "side": 1,
+      "message": "tbh, i wish one didn\u0027t need to worry about this :( Fine to land as is, but wdyt about\na) adding example of using recipes from say build repo\nb) adding stanza for generating own bundles from one\u0027s own repo",
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "525ec2dc_27dc9096",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T02:08:46Z",
+      "side": 1,
+      "message": "I really hate myself for suggesting \"ci\" a few years ago. WDYT about using \"post\" here?",
+      "range": {
+        "startLine": 72,
+        "startChar": 20,
+        "endLine": 72,
+        "endChar": 22
+      },
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "df385147_36c14c19",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T02:08:46Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 94,
+        "startChar": 63,
+        "endLine": 94,
+        "endChar": 64
+      },
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9feb5411_554f9a81",
+        "filename": "lucicfg/examples/02-ci-and-try/main.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T02:08:46Z",
+      "side": 1,
+      "message": "kudos for no trusty :P",
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cf7c1182_5ddd9adb",
+        "filename": "lucicfg/examples_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-09T02:08:46Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 75,
+        "startChar": 20,
+        "endLine": 75,
+        "endChar": 21
+      },
+      "revId": "bb366c87bd3f2e0b64f67a7fd33382ed32abf5ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
