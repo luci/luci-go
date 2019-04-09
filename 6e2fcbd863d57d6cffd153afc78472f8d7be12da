@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "507cabb2_b8e9940e",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-09T22:06:25Z",
+      "side": 1,
+      "message": "Ack. So far nobody is, the first time I\u0027ve created an Instances server is in this CL.",
+      "parentUuid": "a197d216_21987bea",
+      "range": {
+        "startLine": 29,
+        "startChar": 38,
+        "endLine": 29,
+        "endChar": 39
+      },
+      "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c732b4b4_8016f090",
         "filename": "gce/appengine/rpc/common.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48f7b875_2c92968f",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-09T22:06:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c732b4b4_8016f090",
+      "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "362ae0ca_fe3f5afd",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-09T22:06:25Z",
+      "side": 1,
+      "message": "Oh, forgot I decided on Has. Done.",
+      "parentUuid": "b1e528ce_acd0398d",
+      "range": {
+        "startLine": 64,
+        "startChar": 42,
+        "endLine": 64,
+        "endChar": 59
+      },
+      "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -123,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "296afd41_9ddcc0aa",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-09T22:06:25Z",
+      "side": 1,
+      "message": "Wait why will it be happening? You mean if a new VM is brought online but the index isn\u0027t updated so the query incorrectly returns nothing for awhile? I think that\u0027s fine because it should have the same behavior as the Machine Provider agent, it will fail and chromebuild-startup.py will relaunch it until it doesn\u0027t fail.",
+      "parentUuid": "284eda5c_604ee676",
+      "range": {
+        "startLine": 128,
+        "startChar": 3,
+        "endLine": 128,
+        "endChar": 73
+      },
+      "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "988bcda7_9b675cef",
         "filename": "gce/appengine/rpc/instances.go",
         "patchSetId": 1
@@ -143,6 +233,30 @@
       "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04f4fa35_e050b354",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-09T22:06:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "988bcda7_9b675cef",
+      "range": {
+        "startLine": 157,
+        "startChar": 6,
+        "endLine": 157,
+        "endChar": 20
+      },
+      "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -201,6 +315,30 @@
       "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89a84f64_6232959a",
+        "filename": "gce/vmtoken/vmtoken.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-09T22:06:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "56cf20ca_78de8c32",
+      "range": {
+        "startLine": 197,
+        "startChar": 35,
+        "endLine": 197,
+        "endChar": 43
+      },
+      "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
