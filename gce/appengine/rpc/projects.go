@@ -100,7 +100,7 @@ func (*Projects) List(c context.Context, req *projects.ListRequest) (*projects.L
 // NewProjectsServer returns a new projects server.
 func NewProjectsServer() projects.ProjectsServer {
 	return &projects.DecoratedProjects{
-		Prelude:  authPrelude,
+		Prelude:  readOnlyAuthPrelude,
 		Service:  &Projects{},
 		Postlude: gRPCifyAndLogErr,
 	}

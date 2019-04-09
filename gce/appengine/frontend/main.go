@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gce/appengine/backend"
 	"go.chromium.org/luci/gce/appengine/config"
 	"go.chromium.org/luci/gce/appengine/rpc"
+	"go.chromium.org/luci/gce/vmtoken"
 )
 
 func init() {
@@ -43,7 +44,7 @@ func init() {
 
 	r := router.New()
 	mw := standard.Base()
-	api.InstallHandlers(r, mw)
+	api.InstallHandlers(r, mw.Extend(vmtoken.Middleware))
 	backend.InstallHandlers(r, mw)
 	config.InstallHandlers(r, mw)
 	http.DefaultServeMux.Handle("/", r)

@@ -10,33 +10,41 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 // A GCE instance configured to exist.
+// The instance actually exists iff the created timestamp is set.
 message Instance {
   // The ID of the VM this instance was created from.
   string id = 1;
 
-  // The hostname of this instance.
+  // The hostname this instance is configured with.
   string hostname = 2;
 
+  // The zone this instance is configured for.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
+  string zone = 3;
+
+  // The GCP project this instance is configured for.
+  string project = 4;
+
   // The timestamp when this instance was created.
-  google.protobuf.Timestamp created = 3;
+  google.protobuf.Timestamp created = 5;
 
   // The lifetime of this instance.
   // At the end of its lifetime, the instance is deleted.
-  int64 lifetime = 4;
+  int64 lifetime = 6;
 
   // The hostname of the Swarming server this instance should connect to.
-  string swarming = 5;
+  string swarming = 7;
 
   // The timestamp when this instance connected to Swarming.
-  google.protobuf.Timestamp connected = 6;
+  google.protobuf.Timestamp connected = 8;
 
   // The timeout of this instance.
   // If no Swarming bot has connected by the timeout, the instance is deleted.
-  int64 timeout = 7;
+  int64 timeout = 9;
 
   // Whether this instance is drained or not.
   // A drained instance will be safely deleted regardless of lifetime.
-  bool drained = 8;
+  bool drained = 10;
 }
 
 // A request to delete an instance.

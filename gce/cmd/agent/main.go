@@ -29,7 +29,11 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+
+	"go.chromium.org/luci/gce/api/instances/v1"
+	"go.chromium.org/luci/gce/vmtoken/client"
 )
 
 // substitute performs substitutions in a template string.
@@ -53,16 +57,25 @@ func withMetadata(c context.Context, cli *metadata.Client) context.Context {
 	return context.WithValue(c, &metaKey, cli)
 }
 
-// getMetadata returns the *SwarmingClient installed in the current context.
+// getMetadata returns the *metadata.Client installed in the current context.
 func getMetadata(c context.Context) *metadata.Client {
 	return c.Value(&metaKey).(*metadata.Client)
+}
+
+// newInstances returns a new instances.InstancesClient.
+func newInstances(c context.Context, acc, host string) instances.InstancesClient {
+	return instances.NewInstancesPRPCClient(&prpc.Client{
+		C:    client.NewClient(getMetadata(c), acc),
+		Host: host,
+	})
 }
 
 // cmdRunBase is the base struct all subcommands should embed.
 // Implements cli.ContextModificator.
 type cmdRunBase struct {
 	subcommands.CommandRunBase
-	authFlags authcli.Flags
+	authFlags      authcli.Flags
+	serviceAccount string
 }
 
 // Initialize registers common flags.
@@ -71,8 +84,8 @@ func (b *cmdRunBase) Initialize() {
 	b.authFlags.Register(b.GetFlags(), opts)
 }
 
-// ModifyContext returns a new context with configured logging and a *SwarmingClient installed.
-// Implements cli.ContextModificator.
+// ModifyContext returns a new context to be used by all commands. Implements
+// cli.ContextModificator.
 func (b *cmdRunBase) ModifyContext(c context.Context) context.Context {
 	c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
 	opts, err := b.authFlags.Options()
@@ -80,6 +93,7 @@ func (b *cmdRunBase) ModifyContext(c context.Context) context.Context {
 		logging.Errorf(c, "%s", err.Error())
 		panic("failed to get auth options")
 	}
+	b.serviceAccount = opts.GCEAccountName
 	http, err := auth.NewAuthenticator(c, auth.OptionalLogin, opts).Client()
 	if err != nil {
 		logging.Errorf(c, "%s", err.Error())
