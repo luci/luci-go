@@ -152,7 +152,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	}
 
 	svc := flex.GetServices(c)
-	st, err := svc.StorageForStream(c, lst)
+	st, err := svc.StorageForStream(c, lst, coordinator.Project(c))
 	if err != nil {
 		return errors.Annotate(err, "").InternalReason("failed to create storage instance").Err()
 	}
