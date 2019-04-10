@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "422f98d6_c5176010",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-10T22:47:05Z",
+      "side": 1,
+      "message": "-nopaging is incompatible with existing -nocolor\n\ni prefer brevity. WDYT about -nopage?",
+      "parentUuid": "9aaa80be_dd07ad60",
+      "range": {
+        "startLine": 80,
+        "startChar": 32,
+        "endLine": 80,
+        "endChar": 39
+      },
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "38011e75_362fa374",
         "filename": "common/system/pager/pager.go",
         "patchSetId": 8
@@ -36,6 +60,24 @@
       "writtenOn": "2019-04-10T22:05:57Z",
       "side": 1,
       "message": "Windows has \"more\", could use that if \"less\" isn\u0027t found.",
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8044af3_31b48775",
+        "filename": "common/system/pager/pager.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-10T22:47:05Z",
+      "side": 1,
+      "message": "i spent an hour trying to make it work on more. I am not very successful so far, and it is not easy to do with a windows machine handy. In particular, exec.LookupPath(\"more\"), exec.LookupPath(\"more.exe\") and exec.LookupPath(\"more.com\") fail. Is this important?",
+      "parentUuid": "38011e75_362fa374",
       "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -56,6 +98,24 @@
       "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ac840d2_e0198781",
+        "filename": "common/system/pager/pager.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-10T22:47:05Z",
+      "side": 1,
+      "message": "it doesn\u0027t. See \n\n// If fn returns non-zero exit code before less exits, Main returns the exit\n// code. Otherwise Main returns less\u0027s exit code.\n// It is a race between the user hitting q and fn failing.",
+      "parentUuid": "0d042b8e_85b16050",
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
