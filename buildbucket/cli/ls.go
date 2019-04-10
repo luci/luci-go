@@ -6,7 +6,7 @@
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
+// Unpager required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
@@ -17,13 +17,16 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/system/pager"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -88,8 +91,7 @@ type lsRun struct {
 }
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	ctx, cancel := context.WithCancel(cli.GetContext(a, r, env))
-	defer cancel()
+	ctx := cli.GetContext(a, r, env)
 
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
@@ -104,27 +106,33 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		return r.done(ctx, err)
 	}
 
-	buildC := make(chan *pb.Build)
-	errC := make(chan error)
-	go func() {
-		err := protoutil.Search(ctx, buildC, r.client, reqs...)
-		close(buildC)
-		errC <- err
-	}()
+	return pager.Main(ctx, func(ctx context.Context, out io.WriteCloser) int {
+		buildC := make(chan *pb.Build)
+		searchErrC := make(chan error)
+		go func() {
+			err := protoutil.Search(ctx, buildC, r.client, reqs...)
+			close(buildC)
+			searchErrC <- err
+		}()
 
-	stdout, _ := newStdioPrinters(r.noColor)
+		printer := newPrinter(out, r.noColor, time.Now)
+		count := 0
+		for b := range buildC {
+			if err := r.printBuild(printer, b, count == 0); err != nil && !pager.IsEPipe(err) {
+				return r.done(ctx, err)
+			}
 
-	count := 0
-	for b := range buildC {
-		if err := r.printBuild(stdout, b, count == 0); err != nil {
+			count++
+			if count == r.limit {
+				return 0
+			}
+		}
+
+		if err := <-searchErrC; err != nil && err != context.Canceled {
 			return r.done(ctx, err)
 		}
-		count++
-		if count == r.limit {
-			return 0
-		}
-	}
-	return r.done(ctx, <-errC)
+		return 0
+	})
 }
 
 // parseSearchRequests converts flags and arguments to search requests.
