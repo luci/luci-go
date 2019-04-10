@@ -272,10 +272,12 @@ func (p *printer) buildTime(b *pb.Build) {
 	p.dateTime(created)
 
 	if started.IsZero() && ended.IsZero() {
-		// did not start or end yet
-		p.f(", ")
-		p.keyword("waiting")
-		p.f(" for %s, ", now.Sub(created))
+		if !p.isJustNow(created) {
+			// did not start or end yet
+			p.f(", ")
+			p.keyword("waiting")
+			p.f(" for %s, ", now.Sub(created))
+		}
 		return
 	}
 
