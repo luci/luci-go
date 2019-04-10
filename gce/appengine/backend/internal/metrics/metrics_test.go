@@ -38,41 +38,76 @@ func TestMetrics(t *testing.T) {
 		datastore.GetTestable(c).Consistent(true)
 		s := tsmon.Store(c)
 
-		Convey("InstanceCounter", func() {
-			ic := make(InstanceCounter)
-			So(ic, ShouldBeEmpty)
+		Convey("InstanceCount", func() {
+			ic := &InstanceCount{}
+			So(ic.Configured, ShouldBeEmpty)
+			So(ic.Created, ShouldBeEmpty)
+			So(ic.Connected, ShouldBeEmpty)
 
-			ic.Configured(3, "project")
-			ic.Created(1, "project", "zone-1")
-			ic.Created(1, "project", "zone-1")
-			ic.Created(1, "project", "zone-2")
-			ic.Connected(1, "project", "server", "zone-1")
-			So(ic.Update(c, "prefix"), ShouldBeNil)
+			Convey("Configured", func() {
+				ic.AddConfigured(1, "project-1")
+				ic.AddConfigured(1, "project-2")
+				ic.AddConfigured(1, "project-1")
+				So(ic.Configured, ShouldHaveLength, 2)
+				So(ic.Configured, ShouldContain, configuredCount{
+					Count:   2,
+					Project: "project-1",
+				})
+				So(ic.Configured, ShouldContain, configuredCount{
+					Count:   1,
+					Project: "project-2",
+				})
+			})
 
-			n := &InstanceCount{
-				ID: "prefix",
-			}
-			So(datastore.Get(c, n), ShouldBeNil)
-			So(n.Counts, ShouldHaveLength, 4)
-			So(n.Counts, ShouldContain, instanceCount{
-				Configured: 3,
-				Project:    "project",
+			Convey("Created", func() {
+				ic.AddCreated(1, "project", "zone-1")
+				ic.AddCreated(1, "project", "zone-2")
+				ic.AddCreated(1, "project", "zone-1")
+				So(ic.Created, ShouldHaveLength, 2)
+				So(ic.Created, ShouldContain, createdCount{
+					Count:   2,
+					Project: "project",
+					Zone:    "zone-1",
+				})
+				So(ic.Created, ShouldContain, createdCount{
+					Count:   1,
+					Project: "project",
+					Zone:    "zone-2",
+				})
 			})
-			So(n.Counts, ShouldContain, instanceCount{
-				Created: 2,
-				Project: "project",
-				Zone:    "zone-1",
+
+			Convey("Connected", func() {
+				ic.AddConnected(1, "project", "server-1", "zone")
+				ic.AddConnected(1, "project", "server-2", "zone")
+				ic.AddConnected(1, "project", "server-1", "zone")
+				So(ic.Connected, ShouldHaveLength, 2)
+				So(ic.Connected, ShouldContain, connectedCount{
+					Count:   2,
+					Project: "project",
+					Server:  "server-1",
+					Zone:    "zone",
+				})
+				So(ic.Connected, ShouldContain, connectedCount{
+					Count:   1,
+					Project: "project",
+					Server:  "server-2",
+					Zone:    "zone",
+				})
 			})
-			So(n.Counts, ShouldContain, instanceCount{
-				Created: 1,
-				Project: "project",
-				Zone:    "zone-2",
-			})
-			So(n.Counts, ShouldContain, instanceCount{
-				Connected: 1,
-				Project:   "project",
-				Server:    "server",
-				Zone:      "zone-1",
+
+			Convey("Update", func() {
+				ic.AddConfigured(1, "project")
+				ic.AddCreated(1, "project", "zone")
+				ic.AddConnected(1, "project", "server", "zone")
+				So(ic.Update(c, "prefix"), ShouldBeNil)
+				ic = &InstanceCount{
+					ID: "prefix",
+				}
+				So(datastore.Get(c, ic), ShouldBeNil)
+				So(ic.Configured, ShouldHaveLength, 1)
+				So(ic.Created, ShouldHaveLength, 1)
+				So(ic.Connected, ShouldHaveLength, 1)
+				So(ic.Prefix, ShouldEqual, ic.ID)
 			})
 		})
 
@@ -101,65 +136,63 @@ func TestMetrics(t *testing.T) {
 		})
 
 		Convey("updateInstances", func() {
-			fields := []interface{}{"prefix", "project"}
+			confFields := []interface{}{"prefix", "project"}
+			creaFields1 := []interface{}{"prefix", "project", "zone-1"}
+			creaFields2 := []interface{}{"prefix", "project", "zone-2"}
+			connFields := []interface{}{"prefix", "project", "server", "zone"}
 
-			Convey("expired", func() {
-				datastore.Put(c, &InstanceCount{
-					ID:       "prefix",
-					Computed: time.Time{},
-					Counts: []instanceCount{
-						{
-							Configured: 1,
-							Project:    "project",
-						},
+			ic := &InstanceCount{
+				ID: "prefix",
+				Configured: []configuredCount{
+					{
+						Count:   3,
+						Project: "project",
 					},
-					Prefix: "prefix",
-				})
-				updateInstances(c)
-				So(s.Get(c, configuredInstances, time.Time{}, fields), ShouldBeNil)
-				n := &InstanceCount{
-					ID: "prefix",
-				}
-				So(datastore.Get(c, n), ShouldEqual, datastore.ErrNoSuchEntity)
-			})
+				},
+				Created: []createdCount{
+					{
+						Count:   2,
+						Project: "project",
+						Zone:    "zone-1",
+					},
+					{
+						Count:   1,
+						Project: "project",
+						Zone:    "zone-2",
+					},
+				},
+				Connected: []connectedCount{
+					{
+						Count:   1,
+						Project: "project",
+						Server:  "server",
+						Zone:    "zone",
+					},
+				},
+				Prefix: "prefix",
+			}
 
-			Convey("valid", func() {
-				datastore.Put(c, &InstanceCount{
-					ID:       "prefix",
-					Computed: time.Now().UTC(),
-					Counts: []instanceCount{
-						{
-							Configured: 1,
-							Project:    "project",
-						},
-					},
-					Prefix: "prefix",
-				})
-				updateInstances(c)
-				So(s.Get(c, configuredInstances, time.Time{}, fields).(int64), ShouldEqual, 1)
-				n := &InstanceCount{
-					ID: "prefix",
-				}
-				So(datastore.Get(c, n), ShouldBeNil)
+			ic.Computed = time.Time{}
+			So(datastore.Put(c, ic), ShouldBeNil)
+			updateInstances(c)
+			So(s.Get(c, configuredInstances, time.Time{}, confFields), ShouldBeNil)
+			So(s.Get(c, createdInstances, time.Time{}, creaFields1), ShouldBeNil)
+			So(s.Get(c, createdInstances, time.Time{}, creaFields2), ShouldBeNil)
+			So(s.Get(c, connectedInstances, time.Time{}, connFields), ShouldBeNil)
+			So(datastore.Get(c, &InstanceCount{
+				ID: ic.ID,
+			}), ShouldEqual, datastore.ErrNoSuchEntity)
 
-				datastore.Put(c, &InstanceCount{
-					ID:       "prefix",
-					Computed: time.Now().UTC(),
-					Counts: []instanceCount{
-						{
-							Configured: 0,
-							Project:    "project",
-						},
-					},
-					Prefix: "prefix",
-				})
-				updateInstances(c)
-				So(s.Get(c, configuredInstances, time.Time{}, fields).(int64), ShouldEqual, 0)
-				n = &InstanceCount{
-					ID: "prefix",
-				}
-				So(datastore.Get(c, n), ShouldBeNil)
-			})
+			ic.Computed = time.Now().UTC()
+			So(datastore.Put(c, ic), ShouldBeNil)
+			updateInstances(c)
+			So(s.Get(c, configuredInstances, time.Time{}, confFields).(int64), ShouldEqual, 3)
+			So(s.Get(c, createdInstances, time.Time{}, creaFields1).(int64), ShouldEqual, 2)
+			So(s.Get(c, createdInstances, time.Time{}, creaFields2).(int64), ShouldEqual, 1)
+			So(s.Get(c, connectedInstances, time.Time{}, connFields).(int64), ShouldEqual, 1)
+			So(datastore.Get(c, &InstanceCount{
+				ID: ic.ID,
+			}), ShouldBeNil)
 		})
 
 		Convey("UpdateQuota", func() {
