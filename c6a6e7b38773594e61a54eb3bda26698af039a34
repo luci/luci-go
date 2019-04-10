@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aaa80be_dd07ad60",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-10T22:05:57Z",
+      "side": 1,
+      "message": "suggestion: maybe \"nopaging\".  \"nopager\" describes implementation, \"nopaging\" describes behavior.",
+      "range": {
+        "startLine": 80,
+        "startChar": 32,
+        "endLine": 80,
+        "endChar": 39
+      },
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38011e75_362fa374",
+        "filename": "common/system/pager/pager.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-10T22:05:57Z",
+      "side": 1,
+      "message": "Windows has \"more\", could use that if \"less\" isn\u0027t found.",
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d042b8e_85b16050",
+        "filename": "common/system/pager/pager.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-10T22:05:57Z",
+      "side": 1,
+      "message": "this doesn\u0027t look like it pulls the second exit code.",
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
