@@ -77,11 +77,12 @@ var (
 
 // instanceCount encapsulates a count of connected and created VMs.
 type instanceCount struct {
-	Connected int
-	Created   int
-	Project   string
-	Server    string
-	Zone      string
+	Configured int
+	Connected  int
+	Created    int
+	Project    string
+	Server     string
+	Zone       string
 }
 
 // InstanceCounter tracks counts of connected and created VMs for a common
@@ -107,16 +108,20 @@ func (ic InstanceCounter) get(project, server, zone string) *instanceCount {
 	return ic[project][server][zone]
 }
 
-// Connected increments by one the count of connected VMs for the given project,
-// server, and zone.
-func (ic InstanceCounter) Connected(project, server, zone string) {
-	ic.get(project, server, zone).Connected++
+// Configured increments the count of configured VMs for the given project.
+func (ic InstanceCounter) Configured(n int, project string) {
+	ic.get(project, "", "").Configured += n
 }
 
-// Created increments by one the count of created VMs for the given project,
+// Connected increments the count of connected VMs for the given project,
 // server, and zone.
-func (ic InstanceCounter) Created(project, server, zone string) {
-	ic.get(project, server, zone).Created++
+func (ic InstanceCounter) Connected(n int, project, server, zone string) {
+	ic.get(project, server, zone).Connected += n
+}
+
+// Created increments the count of created VMs for the given project and zone.
+func (ic InstanceCounter) Created(n int, project, zone string) {
+	ic.get(project, "", zone).Created += n
 }
 
 // Update updates metrics for all known counts of VMs for the given prefix.
@@ -159,11 +164,6 @@ type InstanceCount struct {
 	Counts []instanceCount `gae:"counts,noindex"`
 }
 
-// UpdateConfiguredInstances sets configured GCE instance metrics.
-func UpdateConfiguredInstances(c context.Context, configured int, prefix, project string) {
-	configuredInstances.Set(c, int64(configured), prefix, project)
-}
-
 // updateInstances sets GCE instance metrics.
 func updateInstances(c context.Context) {
 	now := clock.Now(c)
@@ -177,8 +177,15 @@ func updateInstances(c context.Context) {
 			return
 		}
 		for _, count := range n.Counts {
-			connectedInstances.Set(c, int64(count.Connected), n.Prefix, count.Project, count.Server, count.Zone)
-			createdInstances.Set(c, int64(count.Created), n.Prefix, count.Project, count.Zone)
+			if count.Server == "" && count.Zone == "" {
+				configuredInstances.Set(c, int64(count.Configured), n.Prefix, count.Project)
+			}
+			if count.Server == "" && count.Zone != "" {
+				createdInstances.Set(c, int64(count.Created), n.Prefix, count.Project, count.Zone)
+			}
+			if count.Server != "" && count.Zone != "" {
+				connectedInstances.Set(c, int64(count.Connected), n.Prefix, count.Project, count.Server, count.Zone)
+			}
 		}
 	}); err != nil {
 		errors.Log(c, errors.Annotate(err, "failed to fetch counts").Err())
@@ -186,7 +193,7 @@ func updateInstances(c context.Context) {
 }
 
 func init() {
-	tsmon.RegisterGlobalCallback(updateInstances, connectedInstances, createdInstances)
+	tsmon.RegisterGlobalCallback(updateInstances, configuredInstances, connectedInstances, createdInstances)
 }
 
 var (
