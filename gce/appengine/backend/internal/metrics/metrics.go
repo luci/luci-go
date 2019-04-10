@@ -55,6 +55,15 @@ var (
 		field.String("project"),
 	)
 
+	createdInstances = metric.NewInt(
+		"gce/instances/created",
+		"The number of GCE instances created.",
+		nil,
+		field.String("prefix"),
+		field.String("project"),
+		field.String("zone"),
+	)
+
 	connectedInstances = metric.NewInt(
 		"gce/instances/connected",
 		"The number of GCE instances connected to Swarming.",
@@ -64,86 +73,27 @@ var (
 		field.String("server"),
 		field.String("zone"),
 	)
-
-	createdInstances = metric.NewInt(
-		"gce/instances/created",
-		"The number of GCE instances created.",
-		nil,
-		field.String("prefix"),
-		field.String("project"),
-		field.String("zone"),
-	)
 )
 
-// instanceCount encapsulates a count of connected and created VMs.
-type instanceCount struct {
-	Configured int
-	Connected  int
-	Created    int
-	Project    string
-	Server     string
-	Zone       string
+// configuredCount encapsulates a count of configured VMs.
+type configuredCount struct {
+	Count   int
+	Project string
 }
 
-// InstanceCounter tracks counts of connected and created VMs for a common
-// prefix. Create a new one with make(InstanceCounter).
-type InstanceCounter map[string]map[string]map[string]*instanceCount
-
-// get returns the *instanceCount associated with the given project, server, and
-// zone, creating it if it doesn't exist.
-func (ic InstanceCounter) get(project, server, zone string) *instanceCount {
-	if _, ok := ic[project]; !ok {
-		ic[project] = make(map[string]map[string]*instanceCount)
-	}
-	if _, ok := ic[project][server]; !ok {
-		ic[project][server] = make(map[string]*instanceCount)
-	}
-	if _, ok := ic[project][server][zone]; !ok {
-		ic[project][server][zone] = &instanceCount{
-			Project: project,
-			Server:  server,
-			Zone:    zone,
-		}
-	}
-	return ic[project][server][zone]
+// createdCount encapsulates a count of created VMs.
+type createdCount struct {
+	Count   int
+	Project string
+	Zone    string
 }
 
-// Configured increments the count of configured VMs for the given project.
-func (ic InstanceCounter) Configured(n int, project string) {
-	ic.get(project, "", "").Configured += n
-}
-
-// Connected increments the count of connected VMs for the given project,
-// server, and zone.
-func (ic InstanceCounter) Connected(n int, project, server, zone string) {
-	ic.get(project, server, zone).Connected += n
-}
-
-// Created increments the count of created VMs for the given project and zone.
-func (ic InstanceCounter) Created(n int, project, zone string) {
-	ic.get(project, "", zone).Created += n
-}
-
-// Update updates metrics for all known counts of VMs for the given prefix.
-func (ic InstanceCounter) Update(c context.Context, prefix string) error {
-	n := &InstanceCount{
-		// Prefixes are globally unique, so we can use them as IDs.
-		ID:       prefix,
-		Computed: clock.Now(c).UTC(),
-		Counts:   make([]instanceCount, 0),
-		Prefix:   prefix,
-	}
-	for _, srvs := range ic {
-		for _, zones := range srvs {
-			for _, count := range zones {
-				n.Counts = append(n.Counts, *count)
-			}
-		}
-	}
-	if err := datastore.Put(c, n); err != nil {
-		return errors.Annotate(err, "failed to store count").Err()
-	}
-	return nil
+// connectedCount encapsulates a count of connected VMs.
+type connectedCount struct {
+	Count   int
+	Project string
+	Server  string
+	Zone    string
 }
 
 // InstanceCount is a root entity representing a count for instances with a
@@ -160,32 +110,93 @@ type InstanceCount struct {
 	Prefix string `gae:"prefix"`
 	// Computed is the time this count was computed.
 	Computed time.Time `gae:"computed"`
-	// Counts is a slice of instanceCounts.
-	Counts []instanceCount `gae:"counts,noindex"`
+	// Configured is a slice of configuredCounts.
+	Configured []configuredCount `gae:"configured,noindex"`
+	// Connected is a slice of connectedCounts.
+	Connected []connectedCount `gae:"connected,noindex"`
+	// Created is a slice of createdCounts.
+	Created []createdCount `gae:"created,noindex"`
+}
+
+// AddConfigured increments the count of configured VMs for the given project.
+func (ic *InstanceCount) AddConfigured(n int, project string) {
+	for i, c := range ic.Configured {
+		if c.Project == project {
+			ic.Configured[i].Count += n
+			return
+		}
+	}
+	ic.Configured = append(ic.Configured, configuredCount{
+		Count:   n,
+		Project: project,
+	})
+}
+
+// AddCreated increments the count of created VMs for the given project and
+// zone.
+func (ic *InstanceCount) AddCreated(n int, project, zone string) {
+	for i, c := range ic.Created {
+		if c.Project == project && c.Zone == zone {
+			ic.Created[i].Count += n
+			return
+		}
+	}
+	ic.Created = append(ic.Created, createdCount{
+		Count:   n,
+		Project: project,
+		Zone:    zone,
+	})
+}
+
+// AddConnected increments the count of connected VMs for the given project,
+// server, and zone.
+func (ic *InstanceCount) AddConnected(n int, project, server, zone string) {
+	for i, c := range ic.Connected {
+		if c.Project == project && c.Server == server && c.Zone == zone {
+			ic.Connected[i].Count += n
+			return
+		}
+	}
+	ic.Connected = append(ic.Connected, connectedCount{
+		Count:   n,
+		Project: project,
+		Server:  server,
+		Zone:    zone,
+	})
+}
+
+// Update updates metrics for all known counts of VMs for the given prefix.
+func (ic *InstanceCount) Update(c context.Context, prefix string) error {
+	// Prefixes are globally unique, so we can use them as IDs.
+	ic.ID = prefix
+	ic.Computed = clock.Now(c).UTC()
+	ic.Prefix = prefix
+	if err := datastore.Put(c, ic); err != nil {
+		return errors.Annotate(err, "failed to store count").Err()
+	}
+	return nil
 }
 
 // updateInstances sets GCE instance metrics.
 func updateInstances(c context.Context) {
 	now := clock.Now(c)
 	q := datastore.NewQuery("InstanceCount").Order("computed")
-	if err := datastore.Run(c, q, func(n *InstanceCount) {
-		if now.Sub(n.Computed) > 10*time.Minute {
-			logging.Debugf(c, "deleting outdated count %q", n.Prefix)
-			if err := datastore.Delete(c, n); err != nil {
+	if err := datastore.Run(c, q, func(ic *InstanceCount) {
+		if now.Sub(ic.Computed) > 10*time.Minute {
+			logging.Debugf(c, "deleting outdated count %q", ic.Prefix)
+			if err := datastore.Delete(c, ic); err != nil {
 				logging.Errorf(c, "%s", err)
 			}
 			return
 		}
-		for _, count := range n.Counts {
-			if count.Server == "" && count.Zone == "" {
-				configuredInstances.Set(c, int64(count.Configured), n.Prefix, count.Project)
-			}
-			if count.Server == "" && count.Zone != "" {
-				createdInstances.Set(c, int64(count.Created), n.Prefix, count.Project, count.Zone)
-			}
-			if count.Server != "" && count.Zone != "" {
-				connectedInstances.Set(c, int64(count.Connected), n.Prefix, count.Project, count.Server, count.Zone)
-			}
+		for _, conf := range ic.Configured {
+			configuredInstances.Set(c, int64(conf.Count), ic.Prefix, conf.Project)
+		}
+		for _, crea := range ic.Created {
+			createdInstances.Set(c, int64(crea.Count), ic.Prefix, crea.Project, crea.Zone)
+		}
+		for _, conn := range ic.Connected {
+			connectedInstances.Set(c, int64(conn.Count), ic.Prefix, conn.Project, conn.Server, conn.Zone)
 		}
 	}); err != nil {
 		errors.Log(c, errors.Annotate(err, "failed to fetch counts").Err())

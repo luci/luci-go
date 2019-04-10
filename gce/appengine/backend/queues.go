@@ -48,9 +48,9 @@ func countVMs(c context.Context, payload proto.Message) error {
 		return errors.Reason("ID is required").Err()
 	}
 	// Count VMs per project, server and zone.
-	// VMs created from the same config eventually have the same project,
-	// server, and zone but may currently exist for a previous config.
-	vms := make(metrics.InstanceCounter)
+	// VMs created from the same config eventually have the same project, server,
+	// and zone but may currently exist for a previous version of the config.
+	vms := &metrics.InstanceCount{}
 
 	// Get the configured count.
 	cfg := &model.Config{
@@ -65,7 +65,7 @@ func countVMs(c context.Context, payload proto.Message) error {
 		if err != nil {
 			return errors.Annotate(err, "failed to parse amount").Err()
 		}
-		vms.Configured(int(amt), cfg.Config.Attributes.Project)
+		vms.AddConfigured(int(amt), cfg.Config.Attributes.Project)
 	}
 
 	// Get the actual (connected, created) counts.
@@ -83,11 +83,11 @@ func countVMs(c context.Context, payload proto.Message) error {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
 		default:
-			if vm.Connected > 0 {
-				vms.Connected(1, vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
-			}
 			if vm.Created > 0 {
-				vms.Created(1, vm.Attributes.Project, vm.Attributes.Zone)
+				vms.AddCreated(1, vm.Attributes.Project, vm.Attributes.Zone)
+			}
+			if vm.Connected > 0 {
+				vms.AddConnected(1, vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
 			}
 		}
 	}
