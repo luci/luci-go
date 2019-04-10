@@ -41,6 +41,9 @@ message Config {
 
   // At least 1 ConfigGroup is required.
   repeated ConfigGroup config_groups = 4;
+
+  // EXPERIMENTAL!
+  CQDependOptions cqdepend_options = 5;
 }
 
 // SubmitOptions control how CQ submits CLs.
@@ -61,6 +64,19 @@ message SubmitOptions {
   google.protobuf.Duration burst_delay = 2;
 }
 
+
+// A boolean with an undefined value.
+enum Trinary {
+  UNSET = 0;
+  YES = 1;
+  NO = 2;
+}
+
+
+// EXPERIMENTAL! TODO(tandrii, crbug/912294): add doc.
+message CQDependOptions {
+  Trinary allowed = 1;
+}
 
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
