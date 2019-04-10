@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "478be595_b3917ff7",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 3
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-10T01:41:58Z",
+      "side": 1,
+      "message": "then use 2. and 3. for items below instead 1.",
+      "range": {
+        "startLine": 312,
+        "startChar": 30,
+        "endLine": 312,
+        "endChar": 45
+      },
+      "revId": "abc59f12b37c0e900cd6ed2a52a713e233d20424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
