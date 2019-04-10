@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
@@ -152,7 +152,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	}
 
 	svc := flex.GetServices(c)
-	st, err := svc.StorageForStream(c, lst)
+	st, err := svc.StorageForStream(c, lst, coordinator.Project(c))
 	if err != nil {
 		return errors.Annotate(err, "").InternalReason("failed to create storage instance").Err()
 	}
