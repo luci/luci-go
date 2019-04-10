@@ -126,6 +126,24 @@
     },
     {
       "key": {
+        "uuid": "411c07a6_10adc0bd",
+        "filename": "common/system/pager/pager.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-10T23:14:48Z",
+      "side": 1,
+      "message": "nvm, LookPath works. IsTerminal didn\u0027t work because I was sshing. Works now",
+      "parentUuid": "c8044af3_31b48775",
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1f01d27_0f2da628",
         "filename": "common/system/pager/pager.go",
         "patchSetId": 8
