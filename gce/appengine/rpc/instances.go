@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/gce/api/instances/v1"
 	"go.chromium.org/luci/gce/appengine/model"
+	"go.chromium.org/luci/gce/vmtoken"
 )
 
 // Instances implements instances.InstancesServer.
@@ -65,14 +66,18 @@ func (*Instances) Delete(c context.Context, req *instances.DeleteRequest) (*empt
 	return &empty.Empty{}, nil
 }
 
+// toInstance returns an *instances.Instance representation of the given
+// *model.VM.
 func toInstance(vm *model.VM) *instances.Instance {
 	inst := &instances.Instance{
 		Id:       vm.ID,
 		Drained:  vm.Drained,
 		Hostname: vm.Hostname,
 		Lifetime: vm.Lifetime,
+		Project:  vm.Attributes.Project,
 		Swarming: vm.Swarming,
 		Timeout:  vm.Timeout,
+		Zone:     vm.Attributes.Zone,
 	}
 	if vm.Connected > 0 {
 		inst.Connected = &timestamp.Timestamp{
@@ -87,7 +92,12 @@ func toInstance(vm *model.VM) *instances.Instance {
 	return inst
 }
 
+// getByID returns the *instances.Instance matching the given ID. Always returns
+// permission denied when called by VMs.
 func getByID(c context.Context, id string) (*instances.Instance, error) {
+	if vmtoken.Has(c) {
+		return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
+	}
 	vm := &model.VM{
 		ID: id,
 	}
@@ -101,7 +111,12 @@ func getByID(c context.Context, id string) (*instances.Instance, error) {
 	}
 }
 
+// getByHostname returns the *instances.Instance matching the given hostname.
+// May be called by VMs.
 func getByHostname(c context.Context, hostname string) (*instances.Instance, error) {
+	if vmtoken.Has(c) && vmtoken.Hostname(c) != hostname {
+		return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
+	}
 	var vms []*model.VM
 	// Hostnames are globally unique, so there should be at most one match.
 	q := datastore.NewQuery(model.VMKind).Eq("hostname", hostname).Limit(1)
@@ -109,9 +124,16 @@ func getByHostname(c context.Context, hostname string) (*instances.Instance, err
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch VM").Err()
 	case len(vms) == 0:
+		if vmtoken.Has(c) {
+			return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
+		}
 		return nil, status.Errorf(codes.NotFound, "no VM found with hostname %q", hostname)
 	default:
-		return toInstance(vms[0]), nil
+		inst := toInstance(vms[0])
+		if vmtoken.Has(c) && !vmtoken.Matches(c, inst.Hostname, inst.Zone, inst.Project) {
+			return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
+		}
+		return inst, nil
 	}
 }
 
@@ -152,7 +174,7 @@ func (*Instances) List(c context.Context, req *instances.ListRequest) (*instance
 // NewInstancesServer returns a new instances server.
 func NewInstancesServer() instances.InstancesServer {
 	return &instances.DecoratedInstances{
-		Prelude:  authPrelude,
+		Prelude:  vmAccessPrelude,
 		Service:  &Instances{},
 		Postlude: gRPCifyAndLogErr,
 	}

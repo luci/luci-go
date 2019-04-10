@@ -102,7 +102,7 @@ func (*Config) List(c context.Context, req *config.ListRequest) (*config.ListRes
 // NewConfigurationServer returns a new configuration server.
 func NewConfigurationServer() config.ConfigurationServer {
 	return &config.DecoratedConfiguration{
-		Prelude:  authPrelude,
+		Prelude:  readOnlyAuthPrelude,
 		Service:  &Config{},
 		Postlude: gRPCifyAndLogErr,
 	}

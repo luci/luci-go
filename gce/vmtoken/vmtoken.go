@@ -26,6 +26,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -186,6 +187,36 @@ func withPayload(c context.Context, p *Payload) context.Context {
 func getPayload(c context.Context) *Payload {
 	p, _ := c.Value(&pldKey).(*Payload)
 	return p
+}
+
+// Clear returns a new context without a GCE VM metadata token installed.
+func Clear(c context.Context) context.Context {
+	return context.WithValue(c, &pldKey, nil)
+}
+
+// Has returns whether the current context contains a valid GCE VM metadata
+// token.
+func Has(c context.Context) bool {
+	return getPayload(c) != nil
+}
+
+// Hostname returns the hostname of the VM stored in the current context.
+func Hostname(c context.Context) string {
+	p := getPayload(c)
+	if p == nil {
+		return ""
+	}
+	return p.Instance
+}
+
+// CurrentIdentity returns the identity of the VM stored in the current context.
+func CurrentIdentity(c context.Context) string {
+	p := getPayload(c)
+	if p == nil {
+		return "gce:anonymous"
+	}
+	// GCE hostnames must be unique per project, so <instance, project> suffices.
+	return fmt.Sprintf("gce:%s:%s", p.Instance, p.Project)
 }
 
 // Matches returns whether the current context contains a GCE VM metadata
