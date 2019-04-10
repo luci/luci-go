@@ -305,9 +305,9 @@ func TestValidation(t *testing.T) {
 				So(vctx.Finalize(), ShouldErrLike, "fake verifier is not allowed")
 			})
 			Convey("deprecator not allowed", func() {
-				v.Deprecator = &v2.Verifiers_Deprecator{}
+				v.Cqlinter = &v2.Verifiers_CQLinter{}
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "deprecator verifier is not allowed")
+				So(vctx.Finalize(), ShouldErrLike, "cqlinter verifier is not allowed")
 			})
 			Convey("tree_status", func() {
 				v.TreeStatus = &v2.Verifiers_TreeStatus{}
