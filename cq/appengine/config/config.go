@@ -283,8 +283,8 @@ func validateGerritProject(ctx *validation.Context, gp *v2.ConfigGroup_Gerrit_Pr
 }
 
 func validateVerifiers(ctx *validation.Context, v *v2.Verifiers) {
-	if v.Deprecator != nil {
-		ctx.Errorf("deprecator verifier is not allowed (internal use only)")
+	if v.Cqlinter != nil {
+		ctx.Errorf("cqlinter verifier is not allowed (internal use only)")
 	}
 	if v.Fake != nil {
 		ctx.Errorf("fake verifier is not allowed (internal use only)")

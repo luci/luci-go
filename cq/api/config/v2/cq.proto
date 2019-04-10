@@ -142,8 +142,8 @@ message Verifiers {
   // is agnostic to how and where builds are executed.
   Tryjob tryjob = 3;
 
-  // Deprecator is for internal CQ use only. DO NOT USE IN YOUR cq.cfg.
-  Deprecator deprecator = 4;
+  // CQLinter is for internal CQ use only. DO NOT USE IN YOUR cq.cfg.
+  CQLinter cqlinter = 4;
 
   // Fake is for internal CQ use only. DO NOT USE IN YOUR cq.cfg.
   Fake fake = 5;
@@ -372,8 +372,8 @@ message Verifiers {
     }
   }
 
-  // Deprecator is for internal use in CQ.
-  message Deprecator{}
+  // CQLinter is for internal use in CQ.
+  message CQLinter{}
 
   // Fake is for internal use in CQ.
   message Fake {
