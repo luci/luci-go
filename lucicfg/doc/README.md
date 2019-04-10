@@ -21,6 +21,13 @@
 
 
 
+
+
+
+
+
+
+
 [TOC]
 
 ## Overview
@@ -29,18 +36,17 @@
 high-level configuration given as a [Starlark] script that uses APIs exposed by
 `lucicfg`. In other words, it takes a \*.star file (or files) as input and
 spits out a bunch of \*.cfg files (such us `cr-buildbucket.cfg` and
-`luci-scheduler.cfg`) as outputs. A single entity (such as a
-[luci.builder(...)](#luci.builder) definition) in the input is translated
-into multiple entities (such as Buildbucket's builder{...} and Scheduler's
-job{...}) in the output. This ensures internal consistency of all low-level
-configs.
+`luci-scheduler.cfg`) as outputs. A single entity (such as a [luci.builder(...)](#luci.builder)
+definition) in the input is translated into multiple entities (such as
+Buildbucket's builder{...} and Scheduler's job{...}) in the output. This ensures
+internal consistency of all low-level configs.
 
 Using Starlark allows to further reduce duplication and enforce invariants in
 the configs. A common pattern is to use Starlark functions that wrap one or
-more basic rules (e.g. [luci.builder(...)](#luci.builder) and
-[luci.console_view_entry(...)](#luci.console_view_entry)) to define more "concrete"
-entities (for example "a CI builder" or "a Try builder"). The rest of the
-config script then uses such functions to build up the actual configuration.
+more basic rules (e.g. [luci.builder(...)](#luci.builder) and [luci.console_view_entry(...)](#luci.console_view_entry)) to
+define more "concrete" entities (for example "a CI builder" or "a Try builder").
+The rest of the config script then uses such functions to build up the actual
+configuration.
 
 ### Getting lucicfg
 
@@ -127,7 +133,7 @@ command that can be used to verify the generated configs match the original
 ones. Roughly, the idea is to start with broad strokes, and then refine details
 until old and new configs match:
 
-  1. Create new `main.star`, add luci.project(...) and all luci.bucket(...)
+  1. Create new `main.star`, add [luci.project(...)](#luci.project) and all [luci.bucket(...)](#luci.bucket)
      definitions there. We assume `main.star` is located in the same directory
      as existing conifgs (like `cr-buildbucket.cfg`), and generated configs are
      stored in `generated` subdirectory, which is not yet really used for
@@ -158,32 +164,197 @@ until old and new configs match:
 
 ## Concepts
 
-### Execution model {#execution_doc}
-
 *** note
-TODO: To be written.
+Most of information in this section is specific to `lucicfg`, **not** a generic
+Starlark interpreter. Also this is **advanced stuff**. Its full understanding is
+not required to use `lucicfg` effectively.
 ***
 
+### Modules and packages {#modules_and_packages}
 
-### Rules, nodes, relations
+Each individual Starlark file is called a module. Several modules under the same
+root directory form a package. Modules within a single package can refer to each
+other (in load(...) and [exec(...)](#exec)) using their root-relative paths that
+start with `//`. The root of the main package is taken to be the directory that
+contains the entry point script (usually `main.star`) passed to `lucicfg`, i.e.
+`main.star` itself can be referred to as `//main.star`.
 
-*** note
-TODO: To be written.
-***
 
 
-### Resolving naming ambiguities
+Modules can either be "library-like" (executed via load(...) statement) or
+"script-like" (executed via [exec(...)](#exec) function). Library-like modules can
+load other library-like modules via load(...), but may not call
+[exec(...)](#exec). Script-like modules may use both load(...) and [exec(...)](#exec).
 
-*** note
-TODO: To be written.
-***
+Dicts of modules loaded via load(...) are reused, e.g. if two different
+scripts load the exact same module, they'll get the exact same symbols as a
+result. The loaded code always executes only once. The interpreter *may* load
+modules in parallel in the future, libraries must not rely on their loading
+order and must not have side effects.
 
+On the other hand, modules executed via [exec(...)](#exec) are guaranteed to be
+processed sequentially, and only once. Thus 'exec'-ed scripts essentially form
+a tree, traversed exactly once in the depth first order.
+
+### Rules, state representation
+
+All entities manipulated by `lucicfg` are represented by nodes in a directed
+acyclic graph. One entity (such as a builder) can internally be represented by
+multiple nodes. A function that adds nodes and edges to the graph is called
+**a rule** (e.g. [luci.builder(...)](#luci.builder) is a rule).
+
+Each node has a unique hierarchical key, usually constructed from entity's
+properties. For example, a builder name and its bucket name are used to
+construct a unique key for this builder (roughly `<bucket>/<builder>`). These
+keys are used internally by rules when adding edges to the graph.
+
+To refer to entities from public API, one just usually uses strings (e.g.
+a builder name to refer to the builder). Rules' implementation usually have
+enough context to construct correct node keys from such strings. Sometimes they
+need some help, see [Resolving naming ambiguities](#resolving_ambiguities).
+Other times entities have no meaningful global names at all (for example,
+[luci.console_view_entry(...)](#luci.console_view_entry)). For such cases, one uses a return value of the
+corresponding rule: rules return opaque pointer-like objects that can be passed
+to other rules as an input in place of a string identifiers. This allows to
+"chain" definitions, e.g.
+
+```python
+luci.console_view(
+    ...
+    entries = [
+        luci.console_view_entry(...),
+        luci.console_view_entry(...),
+        ...
+    ],
+)
+```
+
+It is strongly preferred to either use string names to refer to entities **or**
+define them inline where they are needed. Please **avoid** storing return values
+of rules in variables to refer to them later. Using string names is as powerful
+(`lucicfg` verifies referential integrity), and it offers additional advantages
+(like referring to entities across file boundaries).
+
+To aid in using inline definitions where makes sense, many rules allow entities
+to be defines multiple times as long as all definitions are identical (this is
+internally referred to as "idempotent nodes"). It allows following usage style:
+
+```python
+def my_recipe(name):
+  return luci.recipe(
+      name = name,
+      cipd_package = 'my/recipe/bundle',
+  )
+
+luci.builder(
+    name = 'builder 1',
+    executable = my_recipe('some-recipe'),
+    ...
+)
+
+luci.builder(
+    name = 'builder 2',
+    executable = my_recipe('some-recipe'),
+    ...
+)
+```
+
+Here `some-recipe` is formally defined twice, but both definitions are
+identical, so it doesn't cause ambiguities. See the documentation of individual
+rules to see whether they allow such redefinitions.
+
+### Execution stages
+
+There are 3 stages of `lucicfg gen` execution:
+
+  1. **Building the state** by executing the given entry `main.star` code and
+     all modules it exec's. This builds a graph in memory (via calls to rules),
+     and registers a bunch of generator callbacks (via [lucicfg.generator(...)](#lucicfg.generator)) that
+     will traverse this graph in the stage 3.
+       - Validation of the format of parameters happens during this stage (e.g.
+         checking types, ranges, regexps, etc). This is done by rules'
+         implementations. A frozen copy of validated parameters is put into
+         the added graph nodes to be used from the stage 3.
+       - Rules can mutate the graph, but **may not** examine or traverse it.
+       - Nodes and edges can be added out of order, e.g. an edge may be added
+         before the nodes it connects. Together with the previous constraint, it
+         makes most lucicfg statements position independent.
+       - The stage ends after reaching the end of the entry `main.star` code. At
+         this point we have a (potentially incomplete) graph and a list of
+         registered generator callbacks.
+  2. **Checking the referential consistency** by verifying all edges of the
+     graph actually connect existing nodes. Since we have a lot of information
+     about the graph structure, we can emit helpful error messages here, e.g
+     `luci.builder("name") refers to undefined luci.bucket("bucket") at <stack
+     trace of the corresponding luci.builder(...) definition>`.
+       - This stage is performed purely by `lucicfg` core code, not touching
+         Starlark at all. It doesn't need to understand the semantics of graph
+         nodes, and thus used for all sorts of configs (LUCI configs are just
+         one specific application).
+       - At the end of the stage we have a consistent graph with no dangling
+         edges. It still may be semantically wrong.
+  3. **Checking the semantics and generating actual configs** by calling all
+     registered generator callbacks sequentially. They can examine and traverse
+     the graph in whatever way they want and either emit errors or emit
+     generated configs. They **may not** modify the graph at this stage.
+
+Presently all this machinery is mostly hidden from the end user. It will become
+available in future versions of `lucicfg` as an API for **extending**
+`lucicfg`, e.g. for adding new entity types that have relation to LUCI, or for
+repurposing `lucicfg` for generating non-LUCI conifgs.
+
+## Common tasks
+
+### Resolving naming ambiguities {#resolving_ambiguities}
+
+Builder names are scoped to buckets. For example, it is possible to have the
+following definition:
+
+```python
+# Runs pre-submit tests on Linux.
+luci.builder(
+    name = 'Linux',
+    bucket = 'try',
+    ...
+)
+
+# Runs post-submit tests on Linux.
+luci.builder(
+    name = 'Linux',
+    bucket = 'ci',
+    ...
+)
+```
+
+Here `Linux` name by itself is ambiguous and can't be used to refer to the
+builder. E.g. the following chunk of code will cause an error:
+
+```python
+luci.list_view_entry(
+    builder = 'Linux',  # but which one?...
+    ...
+)
+```
+
+The fix is to prepend the bucket name:
+
+```python
+luci.list_view_entry(
+    builder = 'ci/Linux',  # ah, the CI one
+    ...
+)
+```
+
+It is always correct to use "full" name like this. But in practice the vast
+majority of real world configs do not have such ambiguities and requiring full
+names everywhere is a chore. For that reason `lucicfg` allows to omit the bucket
+name if the resulting reference is non-ambiguous. In the example above, if we
+remove one of the builders, `builder = 'Linux'` reference becomes valid.
 
 
 ### Defining cron schedules {#schedules_doc}
 
-[luci.builder(...)](#luci.builder) and
-[luci.gitiles_poller(...)](#luci.gitiles_poller) rules have `schedule` field that
+[luci.builder(...)](#luci.builder) and [luci.gitiles_poller(...)](#luci.gitiles_poller) rules have `schedule` field that
 defines how often the builder or poller should run. Schedules are given as
 strings. Supported kinds of schedules (illustrated via examples):
 
@@ -214,12 +385,12 @@ strings. Supported kinds of schedules (illustrated via examples):
 
   - `triggered` schedule indicates that the job is only started via some
     external triggering event (e.g. via LUCI Scheduler API), not periodically.
-      - in [luci.builder(...)](#luci.builder) this schedule is useful to
-        make lucicfg setup a scheduler job associated with the builder (even if
-        the builder is not triggered by anything else in the configs). This
-        exposes the builder in LUCI Scheduler API.
-      - in [luci.gitiles_poller(...)](#luci.gitiles_poller) this is useful to setup
-        a poller that polls only on manual requests, not periodically.
+      - in [luci.builder(...)](#luci.builder) this schedule is useful to make lucicfg setup a
+        scheduler job associated with the builder (even if the builder is not
+        triggered by anything else in the configs). This exposes the builder in
+        LUCI Scheduler API.
+      - in [luci.gitiles_poller(...)](#luci.gitiles_poller) this is useful to setup a poller that polls
+        only on manual requests, not periodically.
 
 
 ## Interfacing with lucicfg internals
@@ -1633,9 +1804,8 @@ Below is the table with role constants that can be passed as `roles` in
 [acl.entry(...)](#acl.entry).
 
 Due to some inconsistencies in how LUCI service are currently implemented, some
-roles can be assigned only in [luci.project(...)](#luci.project) rule, but
-some also in individual [luci.bucket(...)](#luci.bucket) or
-[luci.cq_group(...)](#luci.cq_group) rules.
+roles can be assigned only in [luci.project(...)](#luci.project) rule, but some also in individual
+[luci.bucket(...)](#luci.bucket) or [luci.cq_group(...)](#luci.cq_group) rules.
 
 Similarly some roles can be assigned to individual users, other only to groups.
 
@@ -2115,10 +2285,6 @@ __load(module)
 Loads another Starlark module (if it haven't been loaded before), extracts
 one or more values from it, and binds them to names in the current module.
 
-This is not actually a function, but a core Starlark statement. We give it
-additional meaning (related to [the execution model](#execution_doc)) worthy
-of additional documentation.
-
 A load statement requires at least two "arguments". The first must be a
 literal string, it identifies the module to load. The remaining arguments are
 a mixture of literal strings, such as `'x'`, or named literal strings, such as
@@ -2136,8 +2302,8 @@ load('//module.star', 'x', y2='y', 'z')    # assigns x, y2, and z
 
 A load statement within a function is a static error.
 
-TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
-'exec' interact with each other.
+See also [Modules and packages](#modules_and_packages) for how load(...)
+interacts with [exec(...)](#exec).
 
 #### Arguments {#__load-args}
 
@@ -2156,8 +2322,8 @@ exec(module)
 
 Executes another Starlark module for its side effects.
 
-TODO(vadimsh): Write about 'load' and 'exec' contexts and how 'load' and
-'exec' interact with each other.
+See also [Modules and packages](#modules_and_packages) for how load(...)
+interacts with [exec(...)](#exec).
 
 #### Arguments {#exec-args}
 
