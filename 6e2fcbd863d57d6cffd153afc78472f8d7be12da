@@ -213,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "001a376e_2aec959f",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-10T01:17:16Z",
+      "side": 1,
+      "message": "\u003e Wait why will it be happening? You mean if a new VM is brought online but the index isn\u0027t updated so the query incorrectly returns nothing for awhile? \n\nYes.\n\n\u003e I think that\u0027s fine because it should have the same behavior as the Machine Provider agent, it will fail and chromebuild-startup.py will relaunch it until it doesn\u0027t fail.\n\nOk.",
+      "parentUuid": "296afd41_9ddcc0aa",
+      "range": {
+        "startLine": 128,
+        "startChar": 3,
+        "endLine": 128,
+        "endChar": 73
+      },
+      "revId": "6e2fcbd863d57d6cffd153afc78472f8d7be12da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "988bcda7_9b675cef",
         "filename": "gce/appengine/rpc/instances.go",
         "patchSetId": 1
