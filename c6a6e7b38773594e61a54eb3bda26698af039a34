@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "72cb0416_70f3adc2",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-10T23:13:38Z",
+      "side": 1,
+      "message": "What do you mean by incompatible?  \"paging\" can be a noun.  eg \"This application performs paging\"\n\n-nopage sounds okay.",
+      "parentUuid": "422f98d6_c5176010",
+      "range": {
+        "startLine": 80,
+        "startChar": 32,
+        "endLine": 80,
+        "endChar": 39
+      },
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "38011e75_362fa374",
         "filename": "common/system/pager/pager.go",
         "patchSetId": 8
@@ -78,6 +102,41 @@
       "side": 1,
       "message": "i spent an hour trying to make it work on more. I am not very successful so far, and it is not easy to do with a windows machine handy. In particular, exec.LookupPath(\"more\"), exec.LookupPath(\"more.exe\") and exec.LookupPath(\"more.com\") fail. Is this important?",
       "parentUuid": "38011e75_362fa374",
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbfe3c2e_a5d5505e",
+        "filename": "common/system/pager/pager.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-10T23:13:38Z",
+      "side": 1,
+      "message": "I guess it\u0027s because it\u0027s a shell command rather than a file :(\n\nI don\u0027t think it\u0027s important enough to spend more time on.",
+      "parentUuid": "c8044af3_31b48775",
+      "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a1f01d27_0f2da628",
+        "filename": "common/system/pager/pager.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-10T23:13:38Z",
+      "side": 1,
+      "message": "This should be \"Wait for either fn or less\" then?",
       "revId": "c6a6e7b38773594e61a54eb3bda26698af039a34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
