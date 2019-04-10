@@ -17,13 +17,16 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/system/pager"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -88,8 +91,7 @@ type lsRun struct {
 }
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	ctx, cancel := context.WithCancel(cli.GetContext(a, r, env))
-	defer cancel()
+	ctx := cli.GetContext(a, r, env)
 
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
@@ -104,27 +106,30 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		return r.done(ctx, err)
 	}
 
-	buildC := make(chan *pb.Build)
-	errC := make(chan error)
-	go func() {
-		err := protoutil.Search(ctx, buildC, r.client, reqs...)
-		close(buildC)
-		errC <- err
-	}()
+	return pager.Main(ctx, func(ctx context.Context, out io.WriteCloser) int {
+		buildC := make(chan *pb.Build)
+		errC := make(chan error)
+		go func() {
+			err := protoutil.Search(ctx, buildC, r.client, reqs...)
+			close(buildC)
+			errC <- err
+		}()
 
-	stdout, _ := newStdioPrinters(r.noColor)
+		p := newPrinter(out, r.noColor, time.Now)
+		count := 0
+		for b := range buildC {
+			r.printBuild(p, b, count == 0)
+			count++
+			if count == r.limit {
+				return 0
+			}
+		}
 
-	count := 0
-	for b := range buildC {
-		if err := r.printBuild(stdout, b, count == 0); err != nil {
+		if err := <-errC; err != nil && err != context.Canceled {
 			return r.done(ctx, err)
 		}
-		count++
-		if count == r.limit {
-			return 0
-		}
-	}
-	return r.done(ctx, <-errC)
+		return 0
+	})
 }
 
 // parseSearchRequests converts flags and arguments to search requests.
