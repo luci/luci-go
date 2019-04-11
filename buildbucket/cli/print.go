@@ -127,7 +127,7 @@ func (p *printer) JSONPB(pb proto.Message) {
 
 // Build prints b.
 func (p *printer) Build(b *pb.Build) {
-	p.f("%sci.chromium.org/b/%d ", ansiStatus[b.Status], b.Id)
+	p.f("%shttp://ci.chromium.org/b/%d ", ansiStatus[b.Status], b.Id)
 	p.fw(10, "%s", b.Status)
 	p.f("'%s/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
 	if b.Number != 0 {
