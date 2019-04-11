@@ -191,7 +191,7 @@ func (r *lsRun) parseBaseRequest(ctx context.Context) (*pb.SearchBuildsRequest, 
 		ret.Fields.Paths[i] = "builds.*." + p
 	}
 
-	if ret.Predicate.GerritChanges, err = r.clsFlag.retrieveCLs(ctx, r.httpClient); err != nil {
+	if ret.Predicate.GerritChanges, err = r.clsFlag.retrieveCLs(ctx, r.httpClient, kRequirePatchset); err != nil {
 		return nil, err
 	}
 	return ret, nil

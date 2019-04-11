@@ -38,15 +38,17 @@ func (f *clsFlag) Register(fs *flag.FlagSet, help string) {
 	fs.Var(luciflag.StringSlice(&f.cls), "cl", help)
 }
 
+const kRequirePatchset = true
+
 // retrieveCLs retrieves GerritChange objects from f.cls.
 // Makes Gerrit RPCs if necessary, in parallel.
-func (f *clsFlag) retrieveCLs(ctx context.Context, httpClient *http.Client) ([]*pb.GerritChange, error) {
+func (f *clsFlag) retrieveCLs(ctx context.Context, httpClient *http.Client, requirePatchset bool) ([]*pb.GerritChange, error) {
 	ret := make([]*pb.GerritChange, len(f.cls))
 	return ret, parallel.FanOutIn(func(work chan<- func() error) {
 		for i, cl := range f.cls {
 			i := i
 			work <- func() error {
-				change, err := f.retrieveCL(ctx, cl, httpClient)
+				change, err := f.retrieveCL(ctx, cl, httpClient, requirePatchset)
 				if err != nil {
 					return fmt.Errorf("CL %q: %s", cl, err)
 				}
@@ -59,11 +61,13 @@ func (f *clsFlag) retrieveCLs(ctx context.Context, httpClient *http.Client) ([]*
 
 // retrieveCL retrieves a GerritChange from a string.
 // Makes a Gerrit RPC if necessary.
-func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Client) (*pb.GerritChange, error) {
+func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Client, requirePatchset bool) (*pb.GerritChange, error) {
 	ret, err := parseCL(cl)
 	switch {
 	case err != nil:
 		return nil, err
+	case requirePatchset && ret.Patchset == 0:
+		return nil, fmt.Errorf("missing patchset number")
 	case ret.Project != "" && ret.Patchset != 0:
 		return ret, nil
 	}
@@ -82,7 +86,9 @@ func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Cl
 	}
 
 	ret.Project = change.Project
-	ret.Patchset = int64(change.Revisions[change.CurrentRevision].Number)
+	if ret.Patchset == 0 {
+		ret.Patchset = int64(change.Revisions[change.CurrentRevision].Number)
+	}
 	return ret, nil
 }
 
