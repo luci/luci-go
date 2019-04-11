@@ -369,7 +369,7 @@ type siteRootOptions struct {
 func (opts *siteRootOptions) registerFlags(f *flag.FlagSet) {
 	f.StringVar(
 		&opts.rootDir, "root", "", "Path to an installation site root directory. "+
-			"If omitted will try to discovery it by examining parent directories.")
+			"If omitted will try to discover it by examining parent directories.")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
