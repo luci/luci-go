@@ -33,7 +33,6 @@ import (
 
 	"go.chromium.org/luci/common/data/text/color"
 	"go.chromium.org/luci/common/data/text/indented"
-	"go.chromium.org/luci/common/system/terminal"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -82,9 +81,7 @@ func newPrinter(w io.Writer, disableColor bool, nowFn func() time.Time) *printer
 }
 
 func newStdioPrinters(disableColor bool) (stdout, stderr *printer) {
-	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
-		disableColor = true
-	}
+	disableColor = disableColor || shouldDisableColors()
 	stdout = newPrinter(os.Stdout, disableColor, time.Now)
 	stderr = newPrinter(os.Stderr, disableColor, time.Now)
 	return
