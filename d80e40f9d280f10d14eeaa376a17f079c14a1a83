@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd7f9475_701e6ad0",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-11T19:15:08Z",
+      "side": 1,
+      "message": "readability--\n\nhow about accepting variable number of flags to retrieveCLs plus add `const kPatchsetRequired \u003d true`\ns.t. this callsite remains\n\n    r.retrieveCLs(ctx, r.httpClient)\n\nand those which need patchset \n\n    r.retrieveCLs(ctx, r.httpClient, kPatchsetRequired)",
+      "range": {
+        "startLine": 145,
+        "startChar": 60,
+        "endLine": 145,
+        "endChar": 67
+      },
+      "revId": "d80e40f9d280f10d14eeaa376a17f079c14a1a83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
