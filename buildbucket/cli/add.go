@@ -146,7 +146,7 @@ func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildReque
 		return nil, err
 	}
 
-	if ret.GitilesCommit, err = r.retrieveCommit(); err != nil {
+	if ret.GitilesCommit, err = r.retrieveCommit(ctx, r.httpClient); err != nil {
 		return nil, err
 	}
 	if ret.GitilesCommit != nil && ret.GitilesCommit.Ref == "" {
