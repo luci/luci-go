@@ -22,6 +22,30 @@
       "revId": "926f9de497cc2f66833afff70f893cd81006e4d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "628019c9_9b5c56a4",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-11T17:00:24Z",
+      "side": 1,
+      "message": "it would be expressed in X.X hours. The second value is what to round to, so if the value is \u003e1h, then round it to a minute, e.g. 1h2m3s -\u003e 1h2m",
+      "parentUuid": "49dd23ba_7babd148",
+      "range": {
+        "startLine": 395,
+        "startChar": 1,
+        "endLine": 395,
+        "endChar": 26
+      },
+      "revId": "926f9de497cc2f66833afff70f893cd81006e4d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
