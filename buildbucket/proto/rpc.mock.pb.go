@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 )
 
@@ -205,26 +204,6 @@ func (mr *MockBuildsClientMockRecorder) CancelBuild(ctx, in interface{}, opts ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsClient)(nil).CancelBuild), varargs...)
 }
 
-// CancelBuilds mocks base method
-func (m *MockBuildsClient) CancelBuilds(ctx context.Context, in *CancelBuildsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CancelBuilds", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CancelBuilds indicates an expected call of CancelBuilds
-func (mr *MockBuildsClientMockRecorder) CancelBuilds(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuilds", reflect.TypeOf((*MockBuildsClient)(nil).CancelBuilds), varargs...)
-}
-
 // Batch mocks base method
 func (m *MockBuildsClient) Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error) {
 	m.ctrl.T.Helper()
@@ -341,21 +320,6 @@ func (m *MockBuildsServer) CancelBuild(arg0 context.Context, arg1 *CancelBuildRe
 func (mr *MockBuildsServerMockRecorder) CancelBuild(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsServer)(nil).CancelBuild), arg0, arg1)
-}
-
-// CancelBuilds mocks base method
-func (m *MockBuildsServer) CancelBuilds(arg0 context.Context, arg1 *CancelBuildsRequest) (*empty.Empty, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CancelBuilds", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CancelBuilds indicates an expected call of CancelBuilds
-func (mr *MockBuildsServerMockRecorder) CancelBuilds(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuilds", reflect.TypeOf((*MockBuildsServer)(nil).CancelBuilds), arg0, arg1)
 }
 
 // Batch mocks base method
