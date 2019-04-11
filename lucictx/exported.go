@@ -23,8 +23,7 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 )
 
-// Exported represents an exported on-disk LUCI_CONTEXT file. It lives for
-// exactly the life of the callback function in Export.
+// Exported represents an exported on-disk LUCI_CONTEXT file.
 type Exported interface {
 	io.Closer
 

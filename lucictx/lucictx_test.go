@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"go.chromium.org/luci/common/system/environ"
@@ -165,7 +166,7 @@ func TestLUCIContextMethods(t *testing.T) {
 				So(path, ShouldEqual, externalContext.path)
 			})
 
-			Convey("export reuses files", func() {
+			Convey("Export reuses files", func() {
 				c, err := Set(c, "blah", map[string]string{})
 				So(err, ShouldBeNil)
 
@@ -206,6 +207,43 @@ func TestLUCIContextMethods(t *testing.T) {
 				e2 = nil
 				_, err = os.Stat(path)
 				So(os.IsNotExist(err), ShouldBeTrue)
+			})
+
+			Convey("ExportInto creates new files", func() {
+				tmp, err := ioutil.TempDir("", "luci_ctx")
+				So(err, ShouldBeNil)
+				defer func() {
+					os.RemoveAll(tmp)
+				}()
+
+				c, err := Set(c, "blah", map[string]string{})
+				So(err, ShouldBeNil)
+
+				e1, err := ExportInto(c, tmp)
+				So(err, ShouldBeNil)
+				p1 := e1.(*liveExport).path
+
+				e2, err := ExportInto(c, tmp)
+				So(err, ShouldBeNil)
+				p2 := e2.(*liveExport).path
+
+				// Two different files, both under 'tmp'.
+				So(p1, ShouldNotEqual, p2)
+				So(filepath.Dir(p1), ShouldEqual, tmp)
+				So(filepath.Dir(p2), ShouldEqual, tmp)
+
+				// Both exist.
+				_, err = os.Stat(p1)
+				So(err, ShouldBeNil)
+				_, err = os.Stat(p2)
+				So(err, ShouldBeNil)
+
+				// Closing one still keeps the other open.
+				So(e1.Close(), ShouldBeNil)
+				_, err = os.Stat(p1)
+				So(os.IsNotExist(err), ShouldBeTrue)
+				_, err = os.Stat(p2)
+				So(err, ShouldBeNil)
 			})
 		})
 	})
