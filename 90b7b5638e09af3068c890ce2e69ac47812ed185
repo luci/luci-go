@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4a43f5c_be5be8cc",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-11T15:45:21Z",
+      "side": 1,
+      "message": "https? This would avoid an extra redirect.",
+      "range": {
+        "startLine": 137,
+        "startChar": 8,
+        "endLine": 137,
+        "endChar": 12
+      },
+      "revId": "90b7b5638e09af3068c890ce2e69ac47812ed185",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
