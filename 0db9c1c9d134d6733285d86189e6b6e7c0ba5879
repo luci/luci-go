@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "addee0aa_033599d5",
+        "filename": "logdog/appengine/coordinator/flex/services.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-04-11T21:32:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "110fbdda_5bc20378",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 16
+      },
+      "revId": "0db9c1c9d134d6733285d86189e6b6e7c0ba5879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a629fba9_ac788681",
         "filename": "logdog/appengine/coordinator/flex/services.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "0db9c1c9d134d6733285d86189e6b6e7c0ba5879",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc85f893_be8ad554",
+        "filename": "logdog/appengine/coordinator/flex/services.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-04-11T21:32:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a629fba9_ac788681",
+      "range": {
+        "startLine": 176,
+        "startChar": 84,
+        "endLine": 176,
+        "endChar": 91
+      },
+      "revId": "0db9c1c9d134d6733285d86189e6b6e7c0ba5879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
