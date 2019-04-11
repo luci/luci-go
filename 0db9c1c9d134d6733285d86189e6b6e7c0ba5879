@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "110fbdda_5bc20378",
+        "filename": "logdog/appengine/coordinator/flex/services.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-11T20:48:47Z",
+      "side": 1,
+      "message": "I don\u0027t see a reason to make this public",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 16
+      },
+      "revId": "0db9c1c9d134d6733285d86189e6b6e7c0ba5879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a629fba9_ac788681",
+        "filename": "logdog/appengine/coordinator/flex/services.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-11T20:48:47Z",
+      "side": 1,
+      "message": "project.String()",
+      "range": {
+        "startLine": 176,
+        "startChar": 84,
+        "endLine": 176,
+        "endChar": 91
+      },
+      "revId": "0db9c1c9d134d6733285d86189e6b6e7c0ba5879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
