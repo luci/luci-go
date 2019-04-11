@@ -24,7 +24,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -89,7 +89,7 @@ func GetSwarmingTaskID(c context.Context, buildAddress string) (host, taskId str
 	if err != nil {
 		return
 	}
-	build, err := buildbucket.GetByAddress(c, client, buildAddress)
+	build, err := deprecated.GetByAddress(c, client, buildAddress)
 	switch {
 	case err != nil:
 		err = errors.Annotate(err, "could not get build at %q", buildAddress).Err()
@@ -144,9 +144,9 @@ func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string,
 // In case of an error, returns a build with a description of the error
 // and logs the error.
 func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBuildLegacy, error) {
-	// Parse the build message into a buildbucket.Build struct, filling in the
+	// Parse the build message into a deprecated.Build struct, filling in the
 	// input and output properties that we expect to receive.
-	var b buildbucket.Build
+	var b deprecated.Build
 	var props struct {
 		Revision string `json:"revision"`
 	}
@@ -237,7 +237,7 @@ func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*u
 		"Swarming task page for task "+task)
 
 	// Use v2 bucket names.
-	_, bucket := buildbucket.BucketNameToV2(b.Bucket)
+	_, bucket := deprecated.BucketNameToV2(b.Bucket)
 
 	result.Summary.ParentLabel = ui.NewLink(
 		b.Builder,

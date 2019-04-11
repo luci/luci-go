@@ -24,7 +24,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/memcache"
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
@@ -191,7 +191,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 	}
 
 	// Extract project and annotate context to use project scoped account.
-	project, _ := buildbucket.BucketNameToV2(bucket)
+	project, _ := deprecated.BucketNameToV2(bucket)
 	if project == "" {
 		return nil, errors.Annotate(err, "unable to extract project from bucket name").Err()
 	}
@@ -229,7 +229,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 			i := i
 			msg := msg
 			work <- func() error {
-				var buildbucketBuild buildbucket.Build
+				var buildbucketBuild deprecated.Build
 				if err := buildbucketBuild.ParseMessage(msg); err != nil {
 					return err
 				}

@@ -20,8 +20,8 @@ import (
 	"sort"
 
 	"go.chromium.org/gae/service/datastore"
-	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -74,7 +74,7 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 			}
 			for _, bBucket := range builders.Buckets {
 				// This uses v1 style bucket names, which are luci.project.bucket.
-				project, bucket := bb.BucketNameToV2(bBucket.Name)
+				project, bucket := deprecated.BucketNameToV2(bBucket.Name)
 				if project != projectID {
 					continue
 				}
