@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "49dd23ba_7babd148",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-11T16:57:36Z",
+      "side": 1,
+      "message": "This does not make sense given the code below. If duration is larger than Hour, it should be expressed in X.X hours, not minutes. Same for the the line below: durations longer than a minute, should be expressed as X.X minutes, not seconds.",
+      "range": {
+        "startLine": 395,
+        "startChar": 1,
+        "endLine": 395,
+        "endChar": 26
+      },
+      "revId": "926f9de497cc2f66833afff70f893cd81006e4d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
