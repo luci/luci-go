@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "6c57488a_18d20ef6",
+        "filename": "buildbucket/cli/cl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-11T18:19:46Z",
+      "side": 1,
+      "message": "Ah. I\u0027ve now just noticed that you are using FindStringSubmatch, i.e. it can also match middle of the string.",
+      "parentUuid": "42a76944_13123ee9",
+      "range": {
+        "startLine": 90,
+        "startChar": 38,
+        "endLine": 90,
+        "endChar": 39
+      },
+      "revId": "a8cbb23512efd1cc487ea8604baf537668233b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a95b22f_5e28604a",
         "filename": "buildbucket/cli/cl_test.go",
         "patchSetId": 3
