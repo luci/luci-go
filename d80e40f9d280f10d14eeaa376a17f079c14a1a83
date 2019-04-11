@@ -22,6 +22,30 @@
       "revId": "d80e40f9d280f10d14eeaa376a17f079c14a1a83",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "997170a6_219a6d39",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-11T19:27:38Z",
+      "side": 1,
+      "message": "variable number of flags sounds magical.\n\nwhat k stands for? PTAL, can add k\n\nnot sure it got better though",
+      "parentUuid": "fd7f9475_701e6ad0",
+      "range": {
+        "startLine": 145,
+        "startChar": 60,
+        "endLine": 145,
+        "endChar": 67
+      },
+      "revId": "d80e40f9d280f10d14eeaa376a17f079c14a1a83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
