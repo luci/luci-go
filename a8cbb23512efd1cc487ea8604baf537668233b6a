@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "42a76944_13123ee9",
+        "filename": "buildbucket/cli/cl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-11T18:10:46Z",
+      "side": 1,
+      "message": "it is omitted intentionally. See L96. This allows users to type \n\n  -cl crrev.com/c/1234\n\nas opposed to\n\n  -cl http://crrev.com/c/1234\n\nthe scheme is ignored anyway\n\nnote that also it does not require patchset",
+      "parentUuid": "b74ef466_0164dfd6",
+      "range": {
+        "startLine": 90,
+        "startChar": 38,
+        "endLine": 90,
+        "endChar": 39
+      },
+      "revId": "a8cbb23512efd1cc487ea8604baf537668233b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a95b22f_5e28604a",
         "filename": "buildbucket/cli/cl_test.go",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "a8cbb23512efd1cc487ea8604baf537668233b6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25edc695_0c7473c3",
+        "filename": "buildbucket/cli/cl_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-11T18:10:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a95b22f_5e28604a",
+      "revId": "a8cbb23512efd1cc487ea8604baf537668233b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
