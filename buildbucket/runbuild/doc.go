@@ -12,21 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
-
-import (
-	"os"
-
-	"go.chromium.org/luci/buildbucket/cli"
-	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
-)
-
-func main() {
-	mathrand.SeedRandomly()
-	p := cli.Params{
-		Auth:                   chromeinfra.DefaultAuthOptions(),
-		DefaultBuildbucketHost: chromeinfra.BuildbucketHost,
-	}
-	os.Exit(cli.Main(p, os.Args[1:]))
-}
+// Package runbuild can run a "LUCI executable", i.e. a user program that
+// produces a Build protobuf message.
+package runbuild

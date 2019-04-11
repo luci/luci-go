@@ -12,21 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package runbuild
 
-import (
-	"os"
-
-	"go.chromium.org/luci/buildbucket/cli"
-	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
-)
-
-func main() {
-	mathrand.SeedRandomly()
-	p := cli.Params{
-		Auth:                   chromeinfra.DefaultAuthOptions(),
-		DefaultBuildbucketHost: chromeinfra.BuildbucketHost,
-	}
-	os.Exit(cli.Main(p, os.Args[1:]))
+// Main runs a build runner, a program that bootstraps a user executable.
+func Main(args []string) int {
+	// TODO(crbug.com/939368): implement.
+	return 0
 }
