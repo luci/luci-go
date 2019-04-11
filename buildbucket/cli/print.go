@@ -41,11 +41,18 @@ var (
 	ansiWhiteBold      = ansi.ColorCode("white+b")
 	ansiWhiteUnderline = ansi.ColorCode("white+u")
 	ansiStatus         = map[pb.Status]string{
-		pb.Status_SCHEDULED:     ansi.LightWhite,
-		pb.Status_STARTED:       ansi.Yellow,
-		pb.Status_SUCCESS:       ansi.Green,
-		pb.Status_FAILURE:       ansi.Red,
-		pb.Status_INFRA_FAILURE: ansi.Magenta,
+		pb.Status_SCHEDULED:     ansi.ColorCode("white+h"),
+		pb.Status_STARTED:       ansi.ColorCode("yellow"),
+		pb.Status_SUCCESS:       ansi.ColorCode("green"),
+		pb.Status_FAILURE:       ansi.ColorCode("red"),
+		pb.Status_INFRA_FAILURE: ansi.ColorCode("magenta"),
+	}
+	ansiStatusUnderline = map[pb.Status]string{
+		pb.Status_SCHEDULED:     ansi.ColorCode("white+hu"), // this case makes generlization not worth it
+		pb.Status_STARTED:       ansi.ColorCode("yellow+u"),
+		pb.Status_SUCCESS:       ansi.ColorCode("green+u"),
+		pb.Status_FAILURE:       ansi.ColorCode("red+u"),
+		pb.Status_INFRA_FAILURE: ansi.ColorCode("magenta+u"),
 	}
 )
 
@@ -127,7 +134,7 @@ func (p *printer) JSONPB(pb proto.Message) {
 
 // Build prints b.
 func (p *printer) Build(b *pb.Build) {
-	p.f("%sci.chromium.org/b/%d ", ansiStatus[b.Status], b.Id)
+	p.f("%shttp://ci.chromium.org/b/%d%s%s ", ansiStatusUnderline[b.Status], b.Id, ansi.Reset, ansiStatus[b.Status])
 	p.fw(10, "%s", b.Status)
 	p.f("'%s/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
 	if b.Number != 0 {
