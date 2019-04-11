@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "69bed434_b46248d2",
+        "filename": "buildbucket/cli/print_posix.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-11T00:16:27Z",
+      "side": 1,
+      "message": "this is an internal function and the value is always os.Stdout.  Consider inlining.",
+      "range": {
+        "startLine": 25,
+        "startChar": 25,
+        "endLine": 25,
+        "endChar": 28
+      },
+      "revId": "7314ebda877d599429e4c5af507ab45adf1a1621",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
