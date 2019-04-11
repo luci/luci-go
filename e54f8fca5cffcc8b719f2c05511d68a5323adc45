@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "499fa558_9ce9d5d1",
+        "filename": "auth/authctx/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T18:39:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2974dde_68400298",
+      "range": {
+        "startLine": 50,
+        "startChar": 11,
+        "endLine": 50,
+        "endChar": 15
+      },
+      "revId": "e54f8fca5cffcc8b719f2c05511d68a5323adc45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "31a65536_bc008ea4",
         "filename": "auth/authctx/context.go",
         "patchSetId": 1
@@ -108,6 +132,30 @@
       "revId": "e54f8fca5cffcc8b719f2c05511d68a5323adc45",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c163fd8_17abc783",
+        "filename": "auth/client/authcli/authcli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T18:39:31Z",
+      "side": 1,
+      "message": "The whole list is not generally reusable. Callers should pick only scopes they care about (e.g. passing firebase scope is not necessary if Firebase is not used). Also callers may choose to use more restricted scopes (e.g. \"devstorage.read_only\" instead of \"cloud-platform\"). Suggested scopes are documented in authctx.",
+      "parentUuid": "aa5caa47_64e76248",
+      "range": {
+        "startLine": 417,
+        "startChar": 42,
+        "endLine": 417,
+        "endChar": 49
+      },
+      "revId": "e54f8fca5cffcc8b719f2c05511d68a5323adc45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
