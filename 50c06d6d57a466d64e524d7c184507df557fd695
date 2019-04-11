@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93a6b80d_6588c6f8",
+        "filename": "client/cmd/devshell/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T02:10:23Z",
+      "side": 0,
+      "message": "this is no longer useful, \u0027luci-auth context\u0027 does this now",
+      "revId": "50c06d6d57a466d64e524d7c184507df557fd695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d46be8e2_f9116171",
+        "filename": "client/cmd/gsutil-auth/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T02:10:23Z",
+      "side": 0,
+      "message": "same",
+      "revId": "50c06d6d57a466d64e524d7c184507df557fd695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

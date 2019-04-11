@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "31a65536_bc008ea4",
+        "filename": "auth/authctx/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T02:10:23Z",
+      "side": 1,
+      "message": "This is new. On bots it should be noop (there\u0027s LUCI_CONTEXT there setup by Swarming bot, it will be inherited). I\u0027ll think through more edge cases when will be integrating this into kitchen.",
+      "range": {
+        "startLine": 194,
+        "startChar": 0,
+        "endLine": 209,
+        "endChar": 2
+      },
+      "revId": "e54f8fca5cffcc8b719f2c05511d68a5323adc45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6ecb63b_a22c656b",
+        "filename": "auth/authctx/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T02:10:23Z",
+      "side": 1,
+      "message": "this has moved from authcli.go",
+      "range": {
+        "startLine": 389,
+        "startChar": 0,
+        "endLine": 420,
+        "endChar": 7
+      },
+      "revId": "e54f8fca5cffcc8b719f2c05511d68a5323adc45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd6ef6d6_8489f216",
+        "filename": "auth/authctx/git.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T02:10:23Z",
+      "side": 1,
+      "message": "exact copy of what we had in kitchen",
+      "revId": "e54f8fca5cffcc8b719f2c05511d68a5323adc45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
