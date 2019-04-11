@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "c2974dde_68400298",
+        "filename": "auth/authctx/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-11T14:36:34Z",
+      "side": 1,
+      "message": "knows",
+      "range": {
+        "startLine": 50,
+        "startChar": 11,
+        "endLine": 50,
+        "endChar": 15
+      },
+      "revId": "e54f8fca5cffcc8b719f2c05511d68a5323adc45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "31a65536_bc008ea4",
         "filename": "auth/authctx/context.go",
         "patchSetId": 1
@@ -59,6 +82,29 @@
       "writtenOn": "2019-04-11T02:10:23Z",
       "side": 1,
       "message": "exact copy of what we had in kitchen",
+      "revId": "e54f8fca5cffcc8b719f2c05511d68a5323adc45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa5caa47_64e76248",
+        "filename": "auth/client/authcli/authcli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-11T14:36:34Z",
+      "side": 1,
+      "message": "should this list be a variable in authctx then?",
+      "range": {
+        "startLine": 417,
+        "startChar": 42,
+        "endLine": 417,
+        "endChar": 49
+      },
       "revId": "e54f8fca5cffcc8b719f2c05511d68a5323adc45",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
