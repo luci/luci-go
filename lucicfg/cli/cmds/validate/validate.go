@@ -146,10 +146,10 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 
 // validateGenerated executes Starlark script, compares the result to whatever
 // is on disk (failing the validation if there's a difference), and then sends
-// the config set to LUCI Config service for validation.
+// the output to LUCI Config service for validation.
 func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*validateResult, error) {
 	meta := vr.DefaultMeta()
-	configSet, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta)
+	output, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta)
 	if err != nil {
 		return nil, err
 	}
@@ -157,18 +157,18 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 	result := &validateResult{}
 
 	if meta.ConfigDir != "-" {
-		// Find files that are present on disk, but no longer in the config set.
+		// Find files that are present on disk, but no longer in the output.
 		tracked, err := lucicfg.FindTrackedFiles(meta.ConfigDir, meta.TrackedFiles)
 		if err != nil {
 			return result, err
 		}
 		for _, f := range tracked {
-			if _, present := configSet[f]; !present {
+			if _, present := output[f]; !present {
 				result.Stale = append(result.Stale, f)
 			}
 		}
-		// Find files that are newer in the config set or do not exist on disk.
-		changed, _ := configSet.Compare(meta.ConfigDir)
+		// Find files that are newer in the output or do not exist on disk.
+		changed, _ := output.Compare(meta.ConfigDir)
 		result.Stale = append(result.Stale, changed...)
 	}
 
@@ -187,7 +187,9 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 	case meta.ConfigSet == "":
 		logging.Warningf(ctx, "Config set name is not set, skipping validation against LUCI Config service")
 	default:
-		result.ValidationResult, err = base.ValidateConfigs(ctx, configSet, &meta, vr.ConfigService)
+		// TODO(vadimsh): Split into multiple config sets and validate them in
+		// parallel.
+		result.ValidationResult, err = base.ValidateConfigs(ctx, output.AsConfigSet(), &meta, vr.ConfigService)
 	}
 	return result, err
 }

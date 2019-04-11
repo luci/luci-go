@@ -1,9 +1,9 @@
 load("@proto//test.proto", "testproto")
 
 
-def test_config_set():
-  cs = __native__.new_config_set()
-  assert.eq(type(cs), 'config_set')
+def test_output_builder():
+  cs = __native__.new_output_builder()
+  assert.eq(type(cs), 'output')
 
   # Setters work.
   cs['hello'] = 'world'
@@ -24,17 +24,17 @@ def test_config_set():
 
 def test_config_generators():
   def gen1(ctx):
-    ctx.config_set['hello'] = 'world'
+    ctx.output['hello'] = 'world'
   lucicfg.generator(impl = gen1)
 
   def gen2(ctx):
-    assert.eq(ctx.config_set['hello'], 'world')
-    ctx.config_set['hello'] = 'nope'
+    assert.eq(ctx.output['hello'], 'world')
+    ctx.output['hello'] = 'nope'
   lucicfg.generator(impl = gen2)
 
   ctx = __native__.new_gen_ctx()
   __native__.call_generators(ctx)
-  assert.eq(ctx.config_set['hello'], 'nope')
+  assert.eq(ctx.output['hello'], 'nope')
 
 
 def with_clean_state(cb):
@@ -43,5 +43,5 @@ def with_clean_state(cb):
   __native__.clear_state()
 
 
-with_clean_state(test_config_set)
+with_clean_state(test_output_builder)
 with_clean_state(test_config_generators)

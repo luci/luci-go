@@ -37,9 +37,9 @@ import (
 // All Starlark code is executed sequentially in a single goroutine, thus the
 // state is not protected by any mutexes.
 type State struct {
-	Inputs  Inputs    // all inputs, exactly as passed to Generate.
-	Configs ConfigSet // all generated config files, populated at the end
-	Meta    Meta      // lucicfg parameters, settable through Starlark
+	Inputs Inputs // all inputs, exactly as passed to Generate.
+	Output Output // all generated config files, populated at the end
+	Meta   Meta   // lucicfg parameters, settable through Starlark
 
 	vars       vars.Vars         // holds state of lucicfg.var() variables
 	seq        sequences         // holds state for __native__.sequence_next()

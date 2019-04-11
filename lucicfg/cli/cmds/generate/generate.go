@@ -90,38 +90,38 @@ func (gr *generateRun) Run(a subcommands.Application, args []string, env subcomm
 
 func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResult, error) {
 	meta := gr.DefaultMeta()
-	configSet, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta)
+	output, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta)
 	if err != nil {
 		return nil, err
 	}
 
 	result := &generateResult{
-		Digests: configSet.Digests(),
+		Digests: output.Digests(),
 		Meta:    &meta,
 	}
 
 	if meta.ConfigDir == "-" {
-		configSet.DebugDump()
+		output.DebugDump()
 	} else {
 		// Get rid of stale output in ConfigDir by deleting tracked files that are
-		// no longer in the config set. Note that if TrackedFiles is empty
-		// (default), nothing is deleted, it is the responsibility of lucicfg users
-		// to make sure there's no stale output in this case.
+		// no longer in the output. Note that if TrackedFiles is empty (default),
+		// nothing is deleted, it is the responsibility of lucicfg users to make
+		// sure there's no stale output in this case.
 		tracked, err := lucicfg.FindTrackedFiles(meta.ConfigDir, meta.TrackedFiles)
 		if err != nil {
 			return result, err
 		}
 		for _, f := range tracked {
-			if _, present := configSet[f]; !present {
+			if _, present := output[f]; !present {
 				result.Deleted = append(result.Deleted, f)
-				logging.Warningf(ctx, "Deleting tracked file no longer present in the config set: %q", f)
+				logging.Warningf(ctx, "Deleting tracked file no longer present in the output: %q", f)
 				if err := os.Remove(filepath.Join(meta.ConfigDir, filepath.FromSlash(f))); err != nil {
 					return result, err
 				}
 			}
 		}
-		// Write new config set there.
-		result.Changed, result.Unchanged, err = configSet.Write(meta.ConfigDir)
+		// Write the new output there.
+		result.Changed, result.Unchanged, err = output.Write(meta.ConfigDir)
 		if err != nil {
 			return result, err
 		}
@@ -135,7 +135,9 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 		case meta.ConfigSet == "":
 			return result, fmt.Errorf("can't validate the config, lucicfg.config(config_set=...) is not set")
 		}
-		result.Validation, err = base.ValidateConfigs(ctx, configSet, &meta, gr.ConfigService)
+		// TODO(vadimsh): Split into multiple config sets and validate them in
+		// parallel.
+		result.Validation, err = base.ValidateConfigs(ctx, output.AsConfigSet(), &meta, gr.ConfigService)
 		if err != nil {
 			return result, err
 		}

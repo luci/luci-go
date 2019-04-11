@@ -37,7 +37,7 @@ import (
 // in-place to contain the final parameters (based on lucicfg.config(...) calls
 // in Starlark and the config populated via CLI flags, passed as 'flags').
 // 'flags' are also mutated in-place to rebase ConfigDir onto cwd.
-func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta) (lucicfg.ConfigSet, error) {
+func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta) (lucicfg.Output, error) {
 	abs, err := filepath.Abs(inputFile)
 	if err != nil {
 		return nil, err
@@ -117,15 +117,15 @@ You may also optionally set +x flag on it, but this is not required.
 	meta.Log(ctx)
 
 	// Discard changes to the non-tracked files by loading their original bodies
-	// (if any) from disk. We replace them to make sure the config set is still
+	// (if any) from disk. We replace them to make sure the output is still
 	// validated as a whole, it is just only partially generated in this case.
 	if len(meta.TrackedFiles) != 0 {
-		if err := state.Configs.DiscardChangesToUntracked(ctx, meta.TrackedFiles, meta.ConfigDir); err != nil {
+		if err := state.Output.DiscardChangesToUntracked(ctx, meta.TrackedFiles, meta.ConfigDir); err != nil {
 			return nil, err
 		}
 	}
 
-	return state.Configs, nil
+	return state.Output, nil
 }
 
 func startsWithShebang(r io.Reader) (bool, error) {

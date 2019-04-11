@@ -130,17 +130,16 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	}
 
 	// The script registered a bunch of callbacks that take the graph and
-	// transform it into actual config files (living in a config set). Run these
-	// callbacks now.
+	// transform it into actual output config files. Run these callbacks now.
 	genCtx := newGenCtx()
 	if errs := state.generators.call(intr.Thread(ctx), genCtx); len(errs) != 0 {
 		return nil, state.err(errs...)
 	}
-	cfgs, err := genCtx.configSet.renderWithTextProto(in.TextPBHeader)
+	output, err := genCtx.output.renderWithTextProto(in.TextPBHeader)
 	if err != nil {
 		return nil, state.err(err)
 	}
-	state.Configs = cfgs
+	state.Output = output
 
 	if len(state.errors) != 0 {
 		return nil, state.errors
