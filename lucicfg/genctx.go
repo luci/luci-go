@@ -24,15 +24,16 @@ import (
 type genCtx struct {
 	starlarkstruct.Struct
 
-	configSet *configSetValue
+	output *outputBuilder
 }
 
 func newGenCtx() *genCtx {
 	ctx := &genCtx{
-		configSet: newConfigSetValue(),
+		output: newOutputBuilder(),
 	}
 	ctx.Struct = *starlarkstruct.FromStringDict(starlark.String("gen_ctx"), starlark.StringDict{
-		"config_set": ctx.configSet,
+		"output":     ctx.output,
+		"config_set": ctx.output, // TODO(vadimsh): get rid of this alias
 	})
 	return ctx
 }
