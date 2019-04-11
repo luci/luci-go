@@ -22,6 +22,30 @@
       "revId": "90b7b5638e09af3068c890ce2e69ac47812ed185",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4da18920_bd2cfd9a",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-11T15:50:40Z",
+      "side": 1,
+      "message": "also now read the CL description, please ignore",
+      "parentUuid": "a4a43f5c_be5be8cc",
+      "range": {
+        "startLine": 137,
+        "startChar": 8,
+        "endLine": 137,
+        "endChar": 12
+      },
+      "revId": "90b7b5638e09af3068c890ce2e69ac47812ed185",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
