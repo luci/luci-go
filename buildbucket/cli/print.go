@@ -195,7 +195,11 @@ func (p *printer) commit(c *pb.GitilesCommit) {
 		return
 	}
 
-	p.linkf("https://%s/%s/+/%s", c.Host, c.Project, c.Id)
+	if c.Host == "chromium.googlesource.com" {
+		p.linkf("https://crrev.com/" + c.Id)
+	} else {
+		p.linkf("https://%s/%s/+/%s", c.Host, c.Project, c.Id)
+	}
 	if c.Ref != "" {
 		p.f(" on %s", c.Ref)
 	}
