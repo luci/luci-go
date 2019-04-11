@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/system/pager"
-	"go.chromium.org/luci/common/system/terminal"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -112,10 +111,7 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		return r.done(ctx, err)
 	}
 
-	disableColors := r.noColor
-	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
-		disableColors = true
-	}
+	disableColors := r.noColor || shouldDisableColors()
 
 	listBuilds := func(ctx context.Context, out io.WriteCloser) int {
 		buildC := make(chan *pb.Build)
