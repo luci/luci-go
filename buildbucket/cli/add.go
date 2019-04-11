@@ -142,7 +142,7 @@ func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildReque
 	}
 
 	var err error
-	if ret.GerritChanges, err = r.retrieveCLs(ctx, r.httpClient); err != nil {
+	if ret.GerritChanges, err = r.retrieveCLs(ctx, r.httpClient, !kRequirePatchset); err != nil {
 		return nil, err
 	}
 
