@@ -188,12 +188,32 @@ func Set(ctx context.Context, section string, in interface{}) (context.Context, 
 // they will just reuse the existing file. Don't forget to release it with
 // Close() when done.
 func Export(ctx context.Context) (Exported, error) {
-	return getCurrent(ctx).export()
+	return getCurrent(ctx).export("")
 }
 
-func (ctx *lctx) export() (Exported, error) {
+// ExportInto is like Export, except it places the temporary file into the given
+// directory.
+//
+// Exports done via this method are not reused: each individual ExportInto call
+// produces a new temporary file.
+func ExportInto(ctx context.Context, dir string) (Exported, error) {
+	return getCurrent(ctx).export(dir)
+}
+
+func (ctx *lctx) export(dir string) (Exported, error) {
 	if len(ctx.sections) == 0 {
 		return &nullExport{}, nil
+	}
+
+	if dir != "" {
+		path, err := dropToDisk(ctx.sections, dir)
+		if err != nil {
+			return nil, err
+		}
+		return &liveExport{
+			path:   path,
+			closer: func() { removeFromDisk(path) },
+		}, nil
 	}
 
 	ctx.lock.Lock()
@@ -203,7 +223,7 @@ func (ctx *lctx) export() (Exported, error) {
 		if ctx.path != "" {
 			panic("lctx.path is supposed to be empty here")
 		}
-		path, err := dropToDisk(ctx.sections)
+		path, err := dropToDisk(ctx.sections, "")
 		if err != nil {
 			return nil, err
 		}
@@ -228,16 +248,18 @@ func (ctx *lctx) export() (Exported, error) {
 	}, nil
 }
 
-func dropToDisk(sections map[string]*json.RawMessage) (string, error) {
+func dropToDisk(sections map[string]*json.RawMessage, dir string) (string, error) {
 	// Note: this makes a file in 0600 mode. This is what we want, the context
 	// may have secrets.
-	f, err := ioutil.TempFile("", "luci_context.")
+	f, err := ioutil.TempFile(dir, "luci_context.")
 	if err != nil {
 		return "", errors.Annotate(err, "creating luci_context file").Err()
 	}
 
 	err = json.NewEncoder(f).Encode(sections)
-	f.Close() // intentionally do this even on error.
+	if clErr := f.Close(); err == nil {
+		err = clErr
+	}
 	if err != nil {
 		removeFromDisk(f.Name())
 		return "", errors.Annotate(err, "writing luci_context").Err()

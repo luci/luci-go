@@ -211,9 +211,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Conte
 
 	// Drop the new LUCI_CONTEXT file to the disk. This is noop when reusing
 	// an existing one.
-	//
-	// TODO(vadimsh): Use tempDir here too.
-	if ac.exported, err = lucictx.Export(ac.ctx); err != nil {
+	if ac.exported, err = lucictx.ExportInto(ac.ctx, tempDir); err != nil {
 		return nil, errors.Annotate(err, "failed to export LUCI_CONTEXT for %q account", ac.ID).Err()
 	}
 
