@@ -66,11 +66,11 @@ func runExample(script string) error {
 	}
 
 	if *regen {
-		_, _, err := state.Configs.Write(output)
+		_, _, err := state.Output.Write(output)
 		return err
 	}
 
-	diff, _ := state.Configs.Compare(output)
+	diff, _ := state.Output.Compare(output)
 	if len(diff) != 0 {
 		return fmt.Errorf("the following generated files are stale, run `go generate .`: %q", diff)
 	}
