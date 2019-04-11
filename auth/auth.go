@@ -148,7 +148,7 @@ const (
 	//     permissions of LUCI_CONTEXT file (there's a secret in this file).
 	//  4. There can be many local auth servers running at once (on different
 	//     ports). Useful for bringing up sub-contexts, in particular in
-	//     combination with ActAsServiceAcccount ("sudo" mode) or for tests.
+	//     combination with ActAsServiceAccount ("sudo" mode) or for tests.
 	//
 	// See auth/integration/localauth package for the implementation of the server
 	// side of the protocol.
