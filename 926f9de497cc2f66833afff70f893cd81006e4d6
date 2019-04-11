@@ -46,6 +46,30 @@
       "revId": "926f9de497cc2f66833afff70f893cd81006e4d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcbe691d_ab451558",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-11T17:02:21Z",
+      "side": 1,
+      "message": "I see now, although I prefer syntax 1.03h. This is subjective though, so using 1h2m is also fine.",
+      "parentUuid": "628019c9_9b5c56a4",
+      "range": {
+        "startLine": 395,
+        "startChar": 1,
+        "endLine": 395,
+        "endChar": 26
+      },
+      "revId": "926f9de497cc2f66833afff70f893cd81006e4d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
