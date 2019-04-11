@@ -149,7 +149,7 @@ def gen_project_cfg(ctx):
     else:
       fail('impossible')
 
-  ctx.config_set['project.cfg'] = config_pb.ProjectCfg(
+  ctx.output['project.cfg'] = config_pb.ProjectCfg(
       name = proj.props.name,
       access = access,
   )
@@ -176,7 +176,7 @@ def gen_logdog_cfg(ctx):
       writers.append(a.group)
 
   logdog = get_service('logdog', 'defining LogDog options')
-  ctx.config_set[logdog.cfg_file] = logdog_pb.ProjectConfig(
+  ctx.output[logdog.cfg_file] = logdog_pb.ProjectConfig(
       reader_auth_groups = readers,
       writer_auth_groups = writers,
       archive_gs_bucket = opts.props.gs_bucket,
@@ -205,7 +205,7 @@ def gen_buildbucket_cfg(ctx):
   swarming = get_service('swarming', 'defining builders')
 
   cfg = buildbucket_pb.BuildbucketCfg()
-  ctx.config_set[buildbucket.cfg_file] = cfg
+  ctx.output[buildbucket.cfg_file] = cfg
 
   for bucket in buckets:
     cfg.buckets.append(buildbucket_pb.Bucket(
@@ -379,7 +379,7 @@ def gen_scheduler_cfg(ctx):
   project_name = get_project().props.name
 
   cfg = scheduler_pb.ProjectConfig()
-  ctx.config_set[scheduler.cfg_file] = cfg
+  ctx.output[scheduler.cfg_file] = cfg
 
   # Generate per-bucket ACL sets based on bucket-level permissions. Skip buckets
   # that aren't used to avoid polluting configs with unnecessary entries.
@@ -530,7 +530,7 @@ def gen_milo_cfg(ctx):
   milo = get_service('milo', 'using views or setting Milo config')
   project_name = get_project().props.name
 
-  ctx.config_set[milo.cfg_file] = milo_pb.Project(
+  ctx.output[milo.cfg_file] = milo_pb.Project(
       build_bug_template = build_bug_template,
       logo_url = opts.logo,
       consoles = [
@@ -680,7 +680,7 @@ def gen_cq_cfg(ctx):
       cq_status_host =  cq_node.props.status_host if cq_node else None,
       draining_start_time = cq_node.props.draining_start_time if cq_node else None,
   )
-  ctx.config_set['commit-queue.cfg'] = cfg
+  ctx.output['commit-queue.cfg'] = cfg
 
   if cq_node and cq_node.props.submit_max_burst:
     cfg.submit_options = cq_pb.SubmitOptions(
@@ -927,7 +927,7 @@ def gen_notify_cfg(ctx):
   # Write all defined templates.
   for t in templates:
     path = '%s/email-templates/%s.template' % (service.app_id, t.props.name)
-    ctx.config_set[path] = t.props.body
+    ctx.output[path] = t.props.body
 
   # Build the map 'builder node => [notifier node] watching it'.
   per_builder = {}
@@ -965,7 +965,7 @@ def gen_notify_cfg(ctx):
     ))
 
   # Done!
-  ctx.config_set[service.cfg_file] = notify_pb.ProjectConfig(
+  ctx.output[service.cfg_file] = notify_pb.ProjectConfig(
       notifiers = sorted(
           notifiers_pb,
           key = lambda n: (n.builders[0].bucket, n.builders[0].name)

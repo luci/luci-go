@@ -505,9 +505,9 @@ stage to modify/append/delete generated configs in an arbitrary way.
 The callback accepts single argument `ctx` which is a struct with the
 following fields:
 
-  * **config_set**: a dict `{config file name -> (str | proto)}`.
+  * **output**: a dict `{config file name -> (str | proto)}`.
 
-The callback is free to modify `ctx.config_set` in whatever way it wants, e.g.
+The callback is free to modify `ctx.output` in whatever way it wants, e.g.
 by adding new values there or mutating/deleting existing ones.
 
 #### Arguments {#lucicfg.generator-args}
