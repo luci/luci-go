@@ -153,7 +153,7 @@ var buildJSON = `
   ]
 }`
 
-const expectedBuildPrintedTemplate = `<green>ci.chromium.org/b/8917899588926498064 SUCCESS   'chromium/try/linux-rel/1'<reset>
+const expectedBuildPrintedTemplate = `<green+u>http://ci.chromium.org/b/8917899588926498064<reset><green> SUCCESS   'chromium/try/linux-rel/1'<reset>
 <white+b>Summary<reset>: it was ok
 <white+b>Experimental<reset>
 <white+b>Created<reset> on 2019-03-26 at 18:33:47, <white+b>waited<reset> 4.488841s, <white+b>started<reset> at 18:33:52, <white+b>ran<reset> for 3m21.444617s, <white+b>ended<reset> at 18:37:13
