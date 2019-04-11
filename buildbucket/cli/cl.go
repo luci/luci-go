@@ -64,7 +64,7 @@ func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Cl
 	switch {
 	case err != nil:
 		return nil, err
-	case ret.Project != "" && ret.Patchset != 0:
+	case ret.Project != "":
 		return ret, nil
 	}
 
@@ -73,20 +73,16 @@ func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Cl
 	if err != nil {
 		return nil, err
 	}
-	change, err := client.GetChange(ctx, &gerritpb.GetChangeRequest{
-		Number:  ret.Change,
-		Options: []gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},
-	})
+	change, err := client.GetChange(ctx, &gerritpb.GetChangeRequest{Number: ret.Change})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch CL %d from %q: %s", ret.Change, ret.Host, err)
 	}
 
 	ret.Project = change.Project
-	ret.Patchset = int64(change.Revisions[change.CurrentRevision].Number)
 	return ret, nil
 }
 
-var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/(#/)?c/(([^\+]+)/\+/)?(\d+)(/(\d+))?`)
+var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/(#/)?c/(([^\+]+)/\+/)?(\d+)/(\d+)`)
 
 // parseCL tries to retrieve a CL info from a string.
 //
@@ -105,7 +101,7 @@ func parseCL(s string) (*pb.GerritChange, error) {
 		Project: m[4],
 	}
 	change := m[5]
-	patchSet := m[7]
+	patchSet := m[6]
 
 	var err error
 	ret.Change, err = strconv.ParseInt(change, 10, 64)
@@ -113,11 +109,9 @@ func parseCL(s string) (*pb.GerritChange, error) {
 		return nil, fmt.Errorf("invalid change %q: %s", change, err)
 	}
 
-	if patchSet != "" {
-		ret.Patchset, err = strconv.ParseInt(patchSet, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("invalid patchset %q: %s", patchSet, err)
-		}
+	ret.Patchset, err = strconv.ParseInt(patchSet, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid patchset %q: %s", patchSet, err)
 	}
 
 	return ret, nil

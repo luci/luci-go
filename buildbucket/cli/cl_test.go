@@ -68,15 +68,5 @@ func TestParseCL(t *testing.T) {
 				Patchset: 7,
 			})
 		})
-
-		Convey("No patchset", func() {
-			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677")
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, &pb.GerritChange{
-				Host:    "chromium-review.googlesource.com",
-				Project: "infra/luci/luci-go",
-				Change:  1541677,
-			})
-		})
 	})
 }
