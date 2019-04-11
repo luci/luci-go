@@ -26,7 +26,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
-	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -383,7 +383,7 @@ func buildIDLink(b string, project string) string {
 		address := strings.TrimPrefix(b, source+"/")
 		id, proj, v1bucket, builder, number, err := bbv1.ParseBuildAddress(address)
 		// Use v2 bucket names.
-		_, bucket := bb.BucketNameToV2(v1bucket)
+		_, bucket := deprecated.BucketNameToV2(v1bucket)
 		switch {
 		case err != nil:
 			return InvalidBuildIDURL

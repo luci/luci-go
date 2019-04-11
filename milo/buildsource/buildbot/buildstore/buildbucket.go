@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -49,7 +49,7 @@ var ErrNoBuildNumber = errors.BoolTag{Key: errors.NewTagKey("no buildnumber")}
 //
 // Does not populate OSFamily, OSVersion, Blame or SourceStamp.Changes
 // fields.
-func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build, fetchAnnotations bool) (*buildbot.Build, error) {
+func buildFromBuildbucket(c context.Context, master string, b *deprecated.Build, fetchAnnotations bool) (*buildbot.Build, error) {
 	num, err := buildNumber(b)
 	if err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func buildbucketClient(c context.Context) (*bbv1.Service, error) {
 	return client, nil
 }
 
-func buildNumber(b *buildbucket.Build) (int, error) {
+func buildNumber(b *deprecated.Build) (int, error) {
 	address := b.Tags.Get("build_address")
 	if address == "" {
 		return 0, errors.Reason("no build_address in build %d", b.ID).Tag(ErrNoBuildNumber).Err()
@@ -181,7 +181,7 @@ func statusResult(status buildbucketpb.Status) buildbot.Result {
 	}
 }
 
-func logLocation(b *buildbucket.Build) (*types.StreamAddr, error) {
+func logLocation(b *deprecated.Build) (*types.StreamAddr, error) {
 	swarmingTags := strpair.ParseMap(b.Tags["swarming_tag"])
 	logLocation := swarmingTags.Get("log_location")
 	if logLocation == "" {
