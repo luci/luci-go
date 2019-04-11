@@ -25,7 +25,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -184,9 +184,9 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
 
-	build := buildbucket.Build{}
+	build := deprecated.Build{}
 	if err := build.ParseMessage(&event.Build); err != nil {
-		return errors.Annotate(err, "could not parse buildbucket.Build").Err()
+		return errors.Annotate(err, "could not parse deprecated.Build").Err()
 	}
 
 	bucket = build.Bucket

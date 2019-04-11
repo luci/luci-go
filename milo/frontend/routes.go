@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
-	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/discovery"
@@ -132,7 +132,7 @@ func Run(templatePath string) {
 	// and common/model/builder_summary.go:SelfLink.
 	r.GET("/p/:project/builders/:bucket/:builder", projectMW, handleError(func(c *router.Context) error {
 		// Handle either v1 or v2 bucket name.
-		_, bucket := bb.BucketNameToV2(c.Params.ByName("bucket"))
+		_, bucket := deprecated.BucketNameToV2(c.Params.ByName("bucket"))
 		if bucket == "" {
 			bucket = c.Params.ByName("bucket")
 		}
@@ -266,7 +266,7 @@ func redirectFromProjectlessBuilder(c *router.Context) {
 	bucket := c.Params.ByName("bucket")
 	builder := c.Params.ByName("builder")
 
-	project, _ := bb.BucketNameToV2(bucket)
+	project, _ := deprecated.BucketNameToV2(bucket)
 	u := *c.Request.URL
 	u.Path = fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket, builder)
 	http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)

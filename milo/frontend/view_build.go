@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -51,7 +51,7 @@ func handleLUCIBuild(c *router.Context) error {
 	numberOrId := c.Params.ByName("numberOrId")
 	forceBlamelist := c.Request.FormValue("blamelist") != ""
 
-	if _, v2Bucket := bb.BucketNameToV2(bucket); v2Bucket != "" {
+	if _, v2Bucket := deprecated.BucketNameToV2(bucket); v2Bucket != "" {
 		// Params bucket is a v1 bucket, so call the legacy endpoint.
 		return handleLUCIBuildLegacy(c, bucket, buildername, numberOrId)
 	}

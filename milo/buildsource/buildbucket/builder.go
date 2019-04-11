@@ -27,7 +27,7 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/memcache"
-	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
@@ -52,7 +52,7 @@ type BuilderID struct {
 
 // NewBuilderID does what it says.
 func NewBuilderID(v1Bucket, builder string) (bid BuilderID) {
-	bid.Project, bid.Bucket = bb.BucketNameToV2(v1Bucket)
+	bid.Project, bid.Bucket = deprecated.BucketNameToV2(v1Bucket)
 	bid.Builder = builder
 	return
 }

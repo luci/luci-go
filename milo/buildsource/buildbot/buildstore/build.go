@@ -26,7 +26,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -97,7 +97,7 @@ func getBuild(c context.Context, id buildbot.BuildID, fetchAnnotations, fetchCha
 
 // EmulationOf returns the Buildbucket build that the given Buildbot build is emulating.
 // Returns (nil, nil) if build is not found.
-func EmulationOf(c context.Context, id buildbot.BuildID) (*buildbucket.Build, error) {
+func EmulationOf(c context.Context, id buildbot.BuildID) (*deprecated.Build, error) {
 	bb, err := buildbucketClient(c)
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func EmulationOf(c context.Context, id buildbot.BuildID) (*buildbucket.Build, er
 	case len(msgs) == 0:
 		return nil, nil
 	default:
-		var b buildbucket.Build
+		var b deprecated.Build
 		return &b, b.ParseMessage(msgs[0])
 	}
 }
