@@ -87,6 +87,7 @@ func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Cl
 }
 
 var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/(#/)?c/(([^\+]+)/\+/)?(\d+)(/(\d+))?`)
+var regexCLCRRev = regexp.MustCompile(`crrev\.com/([ci])/(\d+)(/(\d+))?`)
 
 // parseCL tries to retrieve a CL info from a string.
 //
@@ -94,18 +95,30 @@ var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/(#/)?c/(([^\+]
 // https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go
 // or incomplete strings, e.g.
 // https://chromium-review.googlesource.com/c/1541677
+//
+// Supports crrev.com.
+//
 // If err is nil, returned change is guaranteed to have Host and Change.
 func parseCL(s string) (*pb.GerritChange, error) {
-	m := regexCL.FindStringSubmatch(s)
-	if m == nil {
-		return nil, fmt.Errorf("does not match regexp %q", regexCL)
+	ret := &pb.GerritChange{}
+	var change, patchSet string
+	if m := regexCLCRRev.FindStringSubmatch(s); m != nil {
+		ret.Host = "chromium-review.googlesource.com"
+		if m[1] == "i" {
+			ret.Host = "chrome-internal-review.googlesource.com"
+		}
+		change = m[2]
+		patchSet = m[4]
+	} else if m := regexCL.FindStringSubmatch(s); m != nil {
+		ret.Host = m[1]
+		ret.Project = m[4]
+		change = m[5]
+		patchSet = m[7]
 	}
-	ret := &pb.GerritChange{
-		Host:    m[1],
-		Project: m[4],
+
+	if ret.Host == "" {
+		return nil, fmt.Errorf("does not match r%q or r%q", regexCL, regexCLCRRev)
 	}
-	change := m[5]
-	patchSet := m[7]
 
 	var err error
 	ret.Change, err = strconv.ParseInt(change, 10, 64)

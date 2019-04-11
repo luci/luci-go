@@ -203,7 +203,14 @@ func (p *printer) commit(c *pb.GitilesCommit) {
 
 // change prints cl.
 func (p *printer) change(cl *pb.GerritChange) {
-	p.linkf("https://%s/c/%s/+/%d/%d", cl.Host, cl.Project, cl.Change, cl.Patchset)
+	switch {
+	case cl.Host == "chromium-review.googlesource.com":
+		p.linkf("https://crrev.com/c/%d/%d", cl.Change, cl.Patchset)
+	case cl.Host == "chrome-internal-review.googlesource.com":
+		p.linkf("https://crrev.com/i/%d/%d", cl.Change, cl.Patchset)
+	default:
+		p.linkf("https://%s/c/%s/+/%d/%d", cl.Host, cl.Project, cl.Change, cl.Patchset)
+	}
 }
 
 // steps print steps.

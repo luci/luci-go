@@ -159,7 +159,7 @@ const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://ci.chrom
 <white+b>Created<reset> on 2019-03-26 at 18:33:47, <white+b>waited<reset> 4.488841s, <white+b>started<reset> at 18:33:52, <white+b>ran<reset> for 3m21.444617s, <white+b>ended<reset> at 18:37:13
 <white+b>By<reset>: user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com
 <white+b>Commit<reset>: <white+u>https://chromium.googlesource.com/infra/luci/luci-go/+/deadbeef<reset> on refs/heads/master
-<white+b>CL<reset>: <white+u>https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1<reset>
+<white+b>CL<reset>: <white+u>https://crrev.com/c/1539021/1<reset>
 <white+b>Tag<reset>: buildset:patch/gerrit/chromium-review.googlesource.com/1539021/1
 <white+b>Tag<reset>: cq_experimental:false
 <white+b>Tag<reset>: user_agent:cq
@@ -222,6 +222,42 @@ func TestPrint(t *testing.T) {
 
 			So(p.Err, ShouldBeNil)
 			So(buf.String(), ShouldEqual, ansi.Color("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master", "white+u"))
+		})
+
+		Convey("Arbitrary CL", func() {
+			p.change(&pb.GerritChange{
+				Host:     "fuchsia-review.googlesource.com",
+				Project:  "infra",
+				Change:   123,
+				Patchset: 4,
+			})
+
+			So(p.Err, ShouldBeNil)
+			So(buf.String(), ShouldEqual, ansi.Color("https://fuchsia-review.googlesource.com/c/infra/+/123/4", "white+u"))
+		})
+
+		Convey("Chromium CL", func() {
+			p.change(&pb.GerritChange{
+				Host:     "chromium-review.googlesource.com",
+				Project:  "infra/luci/luci-go",
+				Change:   123,
+				Patchset: 4,
+			})
+
+			So(p.Err, ShouldBeNil)
+			So(buf.String(), ShouldEqual, ansi.Color("https://crrev.com/c/123/4", "white+u"))
+		})
+
+		Convey("Chrome CL", func() {
+			p.change(&pb.GerritChange{
+				Host:     "chrome-internal-review.googlesource.com",
+				Project:  "secret",
+				Change:   123,
+				Patchset: 4,
+			})
+
+			So(p.Err, ShouldBeNil)
+			So(buf.String(), ShouldEqual, ansi.Color("https://crrev.com/i/123/4", "white+u"))
 		})
 	})
 }

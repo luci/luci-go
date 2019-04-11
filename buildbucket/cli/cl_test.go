@@ -26,7 +26,7 @@ import (
 func TestParseCL(t *testing.T) {
 	Convey("ParseCL", t, func() {
 
-		Convey("Perfect", func() {
+		Convey("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7")
 			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, &pb.GerritChange{
@@ -37,7 +37,7 @@ func TestParseCL(t *testing.T) {
 			})
 		})
 
-		Convey("Hash", func() {
+		Convey("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7")
 			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, &pb.GerritChange{
@@ -48,7 +48,7 @@ func TestParseCL(t *testing.T) {
 			})
 		})
 
-		Convey("File", func() {
+		Convey("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go")
 			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, &pb.GerritChange{
@@ -59,7 +59,7 @@ func TestParseCL(t *testing.T) {
 			})
 		})
 
-		Convey("No project", func() {
+		Convey("https://chromium-review.googlesource.com/c/1541677/7", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/1541677/7")
 			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, &pb.GerritChange{
@@ -69,13 +69,50 @@ func TestParseCL(t *testing.T) {
 			})
 		})
 
-		Convey("No patchset", func() {
+		Convey("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677", func() {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677")
 			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, &pb.GerritChange{
 				Host:    "chromium-review.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Change:  1541677,
+			})
+		})
+
+		Convey("crrev.com/c/123", func() {
+			actual, err := parseCL("crrev.com/c/123")
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, &pb.GerritChange{
+				Host:   "chromium-review.googlesource.com",
+				Change: 123,
+			})
+		})
+
+		Convey("crrev.com/c/123/4", func() {
+			actual, err := parseCL("crrev.com/c/123/4")
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, &pb.GerritChange{
+				Host:     "chromium-review.googlesource.com",
+				Change:   123,
+				Patchset: 4,
+			})
+		})
+
+		Convey("crrev.com/i/123", func() {
+			actual, err := parseCL("crrev.com/i/123")
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, &pb.GerritChange{
+				Host:   "chrome-internal-review.googlesource.com",
+				Change: 123,
+			})
+		})
+
+		Convey("https://crrev.com/i/123", func() {
+			actual, err := parseCL("https://crrev.com/i/123")
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, &pb.GerritChange{
+				Host:   "chrome-internal-review.googlesource.com",
+				Change: 123,
 			})
 		})
 	})
