@@ -1,0 +1,62 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c26f068e_cf4369a8",
+        "filename": "lucicfg/gens.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T23:18:22Z",
+      "side": 1,
+      "message": "no new code here, just extracted into a new file",
+      "revId": "5fcf8c331be6dc90ee7b590be3bb4d2126783a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "01a0f92d_e9f70519",
+        "filename": "lucicfg/output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T23:18:22Z",
+      "side": 1,
+      "message": "almost no new code here, extracted from configset.go",
+      "revId": "5fcf8c331be6dc90ee7b590be3bb4d2126783a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "67c541cc_bfe0e86f",
+        "filename": "lucicfg/output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-11T23:18:22Z",
+      "side": 1,
+      "message": "\u003e_\u003c",
+      "parentUuid": "7bf087b7_685b76b7",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 89,
+        "endChar": 1
+      },
+      "revId": "5fcf8c331be6dc90ee7b590be3bb4d2126783a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
