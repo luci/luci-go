@@ -29,6 +29,7 @@ import (
 	_ "github.com/golang/protobuf/ptypes/wrappers"
 
 	_ "go.chromium.org/chromiumos/infra/proto/go/chromiumos"
+	_ "go.chromium.org/chromiumos/infra/proto/go/device"
 	_ "go.chromium.org/chromiumos/infra/proto/go/testplans"
 	_ "go.chromium.org/luci/buildbucket/proto"
 	_ "go.chromium.org/luci/common/proto/config"
@@ -94,6 +95,23 @@ var publicProtos = map[string]struct {
 	"external/crostesting/target_test_requirements_config.proto": {
 		"testplans",
 		"testplans/target_test_requirements_config.proto",
+	},
+
+	// CrOS device config.
+	//
+	// load(
+	//     "@proto//external/device/partner_id.proto",
+	//     partner_id_pb="device")
+	// load(
+	//     "@proto//external/device/partner.proto",
+	//     partner_pb="device")
+	"external/device/partner_id.proto": {
+		"device",
+		"device/partner_id.proto",
+	},
+	"external/device/partner.proto": {
+		"device",
+		"device/partner.proto",
 	},
 
 	// LogDog project config.
