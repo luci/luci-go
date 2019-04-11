@@ -46,6 +46,30 @@
       "revId": "d80e40f9d280f10d14eeaa376a17f079c14a1a83",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e4535ad_ad7b4bc6",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-11T19:58:24Z",
+      "side": 1,
+      "message": "k: kXyz are constants in Google style C++\n\nTo be your change is for the better, thanks :)\n\nAs for variable number of **specifically** flags, I thought it was common to do, e.g. https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/grpc/prpc/client.go?type\u003dcs\u0026q\u003dluci+grpc+%22...%22\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d150",
+      "parentUuid": "997170a6_219a6d39",
+      "range": {
+        "startLine": 145,
+        "startChar": 60,
+        "endLine": 145,
+        "endChar": 67
+      },
+      "revId": "d80e40f9d280f10d14eeaa376a17f079c14a1a83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
