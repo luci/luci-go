@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
+	"go.chromium.org/luci/logdog/common/types"
 
 	gcbt "cloud.google.com/go/bigtable"
 	gcst "cloud.google.com/go/storage"
@@ -58,7 +59,7 @@ type Services interface {
 	// Storage returns a Storage instance for the supplied log stream.
 	//
 	// The caller must close the returned instance if successful.
-	StorageForStream(context.Context, *coordinator.LogStreamState) (coordinator.SigningStorage, error)
+	StorageForStream(context.Context, *coordinator.LogStreamState, types.ProjectName) (coordinator.SigningStorage, error)
 }
 
 // GlobalServices is an application singleton that stores cross-request service
@@ -74,8 +75,9 @@ type GlobalServices struct {
 
 	// gsClient is the application-global Google Storage client.
 	btStorage *bigtable.Storage
-	// gsClient is the application-global Google Storage client.
-	gsClient gs.Client
+
+	// gsClientFactory is the application-global creator of Google Storage clients.
+	gsClientFactory func(context.Context, types.ProjectName) (gs.Client, error)
 
 	// storageCache is the process-wide cache used for storing Storage data.
 	storageCache *StorageCache
@@ -108,7 +110,8 @@ func NewGlobalServices(c context.Context) (*GlobalServices, error) {
 	if err := s.connectBigTableClient(c, cfg); err != nil {
 		return nil, errors.Annotate(err, "failed to connect BigTable client").Err()
 	}
-	if err := s.connectGoogleStorageClient(c, cfg); err != nil {
+
+	if err := s.createGoogleStorageClientFactory(c, cfg); err != nil {
 		return nil, errors.Annotate(err, "failed to connect Google Storage client").Err()
 	}
 
@@ -166,19 +169,20 @@ func (gsvc *GlobalServices) connectBigTableClient(c context.Context, cfg *config
 	return nil
 }
 
-func (gsvc *GlobalServices) connectGoogleStorageClient(c context.Context, cfg *config.Config) error {
-	// Get an Authenticator bound to the token scopes that we need for
-	// authenticated Cloud Storage access.
-	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gs.ReadOnlyScopes...))
-	if err != nil {
-		return errors.Annotate(err, "failed to create Cloud Storage transport").Err()
+func (gsvc *GlobalServices) createGoogleStorageClientFactory(c context.Context, cfg *config.Config) error {
+	gsvc.gsClientFactory = func(c context.Context, project types.ProjectName) (client gs.Client, e error) {
+		// Get an Authenticator bound to the token scopes that we need for
+		// authenticated Cloud Storage access.
+		transport, err := auth.GetRPCTransport(c, auth.AsProject, auth.WithProject(project.String()), auth.WithScopes(gs.ReadOnlyScopes...))
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to create Google Storage RPC transport").Err()
+		}
+		prodClient, err := gs.NewProdClient(c, transport)
+		if err != nil {
+			return nil, errors.Annotate(err, "Failed to create GS client.").Err()
+		}
+		return prodClient, nil
 	}
-	prodClient, err := gs.NewProdClient(c, transport)
-	if err != nil {
-		return errors.Annotate(err, "Failed to create GS client.").Err()
-	}
-
-	gsvc.gsClient = prodClient
 	return nil
 }
 
@@ -207,12 +211,18 @@ type flexServicesInst struct {
 	*GlobalServices
 }
 
-func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.LogStreamState) (
+func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.LogStreamState, project types.ProjectName) (
 	coordinator.SigningStorage, error) {
 
 	if !lst.ArchivalState().Archived() {
 		log.Debugf(c, "Log is not archived. Fetching from intermediate storage.")
 		return noSignedURLStorage{s.btStorage}, nil
+	}
+
+	gsClient, err := s.gsClientFactory(c, project)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create Google Storage client.")
+		return nil, err
 	}
 
 	log.Fields{
@@ -224,8 +234,8 @@ func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.
 	st, err := archive.New(archive.Options{
 		Index:  gs.Path(lst.ArchiveIndexURL),
 		Stream: gs.Path(lst.ArchiveStreamURL),
-		Client: s.gsClient,
 		Cache:  s.storageCache,
+		Client: gsClient,
 	})
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Google Storage storage instance.")
@@ -235,27 +245,11 @@ func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.
 	rv := &googleStorage{
 		Storage: st,
 		svc:     s,
-		gs:      s.gsClient,
+		gs:      gsClient,
 		stream:  gs.Path(lst.ArchiveStreamURL),
 		index:   gs.Path(lst.ArchiveIndexURL),
 	}
 	return rv, nil
-}
-
-func (s *flexServicesInst) newGSClient(c context.Context) (gs.Client, error) {
-	// Get an Authenticator bound to the token scopes that we need for
-	// authenticated Cloud Storage access.
-	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gs.ReadOnlyScopes...))
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Cloud Storage transport.")
-		return nil, errors.New("failed to create Cloud Storage transport")
-	}
-	prodClient, err := gs.NewProdClient(c, transport)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create GS client.")
-		return nil, err
-	}
-	return prodClient, nil
 }
 
 // noSignedURLStorage is a thin wrapper around a Storage instance that cannot
@@ -289,7 +283,10 @@ type googleStorage struct {
 	gsSigningOpts func(context.Context) (*gcst.SignedURLOptions, error)
 }
 
-func (si *googleStorage) Close() { si.Storage.Close() }
+func (si *googleStorage) Close() {
+	si.Storage.Close()
+	si.gs.Close()
+}
 
 func (si *googleStorage) GetSignedURLs(c context.Context, req *coordinator.URLSigningRequest) (
 	*coordinator.URLSigningResponse, error) {
