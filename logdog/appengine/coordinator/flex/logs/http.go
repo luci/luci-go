@@ -328,7 +328,7 @@ func resolveStreams(c context.Context, options userOptions) ([]*coordinator.LogS
 }
 
 // initParams generates a set of params for each LogStream given.
-func initParams(c context.Context, streams []*coordinator.LogStream) ([]fetchParams, error) {
+func initParams(c context.Context, streams []*coordinator.LogStream, project types.ProjectName) ([]fetchParams, error) {
 	states := make([]*coordinator.LogStreamState, len(streams))
 	for i, stream := range streams {
 		states[i] = stream.State(c)
@@ -344,7 +344,7 @@ func initParams(c context.Context, streams []*coordinator.LogStream) ([]fetchPar
 	// Get the backend storage instances.  These will be closed in fetch.
 	params := make([]fetchParams, len(streams))
 	for i, stream := range streams {
-		st, err := flex.GetServices(c).StorageForStream(c, states[i])
+		st, err := flex.GetServices(c).StorageForStream(c, states[i], project)
 		if err != nil {
 			return nil, err
 		}
@@ -389,7 +389,7 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 		return
 	}
 
-	params, err := initParams(c, streams)
+	params, err := initParams(c, streams, project)
 	if err != nil {
 		return
 	}

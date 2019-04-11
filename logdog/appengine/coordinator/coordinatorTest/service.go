@@ -67,7 +67,7 @@ func (s *Services) ProjectConfig(c context.Context, project types.ProjectName) (
 }
 
 // StorageForStream implements coordinator.Services.
-func (s *Services) StorageForStream(c context.Context, lst *coordinator.LogStreamState) (coordinator.SigningStorage, error) {
+func (s *Services) StorageForStream(c context.Context, lst *coordinator.LogStreamState, project types.ProjectName) (coordinator.SigningStorage, error) {
 	if s.ST != nil {
 		return s.ST(lst)
 	}
