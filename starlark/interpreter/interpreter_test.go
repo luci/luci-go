@@ -81,11 +81,12 @@ func TestInterpreter(t *testing.T) {
 				"builtins.star": `
 					load("//loaded.star", "loaded_sym")
 					exported_sym = "exported_sym_val"
+					reimported_sym = loaded_sym
 				`,
 				"loaded.star": `loaded_sym = "loaded_sym_val"`,
 			},
 			scripts: map[string]string{
-				"main.star": `print(loaded_sym, exported_sym)`,
+				"main.star": `print(reimported_sym, exported_sym)`,
 			},
 		})
 		So(err, ShouldBeNil)
@@ -100,9 +101,11 @@ func TestInterpreter(t *testing.T) {
 			},
 			scripts: map[string]string{
 				"main.star": `
-					load("//sub/loaded.star", "loaded_sym")
-					load("@stdlib//lib.star", "lib_sym")
+					load("//sub/loaded.star", _loaded_sym="loaded_sym")
+					load("@stdlib//lib.star", _lib_sym="lib_sym")
 					main_sym = True
+					loaded_sym = _loaded_sym
+					lib_sym = _lib_sym
 				`,
 				"sub/loaded.star": `loaded_sym = True`,
 			},
@@ -292,6 +295,7 @@ Error: invalid call of non-function (NoneType)`)
 		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `Traceback (most recent call last):
   //main.star:4: in <toplevel>
   //main.star:3: in f
+  <builtin>: in exec
 Error: exec //exec.star failed: Traceback (most recent call last):
   //exec.star:4: in <toplevel>
   //exec.star:3: in f

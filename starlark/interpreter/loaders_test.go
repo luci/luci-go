@@ -53,7 +53,7 @@ func TestLoaders(t *testing.T) {
 		}
 
 		Convey("Works", func() {
-			put("1.star", `load("//a/b/c/2.star", "sym")`)
+			put("1.star", `load("//a/b/c/2.star", _sym="sym"); sym = _sym`)
 			put("a/b/c/2.star", "print('Hi')\nsym = 1")
 
 			logs, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
@@ -79,7 +79,7 @@ func TestLoaders(t *testing.T) {
 	Convey("MemoryLoader", t, func() {
 		Convey("Works", func() {
 			loader := MemoryLoader(map[string]string{
-				"1.star":       `load("//a/b/c/2.star", "sym")`,
+				"1.star":       `load("//a/b/c/2.star", _sym="sym"); sym = _sym`,
 				"a/b/c/2.star": "print('Hi')\nsym = 1",
 			})
 
