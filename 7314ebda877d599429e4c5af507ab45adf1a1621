@@ -22,6 +22,30 @@
       "revId": "7314ebda877d599429e4c5af507ab45adf1a1621",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61ab0a04_2cb83751",
+        "filename": "buildbucket/cli/print_posix.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-11T00:18:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "69bed434_b46248d2",
+      "range": {
+        "startLine": 25,
+        "startChar": 25,
+        "endLine": 25,
+        "endChar": 28
+      },
+      "revId": "7314ebda877d599429e4c5af507ab45adf1a1621",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
