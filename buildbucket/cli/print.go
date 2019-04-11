@@ -280,7 +280,7 @@ func (p *printer) buildTime(b *pb.Build) {
 			// did not start or end yet
 			p.f(", ")
 			p.keyword("waiting")
-			p.f(" for %s, ", now.Sub(created))
+			p.f(" for %s, ", truncateDuration(now.Sub(created)))
 		}
 		return
 	}
@@ -289,7 +289,7 @@ func (p *printer) buildTime(b *pb.Build) {
 		// did not start yet
 		p.f(", ")
 		p.keyword("waited")
-		p.f(" %s, ", started.Sub(created))
+		p.f(" %s, ", truncateDuration(started.Sub(created)))
 		p.keyword("started")
 		p.f(" ")
 		p.time(started)
@@ -301,7 +301,7 @@ func (p *printer) buildTime(b *pb.Build) {
 			// running now
 			p.f(", ")
 			p.keyword("running")
-			p.f(" for %s", now.Sub(started))
+			p.f(" for %s", truncateDuration(now.Sub(started)))
 		}
 	} else {
 		// ended
@@ -309,7 +309,7 @@ func (p *printer) buildTime(b *pb.Build) {
 			// started in the past
 			p.f(", ")
 			p.keyword("ran")
-			p.f(" for %s", ended.Sub(started))
+			p.f(" for %s", truncateDuration(ended.Sub(started)))
 		}
 
 		p.f(", ")
