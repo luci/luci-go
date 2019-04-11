@@ -99,12 +99,12 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/auth/integration/localauth"
+	"go.chromium.org/luci/auth/authctx"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exitcode"
-	"go.chromium.org/luci/lucictx"
 )
 
 // CommandParams specifies various parameters for a subcommand.
@@ -414,6 +414,13 @@ func SubcommandContext(opts auth.Options, name string) *subcommands.Command {
 // SubcommandContextWithParams returns subcommand.Command that can be used to
 // setup new LUCI authentication context for a process tree.
 func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
+	// By default request all scopes used by authctx.Context.
+	params.AuthOptions.Scopes = []string{
+		"https://www.googleapis.com/auth/cloud-platform",
+		"https://www.googleapis.com/auth/firebase",
+		"https://www.googleapis.com/auth/gerritcodereview",
+		"https://www.googleapis.com/auth/userinfo.email",
+	}
 	return &subcommands.Command{
 		Advanced:  params.Advanced,
 		UsageLine: fmt.Sprintf("%s [flags] [--] <bin> [args]", params.Name),
@@ -474,8 +481,8 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		Stderr: os.Stderr,
 	}
 
-	// First create an authenticator for requested options and make sure we have
-	// required refresh tokens (if any) by asking user to login.
+	// Create an authenticator for requested options to make sure we have required
+	// refresh tokens (if any), asking the user to login if not.
 	if opts.Method == auth.AutoSelectMethod {
 		opts.Method = auth.SelectBestMethod(ctx, opts)
 	}
@@ -490,62 +497,24 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		return ExitCodeNoValidToken
 	}
 
-	// Now that we have required tokens in the cache, we construct the token
-	// generator.
-	//
-	// Two cases here:
-	//  1) We are using options that specify service account private key or
-	//     IAM-based authenticator (with IAM refresh token just initialized
-	//     above). In this case we can mint tokens for any requested combination
-	//     of scopes and can use NewFlexibleGenerator.
-	//  2) We are using options that specify some externally configured
-	//     authenticator (like GCE metadata server, or a refresh token). In this
-	//     case we have to use this specific authenticator for generating tokens.
-	var gen localauth.TokenGenerator
-	if auth.AllowsArbitraryScopes(ctx, opts) {
-		logging.Debugf(ctx, "Using flexible token generator: %s (acting as %q)", opts.Method, opts.ActAsServiceAccount)
-		gen, err = localauth.NewFlexibleGenerator(ctx, opts)
-	} else {
-		// An authenticator preconfigured with given list of scopes.
-		logging.Debugf(ctx, "Using rigid token generator: %s (scopes %s)", opts.Method, opts.Scopes)
-		gen, err = localauth.NewRigidGenerator(ctx, authenticator)
+	// Now that there exists a cached token for requested options, we can launch
+	// an auth context with all bells and whistles.
+	authCtx := authctx.Context{
+		ID:                 "luci-auth",
+		Options:            opts,
+		EnableGitAuth:      true,
+		EnableDockerAuth:   true,
+		EnableDevShell:     true,
+		EnableFirebaseAuth: true,
 	}
-	if err != nil {
+	if _, err = authCtx.Launch(ctx, ""); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return ExitCodeNoValidToken
-	}
-
-	// We currently always setup a context with one account (which is also
-	// default). To avoid confusion where it comes from, we name it 'luci-auth'.
-	// Most tools should not care how it is named, as long as it is specified as
-	// 'default_account_id' in LUCI_CONTEXT["local_auth"].
-	srv := &localauth.Server{
-		TokenGenerators: map[string]localauth.TokenGenerator{
-			"luci-auth": gen,
-		},
-		DefaultAccountID: "luci-auth",
-	}
-
-	// Bind to the local port and start serving.
-	la, err := srv.Start(ctx)
-	if err != nil {
-		logging.WithError(err).Errorf(ctx, "Failed to start the local auth server")
 		return ExitCodeInternalError
 	}
-	defer srv.Stop(ctx) // close the server no matter what
+	defer authCtx.Close() // logs errors inside
 
-	// Put the new LUCI_CONTEXT file, prepare cmd environ.
-	exported, err := lucictx.Export(lucictx.SetLocalAuth(ctx, la))
-	if err != nil {
-		logging.WithError(err).Errorf(ctx, "Failed to prepare LUCI_CONTEXT file")
-		return ExitCodeInternalError
-	}
-	defer func() {
-		if err := exported.Close(); err != nil {
-			logging.WithError(err).Warningf(ctx, "Failed to remove LUCI_CONTEXT file")
-		}
-	}()
-	exported.SetInCmd(cmd)
+	// Adjust 'cmd' to run in the new modified environ.
+	cmd.Env = authCtx.ExportIntoEnv(environ.System()).Sorted()
 
 	// Launch the process and wait for it to finish. Return its exit code.
 	logging.Debugf(ctx, "Running %q", cmd.Args)
