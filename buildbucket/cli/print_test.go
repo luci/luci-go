@@ -156,7 +156,7 @@ var buildJSON = `
 const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://ci.chromium.org/b/8917899588926498064<reset><white+b><green+h> SUCCESS   'chromium/try/linux-rel/1'<reset>
 <white+b>Summary<reset>: it was ok
 <white+b>Experimental<reset>
-<white+b>Created<reset> on 2019-03-26 at 18:33:47, <white+b>waited<reset> 4.488841s, <white+b>started<reset> at 18:33:52, <white+b>ran<reset> for 3m21.444617s, <white+b>ended<reset> at 18:37:13
+<white+b>Created<reset> on 2019-03-26 at 18:33:47, <white+b>waited<reset> 4.5s, <white+b>started<reset> at 18:33:52, <white+b>ran<reset> for 3m21s, <white+b>ended<reset> at 18:37:13
 <white+b>By<reset>: user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com
 <white+b>Commit<reset>: <white+u>https://chromium.googlesource.com/infra/luci/luci-go/+/deadbeef<reset> on refs/heads/master
 <white+b>CL<reset>: <white+u>https://crrev.com/c/1539021/1<reset>
@@ -183,10 +183,10 @@ const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://ci.chrom
   },
   "bot_id": "build234-m9"
 }
-<green+h>Step "first"    SUCCESS   58.9ms    Logs: "stdout", "stderr"<reset>
+<green+h>Step "first"    SUCCESS   59ms      Logs: "stdout", "stderr"<reset>
   first summary markdown
   summary second line
-<green+h>Step "second"   SUCCESS   58.9ms    Logs: "stdout", "stderr"<reset>
+<green+h>Step "second"   SUCCESS   59ms      Logs: "stdout", "stderr"<reset>
 `
 
 func TestPrint(t *testing.T) {

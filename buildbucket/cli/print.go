@@ -283,7 +283,7 @@ func (p *printer) buildTime(b *pb.Build) {
 			// did not start or end yet
 			p.f(", ")
 			p.keyword("waiting")
-			p.f(" for %s, ", now.Sub(created))
+			p.f(" for %s, ", truncateDuration(now.Sub(created)))
 		}
 		return
 	}
@@ -292,7 +292,7 @@ func (p *printer) buildTime(b *pb.Build) {
 		// did not start yet
 		p.f(", ")
 		p.keyword("waited")
-		p.f(" %s, ", started.Sub(created))
+		p.f(" %s, ", truncateDuration(started.Sub(created)))
 		p.keyword("started")
 		p.f(" ")
 		p.time(started)
@@ -304,7 +304,7 @@ func (p *printer) buildTime(b *pb.Build) {
 			// running now
 			p.f(", ")
 			p.keyword("running")
-			p.f(" for %s", now.Sub(started))
+			p.f(" for %s", truncateDuration(now.Sub(started)))
 		}
 	} else {
 		// ended
@@ -312,7 +312,7 @@ func (p *printer) buildTime(b *pb.Build) {
 			// started in the past
 			p.f(", ")
 			p.keyword("ran")
-			p.f(" for %s", ended.Sub(started))
+			p.f(" for %s", truncateDuration(ended.Sub(started)))
 		}
 
 		p.f(", ")
@@ -398,18 +398,18 @@ func (p *printer) isToday(t time.Time) bool {
 	return tYear == nYear && tMonth == nMonth && tDay == nDay
 }
 
-var durationUnits []time.Duration = []time.Duration{
-	time.Hour,
-	time.Minute,
-	time.Second,
-	time.Millisecond,
+var durTransactions = []struct{ threshold, round time.Duration }{
+	{time.Hour, time.Minute},
+	{time.Minute, time.Second},
+	{time.Second, time.Second / 10},
+	{time.Millisecond, time.Millisecond},
 }
 
 // truncateDuration truncates d to make it more human-readable.
 func truncateDuration(d time.Duration) time.Duration {
-	for _, u := range durationUnits {
-		if d > u {
-			return d.Round(u / 10)
+	for _, t := range durTransactions {
+		if d > t.threshold {
+			return d.Round(t.round)
 		}
 	}
 	return d
