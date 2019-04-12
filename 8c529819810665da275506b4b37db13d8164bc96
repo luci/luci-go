@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6e16f646_23c11d37",
+        "filename": "lucicfg/output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-12T01:37:44Z",
+      "side": 0,
+      "message": "I decided not to bother with this. luci-config doesn\u0027t care, and I can imagine some situation when we may want to have same files in multiple config sets (e.g. some migration or something). I can revisit this decision if there are problems.",
+      "range": {
+        "startLine": 39,
+        "startChar": 32,
+        "endLine": 39,
+        "endChar": 42
+      },
+      "revId": "8c529819810665da275506b4b37db13d8164bc96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
