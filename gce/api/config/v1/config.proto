@@ -185,7 +185,10 @@ message Config {
   TimePeriod lifetime = 4;
 
   // The prefix to use when naming these VMs.
-  string prefix = 6;
+  string prefix = 5;
+
+  // Output only. The revision of this config.
+  string revision = 6;
 
   // The hostname of the Swarming server these VMs should connect to.
   string swarming = 7;

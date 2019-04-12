@@ -22,7 +22,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
@@ -261,8 +260,12 @@ func deref(c context.Context, cfg *Config) error {
 	return nil
 }
 
-// normalize normalizes VMs durations by converting them to seconds.
+// normalize normalizes VMs durations by converting them to seconds, and sets
+// output-only properties.
 func normalize(c context.Context, cfg *Config) error {
+	for _, p := range cfg.Projects.GetProject() {
+		p.Revision = cfg.revision
+	}
 	for _, v := range cfg.VMs.GetVms() {
 		for _, ch := range v.Amount.GetChange() {
 			if err := ch.Length.Normalize(); err != nil {
@@ -272,6 +275,7 @@ func normalize(c context.Context, cfg *Config) error {
 		if err := v.Lifetime.Normalize(); err != nil {
 			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 		}
+		v.Revision = cfg.revision
 		if err := v.Timeout.Normalize(); err != nil {
 			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 		}
@@ -281,76 +285,86 @@ func normalize(c context.Context, cfg *Config) error {
 
 // syncVMs synchronizes the given validated VM configs.
 func syncVMs(c context.Context, vms []*gce.Config) error {
+	// Fetch existing configs.
 	srv := getVMsServer(c)
-	ids := stringset.New(0)
 	rsp, err := srv.List(c, &gce.ListRequest{})
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch VMs configs").Err()
 	}
+	// Track the revision of each config.
+	revs := make(map[string]string, len(rsp.Configs))
 	for _, v := range rsp.Configs {
-		ids.Add(v.Prefix)
+		revs[v.Prefix] = v.Revision
 	}
 	logging.Debugf(c, "fetched %d VMs configs", len(rsp.Configs))
+
+	// Update configs to new revisions.
 	ens := &gce.EnsureRequest{}
 	for _, v := range vms {
-		// Validation enforces prefix uniqueness, so use it as the ID.
+		rev, ok := revs[v.Prefix]
+		delete(revs, v.Prefix)
+		if ok && rev == v.Revision {
+			continue
+		}
 		ens.Id = v.Prefix
 		ens.Config = v
 		if _, err := srv.Ensure(c, ens); err != nil {
 			return errors.Annotate(err, "failed to ensure VMs config %q", ens.Id).Err()
 		}
-		ids.Del(v.Prefix)
 	}
-	logging.Debugf(c, "stored %d VMs configs", len(vms))
+
+	// Delete unreferenced configs.
 	del := &gce.DeleteRequest{}
-	err = nil
-	ids.Iter(func(id string) bool {
+	for id := range revs {
 		del.Id = id
 		if _, err := srv.Delete(c, del); err != nil {
-			err = errors.Annotate(err, "failed to delete VMs config %q", del.Id).Err()
-			return false
+			return errors.Annotate(err, "failed to delete VMs config %q", del.Id).Err()
 		}
 		logging.Debugf(c, "deleted VMs config %q", del.Id)
-		return true
-	})
-	return err
+	}
+	return nil
 }
 
 // syncPrjs synchronizes the given validated project configs.
 func syncPrjs(c context.Context, prjs []*projects.Config) error {
+	// Fetch existing configs.
 	srv := getProjServer(c)
-	ids := stringset.New(0)
 	rsp, err := srv.List(c, &projects.ListRequest{})
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch project configs").Err()
 	}
-	for _, v := range rsp.Projects {
-		ids.Add(v.Project)
+	// Track the revision of each config.
+	revs := make(map[string]string, len(rsp.Projects))
+	for _, p := range rsp.Projects {
+		revs[p.Project] = p.Revision
 	}
 	logging.Debugf(c, "fetched %d project configs", len(rsp.Projects))
+
+	// Update configs to new revisions.
 	ens := &projects.EnsureRequest{}
 	for _, p := range prjs {
-		// Validation enforces project uniqueness, so use it as the ID.
+		rev, ok := revs[p.Project]
+		delete(revs, p.Project)
+		if ok && rev == p.Revision {
+			continue
+		}
 		ens.Id = p.Project
 		ens.Project = p
 		if _, err := srv.Ensure(c, ens); err != nil {
 			return errors.Annotate(err, "failed to ensure project config %q", ens.Id).Err()
 		}
-		ids.Del(p.Project)
 	}
-	logging.Debugf(c, "stored %d project configs", len(prjs))
+
+	// Delete unreferenced configs.
 	del := &projects.DeleteRequest{}
-	err = nil
-	ids.Iter(func(id string) bool {
+	for id := range revs {
 		del.Id = id
 		if _, err := srv.Delete(c, del); err != nil {
-			err = errors.Annotate(err, "failed to delete project config %q", del.Id).Err()
-			return false
+			return errors.Annotate(err, "failed to delete project config %q", del.Id).Err()
 		}
 		logging.Debugf(c, "deleted project config %q", del.Id)
-		return true
-	})
-	return err
+	}
+	return nil
 }
 
 // sync synchronizes the given validated configs.

@@ -31,10 +31,21 @@ func TestConfig(t *testing.T) {
 		c := &validation.Context{Context: context.Background()}
 
 		Convey("invalid", func() {
-			cfg := &Config{}
-			cfg.Validate(c)
-			errs := c.Finalize().(*validation.Error).Errors
-			So(errs, ShouldContainErr, "project is required")
+			Convey("project", func() {
+				cfg := &Config{}
+				cfg.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "project is required")
+			})
+
+			Convey("revision", func() {
+				cfg := &Config{
+					Revision: "revision",
+				}
+				cfg.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "revision must not be specified")
+			})
 		})
 
 		Convey("valid", func() {

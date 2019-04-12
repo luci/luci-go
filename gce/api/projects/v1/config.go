@@ -42,4 +42,7 @@ func (cfg *Config) Validate(c *validation.Context) {
 	if cfg.GetProject() == "" {
 		c.Errorf("project is required")
 	}
+	if cfg.GetRevision() != "" {
+		c.Errorf("revision must not be specified")
+	}
 }
