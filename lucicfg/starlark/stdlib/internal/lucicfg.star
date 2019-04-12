@@ -140,12 +140,16 @@ def _generator(impl):
   stage to modify/append/delete generated configs in an arbitrary way.
 
   The callback accepts single argument `ctx` which is a struct with the
-  following fields:
+  following fields and methods:
 
-    * **output**: a dict `{config file name -> (str | proto)}`.
+    * **output**: a dict `{config file name -> (str | proto)}`. The callback is
+      free to modify `ctx.output` in whatever way it wants, e.g. by adding new
+      values there or mutating/deleting existing ones.
 
-  The callback is free to modify `ctx.output` in whatever way it wants, e.g.
-  by adding new values there or mutating/deleting existing ones.
+    * **declare_config_set(name, root)**: proclaims that generated configs under
+      the given root (relative to `config_dir`) belong to the given config set.
+      Safe to call multiple times with exact same arguments, but changing an
+      existing root to something else is an error.
 
   DocTags:
     Advanced.

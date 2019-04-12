@@ -15,6 +15,9 @@
 package lucicfg
 
 import (
+	"fmt"
+	"path"
+
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -25,23 +28,49 @@ type genCtx struct {
 	starlarkstruct.Struct
 
 	output *outputBuilder
+	roots  map[string]string // name of the set => its root directory
 }
 
 func newGenCtx() *genCtx {
 	ctx := &genCtx{
 		output: newOutputBuilder(),
+		roots:  map[string]string{},
 	}
 	ctx.Struct = *starlarkstruct.FromStringDict(starlark.String("gen_ctx"), starlark.StringDict{
-		"output":     ctx.output,
-		"config_set": ctx.output, // TODO(vadimsh): get rid of this alias
+		"output":             ctx.output,
+		"config_set":         ctx.output, // TODO(vadimsh): get rid of this alias
+		"declare_config_set": starlark.NewBuiltin("declare_config_set", ctx.declareConfigSetImpl),
 	})
 	return ctx
 }
 
+func (c *genCtx) declareConfigSetImpl(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var name starlark.String
+	var root starlark.String
+	err := starlark.UnpackArgs("declare_config_set", args, kwargs,
+		"name", &name,
+		"root", &root)
+	if err != nil {
+		return nil, err
+	}
+	nameS := name.GoString()
+	rootS := path.Clean(root.GoString())
+
+	// It is OK to redeclare exact same root. It is not OK to change it.
+	if existing, ok := c.roots[nameS]; ok && existing != rootS {
+		return nil, fmt.Errorf("declare_config_set: set %q has already been declared", nameS)
+	}
+	c.roots[nameS] = rootS
+
+	return starlark.None, nil
+}
+
 func (c *genCtx) assembleOutput(textPBHeader string) (Output, error) {
 	files, err := c.output.renderWithTextProto(textPBHeader)
-	// TODO(vadimsh): Populate 'Roots' from data passed to 'c' from Starlark.
-	return Output{Data: files}, err
+	return Output{
+		Data:  files,
+		Roots: c.roots,
+	}, err
 }
 
 func init() {
