@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -54,7 +55,7 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 	case err == access.ErrNoAccess:
 		return false, nil
 	case innerError == config.ErrNoConfig:
-		return false, CodeNotFound.Tag().Apply(err)
+		return false, grpcutil.NotFoundTag.Apply(err)
 	default:
 		return false, err
 	}

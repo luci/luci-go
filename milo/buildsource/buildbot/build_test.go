@@ -112,7 +112,7 @@ func TestBuild(t *testing.T) {
 					Internal:    true,
 				})
 				_, err := GetBuild(c, buildbot.BuildID{Master: "fake", Builder: "fake", Number: 1})
-				So(common.ErrorCodeIn(err), ShouldEqual, common.CodeUnauthorized)
+				So(common.ErrorCodeIn(err), ShouldEqual, grpcutil.UnauthenticatedTag)
 			})
 		})
 	})

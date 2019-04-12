@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/gae/service/urlfetch"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -169,11 +171,11 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 	}
 	rawCommits, err := git.Get(c).CombinedLogs(c, repoHost, repoProject, def.ExcludeRef, def.Refs, limit)
 	switch common.ErrorCodeIn(err) {
-	case common.CodeOK:
+	case codes.OK:
 		// Do nothing, all is good.
-	case common.CodeNotFound:
+	case codes.NotFound:
 		return nil, nil, errors.Reason("incorrect repo URL %q in the config or no access", def.RepoUrl).
-			InternalReason(err.Error()).Err()
+			Tag(grpcutil.InternalTag).Err()
 	default:
 		return nil, nil, err
 	}

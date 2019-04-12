@@ -95,7 +95,7 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 	builders := common.MergeStrings(buildersFromConfig, buildersFromSwarmbucket)
 
 	if len(builders) == 0 {
-		return errors.New("No such project or group.", common.CodeNotFound)
+		return errors.New("No such project or group.", grpcutil.NotFoundTag)
 	}
 
 	// Get the histories.
@@ -226,7 +226,7 @@ func getBuildersForProject(c context.Context, project, console string) ([]string
 		case datastore.ErrNoSuchEntity:
 			return nil, errors.Annotate(
 				err, "error getting console %s in project %s", console, project).
-				Tag(common.CodeNotFound).Err()
+				Tag(grpcutil.NotFoundTag).Err()
 		default:
 			return nil, errors.Annotate(
 				err, "error getting console %s in project %s", console, project).Err()
