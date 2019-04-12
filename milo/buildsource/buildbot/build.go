@@ -30,9 +30,9 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
@@ -443,7 +443,7 @@ func GetBuild(c context.Context, id buildbot.BuildID) (*ui.MiloBuildLegacy, erro
 	case err != nil:
 		return nil, err
 	case b == nil:
-		return nil, errors.Reason("build %s not found", &id).Tag(common.CodeNotFound).Err()
+		return nil, errors.Reason("build %s not found", &id).Tag(grpcutil.NotFoundTag).Err()
 	default:
 		return renderBuild(c, b, true), nil
 	}
