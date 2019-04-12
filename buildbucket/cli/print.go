@@ -195,7 +195,19 @@ func (p *printer) commit(c *pb.GitilesCommit) {
 		return
 	}
 
-	p.linkf("https://%s/%s/+/%s", c.Host, c.Project, c.Id)
+	switch c.Host {
+	// This shamelessly hardcodes https://cr-rev.appspot.com/_ah/api/crrev/v1/projects response
+	// TODO(nodir): make an RPC and cache on the file system.
+	case
+		"aomedia.googlesource.com",
+		"boringssl.googlesource.com",
+		"chromium.googlesource.com",
+		"gerrit.googlesource.com",
+		"webrtc.googlesource.com":
+		p.linkf("https://crrev.com/" + c.Id)
+	default:
+		p.linkf("https://%s/%s/+/%s", c.Host, c.Project, c.Id)
+	}
 	if c.Ref != "" {
 		p.f(" on %s", c.Ref)
 	}

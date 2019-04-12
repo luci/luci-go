@@ -26,7 +26,7 @@ import (
 func TestParseCommit(t *testing.T) {
 	Convey("ParseCommit", t, func() {
 
-		Convey("7a63166bfab5de38ddb2cb8e29aca756bdc2a28d", func() {
+		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/7a63166bfab5de38ddb2cb8e29aca756bdc2a28d", func() {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/7a63166bfab5de38ddb2cb8e29aca756bdc2a28d")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeFalse)
@@ -38,7 +38,7 @@ func TestParseCommit(t *testing.T) {
 			})
 		})
 
-		Convey("refs/heads/x", func() {
+		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x", func() {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeFalse)
@@ -50,7 +50,7 @@ func TestParseCommit(t *testing.T) {
 			})
 		})
 
-		Convey("refs/heads/x/y", func() {
+		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x/y", func() {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x/y")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeTrue)
@@ -62,7 +62,7 @@ func TestParseCommit(t *testing.T) {
 			})
 		})
 
-		Convey("refs/branch-heads/x", func() {
+		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/branch-heads/x", func() {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/branch-heads/x")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeTrue)
@@ -74,7 +74,7 @@ func TestParseCommit(t *testing.T) {
 			})
 		})
 
-		Convey("master", func() {
+		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/master", func() {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/master")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeTrue)
@@ -86,7 +86,7 @@ func TestParseCommit(t *testing.T) {
 			})
 		})
 
-		Convey("refs/x", func() {
+		Convey("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/x", func() {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/x")
 			So(err, ShouldBeNil)
 			So(confirm, ShouldBeTrue)
