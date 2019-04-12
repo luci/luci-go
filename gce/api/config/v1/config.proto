@@ -185,15 +185,18 @@ message Config {
   TimePeriod lifetime = 4;
 
   // The prefix to use when naming these VMs.
-  string prefix = 6;
+  string prefix = 5;
 
   // The hostname of the Swarming server these VMs should connect to.
-  string swarming = 7;
+  string swarming = 6;
 
   // The timeout of these VMs.
   // If no Swarming bot has connected by the timeout,
   // the VM is deleted and replaced.
-  TimePeriod timeout = 8;
+  TimePeriod timeout = 7;
+
+  // Should only be set by the server. The revision of this config.
+  string revision = 8;
 }
 
 // A config for several types of VMs.

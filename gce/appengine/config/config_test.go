@@ -413,6 +413,25 @@ func TestNormalize(t *testing.T) {
 			So(cfg.VMs.GetVms()[0].Lifetime.GetSeconds(), ShouldEqual, 3600)
 		})
 
+		Convey("revision", func() {
+			cfg := &Config{
+				revision: "revision",
+				Projects: &projects.Configs{
+					Project: []*projects.Config{
+						{},
+					},
+				},
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{},
+					},
+				},
+			}
+			So(normalize(c, cfg), ShouldBeNil)
+			So(cfg.Projects.GetProject()[0].Revision, ShouldEqual, "revision")
+			So(cfg.VMs.GetVms()[0].Revision, ShouldEqual, "revision")
+		})
+
 		Convey("timeout", func() {
 			cfg := &Config{
 				VMs: &gce.Configs{
@@ -469,6 +488,7 @@ func TestSyncPrjs(t *testing.T) {
 					Region: []string{
 						"region1",
 					},
+					Revision: "revision-1",
 				},
 			})
 			prjs := []*projects.Config{
@@ -478,6 +498,7 @@ func TestSyncPrjs(t *testing.T) {
 						"region2",
 						"region3",
 					},
+					Revision: "revision-2",
 				},
 			}
 			So(syncPrjs(c, prjs), ShouldBeNil)
@@ -490,6 +511,7 @@ func TestSyncPrjs(t *testing.T) {
 					"region2",
 					"region3",
 				},
+				Revision: "revision-2",
 			})
 		})
 
@@ -543,7 +565,8 @@ func TestSyncVMs(t *testing.T) {
 					Amount: &gce.Amount{
 						Default: 1,
 					},
-					Prefix: "prefix",
+					Prefix:   "prefix",
+					Revision: "revision-1",
 				},
 			})
 			vms := []*gce.Config{
@@ -551,7 +574,8 @@ func TestSyncVMs(t *testing.T) {
 					Amount: &gce.Amount{
 						Default: 2,
 					},
-					Prefix: "prefix",
+					Prefix:   "prefix",
+					Revision: "revision-2",
 				},
 			}
 			So(syncVMs(c, vms), ShouldBeNil)
@@ -562,7 +586,8 @@ func TestSyncVMs(t *testing.T) {
 				Amount: &gce.Amount{
 					Default: 2,
 				},
-				Prefix: "prefix",
+				Prefix:   "prefix",
+				Revision: "revision-2",
 			})
 		})
 

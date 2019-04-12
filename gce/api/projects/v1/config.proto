@@ -18,6 +18,9 @@ message Config {
   // The names of GCE regions to report.
   // https://cloud.google.com/compute/docs/reference/rest/v1/regions/list.
   repeated string region = 3;
+
+  // Should only be set by the server. The revision of this config.
+  string revision = 4;
 }
 
 // A config for several projects to report GCE quota utilization for.
