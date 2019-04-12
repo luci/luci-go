@@ -65,17 +65,17 @@ func TestDeleteBot(t *testing.T) {
 				})
 				So(err, ShouldErrLike, "hostname is required")
 			})
+		})
 
+		Convey("valid", func() {
 			Convey("missing", func() {
 				err := deleteBot(c, &tasks.DeleteBot{
 					Id:       "id",
 					Hostname: "name",
 				})
-				So(err, ShouldErrLike, "failed to fetch VM")
+				So(err, ShouldBeNil)
 			})
-		})
 
-		Convey("valid", func() {
 			Convey("error", func() {
 				rt.Handler = func(req interface{}) (int, interface{}) {
 					return http.StatusInternalServerError, nil
@@ -503,17 +503,17 @@ func TestTerminateBot(t *testing.T) {
 				})
 				So(err, ShouldErrLike, "hostname is required")
 			})
+		})
 
+		Convey("valid", func() {
 			Convey("missing", func() {
 				err := terminateBot(c, &tasks.TerminateBot{
 					Id:       "id",
 					Hostname: "name",
 				})
-				So(err, ShouldErrLike, "failed to fetch VM")
+				So(err, ShouldBeNil)
 			})
-		})
 
-		Convey("valid", func() {
 			Convey("error", func() {
 				rt.Handler = func(req interface{}) (int, interface{}) {
 					return http.StatusInternalServerError, nil

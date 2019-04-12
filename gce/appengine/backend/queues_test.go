@@ -16,6 +16,7 @@ package backend
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
 	"testing"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
@@ -118,6 +120,7 @@ func TestQueues(t *testing.T) {
 				})
 
 				Convey("non-empty", func() {
+					c := mathrand.Set(c, rand.New(rand.NewSource(1)))
 					err := createVM(c, &tasks.CreateVM{
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
@@ -144,9 +147,10 @@ func TestQueues(t *testing.T) {
 								},
 							},
 						},
-						Config:  "id",
-						Drained: false,
-						Index:   2,
+						Config:   "id",
+						Drained:  false,
+						Hostname: "id-2-fpll",
+						Index:    2,
 					})
 				})
 

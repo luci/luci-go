@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -156,6 +157,16 @@ func drainVM(c context.Context, payload proto.Message) error {
 	}, nil)
 }
 
+// getSuffix returns a random suffix to use when naming a GCE instance.
+func getSuffix(c context.Context) string {
+	const allowed = "abcdefghijklmnopqrstuvwxyz0123456789"
+	suf := make([]byte, 4)
+	for i := range suf {
+		suf[i] = allowed[mathrand.Intn(c, len(allowed))]
+	}
+	return string(suf)
+}
+
 // createVMQueue is the name of the create VM task handler queue.
 const createVMQueue = "create-vm"
 
@@ -170,7 +181,17 @@ func createVM(c context.Context, payload proto.Message) error {
 	}
 	id := fmt.Sprintf("%s-%d", task.Config, task.Index)
 	vm := &model.VM{
-		ID: id,
+		ID:       id,
+		Config:   task.Config,
+		Hostname: fmt.Sprintf("%s-%s", id, getSuffix(c)),
+		Index:    task.Index,
+		Lifetime: task.Lifetime,
+		Prefix:   task.Prefix,
+		Swarming: task.Swarming,
+		Timeout:  task.Timeout,
+	}
+	if task.Attributes != nil {
+		vm.Attributes = *task.Attributes
 	}
 	// createVM is called repeatedly, so do a fast check outside the transaction.
 	// In most cases, this will skip the more expensive transactional check.
@@ -189,16 +210,6 @@ func createVM(c context.Context, payload proto.Message) error {
 		default:
 			return nil
 		}
-		if task.Attributes != nil {
-			vm.Attributes = *task.Attributes
-		}
-		vm.Config = task.Config
-		vm.Drained = false
-		vm.Index = task.Index
-		vm.Lifetime = task.Lifetime
-		vm.Prefix = task.Prefix
-		vm.Swarming = task.Swarming
-		vm.Timeout = task.Timeout
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}

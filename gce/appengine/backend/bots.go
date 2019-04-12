@@ -149,10 +149,12 @@ func manageBot(c context.Context, payload proto.Message) error {
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
-	vm, err := getVM(c, task.Id)
-	switch {
+	vm := &model.VM{
+		ID: task.Id,
+	}
+	switch err := datastore.Get(c, vm); {
 	case err != nil:
-		return err
+		return errors.Annotate(err, "failed to fetch VM").Err()
 	case vm.URL == "":
 		return errors.Reason("instance does not exist: %s", vm.URL).Err()
 	}
@@ -201,8 +203,12 @@ func terminateBot(c context.Context, payload proto.Message) error {
 	case task.GetHostname() == "":
 		return errors.Reason("hostname is required").Err()
 	}
-	vm, err := getVM(c, task.Id)
-	switch {
+	vm := &model.VM{
+		ID: task.Id,
+	}
+	switch err := datastore.Get(c, vm); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch VM").Err()
 	case vm.Hostname != task.Hostname:
@@ -211,7 +217,7 @@ func terminateBot(c context.Context, payload proto.Message) error {
 	}
 	logging.Debugf(c, "terminating bot %q: %s", vm.Hostname, vm.Swarming)
 	srv := getSwarming(c, vm.Swarming)
-	_, err = srv.Bot.Terminate(vm.Hostname).Context(c).Do()
+	_, err := srv.Bot.Terminate(vm.Hostname).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
@@ -255,8 +261,12 @@ func deleteBot(c context.Context, payload proto.Message) error {
 	case task.GetHostname() == "":
 		return errors.Reason("hostname is required").Err()
 	}
-	vm, err := getVM(c, task.Id)
-	switch {
+	vm := &model.VM{
+		ID: task.Id,
+	}
+	switch err := datastore.Get(c, vm); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch VM").Err()
 	case vm.Hostname != task.Hostname:
@@ -265,7 +275,7 @@ func deleteBot(c context.Context, payload proto.Message) error {
 	}
 	logging.Debugf(c, "deleting bot %q: %s", vm.Hostname, vm.Swarming)
 	srv := getSwarming(c, vm.Swarming).Bot
-	_, err = srv.Delete(vm.Hostname).Context(c).Do()
+	_, err := srv.Delete(vm.Hostname).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {

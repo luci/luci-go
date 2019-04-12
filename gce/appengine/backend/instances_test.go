@@ -83,47 +83,22 @@ func TestCreate(t *testing.T) {
 			})
 
 			Convey("drained", func() {
-				Convey("names", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
-						inst, ok := req.(*compute.Instance)
-						So(ok, ShouldBeTrue)
-						So(inst.Name, ShouldNotBeEmpty)
-						return http.StatusOK, &compute.Operation{}
-					}
-					rt.Type = reflect.TypeOf(compute.Instance{})
-					datastore.Put(c, &model.VM{
-						ID:      "id",
-						Drained: true,
-					})
-					err := createInstance(c, &tasks.CreateInstance{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
-					v := &model.VM{
-						ID: "id",
-					}
-					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Hostname, ShouldNotBeEmpty)
+				rt.Handler = func(req interface{}) (int, interface{}) {
+					inst, ok := req.(*compute.Instance)
+					So(ok, ShouldBeTrue)
+					So(inst.Name, ShouldEqual, "name")
+					return http.StatusOK, &compute.Operation{}
+				}
+				rt.Type = reflect.TypeOf(compute.Instance{})
+				datastore.Put(c, &model.VM{
+					ID:       "id",
+					Drained:  true,
+					Hostname: "name",
 				})
-
-				Convey("named", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
-						inst, ok := req.(*compute.Instance)
-						So(ok, ShouldBeTrue)
-						So(inst.Name, ShouldEqual, "name")
-						return http.StatusOK, &compute.Operation{}
-					}
-					rt.Type = reflect.TypeOf(compute.Instance{})
-					datastore.Put(c, &model.VM{
-						ID:       "id",
-						Drained:  true,
-						Hostname: "name",
-					})
-					err := createInstance(c, &tasks.CreateInstance{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
+				err := createInstance(c, &tasks.CreateInstance{
+					Id: "id",
 				})
+				So(err, ShouldBeNil)
 			})
 
 			Convey("error", func() {
@@ -238,24 +213,7 @@ func TestCreate(t *testing.T) {
 			})
 
 			Convey("creates", func() {
-				Convey("names", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
-						inst, ok := req.(*compute.Instance)
-						So(ok, ShouldBeTrue)
-						So(inst.Name, ShouldNotBeEmpty)
-						return http.StatusOK, &compute.Operation{}
-					}
-					rt.Type = reflect.TypeOf(compute.Instance{})
-					datastore.Put(c, &model.VM{
-						ID: "id",
-					})
-					err := createInstance(c, &tasks.CreateInstance{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
-				})
-
-				Convey("named", func() {
+				Convey("pending", func() {
 					rt.Handler = func(req interface{}) (int, interface{}) {
 						inst, ok := req.(*compute.Instance)
 						So(ok, ShouldBeTrue)
@@ -271,6 +229,12 @@ func TestCreate(t *testing.T) {
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Created, ShouldEqual, 0)
+					So(v.URL, ShouldBeEmpty)
 				})
 
 				Convey("done", func() {
