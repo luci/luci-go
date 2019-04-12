@@ -52,6 +52,24 @@
       "revId": "5c0b8147c007d973008a1d5b7925513fc47511b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecd07029_d2c22a18",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-12T02:51:00Z",
+      "side": 1,
+      "message": "Nah, I don\u0027t like that. Uploaded new patch clarifying that the server sets the revision.",
+      "parentUuid": "bcd7a42e_3eab2e38",
+      "revId": "5c0b8147c007d973008a1d5b7925513fc47511b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
