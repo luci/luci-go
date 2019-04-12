@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a562f8f_6a1c5ea3",
+        "filename": "buildbucket/cli/commit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-12T13:59:03Z",
+      "side": 1,
+      "message": "Unless I remember URL semantics incorrectly, this is \"path\" as it comes directly after hostname and \"query\" is what comes after question mark. If you make a change here, please also update the comment above.",
+      "range": {
+        "startLine": 80,
+        "startChar": 61,
+        "endLine": 80,
+        "endChar": 66
+      },
+      "revId": "b1d64416268edb16bf6e0f5161c2dad6422ab2bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "458310e7_fa1f12a7",
+        "filename": "buildbucket/cli/commit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-12T13:59:03Z",
+      "side": 1,
+      "message": "Are you sure this works with GET requests? I\u0027ve tried opening https://cr-rev.appspot.com/_ah/api/crrev/v1/redirect/c%2F123456 in a browser and it returns 404 for me. Same for curl.",
+      "revId": "b1d64416268edb16bf6e0f5161c2dad6422ab2bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1d338ac_e1b10712",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-12T13:59:03Z",
+      "side": 1,
+      "message": "This seems to also work for webrtc.googlesource.com, e.g. http://crrev.com/fc47c86b128103a362e4096d749fadf49d1c47f4. Is there no API that crrev.com provides to see if certain revision is registered?",
+      "revId": "b1d64416268edb16bf6e0f5161c2dad6422ab2bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
