@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1662f98_ef37f9f6",
+        "filename": "lucicfg/cli/base/generate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-12T00:45:22Z",
+      "side": 1,
+      "message": "I decided to keep passing it by value (its just two maps) since it makes State in state.go struct look nice :)",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 25
+      },
+      "revId": "af651dcfd6020b638e433ee8948d6f3e75eb7a88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
