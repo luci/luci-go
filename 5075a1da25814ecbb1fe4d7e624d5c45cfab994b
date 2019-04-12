@@ -22,6 +22,30 @@
       "revId": "5075a1da25814ecbb1fe4d7e624d5c45cfab994b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "231201a4_440eb1c7",
+        "filename": "buildbucket/cli/commit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-12T17:06:53Z",
+      "side": 1,
+      "message": "For commit positions this can also be a number, but it is also covered by regexp proposed above.",
+      "parentUuid": "ef810317_f3d07cf9",
+      "range": {
+        "startLine": 40,
+        "startChar": 48,
+        "endLine": 40,
+        "endChar": 52
+      },
+      "revId": "5075a1da25814ecbb1fe4d7e624d5c45cfab994b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
