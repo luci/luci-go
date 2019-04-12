@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 	"testing"
 
@@ -147,15 +146,10 @@ func TestAllStarlark(t *testing.T) {
 
 			// If was expecting to see some configs, assert we did see them.
 			if expectCfg != "" {
-				files := make([]string, 0, len(state.Output))
-				for f := range state.Output {
-					files = append(files, f)
-				}
-				sort.Strings(files)
 				got := bytes.Buffer{}
-				for _, f := range files {
+				for _, f := range state.Output.Files() {
 					fmt.Fprintf(&got, "=== %s\n", f)
-					fmt.Fprintf(&got, string(state.Output[f]))
+					fmt.Fprintf(&got, string(state.Output.Data[f]))
 					fmt.Fprintf(&got, "===\n\n")
 				}
 				errorOnDiff(t, got.String(), expectCfg)
