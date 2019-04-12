@@ -46,6 +46,30 @@
       "revId": "5075a1da25814ecbb1fe4d7e624d5c45cfab994b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3077fac2_0464c728",
+        "filename": "buildbucket/cli/commit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-12T17:58:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "231201a4_440eb1c7",
+      "range": {
+        "startLine": 40,
+        "startChar": 48,
+        "endLine": 40,
+        "endChar": 52
+      },
+      "revId": "5075a1da25814ecbb1fe4d7e624d5c45cfab994b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
