@@ -24,12 +24,12 @@ def gen1(ctx):
   msg = []
   for c in graph.children(root, 'child'):
     msg.append('%s: %s' % (c.props.msg, graph.parents(c.key, 'root')))
-  ctx.config_set['children_parents.txt'] = '\n'.join(msg) + '\n'
+  ctx.output['children_parents.txt'] = '\n'.join(msg) + '\n'
 lucicfg.generator(impl = gen1)
 
 
 def gen2(ctx):
-  ctx.config_set['recursive.txt'] = ' '.join([
+  ctx.output['recursive.txt'] = ' '.join([
       n.props.msg for n in graph.sorted_nodes(
           graph.descendants(root), graph.DEFINITION_ORDER)
   ]) + '\n'
