@@ -48,8 +48,8 @@ import (
 )
 
 var (
-	ErrNotFound    = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
-	ErrNotLoggedIn = errors.Reason("not logged in").Tag(common.CodeUnauthorized).Err()
+	ErrNotFound    = errors.Reason("Build not found").Tag(grpcutil.NotFoundTag).Err()
+	ErrNotLoggedIn = errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
 )
 
 // BuildAddress constructs the build address of a buildbucketpb.Build.
@@ -87,7 +87,7 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) (result [
 	case err == nil || err == model.ErrUnknownPreviousBuild:
 		// continue
 	case status.Code(err) == codes.PermissionDenied:
-		err = common.CodeUnauthorized.Tag().Apply(err)
+		err = grpcutil.UnauthenticatedTag.Apply(err)
 		return
 	default:
 		return
