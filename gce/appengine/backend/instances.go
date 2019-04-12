@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -35,47 +34,6 @@ import (
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 )
-
-// getSuffix returns a random suffix to use when naming a GCE instance.
-func getSuffix(c context.Context) string {
-	const allowed = "abcdefghijklmnopqrstuvwxyz0123456789"
-	suf := make([]byte, 4)
-	for i := range suf {
-		suf[i] = allowed[mathrand.Intn(c, len(allowed))]
-	}
-	return string(suf)
-}
-
-// getVM returns a VM from the datastore. Hostname is guaranteed to be set.
-func getVM(c context.Context, id string) (*model.VM, error) {
-	vm := &model.VM{
-		ID: id,
-	}
-	switch err := datastore.Get(c, vm); {
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch VM").Err()
-	case vm.Hostname != "":
-		return vm, nil
-	}
-	// Generate a new hostname and record it so future calls are idempotent.
-	hostname := fmt.Sprintf("%s-%s", vm.ID, getSuffix(c))
-	if err := datastore.RunInTransaction(c, func(c context.Context) error {
-		switch err := datastore.Get(c, vm); {
-		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM").Err()
-		case vm.Hostname != "":
-			return nil
-		}
-		vm.Hostname = hostname
-		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM").Err()
-		}
-		return nil
-	}, nil); err != nil {
-		return nil, err
-	}
-	return vm, nil
-}
 
 // setCreated sets the GCE instance as created in the datastore if it isn't already.
 func setCreated(c context.Context, id, url string, at time.Time) error {
@@ -148,10 +106,12 @@ func createInstance(c context.Context, payload proto.Message) error {
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
-	vm, err := getVM(c, task.Id)
-	switch {
+	vm := &model.VM{
+		ID: task.Id,
+	}
+	switch err := datastore.Get(c, vm); {
 	case err != nil:
-		return err
+		return errors.Annotate(err, "failed to fetch VM").Err()
 	case vm.URL != "":
 		logging.Debugf(c, "instance exists: %s", vm.URL)
 		return nil
@@ -227,10 +187,14 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	case task.GetUrl() == "":
 		return errors.Reason("URL is required").Err()
 	}
-	vm, err := getVM(c, task.Id)
-	switch {
-	case err != nil:
+	vm := &model.VM{
+		ID: task.Id,
+	}
+	switch err := datastore.Get(c, vm); {
+	case err == datastore.ErrNoSuchEntity:
 		return nil
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch VM").Err()
 	case vm.URL != task.Url:
 		// Instance is already destroyed and replaced. Don't destroy the new one.
 		return errors.Reason("instance does not exist: %s", task.Url).Err()
