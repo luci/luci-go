@@ -45,9 +45,6 @@ func (cfg *Config) Validate(c *validation.Context) {
 	c.Enter("attributes")
 	cfg.GetAttributes().Validate(c)
 	c.Exit()
-	if cfg.GetPrefix() == "" {
-		c.Errorf("prefix is required")
-	}
 	c.Enter("lifetime")
 	cfg.GetLifetime().Validate(c)
 	switch n, err := cfg.Lifetime.ToSeconds(); {
@@ -57,6 +54,12 @@ func (cfg *Config) Validate(c *validation.Context) {
 		c.Errorf("duration or seconds is required")
 	}
 	c.Exit()
+	if cfg.GetPrefix() == "" {
+		c.Errorf("prefix is required")
+	}
+	if cfg.GetRevision() != "" {
+		c.Errorf("revision must not be specified")
+	}
 	c.Enter("timeout")
 	cfg.GetTimeout().Validate(c)
 	c.Exit()

@@ -50,6 +50,15 @@ func TestValidateConfig(t *testing.T) {
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "default amount must be non-negative")
 			})
+
+			Convey("revision", func() {
+				cfg := &Config{
+					Revision: "revision",
+				}
+				cfg.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "revision must not be specified")
+			})
 		})
 
 		Convey("valid", func() {
