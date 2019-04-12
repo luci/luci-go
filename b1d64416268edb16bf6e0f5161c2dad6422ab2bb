@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0da0e02e_6b28bed2",
+        "filename": "buildbucket/cli/commit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-12T15:46:19Z",
+      "side": 1,
+      "message": "i\u0027ve added a link to API Explorer\n\nquery here is not URL query (the one that comes after ?), but the name of the param. https://screenshot.googleplex.com/6fRLT3oUkY5",
+      "parentUuid": "9a562f8f_6a1c5ea3",
+      "range": {
+        "startLine": 80,
+        "startChar": 61,
+        "endLine": 80,
+        "endChar": 66
+      },
+      "revId": "b1d64416268edb16bf6e0f5161c2dad6422ab2bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "458310e7_fa1f12a7",
         "filename": "buildbucket/cli/commit.go",
         "patchSetId": 3
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "5046dc1a_3a545403",
+        "filename": "buildbucket/cli/commit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-12T15:46:19Z",
+      "side": 1,
+      "message": "yes, this is a GET query https://apis-explorer.appspot.com/apis-explorer/?base\u003dhttps://cr-rev.appspot.com/_ah/api#p/crrev/v1/crrev.redirect.get?_h\u003d1\u0026\n\ncorrect URL is https://cr-rev.appspot.com/_ah/api/crrev/v1/redirect/F123456",
+      "parentUuid": "458310e7_fa1f12a7",
+      "revId": "b1d64416268edb16bf6e0f5161c2dad6422ab2bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e1d338ac_e1b10712",
         "filename": "buildbucket/cli/print.go",
         "patchSetId": 3
@@ -56,6 +98,24 @@
       "revId": "b1d64416268edb16bf6e0f5161c2dad6422ab2bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "912ba2e8_5a48a82b",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-12T15:46:19Z",
+      "side": 1,
+      "message": "hardcoded all projects from https://cr-rev.appspot.com/_ah/api/crrev/v1/projects\ndoing an RPC here or before would be undesirable (because it is slow). Caching would be new to this tool, so I\u0027d like to avoid it until there are serious reasons to add it. Added a TODO",
+      "parentUuid": "e1d338ac_e1b10712",
+      "revId": "b1d64416268edb16bf6e0f5161c2dad6422ab2bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
