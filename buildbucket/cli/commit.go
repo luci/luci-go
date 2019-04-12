@@ -15,10 +15,16 @@
 package cli
 
 import (
+	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
+
+	"golang.org/x/net/context/ctxhttp"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -31,14 +37,26 @@ func (f *commitFlag) Register(fs *flag.FlagSet, help string) {
 	fs.StringVar(&f.commit, "commit", "", help)
 }
 
+var regexCRRev = regexp.MustCompile(`crrev\.com/(.+)`)
+
 // retrieveCommit retrieves a GitilesCommit from f.commit.
-// Interacts with the user if necessary/
-func (f *commitFlag) retrieveCommit() (*pb.GitilesCommit, error) {
-	if f.commit == "" {
+// Might make RPCs.
+// Interacts with the user if necessary.
+func (f *commitFlag) retrieveCommit(ctx context.Context, client *http.Client) (*pb.GitilesCommit, error) {
+	s := f.commit
+	if s == "" {
 		return nil, nil
 	}
 
-	commit, mustConfirmRef, err := parseCommit(f.commit)
+	if m := regexCRRev.FindStringSubmatch(s); m != nil {
+		redirect, err := crrevRedirect(ctx, client, m[1])
+		if err != nil {
+			return nil, fmt.Errorf("crrev.com response for %q: %s", m[1], err)
+		}
+		s = redirect
+	}
+
+	commit, mustConfirmRef, err := parseCommit(s)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf("invalid -commit: %s", err)
@@ -52,10 +70,39 @@ func (f *commitFlag) retrieveCommit() (*pb.GitilesCommit, error) {
 			commit.Ref = reply
 		}
 	}
+
 	return commit, nil
 }
 
 var regexCommit = regexp.MustCompile(`(\w+\.googlesource\.com)/([^\+]+)/\+/(([a-f0-9]{40})|([\w\-/]+))`)
+
+// crrevRedirect returns a URL that crrev.com redirects the query to.
+func crrevRedirect(ctx context.Context, client *http.Client, query string) (redirect string, err error) {
+	// API Explorer for this API:
+	// https://cr-rev.appspot.com/_ah/api/explorer#p/crrev/v1/crrev.redirect.get
+	u := "https://cr-rev.appspot.com/_ah/api/crrev/v1/redirect/" + url.PathEscape(query)
+	res, err := ctxhttp.Get(ctx, client, u)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("%s", res.Status)
+	}
+
+	var body struct {
+		RedirectURL string `json:"redirect_url"`
+	}
+	switch err := json.NewDecoder(res.Body).Decode(&body); {
+	case err != nil:
+		return "", fmt.Errorf("decoding crrev.com response: %s", err)
+	case body.RedirectURL == "":
+		return "", fmt.Errorf("crrev.com redirected to nothing")
+	default:
+		return body.RedirectURL, nil
+	}
+}
 
 // parseCommit tries to retrieve a Gitiles Commit from a string.
 //
