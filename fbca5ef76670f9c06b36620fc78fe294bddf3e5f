@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "990d7434_391d462e",
+        "filename": "lucicfg/cli/base/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-12T23:35:26Z",
+      "side": 1,
+      "message": "This is to be able to split some work into a separate CL.",
+      "range": {
+        "startLine": 129,
+        "startChar": 31,
+        "endLine": 129,
+        "endChar": 45
+      },
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fe3d7da0_d2355d60",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-12T23:35:26Z",
+      "side": 1,
+      "message": "So instead of adding a separate helper for validating single config set I decided just to promote this set to Output{...} instead and reusing ValidateOutput.\n\nI don\u0027t like this \u0027validateExisting\u0027 codepath, but Fuchsia is using it :(",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 4
+      },
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "243036cf_6bf339d8",
+        "filename": "lucicfg/meta.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-12T23:35:26Z",
+      "side": 1,
+      "message": "it is needed by \"lucicfg validate \u003cdirectory-with-existing-configs\u003e\" code path used by Fuchsia :-/ Otherwise I\u0027d deleted it.",
+      "range": {
+        "startLine": 39,
+        "startChar": 92,
+        "endLine": 39,
+        "endChar": 100
+      },
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d7837586_f3062a06",
+        "filename": "lucicfg/output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-12T23:35:26Z",
+      "side": 1,
+      "message": "This is to allow ConfigSets() method below to have the \"final\" signature, which it will have in the end when everything is implemented (in the next CL presumably).",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 15
+      },
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
