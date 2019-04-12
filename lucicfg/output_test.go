@@ -54,11 +54,13 @@ func TestOutput(t *testing.T) {
 		}
 
 		Convey("Writing", func() {
-			cs := Output{
-				"a":     []byte("111"),
-				"dir/a": []byte("222"),
+			out := Output{
+				Data: map[string][]byte{
+					"a":     []byte("111"),
+					"dir/a": []byte("222"),
+				},
 			}
-			changed, unchanged, err := cs.Write(tmp)
+			changed, unchanged, err := out.Write(tmp)
 			So(changed, ShouldResemble, []string{"a", "dir/a"})
 			So(unchanged, ShouldHaveLength, 0)
 			So(err, ShouldBeNil)
@@ -66,8 +68,8 @@ func TestOutput(t *testing.T) {
 			So(read("a"), ShouldResemble, []byte("111"))
 			So(read("dir/a"), ShouldResemble, []byte("222"))
 
-			cs["a"] = []byte("333")
-			changed, unchanged, err = cs.Write(tmp)
+			out.Data["a"] = []byte("333")
+			changed, unchanged, err = out.Write(tmp)
 			So(changed, ShouldResemble, []string{"a"})
 			So(unchanged, ShouldResemble, []string{"dir/a"})
 			So(err, ShouldBeNil)
@@ -78,45 +80,56 @@ func TestOutput(t *testing.T) {
 		Convey("DiscardChangesToUntracked", func() {
 			generated := func() Output {
 				return Output{
-					"a.cfg":        []byte("new a\n"),
-					"subdir/b.cfg": []byte("new b\n"),
+					Data: map[string][]byte{
+						"a.cfg":        []byte("new a\n"),
+						"subdir/b.cfg": []byte("new b\n"),
+					},
 				}
 			}
 
 			Convey("No untracked", func() {
-				cs := generated()
-				So(cs.DiscardChangesToUntracked(ctx, []string{"**/*"}, "-"), ShouldBeNil)
-				So(cs, ShouldResemble, generated())
+				out := generated()
+				So(out.DiscardChangesToUntracked(ctx, []string{"**/*"}, "-"), ShouldBeNil)
+				So(out.Data, ShouldResemble, generated().Data)
 			})
 
 			Convey("Untracked files are restored from disk", func() {
-				cs := generated()
-				So(cs.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, tmp), ShouldBeNil)
-				So(cs, ShouldResemble, Output{
-					"a.cfg":        generated()["a.cfg"],
+				out := generated()
+				So(out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, tmp), ShouldBeNil)
+				So(out.Data, ShouldResemble, map[string][]byte{
+					"a.cfg":        generated().Data["a.cfg"],
 					"subdir/b.cfg": original["subdir/b.cfg"],
 				})
 			})
 
 			Convey("Untracked files are discarded when dumping to stdout", func() {
-				cs := generated()
-				So(cs.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, "-"), ShouldBeNil)
-				So(cs, ShouldResemble, Output{
-					"a.cfg": generated()["a.cfg"],
+				out := generated()
+				So(out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, "-"), ShouldBeNil)
+				So(out.Data, ShouldResemble, map[string][]byte{
+					"a.cfg": generated().Data["a.cfg"],
 				})
 			})
 
 			Convey("Untracked files are discarded if don't exist on disk", func() {
-				cs := Output{"c.cfg": []byte("generated")}
-				So(cs.DiscardChangesToUntracked(ctx, []string{"!c.cfg"}, tmp), ShouldBeNil)
-				So(cs, ShouldResemble, Output{})
+				out := Output{
+					Data: map[string][]byte{
+						"c.cfg": []byte("generated"),
+					},
+				}
+				So(out.DiscardChangesToUntracked(ctx, []string{"!c.cfg"}, tmp), ShouldBeNil)
+				So(out.Data, ShouldHaveLength, 0)
 			})
 		})
 	})
 
 	Convey("Digests", t, func() {
-		cs := Output{"a": nil, "b": []byte("123")}
-		So(cs.Digests(), ShouldResemble, map[string]string{
+		out := Output{
+			Data: map[string][]byte{
+				"a": nil,
+				"b": []byte("123"),
+			},
+		}
+		So(out.Digests(), ShouldResemble, map[string]string{
 			"a": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 			"b": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
 		})

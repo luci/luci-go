@@ -135,7 +135,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	if errs := state.generators.call(intr.Thread(ctx), genCtx); len(errs) != 0 {
 		return nil, state.err(errs...)
 	}
-	output, err := genCtx.output.renderWithTextProto(in.TextPBHeader)
+	output, err := genCtx.assembleOutput(in.TextPBHeader)
 	if err != nil {
 		return nil, state.err(err)
 	}

@@ -112,7 +112,7 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 			return result, err
 		}
 		for _, f := range tracked {
-			if _, present := output[f]; !present {
+			if _, present := output.Data[f]; !present {
 				result.Deleted = append(result.Deleted, f)
 				logging.Warningf(ctx, "Deleting tracked file no longer present in the output: %q", f)
 				if err := os.Remove(filepath.Join(meta.ConfigDir, filepath.FromSlash(f))); err != nil {

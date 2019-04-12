@@ -27,18 +27,30 @@ import (
 	"sort"
 
 	"github.com/golang/protobuf/proto"
+	"go.starlark.net/starlark"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/starlark/starlarkproto"
-	"go.starlark.net/starlark"
 )
 
 // Output is an in-memory representation of all generated output files.
 //
-// Keys are slash-separated filenames, values are corresponding file bodies.
-//
 // Output may span zero or more (disjoint) config sets.
-type Output map[string][]byte
+type Output struct {
+	// Data is all output files.
+	//
+	// Keys are slash-separated filenames, values are corresponding file bodies.
+	Data map[string][]byte
+
+	// Roots is mapping "config set name => its root".
+	//
+	// Roots are given as slash-separated paths relative to the output root, e.g.
+	// '.' matches ALL output files.
+	//
+	// TODO(vadimsh): Currently ignored.
+	Roots map[string]string
+}
 
 // AsConfigSet casts this output to ConfigSet.
 //
@@ -47,8 +59,8 @@ type Output map[string][]byte
 //
 // TODO(vadimsh): Remove.
 func (o Output) AsConfigSet() ConfigSet {
-	cs := make(ConfigSet, len(o))
-	for k, v := range o {
+	cs := make(ConfigSet, len(o.Data))
+	for k, v := range o.Data {
 		cs[k] = v
 	}
 	return cs
@@ -63,7 +75,7 @@ func (o Output) AsConfigSet() ConfigSet {
 func (o Output) Compare(dir string) (changed, unchanged []string) {
 	for _, name := range o.Files() {
 		path := filepath.Join(dir, filepath.FromSlash(name))
-		if bytes.Equal(fileDigest(path), blobDigest(o[name])) {
+		if bytes.Equal(fileDigest(path), blobDigest(o.Data[name])) {
 			unchanged = append(unchanged, name)
 		} else {
 			changed = append(changed, name)
@@ -89,7 +101,7 @@ func (o Output) Write(dir string) (changed, unchanged []string, err error) {
 		if err = os.MkdirAll(filepath.Dir(path), 0777); err != nil {
 			return
 		}
-		if err = ioutil.WriteFile(path, o[name], 0666); err != nil {
+		if err = ioutil.WriteFile(path, o.Data[name], 0666); err != nil {
 			return
 		}
 	}
@@ -99,8 +111,8 @@ func (o Output) Write(dir string) (changed, unchanged []string, err error) {
 
 // Digests returns a map "file name -> hex SHA256 of its body".
 func (o Output) Digests() map[string]string {
-	out := make(map[string]string, len(o))
-	for file, body := range o {
+	out := make(map[string]string, len(o.Data))
+	for file, body := range o.Data {
 		out[file] = hex.EncodeToString(blobDigest(body))
 	}
 	return out
@@ -108,8 +120,8 @@ func (o Output) Digests() map[string]string {
 
 // Files returns a sorted list of file names in the output.
 func (o Output) Files() []string {
-	f := make([]string, 0, len(o))
-	for k := range o {
+	f := make([]string, 0, len(o.Data))
+	for k := range o.Data {
 		f = append(f, k)
 	}
 	sort.Strings(f)
@@ -122,7 +134,7 @@ func (o Output) DebugDump() {
 		fmt.Println("--------------------------------------------------")
 		fmt.Println(f)
 		fmt.Println("--------------------------------------------------")
-		fmt.Print(string(o[f]))
+		fmt.Print(string(o.Data[f]))
 		fmt.Println("--------------------------------------------------")
 	}
 }
@@ -153,15 +165,15 @@ func (o Output) DiscardChangesToUntracked(ctx context.Context, tracked []string,
 		if dir == "-" {
 			// When using stdout as destination, there's nowhere to read existing
 			// files from.
-			delete(o, path)
+			delete(o.Data, path)
 			continue
 		}
 
 		switch body, err := ioutil.ReadFile(filepath.Join(dir, filepath.FromSlash(path))); {
 		case err == nil:
-			o[path] = body
+			o.Data[path] = body
 		case os.IsNotExist(err):
-			delete(o, path)
+			delete(o.Data, path)
 		case err != nil:
 			return errors.Annotate(err, "when discarding changes to %s", path).Err()
 		}
@@ -226,12 +238,12 @@ func (o *outputBuilder) SetKey(k, v starlark.Value) error {
 	return o.Dict.SetKey(k, v)
 }
 
-// renderWithTextProto returns an Output with all protos serialized to text
+// renderWithTextProto returns output files with all protos serialized to text
 // proto format (with added header).
 //
 // Configs supplied as strings are serialized using UTF-8 encoding.
-func (o *outputBuilder) renderWithTextProto(header string) (Output, error) {
-	out := make(Output, o.Len())
+func (o *outputBuilder) renderWithTextProto(header string) (map[string][]byte, error) {
+	out := make(map[string][]byte, o.Len())
 
 	for _, kv := range o.Items() {
 		k, v := kv[0].(starlark.String), kv[1]

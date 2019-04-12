@@ -163,7 +163,7 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 			return result, err
 		}
 		for _, f := range tracked {
-			if _, present := output[f]; !present {
+			if _, present := output.Data[f]; !present {
 				result.Stale = append(result.Stale, f)
 			}
 		}

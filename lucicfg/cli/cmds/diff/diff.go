@@ -100,7 +100,7 @@ func (dr *diffRun) Run(a subcommands.Application, args []string, env subcommands
 
 func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []string) error {
 	meta := dr.DefaultMeta()
-	configSet, err := base.GenerateConfigs(ctx, inputFile, &meta, &dr.Meta)
+	output, err := base.GenerateConfigs(ctx, inputFile, &meta, &dr.Meta)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 			name:     filepath.Base(path),
 			original: blob,
 		}
-		for name, body := range configSet {
+		for name, body := range output.Data {
 			if strings.HasSuffix(name, pair.name) {
 				pair.generated = body
 				break
