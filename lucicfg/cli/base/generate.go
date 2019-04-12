@@ -40,7 +40,7 @@ import (
 func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta) (lucicfg.Output, error) {
 	abs, err := filepath.Abs(inputFile)
 	if err != nil {
-		return nil, err
+		return lucicfg.Output{}, err
 	}
 
 	// Make sure the input file exists, to make the error message in this case be
@@ -53,15 +53,15 @@ func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg
 	// confusing errors.
 	switch f, err := os.Open(abs); {
 	case os.IsNotExist(err):
-		return nil, fmt.Errorf("no such file: %s", inputFile)
+		return lucicfg.Output{}, fmt.Errorf("no such file: %s", inputFile)
 	case err != nil:
-		return nil, err
+		return lucicfg.Output{}, err
 	default:
 		yes, err := startsWithShebang(f)
 		f.Close()
 		switch {
 		case err != nil:
-			return nil, err
+			return lucicfg.Output{}, err
 		case !yes:
 			fmt.Fprintf(os.Stderr,
 				`================================= WARNING =================================
@@ -95,7 +95,7 @@ You may also optionally set +x flag on it, but this is not required.
 		TextPBHeader: lucicfg.DefaultTextPBHeader,
 	})
 	if err != nil {
-		return nil, err
+		return lucicfg.Output{}, err
 	}
 
 	// Config dir in the default meta, and if set from Starlark, is relative to
@@ -103,7 +103,7 @@ You may also optionally set +x flag on it, but this is not required.
 	// via -config-dir CLI flag. Note that ".." is allowed.
 	cwd, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return lucicfg.Output{}, err
 	}
 	meta.RebaseConfigDir(root)
 	state.Meta.RebaseConfigDir(root)
@@ -121,7 +121,7 @@ You may also optionally set +x flag on it, but this is not required.
 	// validated as a whole, it is just only partially generated in this case.
 	if len(meta.TrackedFiles) != 0 {
 		if err := state.Output.DiscardChangesToUntracked(ctx, meta.TrackedFiles, meta.ConfigDir); err != nil {
-			return nil, err
+			return lucicfg.Output{}, err
 		}
 	}
 

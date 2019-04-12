@@ -38,6 +38,12 @@ func newGenCtx() *genCtx {
 	return ctx
 }
 
+func (c *genCtx) assembleOutput(textPBHeader string) (Output, error) {
+	files, err := c.output.renderWithTextProto(textPBHeader)
+	// TODO(vadimsh): Populate 'Roots' from data passed to 'c' from Starlark.
+	return Output{Data: files}, err
+}
+
 func init() {
 	// new_gen_ctx() makes a new empty generator context object.
 	declNative("new_gen_ctx", func(call nativeCall) (starlark.Value, error) {
