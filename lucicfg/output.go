@@ -36,7 +36,8 @@ import (
 
 // Output is an in-memory representation of all generated output files.
 //
-// Output may span zero or more (disjoint) config sets.
+// Output may span zero or more config sets, each defined by its root directory.
+// Config sets may intersect (though this is rare).
 type Output struct {
 	// Data is all output files.
 	//

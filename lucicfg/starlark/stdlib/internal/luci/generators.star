@@ -133,8 +133,13 @@ def gen_project_cfg(ctx):
   if not proj:
     return
 
-  # Use "projects/<name>" as default value for lucicfg.config(config_set=...).
-  # This is noop if config_set was already explicitly provided.
+  # If there's a luci.project(...) node defined, then lucicfg is used to
+  # generate LUCI project configs. In this case ALL generated configs belong to
+  # "projects/<name>" config set (so declare that it spans all configs).
+  ctx.declare_config_set('projects/%s' % proj.props.name, '.')
+
+  # TODO(vadimsh): Remove the call below once 'declare_config_set' is
+  # fully implemented and 'config_set' meta option is removed.
   __native__.set_meta_default('config_set', 'projects/%s' % proj.props.name)
 
   # Find all PROJECT_CONFIGS_READER role entries.
