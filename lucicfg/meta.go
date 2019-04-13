@@ -36,7 +36,7 @@ import (
 // See @stdlib//internal/lucicfg.star for full meaning of fields.
 type Meta struct {
 	ConfigServiceHost string   `json:"config_service_host"` // LUCI config host name
-	ConfigSet         string   `json:"config_set"`          // e.g. "project/<name>"
+	ConfigSet         string   `json:"config_set"`          // TODO(vadimsh): Demote to just a CLI flag.
 	ConfigDir         string   `json:"config_dir"`          // output directory to place generated files or '-' for stdout
 	TrackedFiles      []string `json:"tracked_files"`       // e.g. ["*.cfg", "!*-dev.cfg"]
 	FailOnWarnings    bool     `json:"fail_on_warnings"`    // true to treat validation warnings as errors
