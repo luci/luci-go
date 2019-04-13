@@ -51,20 +51,26 @@ type Output struct {
 	//
 	// TODO(vadimsh): Currently ignored.
 	Roots map[string]string
+
+	HackyConfigSet string // exists very temporary during the refactoring
 }
 
-// AsConfigSet casts this output to ConfigSet.
-//
-// This is temporary method useful during the refactoring. It will eventually be
-// replaced with a method that returns multiple config sets.
-//
-// TODO(vadimsh): Remove.
-func (o Output) AsConfigSet() ConfigSet {
-	cs := make(ConfigSet, len(o.Data))
-	for k, v := range o.Data {
-		cs[k] = v
+// ConfigSets partitions this output into 0 or more config sets based on Roots.
+func (o Output) ConfigSets() []ConfigSet {
+	// TODO(vadimsh): Implement properly.
+	if o.HackyConfigSet == "" {
+		return nil
 	}
-	return cs
+	data := make(map[string][]byte, len(o.Data))
+	for k, v := range o.Data {
+		data[k] = v
+	}
+	return []ConfigSet{
+		{
+			Name: o.HackyConfigSet,
+			Data: data,
+		},
+	}
 }
 
 // Compare compares files on disk to what's in the output.
