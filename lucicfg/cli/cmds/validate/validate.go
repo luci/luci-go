@@ -24,7 +24,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucicfg"
 
 	"go.chromium.org/luci/lucicfg/cli/base"
@@ -75,7 +74,8 @@ type validateRun struct {
 }
 
 type validateResult struct {
-	*lucicfg.ValidationResult
+	// Validation is per config set validation results.
+	Validation []*lucicfg.ValidationResult `json:"validation"`
 
 	// Stale is a list of config files on disk that are out-of-date compared to
 	// what is produced by the starlark script.
@@ -136,12 +136,21 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 	case vr.Meta.WasTouched("config_dir"):
 		return nil, base.NewCLIError("-config-dir shouldn't be used, the directory was already given as positional argument")
 	}
-	configSet, err := lucicfg.ReadConfigSet(dir)
+	configSet, err := lucicfg.ReadConfigSet(dir, vr.Meta.ConfigSet)
 	if err != nil {
 		return nil, err
 	}
-	res, err := base.ValidateConfigs(ctx, configSet, &vr.Meta, vr.ConfigService)
-	return &validateResult{ValidationResult: res}, err
+	res, err := base.ValidateOutput(
+		ctx,
+		lucicfg.Output{
+			Data:           configSet.Data,
+			Roots:          map[string]string{configSet.Name: "."},
+			HackyConfigSet: configSet.Name,
+		},
+		vr.ConfigService,
+		vr.Meta.ConfigServiceHost,
+		vr.Meta.FailOnWarnings)
+	return &validateResult{Validation: res}, err
 }
 
 // validateGenerated executes Starlark script, compares the result to whatever
@@ -179,17 +188,13 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 			strings.Join(result.Stale, ", "), path)
 	}
 
-	// If config set is not set, warn, but carry on. It is OK to use 'validate'
-	// to check for diff in configs that do not belong to any config set.
-	switch {
-	case meta.ConfigServiceHost == "":
-		logging.Warningf(ctx, "Config service host is not set, skipping validation against LUCI Config service")
-	case meta.ConfigSet == "":
-		logging.Warningf(ctx, "Config set name is not set, skipping validation against LUCI Config service")
-	default:
-		// TODO(vadimsh): Split into multiple config sets and validate them in
-		// parallel.
-		result.ValidationResult, err = base.ValidateConfigs(ctx, output.AsConfigSet(), &meta, vr.ConfigService)
-	}
+	// Validate via LUCI Config RPC. This silently skips configs not belonging to
+	// any config sets.
+	result.Validation, err = base.ValidateOutput(
+		ctx,
+		output,
+		vr.ConfigService,
+		meta.ConfigServiceHost,
+		meta.FailOnWarnings)
 	return result, err
 }

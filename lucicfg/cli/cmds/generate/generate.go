@@ -17,7 +17,6 @@ package generate
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -69,8 +68,8 @@ type generateResult struct {
 	Digests map[string]string `json:"digests,omitempty"`
 	// Meta is the final meta parameters used by the generator.
 	Meta *lucicfg.Meta `json:"meta,omitempty"`
-	// Validation contains validation results, if -validate was used.
-	Validation *lucicfg.ValidationResult `json:"validation,omitempty"`
+	// Validation is per config set validation results (if -validate was used).
+	Validation []*lucicfg.ValidationResult `json:"validation,omitempty"`
 
 	// Changed is a list of config files that have changed or been created.
 	Changed []string `json:"changed,omitempty"`
@@ -129,19 +128,12 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 
 	// Optionally validate via RPC. This is slow, thus off by default.
 	if gr.validate {
-		switch {
-		case meta.ConfigServiceHost == "":
-			return result, fmt.Errorf("can't validate the config, lucicfg.config(config_service_host=...) is not set")
-		case meta.ConfigSet == "":
-			return result, fmt.Errorf("can't validate the config, lucicfg.config(config_set=...) is not set")
-		}
-		// TODO(vadimsh): Split into multiple config sets and validate them in
-		// parallel.
-		result.Validation, err = base.ValidateConfigs(ctx, output.AsConfigSet(), &meta, gr.ConfigService)
-		if err != nil {
-			return result, err
-		}
+		result.Validation, err = base.ValidateOutput(
+			ctx,
+			output,
+			gr.ConfigService,
+			meta.ConfigServiceHost,
+			meta.FailOnWarnings)
 	}
-
 	return result, nil
 }
