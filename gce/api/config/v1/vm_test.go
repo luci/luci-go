@@ -24,74 +24,146 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateVM(t *testing.T) {
+func TestVM(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
-		c := &validation.Context{Context: context.Background()}
-
-		Convey("invalid", func() {
-			Convey("empty", func() {
-				vm := &VM{}
-				vm.Validate(c)
-				err := c.Finalize().(*validation.Error).Errors
-				So(err, ShouldContainErr, "at least one disk is required")
-				So(err, ShouldContainErr, "machine type is required")
-				So(err, ShouldContainErr, "at least one network interface is required")
-				So(err, ShouldContainErr, "project is required")
-				So(err, ShouldContainErr, "zone is required")
+	Convey("VM", t, func() {
+		Convey("SetZone", func() {
+			Convey("no replacement", func() {
+				vm := &VM{
+					Disk: []*Disk{
+						{
+							Type: "type",
+						},
+					},
+					MachineType: "type",
+				}
+				vm.SetZone("zone")
+				So(vm.Disk[0].Type, ShouldEqual, "type")
+				So(vm.MachineType, ShouldEqual, "type")
+				So(vm.Zone, ShouldEqual, "zone")
 			})
 
-			Convey("metadata", func() {
-				Convey("format", func() {
+			Convey("replacement", func() {
+				Convey("disk type", func() {
 					vm := &VM{
-						Metadata: []*Metadata{
-							{},
-						},
-					}
-					vm.Validate(c)
-					err := c.Finalize().(*validation.Error).Errors
-					So(err, ShouldContainErr, "metadata from text must be in key:value form")
-				})
-
-				Convey("file", func() {
-					vm := &VM{
-						Metadata: []*Metadata{
+						Disk: []*Disk{
 							{
-								Metadata: &Metadata_FromFile{
-									FromFile: "key:file",
-								},
+								Type: "{{.Zone}}/type",
 							},
 						},
+						MachineType: "type",
 					}
-					vm.Validate(c)
-					err := c.Finalize().(*validation.Error).Errors
-					So(err, ShouldContainErr, "metadata from text must be in key:value form")
+					vm.SetZone("zone")
+					So(vm.Disk[0].Type, ShouldEqual, "zone/type")
+					So(vm.MachineType, ShouldEqual, "type")
+					So(vm.Zone, ShouldEqual, "zone")
+				})
+
+				Convey("machine type", func() {
+					vm := &VM{
+						Disk: []*Disk{
+							{
+								Type: "type",
+							},
+						},
+						MachineType: "{{.Zone}}/type",
+					}
+					vm.SetZone("zone")
+					So(vm.Disk[0].Type, ShouldEqual, "type")
+					So(vm.MachineType, ShouldEqual, "zone/type")
+					So(vm.Zone, ShouldEqual, "zone")
+				})
+
+				Convey("multiple", func() {
+					vm := &VM{
+						Disk: []*Disk{
+							{
+								Type: "{{.Zone}}/type-1",
+							},
+							{
+								Type: "{{.Zone}}/type-2",
+							},
+						},
+						MachineType: "{{.Zone}}/type",
+					}
+					vm.SetZone("zone")
+					So(vm.Disk[0].Type, ShouldEqual, "zone/type-1")
+					So(vm.Disk[1].Type, ShouldEqual, "zone/type-2")
+					So(vm.MachineType, ShouldEqual, "zone/type")
+					So(vm.Zone, ShouldEqual, "zone")
 				})
 			})
 		})
 
-		Convey("valid", func() {
-			vm := &VM{
-				Disk: []*Disk{
-					{},
-				},
-				MachineType: "type",
-				Metadata: []*Metadata{
-					{
-						Metadata: &Metadata_FromText{
-							FromText: "key:value",
+		Convey("Validate", func() {
+			c := &validation.Context{Context: context.Background()}
+
+			Convey("invalid", func() {
+				Convey("empty", func() {
+					vm := &VM{}
+					vm.Validate(c)
+					err := c.Finalize().(*validation.Error).Errors
+					So(err, ShouldContainErr, "at least one disk is required")
+					So(err, ShouldContainErr, "machine type is required")
+					So(err, ShouldContainErr, "at least one network interface is required")
+					So(err, ShouldContainErr, "project is required")
+					So(err, ShouldContainErr, "zone is required")
+				})
+
+				Convey("metadata", func() {
+					Convey("format", func() {
+						vm := &VM{
+							Metadata: []*Metadata{
+								{},
+							},
+						}
+						vm.Validate(c)
+						err := c.Finalize().(*validation.Error).Errors
+						So(err, ShouldContainErr, "metadata from text must be in key:value form")
+					})
+
+					Convey("file", func() {
+						vm := &VM{
+							Metadata: []*Metadata{
+								{
+									Metadata: &Metadata_FromFile{
+										FromFile: "key:file",
+									},
+								},
+							},
+						}
+						vm.Validate(c)
+						err := c.Finalize().(*validation.Error).Errors
+						So(err, ShouldContainErr, "metadata from text must be in key:value form")
+					})
+				})
+			})
+
+			Convey("valid", func() {
+				vm := &VM{
+					Disk: []*Disk{
+						{
+							Type: "{{.Zone}}/type",
 						},
 					},
-				},
-				NetworkInterface: []*NetworkInterface{
-					{},
-				},
-				Project: "project",
-				Zone:    "zone",
-			}
-			vm.Validate(c)
-			So(c.Finalize(), ShouldBeNil)
+					MachineType: "type",
+					Metadata: []*Metadata{
+						{
+							Metadata: &Metadata_FromText{
+								FromText: "key:value",
+							},
+						},
+					},
+					NetworkInterface: []*NetworkInterface{
+						{},
+					},
+					Project: "project",
+					Zone:    "zone",
+				}
+				vm.Validate(c)
+				So(c.Finalize(), ShouldBeNil)
+			})
 		})
 	})
 }

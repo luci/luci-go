@@ -136,8 +136,7 @@ func TestQueues(t *testing.T) {
 					v := &model.VM{
 						ID: "id-2",
 					}
-					err = datastore.Get(c, v)
-					So(err, ShouldBeNil)
+					So(datastore.Get(c, v), ShouldBeNil)
 					So(v, ShouldResemble, &model.VM{
 						ID: "id-2",
 						Attributes: config.VM{
@@ -166,21 +165,50 @@ func TestQueues(t *testing.T) {
 						Attributes: &config.VM{
 							Project: "project",
 						},
-						Index:  2,
 						Config: "id",
+						Index:  2,
 					})
 					So(err, ShouldBeNil)
 					v := &model.VM{
 						ID: "id-2",
 					}
-					err = datastore.Get(c, v)
-					So(err, ShouldBeNil)
+					So(datastore.Get(c, v), ShouldBeNil)
 					So(v, ShouldResemble, &model.VM{
 						ID: "id-2",
 						Attributes: config.VM{
 							Zone: "zone",
 						},
 						Drained: true,
+					})
+				})
+
+				Convey("sets zone", func() {
+					err := createVM(c, &tasks.CreateVM{
+						Attributes: &config.VM{
+							Disk: []*config.Disk{
+								{
+									Type: "{{.Zone}}/type",
+								},
+							},
+							MachineType: "{{.Zone}}/type",
+							Zone:        "zone",
+						},
+						Config: "id",
+						Index:  2,
+					})
+					So(err, ShouldBeNil)
+					v := &model.VM{
+						ID: "id-2",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Attributes, ShouldResemble, config.VM{
+						Disk: []*config.Disk{
+							{
+								Type: "zone/type",
+							},
+						},
+						MachineType: "zone/type",
+						Zone:        "zone",
 					})
 				})
 			})
