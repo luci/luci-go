@@ -46,6 +46,30 @@
       "revId": "fc321747b7ca71cadb056d4dec3be75f0fb2622c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "caea88e8_1998bf83",
+        "filename": "gce/api/config/v1/vm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-13T00:38:00Z",
+      "side": 1,
+      "message": "Good question, I\u0027ve been using templates everywhere, maybe it\u0027s overkill. I don\u0027t have a good answer for this, other than I don\u0027t really like free-form text parsing. Where would you draw the line? For example, I\u0027m using templates here:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/d33f364e2ea15dfc07d022ab44bfc590ef91259a/gce/cmd/agent/swarming-start-bot.service.tmpl\n\nAnd here:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/d33f364e2ea15dfc07d022ab44bfc590ef91259a/gce/cmd/agent/windows.go#34\n\nWhere strings.ReplaceAll would probably suffice since there are only 1-2 instances of {{.\u003cvariable\u003e}} in each template.",
+      "parentUuid": "4636fd5d_ad714df2",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 39
+      },
+      "revId": "fc321747b7ca71cadb056d4dec3be75f0fb2622c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
