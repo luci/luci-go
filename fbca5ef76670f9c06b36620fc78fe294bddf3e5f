@@ -143,6 +143,24 @@
     },
     {
       "key": {
+        "uuid": "23358762_0f12d4e1",
+        "filename": "lucicfg/cli/base/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-13T01:17:12Z",
+      "side": 1,
+      "message": "that doc is clear. But, when reading just this func, it\u0027s not clear, particularly, in light of warning mentioned next to host arg. The only suggestion I have is re-document failOnWarns arg right here:\n\n// failOnWarn: if true, treat warnings from LUCI Config as errors.",
+      "parentUuid": "5d1e4bcb_ec3b2873",
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe3d7da0_d2355d60",
         "filename": "lucicfg/cli/cmds/validate/validate.go",
         "patchSetId": 1
