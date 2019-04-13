@@ -192,6 +192,8 @@ func createVM(c context.Context, payload proto.Message) error {
 	}
 	if task.Attributes != nil {
 		vm.Attributes = *task.Attributes
+		// TODO(crbug/942301): Auto-select zone if zone is unspecified.
+		vm.Attributes.SetZone(vm.Attributes.GetZone())
 	}
 	// createVM is called repeatedly, so do a fast check outside the transaction.
 	// In most cases, this will skip the more expensive transactional check.
