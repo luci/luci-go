@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dae5bdb0_883e5727",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-13T00:39:49Z",
+      "side": 0,
+      "message": "Nope. Everyone should just use starlark instead of doing weirdass guessing. (This TODO was coerced on me by the previous reviewer).",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 44
+      },
+      "revId": "795d73bbd9d6c93e86d61cbfd6b4a628bc12c9fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
