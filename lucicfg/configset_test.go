@@ -16,6 +16,7 @@ package lucicfg
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -47,11 +48,14 @@ func TestConfigSet(t *testing.T) {
 
 		Convey("Reading", func() {
 			Convey("Success", func() {
-				cfg, err := ReadConfigSet(tmp)
+				cfg, err := ReadConfigSet(tmp, "set name")
 				So(err, ShouldBeNil)
 				So(cfg, ShouldResemble, ConfigSet{
-					"a.cfg":        []byte("a\n"),
-					"subdir/b.cfg": []byte("b\n"),
+					Name: "set name",
+					Data: map[string][]byte{
+						"a.cfg":        []byte("a\n"),
+						"subdir/b.cfg": []byte("b\n"),
+					},
 				})
 
 				So(cfg.Files(), ShouldResemble, []string{
@@ -61,34 +65,64 @@ func TestConfigSet(t *testing.T) {
 			})
 
 			Convey("Missing dir", func() {
-				_, err := ReadConfigSet(path("unknown"))
+				_, err := ReadConfigSet(path("unknown"), "zzz")
 				So(err, ShouldNotBeNil)
 			})
 		})
 	})
 
 	Convey("Validation", t, func() {
+		const configSetName = "config set name"
+
 		validator := testValidator{
-			res: &ValidationResult{
-				Messages: []*ValidationMessage{
-					{Severity: "ERROR", Text: "Boo"},
-				},
+			res: []*ValidationMessage{
+				{Severity: "ERROR", Text: "Boo"},
 			},
 		}
 
-		cfg := ConfigSet{"a.cfg": []byte("aaa"), "b.cfg": []byte{0, 1, 2}}
+		cfg := ConfigSet{
+			Name: configSetName,
+			Data: map[string][]byte{
+				"a.cfg": []byte("aaa"),
+				"b.cfg": {0, 1, 2},
+			},
+		}
 
-		res, err := cfg.Validate(ctx, "config set name", &validator)
-		So(err, ShouldBeNil)
-		So(res, ShouldResemble, validator.res)
+		So(cfg.Validate(ctx, &validator), ShouldResemble, &ValidationResult{
+			ConfigSet: configSetName,
+			Messages:  validator.res,
+		})
 
 		So(validator.req, ShouldResemble, &ValidationRequest{
-			ConfigSet: "config set name",
+			ConfigSet: configSetName,
 			Files: []*config.LuciConfigValidateConfigRequestMessageFile{
 				{Path: "a.cfg", Content: "YWFh"},
 				{Path: "b.cfg", Content: "AAEC"},
 			},
 		})
+	})
+
+	Convey("RPC error", t, func() {
+		validator := testValidator{
+			err: fmt.Errorf("BOOM"),
+		}
+
+		cfg := ConfigSet{
+			Name: "set",
+			Data: map[string][]byte{"a.cfg": []byte("aaa")},
+		}
+
+		res := cfg.Validate(ctx, &validator)
+		So(res, ShouldResemble, &ValidationResult{
+			ConfigSet: "set",
+			Failed:    true,
+			RPCError:  "BOOM",
+		})
+
+		// This is considered overall failure.
+		err := res.OverallError(false)
+		So(err, ShouldErrLike, "BOOM")
+		So(res.Failed, ShouldBeTrue)
 	})
 
 	Convey("Overall error check", t, func() {
@@ -118,11 +152,12 @@ func TestConfigSet(t *testing.T) {
 }
 
 type testValidator struct {
-	req *ValidationRequest // captured request
-	res *ValidationResult  // a reply to send
+	req *ValidationRequest   // captured request
+	res []*ValidationMessage // a reply to send
+	err error                // an RPC error
 }
 
-func (t *testValidator) Validate(ctx context.Context, req *ValidationRequest) (*ValidationResult, error) {
+func (t *testValidator) Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error) {
 	t.req = req
-	return t.res, nil
+	return t.res, t.err
 }
