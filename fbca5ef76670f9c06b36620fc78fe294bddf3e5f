@@ -125,6 +125,24 @@
     },
     {
       "key": {
+        "uuid": "5d1e4bcb_ec3b2873",
+        "filename": "lucicfg/cli/base/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-13T01:10:49Z",
+      "side": 1,
+      "message": "See fail_on_warnings: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/doc/README.md#lucicfg.config-args\n\nDo you have suggestions how to change it?",
+      "parentUuid": "4aa230d2_30c6ecba",
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe3d7da0_d2355d60",
         "filename": "lucicfg/cli/cmds/validate/validate.go",
         "patchSetId": 1
