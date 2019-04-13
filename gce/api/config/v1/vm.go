@@ -39,6 +39,15 @@ func (v *VM) ToProperty() (datastore.Property, error) {
 	return p, p.SetValue(proto.MarshalTextString(v), datastore.NoIndex)
 }
 
+// SetZone sets the given zone throughout this VM.
+func (v *VM) SetZone(zone string) {
+	for _, disk := range v.GetDisk() {
+		disk.Type = strings.Replace(disk.Type, "{{.Zone}}", zone, -1)
+	}
+	v.MachineType = strings.Replace(v.GetMachineType(), "{{.Zone}}", zone, -1)
+	v.Zone = zone
+}
+
 // Validate validates this VM description.
 // Metadata FromFile must already be converted to FromText.
 func (v *VM) Validate(c *validation.Context) {
