@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4636fd5d_ad714df2",
+        "filename": "gce/api/config/v1/vm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-13T00:30:48Z",
+      "side": 1,
+      "message": "if so, why not just:\n\n    strings.Replace(s, \u0027{{.Zone}}\u0027, zone)\n\n?",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 39
+      },
+      "revId": "fc321747b7ca71cadb056d4dec3be75f0fb2622c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
