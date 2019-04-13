@@ -24,74 +24,188 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateVM(t *testing.T) {
+func TestVM(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
-		c := &validation.Context{Context: context.Background()}
-
-		Convey("invalid", func() {
-			Convey("empty", func() {
-				vm := &VM{}
-				vm.Validate(c)
-				err := c.Finalize().(*validation.Error).Errors
-				So(err, ShouldContainErr, "at least one disk is required")
-				So(err, ShouldContainErr, "machine type is required")
-				So(err, ShouldContainErr, "at least one network interface is required")
-				So(err, ShouldContainErr, "project is required")
-				So(err, ShouldContainErr, "zone is required")
+	Convey("VM", t, func() {
+		Convey("SetZone", func() {
+			Convey("text", func() {
+				vm := &VM{
+					Disk: []*Disk{
+						{
+							Type: "type",
+						},
+					},
+					MachineType: "type",
+				}
+				So(vm.SetZone("zone"), ShouldBeNil)
+				So(vm.Disk[0].Type, ShouldEqual, "type")
+				So(vm.MachineType, ShouldEqual, "type")
+				So(vm.Zone, ShouldEqual, "zone")
 			})
 
-			Convey("metadata", func() {
-				Convey("format", func() {
+			Convey("template", func() {
+				Convey("disk type", func() {
 					vm := &VM{
-						Metadata: []*Metadata{
-							{},
+						Disk: []*Disk{
+							{
+								Type: "{{.Zone}}/type",
+							},
 						},
+						MachineType: "{{.Zone}}/{{}}",
 					}
-					vm.Validate(c)
-					err := c.Finalize().(*validation.Error).Errors
-					So(err, ShouldContainErr, "metadata from text must be in key:value form")
+					So(vm.SetZone("zone"), ShouldErrLike, "failed to substitute")
+					So(vm.Disk[0].Type, ShouldEqual, "{{.Zone}}/type")
+					So(vm.MachineType, ShouldEqual, "{{.Zone}}/{{}}")
+					So(vm.Zone, ShouldBeEmpty)
+
+					vm.MachineType = ""
+					So(vm.SetZone("zone"), ShouldBeNil)
+					So(vm.Disk[0].Type, ShouldEqual, "zone/type")
+					So(vm.MachineType, ShouldBeEmpty)
+					So(vm.Zone, ShouldEqual, "zone")
 				})
 
-				Convey("file", func() {
+				Convey("machine type", func() {
 					vm := &VM{
-						Metadata: []*Metadata{
+						Disk: []*Disk{
 							{
-								Metadata: &Metadata_FromFile{
-									FromFile: "key:file",
-								},
+								Type: "{{.Zone}}/{{}}",
+							},
+						},
+						MachineType: "{{.Zone}}/type",
+					}
+					So(vm.SetZone("zone"), ShouldErrLike, "failed to substitute")
+					So(vm.Disk[0].Type, ShouldEqual, "{{.Zone}}/{{}}")
+					So(vm.MachineType, ShouldEqual, "{{.Zone}}/type")
+					So(vm.Zone, ShouldBeEmpty)
+
+					vm.Disk[0].Type = ""
+					So(vm.SetZone("zone"), ShouldBeNil)
+					So(vm.Disk[0].Type, ShouldBeEmpty)
+					So(vm.MachineType, ShouldEqual, "zone/type")
+					So(vm.Zone, ShouldEqual, "zone")
+				})
+			})
+		})
+
+		Convey("substituteZone", func() {
+			Convey("invalid", func() {
+				_, err := substituteZone("{{.Zone}}/{{}}", "zone")
+				So(err, ShouldNotBeNil)
+			})
+
+			Convey("valid", func() {
+				Convey("empty", func() {
+					s, err := substituteZone("", "zone")
+					So(err, ShouldBeNil)
+					So(s, ShouldBeEmpty)
+				})
+
+				Convey("text", func() {
+					s, err := substituteZone("zone-1", "zone-2")
+					So(err, ShouldBeNil)
+					So(s, ShouldEqual, "zone-1")
+				})
+
+				Convey("template", func() {
+					s, err := substituteZone("{{.Zone}}", "zone")
+					So(err, ShouldBeNil)
+					So(s, ShouldEqual, "zone")
+				})
+			})
+		})
+
+		Convey("Validate", func() {
+			c := &validation.Context{Context: context.Background()}
+
+			Convey("invalid", func() {
+				Convey("empty", func() {
+					vm := &VM{}
+					vm.Validate(c)
+					err := c.Finalize().(*validation.Error).Errors
+					So(err, ShouldContainErr, "at least one disk is required")
+					So(err, ShouldContainErr, "machine type is required")
+					So(err, ShouldContainErr, "at least one network interface is required")
+					So(err, ShouldContainErr, "project is required")
+					So(err, ShouldContainErr, "zone is required")
+				})
+
+				Convey("disk type", func() {
+					vm := &VM{
+						Disk: []*Disk{
+							{
+								Type: "{{.Zone}}/{{}}",
 							},
 						},
 					}
 					vm.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
-					So(err, ShouldContainErr, "metadata from text must be in key:value form")
+					So(err, ShouldContainErr, "template")
+				})
+
+				Convey("machine type", func() {
+					vm := &VM{
+						MachineType: "{{.Zone}}/{{}}",
+					}
+					vm.Validate(c)
+					err := c.Finalize().(*validation.Error).Errors
+					So(err, ShouldContainErr, "template")
+				})
+
+				Convey("metadata", func() {
+					Convey("format", func() {
+						vm := &VM{
+							Metadata: []*Metadata{
+								{},
+							},
+						}
+						vm.Validate(c)
+						err := c.Finalize().(*validation.Error).Errors
+						So(err, ShouldContainErr, "metadata from text must be in key:value form")
+					})
+
+					Convey("file", func() {
+						vm := &VM{
+							Metadata: []*Metadata{
+								{
+									Metadata: &Metadata_FromFile{
+										FromFile: "key:file",
+									},
+								},
+							},
+						}
+						vm.Validate(c)
+						err := c.Finalize().(*validation.Error).Errors
+						So(err, ShouldContainErr, "metadata from text must be in key:value form")
+					})
 				})
 			})
-		})
 
-		Convey("valid", func() {
-			vm := &VM{
-				Disk: []*Disk{
-					{},
-				},
-				MachineType: "type",
-				Metadata: []*Metadata{
-					{
-						Metadata: &Metadata_FromText{
-							FromText: "key:value",
+			Convey("valid", func() {
+				vm := &VM{
+					Disk: []*Disk{
+						{
+							Type: "{{.Zone}}/type",
 						},
 					},
-				},
-				NetworkInterface: []*NetworkInterface{
-					{},
-				},
-				Project: "project",
-				Zone:    "zone",
-			}
-			vm.Validate(c)
-			So(c.Finalize(), ShouldBeNil)
+					MachineType: "type",
+					Metadata: []*Metadata{
+						{
+							Metadata: &Metadata_FromText{
+								FromText: "key:value",
+							},
+						},
+					},
+					NetworkInterface: []*NetworkInterface{
+						{},
+					},
+					Project: "project",
+					Zone:    "zone",
+				}
+				vm.Validate(c)
+				So(c.Finalize(), ShouldBeNil)
+			})
 		})
 	})
 }
