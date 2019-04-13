@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "d34763ee_c92ac347",
+        "filename": "lucicfg/cli/base/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-13T01:02:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca321276_2a68bcf9",
+      "range": {
+        "startLine": 43,
+        "startChar": 10,
+        "endLine": 43,
+        "endChar": 11
+      },
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "84c1645d_fcb92aeb",
         "filename": "lucicfg/cli/base/validate.go",
         "patchSetId": 1
@@ -62,6 +86,24 @@
       "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a48cd42_7a078397",
+        "filename": "lucicfg/cli/base/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-13T01:02:41Z",
+      "side": 1,
+      "message": "fail_on_warnings is explicitly documented \"treat warnings from LUCI Config as errors\". It doesn\u0027t specify what to do for all other kinds of warnings, so this code is technically correct: best kind of correct :) \n\nI decided to just skip the validation here to allow quickly disabling the validation if there are some issues by doing:\n\n`lucicfg validate main.star -config-service-host \"\"`",
+      "parentUuid": "84c1645d_fcb92aeb",
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -100,6 +142,30 @@
       "side": 1,
       "message": "Yeah, trade off is inevitable here :( \n\n\u003e Fuchsia is using it\n\nWhy?\n\nShould this method be marked as deprecated and hidden from cli help?\nUpdate: ah, I see, you\u0027ve added todo below.",
       "parentUuid": "fe3d7da0_d2355d60",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 4
+      },
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0108e6a3_3a72041b",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-13T01:02:41Z",
+      "side": 1,
+      "message": "\u003e Yeah, trade off is inevitable here :( \n\u003e \n\u003e \u003e Fuchsia is using it\n\u003e \n\u003e Why?\n\nBecause they don\u0027t use PRESUBMIT.py (and the helper there), but still want to validate their manual cr-buildbucket.cfg.\n\n\u003e \n\u003e Should this method be marked as deprecated and hidden from cli help?\n\u003e Update: ah, I see, you\u0027ve added todo below.",
+      "parentUuid": "dac5cb68_6ff1b13f",
       "range": {
         "startLine": 145,
         "startChar": 2,
