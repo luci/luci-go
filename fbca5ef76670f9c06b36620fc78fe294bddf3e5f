@@ -25,6 +25,46 @@
     },
     {
       "key": {
+        "uuid": "ca321276_2a68bcf9",
+        "filename": "lucicfg/cli/base/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-13T00:54:46Z",
+      "side": 1,
+      "message": ",",
+      "range": {
+        "startLine": 43,
+        "startChar": 10,
+        "endLine": 43,
+        "endChar": 11
+      },
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84c1645d_fcb92aeb",
+        "filename": "lucicfg/cli/base/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-13T00:54:46Z",
+      "side": 1,
+      "message": "minor: what about failOnWarns arg?",
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fe3d7da0_d2355d60",
         "filename": "lucicfg/cli/cmds/validate/validate.go",
         "patchSetId": 1
@@ -36,6 +76,30 @@
       "writtenOn": "2019-04-12T23:35:26Z",
       "side": 1,
       "message": "So instead of adding a separate helper for validating single config set I decided just to promote this set to Output{...} instead and reusing ValidateOutput.\n\nI don\u0027t like this \u0027validateExisting\u0027 codepath, but Fuchsia is using it :(",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 4
+      },
+      "revId": "fbca5ef76670f9c06b36620fc78fe294bddf3e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dac5cb68_6ff1b13f",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-13T00:54:46Z",
+      "side": 1,
+      "message": "Yeah, trade off is inevitable here :( \n\n\u003e Fuchsia is using it\n\nWhy?\n\nShould this method be marked as deprecated and hidden from cli help?\nUpdate: ah, I see, you\u0027ve added todo below.",
+      "parentUuid": "fe3d7da0_d2355d60",
       "range": {
         "startLine": 145,
         "startChar": 2,
