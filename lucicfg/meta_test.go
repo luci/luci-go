@@ -33,17 +33,17 @@ func TestMeta(t *testing.T) {
 
 		Convey("Success", func() {
 			// String.
-			So(m.setField("config_service_host", starlark.String("boo"), false), ShouldBeNil)
+			So(m.setField("config_service_host", starlark.String("boo")), ShouldBeNil)
 			So(m.ConfigServiceHost, ShouldEqual, "boo")
 
 			// Bool.
-			So(m.setField("fail_on_warnings", starlark.Bool(true), false), ShouldBeNil)
+			So(m.setField("fail_on_warnings", starlark.Bool(true)), ShouldBeNil)
 			So(m.FailOnWarnings, ShouldBeTrue)
 
 			// []string.
 			So(m.setField("tracked_files", starlark.NewList([]starlark.Value{
 				starlark.String("t1"), starlark.String("t2"),
-			}), false), ShouldBeNil)
+			})), ShouldBeNil)
 			So(m.TrackedFiles, ShouldResemble, []string{"t1", "t2"})
 
 			// List of touched fields was updated.
@@ -55,29 +55,11 @@ func TestMeta(t *testing.T) {
 		})
 
 		Convey("Errors", func() {
-			So(m.setField("unknown", starlark.None, false), ShouldErrLike, `set_meta: no such meta key "unknown"`)
-			So(m.setField("config_service_host", starlark.None, false), ShouldErrLike, `set_meta: got NoneType, expecting string`)
-			So(m.setField("fail_on_warnings", starlark.None, false), ShouldErrLike, `set_meta: got NoneType, expecting bool`)
-			So(m.setField("tracked_files", starlark.None, false), ShouldErrLike, `set_meta: got NoneType, expecting an iterable`)
-			So(m.setField("tracked_files", starlark.NewList([]starlark.Value{starlark.None}), false), ShouldErrLike, `set_meta: got NoneType, expecting string`)
-		})
-
-		Convey("untouched arg is respected", func() {
-			So(m.setField("config_service_host", starlark.String("boo"), false), ShouldBeNil)
-			So(m.ConfigServiceHost, ShouldEqual, "boo")
-
-			// Can override if 'untouched' is false.
-			So(m.setField("config_service_host", starlark.String("blah"), false), ShouldBeNil)
-			So(m.ConfigServiceHost, ShouldEqual, "blah")
-
-			// Can't if true.
-			So(m.setField("config_service_host", starlark.String("bzzz"), true), ShouldBeNil)
-			So(m.ConfigServiceHost, ShouldEqual, "blah")
-
-			// Can if 'untouched' is true and the field wasn't actually touched.
-			m = Meta{}
-			So(m.setField("config_service_host", starlark.String("bzzz"), true), ShouldBeNil)
-			So(m.ConfigServiceHost, ShouldEqual, "bzzz")
+			So(m.setField("unknown", starlark.None), ShouldErrLike, `set_meta: no such meta key "unknown"`)
+			So(m.setField("config_service_host", starlark.None), ShouldErrLike, `set_meta: got NoneType, expecting string`)
+			So(m.setField("fail_on_warnings", starlark.None), ShouldErrLike, `set_meta: got NoneType, expecting bool`)
+			So(m.setField("tracked_files", starlark.None), ShouldErrLike, `set_meta: got NoneType, expecting an iterable`)
+			So(m.setField("tracked_files", starlark.NewList([]starlark.Value{starlark.None})), ShouldErrLike, `set_meta: got NoneType, expecting string`)
 		})
 	})
 
@@ -107,26 +89,22 @@ func TestMeta(t *testing.T) {
 	Convey("Merging", t, func() {
 		l := Meta{
 			ConfigServiceHost: "l1",
-			ConfigSet:         "l2",
 			FailOnWarnings:    true,
 			TrackedFiles:      []string{"l3"},
 		}
 		r := Meta{
 			ConfigServiceHost: "r1",
-			ConfigSet:         "r2",
 			FailOnWarnings:    false,
 			TrackedFiles:      []string{"r3"},
 		}
 
-		r.touch(&r.ConfigServiceHost)
 		r.touch(&r.FailOnWarnings)
 		r.touch(&r.TrackedFiles)
 
 		l.PopulateFromTouchedIn(&r)
 
 		So(l, ShouldResemble, Meta{
-			ConfigServiceHost: "r1",
-			ConfigSet:         "l2", // wasn't touched in r
+			ConfigServiceHost: "l1", // wasn't touched in r
 			FailOnWarnings:    false,
 			TrackedFiles:      []string{"r3"},
 		})
