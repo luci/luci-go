@@ -21,11 +21,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/gae/service/memcache"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/milo/common"
 )
 
 // CLEmail implements Client interface.
 func (p *implementation) CLEmail(c context.Context, host string, changeNumber int64) (email string, err error) {
-	defer func() { err = markUnauthed(c, err) }()
+	defer func() { err = common.TagGRPC(c, err) }()
 	changeInfo, err := p.clEmailAndProjectNoACLs(c, host, changeNumber)
 	if err != nil {
 		return
