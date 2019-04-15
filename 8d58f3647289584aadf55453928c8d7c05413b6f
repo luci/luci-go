@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34723d24_5599197d",
+        "filename": "milo/git/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-15T20:35:02Z",
+      "side": 1,
+      "message": "consider describing what it actually does, e.g. if the user is not logged in and the the resource appears to be inaccessible, then convert the error into Unauthenticated. Also consider renaming the func. Currently very abstract.",
+      "range": {
+        "startLine": 177,
+        "startChar": 21,
+        "endLine": 177,
+        "endChar": 61
+      },
+      "revId": "8d58f3647289584aadf55453928c8d7c05413b6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
