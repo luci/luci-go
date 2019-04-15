@@ -22,6 +22,30 @@
       "revId": "8d58f3647289584aadf55453928c8d7c05413b6f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7b9cef3_1c784b6b",
+        "filename": "milo/git/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-15T21:48:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "34723d24_5599197d",
+      "range": {
+        "startLine": 177,
+        "startChar": 21,
+        "endLine": 177,
+        "endChar": 61
+      },
+      "revId": "8d58f3647289584aadf55453928c8d7c05413b6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
