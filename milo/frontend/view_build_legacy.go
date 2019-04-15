@@ -26,6 +26,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -47,7 +48,7 @@ func handleBuildbotBuild(c *router.Context) error {
 	buildNum, err := strconv.Atoi(c.Params.ByName("number"))
 	if err != nil {
 		return errors.Annotate(err, "build number is not a number").
-			Tag(common.CodeParameterError).
+			Tag(grpcutil.InvalidArgumentTag).
 			Err()
 	}
 	id := buildbotapi.BuildID{

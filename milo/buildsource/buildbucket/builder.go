@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -96,7 +97,7 @@ func fetchBuilds(c context.Context, client *bbv1.Service, bid BuilderID,
 	return msgs, cursor, nil
 }
 
-// ensureDefined returns common.CodeNotFound tagged error if a builder is not
+// ensureDefined returns grpcutil.NotFoundTag tagged error if a builder is not
 // defined in its swarmbucket.
 func ensureDefined(c context.Context, host string, bid BuilderID) error {
 	client, err := newSwarmbucketClient(c, host)
@@ -121,7 +122,7 @@ func ensureDefined(c context.Context, host string, bid BuilderID) error {
 			}
 		}
 	}
-	return errors.Reason("builder %q not found", bid.Builder).Tag(common.CodeNotFound).Err()
+	return errors.Reason("builder %q not found", bid.Builder).Tag(grpcutil.NotFoundTag).Err()
 }
 
 func getDebugBuilds(c context.Context, bid BuilderID, maxCompletedBuilds int, target *ui.Builder) error {
