@@ -20,22 +20,23 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestTagError(t *testing.T) {
+func testMarkUnauthed(t *testing.T) {
 	t.Parallel()
 
-	Convey("tagError Works", t, func() {
+	Convey("mark Unauthed Works", t, func() {
 		c := memory.Use(context.Background())
 		cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:user@example.com"})
 		cAnon := auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
-		So(common.ErrorCodeIn(tagError(cAnon, errGRPCNotFound)), ShouldEqual, common.CodeUnauthorized)
-		So(common.ErrorCodeIn(tagError(cUser, errGRPCNotFound)), ShouldEqual, common.CodeNotFound)
+		So(grpcutil.Code(markUnauthed(cAnon, errGRPCNotFound)), ShouldEqual, codes.Unauthenticated)
+		So(grpcutil.Code(markUnauthed(cUser, errGRPCNotFound)), ShouldEqual, codes.NotFound)
 	})
 }

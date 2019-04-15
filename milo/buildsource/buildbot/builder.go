@@ -25,9 +25,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
@@ -140,7 +140,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 		return nil, errors.Reason(
 			"Cannot find builder %q in master %q.\nAvailable builders: \n%s",
 			builderName, masterName, builders,
-		).Tag(common.CodeNotFound).Err()
+		).Tag(grpcutil.NotFoundTag).Err()
 	}
 
 	// Extract pending builds out of the master.

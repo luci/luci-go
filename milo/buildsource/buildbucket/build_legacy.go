@@ -32,12 +32,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/grpc/grpcutil"
 	logDogTypes "go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
@@ -95,7 +95,7 @@ func GetSwarmingTaskID(c context.Context, buildAddress string) (host, taskId str
 		err = errors.Annotate(err, "could not get build at %q", buildAddress).Err()
 		return
 	case build == nil:
-		err = errors.Reason("build at %q not found", buildAddress).Tag(common.CodeNotFound).Err()
+		err = errors.Reason("build at %q not found", buildAddress).Tag(grpcutil.NotFoundTag).Err()
 		return
 	}
 
@@ -276,9 +276,9 @@ func GetRawBuild(c context.Context, address string) (*bbv1.ApiCommonBuildMessage
 	case err != nil:
 		return nil, errors.Annotate(err, "could not get build at %q", address).Err()
 	case build == nil && auth.CurrentUser(c).Identity == identity.AnonymousIdentity:
-		return nil, errors.Reason("not logged in").Tag(common.CodeUnauthorized).Err()
+		return nil, errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
 	case build == nil:
-		return nil, errors.Reason("build at %q not found", address).Tag(common.CodeNotFound).Err()
+		return nil, errors.Reason("build at %q not found", address).Tag(grpcutil.NotFoundTag).Err()
 	default:
 		return build, nil
 	}
