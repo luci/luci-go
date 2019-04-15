@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
@@ -85,7 +86,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 	entity := masterEntity{Name: name}
 	err := datastore.Get(c, &entity)
 	if err == datastore.ErrNoSuchEntity {
-		return nil, errors.New("master not found", common.CodeNotFound)
+		return nil, errors.New("master not found", grpcutil.NotFoundTag)
 	}
 	if err != nil {
 		return nil, err
@@ -419,9 +420,9 @@ func CanAccessMaster(c context.Context, name string) error {
 		return nil
 	}
 
-	code := common.CodeNotFound
+	code := grpcutil.NotFoundTag
 	if auth.CurrentUser(c).Identity == identity.AnonymousIdentity {
-		code = common.CodeUnauthorized
+		code = grpcutil.UnauthenticatedTag
 	}
 	// Act like master does not exist.
 	return errors.Reason("master %q not found", name).Tag(code).Err()

@@ -12,6 +12,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
@@ -36,7 +37,7 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 	toks := strings.SplitN(string(b), "/", 3)
 	if len(toks) != 3 {
 		err = errors.Reason("bad BuilderID: not enough tokens: %q", b).
-			Tag(common.CodeParameterError).Err()
+			Tag(grpcutil.InvalidArgumentTag).Err()
 		return
 	}
 	backend, backendGroup, builderName = toks[0], toks[1], toks[2]
@@ -44,15 +45,15 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 	case "buildbot", "buildbucket":
 	default:
 		err = errors.Reason("bad BuilderID: unknown backend %q", backend).
-			Tag(common.CodeParameterError).Err()
+			Tag(grpcutil.InvalidArgumentTag).Err()
 		return
 	}
 	if backendGroup == "" {
-		err = errors.New("bad BuilderID: empty backendGroup", common.CodeParameterError)
+		err = errors.New("bad BuilderID: empty backendGroup", grpcutil.InvalidArgumentTag)
 		return
 	}
 	if builderName == "" {
-		err = errors.New("bad BuilderID: empty builderName", common.CodeParameterError)
+		err = errors.New("bad BuilderID: empty builderName", grpcutil.InvalidArgumentTag)
 		return
 	}
 	return

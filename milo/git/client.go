@@ -39,7 +39,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server/auth"
 )
@@ -174,21 +174,14 @@ func (p *implementation) gerritClient(c context.Context, host string) (gerritpb.
 // errGRPCNotFound is what gRPC API would have returned for NotFound error.
 var errGRPCNotFound = status.Errorf(codes.NotFound, "not found")
 
-// tagError annotates some gRPC with Milo specific tag.
-func tagError(c context.Context, err error) error {
+// markUnauthed annotates some gRPC with Milo specific semantics, specifically:
+// * Marks the error as Unauthorized if the user is not logged in,
+// and the underlying error was a 403 or 404.
+func markUnauthed(c context.Context, err error) error {
 	loggedIn := auth.CurrentIdentity(c) != identity.AnonymousIdentity
-	tag := common.CodeUnknown
-	switch code := status.Code(err); {
-	case code == codes.Unauthenticated:
-		tag = common.CodeUnauthorized
-	case !loggedIn && (code == codes.NotFound || code == codes.PermissionDenied):
-		tag = common.CodeUnauthorized
-	case code == codes.NotFound:
-		tag = common.CodeNotFound
-	case code == codes.PermissionDenied:
-		tag = common.CodeNoAccess
-	default:
-		return err
+	code := grpcutil.Code(err)
+	if !loggedIn && (code == codes.NotFound || code == codes.PermissionDenied) {
+		return errors.Annotate(err, "").Tag(grpcutil.UnauthenticatedTag).Err()
 	}
-	return errors.Annotate(err, "").Tag(tag).Err()
+	return err
 }

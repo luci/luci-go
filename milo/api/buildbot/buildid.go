@@ -18,8 +18,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
-
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 // BuildID identifies a buildbot build.
@@ -33,11 +32,11 @@ type BuildID struct {
 func (id BuildID) Validate() error {
 	switch {
 	case id.Master == "":
-		return errors.New("master is unspecified", common.CodeParameterError)
+		return errors.New("master is unspecified", grpcutil.InvalidArgumentTag)
 	case id.Builder == "":
-		return errors.New("builder is unspecified", common.CodeParameterError)
+		return errors.New("builder is unspecified", grpcutil.InvalidArgumentTag)
 	case id.Number < 0:
-		return errors.New("nunber must be >= 0", common.CodeParameterError)
+		return errors.New("nunber must be >= 0", grpcutil.InvalidArgumentTag)
 	default:
 		return nil
 	}

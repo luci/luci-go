@@ -29,7 +29,6 @@ import (
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
-	"go.chromium.org/luci/milo/common"
 )
 
 // GetBuildInfo resolves a Milo protobuf Step for a given BuildBot build.
@@ -55,15 +54,10 @@ func GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_BuildBot,
 		Number:  int(req.BuildNumber),
 	}
 	build, err := buildstore.GetBuild(c, buildID)
-	switch code := common.ErrorCodeIn(err); {
-	case code == common.CodeUnauthorized:
-		return nil, grpcutil.Unauthenticated
-
-	case err != nil:
-		logging.WithError(err).Errorf(c, "Failed to load build info.")
-		return nil, grpcutil.Internal
-
-	case build == nil:
+	if err != nil {
+		return nil, err
+	}
+	if build == nil {
 		return nil, grpcutil.Errf(codes.NotFound, "Build #%d for master %q, builder %q was not found",
 			req.BuildNumber, req.MasterName, req.BuilderName)
 	}

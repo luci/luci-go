@@ -25,13 +25,13 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/common/viewer"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation/internal"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
@@ -61,11 +61,11 @@ type AnnotationStream struct {
 // Normalize validates and normalizes the stream's parameters.
 func (as *AnnotationStream) Normalize() error {
 	if err := as.Project.Validate(); err != nil {
-		return errors.Annotate(err, "Invalid project name: %s", as.Project).Tag(common.CodeParameterError).Err()
+		return errors.Annotate(err, "Invalid project name: %s", as.Project).Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
 	if err := as.Path.Validate(); err != nil {
-		return errors.Annotate(err, "Invalid log stream path %q", as.Path).Tag(common.CodeParameterError).Err()
+		return errors.Annotate(err, "Invalid log stream path %q", as.Path).Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
 	return nil
@@ -265,14 +265,14 @@ func GetBuild(c context.Context, host string, project types.ProjectName, path ty
 	case nil, errNoEntries:
 
 	case coordinator.ErrNoSuchStream:
-		return nil, common.CodeNotFound.Tag().Apply(err)
+		return nil, grpcutil.NotFoundTag.Apply(err)
 
 	case coordinator.ErrNoAccess:
-		return nil, common.CodeNoAccess.Tag().Apply(err)
+		return nil, grpcutil.PermissionDeniedTag.Apply(err)
 
 	case errNotMilo, errNotDatagram:
 		// The user requested a LogDog url that isn't a Milo annotation.
-		return nil, common.CodeParameterError.Tag().Apply(err)
+		return nil, grpcutil.InvalidArgumentTag.Apply(err)
 
 	default:
 		return nil, errors.Annotate(err, "failed to load stream").Err()

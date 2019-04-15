@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/client/annotee"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
@@ -60,7 +61,7 @@ type SwarmingService interface {
 
 // ErrNotMiloJob is returned if a Swarming task is fetched that does not self-
 // identify as a Milo job.
-var ErrNotMiloJob = errors.New("Not a Milo Job or access denied", common.CodeNoAccess)
+var ErrNotMiloJob = errors.New("Not a Milo Job or access denied", grpcutil.PermissionDeniedTag)
 
 // SwarmingTimeLayout is time layout used by swarming.
 const SwarmingTimeLayout = "2006-01-02T15:04:05.999999999"
@@ -194,9 +195,9 @@ func swarmingFetch(c context.Context, svc SwarmingService, taskID string, req sw
 			} else if ierr, ok := err.(*googleapi.Error); ok {
 				switch ierr.Code {
 				case http.StatusNotFound:
-					err = errors.Annotate(ierr, "not found on swarming").Tag(common.CodeNotFound).Err()
+					err = errors.Annotate(ierr, "not found on swarming").Tag(grpcutil.NotFoundTag).Err()
 				case http.StatusBadRequest:
-					err = errors.Annotate(ierr, "bad request").Tag(common.CodeParameterError).Err()
+					err = errors.Annotate(ierr, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 				}
 			}
 			return
@@ -829,13 +830,13 @@ func getSwarmingHost(c context.Context, host string) (string, error) {
 			return host, nil
 		}
 	}
-	return "", errors.New("unknown swarming host", common.CodeParameterError)
+	return "", errors.New("unknown swarming host", grpcutil.InvalidArgumentTag)
 }
 
 // GetBuild returns a milo build from a swarming task id.
 func GetBuild(c context.Context, host, taskId string) (*ui.MiloBuildLegacy, error) {
 	if taskId == "" {
-		return nil, errors.New("no swarming task id", common.CodeParameterError)
+		return nil, errors.New("no swarming task id", grpcutil.InvalidArgumentTag)
 	}
 
 	sf, err := NewProdService(c, host)
@@ -850,10 +851,10 @@ func GetBuild(c context.Context, host, taskId string) (*ui.MiloBuildLegacy, erro
 func GetLog(c context.Context, host, taskID, logname string) (text string, closed bool, err error) {
 	switch {
 	case taskID == "":
-		err = errors.New("no swarming task id", common.CodeParameterError)
+		err = errors.New("no swarming task id", grpcutil.InvalidArgumentTag)
 		return
 	case logname == "":
-		err = errors.New("no log name", common.CodeParameterError)
+		err = errors.New("no log name", grpcutil.InvalidArgumentTag)
 		return
 	}
 

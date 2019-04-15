@@ -30,12 +30,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/milo/api/buildbot"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -75,7 +75,7 @@ func fetchAnnotationProto(c context.Context, addr *types.StreamAddr) (*miloProto
 		return nil, errAnnotationNotFound
 	case err == coordinator.ErrNoAccess:
 		// Tag with Milo internal tags.
-		return nil, errors.Annotate(err, "getting logdog stream").Tag(common.CodeNoAccess).Err()
+		return nil, errors.Annotate(err, "getting logdog stream").Tag(grpcutil.PermissionDeniedTag).Err()
 	case err != nil:
 		return nil, err
 	case state.Desc.StreamType != logpb.StreamType_DATAGRAM:

@@ -25,7 +25,7 @@ import (
 
 // CLEmail implements Client interface.
 func (p *implementation) CLEmail(c context.Context, host string, changeNumber int64) (email string, err error) {
-	defer func() { err = tagError(c, err) }()
+	defer func() { err = markUnauthed(c, err) }()
 	changeInfo, err := p.clEmailAndProjectNoACLs(c, host, changeNumber)
 	if err != nil {
 		return

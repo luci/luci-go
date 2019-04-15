@@ -47,7 +47,7 @@ type LogOptions struct {
 
 // Log implements Client interface.
 func (p *implementation) Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) (commits []*gitpb.Commit, err error) {
-	defer func() { err = tagError(c, err) }()
+	defer func() { err = markUnauthed(c, err) }()
 
 	allowed, err := p.acls.IsAllowed(c, host, project)
 	switch {

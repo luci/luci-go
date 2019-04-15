@@ -30,11 +30,12 @@ import (
 	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/api/buildbot"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
+	"google.golang.org/grpc/codes"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -112,7 +113,7 @@ func TestBuild(t *testing.T) {
 					Internal:    true,
 				})
 				_, err := GetBuild(c, buildbot.BuildID{Master: "fake", Builder: "fake", Number: 1})
-				So(common.ErrorCodeIn(err), ShouldEqual, common.CodeUnauthorized)
+				So(grpcutil.Code(err), ShouldResemble, codes.Unauthenticated)
 			})
 		})
 	})

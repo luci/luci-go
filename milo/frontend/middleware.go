@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/data/text/sanitizehtml"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -502,9 +503,9 @@ func projectACLMiddleware(c *router.Context, next router.Handler) {
 		ErrorHandler(c, err)
 	case !allowed:
 		if auth.CurrentIdentity(c.Context) == identity.AnonymousIdentity {
-			ErrorHandler(c, errors.New("not logged in", common.CodeUnauthorized))
+			ErrorHandler(c, errors.New("not logged in", grpcutil.UnauthenticatedTag))
 		} else {
-			ErrorHandler(c, errors.New("no access to project", common.CodeNoAccess))
+			ErrorHandler(c, errors.New("no access to project", grpcutil.PermissionDeniedTag))
 		}
 	default:
 		c.Context = git.WithProject(c.Context, luciProject)

@@ -37,6 +37,7 @@ import (
 	cfgclientAccess "go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/api/config"
@@ -191,7 +192,7 @@ var ErrConsoleNotFound = errors.New("console not found")
 
 func init() {
 	// We need to wait until error codes have generated tags before initializing this error
-	ErrConsoleNotFound = errors.New("console not found", CodeNotFound)
+	ErrConsoleNotFound = errors.New("console not found", grpcutil.NotFoundTag)
 }
 
 // LuciConfigURL returns a user friendly URL that specifies where to view
