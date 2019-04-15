@@ -371,7 +371,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 			fullbr := br // Copy request
 			fullbr.Fields = fullBuildMask
 			b, err = client.GetBuild(c, &fullbr)
-			return
+			return common.TagGRPC(c, err)
 		}
 
 		// Fetch a small build with just a tiny bit of information.
