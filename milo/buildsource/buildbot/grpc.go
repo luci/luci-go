@@ -28,10 +28,10 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -67,7 +67,7 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 	logging.Debugf(c, "%s is requesting %s/%s/%d",
 		cu.Identity, req.Master, req.Builder, req.BuildNum)
 
-	if err := grpcCanAccessMaster(c, req.Master); err != nil {
+	if err := buildstore.CanAccessMaster(c, req.Master); err != nil {
 		return nil, err
 	}
 
@@ -76,8 +76,8 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 		Builder: req.Builder,
 		Number:  int(req.BuildNum),
 	})
-	switch {
-	case common.ErrorCodeIn(err) == common.CodeNoAccess:
+	switch code := grpcutil.Code(err); {
+	case code == codes.PermissionDenied, code == codes.NotFound:
 		return nil, errNotFoundGRPC
 	case err != nil:
 		return nil, err
@@ -120,7 +120,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	logging.Debugf(c, "%s is requesting %s/%s (limit %d)",
 		cu.Identity, req.Master, req.Builder, limit)
 
-	if err := grpcCanAccessMaster(c, req.Master); err != nil {
+	if err := buildstore.CanAccessMaster(c, req.Master); err != nil {
 		return nil, err
 	}
 
@@ -133,8 +133,8 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		q.Finished = buildstore.Yes
 	}
 	res, err := buildstore.GetBuilds(c, q)
-	switch {
-	case common.ErrorCodeIn(err) == common.CodeNoAccess:
+	switch code := grpcutil.Code(err); {
+	case code == codes.NotFound, code == codes.PermissionDenied:
 		return nil, errNotFoundGRPC
 	case err != nil:
 		return nil, err
@@ -170,14 +170,14 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	cu := auth.CurrentUser(c)
 	logging.Debugf(c, "%s is making a master request for %s", cu.Identity, req.Name)
 
-	if err := grpcCanAccessMaster(c, req.Name); err != nil {
+	if err := buildstore.CanAccessMaster(c, req.Name); err != nil {
 		return nil, err
 	}
 
 	master, err := buildstore.GetMaster(c, req.Name, true)
 
-	switch code := common.ErrorCodeIn(err); {
-	case code == common.CodeNotFound, code == common.CodeNoAccess:
+	switch code := grpcutil.Code(err); {
+	case code == codes.NotFound, code == codes.PermissionDenied:
 		return nil, errNotFoundGRPC
 	case err != nil:
 		return nil, err
@@ -230,16 +230,4 @@ func excludeDeprecatedFromMaster(m *buildbot.Master) {
 
 func excludeDeprecatedFromBuild(b *buildbot.Build) {
 	b.Slave = ""
-}
-
-func grpcCanAccessMaster(c context.Context, master string) error {
-	err := buildstore.CanAccessMaster(c, master)
-	switch common.ErrorCodeIn(err) {
-	case common.CodeNotFound:
-		return errNotFoundGRPC
-	case common.CodeUnauthorized:
-		return status.Errorf(codes.Unauthenticated, "Unauthenticated request")
-	default:
-		return err
-	}
 }

@@ -24,8 +24,8 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -61,13 +61,13 @@ func handleLUCIBuild(c *router.Context) error {
 	if strings.HasPrefix(numberOrId, "b") {
 		id, err := strconv.ParseInt(numberOrId[1:], 10, 64)
 		if err != nil {
-			return errors.Annotate(err, "bad build id").Tag(common.CodeParameterError).Err()
+			return errors.Annotate(err, "bad build id").Tag(grpcutil.InvalidArgumentTag).Err()
 		}
 		br.Id = int64(id)
 	} else {
 		number, err := strconv.Atoi(numberOrId)
 		if err != nil {
-			return errors.Annotate(err, "bad build number").Tag(common.CodeParameterError).Err()
+			return errors.Annotate(err, "bad build number").Tag(grpcutil.InvalidArgumentTag).Err()
 		}
 		br.BuildNumber = int32(number)
 		br.Builder = &buildbucketpb.BuilderID{
@@ -102,7 +102,7 @@ func redirectLUCIBuild(c *router.Context) error {
 	// Verify it is an int64.
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		return errors.Annotate(err, "invalid id").Tag(common.CodeParameterError).Err()
+		return errors.Annotate(err, "invalid id").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 	builder, number, err := buildbucket.GetBuilderID(c.Context, id)
 	if err != nil {

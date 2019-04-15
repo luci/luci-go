@@ -8,22 +8,18 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
-
-	"go.chromium.org/luci/milo/common"
+	"google.golang.org/grpc/codes"
 )
 
 // ErrorHandler renders an error page for the user.
 func ErrorHandler(c *router.Context, err error) {
-	// TODO(iannucci): tag/extract other information from error, like a link to the
-	// 'container'; i.e. a build may link to its builder, a builder to its
-	// master/bucket, etc.
-
-	code := common.ErrorCodeIn(err)
+	code := grpcutil.Code(err)
 	switch code {
-	case common.CodeUnauthorized:
+	case codes.Unauthenticated:
 		loginURL, err := auth.LoginURL(c.Context, c.Request.URL.RequestURI())
 		if err == nil {
 			http.Redirect(c.Writer, c.Request, loginURL, http.StatusFound)
@@ -31,13 +27,13 @@ func ErrorHandler(c *router.Context, err error) {
 		}
 		errors.Log(
 			c.Context, errors.Annotate(err, "Failed to retrieve login URL").Err())
-	case common.CodeOK:
+	case codes.OK:
 		// All good.
 	default:
 		errors.Log(c.Context, err)
 	}
 
-	status := code.HTTPStatus()
+	status := grpcutil.CodeStatus(code)
 	c.Writer.WriteHeader(status)
 	templates.MustRender(c.Context, c.Writer, "pages/error.html", templates.Args{
 		"Code":    status,
