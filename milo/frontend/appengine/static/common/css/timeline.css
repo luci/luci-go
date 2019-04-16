@@ -17,6 +17,14 @@
   padding: 5px;
 }
 
+.group-title > .title {
+  display: inline-block;
+  white-space: nowrap;
+  max-width: 50em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /*
   TODO(dburger): these status styles could come from default.css but are
   apparently overridden by styles from .vis-item. This could likely be
