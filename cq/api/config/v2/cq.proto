@@ -207,7 +207,7 @@ message Verifiers {
     RetryConfig retry_config = 2;
 
     message Builder {
-      // Next field number: 8
+      // Next field number: 9
 
       // Required. Name of the builder as <project>/<bucket>/<builder>
       //
@@ -336,6 +336,10 @@ message Verifiers {
       //     Note, in this case location_regexp defaults to ".*".
       repeated string location_regexp = 6;
       repeated string location_regexp_exclude = 7;
+
+      // If set, this builder will only be triggered when the CL owner is listed
+      // here.
+      repeated string owners_whitelist_group = 8;
     }
 
     message EquivalentBuilder {
