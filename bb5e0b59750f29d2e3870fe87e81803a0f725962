@@ -187,6 +187,30 @@
       "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ef51b739_c54f8f10",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-16T20:11:09Z",
+      "side": 1,
+      "message": "i mean that I think this can be simplified to just strings.HasPrefix(key.path, \"..\")",
+      "parentUuid": "264ce3a1_9e194279",
+      "range": {
+        "startLine": 291,
+        "startChar": 49,
+        "endLine": 291,
+        "endChar": 53
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
