@@ -9,20 +9,27 @@ package instances;
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
+// A disk associated with a GCE instance.
+message Disk {
+  // The image associated with this disk.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/images/list.
+  string image = 1;
+}
+
 // A GCE instance configured to exist.
 // The instance actually exists iff the created timestamp is set.
 message Instance {
   // The ID of the VM this instance was created from.
   string id = 1;
 
-  // The hostname this instance is configured with.
+  // The hostname associated with this instance.
   string hostname = 2;
 
-  // The zone this instance is configured for.
+  // The zone associated with this instance.
   // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
   string zone = 3;
 
-  // The GCP project this instance is configured for.
+  // The GCP project associated with this instance.
   string project = 4;
 
   // The timestamp when this instance was created.
@@ -45,6 +52,12 @@ message Instance {
   // Whether this instance is drained or not.
   // A drained instance will be safely deleted regardless of lifetime.
   bool drained = 10;
+
+  // The config revision associated with this instance.
+  string config_revision = 11;
+
+  // The disks associated with this instance.
+  repeated Disk disks = 12;
 }
 
 // A request to delete an instance.

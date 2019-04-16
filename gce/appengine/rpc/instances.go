@@ -70,23 +70,30 @@ func (*Instances) Delete(c context.Context, req *instances.DeleteRequest) (*empt
 // *model.VM.
 func toInstance(vm *model.VM) *instances.Instance {
 	inst := &instances.Instance{
-		Id:       vm.ID,
-		Drained:  vm.Drained,
-		Hostname: vm.Hostname,
-		Lifetime: vm.Lifetime,
-		Project:  vm.Attributes.Project,
-		Swarming: vm.Swarming,
-		Timeout:  vm.Timeout,
-		Zone:     vm.Attributes.Zone,
+		Id:             vm.ID,
+		ConfigRevision: vm.Revision,
+		Disks:          make([]*instances.Disk, len(vm.Attributes.Disk)),
+		Drained:        vm.Drained,
+		Hostname:       vm.Hostname,
+		Lifetime:       vm.Lifetime,
+		Project:        vm.Attributes.Project,
+		Swarming:       vm.Swarming,
+		Timeout:        vm.Timeout,
+		Zone:           vm.Attributes.Zone,
 	}
-	if vm.Connected > 0 {
-		inst.Connected = &timestamp.Timestamp{
-			Seconds: vm.Connected,
+	for i, d := range vm.Attributes.Disk {
+		inst.Disks[i] = &instances.Disk{
+			Image: d.Image,
 		}
 	}
 	if vm.Created > 0 {
 		inst.Created = &timestamp.Timestamp{
 			Seconds: vm.Created,
+		}
+	}
+	if vm.Connected > 0 {
+		inst.Connected = &timestamp.Timestamp{
+			Seconds: vm.Connected,
 		}
 	}
 	return inst

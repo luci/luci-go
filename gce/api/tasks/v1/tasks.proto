@@ -54,10 +54,12 @@ message CreateVM {
   int64 lifetime = 4;
   // The prefix to use when naming this VM.
   string prefix = 5;
+  // The config revision this VM is created from.
+  string revision = 6;
   // The hostname of the Swarming server this VM connects to.
-  string swarming = 6;
+  string swarming = 7;
   // The timeout of the VM in seconds.
-  int64 timeout = 7;
+  int64 timeout = 8;
 }
 
 // A task to expand a config.
