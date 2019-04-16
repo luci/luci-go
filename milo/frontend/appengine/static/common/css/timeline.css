@@ -18,6 +18,18 @@
 }
 
 /*
+  Limit the group step title width to 50em, otherwise the items may
+  be pushed off the right side of the screen and be inaccessible.
+*/
+.group-title > .title {
+  display: inline-block;
+  white-space: nowrap;
+  max-width: 50em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
   TODO(dburger): these status styles could come from default.css but are
   apparently overridden by styles from .vis-item. This could likely be
   fixed by tweaking the style in default.css to get higher specificity.
