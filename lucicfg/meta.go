@@ -36,7 +36,6 @@ import (
 // See @stdlib//internal/lucicfg.star for full meaning of fields.
 type Meta struct {
 	ConfigServiceHost string   `json:"config_service_host"` // LUCI config host name
-	ConfigSet         string   `json:"config_set"`          // TODO(vadimsh): Demote to just a CLI flag.
 	ConfigDir         string   `json:"config_dir"`          // output directory to place generated files or '-' for stdout
 	TrackedFiles      []string `json:"tracked_files"`       // e.g. ["*.cfg", "!*-dev.cfg"]
 	FailOnWarnings    bool     `json:"fail_on_warnings"`    // true to treat validation warnings as errors
@@ -53,7 +52,6 @@ type Meta struct {
 func (m *Meta) Log(ctx context.Context) {
 	logging.Debugf(ctx, "Meta config:")
 	logging.Debugf(ctx, "  config_service_host = %q", m.ConfigServiceHost)
-	logging.Debugf(ctx, "  config_set = %q", m.ConfigSet)
 	logging.Debugf(ctx, "  config_dir = %q", m.ConfigDir)
 	logging.Debugf(ctx, "  tracked_files = %v", m.TrackedFiles)
 	logging.Debugf(ctx, "  fail_on_warnings = %v", m.FailOnWarnings)
@@ -73,7 +71,6 @@ func (m *Meta) RebaseConfigDir(root string) {
 func (m *Meta) AddFlags(fs *flag.FlagSet) {
 	m.fs = fs
 	fs.StringVar(&m.ConfigServiceHost, "config-service-host", m.ConfigServiceHost, "Hostname of a LUCI config service to use for validation.")
-	fs.StringVar(&m.ConfigSet, "config-set", m.ConfigSet, "Name of the config set to validate against.")
 	fs.StringVar(&m.ConfigDir, "config-dir", m.ConfigDir,
 		`A directory to place generated configs into (relative to cwd if given as a
 flag otherwise relative to the main script). If '-', generated configs are just
@@ -162,7 +159,6 @@ func (m *Meta) touch(ptr interface{}) {
 func (m *Meta) fieldsMap() map[string]interface{} {
 	return map[string]interface{}{
 		"config_service_host": &m.ConfigServiceHost,
-		"config_set":          &m.ConfigSet,
 		"config_dir":          &m.ConfigDir,
 		"tracked_files":       &m.TrackedFiles,
 		"fail_on_warnings":    &m.FailOnWarnings,
@@ -170,17 +166,10 @@ func (m *Meta) fieldsMap() map[string]interface{} {
 }
 
 // setField sets the field k to v.
-//
-// If untouched is true, will do it only if k wasn't modified before. Silently
-// does nothing if it was.
-func (m *Meta) setField(k string, v starlark.Value, untouched bool) (err error) {
+func (m *Meta) setField(k string, v starlark.Value) (err error) {
 	ptr := m.fieldsMap()[k]
 	if ptr == nil {
 		return fmt.Errorf("set_meta: no such meta key %q", k)
-	}
-
-	if untouched && m.WasTouched(k) {
-		return nil
 	}
 
 	// On success, mark the field as modified.
@@ -237,23 +226,6 @@ func init() {
 		if err := call.unpack(2, &k, &v); err != nil {
 			return nil, err
 		}
-		return starlark.None, call.State.Meta.setField(k.GoString(), v, false)
-	})
-
-	// set_meta_default(k, v) sets the value of the corresponding field in Meta,
-	// but only if it wasn't set before.
-	//
-	// Unlike set_meta, which is almost directly exposed through
-	// lucicfg.config(...), set_meta_default is currently a private API, used only
-	// to set the default config set name based on luci.project(name=...). It is
-	// expected that no one will really need to use set_meta_default, so it's not
-	// worth exporting and documenting it.
-	declNative("set_meta_default", func(call nativeCall) (starlark.Value, error) {
-		var k starlark.String
-		var v starlark.Value
-		if err := call.unpack(2, &k, &v); err != nil {
-			return nil, err
-		}
-		return starlark.None, call.State.Meta.setField(k.GoString(), v, true)
+		return starlark.None, call.State.Meta.setField(k.GoString(), v)
 	})
 }

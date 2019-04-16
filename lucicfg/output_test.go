@@ -134,4 +134,83 @@ func TestOutput(t *testing.T) {
 			"b": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
 		})
 	})
+
+	Convey("ConfigSets", t, func() {
+		out := Output{
+			Data: map[string][]byte{
+				"f1":          {0},
+				"dir1/f2":     {1},
+				"dir1/f3":     {2},
+				"dir1/sub/f4": {3},
+				"dir2/f5":     {4},
+			},
+			Roots: map[string]string{},
+		}
+
+		Convey("No roots", func() {
+			So(out.ConfigSets(), ShouldHaveLength, 0)
+		})
+
+		Convey("Empty set", func() {
+			out.Roots["set"] = "zzz"
+			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+				{
+					Name: "set",
+					Data: map[string][]byte{},
+				},
+			})
+		})
+
+		Convey("`.` root", func() {
+			out.Roots["set"] = "."
+			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+				{
+					Name: "set",
+					Data: out.Data, // everything
+				},
+			})
+		})
+
+		Convey("Subdir root", func() {
+			out.Roots["set"] = "dir1/."
+			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+				{
+					Name: "set",
+					Data: map[string][]byte{
+						"f2":     {1},
+						"f3":     {2},
+						"sub/f4": {3},
+					},
+				},
+			})
+		})
+
+		Convey("Multiple roots", func() {
+			out.Roots["set1"] = "dir1"
+			out.Roots["set2"] = "dir2"
+			out.Roots["set3"] = "dir1/sub" // intersecting sets are OK
+			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+				{
+					Name: "set1",
+					Data: map[string][]byte{
+						"f2":     {1},
+						"f3":     {2},
+						"sub/f4": {3},
+					},
+				},
+				{
+					Name: "set2",
+					Data: map[string][]byte{
+						"f5": {4},
+					},
+				},
+				{
+					Name: "set3",
+					Data: map[string][]byte{
+						"f4": {3},
+					},
+				},
+			})
+		})
+	})
 }

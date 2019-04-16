@@ -125,9 +125,6 @@ You may also optionally set +x flag on it, but this is not required.
 		}
 	}
 
-	// TODO(vadimsh): Remove.
-	state.Output.HackyConfigSet = meta.ConfigSet
-
 	return state.Output, nil
 }
 
