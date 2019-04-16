@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "77976b45_f5d5c516",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1243399
+      },
+      "writtenOn": "2019-04-16T16:26:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5e6a49d6_2b0c1f93",
+      "range": {
+        "startLine": 340,
+        "startChar": 39,
+        "endLine": 340,
+        "endChar": 40
+      },
+      "revId": "7ae3c52136ef538c9e7f3a4ba6f7442931802737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e136abe8_1811deaa",
         "filename": "cq/api/config/v2/cq.proto",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "7ae3c52136ef538c9e7f3a4ba6f7442931802737",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "341e8d0f_fc2cdb2a",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1243399
+      },
+      "writtenOn": "2019-04-16T16:26:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e136abe8_1811deaa",
+      "range": {
+        "startLine": 341,
+        "startChar": 22,
+        "endLine": 341,
+        "endChar": 28
+      },
+      "revId": "7ae3c52136ef538c9e7f3a4ba6f7442931802737",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
