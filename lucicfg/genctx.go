@@ -38,7 +38,6 @@ func newGenCtx() *genCtx {
 	}
 	ctx.Struct = *starlarkstruct.FromStringDict(starlark.String("gen_ctx"), starlark.StringDict{
 		"output":             ctx.output,
-		"config_set":         ctx.output, // TODO(vadimsh): get rid of this alias
 		"declare_config_set": starlark.NewBuiltin("declare_config_set", ctx.declareConfigSetImpl),
 	})
 	return ctx

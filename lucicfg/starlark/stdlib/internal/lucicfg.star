@@ -65,7 +65,6 @@ def _check_version(min, message=None):
 def _config(
       *,
       config_service_host=None,
-      config_set=None,
       config_dir=None,
       tracked_files=None,
       fail_on_warnings=None
@@ -88,11 +87,6 @@ def _config(
     config_service_host: a hostname of a LUCI Config Service to send validation
         requests to. Default is whatever is hardcoded in `lucicfg` binary,
         usually `luci-config.appspot.com`.
-    config_set: name of the config set in LUCI Config Service to use for
-        validation. Default is `projects/<name>` where `<name>` is taken from
-        luci.project(...) rule. If there's no such rule, the default is "",
-        meaning the generated config will not be validated via LUCI Config
-        Service.
     config_dir: a directory to place generated configs into, relative to the
         directory that contains the entry point \*.star file. `..` is allowed.
         If set via `-config-dir` command line flag, it is relative to the
@@ -125,8 +119,6 @@ def _config(
   """
   if config_service_host != None:
     __native__.set_meta('config_service_host', config_service_host)
-  if config_set != None:
-    __native__.set_meta('config_set', config_set)
   if config_dir != None:
     __native__.set_meta('config_dir', config_dir)
   if tracked_files != None:
