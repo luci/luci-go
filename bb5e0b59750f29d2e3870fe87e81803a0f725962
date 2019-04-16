@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4bce5f4b_1a9b4fac",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-16T18:51:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c1ee497_73172e2c",
+      "range": {
+        "startLine": 180,
+        "startChar": 0,
+        "endLine": 180,
+        "endChar": 4
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18f2f2cd_9704e53b",
         "filename": "starlark/interpreter/interpreter.go",
         "patchSetId": 1
@@ -71,6 +95,54 @@
     },
     {
       "key": {
+        "uuid": "9e7aa5f9_fbd86604",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-16T18:51:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "34f63c10_36a82bda",
+      "range": {
+        "startLine": 282,
+        "startChar": 57,
+        "endLine": 282,
+        "endChar": 59
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cddc435d_862b2dd0",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-16T18:51:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18f2f2cd_9704e53b",
+      "range": {
+        "startLine": 282,
+        "startChar": 68,
+        "endLine": 282,
+        "endChar": 72
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2dfab287_6acc1225",
         "filename": "starlark/interpreter/interpreter.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "264ce3a1_9e194279",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-16T18:51:53Z",
+      "side": 1,
+      "message": "what do you mean? It is ok to load(\u0027../abc.star\u0027) in general (e.g. from //subdir/def.star file to load //abc.star). It is not ok when the resolved \"absolute\" path starts with \u0027../\u0027 (it means it points to an outside of the package).",
+      "parentUuid": "2dfab287_6acc1225",
+      "range": {
+        "startLine": 291,
+        "startChar": 49,
+        "endLine": 291,
+        "endChar": 53
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
