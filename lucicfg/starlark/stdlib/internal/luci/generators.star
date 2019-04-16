@@ -138,10 +138,6 @@ def gen_project_cfg(ctx):
   # "projects/<name>" config set (so declare that it spans all configs).
   ctx.declare_config_set('projects/%s' % proj.props.name, '.')
 
-  # TODO(vadimsh): Remove the call below once 'declare_config_set' is
-  # fully implemented and 'config_set' meta option is removed.
-  __native__.set_meta_default('config_set', 'projects/%s' % proj.props.name)
-
   # Find all PROJECT_CONFIGS_READER role entries.
   access = []
   for a in filter_acls(get_project_acls(), [acl.PROJECT_CONFIGS_READER]):

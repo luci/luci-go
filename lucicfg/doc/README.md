@@ -453,7 +453,6 @@ lucicfg.check_version('1.5.5')
 lucicfg.config(
     # Optional arguments.
     config_service_host = None,
-    config_set = None,
     config_dir = None,
     tracked_files = None,
     fail_on_warnings = None,
@@ -479,7 +478,6 @@ assigning to a variable.
 #### Arguments {#lucicfg.config-args}
 
 * **config_service_host**: a hostname of a LUCI Config Service to send validation requests to. Default is whatever is hardcoded in `lucicfg` binary, usually `luci-config.appspot.com`.
-* **config_set**: name of the config set in LUCI Config Service to use for validation. Default is `projects/<name>` where `<name>` is taken from [luci.project(...)](#luci.project) rule. If there's no such rule, the default is "", meaning the generated config will not be validated via LUCI Config Service.
 * **config_dir**: a directory to place generated configs into, relative to the directory that contains the entry point \*.star file. `..` is allowed. If set via `-config-dir` command line flag, it is relative to the current working directory. Will be created if absent. If `-`, the configs are just printed to stdout in a format useful for debugging. Default is "generated".
 * **tracked_files**: a list of glob patterns that define a subset of files under `config_dir` that are considered generated. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file under `config_dir` is considered tracked if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, single positive `**/*` glob is implied as well. `tracked_files` can be used to limit what files are actually emitted: if this set is not empty, only files that are in this set will be actually written to the disk (and all other files are discarded). This is beneficial when `lucicfg` is used to generate only a subset of config files, e.g. during the migration from handcrafted to generated configs. Knowing the tracked files set is also important when some generated file disappears from `lucicfg` output: it must be deleted from the disk as well. To do this, `lucicfg` needs to know what files are safe to delete. If `tracked_files` is empty (default), `lucicfg` will save all generated files and will never delete any file (in this case it is responsibility of the caller to make sure no stale output remains).
 * **fail_on_warnings**: if set to True treat validation warnings as errors. Default is False (i.e. warnings do to cause the validation to fail). If set to True via `lucicfg.config` and you want to override it to False via command line flags use `-fail-on-warnings=false`.

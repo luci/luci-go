@@ -23,8 +23,10 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"go.starlark.net/starlark"
@@ -48,29 +50,41 @@ type Output struct {
 	//
 	// Roots are given as slash-separated paths relative to the output root, e.g.
 	// '.' matches ALL output files.
-	//
-	// TODO(vadimsh): Currently ignored.
 	Roots map[string]string
-
-	HackyConfigSet string // exists very temporary during the refactoring
 }
 
 // ConfigSets partitions this output into 0 or more config sets based on Roots.
 func (o Output) ConfigSets() []ConfigSet {
-	// TODO(vadimsh): Implement properly.
-	if o.HackyConfigSet == "" {
-		return nil
+	names := make([]string, 0, len(o.Roots))
+	for name := range o.Roots {
+		names = append(names, name)
 	}
-	data := make(map[string][]byte, len(o.Data))
-	for k, v := range o.Data {
-		data[k] = v
+	sort.Strings(names) // order is important for logs
+
+	cs := make([]ConfigSet, len(names))
+	for i, nm := range names {
+		root := o.Roots[nm]
+
+		// Normalize in preparation for prefix matching.
+		root = path.Clean(root)
+		if root == "." {
+			root = "" // match EVERYTHING
+		} else {
+			root = root + "/" // match only what's under 'root/...'
+		}
+
+		files := map[string][]byte{}
+		for f, body := range o.Data {
+			f = path.Clean(f)
+			if strings.HasPrefix(f, root) {
+				files[f[len(root):]] = body
+			}
+		}
+
+		cs[i] = ConfigSet{Name: nm, Data: files}
 	}
-	return []ConfigSet{
-		{
-			Name: o.HackyConfigSet,
-			Data: data,
-		},
-	}
+
+	return cs
 }
 
 // Compare compares files on disk to what's in the output.
