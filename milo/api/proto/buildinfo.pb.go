@@ -13,6 +13,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	milo "go.chromium.org/luci/common/proto/milo"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -442,6 +444,14 @@ func (c *buildInfoClient) Get(ctx context.Context, in *BuildInfoRequest, opts ..
 // BuildInfoServer is the server API for BuildInfo service.
 type BuildInfoServer interface {
 	Get(context.Context, *BuildInfoRequest) (*BuildInfoResponse, error)
+}
+
+// UnimplementedBuildInfoServer can be embedded to have forward compatible implementations.
+type UnimplementedBuildInfoServer struct {
+}
+
+func (*UnimplementedBuildInfoServer) Get(ctx context.Context, req *BuildInfoRequest) (*BuildInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
 
 func RegisterBuildInfoServer(s prpc.Registrar, srv BuildInfoServer) {
