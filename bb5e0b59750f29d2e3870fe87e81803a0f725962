@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c1ee497_73172e2c",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-16T04:56:21Z",
+      "side": 1,
+      "message": "e.g.",
+      "range": {
+        "startLine": 180,
+        "startChar": 0,
+        "endLine": 180,
+        "endChar": 4
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18f2f2cd_9704e53b",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-16T04:56:21Z",
+      "side": 1,
+      "message": "start",
+      "range": {
+        "startLine": 282,
+        "startChar": 68,
+        "endLine": 282,
+        "endChar": 72
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34f63c10_36a82bda",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-16T04:56:21Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 282,
+        "startChar": 57,
+        "endLine": 282,
+        "endChar": 59
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dfab287_6acc1225",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-16T04:56:21Z",
+      "side": 1,
+      "message": "can prefix .. be ever valid?",
+      "range": {
+        "startLine": 291,
+        "startChar": 49,
+        "endLine": 291,
+        "endChar": 53
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
