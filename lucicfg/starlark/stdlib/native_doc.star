@@ -45,7 +45,7 @@ def __load(module, *args, **kwargs):
 
   Args:
     module: module to load, i.e. `//path/within/current/package.star` or
-        `@<pkg>//path/within/pkg.star`. Required.
+        `@<pkg>//path/within/pkg.star` or `./relative/path.star`. Required.
   """
 
 
@@ -57,7 +57,7 @@ def exec(module):
 
   Args:
     module: module to execute, i.e. `//path/within/current/package.star` or
-        `@<pkg>//path/within/pkg.star`. Required.
+        `@<pkg>//path/within/pkg.star` or `./relative/path.star`. Required.
 
   Returns:
     A struct with all exported symbols of the executed module.

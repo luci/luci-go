@@ -174,10 +174,10 @@ not required to use `lucicfg` effectively.
 
 Each individual Starlark file is called a module. Several modules under the same
 root directory form a package. Modules within a single package can refer to each
-other (in load(...) and [exec(...)](#exec)) using their root-relative paths that
-start with `//`. The root of the main package is taken to be the directory that
-contains the entry point script (usually `main.star`) passed to `lucicfg`, i.e.
-`main.star` itself can be referred to as `//main.star`.
+other (in load(...) and [exec(...)](#exec)) using their relative or absolute (if
+start with `//`) paths. The root of the main package is taken to be a directory
+that contains the entry point script (usually `main.star`) passed to `lucicfg`,
+i.e. `main.star` itself can be referred to as `//main.star`.
 
 
 
@@ -2309,7 +2309,7 @@ interacts with [exec(...)](#exec).
 
 #### Arguments {#__load-args}
 
-* **module**: module to load, i.e. `//path/within/current/package.star` or `@<pkg>//path/within/pkg.star`. Required.
+* **module**: module to load, i.e. `//path/within/current/package.star` or `@<pkg>//path/within/pkg.star` or `./relative/path.star`. Required.
 
 
 
@@ -2329,7 +2329,7 @@ interacts with [exec(...)](#exec).
 
 #### Arguments {#exec-args}
 
-* **module**: module to execute, i.e. `//path/within/current/package.star` or `@<pkg>//path/within/pkg.star`. Required.
+* **module**: module to execute, i.e. `//path/within/current/package.star` or `@<pkg>//path/within/pkg.star` or `./relative/path.star`. Required.
 
 
 #### Returns  {#exec-returns}

@@ -32,7 +32,7 @@
 // not call 'exec'. Script-like modules may use both 'load' and 'exec'.
 //
 // Modules within a single package can refer to each other (in 'load' and
-// 'exec') using their root-relative paths that start with "//".
+// 'exec') using their relative or absolute (if start with "//") paths.
 //
 // Packages also have identifiers, though they are local to the interpreter
 // (e.g. not defined anywhere in the package itself). For that reason they are
@@ -276,19 +276,52 @@ func (key moduleKey) String() string {
 	return pkg + "//" + key.path
 }
 
-// makeModuleKey takes '[@pkg]//path', parses and cleans it up a bit.
+// makeModuleKey takes '[@pkg]//<path>' or '<path>', parses and normalizes it.
 //
-// Does some light validation. Module loaders are expected to validate module
-// paths more rigorously, since they interpret them anyway.
+// Converts the path to be relative to the package root. Does some light
+// validation, in particular checking the resulting path is doesn't star with
+// '../'. Module loaders are expected to validate module paths more rigorously
+// (since they interpret them anyway).
 //
-// If 'th' is not nil, it is used to get the name of the currently executing
-// package if '@pkg' part in 'ref' is omitted.
+// 'th' is used to get the name of the currently executing package and a path to
+// the currently executing module within it. It is required if 'ref' is not
+// given as an absolute path (i.e. does NOT look like '@pkg//path').
 func makeModuleKey(ref string, th *starlark.Thread) (key moduleKey, err error) {
+	defer func() {
+		if err == nil && (strings.HasPrefix(key.path, "../") || key.path == "..") {
+			err = errors.New("outside the package root")
+		}
+	}()
+
+	// 'th' can be nil here if makeModuleKey is called by LoadModule or
+	// ExecModule: they are entry points into Starlark code, there's no thread
+	// yet when they start.
+	var current *moduleKey
+	if th != nil {
+		if modKey, ok := th.Local(threadModKey).(moduleKey); ok {
+			current = &modKey
+		}
+	}
+
+	// Absolute paths start with '//' or '@'. Everything else is a relative path.
 	hasPkg := strings.HasPrefix(ref, "@")
+	isAbs := hasPkg || strings.HasPrefix(ref, "//")
+
+	if !isAbs {
+		if current == nil {
+			err = errors.New("can't resolve relative module path: no current module information in thread locals")
+		} else {
+			key = moduleKey{
+				pkg:  current.pkg,
+				path: path.Join(path.Dir(current.path), ref),
+			}
+		}
+		return
+	}
 
 	idx := strings.Index(ref, "//")
 	if idx == -1 || (!hasPkg && idx != 0) {
-		err = errors.New("a module path should be either '//<path>' or '@<package>//<path>'")
+		err = errors.New("a module path should be either '//<path>', '<path>' or '@<package>//<path>'")
 		return
 	}
 
@@ -301,11 +334,11 @@ func makeModuleKey(ref string, th *starlark.Thread) (key moduleKey, err error) {
 	key.path = path.Clean(ref[idx+2:])
 
 	// Grab the package name from thread locals, if given.
-	if !hasPkg && th != nil {
-		if modKey, ok := th.Local(threadModKey).(moduleKey); ok {
-			key.pkg = modKey.pkg
-		} else {
+	if !hasPkg {
+		if current == nil {
 			err = errors.New("no current package name in thread locals")
+		} else {
+			key.pkg = current.pkg
 		}
 	}
 	return
@@ -441,23 +474,9 @@ func (intr *Interpreter) LoadSource(th *starlark.Thread, ref string) (string, er
 			"resolve the file reference), only threads that do 'load' and 'exec' can call this function")
 	}
 
-	var target moduleKey
-	if strings.HasPrefix(ref, "//") || strings.HasPrefix(ref, "@") {
-		// An absolute path (within the same or some other package).
-		var err error
-		if target, err = makeModuleKey(ref, th); err != nil {
-			return "", err
-		}
-	} else {
-		// A path relative to the currently executing module.
-		//
-		// Note that threadModKey is guaranteed to be set at this point per
-		// GetThreadKind check above.
-		running := th.Local(threadModKey).(moduleKey)
-		target = moduleKey{
-			pkg:  running.pkg,
-			path: path.Join(path.Dir(running.path), ref),
-		}
+	target, err := makeModuleKey(ref, th)
+	if err != nil {
+		return "", err
 	}
 
 	dict, src, err := intr.invokeLoader(target)

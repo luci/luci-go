@@ -31,39 +31,48 @@ import (
 func TestMakeModuleKey(t *testing.T) {
 	t.Parallel()
 
+	th := &starlark.Thread{}
+	th.SetLocal(threadModKey, moduleKey{pkg: "cur_pkg", path: "dir/cur.star"})
+
 	Convey("Works", t, func() {
-		k, err := makeModuleKey("//some/mod", nil)
+		k, err := makeModuleKey("//some/mod", th)
 		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"", "some/mod"})
+		So(k, ShouldResemble, moduleKey{"cur_pkg", "some/mod"})
 
-		k, err = makeModuleKey("//some/mod/../blah", nil)
+		k, err = makeModuleKey("//some/mod/../blah", th)
 		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"", "some/blah"})
+		So(k, ShouldResemble, moduleKey{"cur_pkg", "some/blah"})
 
-		k, err = makeModuleKey("//../../", nil)
+		k, err = makeModuleKey("some/mod", th)
 		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"", "../.."})
+		So(k, ShouldResemble, moduleKey{"cur_pkg", "dir/some/mod"})
 
+		k, err = makeModuleKey("./mod", th)
+		So(err, ShouldBeNil)
+		So(k, ShouldResemble, moduleKey{"cur_pkg", "dir/mod"})
+
+		k, err = makeModuleKey("../mod", th)
+		So(err, ShouldBeNil)
+		So(k, ShouldResemble, moduleKey{"cur_pkg", "mod"})
+
+		// For absolute paths the thread is optional.
 		k, err = makeModuleKey("@pkg//some/mod", nil)
-		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"pkg", "some/mod"})
-
-		// Picks up default package name from the thread, if given.
-		th := starlark.Thread{}
-		th.SetLocal(threadModKey, moduleKey{pkg: "pkg", path: "zzz"})
-		k, err = makeModuleKey("//some/mod", &th)
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, moduleKey{"pkg", "some/mod"})
 	})
 
 	Convey("Fails", t, func() {
-		_, err := makeModuleKey("some/mod", nil)
+		_, err := makeModuleKey("@//mod", th)
 		So(err, ShouldNotBeNil)
 
-		_, err = makeModuleKey("some//mod", nil)
+		_, err = makeModuleKey("@mod", th)
 		So(err, ShouldNotBeNil)
 
-		_, err = makeModuleKey("@//mod", nil)
+		// Imports outside of the package root are forbidden.
+		_, err = makeModuleKey("//..", th)
+		So(err, ShouldNotBeNil)
+
+		_, err = makeModuleKey("../../mod", th)
 		So(err, ShouldNotBeNil)
 
 		// If the thread is given, it must have the package name.
@@ -136,13 +145,22 @@ func TestInterpreter(t *testing.T) {
 		So(err, ShouldErrLike, `cannot load @pkg//some.star: no such package`)
 	})
 
-	Convey("Bad module reference", t, func() {
+	Convey("Malformed module reference", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `load("@@", "some")`,
+			},
+		})
+		So(err, ShouldErrLike, `cannot load @@: a module path should be either '//<path>', '<path>' or '@<package>//<path>'`)
+	})
+
+	Convey("Double dot module reference", t, func() {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `load("../some.star", "some")`,
 			},
 		})
-		So(err, ShouldErrLike, `cannot load ../some.star: a module path should be either '//<path>' or '@<package>//<path>'`)
+		So(err, ShouldErrLike, `cannot load ../some.star: outside the package root`)
 	})
 
 	Convey("Predeclared are exposed to stdlib and user scripts", t, func() {
@@ -258,6 +276,20 @@ Error: invalid call of non-function (NoneType)`)
 		So(logs, ShouldResemble, []string{
 			"[//execed.star:2] hi",
 			"[//main.star:3] 123",
+		})
+	})
+
+	Convey("Exec using relative path", t, func() {
+		_, logs, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star":  `exec("//sub/1.star")`,
+				"sub/1.star": `exec("./2.star")`,
+				"sub/2.star": `print('hi')`,
+			},
+		})
+		So(err, ShouldBeNil)
+		So(logs, ShouldResemble, []string{
+			"[//sub/2.star:1] hi",
 		})
 	})
 
