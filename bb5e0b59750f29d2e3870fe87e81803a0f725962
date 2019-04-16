@@ -211,6 +211,30 @@
       "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4540b961_9a18e26f",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-16T20:16:59Z",
+      "side": 1,
+      "message": "It is possible to have a directory (or file) named e.g. \"..blah\". load(\"..blah.star\") is a valid statement.",
+      "parentUuid": "ef51b739_c54f8f10",
+      "range": {
+        "startLine": 291,
+        "startChar": 49,
+        "endLine": 291,
+        "endChar": 53
+      },
+      "revId": "bb5e0b59750f29d2e3870fe87e81803a0f725962",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
