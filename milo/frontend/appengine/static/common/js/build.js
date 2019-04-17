@@ -44,7 +44,7 @@ $(document).ready(function() {
     function groupTemplater(group, element, data) {
       return `
         <div class="group-title ${group.data.statusClassName}">
-          ${group.data.label}
+          <span class="title">${group.data.label}</span>
           <span class="duration">( ${group.data.duration} )</span>
         </div>`;
     }
