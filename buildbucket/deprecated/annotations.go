@@ -128,7 +128,7 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann
 
 	// Unlike annotation step names, buildbucket step names must be unique.
 	// Choose a name.
-	stripPrefix := strings.TrimSuffix(stepPrefix, StepSep) + "."
+	stripPrefix := strings.Replace(strings.TrimSuffix(stepPrefix, StepSep), "|", ".", -1) + "."
 	baseName := stepPrefix + strings.TrimPrefix(ann.Name, stripPrefix)
 	bb.Name = baseName
 	for i := 2; p.steps[bb.Name] != nil; i++ {
