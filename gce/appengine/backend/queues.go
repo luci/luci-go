@@ -187,6 +187,7 @@ func createVM(c context.Context, payload proto.Message) error {
 		Index:    task.Index,
 		Lifetime: task.Lifetime,
 		Prefix:   task.Prefix,
+		Revision: task.Revision,
 		Swarming: task.Swarming,
 		Timeout:  task.Timeout,
 	}
@@ -248,6 +249,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 				Index:      i,
 				Lifetime:   cfg.Lifetime.GetSeconds(),
 				Prefix:     cfg.Prefix,
+				Revision:   cfg.Revision,
 				Swarming:   cfg.Swarming,
 				Timeout:    cfg.Timeout.GetSeconds(),
 			},

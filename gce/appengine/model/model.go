@@ -100,6 +100,8 @@ type VM struct {
 	Lifetime int64 `gae:"lifetime"`
 	// Prefix is the prefix to use when naming the GCE instance.
 	Prefix string `gae:"prefix"`
+	// Revision is the config revision this VM was created from.
+	Revision string `gae:"revision"`
 	// Swarming is hostname of the Swarming server the GCE instance connects to.
 	Swarming string `gae:"swarming"`
 	// Timeout is the number of seconds the GCE instance has to connect to Swarming.
