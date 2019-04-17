@@ -19,6 +19,9 @@ package lucicfg
 // type information.
 
 import (
+	"github.com/golang/protobuf/descriptor"
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/starlark/interpreter"
 
 	_ "github.com/golang/protobuf/ptypes/any"
@@ -41,7 +44,7 @@ import (
 )
 
 // Mapping from a proto module path on the Starlark side to its proto package
-// name and path within luci-go repository.
+// name, a path within GOPATH, and an optional link to schema docs.
 //
 // Go proto location can be changed without altering Starlark API. Proto package
 // name is still important and should not be changed. It is here mostly for the
@@ -52,6 +55,7 @@ import (
 var publicProtos = map[string]struct {
 	protoPkg string
 	goPath   string
+	docURL   string
 }{
 	// Buildbucket project config.
 	//
@@ -59,6 +63,7 @@ var publicProtos = map[string]struct {
 	"luci/buildbucket/project_config.proto": {
 		"buildbucket",
 		"go.chromium.org/luci/buildbucket/proto/project_config.proto",
+		"https://luci-config.appspot.com/schemas/projects:buildbucket.cfg",
 	},
 
 	// "LUCI Config" project config.
@@ -67,6 +72,7 @@ var publicProtos = map[string]struct {
 	"luci/config/project_config.proto": {
 		"config",
 		"go.chromium.org/luci/common/proto/config/project_config.proto",
+		"https://luci-config.appspot.com/schemas/projects:project.cfg",
 	},
 
 	// CrOS builder config.
@@ -77,6 +83,7 @@ var publicProtos = map[string]struct {
 	"external/cros/builder_config.proto": {
 		"chromiumos",
 		"chromiumos/builder_config.proto",
+		"",
 	},
 
 	// CrOS testing project config.
@@ -90,10 +97,12 @@ var publicProtos = map[string]struct {
 	"external/crostesting/source_tree_test_config.proto": {
 		"testplans",
 		"testplans/source_tree_test_config.proto",
+		"",
 	},
 	"external/crostesting/target_test_requirements_config.proto": {
 		"testplans",
 		"testplans/target_test_requirements_config.proto",
+		"",
 	},
 
 	// LogDog project config.
@@ -102,6 +111,7 @@ var publicProtos = map[string]struct {
 	"luci/logdog/project_config.proto": {
 		"svcconfig",
 		"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",
+		"https://luci-config.appspot.com/schemas/projects:luci-logdog.cfg",
 	},
 
 	// "LUCI Notify" project config.
@@ -110,6 +120,7 @@ var publicProtos = map[string]struct {
 	"luci/notify/project_config.proto": {
 		"notify",
 		"go.chromium.org/luci/luci_notify/api/config/notify.proto",
+		"https://luci-config.appspot.com/schemas/projects:luci-notify.cfg",
 	},
 
 	// Milo project config.
@@ -118,6 +129,7 @@ var publicProtos = map[string]struct {
 	"luci/milo/project_config.proto": {
 		"milo",
 		"go.chromium.org/luci/milo/api/config/project.proto",
+		"https://luci-config.appspot.com/schemas/projects:luci-milo.cfg",
 	},
 
 	// "LUCI Scheduler" project config.
@@ -126,6 +138,7 @@ var publicProtos = map[string]struct {
 	"luci/scheduler/project_config.proto": {
 		"scheduler.config",
 		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
+		"https://luci-config.appspot.com/schemas/projects:luci-scheduler.cfg",
 	},
 
 	// Commit Queue project configs (v2).
@@ -134,6 +147,7 @@ var publicProtos = map[string]struct {
 	"luci/cq/project_config.proto": {
 		"cq.config",
 		"go.chromium.org/luci/cq/api/config/v2/cq.proto",
+		"https://luci-config.appspot.com/schemas/projects:commit-queue.cfg",
 	},
 
 	// Swarming service configs.
@@ -141,9 +155,21 @@ var publicProtos = map[string]struct {
 	// load("@proto//luci/swarming/bots.proto", bots_pb="swarming")
 	// load("@proto//luci/swarming/config.proto", config_pb="swarming")
 	// load("@proto//luci/swarming/pools.proto", pools_pb="swarming")
-	"luci/swarming/bots.proto":   {"swarming", "go.chromium.org/luci/swarming/proto/config/bots.proto"},
-	"luci/swarming/config.proto": {"swarming", "go.chromium.org/luci/swarming/proto/config/config.proto"},
-	"luci/swarming/pools.proto":  {"swarming", "go.chromium.org/luci/swarming/proto/config/pools.proto"},
+	"luci/swarming/bots.proto": {
+		"swarming",
+		"go.chromium.org/luci/swarming/proto/config/bots.proto",
+		"https://luci-config.appspot.com/schemas/services/swarming:bots.cfg",
+	},
+	"luci/swarming/config.proto": {
+		"swarming",
+		"go.chromium.org/luci/swarming/proto/config/config.proto",
+		"https://luci-config.appspot.com/schemas/services/swarming:settings.cfg",
+	},
+	"luci/swarming/pools.proto": {
+		"swarming",
+		"go.chromium.org/luci/swarming/proto/config/pools.proto",
+		"https://luci-config.appspot.com/schemas/services/swarming:pools.cfg",
+	},
 
 	// Various well-known proto types.
 	//
@@ -153,12 +179,12 @@ var publicProtos = map[string]struct {
 	// load("@proto//google/protobuf/struct.proto", struct_pb="google.protobuf")
 	// load("@proto//google/protobuf/timestamp.proto", timestamp_pb="google.protobuf")
 	// load("@proto//google/protobuf/wrappers.proto", wrappers_pb="google.protobuf")
-	"google/protobuf/any.proto":       {"google.protobuf", "google/protobuf/any.proto"},
-	"google/protobuf/duration.proto":  {"google.protobuf", "google/protobuf/duration.proto"},
-	"google/protobuf/empty.proto":     {"google.protobuf", "google/protobuf/empty.proto"},
-	"google/protobuf/struct.proto":    {"google.protobuf", "google/protobuf/struct.proto"},
-	"google/protobuf/timestamp.proto": {"google.protobuf", "google/protobuf/timestamp.proto"},
-	"google/protobuf/wrappers.proto":  {"google.protobuf", "google/protobuf/wrappers.proto"},
+	"google/protobuf/any.proto":       {"google.protobuf", "google/protobuf/any.proto", ""},
+	"google/protobuf/duration.proto":  {"google.protobuf", "google/protobuf/duration.proto", ""},
+	"google/protobuf/empty.proto":     {"google.protobuf", "google/protobuf/empty.proto", ""},
+	"google/protobuf/struct.proto":    {"google.protobuf", "google/protobuf/struct.proto", ""},
+	"google/protobuf/timestamp.proto": {"google.protobuf", "google/protobuf/timestamp.proto", ""},
+	"google/protobuf/wrappers.proto":  {"google.protobuf", "google/protobuf/wrappers.proto", ""},
 }
 
 // protoLoader returns a loader that is capable of loading publicProtos.
@@ -168,4 +194,31 @@ func protoLoader() interpreter.Loader {
 		mapping[path] = proto.goPath
 	}
 	return interpreter.ProtoLoader(mapping)
+}
+
+// protoMessageDoc returns the message name and a link to its schema doc.
+//
+// If there's no documentation, returns two empty strings.
+func protoMessageDoc(msg proto.Message) (name, doc string) {
+	withDesc, ok := msg.(descriptor.Message)
+	if !ok {
+		return "", ""
+	}
+
+	fd, md := descriptor.ForMessage(withDesc)
+	if fd == nil || md == nil {
+		return "", ""
+	}
+
+	for _, info := range publicProtos {
+		// Find the exact same *.proto file within publicProtos struct.
+		if info.goPath == fd.GetName() {
+			if info.docURL == "" {
+				return "", "" // no docs for it
+			}
+			return md.GetName(), info.docURL
+		}
+	}
+
+	return "", "" // not a public proto
 }
