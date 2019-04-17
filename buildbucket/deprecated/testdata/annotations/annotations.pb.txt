@@ -216,11 +216,19 @@ substep: <
     started: < seconds: 1500000000 >
 
     substep: <
-     step: <
-       name: "parent_prefix.child"
-       status: RUNNING
-       started: < seconds: 1500000000 >
-     >
+      step: <
+        name: "parent_prefix.child"
+        status: RUNNING
+        started: < seconds: 1500000000 >
+
+        substep: <
+          step: <
+            name: "parent_prefix.child.grandchild"
+            status: RUNNING
+            started: < seconds: 1500000000 >
+          >
+        >
+      >
    >
   >
 >
