@@ -12,8 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package runbuild can runs LUCI user executables, i.e. an executable that
-// produces a Build protobuf message.
-// The protocol is documented in message Executable in
-// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
 package runbuild
+
+import (
+	"os/exec"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
+)
+
+// userSubprocess is a subprocess of a user executable.
+type userSubprocess struct {
+	Path      string
+	Dir       string
+	InitBuild *pb.Build
+
+	cmd *exec.Cmd
+}
+
+func (p *userSubprocess) Run(ctx context.Context) error {
+	userLUCICtx.SetInCmd(cmd)
+	cmd.Dir = userWorkDir
+	buildBytes, err := proto.Marshal(args.Build)
+	if err != nil {
+		return nil, err
+	}
+
+}

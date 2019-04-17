@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package runbuild can runs LUCI user executables, i.e. an executable that
-// produces a Build protobuf message.
-// The protocol is documented in message Executable in
-// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
-package runbuild
+package main
+
+func main() {
+	initBuild, _, buildStream := initExecutable()
+	writeBuild(buildStream, initBuild)
+}
