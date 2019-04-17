@@ -128,11 +128,14 @@ func createInstance(c context.Context, payload proto.Message) error {
 			if gerr.Code == http.StatusConflict {
 				return conflictingInstance(c, vm)
 			}
+			logErrors(c, gerr)
 			metrics.UpdateFailures(c, 1, vm)
+			if gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500 {
+				return errors.Reason("transiently failed to create instance").Err()
+			}
 			if err := deleteVM(c, task.Id, vm.Hostname); err != nil {
 				return errors.Annotate(err, "failed to create instance").Err()
 			}
-			logErrors(c, gerr)
 			return errors.Reason("failed to create instance").Err()
 		}
 		return errors.Annotate(err, "failed to create instance").Err()

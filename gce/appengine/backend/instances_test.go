@@ -103,22 +103,44 @@ func TestCreate(t *testing.T) {
 
 			Convey("error", func() {
 				Convey("http", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
-						return http.StatusInternalServerError, nil
-					}
-					rt.Type = reflect.TypeOf(compute.Instance{})
-					datastore.Put(c, &model.VM{
-						ID:       "id",
-						Hostname: "name",
+					Convey("transient", func() {
+						rt.Handler = func(req interface{}) (int, interface{}) {
+							return http.StatusInternalServerError, nil
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						datastore.Put(c, &model.VM{
+							ID:       "id",
+							Hostname: "name",
+						})
+						err := createInstance(c, &tasks.CreateInstance{
+							Id: "id",
+						})
+						So(err, ShouldErrLike, "transiently failed to create instance")
+						v := &model.VM{
+							ID: "id",
+						}
+						So(datastore.Get(c, v), ShouldBeNil)
+						So(v.Hostname, ShouldEqual, "name")
 					})
-					err := createInstance(c, &tasks.CreateInstance{
-						Id: "id",
+
+					Convey("permanent", func() {
+						rt.Handler = func(req interface{}) (int, interface{}) {
+							return http.StatusBadRequest, nil
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						datastore.Put(c, &model.VM{
+							ID:       "id",
+							Hostname: "name",
+						})
+						err := createInstance(c, &tasks.CreateInstance{
+							Id: "id",
+						})
+						So(err, ShouldErrLike, "failed to create instance")
+						v := &model.VM{
+							ID: "id",
+						}
+						So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
 					})
-					So(err, ShouldErrLike, "failed to create instance")
-					v := &model.VM{
-						ID: "id",
-					}
-					So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
 				})
 
 				Convey("operation", func() {
