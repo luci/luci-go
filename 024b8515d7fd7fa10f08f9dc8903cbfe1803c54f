@@ -22,6 +22,30 @@
       "revId": "024b8515d7fd7fa10f08f9dc8903cbfe1803c54f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "edee22f0_a19e1106",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-04-17T22:49:40Z",
+      "side": 1,
+      "message": "If created is not set then it\u0027s the hostname intended for this instance. If creation fails, then the hostname will be generated anew. At the time you\u0027re reading the RPC response, this is the hostname associated with the instance, it may or may not be an actual GCE instance\u0027s hostname though. To me \"hostname of the instance\" suggests there\u0027s a created instance and it has this hostname while \"hostname associated with this instance\" suggests a more loose connection.\n\nMaybe I\u0027m overthinking it.",
+      "parentUuid": "fe1ba9d0_caa162d8",
+      "range": {
+        "startLine": 25,
+        "startChar": 18,
+        "endLine": 25,
+        "endChar": 34
+      },
+      "revId": "024b8515d7fd7fa10f08f9dc8903cbfe1803c54f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
