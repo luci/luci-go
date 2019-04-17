@@ -13,6 +13,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -519,6 +521,20 @@ type BuildbotServer interface {
 	GetCompressedMasterJSON(context.Context, *MasterRequest) (*CompressedMasterJSON, error)
 	GetBuildbotBuildJSON(context.Context, *BuildbotBuildRequest) (*BuildbotBuildJSON, error)
 	GetBuildbotBuildsJSON(context.Context, *BuildbotBuildsRequest) (*BuildbotBuildsJSON, error)
+}
+
+// UnimplementedBuildbotServer can be embedded to have forward compatible implementations.
+type UnimplementedBuildbotServer struct {
+}
+
+func (*UnimplementedBuildbotServer) GetCompressedMasterJSON(ctx context.Context, req *MasterRequest) (*CompressedMasterJSON, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCompressedMasterJSON not implemented")
+}
+func (*UnimplementedBuildbotServer) GetBuildbotBuildJSON(ctx context.Context, req *BuildbotBuildRequest) (*BuildbotBuildJSON, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBuildbotBuildJSON not implemented")
+}
+func (*UnimplementedBuildbotServer) GetBuildbotBuildsJSON(ctx context.Context, req *BuildbotBuildsRequest) (*BuildbotBuildsJSON, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBuildbotBuildsJSON not implemented")
 }
 
 func RegisterBuildbotServer(s prpc.Registrar, srv BuildbotServer) {

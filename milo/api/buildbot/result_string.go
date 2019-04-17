@@ -4,6 +4,20 @@ package buildbot
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[NoResult - -1]
+	_ = x[Success-0]
+	_ = x[Warning-1]
+	_ = x[Failure-2]
+	_ = x[Skipped-3]
+	_ = x[Exception-4]
+	_ = x[Retry-5]
+	_ = x[resultEnd-6]
+}
+
 const _Result_name = "NoResultSuccessWarningFailureSkippedExceptionRetryresultEnd"
 
 var _Result_index = [...]uint8{0, 8, 15, 22, 29, 36, 45, 50, 59}

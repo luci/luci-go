@@ -4,6 +4,21 @@ package model
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[NotRun-0]
+	_ = x[Running-1]
+	_ = x[Success-2]
+	_ = x[Failure-3]
+	_ = x[Warning-4]
+	_ = x[InfraFailure-5]
+	_ = x[Exception-6]
+	_ = x[Expired-7]
+	_ = x[Cancelled-8]
+}
+
 const _Status_name = "NotRunRunningSuccessFailureWarningInfraFailureExceptionExpiredCancelled"
 
 var _Status_index = [...]uint8{0, 6, 13, 20, 27, 34, 46, 55, 62, 71}
@@ -13,6 +28,14 @@ func (i Status) String() string {
 		return "Status(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
 	return _Status_name[_Status_index[i]:_Status_index[i+1]]
+}
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[Idle-0]
+	_ = x[Busy-1]
+	_ = x[Offline-2]
 }
 
 const _BotStatus_name = "IdleBusyOffline"
