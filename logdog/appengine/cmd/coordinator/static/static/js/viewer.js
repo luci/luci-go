@@ -27,10 +27,15 @@
   });
 
   function setMode(mode) {
-    document.cookie = `html-mode=${mode}; path=/`;
+    document.cookie = `default-format=${mode}; path=/`;
     location.reload(true);  // Changing modes require a force refresh.
   }
 
   $("#to-full").click(() => setMode("full"));
   $("#to-lite").click(() => setMode("lite"));
+  $("#default-raw").click(function() {
+    if (confirm("Going back to HTML mode will only be possible by manually deleting 'default-format' cookie. Are you sure?") {
+      setMode("raw")
+    }
+  });
 }());

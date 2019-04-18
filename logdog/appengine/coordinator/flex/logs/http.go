@@ -90,7 +90,7 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 <header>
 <div>{{ if .Link }}<a href="{{ .Link }}">Back to build</a>{{ end }}</div>
 <div>
-<a id="to-raw" href="?format=raw">Raw log</a> |
+<a id="to-raw" href="?format=raw">Raw log</a> (<a id="default-raw">set as default</a>) |
 {{ if .IsFull }}<a id="to-lite">Switch to lite
 {{ else }}<a id="to-full">Switch to full{{ end }} mode</a> |
 	{{ if .IsAnonymous }}
@@ -200,7 +200,7 @@ func (uo userOptions) isHTML() bool {
 // If we can't figure anything out, default to HTML lite mode.
 // We do this before path parsing to figure out which mode we want
 // to render parsing errors in.
-func resolveFormat(request *http.Request) string {
+func resolveFormat(request *http.Request, writer *http.ResponseWriter) string {
 	// If a known format is specified, return it.
 	format := request.URL.Query().Get("format")
 	switch f := strings.ToLower(format); f {
@@ -223,8 +223,25 @@ func resolveFormat(request *http.Request) string {
 	if request.URL.Fragment != "" {
 		return formatHTMLFull // URL fragment requires full mode.
 	}
-	if cookie, err := request.Cookie("html-mode"); err == nil && cookie.Value == formatHTMLFull {
-		return formatHTMLFull
+	// Deprecated. Remove after 2019-07-01 when most clients have been updated.
+	if cookie, err := request.Cookie("html-mode"); err == nil {
+		if cookie.Value == formatHTMLFull || cookie.Value == formatHTMLLite {
+			newCookie := &http.Cookie{
+				Name:  "default-format",
+				Value: cookie.Value,
+				Path:  "/",
+			}
+			http.SetCookie(writer, newCookie)
+			request.AddCookie(newCookie)
+		}
+
+		cookie.MaxAge = -1 // Delete old cookie.
+		http.SetCookie(writer, cookie)
+	}
+	if cookie, err := request.Cookie("default-format"); err != nil {
+		if cookie.Value == formatHTMLFull || cookie.Value == formatHTMLLite || cookie.Value == formatRAW {
+			return cookie.Value
+		}
 	}
 	return formatHTMLLite
 }
@@ -235,8 +252,8 @@ func resolveFormat(request *http.Request) string {
 // * Fully resolved path.  a/+/b/c
 // * Single star path.  a/+/b/*
 // * Double star path. a/+/**
-func resolveOptions(request *http.Request, pathStr string) (options userOptions, err error) {
-	options.format = resolveFormat(request)
+func resolveOptions(request *http.Request, writer *http.ResponseWriter, pathStr string) (options userOptions, err error) {
+	options.format = resolveFormat(request, writer)
 
 	// The expected format is "/project/path..."
 	parts := strings.SplitN(strings.TrimLeft(pathStr, "/"), "/", 2)
@@ -363,8 +380,8 @@ func initParams(c context.Context, streams []*coordinator.LogStream) ([]fetchPar
 // It returns a logData struct containing:
 // * A channel where logs entries are sent back.
 // * Log Stream metadata and state.
-func startFetch(c context.Context, request *http.Request, pathStr string) (data logData, err error) {
-	if data.options, err = resolveOptions(request, pathStr); err != nil {
+func startFetch(c context.Context, request *http.Request, writer *http.ResponseWriter, pathStr string) (data logData, err error) {
+	if data.options, err = resolveOptions(request, writer, pathStr); err != nil {
 		err = errors.Annotate(err, "resolving options").Tag(grpcutil.InvalidArgumentTag).Err()
 		return
 	}
@@ -844,7 +861,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 func GetHandler(ctx *router.Context) {
 	start := clock.Now(ctx.Context)
 	// Start the fetcher and wait for fetched logs to arrive into ch.
-	data, err := startFetch(ctx.Context, ctx.Request, ctx.Params.ByName("path"))
+	data, err := startFetch(ctx.Context, ctx.Request, ctx.Writer, ctx.Params.ByName("path"))
 	if err != nil {
 		logging.WithError(err).Errorf(ctx.Context, "failed to start fetch")
 		writeErrorPage(ctx, err, data)
