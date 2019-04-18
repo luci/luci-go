@@ -41,9 +41,6 @@ message Config {
 
   // At least 1 ConfigGroup is required.
   repeated ConfigGroup config_groups = 4;
-
-  // EXPERIMENTAL!
-  CQDependOptions cqdepend_options = 5;
 }
 
 // SubmitOptions control how CQ submits CLs.
@@ -72,11 +69,6 @@ enum Trinary {
   NO = 2;
 }
 
-
-// EXPERIMENTAL! TODO(tandrii, crbug/912294): add doc.
-message CQDependOptions {
-  Trinary allowed = 1;
-}
 
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
@@ -128,8 +120,16 @@ message ConfigGroup {
   // At least 1 Gerrit instance with repositories to work with is required.
   repeated Gerrit gerrit = 1;
 
+  // EXPERIMENTAL!
+  CQDependOptions cqdepend_options = 3;
+
   // Defines how to verify a CL before submitting it. Required.
   Verifiers verifiers = 2;
+}
+
+// EXPERIMENTAL! TODO(tandrii, crbug/912294): add doc.
+message CQDependOptions {
+  Trinary allowed = 1;
 }
 
 // Verifiers are various types of checks that a Commit Queue performs on a CL.
