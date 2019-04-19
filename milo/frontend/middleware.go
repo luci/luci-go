@@ -357,7 +357,12 @@ var rLinkBreak = regexp.MustCompile("<br */?>")
 // This uses blackfriday to convert from markdown to HTML,
 // and sanitizehtml to allow only a small subset of HTML through.
 func renderMarkdown(t string) (results template.HTML) {
-	buf := bytes.NewBuffer(blackfriday.Run([]byte(t)))
+	// We don't want auto punctuation, which changes "foo" into “foo”
+	r := blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{
+		Flags: blackfriday.CommonHTMLFlags &^ blackfriday.Smartypants,
+	})
+	optList := []blackfriday.Option{blackfriday.WithRenderer(r), blackfriday.WithExtensions(blackfriday.CommonExtensions)}
+	buf := bytes.NewBuffer(blackfriday.Run([]byte(t), optList...))
 	out := bytes.NewBuffer(nil)
 	if err := sanitizehtml.Sanitize(out, buf); err != nil {
 		return template.HTML(fmt.Sprintf("Failed to render markdown: %s", template.HTMLEscapeString(err.Error())))
