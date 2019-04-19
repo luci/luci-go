@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c8373ee_8641d792",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-19T20:46:13Z",
+      "side": 1,
+      "message": "why not\n\n\tbuf :\u003d bytes.NewBuffer(blackfriday.Run([]byte(t), blackfriday.WithRenderer(r), blackfriday.WithExtensions(blackfriday.CommonExtensions)))",
+      "revId": "e970ea3882e9b36247e847c6fcb09302a98cab7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
