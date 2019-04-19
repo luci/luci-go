@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -59,9 +60,21 @@ func setCreated(c context.Context, id, url string, at time.Time) error {
 
 // logErrors logs the errors in the given *googleapi.Error.
 func logErrors(c context.Context, err *googleapi.Error) {
+	logging.Errorf(c, "HTTP %d", err.Code)
 	for _, err := range err.Errors {
 		logging.Errorf(c, "%s", err.Message)
 	}
+}
+
+// rateLimitExceeded returns whether the given *googleapi.Error contains a rate
+// limit error.
+func rateLimitExceeded(err *googleapi.Error) bool {
+	for _, err := range err.Errors {
+		if strings.Contains(err.Message, "Rate Limit Exceeded") {
+			return true
+		}
+	}
+	return false
 }
 
 // conflictingInstance deals with a GCE instance creation conflict.
@@ -130,6 +143,10 @@ func createInstance(c context.Context, payload proto.Message) error {
 			}
 			logErrors(c, gerr)
 			metrics.UpdateFailures(c, 1, vm)
+			// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
+			if rateLimitExceeded(gerr) {
+				return errors.Reason("rate limit exceeded creating instance").Err()
+			}
 			if gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500 {
 				return errors.Reason("transiently failed to create instance").Err()
 			}
