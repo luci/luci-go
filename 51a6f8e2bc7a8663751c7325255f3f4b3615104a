@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3918e611_67bdb5d7",
+        "filename": "milo/common/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-20T00:13:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e36633c_23dc3734",
+      "revId": "51a6f8e2bc7a8663751c7325255f3f4b3615104a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95e23e5f_a133461d",
         "filename": "milo/common/utils.go",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "51a6f8e2bc7a8663751c7325255f3f4b3615104a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1520dfaa_58255dfc",
+        "filename": "milo/common/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2019-04-20T00:13:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95e23e5f_a133461d",
+      "revId": "51a6f8e2bc7a8663751c7325255f3f4b3615104a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
