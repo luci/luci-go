@@ -59,7 +59,7 @@ func TestCLEmail(t *testing.T) {
 
 		_, err = impl.CLEmail(cDenied, host, 123)
 		Convey("ACLs respected with cold cache", func() {
-			So(err.Error(), ShouldContainSubstring, "not found")
+			So(err.Error(), ShouldContainSubstring, "not logged in")
 		})
 
 		// Now that we have cached change owner, no more GetChange calls should
@@ -67,7 +67,7 @@ func TestCLEmail(t *testing.T) {
 
 		Convey("ACLs still respected with warm cache", func() {
 			_, err = impl.CLEmail(cDenied, host, 123)
-			So(err.Error(), ShouldContainSubstring, "not found")
+			So(err.Error(), ShouldContainSubstring, "not logged in")
 		})
 
 		Convey("Happy cached path", func() {

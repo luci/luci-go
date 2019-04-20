@@ -70,7 +70,7 @@ func TestLog(t *testing.T) {
 		Convey("cold cache", func() {
 			Convey("ACLs respected", func() {
 				_, err := impl.Log(cDenied, host, "project", "refs/heads/master", &LogOptions{Limit: 50})
-				So(err.Error(), ShouldContainSubstring, "not found")
+				So(err.Error(), ShouldContainSubstring, "not logged in")
 			})
 
 			req := &gitilespb.LogRequest{
@@ -93,7 +93,7 @@ func TestLog(t *testing.T) {
 
 			Convey("ACLs respected even with cache", func() {
 				_, err := impl.Log(cDenied, host, "project", "refs/heads/master", &LogOptions{Limit: 50})
-				So(err.Error(), ShouldContainSubstring, "not found")
+				So(err.Error(), ShouldContainSubstring, "not logged in")
 			})
 
 			Convey("with ref in cache", func() {

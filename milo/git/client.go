@@ -29,17 +29,12 @@ import (
 	"context"
 	"net/http"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server/auth"
 )
@@ -169,19 +164,4 @@ func (p *implementation) gerritClient(c context.Context, host string) (gerritpb.
 		return nil, err
 	}
 	return gerrit.NewRESTClient(&http.Client{Transport: t}, host, true)
-}
-
-// errGRPCNotFound is what gRPC API would have returned for NotFound error.
-var errGRPCNotFound = status.Errorf(codes.NotFound, "not found")
-
-// markUnauthed annotates some gRPC with Milo specific semantics, specifically:
-// * Marks the error as Unauthorized if the user is not logged in,
-// and the underlying error was a 403 or 404.
-func markUnauthed(c context.Context, err error) error {
-	loggedIn := auth.CurrentIdentity(c) != identity.AnonymousIdentity
-	code := grpcutil.Code(err)
-	if !loggedIn && (code == codes.NotFound || code == codes.PermissionDenied) {
-		return errors.Annotate(err, "").Tag(grpcutil.UnauthenticatedTag).Err()
-	}
-	return err
 }
