@@ -2,7 +2,7 @@ cron:
 - url: /internal/cron/count-vms
   schedule: every 2 minutes
 - url: /internal/cron/create-instances
-  schedule: every 1 minutes
+  schedule: every 4 minutes
 - url: /internal/cron/drain-vms
   schedule: every 1 minutes
 - url: /internal/cron/expand-configs
