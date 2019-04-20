@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package git
+package common
 
 import (
 	"context"
@@ -24,19 +24,22 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func testMarkUnauthed(t *testing.T) {
+var errGRPCNotFound = status.Errorf(codes.NotFound, "not found")
+
+func testTagGRPC(t *testing.T) {
 	t.Parallel()
 
-	Convey("mark Unauthed Works", t, func() {
+	Convey("GRPC Tagging Works", t, func() {
 		c := memory.Use(context.Background())
 		cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:user@example.com"})
 		cAnon := auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
-		So(grpcutil.Code(markUnauthed(cAnon, errGRPCNotFound)), ShouldEqual, codes.Unauthenticated)
-		So(grpcutil.Code(markUnauthed(cUser, errGRPCNotFound)), ShouldEqual, codes.NotFound)
+		So(grpcutil.Code(TagGRPC(cAnon, errGRPCNotFound)), ShouldEqual, codes.Unauthenticated)
+		So(grpcutil.Code(TagGRPC(cUser, errGRPCNotFound)), ShouldEqual, codes.NotFound)
 	})
 }

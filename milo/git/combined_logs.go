@@ -32,6 +32,7 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/milo/common"
 )
 
 // A structure to keep a list of commits for some ref.
@@ -258,7 +259,7 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 
 // CombinedLogs implements Client interface.
 func (impl *implementation) CombinedLogs(c context.Context, host, project, excludeRef string, refs []string, limit int) (commits []*gitpb.Commit, err error) {
-	defer func() { err = errors.Annotate(markUnauthed(c, err), "gitiles.CombinedLogs").Err() }()
+	defer func() { err = errors.Annotate(common.TagGRPC(c, err), "gitiles.CombinedLogs").Err() }()
 
 	// Check if the user is allowed to access this project.
 	allowed, err := impl.acls.IsAllowed(c, host, project)

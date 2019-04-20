@@ -91,7 +91,7 @@ func TestCombinedLogs(t *testing.T) {
 			_, err := impl.CombinedLogs(
 				cDenied, host, "project", "refs/heads/master",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
-			So(err.Error(), ShouldContainSubstring, "not found")
+			So(err.Error(), ShouldContainSubstring, "not logged in")
 		})
 
 		Convey("no refs match", func() {
