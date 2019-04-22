@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6ef1ec4f_c6a8194d",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-22T22:53:55Z",
+      "side": 1,
+      "message": "what happened to 1?",
+      "range": {
+        "startLine": 39,
+        "startChar": 18,
+        "endLine": 39,
+        "endChar": 19
+      },
+      "revId": "845a69dc480746a36fc281232a29d9ae35f36f34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c83ace5e_f5bb1dda",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-22T22:53:55Z",
+      "side": 1,
+      "message": "where defaults are set now?\n\nIn kitchen defaults were \u0027true\u0027 and cr-buildbucket.cfg could be used to override them to \u0027false\u0027. Should this be ternary \"on/off/default\"?",
+      "range": {
+        "startLine": 40,
+        "startChar": 4,
+        "endLine": 42,
+        "endChar": 39
+      },
+      "revId": "845a69dc480746a36fc281232a29d9ae35f36f34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b44b0bcd_92a6cb98",
+        "filename": "buildbucket/runbuild/runbuild.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-22T22:53:55Z",
+      "side": 1,
+      "message": "Please don\u0027t, it may copy internal guts of authctx.Context that should not be copied. If you really-really want to do this, do it before system.Launch(...).",
+      "range": {
+        "startLine": 387,
+        "startChar": 1,
+        "endLine": 387,
+        "endChar": 16
+      },
+      "revId": "845a69dc480746a36fc281232a29d9ae35f36f34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
