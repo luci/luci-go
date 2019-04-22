@@ -19,9 +19,10 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/starlark/interpreter"
+	"github.com/golang/protobuf/ptypes/empty"
 
-	_ "go.chromium.org/luci/lucicfg/testproto"
+	"go.chromium.org/luci/lucicfg/testproto"
+	"go.chromium.org/luci/starlark/interpreter"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -31,7 +32,12 @@ func init() {
 	publicProtos["test.proto"] = struct {
 		protoPkg string
 		goPath   string
-	}{"testproto", "go.chromium.org/luci/lucicfg/testproto/test.proto"}
+		docURL   string
+	}{
+		"testproto",
+		"go.chromium.org/luci/lucicfg/testproto/test.proto",
+		"https://example.com/proto-doc",
+	}
 }
 
 func TestProtosAreImportable(t *testing.T) {
@@ -56,4 +62,18 @@ func TestProtosAreImportable(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 	}
+}
+
+func TestProtoMessageDoc(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		name, doc := protoMessageDoc(&testproto.Msg{})
+		So(name, ShouldEqual, "Msg")
+		So(doc, ShouldEqual, "https://example.com/proto-doc")
+
+		name, doc = protoMessageDoc(&empty.Empty{})
+		So(name, ShouldEqual, "")
+		So(doc, ShouldEqual, "")
+	})
 }

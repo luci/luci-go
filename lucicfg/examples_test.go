@@ -57,9 +57,8 @@ func runExample(script string) error {
 	output := filepath.Join(root, "generated")
 
 	state, err := Generate(context.Background(), Inputs{
-		Code:         interpreter.FileSystemLoader(root),
-		Entry:        main,
-		TextPBHeader: DefaultTextPBHeader,
+		Code:  interpreter.FileSystemLoader(root),
+		Entry: main,
 	})
 	if err != nil {
 		return err

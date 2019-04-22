@@ -90,9 +90,8 @@ You may also optionally set +x flag on it, but this is not required.
 	// Generate everything, storing the result in memory.
 	logging.Infof(ctx, "Generating configs...")
 	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
-		Code:         interpreter.FileSystemLoader(root),
-		Entry:        main,
-		TextPBHeader: lucicfg.DefaultTextPBHeader,
+		Code:  interpreter.FileSystemLoader(root),
+		Entry: main,
 	})
 	if err != nil {
 		return lucicfg.Output{}, err

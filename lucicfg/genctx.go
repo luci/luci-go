@@ -64,8 +64,8 @@ func (c *genCtx) declareConfigSetImpl(_ *starlark.Thread, _ *starlark.Builtin, a
 	return starlark.None, nil
 }
 
-func (c *genCtx) assembleOutput(textPBHeader string) (Output, error) {
-	files, err := c.output.renderWithTextProto(textPBHeader)
+func (c *genCtx) assembleOutput(includePBHeader bool) (Output, error) {
+	files, err := c.output.renderWithTextProto(includePBHeader)
 	return Output{
 		Data:  files,
 		Roots: c.roots,
