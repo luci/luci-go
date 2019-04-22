@@ -151,6 +151,7 @@ func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) error {
 // as args.
 func (r *printRun) PrintAndDone(ctx context.Context, args []string, fn func(context.Context, string) (*pb.Build, error)) int {
 	stdout, stderr := newStdioPrinters(r.noColor)
+	
 	return r.printAndDone(ctx, stdout, stderr, args, fn)
 }
 
