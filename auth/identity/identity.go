@@ -52,7 +52,7 @@ var knownKinds = map[Kind]*regexp.Regexp{
 	Bot:       regexp.MustCompile(`^[0-9a-zA-Z_\-\.@]+$`),
 	Project:   regexp.MustCompile(`^[a-z0-9\-_]+$`),
 	Service:   regexp.MustCompile(`^[0-9a-zA-Z_\-\:\.]+$`),
-	User:      regexp.MustCompile(`^[0-9a-zA-Z_\-\.\+]+@[0-9a-z_\-\.]+$`),
+	User:      regexp.MustCompile(`^[0-9a-zA-Z_\-\.\+\%]+@[0-9a-zA-Z_\-\.]+$`),
 }
 
 // Identity represents a caller that makes requests. A string of the form
