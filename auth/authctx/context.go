@@ -200,8 +200,12 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Conte
 	//
 	// If we can't reuse the existing LUCI_CONTEXT, launch a new one (deriving
 	// a new context.Context with it).
+	//
+	// If there's no auth credentials at all, do not launch any LUCI_CONTEXT (it
+	// is impossible without credentials). Subprocesses will discover lack of
+	// ambient credentials on their own and fail (or proceed) appropriately.
 	canInherit := opts.Method == auth.LUCIContextMethod && opts.ActAsServiceAccount == ""
-	if !canInherit {
+	if !canInherit && !ac.anonymous {
 		var la *lucictx.LocalAuth
 		if ac.luciSrv, la, err = launchSrv(ac.ctx, opts, ac.authenticator, ac.ID); err != nil {
 			return nil, errors.Annotate(err, "failed to launch local auth server for %q account", ac.ID).Err()
