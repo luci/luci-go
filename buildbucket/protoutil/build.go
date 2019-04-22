@@ -24,6 +24,9 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+// BuildMediaType is a media type for a binary-encoded Build message.
+const BuildMediaType = "application/luci+proto; message=buildbucket.v2.Build"
+
 // RunDuration returns duration between build start and end.
 func RunDuration(b *pb.Build) (duration time.Duration, ok bool) {
 	start, startErr := ptypes.Timestamp(b.StartTime)
