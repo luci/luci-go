@@ -68,6 +68,30 @@
       "revId": "845a69dc480746a36fc281232a29d9ae35f36f34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25f827fd_8add95f6",
+        "filename": "buildbucket/runbuild/runbuild.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-22T22:55:58Z",
+      "side": 1,
+      "message": "Actually, don\u0027t do it even before Launch. I may want to add a sync.Mutex (or something) to authctx.Context later, and they should not be copied IIRC. If copy-pasta bothers you, add a new helper method authContextWithArgs(\"system\", \u0026authArgs).",
+      "parentUuid": "b44b0bcd_92a6cb98",
+      "range": {
+        "startLine": 387,
+        "startChar": 1,
+        "endLine": 387,
+        "endChar": 16
+      },
+      "revId": "845a69dc480746a36fc281232a29d9ae35f36f34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
