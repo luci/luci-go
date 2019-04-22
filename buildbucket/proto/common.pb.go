@@ -143,6 +143,8 @@ func (Trinary) EnumDescriptor() ([]byte, []int) {
 // The stream MUST have a binary-encoded buildbucket.v2.Build message datagrams,
 // with content type "application/luci+proto; message=buildbucket.v2.Build".
 // Server-side build will be updated with the values from the latest message.
+// The datagram must be full, that is logpb.Datagram.partial proto field MUST be
+// unset.
 //
 // A build step S without children in the datagram MAY have a Step.Log named
 // "$build.proto".

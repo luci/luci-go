@@ -12,6 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package protoutil provides utility functions for protobuf messages
-// in ../proto package.
-package protoutil
+package runbuild
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"go.chromium.org/luci/logdog/client/butler/streamserver"
+)
+
+// newLogDogStreamServerForPlatform creates a StreamServer instance usable on
+// Windows.
+func newLogDogStreamServerForPlatform(ctx context.Context, workDir string) (streamserver.StreamServer, error) {
+	// Windows, use named pipe.
+	return streamserver.NewNamedPipeServer(ctx, fmt.Sprintf("LUCILogDogRunBuild_%d", os.Getpid()))
+}
