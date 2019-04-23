@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4555477_8189b814",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-23T13:42:22Z",
+      "side": 1,
+      "message": "why only stdout and stderr?",
+      "range": {
+        "startLine": 65,
+        "startChar": 23,
+        "endLine": 65,
+        "endChar": 41
+      },
+      "revId": "d54506bffff1fd225d0c1b80a2304347866f4ac0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ab5b93a_59d87dbc",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-23T13:42:22Z",
+      "side": 1,
+      "message": "This assumes a quite specific URL format, including it is a logdog URL and that there is ? in it.\n\nthere is \"Url\" which is a logdog:// URL. From there we can construct anything in a reliable way\n\nthen we don\u0027t need to modify logdog server",
+      "revId": "d54506bffff1fd225d0c1b80a2304347866f4ac0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
