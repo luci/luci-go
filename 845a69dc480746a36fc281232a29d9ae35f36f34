@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "de77ee11_a9e49177",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-23T02:33:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ef1ec4f_c6a8194d",
+      "range": {
+        "startLine": 39,
+        "startChar": 18,
+        "endLine": 39,
+        "endChar": 19
+      },
+      "revId": "845a69dc480746a36fc281232a29d9ae35f36f34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c83ace5e_f5bb1dda",
         "filename": "buildbucket/proto/launcher.proto",
         "patchSetId": 5
@@ -36,6 +60,30 @@
       "writtenOn": "2019-04-22T22:53:55Z",
       "side": 1,
       "message": "where defaults are set now?\n\nIn kitchen defaults were \u0027true\u0027 and cr-buildbucket.cfg could be used to override them to \u0027false\u0027. Should this be ternary \"on/off/default\"?",
+      "range": {
+        "startLine": 40,
+        "startChar": 4,
+        "endLine": 42,
+        "endChar": 39
+      },
+      "revId": "845a69dc480746a36fc281232a29d9ae35f36f34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10b71ab9_975c4641",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-23T02:33:52Z",
+      "side": 1,
+      "message": "ah, i was under impression it is off by default. Made it on by default. PTAL",
+      "parentUuid": "c83ace5e_f5bb1dda",
       "range": {
         "startLine": 40,
         "startChar": 4,
@@ -92,6 +140,30 @@
       "revId": "845a69dc480746a36fc281232a29d9ae35f36f34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7711443c_163335fe",
+        "filename": "buildbucket/runbuild/runbuild.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-23T02:33:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "25f827fd_8add95f6",
+      "range": {
+        "startLine": 387,
+        "startChar": 1,
+        "endLine": 387,
+        "endChar": 16
+      },
+      "revId": "845a69dc480746a36fc281232a29d9ae35f36f34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
