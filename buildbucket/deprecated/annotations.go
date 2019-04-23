@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/logdog/common/types"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	annotpb "go.chromium.org/luci/common/proto/milo"
@@ -63,11 +62,10 @@ func init() {
 //   * Step.link,
 //   * Link.isolate_object,
 //   * Link.dm_link.
-func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, annAddr *types.StreamAddr) ([]*pb.Step, error) {
-	prefix, _ := annAddr.Path.Split()
+func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, defaultLogdogHost, defaultLogdogPrefix string) ([]*pb.Step, error) {
 	sc := &stepConverter{
-		defaultLogdogHost:   annAddr.Host,
-		defaultLogdogPrefix: fmt.Sprintf("%s/%s", annAddr.Project, prefix),
+		defaultLogdogHost:   defaultLogdogHost,
+		defaultLogdogPrefix: defaultLogdogPrefix,
 		steps:               map[string]*pb.Step{},
 	}
 
