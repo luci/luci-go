@@ -66,8 +66,9 @@ type Client struct {
 	// InitBuild is the initial state of the build read from stdin.
 	InitBuild *pb.Build
 
-	// ButlerClient can be used to create new LogDog streams.
-	ButlerClient streamclient.Client
+	// Logdog environment.
+	// Logdog.Client can be used to create new LogDog streams.
+	Logdog *bootstrap.Bootstrap
 
 	buildStream streamclient.Stream
 }
@@ -84,8 +85,7 @@ func (c *Client) Init() error {
 		return errors.Annotate(err, "failed to parse buildbucket.v2.Build from stdin").Err()
 	}
 
-	bootstrapped, err := bootstrap.Get()
-	if err != nil {
+	if c.Logdog, err = bootstrap.Get(); err != nil {
 		return err
 	}
 
@@ -94,8 +94,7 @@ func (c *Client) Init() error {
 		buildTimestamp = time.Now()
 	}
 
-	c.ButlerClient = bootstrapped.Client
-	c.buildStream, err = c.ButlerClient.NewStream(streamproto.Flags{
+	c.buildStream, err = c.Logdog.Client.NewStream(streamproto.Flags{
 		Name:        streamproto.StreamNameFlag(BuildStreamName),
 		Type:        streamproto.StreamType(logpb.StreamType_DATAGRAM),
 		ContentType: protoutil.BuildMediaType,
