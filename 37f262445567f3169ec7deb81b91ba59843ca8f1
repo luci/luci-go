@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "b37d6bbc_b3c9af16",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-23T18:31:40Z",
+      "side": 1,
+      "message": "I was thinking this structure would allow us to explicitly scope service specific parameters, instead of having service_value options in the top level message. It means that when we need to add additional parameters the scope is obvious. I thought this would be for the same reason that you use \u0027google.protobuf.Empty\u0027 instead of bool above (i.e. a small amount of future proofing)",
+      "parentUuid": "1f3b41b3_0b207cf4",
+      "range": {
+        "startLine": 46,
+        "startChar": 9,
+        "endLine": 46,
+        "endChar": 25
+      },
+      "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0e2c81c6_8c5fbf10",
         "filename": "buildbucket/proto/launcher.proto",
         "patchSetId": 4
@@ -131,6 +155,30 @@
       "side": 1,
       "message": "why? it is typical for commands to accept paths relatives to cwd",
       "parentUuid": "0e2c81c6_8c5fbf10",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 13
+      },
+      "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ccdc47c_8c647a91",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-23T18:31:40Z",
+      "side": 1,
+      "message": "Yes, on e.g. the command line. However it\u0027s confusing to have relative paths in configuration files; this being a proto is borderline, and I would prefer to keep it unambiguous. This would also mean that when the proto gets logged to stdout it\u0027s obvious what paths it\u0027s using.",
+      "parentUuid": "2b64abfc_9a52c6dc",
       "range": {
         "startLine": 60,
         "startChar": 5,
@@ -237,6 +285,30 @@
     },
     {
       "key": {
+        "uuid": "409b9e7d_8407a677",
+        "filename": "buildbucket/runbuild/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-23T18:31:40Z",
+      "side": 1,
+      "message": "oh and swarming is dumb so you have to pass it on the command line :(",
+      "parentUuid": "506f57b2_681bd590",
+      "range": {
+        "startLine": 38,
+        "startChar": 23,
+        "endLine": 38,
+        "endChar": 27
+      },
+      "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "550b0a55_2bcb5ede",
         "filename": "buildbucket/runbuild/runbuild.go",
         "patchSetId": 4
@@ -319,6 +391,30 @@
       "side": 1,
       "message": "confused. How do you suggest to compare to? there is only one channel from a subprocess to runbuild. Whatever was most recent is the final build.",
       "parentUuid": "ca247ede_bad526ee",
+      "range": {
+        "startLine": 148,
+        "startChar": 21,
+        "endLine": 148,
+        "endChar": 26
+      },
+      "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5196237_3ce78456",
+        "filename": "buildbucket/runbuild/runbuild.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-23T18:31:40Z",
+      "side": 1,
+      "message": "That\u0027s not how I read the code that consumes build messages; if there\u0027s a parse or validation error then it will log the error but the old build message stays \u0027current\u0027. I\u0027m saying that if an error occurs we also need to retain that fact and somehow indicate that the \u0027final\u0027 build is actually stale (not what the user code actually transmitted). Maybe just keep the error alongside the build?\n\nThis would allow us to distinguish between a build which ended in state X and a build which appears to end in state X, but ACTUALLY wanted to be state Y (which contained some error)",
+      "parentUuid": "2b03403b_ecaecbca",
       "range": {
         "startLine": 148,
         "startChar": 21,
