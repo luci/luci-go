@@ -62,6 +62,9 @@
     {{ range .Logs }}
       <li class="sublink">
         <a href="{{ .ViewUrl }}">{{ .Name }}</a>
+        {{ if .Name == "stdout" || .Name == "stderr" }}
+          [<a href="{{ .ViewUrl?fmt=raw }}">raw</a>]
+        {{ end }}
       </li>
     {{ else }}
       <li class="sublink"> - no logs - </li>
