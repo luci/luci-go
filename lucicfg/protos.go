@@ -31,11 +31,16 @@ import (
 	_ "github.com/golang/protobuf/ptypes/timestamp"
 	_ "github.com/golang/protobuf/ptypes/wrappers"
 
+	_ "google.golang.org/genproto/googleapis/type/dayofweek"
+
 	_ "go.chromium.org/chromiumos/infra/proto/go/chromiumos"
 	_ "go.chromium.org/chromiumos/infra/proto/go/testplans"
+
 	_ "go.chromium.org/luci/buildbucket/proto"
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/cq/api/config/v2"
+	_ "go.chromium.org/luci/gce/api/config/v1"
+	_ "go.chromium.org/luci/gce/api/projects/v1"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
 	_ "go.chromium.org/luci/milo/api/config"
@@ -171,6 +176,21 @@ var publicProtos = map[string]struct {
 		"https://luci-config.appspot.com/schemas/services/swarming:pools.cfg",
 	},
 
+	// GCE Provider service configs.
+	//
+	// load("@proto//luci/gce/config.proto", config_pb="config")
+	// load("@proto//luci/gce/projects.proto", projects_pb="projects")
+	"luci/gce/config.proto": {
+		"config",
+		"go.chromium.org/luci/gce/api/config/v1/config.proto",
+		"https://luci-config.appspot.com/schemas/services/gce-provider:vms.cfg",
+	},
+	"luci/gce/projects.proto": {
+		"projects",
+		"go.chromium.org/luci/gce/api/projects/v1/config.proto",
+		"https://luci-config.appspot.com/schemas/services/gce-provider:projects.cfg",
+	},
+
 	// Various well-known proto types.
 	//
 	// load("@proto//google/protobuf/any.proto", any_pb="google.protobuf")
@@ -185,6 +205,11 @@ var publicProtos = map[string]struct {
 	"google/protobuf/struct.proto":    {"google.protobuf", "google/protobuf/struct.proto", ""},
 	"google/protobuf/timestamp.proto": {"google.protobuf", "google/protobuf/timestamp.proto", ""},
 	"google/protobuf/wrappers.proto":  {"google.protobuf", "google/protobuf/wrappers.proto", ""},
+
+	// Extension proto types.
+	//
+	// load("@proto//google/type/dayofweek.proto", dayofweek_pb="google.type")
+	"google/type/dayofweek.proto": {"google.type", "google/type/dayofweek.proto", ""},
 }
 
 // protoLoader returns a loader that is capable of loading publicProtos.
