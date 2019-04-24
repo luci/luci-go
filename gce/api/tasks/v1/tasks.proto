@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package tasks;
 
+import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/gce/api/config/v1/config.proto";
 
 // A task to count the VMs in a config.
@@ -44,22 +45,24 @@ message DrainVM {
 
 // A task to create a particular VM.
 message CreateVM {
-  // The index of the VM to create.
-  int32 index = 1;
-  // The attributes of the VM.
-  config.VM attributes = 2;
-  // The ID of the config this VM belongs to.
-  string config = 3;
-  // The lifetime of the VM in seconds.
-  int64 lifetime = 4;
   // The prefix to use when naming this VM.
-  string prefix = 5;
+  string prefix = 1;
+  // The index of the VM to create.
+  int32 index = 2;
+  // The attributes of the VM.
+  config.VM attributes = 3;
+  // The ID of the config this VM belongs to.
+  string config = 4;
+  // The timestamp when this task was created.
+  google.protobuf.Timestamp created = 5;
+  // The lifetime of the VM in seconds.
+  int64 lifetime = 6;
   // The config revision this VM is created from.
-  string revision = 6;
+  string revision = 7;
   // The hostname of the Swarming server this VM connects to.
-  string swarming = 7;
+  string swarming = 8;
   // The timeout of the VM in seconds.
-  int64 timeout = 8;
+  int64 timeout = 9;
 }
 
 // A task to expand a config.
