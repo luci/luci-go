@@ -68,8 +68,7 @@ the only officially supported distribution mechanism is CIPD packages.
 More examples of using `lucicfg` can be found [here](../examples).
 ***
 
-Create a new directory, create a new `main.star` file there with the following
-content:
+Create `main.star` file with the following content:
 
 ```python
 #!/usr/bin/env lucicfg
@@ -133,11 +132,10 @@ command that can be used to verify the generated configs match the original
 ones. Roughly, the idea is to start with broad strokes, and then refine details
 until old and new configs match:
 
-  1. Create new `main.star`, add [luci.project(...)](#luci.project) and all [luci.bucket(...)](#luci.bucket)
-     definitions there. We assume `main.star` is located in the same directory
-     as existing conifgs (like `cr-buildbucket.cfg`), and generated configs are
-     stored in `generated` subdirectory, which is not yet really used for
-     anything.
+  1. Create `main.star` in the same directory that contains existing configs
+     (like `cr-buildbucket.cfg`). Add [luci.project(...)](#luci.project) and all [luci.bucket(...)](#luci.bucket)
+     definitions there. Generated configs will be stored in `generated`
+     subdirectory, which is not yet really used for anything.
   1. Add rough definitions of all existing builders, focusing on identifying
      common patterns in the existing configs and representing them as Starlark
      functions. At this stage we want to make sure the generated
@@ -1146,8 +1144,8 @@ displayed.
 
 #### Arguments {#luci.milo-args}
 
-* **logo**: optional https URL to the project logo, must be hosted on `storage.googleapis.com`.
-* **favicon**: optional https URL to the project favicon, must be hosted on `storage.googleapis.com`.
+* **logo**: optional https URL to the project logo (usually \*.png), must be hosted on `storage.googleapis.com`.
+* **favicon**: optional https URL to the project favicon (usually \*.ico), must be hosted on `storage.googleapis.com`.
 * **monorail_project**: optional Monorail project to file bugs in when a user clicks the feedback link on a build page.
 * **monorail_components**: a list of the Monorail component to assign to a new bug, in the hierarchical `>`-separated format, e.g. `Infra>Client>ChromeOS>CI`. Required if `monorail_project` is set, otherwise must not be used.
 * **bug_summary**: string with a text template for generating new bug's summary given a builder on whose page a user clicked the bug link. Must not be used if `monorail_project` is unset.
