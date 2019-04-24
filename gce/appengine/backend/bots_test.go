@@ -209,16 +209,26 @@ func TestManageBot(t *testing.T) {
 				err := manageBot(c, &tasks.ManageBot{})
 				So(err, ShouldErrLike, "ID is required")
 			})
-
-			Convey("missing", func() {
-				err := manageBot(c, &tasks.ManageBot{
-					Id: "id",
-				})
-				So(err, ShouldErrLike, "failed to fetch VM")
-			})
 		})
 
 		Convey("valid", func() {
+			Convey("deleted", func() {
+				err := manageBot(c, &tasks.ManageBot{
+					Id: "id",
+				})
+				So(err, ShouldBeNil)
+			})
+
+			Convey("creating", func() {
+				datastore.Put(c, &model.VM{
+					ID: "id",
+				})
+				err := manageBot(c, &tasks.ManageBot{
+					Id: "id",
+				})
+				So(err, ShouldBeNil)
+			})
+
 			Convey("error", func() {
 				rt.Handler = func(_ interface{}) (int, interface{}) {
 					return http.StatusConflict, nil
