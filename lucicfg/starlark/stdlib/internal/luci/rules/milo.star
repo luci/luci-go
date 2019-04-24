@@ -62,10 +62,10 @@ def _milo(
   [text templates]: https://golang.org/pkg/text/template
 
   Args:
-    logo: optional https URL to the project logo, must be hosted on
-        `storage.googleapis.com`.
-    favicon: optional https URL to the project favicon, must be hosted on
-        `storage.googleapis.com`.
+    logo: optional https URL to the project logo (usually \*.png), must be
+        hosted on `storage.googleapis.com`.
+    favicon: optional https URL to the project favicon (usually \*.ico), must be
+        hosted on `storage.googleapis.com`.
     monorail_project: optional Monorail project to file bugs in when a user
         clicks the feedback link on a build page.
     monorail_components: a list of the Monorail component to assign to a new

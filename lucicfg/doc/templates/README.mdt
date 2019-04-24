@@ -104,8 +104,7 @@ the only officially supported distribution mechanism is CIPD packages.
 More examples of using `lucicfg` can be found [here](../examples).
 ***
 
-Create a new directory, create a new `main.star` file there with the following
-content:
+Create `main.star` file with the following content:
 
 ```python
 #!/usr/bin/env lucicfg
@@ -169,11 +168,10 @@ command that can be used to verify the generated configs match the original
 ones. Roughly, the idea is to start with broad strokes, and then refine details
 until old and new configs match:
 
-  1. Create new `main.star`, add {{$project_ref}} and all {{$bucket_ref}}
-     definitions there. We assume `main.star` is located in the same directory
-     as existing conifgs (like `cr-buildbucket.cfg`), and generated configs are
-     stored in `generated` subdirectory, which is not yet really used for
-     anything.
+  1. Create `main.star` in the same directory that contains existing configs
+     (like `cr-buildbucket.cfg`). Add {{$project_ref}} and all {{$bucket_ref}}
+     definitions there. Generated configs will be stored in `generated`
+     subdirectory, which is not yet really used for anything.
   1. Add rough definitions of all existing builders, focusing on identifying
      common patterns in the existing configs and representing them as Starlark
      functions. At this stage we want to make sure the generated
