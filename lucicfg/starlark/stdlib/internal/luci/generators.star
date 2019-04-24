@@ -666,6 +666,13 @@ def _milo_builder_pb(entry, view, project_name, seen):
 ## commit-queue.cfg.
 
 
+def _cq_toggle(val):
+  """Bool|None => buildbucket_pb.Toggle."""
+  if val == None:
+    return buildbucket_pb.UNSET
+  return buildbucket_pb.YES if val else buildbucket_pb.NO
+
+
 def gen_cq_cfg(ctx):
   """Generates commit-queue.cfg."""
   _cq_check_connections()
