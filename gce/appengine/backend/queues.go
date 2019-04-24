@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"google.golang.org/api/googleapi"
 
@@ -236,7 +237,8 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
-	amt, err := cfg.Amount.GetAmount(clock.Now(c))
+	now := clock.Now(c)
+	amt, err := cfg.Amount.GetAmount(now)
 	if err != nil {
 		return errors.Annotate(err, "failed to parse amount").Err()
 	}
@@ -246,12 +248,15 @@ func expandConfig(c context.Context, payload proto.Message) error {
 			Payload: &tasks.CreateVM{
 				Attributes: cfg.Attributes,
 				Config:     task.Id,
-				Index:      i,
-				Lifetime:   cfg.Lifetime.GetSeconds(),
-				Prefix:     cfg.Prefix,
-				Revision:   cfg.Revision,
-				Swarming:   cfg.Swarming,
-				Timeout:    cfg.Timeout.GetSeconds(),
+				Created: &timestamp.Timestamp{
+					Seconds: now.Unix(),
+				},
+				Index:    i,
+				Lifetime: cfg.Lifetime.GetSeconds(),
+				Prefix:   cfg.Prefix,
+				Revision: cfg.Revision,
+				Swarming: cfg.Swarming,
+				Timeout:  cfg.Timeout.GetSeconds(),
 			},
 		}
 	}
