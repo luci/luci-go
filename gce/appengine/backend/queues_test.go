@@ -88,6 +88,20 @@ func TestQueues(t *testing.T) {
 
 				Convey("empty", func() {
 					err := createVM(c, &tasks.CreateVM{})
+					So(err, ShouldErrLike, "is required")
+				})
+
+				Convey("ID", func() {
+					err := createVM(c, &tasks.CreateVM{
+						Config: "config",
+					})
+					So(err, ShouldErrLike, "ID is required")
+				})
+
+				Convey("config", func() {
+					err := createVM(c, &tasks.CreateVM{
+						Id: "id",
+					})
 					So(err, ShouldErrLike, "config is required")
 				})
 			})
@@ -95,33 +109,38 @@ func TestQueues(t *testing.T) {
 			Convey("valid", func() {
 				Convey("nil", func() {
 					err := createVM(c, &tasks.CreateVM{
+						Id:     "id",
 						Index:  2,
-						Config: "id",
+						Config: "config",
 					})
 					So(err, ShouldBeNil)
-					err = datastore.Get(c, &model.VM{
-						ID: "id-2",
-					})
-					So(err, ShouldBeNil)
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Index, ShouldEqual, 2)
+					So(v.Config, ShouldEqual, "config")
 				})
 
 				Convey("empty", func() {
 					err := createVM(c, &tasks.CreateVM{
+						Id:         "id",
 						Attributes: &config.VM{},
 						Index:      2,
-						Config:     "id",
+						Config:     "config",
 					})
 					So(err, ShouldBeNil)
-					err = datastore.Get(c, &model.VM{
-						ID:      "id-2",
-						Drained: false,
-					})
-					So(err, ShouldBeNil)
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Index, ShouldEqual, 2)
 				})
 
 				Convey("non-empty", func() {
 					c := mathrand.Set(c, rand.New(rand.NewSource(1)))
 					err := createVM(c, &tasks.CreateVM{
+						Id: "id",
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{
@@ -130,15 +149,16 @@ func TestQueues(t *testing.T) {
 							},
 						},
 						Index:  2,
-						Config: "id",
+						Config: "config",
+						Prefix: "prefix",
 					})
 					So(err, ShouldBeNil)
 					v := &model.VM{
-						ID: "id-2",
+						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v, ShouldResemble, &model.VM{
-						ID: "id-2",
+						ID: "id",
 						Attributes: config.VM{
 							Disk: []*config.Disk{
 								{
@@ -146,35 +166,36 @@ func TestQueues(t *testing.T) {
 								},
 							},
 						},
-						Config:   "id",
-						Drained:  false,
-						Hostname: "id-2-fpll",
+						Config:   "config",
+						Hostname: "prefix-2-fpll",
 						Index:    2,
+						Prefix:   "prefix",
 					})
 				})
 
 				Convey("not updated", func() {
 					datastore.Put(c, &model.VM{
-						ID: "id-2",
+						ID: "id",
 						Attributes: config.VM{
 							Zone: "zone",
 						},
 						Drained: true,
 					})
 					err := createVM(c, &tasks.CreateVM{
+						Id: "id",
 						Attributes: &config.VM{
 							Project: "project",
 						},
-						Config: "id",
+						Config: "config",
 						Index:  2,
 					})
 					So(err, ShouldBeNil)
 					v := &model.VM{
-						ID: "id-2",
+						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v, ShouldResemble, &model.VM{
-						ID: "id-2",
+						ID: "id",
 						Attributes: config.VM{
 							Zone: "zone",
 						},
@@ -184,6 +205,7 @@ func TestQueues(t *testing.T) {
 
 				Convey("sets zone", func() {
 					err := createVM(c, &tasks.CreateVM{
+						Id: "id",
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{
@@ -193,12 +215,12 @@ func TestQueues(t *testing.T) {
 							MachineType: "{{.Zone}}/type",
 							Zone:        "zone",
 						},
-						Config: "id",
+						Config: "config",
 						Index:  2,
 					})
 					So(err, ShouldBeNil)
 					v := &model.VM{
-						ID: "id-2",
+						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Attributes, ShouldResemble, config.VM{

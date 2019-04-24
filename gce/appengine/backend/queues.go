@@ -177,14 +177,15 @@ func createVM(c context.Context, payload proto.Message) error {
 	switch {
 	case !ok:
 		return errors.Reason("unexpected payload type %T", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("ID is required").Err()
 	case task.GetConfig() == "":
 		return errors.Reason("config is required").Err()
 	}
-	id := fmt.Sprintf("%s-%d", task.Config, task.Index)
 	vm := &model.VM{
-		ID:       id,
+		ID:       task.Id,
 		Config:   task.Config,
-		Hostname: fmt.Sprintf("%s-%s", id, getSuffix(c)),
+		Hostname: fmt.Sprintf("%s-%d-%s", task.Prefix, task.Index, getSuffix(c)),
 		Index:    task.Index,
 		Lifetime: task.Lifetime,
 		Prefix:   task.Prefix,
@@ -246,6 +247,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	for i := int32(0); i < amt; i++ {
 		t[i] = &tq.Task{
 			Payload: &tasks.CreateVM{
+				Id:         fmt.Sprintf("%s-%d", cfg.Prefix, i),
 				Attributes: cfg.Attributes,
 				Config:     task.Id,
 				Created: &timestamp.Timestamp{

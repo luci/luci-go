@@ -45,24 +45,26 @@ message DrainVM {
 
 // A task to create a particular VM.
 message CreateVM {
-  // The prefix to use when naming this VM.
-  string prefix = 1;
-  // The index of the VM to create.
-  int32 index = 2;
+  // The ID of the VM to create.
+  string id = 1;
   // The attributes of the VM.
-  config.VM attributes = 3;
+  config.VM attributes = 2;
   // The ID of the config this VM belongs to.
-  string config = 4;
+  string config = 3;
   // The timestamp when this task was created.
-  google.protobuf.Timestamp created = 5;
+  google.protobuf.Timestamp created = 4;
+  // The index of the VM to create.
+  int32 index = 5;
   // The lifetime of the VM in seconds.
   int64 lifetime = 6;
+  // The prefix to use when naming this VM.
+  string prefix = 7;
   // The config revision this VM is created from.
-  string revision = 7;
+  string revision = 8;
   // The hostname of the Swarming server this VM connects to.
-  string swarming = 8;
+  string swarming = 9;
   // The timeout of the VM in seconds.
-  int64 timeout = 9;
+  int64 timeout = 10;
 }
 
 // A task to expand a config.
