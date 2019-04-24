@@ -120,16 +120,15 @@ message ConfigGroup {
   // At least 1 Gerrit instance with repositories to work with is required.
   repeated Gerrit gerrit = 1;
 
-  // EXPERIMENTAL!
-  CQDependOptions cqdepend_options = 3;
+  // EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
+  // Enables support for detecting deps via CQ-Depend: footers.
+  Trinary allow_cq_depend = 3;
+  // EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
+  // Enables support for attempt spanning >1 CL.
+  Trinary allow_grouping  = 4;
 
   // Defines how to verify a CL before submitting it. Required.
   Verifiers verifiers = 2;
-}
-
-// EXPERIMENTAL! TODO(tandrii, crbug/912294): add doc.
-message CQDependOptions {
-  Trinary allowed = 1;
 }
 
 // Verifiers are various types of checks that a Commit Queue performs on a CL.
