@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -329,6 +330,8 @@ func (d *Downloader) ensureDir(dir string) error {
 		return nil
 	}
 
+	dir = strings.Replace(dir, "\\", "/", -1)
+
 	// Slow path: collect the directory and its parents, then create
 	// them and add them to the cache.
 	d.muCache.Lock()
@@ -381,6 +384,8 @@ func (d *Downloader) doSymlink(filename, name string, details *isolated.File) {
 
 func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.File) {
 	d.pool.Schedule(fileType.Priority(), func() {
+		filename = strings.Replace(filename, "\\", "/", -1)
+
 		// Ensure dir exists.
 		if err := d.ensureDir(filepath.Dir(filename)); err != nil {
 			d.addError(fileType, name, err)
@@ -448,6 +453,8 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 			}
 
 			filename := filepath.Join(d.outputDir, name)
+			filename = strings.Replace(filename, "\\", "/", -1)
+
 			mode := int(hdr.Mode)
 			if err := d.ensureDir(filepath.Dir(filename)); err != nil {
 				d.addError(tarType, string(hash)+":"+filename, err)
