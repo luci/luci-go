@@ -23,7 +23,9 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
+
 	"go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -156,6 +158,14 @@ func TestCron(t *testing.T) {
 			})
 		})
 
+		Convey("payloadFactory", func() {
+			f := payloadFactory(&tasks.CountVMs{})
+			p := f("id")
+			So(p, ShouldResemble, &tasks.CountVMs{
+				Id: "id",
+			})
+		})
+
 		Convey("reportQuotasAsync", func() {
 			Convey("none", func() {
 				err := reportQuotasAsync(c)
@@ -170,6 +180,24 @@ func TestCron(t *testing.T) {
 				err := reportQuotasAsync(c)
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+		})
+
+		Convey("trigger", func() {
+			Convey("none", func() {
+				So(trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("one", func() {
+				datastore.Put(c, &model.VM{
+					ID: "id",
+				})
+				So(trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				So(tqt.GetScheduledTasks()[0].Payload, ShouldResemble, &tasks.ManageBot{
+					Id: "id",
+				})
 			})
 		})
 	})
