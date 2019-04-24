@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -153,7 +154,7 @@ func New(ctx context.Context, c *isolatedclient.Client, hash isolated.HexDigest,
 		interval:  interval,
 		dirCache:  stringset.New(0),
 		rootHash:  hash,
-		outputDir: outputDir,
+		outputDir: strings.Replace(outputDir, `\`, "/", -1),
 		isoMap:    map[isolated.HexDigest]*isolated.Isolated{},
 	}
 	return ret
@@ -353,6 +354,7 @@ func (d *Downloader) processFile(name string, details isolated.File) {
 	d.startFile(details.Size)
 
 	// Get full local path for file.
+	name = strings.Replace(name, `\`, "/", -1)
 	filename := filepath.Join(d.outputDir, name)
 
 	if details.Link != nil {
@@ -433,6 +435,7 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 			}
 
 			name := filepath.Clean(hdr.Name)
+			name = strings.Replace(name, `\`, "/", -1)
 
 			// got a file to read
 			if hdr.Typeflag != tar.TypeReg {
