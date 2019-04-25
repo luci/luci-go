@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "81b86f13_d592a072",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-25T01:59:35Z",
+      "side": 1,
+      "message": "i started implementing your proposal, but this does not look right. By this logic, build field should in buildbucket (see comment above), but it does not make sense because only buildbucket has build and no other LUCI service is going to have builds (say we introduce DM, then it would be quest). So I am not sure I buy the argument that we\u0027d be adding \"service_value\" fields. I think we\u0027d be adding \"value\" fields (like \"build\", as opposed to \"buildbucket_build\"). It is the hostname that is special here. Imagine that one day we have buildbucket.\u003cluci_deployment_host\u003e and logdog.\u003cluci_deployment_host\u003e. Then we don\u0027t need by-service separation. In other words, I think we should continue pursuing the idea that we should hide/encapsulate the fact that LUCI happens to be implemented as a set of separate micro-services. It is an impl detail.",
+      "parentUuid": "b37d6bbc_b3c9af16",
+      "range": {
+        "startLine": 46,
+        "startChar": 9,
+        "endLine": 46,
+        "endChar": 25
+      },
+      "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0e2c81c6_8c5fbf10",
         "filename": "buildbucket/proto/launcher.proto",
         "patchSetId": 4
@@ -188,6 +212,30 @@
       "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43a77d58_2e0018ae",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-25T01:59:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ccdc47c_8c647a91",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 13
+      },
+      "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -309,6 +357,30 @@
     },
     {
       "key": {
+        "uuid": "b6e6f4a7_1aa9319f",
+        "filename": "buildbucket/runbuild/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-25T01:59:35Z",
+      "side": 1,
+      "message": "swarming can accept files via isolate, but it is a bit of an overhead",
+      "parentUuid": "409b9e7d_8407a677",
+      "range": {
+        "startLine": 38,
+        "startChar": 23,
+        "endLine": 38,
+        "endChar": 27
+      },
+      "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "550b0a55_2bcb5ede",
         "filename": "buildbucket/runbuild/runbuild.go",
         "patchSetId": 4
@@ -415,6 +487,30 @@
       "side": 1,
       "message": "That\u0027s not how I read the code that consumes build messages; if there\u0027s a parse or validation error then it will log the error but the old build message stays \u0027current\u0027. I\u0027m saying that if an error occurs we also need to retain that fact and somehow indicate that the \u0027final\u0027 build is actually stale (not what the user code actually transmitted). Maybe just keep the error alongside the build?\n\nThis would allow us to distinguish between a build which ended in state X and a build which appears to end in state X, but ACTUALLY wanted to be state Y (which contained some error)",
       "parentUuid": "2b03403b_ecaecbca",
+      "range": {
+        "startLine": 148,
+        "startChar": 21,
+        "endLine": 148,
+        "endChar": 26
+      },
+      "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c294f1b_6a098ec5",
+        "filename": "buildbucket/runbuild/runbuild.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-25T01:59:35Z",
+      "side": 1,
+      "message": "quote from https://docs.google.com/document/d/1RFeprmxM81fRaR2sjo0HJcIGIfko06ciAvzgFAjjXGQ/edit?ts\u003d5c78900a#\n\n\u003e All build proto messages kitchen reads from logdog logs must be valid, according to proto comments, especially step.proto. If any of them is not valid, the build is considered infra-failed.\n\nI think this is important, otherwise a permissive behavior will lead to flaky behavior (overall build fails if the most recent build message was valid, but if the most recent build message was valid, then the build fails).\n\nThis means, as soon as the executable returns an invalid message, we can fail the entire build and there is no need to compare.\n\ni\u0027ve updated common.proto",
+      "parentUuid": "e5196237_3ce78456",
       "range": {
         "startLine": 148,
         "startChar": 21,
