@@ -63,7 +63,7 @@ message SubmitOptions {
 
 
 // A boolean with an undefined value.
-enum Trinary {
+enum Toggle {
   UNSET = 0;
   YES = 1;
   NO = 2;
@@ -120,16 +120,35 @@ message ConfigGroup {
   // At least 1 Gerrit instance with repositories to work with is required.
   repeated Gerrit gerrit = 1;
 
-  // EXPERIMENTAL!
-  CQDependOptions cqdepend_options = 3;
+  // EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
+  // Enables support for detecting deps via CQ-Depend: footers.
+  Toggle allow_cq_depend = 3;
+  // EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
+  // Enables support for attempt spanning >1 CL.
+  CombineCLs combine_cls = 4;
 
   // Defines how to verify a CL before submitting it. Required.
   Verifiers verifiers = 2;
 }
 
-// EXPERIMENTAL! TODO(tandrii, crbug/912294): add doc.
-message CQDependOptions {
-  Trinary allowed = 1;
+// EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
+message CombineCLs {
+  // Roughly, how long CQ waits for CQ to be triggered on each of the related
+  // CLs.
+  // Must be >0 to enable combining CLs.
+  //
+  // Technically precise definition is time to wait since the latest CL among
+  // related ones receives CQ+1/2 vote before starting actual attempt.
+  //
+  // For example, during this delay, a CQ vote may be added on another CL
+  // which depends on previously CQ-ed CL in this not-yet-started attempt. Then,
+  // CQ would extend the attempt with additional CL and reset the waiting
+  // counter.
+  //
+  // Additional implication is that a standalone CL w/o any other relations to
+  // other CLs will need to wait this much time before CQ would start processing
+  // it (i.e., before it triggers first tryjob).
+  google.protobuf.Duration stabilization_delay = 1;
 }
 
 // Verifiers are various types of checks that a Commit Queue performs on a CL.
