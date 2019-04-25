@@ -22,6 +22,46 @@
       "revId": "1239e35a2f46c95f4e3471b608713c05ce1a4eaa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "31090e48_c08c06d1",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-25T15:28:49Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/logdog/common/types#ParseURL",
+      "revId": "1239e35a2f46c95f4e3471b608713c05ce1a4eaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e534b4cf_68da2ea4",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-25T15:28:49Z",
+      "side": 1,
+      "message": "should this indicate that the link is raw?",
+      "range": {
+        "startLine": 127,
+        "startChar": 30,
+        "endLine": 127,
+        "endChar": 61
+      },
+      "revId": "1239e35a2f46c95f4e3471b608713c05ce1a4eaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
