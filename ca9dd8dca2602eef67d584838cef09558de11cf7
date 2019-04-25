@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3ecc9f90_634ce87a",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-04-25T14:38:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "816efac3_62db24e5",
+      "revId": "ca9dd8dca2602eef67d584838cef09558de11cf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a8e060f5_18d106f3",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 8
@@ -33,6 +51,24 @@
       "revId": "ca9dd8dca2602eef67d584838cef09558de11cf7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d97acdb5_43acd258",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-04-25T14:38:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8e060f5_18d106f3",
+      "revId": "ca9dd8dca2602eef67d584838cef09558de11cf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
