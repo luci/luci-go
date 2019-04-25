@@ -544,6 +544,30 @@
       "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc52ed16_cce6f9d2",
+        "filename": "buildbucket/runbuild/runbuild.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-25T20:52:14Z",
+      "side": 1,
+      "message": "this makes sense to me now",
+      "parentUuid": "1c294f1b_6a098ec5",
+      "range": {
+        "startLine": 148,
+        "startChar": 21,
+        "endLine": 148,
+        "endChar": 26
+      },
+      "revId": "37f262445567f3169ec7deb81b91ba59843ca8f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
