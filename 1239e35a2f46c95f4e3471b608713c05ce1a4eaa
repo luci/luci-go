@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f37df776_a33eac28",
+        "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_linux-rel.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-25T14:27:23Z",
+      "side": 1,
+      "message": "note: this is proper HTML escaping of the + sign, actual URL used by the browser will be https://logs.chromium.org/logs/chromium/buildbucket/cr-buildbucket.appspot.com/8927206632544641856/+/steps/setup_build/0/stdout?format\u003draw",
+      "range": {
+        "startLine": 158,
+        "startChar": 119,
+        "endLine": 158,
+        "endChar": 124
+      },
+      "revId": "1239e35a2f46c95f4e3471b608713c05ce1a4eaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

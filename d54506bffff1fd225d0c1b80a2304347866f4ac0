@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ad6cc739_7c317331",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-25T14:27:23Z",
+      "side": 1,
+      "message": "IMHO, it\u0027s only useful there for most of the logs and adding it everywhere would increase information density too much. Happy to add it to all logs if you and Ryan both agree on this.",
+      "parentUuid": "f4555477_8189b814",
+      "range": {
+        "startLine": 65,
+        "startChar": 23,
+        "endLine": 65,
+        "endChar": 41
+      },
+      "revId": "d54506bffff1fd225d0c1b80a2304347866f4ac0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ab5b93a_59d87dbc",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 6
@@ -39,6 +63,24 @@
       "revId": "d54506bffff1fd225d0c1b80a2304347866f4ac0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a4e42cc_2949b75d",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-25T14:27:23Z",
+      "side": 1,
+      "message": "Done. Should I also generate normal link from Url? Is there a reason for separate ViewUrl and a redirect?",
+      "parentUuid": "3ab5b93a_59d87dbc",
+      "revId": "d54506bffff1fd225d0c1b80a2304347866f4ac0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
