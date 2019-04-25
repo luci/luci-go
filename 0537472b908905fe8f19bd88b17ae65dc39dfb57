@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2a5607c_5877318d",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-04-25T01:33:52Z",
+      "side": 1,
+      "message": "I think it\u0027s a good idea to log a line, as info or warning.\n\nThis in case at a later time a bug makes it into codebase resulting in say vm.URL being \"\" under a different scenario. Not having log line would make debugging it more difficult.",
+      "revId": "0537472b908905fe8f19bd88b17ae65dc39dfb57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
