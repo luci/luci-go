@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package protoutil provides utility functions for protobuf messages
-// in ../proto package.
-package protoutil
+package main
+
+func main() {
+	initExecutable()
+	writeBuild(client.InitBuild)
+}
