@@ -22,6 +22,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
@@ -110,6 +111,22 @@ func TestFuncs(t *testing.T) {
 			projectACLMiddleware(ctx, nil)
 			So(r.Code, ShouldEqual, 302)
 			So(r.HeaderMap["Location"], ShouldResemble, []string{"http://fake.example.com/login?dest=%2Fp%2Fsecret"})
+		})
+
+		Convey("Convert LogDog URLs", func() {
+			So(
+				logdogLink(buildbucketpb.Step_Log{Name: "foo", Url: "logdog://www.example.com:1234/foo/bar/+/baz"}, true),
+				ShouldEqual,
+				`<a href="https://www.example.com:1234/logs/foo/bar/&#43;/baz?format=raw" aria-label="raw log foo">raw</a>`)
+			So(
+				logdogLink(buildbucketpb.Step_Log{Name: "foo", Url: "%zzzzz"}, true),
+				ShouldEqual,
+				`<a href="#invalid-logdog-link" aria-label="raw log foo">raw</a>`)
+			So(
+				logdogLink(buildbucketpb.Step_Log{Name: "foo", Url: "logdog://logs.chromium.org/foo/bar/+/baz"}, false),
+				ShouldEqual,
+				`<a href="https://logs.chromium.org/logs/foo/bar/&#43;/baz" aria-label="raw log foo">foo</a>`)
+
 		})
 	})
 }

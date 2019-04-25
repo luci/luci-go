@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -38,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -56,6 +58,7 @@ import (
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
 	"botLink":          botLink,
+	"logdogLink":       logdogLink,
 	"recipeLink":       recipeLink,
 	"duration":         common.Duration,
 	"faviconMIMEType":  faviconMIMEType,
@@ -102,6 +105,29 @@ func localTimeCommon(ifZero string, t time.Time, tooltipClass string, innerText 
 		tooltipClass,
 		milliseconds,
 		template.HTMLEscapeString(innerText)))
+}
+
+// logdogLink generates a link with URL pointing to logdog host and a label
+// corresponding to the log name. In case `raw` is true, the link points to the
+// raw version of the log (without UI) and the label becomes "raw".
+func logdogLink(log buildbucketpb.Step_Log, raw bool) template.HTML {
+	rawURL := "#invalid-logdog-link"
+	if sa, err := types.ParseURL(log.Url); err == nil {
+		u := url.URL{
+			Scheme: "https",
+			Host:   sa.Host,
+			Path:   fmt.Sprintf("/logs/%s/%s", sa.Project, sa.Path),
+		}
+		if raw {
+			u.RawQuery = "format=raw"
+		}
+		rawURL = u.String()
+	}
+	name := log.Name
+	if raw {
+		name = "raw"
+	}
+	return ui.NewLink(name, rawURL, fmt.Sprintf("raw log %s", log.Name)).HTML()
 }
 
 // rURL matches anything that looks like an https:// URL.
