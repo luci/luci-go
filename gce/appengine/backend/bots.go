@@ -153,10 +153,13 @@ func manageBot(c context.Context, payload proto.Message) error {
 		ID: task.Id,
 	}
 	switch err := datastore.Get(c, vm); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch VM").Err()
 	case vm.URL == "":
-		return errors.Reason("instance does not exist: %s", vm.URL).Err()
+		logging.Debugf(c, "instance %q does not exist", vm.Hostname)
+		return nil
 	}
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
 	bot, err := getSwarming(c, vm.Swarming).Bot.Get(vm.Hostname).Context(c).Do()
