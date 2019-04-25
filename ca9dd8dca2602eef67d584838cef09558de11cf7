@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "816efac3_62db24e5",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-04-25T13:51:35Z",
+      "side": 1,
+      "message": "It\u0027d be faster to do this, there\u0027s no need to call replace twice:\n\nif filepath.Separator \u003d\u003d \u0027/\u0027 {\n  return strings.Replace(p, \"\\\\\", string(filepath.Separator), -1)\n}\nreturn strings.Replace(p, \"/\", string(filepath.Separator), -1)",
+      "revId": "ca9dd8dca2602eef67d584838cef09558de11cf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8e060f5_18d106f3",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-04-25T13:51:35Z",
+      "side": 1,
+      "message": "I\u0027d recommend to do the normalization before Clean.",
+      "revId": "ca9dd8dca2602eef67d584838cef09558de11cf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
