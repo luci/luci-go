@@ -37,6 +37,20 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func TestNormalizePathSeparator(t *testing.T) {
+	t.Parallel()
+
+	Convey("Check path normalization", t, func() {
+		Convey("posix path", func() {
+			So(normalizePathSeparator("a/b"), ShouldEqual, filepath.Join("a", "b"))
+		})
+
+		Convey("windows path", func() {
+			So(normalizePathSeparator(`a\b`), ShouldEqual, filepath.Join("a", "b"))
+		})
+	})
+}
+
 func TestDownloaderFetchIsolated(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -55,10 +69,14 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 
 	onePath := filepath.Join("foo", "one.txt")
 	twoPath := filepath.Join("foo", "two.txt")
+	posixPath := "posix/path"
+	winPath := `win\path`
 	isolated1 := isolated.New(h)
 	isolated1.Files = map[string]isolated.File{
 		onePath:     isolated.BasicFile(data1hash, 0664, int64(len(data1))),
 		twoPath:     isolated.BasicFile(data2hash, 0664, int64(len(data2))),
+		posixPath:   isolated.BasicFile(data1hash, 0664, int64(len(data1))),
+		winPath:     isolated.BasicFile(data2hash, 0664, int64(len(data2))),
 		tardataname: isolated.TarFile(tardatahash, int64(len(tardata))),
 	}
 	isolated1bytes, _ := json.Marshal(&isolated1)
@@ -75,11 +93,15 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		tardataname,
 		onePath,
 		twoPath,
+		normalizePathSeparator(posixPath),
+		normalizePathSeparator(winPath),
 		lolPath,
 		oloPath,
 		// In tardata
 		"file1",
 		"file2",
+		filepath.Join("tar", "posix", "path"),
+		filepath.Join("tar", "win", "path"),
 	}...)
 	blahPath := "blah.txt"
 
@@ -128,6 +150,19 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(b, ShouldResemble, data2)
 
+		// Check files in tar archive
+		_, err = os.Stat(filepath.Join(tmpDir, "file1"))
+		So(err, ShouldBeNil)
+
+		_, err = os.Stat(filepath.Join(tmpDir, "file2"))
+		So(err, ShouldBeNil)
+
+		_, err = os.Stat(filepath.Join(tmpDir, "tar", "posix", "path"))
+		So(err, ShouldBeNil)
+
+		_, err = os.Stat(filepath.Join(tmpDir, "tar", "win", "path"))
+		So(err, ShouldBeNil)
+
 		_, err = ioutil.ReadFile(filepath.Join(tmpDir, tardataname))
 		So(os.IsNotExist(err), ShouldBeTrue)
 
@@ -157,6 +192,21 @@ func genTar(t *testing.T) []byte {
 	if _, err := tw.Write(d); err != nil {
 		t.Fatal(err)
 	}
+	d = []byte("posixpath")
+	if err := tw.WriteHeader(&tar.Header{Name: "tar/posix/path", Mode: 0644, Typeflag: tar.TypeReg, Size: int64(len(d))}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tw.Write(d); err != nil {
+		t.Fatal(err)
+	}
+	d = []byte("winpath")
+	if err := tw.WriteHeader(&tar.Header{Name: `tar\win\path`, Mode: 0644, Typeflag: tar.TypeReg, Size: int64(len(d))}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tw.Write(d); err != nil {
+		t.Fatal(err)
+	}
+
 	if err := tw.Close(); err != nil {
 		t.Fatal(err)
 	}

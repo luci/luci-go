@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -118,6 +119,12 @@ type Options struct {
 	MaxConcurrentJobs int
 }
 
+// normalizePathSeparator returns path having os native path separator.
+func normalizePathSeparator(p string) string {
+	p = strings.Replace(p, "/", string(filepath.Separator), -1)
+	return strings.Replace(p, `\`, string(filepath.Separator), -1)
+}
+
 // New returns a Downloader instance, good to download one isolated.
 //
 // ctx will be used for logging and clock.
@@ -153,7 +160,7 @@ func New(ctx context.Context, c *isolatedclient.Client, hash isolated.HexDigest,
 		interval:  interval,
 		dirCache:  stringset.New(0),
 		rootHash:  hash,
-		outputDir: outputDir,
+		outputDir: normalizePathSeparator(outputDir),
 		isoMap:    map[isolated.HexDigest]*isolated.Isolated{},
 	}
 	return ret
@@ -321,6 +328,7 @@ func (d *Downloader) track(w io.Writer) io.Writer {
 
 // ensureDir ensures that the directory dir exists.
 func (d *Downloader) ensureDir(dir string) error {
+	dir = normalizePathSeparator(dir)
 	// Fast path: if the cache has the directory, we're done.
 	d.muCache.RLock()
 	cached := d.dirCache.Has(dir)
@@ -328,7 +336,6 @@ func (d *Downloader) ensureDir(dir string) error {
 	if cached {
 		return nil
 	}
-
 	// Slow path: collect the directory and its parents, then create
 	// them and add them to the cache.
 	d.muCache.Lock()
@@ -353,6 +360,7 @@ func (d *Downloader) processFile(name string, details isolated.File) {
 	d.startFile(details.Size)
 
 	// Get full local path for file.
+	name = normalizePathSeparator(name)
 	filename := filepath.Join(d.outputDir, name)
 
 	if details.Link != nil {
@@ -432,8 +440,7 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 				continue
 			}
 
-			name := filepath.Clean(hdr.Name)
-
+			name := normalizePathSeparator(filepath.Clean(hdr.Name))
 			// got a file to read
 			if hdr.Typeflag != tar.TypeReg {
 				d.addError(tarType, string(hash)+":"+name,
