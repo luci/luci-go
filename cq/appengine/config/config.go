@@ -204,6 +204,21 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup) {
 		ctx.Exit()
 	}
 
+	if group.Clgrouping != nil {
+		ctx.Enter("clgrouping")
+		if group.Clgrouping.StabilizationDelay == nil {
+			ctx.Errorf("stabilization_delay is required to enable clgrouping")
+		} else {
+			switch d, err := ptypes.Duration(group.Clgrouping.StabilizationDelay); {
+			case err != nil:
+				ctx.Errorf("invalid stabilization_delay: %s", err)
+			case d.Seconds() < 10.0:
+				ctx.Errorf("stabilization_delay must be at least 10 seconds")
+			}
+		}
+		ctx.Exit()
+	}
+
 	if group.Verifiers == nil {
 		ctx.Errorf("verifiers are required")
 	} else {
