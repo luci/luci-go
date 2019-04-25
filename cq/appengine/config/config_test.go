@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config/validation"
@@ -221,6 +222,23 @@ func TestValidation(t *testing.T) {
 				cfg.ConfigGroups[0].Gerrit = append(cfg.ConfigGroups[0].Gerrit, cfg.ConfigGroups[0].Gerrit[0])
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "duplicate gerrit url in the same config_group")
+			})
+			Convey("CombineCLs", func() {
+				cfg.ConfigGroups[0].CombineCls = &v2.CombineCLs{}
+				Convey("Needs stabilization_delay", func() {
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "stabilization_delay is required")
+				})
+				cfg.ConfigGroups[0].CombineCls.StabilizationDelay = &duration.Duration{}
+				Convey("Needs stabilization_delay > 10s", func() {
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "stabilization_delay must be at least 10 seconds")
+				})
+				cfg.ConfigGroups[0].CombineCls.StabilizationDelay.Seconds = 20
+				Convey("OK", func() {
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldBeNil)
+				})
 			})
 		})
 
