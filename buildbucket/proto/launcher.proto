@@ -18,10 +18,63 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "go.chromium.org/luci/buildbucket/proto/build.proto";
+
 // This file is meant for protos passed and used internally.
 
 // A collection of build-related secrets we might pass from Buildbucket to Kitchen.
 message BuildSecrets {
   // Token to identify RPCs associated with the same build.
   string build_token = 1;
+}
+
+// Arguments for runbuild command.
+message RunBuildArgs {
+  message GitAuth {
+    bool disable = 1;
+    repeated string known_gerrit_hosts = 2;
+  }
+  message Disablable {
+    bool disable = 1;
+  }
+
+  message Auth {
+    GitAuth git = 1;
+    Disablable dev_shell = 2;
+    Disablable docker = 3;
+    Disablable firebase = 4;
+
+
+    // Use this LUCI context logical account for system-level operations.
+    string luci_system_account = 5;
+  }
+
+  // Buildbucket service hostname, e.g. "cr-buildbucket.appspot.com".
+  string buildbucket_host = 1;
+
+  // LogDog service hostname, e.g. "logs.chromium.org".
+  string logdog_host = 2;
+
+  // Initial state of the build, including immutable state such as id and input
+  // properties.
+  Build build = 3;
+
+  Auth auth = 4;
+
+  // Where to put temp files and create CWD for the user executable.
+  // MUST not exist.
+  // MUST be absolute.
+  // Required.
+  string work_dir = 5;
+
+  // Path to the user executable.
+  // MUST be absolute.
+  // Required.
+  string executable_path = 6;
+
+  // Path to a directory where each subdirectory is a cache dir.
+  // Managed by Swarming.
+  // MUST be absolute.
+  // Required.
+  string cache_dir = 7;
 }

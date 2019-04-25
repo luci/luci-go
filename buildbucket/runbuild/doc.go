@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package protoutil provides utility functions for protobuf messages
-// in ../proto package.
-package protoutil
+// Package runbuild implements LUCI user executable protocol, documented in
+// message Executable in
+// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
+package runbuild
