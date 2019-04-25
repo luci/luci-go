@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "f7b37c14_a6726cf5",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-25T19:06:34Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "33c1b266_4401281d",
+      "range": {
+        "startLine": 65,
+        "startChar": 23,
+        "endLine": 65,
+        "endChar": 41
+      },
+      "revId": "d54506bffff1fd225d0c1b80a2304347866f4ac0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ab5b93a_59d87dbc",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 6
@@ -120,6 +144,24 @@
       "side": 1,
       "message": "i think reusing ViewURL is fine.\n\nthe Log message is used not only by Milo, but by other buildbucket clients too. It is easier for them if it is a ready-made view url",
       "parentUuid": "4a4e42cc_2949b75d",
+      "revId": "d54506bffff1fd225d0c1b80a2304347866f4ac0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1f05ab8c_5b9b9dac",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2019-04-25T19:06:34Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f2fcda79_dc4ffc6c",
       "revId": "d54506bffff1fd225d0c1b80a2304347866f4ac0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
