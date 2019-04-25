@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -56,6 +57,7 @@ import (
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
 	"botLink":          botLink,
+	"logdogLink":       logdogLink,
 	"recipeLink":       recipeLink,
 	"duration":         common.Duration,
 	"faviconMIMEType":  faviconMIMEType,
@@ -102,6 +104,27 @@ func localTimeCommon(ifZero string, t time.Time, tooltipClass string, innerText 
 		tooltipClass,
 		milliseconds,
 		template.HTMLEscapeString(innerText)))
+}
+
+// logdogLink generates a link with URL pointing to logdog host and a label
+// corresponding to the log name. In case `raw` is true, the link points to the
+// raw version of the log (without UI) and the label becomes "raw".
+func logdogLink(log buildbucketpb.Step_Log, raw bool) template.HTML {
+	lurl, err := url.Parse(log.Url)
+	url := "#invalid-logdog-link"
+	if err == nil {
+		lurl.Scheme = "https"
+		lurl.Path = "/logs" + lurl.Path
+		if raw {
+			lurl.RawQuery = "format=raw"
+		}
+		url = lurl.String()
+	}
+	name := log.Name
+	if raw {
+		name = "raw"
+	}
+	return ui.NewLink(name, url, fmt.Sprintf("log %s", log.Name)).HTML()
 }
 
 // rURL matches anything that looks like an https:// URL.
