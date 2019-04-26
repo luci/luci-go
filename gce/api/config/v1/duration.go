@@ -35,7 +35,7 @@ func (d *TimePeriod_Duration) ToSeconds() (int64, error) {
 	}
 	n, err := strconv.ParseInt(m[1], 10, 64)
 	if err != nil {
-		return 0, errors.Reason("duration must not exceed %q", math.MaxInt64).Err()
+		return 0, errors.Reason("duration must not exceed %q", int64(math.MaxInt64)).Err()
 	}
 	var mul int64
 	switch m[2] {
