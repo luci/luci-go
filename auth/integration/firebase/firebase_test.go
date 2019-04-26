@@ -55,7 +55,7 @@ func TestProtocol(t *testing.T) {
 			form.Add("refresh_token", refreshTok)
 			form.Add("client_id", "fake_client_id")
 			form.Add("client_secret", "fake_client_secret")
-			return http.Post(addr, "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
+			return http.Post(addr+"/oauth2/v3/token", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
 		}
 
 		Convey("Happy path", func() {
