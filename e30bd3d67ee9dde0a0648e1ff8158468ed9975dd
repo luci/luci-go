@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "62676d86_0cdde0f6",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-26T01:08:05Z",
+      "side": 1,
+      "message": "this looks ugly... why not\n\nenum Toggle {\n  DEFAULT \u003d 0;\n  ON \u003d 1;\n  OFF \u003d 2;\n}\n\nmessage Auth {\n  Toggle git \u003d 1;\n  Toggle dev_shell \u003d 2;\n  Toggle docker \u003d 3;\n  Toggle firebase \u003d 4;\n\n  string luci_system_account \u003d 5;\n  repeated string known_gerrit_hosts \u003d 6;\n}\n\nNote also that default value for firebase is OFF currently (it is still experimental).",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 3
+      },
+      "revId": "e30bd3d67ee9dde0a0648e1ff8158468ed9975dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
