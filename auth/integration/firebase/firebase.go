@@ -53,7 +53,7 @@ type Server struct {
 // The provided context is used as base context for request handlers and for
 // logging. The server must be eventually stopped with Stop().
 //
-// Returns the auth URL for getting a new token.
+// Returns the root URL of a local server to use as FIREBASE_TOKEN_URL.
 func (s *Server) Start(ctx context.Context) (string, error) {
 	// Launch the server to get the port number.
 	addr, err := s.srv.Start(ctx, "firebase-auth", s.Port, func(c context.Context, l net.Listener, wg *sync.WaitGroup) error {
@@ -62,7 +62,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", errors.Annotate(err, "failed to start the server").Err()
 	}
-	return fmt.Sprintf("http://%s/oauth2/v3/token", addr), nil
+	return fmt.Sprintf("http://%s", addr), nil
 }
 
 // Stop closes the listening socket, notifies pending requests to abort and
