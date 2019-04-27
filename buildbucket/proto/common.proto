@@ -75,6 +75,8 @@ enum Status {
 //   For LUCI Context doc, see
 //   https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md
 //   See also CacheEntry.
+// - LUCI_CONTEXT["buildbucket"]["hostname"]: Buildbucket hostname,
+//   e.g. "cr-buildbucket.appspot.com".
 //
 // The executable MUST write "$LOGDOG_NAMESPACE/build.proto" stream using the
 // LogDog streamserver at $LOGDOG_STREAM_SERVER_PATH.
