@@ -16,10 +16,13 @@ package python
 
 import (
 	"context"
+	"os"
 	"os/exec"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
@@ -46,14 +49,14 @@ type LookPathResult struct {
 // function is responsible for trying known extensions as part of the lookup.
 //
 // A nil LookPathFunc will use exec.LookPath.
-type LookPathFunc func(c context.Context, target string) (*LookPathResult, error)
+type LookPathFunc func(c context.Context, target string, pathDir []string) (*LookPathResult, error)
 
 // Find attempts to find a Python interpreter matching the supplied version
 // using PATH.
 //
 // In order to accommodate multiple configurations on operating systems, Find
 // will attempt to identify versions that appear on the path
-func Find(c context.Context, vers Version, lookPath LookPathFunc) (*Interpreter, error) {
+func Find(c context.Context, vers Version, lookPath LookPathFunc, env environ.Env) (*Interpreter, error) {
 	// pythonM.m, pythonM, python
 	searches := make([]string, 0, 3)
 	pv := vers
@@ -70,7 +73,7 @@ func Find(c context.Context, vers Version, lookPath LookPathFunc) (*Interpreter,
 
 	lookErrs := errors.NewLazyMultiError(len(searches))
 	for i, s := range searches {
-		interp, err := findInterpreter(c, s, vers, lookPath)
+		interp, err := findInterpreter(c, s, vers, lookPath, env)
 		if err == nil {
 			// Resolve to absolute path.
 			if err := filesystem.AbsPath(&interp.Python); err != nil {
@@ -88,44 +91,59 @@ func Find(c context.Context, vers Version, lookPath LookPathFunc) (*Interpreter,
 	return nil, errors.Annotate(lookErrs.Get(), "no Python found").Err()
 }
 
-func findInterpreter(c context.Context, name string, vers Version, lookPath LookPathFunc) (*Interpreter, error) {
+func findInterpreter(c context.Context, name string, vers Version, lookPath LookPathFunc, env environ.Env) (*Interpreter, error) {
+	pathDir := make([]string, 1, 1)
+	var pathEntries []string
+
 	if lookPath == nil {
 		lookPath = osExecLookPath
-	}
-	lpr, err := lookPath(c, name)
-	if err != nil {
-		return nil, errors.Annotate(err, "could not find executable for: %q", name).Err()
-	}
-
-	i := Interpreter{
-		Python: lpr.Path,
+		pathEntries = strings.Split("ignored", string(os.PathListSeparator))
+	} else {
+		pathEntries = strings.Split(env.GetEmpty("PATH"), string(os.PathListSeparator))
 	}
 
-	// If our LookPathResult included a target version, install that into the
-	// Interpreter, allowing it to use this cached value when GetVersion is
-	// called instead of needing to perform an additional lookup.
-	//
-	// Note that our LookPathResult may not populate Version, in which case we
-	// will not pre-cache it.
-	if !lpr.Version.IsZero() {
-		i.cachedVersion = &lpr.Version
-	}
-	if err := i.Normalize(); err != nil {
-		return nil, err
+	for idx := 0; idx < len(pathEntries); idx++ {
+		pathDir[0] = pathEntries[idx]
+		lpr, err := lookPath(c, name, pathDir)
+		if err != nil {
+			//logging.WithError(err).Debugf(c, "No Python found in %q.", pathDir[0])
+			continue
+		}
+
+		i := Interpreter{
+			Python: lpr.Path,
+		}
+
+		// If our LookPathResult included a target version, install that into the
+		// Interpreter, allowing it to use this cached value when GetVersion is
+		// called instead of needing to perform an additional lookup.
+		//
+		// Note that our LookPathResult may not populate Version, in which case we
+		// will not pre-cache it.
+		if !lpr.Version.IsZero() {
+			i.cachedVersion = &lpr.Version
+		}
+		if err := i.Normalize(); err != nil {
+			logging.WithError(err).Debugf(c, "Could not normalize Python for %q.", i.Python)
+			continue
+		}
+
+		iv, err := i.GetVersion(c)
+		if err != nil {
+			logging.WithError(err).Debugf(c, "failed to get version for: %q", i.Python)
+			continue
+		}
+		if vers.IsSatisfiedBy(iv) {
+			return &i, nil
+		} else {
+			logging.Debugf(c, "interpreter %q version %q does not satisfy %q", i.Python, iv, vers)
+		}
 	}
 
-	iv, err := i.GetVersion(c)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get version for: %q", i.Python).Err()
-	}
-	if !vers.IsSatisfiedBy(iv) {
-		return nil, errors.Reason("interpreter %q version %q does not satisfy %q", i.Python, iv, vers).Err()
-	}
-
-	return &i, nil
+	return nil, errors.Reason("No interpreter found satisfying %q", vers).Err()
 }
 
-func osExecLookPath(c context.Context, target string) (*LookPathResult, error) {
+func osExecLookPath(c context.Context, target string, pathDir []string) (*LookPathResult, error) {
 	v, err := exec.LookPath(target)
 	if err != nil {
 		return nil, err

@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/testing/testfs"
 
@@ -66,7 +67,7 @@ func TestFind(t *testing.T) {
 		c := context.Background()
 
 		var lookPathVersion Version
-		testLookPath := func(c context.Context, target string) (*LookPathResult, error) {
+		testLookPath := func(c context.Context, target string, ignored []string) (*LookPathResult, error) {
 			path := filepath.Join(tdir, target)
 			if _, err := os.Stat(path); err != nil {
 				return nil, err
@@ -89,7 +90,8 @@ func TestFind(t *testing.T) {
 				}
 
 				lookPathVersion = tc.foundVersion
-				interp, err := Find(c, tc.version, testLookPath)
+				env := environ.System()
+				interp, err := Find(c, tc.version, testLookPath, env)
 				if tc.err == "" {
 					So(err, ShouldBeNil)
 

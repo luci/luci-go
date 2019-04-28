@@ -219,6 +219,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 		logging.WithError(err).Warningf(c, "Failed to resolve 'self'")
 	}
 	a.opts.EnvConfig.LookPathFunc = lp.look
+	a.opts.EnvConfig.LookPathEnv = lp.env
 
 	// Determine our VirtualEnv base directory.
 	if v, ok := a.opts.Environ.Get(VirtualEnvRootENV); ok {
@@ -323,7 +324,7 @@ func (a *application) showPythonHelp(c context.Context, self string, fs *flag.Fl
 	fs.SetOutput(os.Stdout)
 	fs.PrintDefaults()
 
-	i, err := python.Find(c, python.Version{}, lp.look)
+	i, err := python.Find(c, python.Version{}, lp.look, lp.env)
 	if err != nil {
 		return errors.Annotate(err, "could not find Python interpreter").Err()
 	}
@@ -347,7 +348,7 @@ func (a *application) runDirect(c context.Context, cl *python.CommandLine, lp *l
 			return errors.Annotate(err, "could not parse Python version from: %q", s.PythonVersion).Err()
 		}
 	}
-	i, err := python.Find(c, version, lp.look)
+	i, err := python.Find(c, version, lp.look, lp.env)
 	if err != nil {
 		return errors.Annotate(err, "could not find Python interpreter").Err()
 	}

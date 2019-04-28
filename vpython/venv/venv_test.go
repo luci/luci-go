@@ -57,7 +57,7 @@ type resolvedInterpreter struct {
 
 func resolveFromPath(vers python.Version) *resolvedInterpreter {
 	c := testContext()
-	py, err := python.Find(c, vers, nil)
+	py, err := python.Find(c, vers, nil, environ.System())
 	if err != nil {
 		return nil
 	}

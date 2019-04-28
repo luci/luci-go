@@ -79,6 +79,9 @@ type Config struct {
 	// underlying Python interpreter.
 	LookPathFunc python.LookPathFunc
 
+	// LookPathEnv specifies the environment to look for python interpreters within
+	LookPathEnv environ.Env
+
 	// Spec is the specification file to use to construct the VirtualEnv. If
 	// nil, or if fields are missing, they will be filled in by probing the system
 	// PATH.
@@ -269,7 +272,7 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 	if cfg.Python == "" {
 		// No explicitly-specified Python path. Determine one based on the
 		// specification.
-		if cfg.si, err = python.Find(c, specVers, cfg.LookPathFunc); err != nil {
+		if cfg.si, err = python.Find(c, specVers, cfg.LookPathFunc, cfg.LookPathEnv); err != nil {
 			return errors.Annotate(err, "could not find Python for: %s", specVers).Err()
 		}
 		cfg.Python = cfg.si.Python
