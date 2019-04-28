@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76ed8e44_7a3d3f1f",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-28T22:51:42Z",
+      "side": 1,
+      "message": "I realize that I should add a comment explaining what this parameter does; I thought I\u0027d get a sanity check that this approach is reasonable before doing all the polish.",
+      "range": {
+        "startLine": 52,
+        "startChar": 56,
+        "endLine": 52,
+        "endChar": 73
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28e8011d_884e2ec8",
+        "filename": "vpython/venv/venv_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-28T22:51:42Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s due to my change which should be perf-neutral in the `nil` lookup function case, but running these venv_tests took a long time on my system, to the point of timing out in presubmit checks. Are these expected to work well on windows, or is it primarily tested on linux?",
+      "range": {
+        "startLine": 60,
+        "startChar": 36,
+        "endLine": 60,
+        "endChar": 54
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
