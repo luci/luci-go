@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "b15ecf0d_68b09567",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-29T18:08:13Z",
+      "side": 1,
+      "message": "nit: plural?",
+      "range": {
+        "startLine": 67,
+        "startChar": 59,
+        "endLine": 67,
+        "endChar": 66
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2abdc1bf_fc029b60",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-29T18:08:13Z",
+      "side": 1,
+      "message": "nice :)",
+      "range": {
+        "startLine": 102,
+        "startChar": 31,
+        "endLine": 102,
+        "endChar": 37
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "76ed8e44_7a3d3f1f",
         "filename": "vpython/python/find.go",
         "patchSetId": 1
@@ -25,6 +71,99 @@
     },
     {
       "key": {
+        "uuid": "02086c5f_efd7745b",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-29T18:08:13Z",
+      "side": 1,
+      "message": "I think \u0027LookPathFunc\u0027 is already intended to be a closure over PATH? Adding path here doesn\u0027t seem quite right. I believe there\u0027s already meant to be an environ object in the context here, and the reason this typedef varies from just `func(target string)` is to reflect this (this typedef is supposed to be analogous to https://golang.org/pkg/os/exec/#LookPath)",
+      "parentUuid": "76ed8e44_7a3d3f1f",
+      "range": {
+        "startLine": 52,
+        "startChar": 56,
+        "endLine": 52,
+        "endChar": 73
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d58029f8_90b91168",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-29T18:08:13Z",
+      "side": 1,
+      "message": "this is a bit weird; this will end up with `pathEntries \u003d []string{\"ignored\"}`. Is that intentional?",
+      "range": {
+        "startLine": 100,
+        "startChar": 16,
+        "endLine": 100,
+        "endChar": 70
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0a028ff_c8da3284",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-29T18:08:13Z",
+      "side": 1,
+      "message": "this is a bit weird; we\u0027re calling lookPath each time with a list of paths to search of exactly 1?\n\nIt think it might be better to change the probe thing entirely to be something like:\n\n   type ExecutableFinder struct {\n     Paths              []string\n     Extensions         []string\n   }\n\n   func (e *ExecutableFinder) FindFirst(targets []string, func isOK(fullpath string) bool) error {\n     // calls isOK for each candidate which exists, is executable.\n     // if isOK returns true, loop stops.\n   }\n\nmaybe?",
+      "range": {
+        "startLine": 107,
+        "startChar": 32,
+        "endLine": 107,
+        "endChar": 39
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abbfeaa0_1b588728",
+        "filename": "vpython/python/find_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-29T18:08:13Z",
+      "side": 1,
+      "message": "this is a bit iffy in a test, I think; it means the test will vary its behavior depending on the actual environment it\u0027s running in.",
+      "range": {
+        "startLine": 93,
+        "startChar": 19,
+        "endLine": 93,
+        "endChar": 25
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28e8011d_884e2ec8",
         "filename": "vpython/venv/venv_test.go",
         "patchSetId": 1
@@ -36,6 +175,30 @@
       "writtenOn": "2019-04-28T22:51:42Z",
       "side": 1,
       "message": "I don\u0027t think it\u0027s due to my change which should be perf-neutral in the `nil` lookup function case, but running these venv_tests took a long time on my system, to the point of timing out in presubmit checks. Are these expected to work well on windows, or is it primarily tested on linux?",
+      "range": {
+        "startLine": 60,
+        "startChar": 36,
+        "endLine": 60,
+        "endChar": 54
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31866f93_e754bb48",
+        "filename": "vpython/venv/venv_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-29T18:08:13Z",
+      "side": 1,
+      "message": "It\u0027s primarily tested on linux, but I believe these tests are actually just slow (I haven\u0027t run them locally in a while, but I seem to recall that they\u0027re pretty extensive)",
+      "parentUuid": "28e8011d_884e2ec8",
       "range": {
         "startLine": 60,
         "startChar": 36,
