@@ -95,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "eb1d889a_9efcd79b",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-29T20:06:02Z",
+      "side": 1,
+      "message": "If the context has an env, then I can definitely use that; I had tried to expose the `env` that is part of the lookPath type by passing that directly rather than just the `LookPathFunc`, but I ran into issues where it was complaining that the type had a `environ.env` and not a `python.environ.env`.",
+      "parentUuid": "02086c5f_efd7745b",
+      "range": {
+        "startLine": 52,
+        "startChar": 56,
+        "endLine": 52,
+        "endChar": 73
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d58029f8_90b91168",
         "filename": "vpython/python/find.go",
         "patchSetId": 1
@@ -118,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "30ee1ce1_3ff1af0e",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-29T20:06:02Z",
+      "side": 1,
+      "message": "It is, but it\u0027s somewhat a hack: In the case of using `osExecLookPath` the `pathDir` value is ignored, so I just wanted to have an array/slice of length 1, so the following for loop iterated exactly once.",
+      "parentUuid": "d58029f8_90b91168",
+      "range": {
+        "startLine": 100,
+        "startChar": 16,
+        "endLine": 100,
+        "endChar": 70
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b0a028ff_c8da3284",
         "filename": "vpython/python/find.go",
         "patchSetId": 1
@@ -129,6 +177,30 @@
       "writtenOn": "2019-04-29T18:08:13Z",
       "side": 1,
       "message": "this is a bit weird; we\u0027re calling lookPath each time with a list of paths to search of exactly 1?\n\nIt think it might be better to change the probe thing entirely to be something like:\n\n   type ExecutableFinder struct {\n     Paths              []string\n     Extensions         []string\n   }\n\n   func (e *ExecutableFinder) FindFirst(targets []string, func isOK(fullpath string) bool) error {\n     // calls isOK for each candidate which exists, is executable.\n     // if isOK returns true, loop stops.\n   }\n\nmaybe?",
+      "range": {
+        "startLine": 107,
+        "startChar": 32,
+        "endLine": 107,
+        "endChar": 39
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adc73fd4_7dd7c26b",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-29T20:06:02Z",
+      "side": 1,
+      "message": "I had thought of that, but I was hesitant to go make changes to the more core probe code, since that could impact any other projects which depend on it. I do agree that it\u0027s a much nicer approach though.",
+      "parentUuid": "b0a028ff_c8da3284",
       "range": {
         "startLine": 107,
         "startChar": 32,
