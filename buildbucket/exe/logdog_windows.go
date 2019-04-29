@@ -12,28 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package exe
 
 import (
-	"go.chromium.org/luci/common/clock/testclock"
+	"context"
+	"fmt"
+	"os"
 
-	"go.chromium.org/luci/buildbucket/runbuild"
-
-	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/logdog/client/butler/streamserver"
 )
 
-var client = runbuild.Client{
-	BuildTimestamp: testclock.TestRecentTimeUTC,
-}
-
-func initExecutable() {
-	if err := client.Init(); err != nil {
-		panic(err)
-	}
-}
-
-func writeBuild(build *pb.Build) {
-	if err := client.WriteBuild(build); err != nil {
-		panic(err)
-	}
+// newLogDogStreamServerForPlatform creates a StreamServer instance usable on
+// Windows.
+func newLogDogStreamServerForPlatform(ctx context.Context, workDir string) (streamserver.StreamServer, error) {
+	// Windows, use named pipe.
+	return streamserver.NewNamedPipeServer(ctx, fmt.Sprintf("LUCILogDogRunBuild_%d", os.Getpid()))
 }

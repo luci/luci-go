@@ -12,7 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package runbuild implements LUCI user executable protocol, documented in
-// message Executable in
-// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
-package runbuild
+// +build darwin dragonfly freebsd linux netbsd openbsd
+
+package exe
+
+import (
+	"context"
+	"path/filepath"
+
+	"go.chromium.org/luci/logdog/client/butler/streamserver"
+)
+
+// newLogDogStreamServerForPlatform creates a StreamServer instance usable on
+// POSIX.
+func newLogDogStreamServerForPlatform(ctx context.Context, workDir string) (streamserver.StreamServer, error) {
+	// POSIX, use UNIX domain socket.
+	return streamserver.NewUNIXDomainSocketServer(ctx, filepath.Join(workDir, "ld.sock"))
+}

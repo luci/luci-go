@@ -12,19 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runbuild
-
-import (
-	"context"
-	"fmt"
-	"os"
-
-	"go.chromium.org/luci/logdog/client/butler/streamserver"
-)
-
-// newLogDogStreamServerForPlatform creates a StreamServer instance usable on
-// Windows.
-func newLogDogStreamServerForPlatform(ctx context.Context, workDir string) (streamserver.StreamServer, error) {
-	// Windows, use named pipe.
-	return streamserver.NewNamedPipeServer(ctx, fmt.Sprintf("LUCILogDogRunBuild_%d", os.Getpid()))
-}
+// Package exe implements LUCI Executable protocol, documented in
+// message Executable in
+// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
+package exe

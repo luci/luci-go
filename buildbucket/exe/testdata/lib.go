@@ -12,20 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build darwin dragonfly freebsd linux netbsd openbsd
-
-package runbuild
+package main
 
 import (
-	"context"
-	"path/filepath"
+	"go.chromium.org/luci/common/clock/testclock"
 
-	"go.chromium.org/luci/logdog/client/butler/streamserver"
+	"go.chromium.org/luci/buildbucket/exe"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-// newLogDogStreamServerForPlatform creates a StreamServer instance usable on
-// POSIX.
-func newLogDogStreamServerForPlatform(ctx context.Context, workDir string) (streamserver.StreamServer, error) {
-	// POSIX, use UNIX domain socket.
-	return streamserver.NewUNIXDomainSocketServer(ctx, filepath.Join(workDir, "ld.sock"))
+var client = exe.Client{
+	BuildTimestamp: testclock.TestRecentTimeUTC,
+}
+
+func initExecutable() {
+	if err := client.Init(); err != nil {
+		panic(err)
+	}
+}
+
+func writeBuild(build *pb.Build) {
+	if err := client.WriteBuild(build); err != nil {
+		panic(err)
+	}
 }
