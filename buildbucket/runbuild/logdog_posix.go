@@ -12,6 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package protoutil provides utility functions for protobuf messages
-// in ../proto package.
-package protoutil
+// +build darwin dragonfly freebsd linux netbsd openbsd
+
+package runbuild
+
+import (
+	"context"
+	"path/filepath"
+
+	"go.chromium.org/luci/logdog/client/butler/streamserver"
+)
+
+// newLogDogStreamServerForPlatform creates a StreamServer instance usable on
+// POSIX.
+func newLogDogStreamServerForPlatform(ctx context.Context, workDir string) (streamserver.StreamServer, error) {
+	// POSIX, use UNIX domain socket.
+	return streamserver.NewUNIXDomainSocketServer(ctx, filepath.Join(workDir, "ld.sock"))
+}
