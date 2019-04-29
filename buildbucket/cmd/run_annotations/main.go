@@ -28,8 +28,8 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/buildbucket/deprecated"
+	"go.chromium.org/luci/buildbucket/luciexe"
 	pb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/runbuild"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/client/annotee"
@@ -37,7 +37,7 @@ import (
 )
 
 var (
-	client  runbuild.Client
+	client  luciexe.Client
 	build   *pb.Build
 	buildMU sync.Mutex
 )
@@ -89,7 +89,7 @@ func main() {
 	}
 
 	if err := client.Init(); err != nil {
-		fmt.Fprintln(os.Stderr, "failed to initialize runbuild client")
+		fmt.Fprintln(os.Stderr, "failed to initialize LUCI Executable client")
 		os.Exit(1)
 	}
 
