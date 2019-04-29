@@ -213,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "d3072279_1632cc20",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-29T20:17:55Z",
+      "side": 1,
+      "message": "I actually wouldn\u0027t be surprised if this code wasn\u0027t actually used in other projects. There was an early tendency in luci-go to put things in common when they \u0027seemed like they could be useful for other things\u0027 which was too low of a bar.",
+      "parentUuid": "adc73fd4_7dd7c26b",
+      "range": {
+        "startLine": 107,
+        "startChar": 32,
+        "endLine": 107,
+        "endChar": 39
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "abbfeaa0_1b588728",
         "filename": "vpython/python/find_test.go",
         "patchSetId": 1
