@@ -45,7 +45,7 @@ type Bootstrap struct {
 	Project types.ProjectName
 	// Prefix is the Butler instance prefix.
 	Prefix types.StreamName
-	// Prefix is the Butler instance prefix.
+	// Namespace is prefix for stream names.
 	Namespace types.StreamName
 
 	// Client is the streamclient for this instance, or nil if the Butler has no

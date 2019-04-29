@@ -22,8 +22,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/logdog/common/types"
-
 	pb "go.chromium.org/luci/buildbucket/proto"
 	luci "go.chromium.org/luci/common/proto"
 	annotpb "go.chromium.org/luci/common/proto/milo"
@@ -70,16 +68,7 @@ func TestAnnotations(t *testing.T) {
 		}
 
 		Convey("e2e", func() {
-			streamAddr := &types.StreamAddr{
-				Host:    "logdog.example.com",
-				Project: "project",
-				Path:    "prefix/+/stream",
-			}
-			got, err := ConvertBuildSteps(
-				c,
-				ann.Substep,
-				streamAddr,
-			)
+			got, err := ConvertBuildSteps(c, ann.Substep, "logdog.example.com", "project/prefix")
 			So(err, ShouldBeNil)
 
 			So(len(got), ShouldEqual, len(want.Steps))
