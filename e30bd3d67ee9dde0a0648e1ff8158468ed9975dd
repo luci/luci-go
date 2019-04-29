@@ -70,6 +70,30 @@
       "revId": "e30bd3d67ee9dde0a0648e1ff8158468ed9975dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cb34042_4805cae1",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-04-29T19:47:12Z",
+      "side": 1,
+      "message": "Ok.",
+      "parentUuid": "ec5cf4e0_71ceabd3",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 3
+      },
+      "revId": "e30bd3d67ee9dde0a0648e1ff8158468ed9975dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
