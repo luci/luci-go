@@ -82,6 +82,7 @@ enum Status {
 // LogDog streamserver at $LOGDOG_STREAM_SERVER_PATH.
 // The stream MUST have a binary-encoded buildbucket.v2.Build message datagrams,
 // with content type "application/luci+proto; message=buildbucket.v2.Build".
+// Each build message must be valid, as defined by the comments in proto files.
 // Server-side build will be updated with the values from the latest message.
 //
 // A build step S without children in the datagram MAY have a Step.Log named

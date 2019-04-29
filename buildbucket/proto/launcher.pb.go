@@ -61,8 +61,273 @@ func (m *BuildSecrets) GetBuildToken() string {
 	return ""
 }
 
+// Arguments for runbuild command.
+type RunBuildArgs struct {
+	// Buildbucket service hostname, e.g. "cr-buildbucket.appspot.com".
+	BuildbucketHost string `protobuf:"bytes,1,opt,name=buildbucket_host,json=buildbucketHost,proto3" json:"buildbucket_host,omitempty"`
+	// LogDog service hostname, e.g. "logs.chromium.org".
+	LogdogHost string `protobuf:"bytes,2,opt,name=logdog_host,json=logdogHost,proto3" json:"logdog_host,omitempty"`
+	// Initial state of the build, including immutable state such as id and input
+	// properties.
+	Build *Build             `protobuf:"bytes,3,opt,name=build,proto3" json:"build,omitempty"`
+	Auth  *RunBuildArgs_Auth `protobuf:"bytes,4,opt,name=auth,proto3" json:"auth,omitempty"`
+	// Where to put temp files and create CWD for the user executable.
+	// MUST not exist.
+	// MUST be absolute.
+	// Required.
+	WorkDir string `protobuf:"bytes,5,opt,name=work_dir,json=workDir,proto3" json:"work_dir,omitempty"`
+	// Path to the user executable.
+	// MUST be absolute.
+	// Required.
+	ExecutablePath string `protobuf:"bytes,6,opt,name=executable_path,json=executablePath,proto3" json:"executable_path,omitempty"`
+	// Path to a directory where each subdirectory is a cache dir.
+	// Managed by Swarming.
+	// MUST be absolute.
+	// Required.
+	CacheDir             string   `protobuf:"bytes,7,opt,name=cache_dir,json=cacheDir,proto3" json:"cache_dir,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RunBuildArgs) Reset()         { *m = RunBuildArgs{} }
+func (m *RunBuildArgs) String() string { return proto.CompactTextString(m) }
+func (*RunBuildArgs) ProtoMessage()    {}
+func (*RunBuildArgs) Descriptor() ([]byte, []int) {
+	return fileDescriptor_45f9e6fb262a81d2, []int{1}
+}
+
+func (m *RunBuildArgs) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RunBuildArgs.Unmarshal(m, b)
+}
+func (m *RunBuildArgs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RunBuildArgs.Marshal(b, m, deterministic)
+}
+func (m *RunBuildArgs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RunBuildArgs.Merge(m, src)
+}
+func (m *RunBuildArgs) XXX_Size() int {
+	return xxx_messageInfo_RunBuildArgs.Size(m)
+}
+func (m *RunBuildArgs) XXX_DiscardUnknown() {
+	xxx_messageInfo_RunBuildArgs.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RunBuildArgs proto.InternalMessageInfo
+
+func (m *RunBuildArgs) GetBuildbucketHost() string {
+	if m != nil {
+		return m.BuildbucketHost
+	}
+	return ""
+}
+
+func (m *RunBuildArgs) GetLogdogHost() string {
+	if m != nil {
+		return m.LogdogHost
+	}
+	return ""
+}
+
+func (m *RunBuildArgs) GetBuild() *Build {
+	if m != nil {
+		return m.Build
+	}
+	return nil
+}
+
+func (m *RunBuildArgs) GetAuth() *RunBuildArgs_Auth {
+	if m != nil {
+		return m.Auth
+	}
+	return nil
+}
+
+func (m *RunBuildArgs) GetWorkDir() string {
+	if m != nil {
+		return m.WorkDir
+	}
+	return ""
+}
+
+func (m *RunBuildArgs) GetExecutablePath() string {
+	if m != nil {
+		return m.ExecutablePath
+	}
+	return ""
+}
+
+func (m *RunBuildArgs) GetCacheDir() string {
+	if m != nil {
+		return m.CacheDir
+	}
+	return ""
+}
+
+type RunBuildArgs_GitAuth struct {
+	Disable              bool     `protobuf:"varint,1,opt,name=disable,proto3" json:"disable,omitempty"`
+	KnownGerritHosts     []string `protobuf:"bytes,2,rep,name=known_gerrit_hosts,json=knownGerritHosts,proto3" json:"known_gerrit_hosts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RunBuildArgs_GitAuth) Reset()         { *m = RunBuildArgs_GitAuth{} }
+func (m *RunBuildArgs_GitAuth) String() string { return proto.CompactTextString(m) }
+func (*RunBuildArgs_GitAuth) ProtoMessage()    {}
+func (*RunBuildArgs_GitAuth) Descriptor() ([]byte, []int) {
+	return fileDescriptor_45f9e6fb262a81d2, []int{1, 0}
+}
+
+func (m *RunBuildArgs_GitAuth) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RunBuildArgs_GitAuth.Unmarshal(m, b)
+}
+func (m *RunBuildArgs_GitAuth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RunBuildArgs_GitAuth.Marshal(b, m, deterministic)
+}
+func (m *RunBuildArgs_GitAuth) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RunBuildArgs_GitAuth.Merge(m, src)
+}
+func (m *RunBuildArgs_GitAuth) XXX_Size() int {
+	return xxx_messageInfo_RunBuildArgs_GitAuth.Size(m)
+}
+func (m *RunBuildArgs_GitAuth) XXX_DiscardUnknown() {
+	xxx_messageInfo_RunBuildArgs_GitAuth.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RunBuildArgs_GitAuth proto.InternalMessageInfo
+
+func (m *RunBuildArgs_GitAuth) GetDisable() bool {
+	if m != nil {
+		return m.Disable
+	}
+	return false
+}
+
+func (m *RunBuildArgs_GitAuth) GetKnownGerritHosts() []string {
+	if m != nil {
+		return m.KnownGerritHosts
+	}
+	return nil
+}
+
+type RunBuildArgs_Disablable struct {
+	Disable              bool     `protobuf:"varint,1,opt,name=disable,proto3" json:"disable,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RunBuildArgs_Disablable) Reset()         { *m = RunBuildArgs_Disablable{} }
+func (m *RunBuildArgs_Disablable) String() string { return proto.CompactTextString(m) }
+func (*RunBuildArgs_Disablable) ProtoMessage()    {}
+func (*RunBuildArgs_Disablable) Descriptor() ([]byte, []int) {
+	return fileDescriptor_45f9e6fb262a81d2, []int{1, 1}
+}
+
+func (m *RunBuildArgs_Disablable) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RunBuildArgs_Disablable.Unmarshal(m, b)
+}
+func (m *RunBuildArgs_Disablable) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RunBuildArgs_Disablable.Marshal(b, m, deterministic)
+}
+func (m *RunBuildArgs_Disablable) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RunBuildArgs_Disablable.Merge(m, src)
+}
+func (m *RunBuildArgs_Disablable) XXX_Size() int {
+	return xxx_messageInfo_RunBuildArgs_Disablable.Size(m)
+}
+func (m *RunBuildArgs_Disablable) XXX_DiscardUnknown() {
+	xxx_messageInfo_RunBuildArgs_Disablable.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RunBuildArgs_Disablable proto.InternalMessageInfo
+
+func (m *RunBuildArgs_Disablable) GetDisable() bool {
+	if m != nil {
+		return m.Disable
+	}
+	return false
+}
+
+type RunBuildArgs_Auth struct {
+	Git      *RunBuildArgs_GitAuth    `protobuf:"bytes,1,opt,name=git,proto3" json:"git,omitempty"`
+	DevShell *RunBuildArgs_Disablable `protobuf:"bytes,2,opt,name=dev_shell,json=devShell,proto3" json:"dev_shell,omitempty"`
+	Docker   *RunBuildArgs_Disablable `protobuf:"bytes,3,opt,name=docker,proto3" json:"docker,omitempty"`
+	Firebase *RunBuildArgs_Disablable `protobuf:"bytes,4,opt,name=firebase,proto3" json:"firebase,omitempty"`
+	// Use this LUCI context logical account for system-level operations.
+	LuciSystemAccount    string   `protobuf:"bytes,5,opt,name=luci_system_account,json=luciSystemAccount,proto3" json:"luci_system_account,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RunBuildArgs_Auth) Reset()         { *m = RunBuildArgs_Auth{} }
+func (m *RunBuildArgs_Auth) String() string { return proto.CompactTextString(m) }
+func (*RunBuildArgs_Auth) ProtoMessage()    {}
+func (*RunBuildArgs_Auth) Descriptor() ([]byte, []int) {
+	return fileDescriptor_45f9e6fb262a81d2, []int{1, 2}
+}
+
+func (m *RunBuildArgs_Auth) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RunBuildArgs_Auth.Unmarshal(m, b)
+}
+func (m *RunBuildArgs_Auth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RunBuildArgs_Auth.Marshal(b, m, deterministic)
+}
+func (m *RunBuildArgs_Auth) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RunBuildArgs_Auth.Merge(m, src)
+}
+func (m *RunBuildArgs_Auth) XXX_Size() int {
+	return xxx_messageInfo_RunBuildArgs_Auth.Size(m)
+}
+func (m *RunBuildArgs_Auth) XXX_DiscardUnknown() {
+	xxx_messageInfo_RunBuildArgs_Auth.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RunBuildArgs_Auth proto.InternalMessageInfo
+
+func (m *RunBuildArgs_Auth) GetGit() *RunBuildArgs_GitAuth {
+	if m != nil {
+		return m.Git
+	}
+	return nil
+}
+
+func (m *RunBuildArgs_Auth) GetDevShell() *RunBuildArgs_Disablable {
+	if m != nil {
+		return m.DevShell
+	}
+	return nil
+}
+
+func (m *RunBuildArgs_Auth) GetDocker() *RunBuildArgs_Disablable {
+	if m != nil {
+		return m.Docker
+	}
+	return nil
+}
+
+func (m *RunBuildArgs_Auth) GetFirebase() *RunBuildArgs_Disablable {
+	if m != nil {
+		return m.Firebase
+	}
+	return nil
+}
+
+func (m *RunBuildArgs_Auth) GetLuciSystemAccount() string {
+	if m != nil {
+		return m.LuciSystemAccount
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*BuildSecrets)(nil), "buildbucket.v2.BuildSecrets")
+	proto.RegisterType((*RunBuildArgs)(nil), "buildbucket.v2.RunBuildArgs")
+	proto.RegisterType((*RunBuildArgs_GitAuth)(nil), "buildbucket.v2.RunBuildArgs.GitAuth")
+	proto.RegisterType((*RunBuildArgs_Disablable)(nil), "buildbucket.v2.RunBuildArgs.Disablable")
+	proto.RegisterType((*RunBuildArgs_Auth)(nil), "buildbucket.v2.RunBuildArgs.Auth")
 }
 
 func init() {
@@ -70,14 +335,35 @@ func init() {
 }
 
 var fileDescriptor_45f9e6fb262a81d2 = []byte{
-	// 138 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x32, 0x4d, 0xcf, 0xd7, 0x4b,
-	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,
-	0xd4, 0x4f, 0x2a, 0xcd, 0xcc, 0x49, 0x49, 0x2a, 0x4d, 0xce, 0x4e, 0x2d, 0xd1, 0x2f, 0x28, 0xca,
-	0x2f, 0xc9, 0xd7, 0xcf, 0x49, 0x2c, 0xcd, 0x4b, 0xce, 0x48, 0x2d, 0xd2, 0x03, 0x73, 0x85, 0xf8,
-	0x90, 0x54, 0xe8, 0x95, 0x19, 0x29, 0xe9, 0x73, 0xf1, 0x38, 0x81, 0x44, 0x82, 0x53, 0x93, 0x8b,
-	0x52, 0x4b, 0x8a, 0x85, 0xe4, 0xb9, 0xb8, 0xc1, 0x2a, 0xe2, 0x4b, 0xf2, 0xb3, 0x53, 0xf3, 0x24,
-	0x18, 0x15, 0x18, 0x35, 0x38, 0x83, 0xb8, 0xc0, 0x42, 0x21, 0x20, 0x11, 0x27, 0xb3, 0x28, 0x13,
-	0xe2, 0x6c, 0xb6, 0x46, 0x12, 0x29, 0x48, 0x4a, 0x62, 0x03, 0x0b, 0x1a, 0x03, 0x02, 0x00, 0x00,
-	0xff, 0xff, 0xb1, 0x42, 0xc0, 0x94, 0xb8, 0x00, 0x00, 0x00,
+	// 465 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0xcd, 0x6e, 0xd3, 0x40,
+	0x10, 0x56, 0xfe, 0x9d, 0x49, 0xd5, 0x96, 0x45, 0x48, 0x26, 0x1c, 0x08, 0x15, 0xa2, 0x41, 0x20,
+	0x5b, 0x32, 0xb4, 0x17, 0x0e, 0x28, 0x25, 0x52, 0x39, 0x82, 0xc3, 0x89, 0x8b, 0x65, 0xaf, 0x17,
+	0xef, 0xca, 0x8e, 0x37, 0xda, 0x9f, 0x14, 0x5e, 0x8d, 0x17, 0xe1, 0x75, 0xd0, 0x8e, 0x5d, 0xd5,
+	0x20, 0xb5, 0xca, 0x71, 0xbe, 0xbf, 0x99, 0x9d, 0xd1, 0xc2, 0x45, 0x21, 0x03, 0xca, 0x95, 0xdc,
+	0x0a, 0xbb, 0x0d, 0xa4, 0x2a, 0xc2, 0xca, 0x52, 0x11, 0x66, 0x56, 0x54, 0x79, 0x66, 0x69, 0xc9,
+	0x4c, 0xb8, 0x53, 0xd2, 0xc8, 0xb0, 0x4a, 0x6d, 0x4d, 0x39, 0x53, 0x01, 0x96, 0xe4, 0xb8, 0xa3,
+	0x08, 0xf6, 0xd1, 0x3c, 0x3a, 0x30, 0x06, 0x91, 0x26, 0xe3, 0x2c, 0x84, 0xa3, 0x2b, 0x57, 0x6e,
+	0x18, 0x55, 0xcc, 0x68, 0xf2, 0x1c, 0x66, 0x48, 0x27, 0x46, 0x96, 0xac, 0xf6, 0x7b, 0x8b, 0xde,
+	0x72, 0x1a, 0x03, 0x42, 0xdf, 0x1c, 0x72, 0xf6, 0x67, 0x04, 0x47, 0xb1, 0xad, 0xd1, 0xb4, 0x52,
+	0x85, 0x26, 0xaf, 0xe1, 0xb4, 0xd3, 0x22, 0xe1, 0x52, 0x9b, 0xd6, 0x76, 0xd2, 0xc1, 0x3f, 0x4b,
+	0x6d, 0x5c, 0x78, 0x25, 0x8b, 0x5c, 0x16, 0x8d, 0xaa, 0xdf, 0x84, 0x37, 0x10, 0x0a, 0xde, 0xc0,
+	0x08, 0x3d, 0xfe, 0x60, 0xd1, 0x5b, 0xce, 0xa2, 0x27, 0xc1, 0xbf, 0x2f, 0x0c, 0xb0, 0x6b, 0xdc,
+	0x68, 0xc8, 0x05, 0x0c, 0x53, 0x6b, 0xb8, 0x3f, 0x44, 0xed, 0x8b, 0xff, 0xb5, 0xdd, 0x21, 0x83,
+	0x95, 0x35, 0x3c, 0x46, 0x39, 0x79, 0x0a, 0xde, 0x8d, 0x54, 0x65, 0x92, 0x0b, 0xe5, 0x8f, 0x70,
+	0x82, 0x89, 0xab, 0xd7, 0x42, 0x91, 0x73, 0x38, 0x61, 0x3f, 0x19, 0xb5, 0x26, 0xcd, 0x2a, 0x96,
+	0xec, 0x52, 0xc3, 0xfd, 0x31, 0x2a, 0x8e, 0xef, 0xe0, 0x2f, 0xa9, 0xe1, 0xe4, 0x19, 0x4c, 0x69,
+	0x4a, 0x39, 0xc3, 0x90, 0x09, 0x4a, 0x3c, 0x04, 0xd6, 0x42, 0xcd, 0xbf, 0xc2, 0xe4, 0x5a, 0x18,
+	0xd7, 0x91, 0xf8, 0x30, 0xc9, 0x85, 0x76, 0x36, 0x5c, 0x89, 0x17, 0xdf, 0x96, 0xe4, 0x2d, 0x90,
+	0xb2, 0x96, 0x37, 0x75, 0x52, 0x30, 0xa5, 0x44, 0xb3, 0x36, 0xed, 0xf7, 0x17, 0x83, 0xe5, 0x34,
+	0x3e, 0x45, 0xe6, 0x1a, 0x09, 0xb7, 0x16, 0x3d, 0x7f, 0x05, 0xb0, 0x46, 0x23, 0x7a, 0xef, 0x4d,
+	0x9d, 0xff, 0xee, 0xc3, 0x10, 0x1b, 0x5f, 0xc2, 0xa0, 0x10, 0xcd, 0x1d, 0x66, 0xd1, 0xcb, 0x07,
+	0x57, 0xd3, 0xce, 0x1a, 0x3b, 0x03, 0x59, 0xc3, 0x34, 0x67, 0xfb, 0x44, 0x73, 0x56, 0x55, 0x78,
+	0x9f, 0x59, 0x74, 0xfe, 0xa0, 0xfb, 0x6e, 0xac, 0xd8, 0xcb, 0xd9, 0x7e, 0xe3, 0x8c, 0xe4, 0x23,
+	0x8c, 0x73, 0x49, 0x4b, 0xa6, 0xda, 0x3b, 0x1e, 0x1c, 0xd1, 0xda, 0xc8, 0x27, 0xf0, 0x7e, 0x08,
+	0xc5, 0xb2, 0x54, 0xb3, 0xf6, 0xbc, 0x87, 0x4f, 0x71, 0x6b, 0x24, 0x01, 0x3c, 0x76, 0x1f, 0x20,
+	0xd1, 0xbf, 0xb4, 0x61, 0xdb, 0x24, 0xa5, 0x54, 0xda, 0xda, 0xb4, 0x37, 0x7f, 0xe4, 0xa8, 0x0d,
+	0x32, 0xab, 0x86, 0xb8, 0xba, 0xfc, 0xfe, 0xfe, 0xb0, 0x0f, 0xf4, 0xa1, 0x83, 0xec, 0xb2, 0x6c,
+	0x8c, 0xe0, 0xbb, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0xe5, 0xe2, 0x04, 0xe1, 0xc6, 0x03, 0x00,
+	0x00,
 }
