@@ -66,7 +66,7 @@ func TestFind(t *testing.T) {
 		c := context.Background()
 
 		var lookPathVersion Version
-		testLookPath := func(c context.Context, target string) (*LookPathResult, error) {
+		testLookPath := func(c context.Context, target string, filter LookPathFilter) (*LookPathResult, error) {
 			path := filepath.Join(tdir, target)
 			if _, err := os.Stat(path); err != nil {
 				return nil, err
