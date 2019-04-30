@@ -93,6 +93,30 @@
       "revId": "3382270ade9a2147eedc475c4836fc4b91090eb0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70c26fba_48c53c80",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-30T19:02:35Z",
+      "side": 1,
+      "message": "I think we should assume that lookPath properly uses the filter",
+      "parentUuid": "c0711e8a_5636eb1b",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 25
+      },
+      "revId": "3382270ade9a2147eedc475c4836fc4b91090eb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
