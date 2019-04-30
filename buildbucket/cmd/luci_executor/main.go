@@ -12,7 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package runbuild implements LUCI user executable protocol, documented in
-// message Executable in
-// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
-package runbuild
+// Command run_annotations is a LUCI executable that wraps a command that
+// produces @@@ANNOTATIONS@@@, and converts annotations to build message.
+package main
+
+import (
+	"os"
+
+	"go.chromium.org/luci/buildbucket/luciexe"
+)
+
+func main() {
+	os.Exit(luciexe.ExecutorMain(os.Args))
+}
