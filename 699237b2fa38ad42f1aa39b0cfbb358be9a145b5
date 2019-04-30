@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "5af3f132_6ad3a3f0",
+        "filename": "buildbucket/cmd/luci_executor/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-30T18:53:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2dd1dd30_bd5884a6",
+      "range": {
+        "startLine": 22,
+        "startChar": 35,
+        "endLine": 22,
+        "endChar": 38
+      },
+      "revId": "699237b2fa38ad42f1aa39b0cfbb358be9a145b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "700b776e_6236115b",
         "filename": "buildbucket/exe/executor.go",
         "patchSetId": 1
@@ -108,6 +132,30 @@
       "side": 1,
       "message": "Done",
       "parentUuid": "700b776e_6236115b",
+      "range": {
+        "startLine": 62,
+        "startChar": 9,
+        "endLine": 62,
+        "endChar": 17
+      },
+      "revId": "699237b2fa38ad42f1aa39b0cfbb358be9a145b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "77c2741c_e1018e68",
+        "filename": "buildbucket/exe/executor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-04-30T18:53:48Z",
+      "side": 1,
+      "message": "consistent with this, I did another series of renames to use \"runner\" where this CL used \"executor\"",
+      "parentUuid": "9a74c1dc_43cb75ce",
       "range": {
         "startLine": 62,
         "startChar": 9,
