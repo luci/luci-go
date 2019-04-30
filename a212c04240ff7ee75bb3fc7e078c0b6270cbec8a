@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6976028e_bc0a51b9",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-30T04:32:19Z",
+      "side": 1,
+      "message": "Changed to a filter function now",
+      "parentUuid": "b15ecf0d_68b09567",
+      "range": {
+        "startLine": 67,
+        "startChar": 59,
+        "endLine": 67,
+        "endChar": 66
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2abdc1bf_fc029b60",
         "filename": "vpython/application/probe.go",
         "patchSetId": 1
@@ -119,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "2806b8d5_6d2dceae",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-30T04:32:19Z",
+      "side": 1,
+      "message": "Changed to a filter function implemented as part of the wrapper checking code.",
+      "parentUuid": "eb1d889a_9efcd79b",
+      "range": {
+        "startLine": 52,
+        "startChar": 56,
+        "endLine": 52,
+        "endChar": 73
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d58029f8_90b91168",
         "filename": "vpython/python/find.go",
         "patchSetId": 1
@@ -163,6 +211,30 @@
       "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2dd90c4_80bfadea",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-30T04:32:19Z",
+      "side": 1,
+      "message": "No longer needed.",
+      "parentUuid": "30ee1ce1_3ff1af0e",
+      "range": {
+        "startLine": 100,
+        "startChar": 16,
+        "endLine": 100,
+        "endChar": 70
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -237,6 +309,30 @@
     },
     {
       "key": {
+        "uuid": "68ae371d_37b2618d",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-30T04:32:19Z",
+      "side": 1,
+      "message": "Turns out this functionality was essentially already there.",
+      "parentUuid": "d3072279_1632cc20",
+      "range": {
+        "startLine": 107,
+        "startChar": 32,
+        "endLine": 107,
+        "endChar": 39
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "abbfeaa0_1b588728",
         "filename": "vpython/python/find_test.go",
         "patchSetId": 1
@@ -257,6 +353,30 @@
       "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4d412e8_4b8e3c9a",
+        "filename": "vpython/python/find_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-30T04:32:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "abbfeaa0_1b588728",
+      "range": {
+        "startLine": 93,
+        "startChar": 19,
+        "endLine": 93,
+        "endChar": 25
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -304,6 +424,30 @@
       "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f6046ec_de41b296",
+        "filename": "vpython/venv/venv_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-30T04:32:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "31866f93_e754bb48",
+      "range": {
+        "startLine": 60,
+        "startChar": 36,
+        "endLine": 60,
+        "endChar": 54
+      },
+      "revId": "a212c04240ff7ee75bb3fc7e078c0b6270cbec8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

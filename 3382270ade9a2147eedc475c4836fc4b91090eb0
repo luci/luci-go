@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c6645b98_9942a96a",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-30T04:32:19Z",
+      "side": 1,
+      "message": "This is here primarily for test code reasons, although it would also cover for other `lookPathFunc`s being provided and not behaving properly.",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 25
+      },
+      "revId": "3382270ade9a2147eedc475c4836fc4b91090eb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
