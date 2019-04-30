@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	flattenerVersion = "git_revision:1eb070139f88270631d9017ce9798853792dbd20"
+	flattenerVersion = "git_revision:4956df0d44a42779ac13d4363c81bda88124d976"
 )
 
 // Buildbucket normalizes cr-buildbucket.cfg config.
@@ -80,7 +80,7 @@ func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
 var flattenerPath = ""
 
 func installFlattenBuildbucketCfg(c context.Context) (bin string, err error) {
-	// Do not install twice, just a waste of time resolving 'latest'.
+	// Do not install twice.
 	if flattenerPath != "" {
 		return flattenerPath, nil
 	}
