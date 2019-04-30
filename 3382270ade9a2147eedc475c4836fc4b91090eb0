@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "60659c0a_6629e3ff",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-30T18:20:57Z",
+      "side": 1,
+      "message": "can we specify that this is an absolute path? (I think that\u0027s practically true, but the docstring should mention this)",
+      "range": {
+        "startLine": 41,
+        "startChar": 29,
+        "endLine": 41,
+        "endChar": 48
+      },
+      "revId": "3382270ade9a2147eedc475c4836fc4b91090eb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c6645b98_9942a96a",
         "filename": "vpython/python/find.go",
         "patchSetId": 2
@@ -13,6 +36,30 @@
       "writtenOn": "2019-04-30T04:32:19Z",
       "side": 1,
       "message": "This is here primarily for test code reasons, although it would also cover for other `lookPathFunc`s being provided and not behaving properly.",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 25
+      },
+      "revId": "3382270ade9a2147eedc475c4836fc4b91090eb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0ae877d_09252077",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-30T18:20:57Z",
+      "side": 1,
+      "message": "By \u0027test code reasons\u0027 do you mean that existing tests expect this call? Could the tests just provide a different LookPathFunc to achieve the same thing?\n\nIIUC this means that we run the version check at least twice (assuming that the first result matches?)",
+      "parentUuid": "c6645b98_9942a96a",
       "range": {
         "startLine": 145,
         "startChar": 1,
