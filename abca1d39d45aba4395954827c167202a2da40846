@@ -37,6 +37,47 @@
     },
     {
       "key": {
+        "uuid": "bbbc4193_044fdc55",
+        "filename": "buildbucket/cmd/luci_runner/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-30T21:46:22Z",
+      "side": 1,
+      "message": "see below",
+      "parentUuid": "0abf35ec_992d249e",
+      "revId": "abca1d39d45aba4395954827c167202a2da40846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76198559_0c3eb93a",
+        "filename": "buildbucket/cmd/luci_runner/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-30T21:46:22Z",
+      "side": 1,
+      "message": "oh... maybe this is a weird diff then?",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 16,
+        "endChar": 73
+      },
+      "revId": "abca1d39d45aba4395954827c167202a2da40846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "11eeecf7_0999013d",
         "filename": "buildbucket/cmd/luci_runner/main.go",
         "patchSetId": 9
