@@ -112,7 +112,11 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 		return destroyInstanceAsync(c, vm.ID, vm.URL)
 	}
 	srv := getSwarming(c, vm.Swarming).Bot
-	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Do()
+	// bot_terminate occurs when the bot starts the termination task and is normally followed
+	// by task_completed and bot_shutdown. A terminated bot has no further events. Responses
+	// also include the full set of dimensions when the event was recorded. Limit response size
+	// by fetching only recent events, and only the type of each.
+	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Limit(5).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(c, gerr)
