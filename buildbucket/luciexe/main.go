@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runbuild
+package luciexe
 
 import (
 	"bytes"
@@ -33,12 +33,12 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func parseArgs(args []string) (*pb.RunBuildArgs, error) {
+func parseArgs(args []string) (*pb.RunnerArgs, error) {
 	fs := flag.FlagSet{}
 	argsB64 := fs.String("args-b64gz", "", text.Doc(`
 		(standard raw, unpadded base64)-encoded,
 		zlib-compressed,
-		binary buildbucket.v2.RunBuildArgs protobuf message.
+		binary buildbucket.v2.RunnerArgs protobuf message.
 	`))
 	if err := fs.Parse(args); err != nil {
 		return nil, err
@@ -66,15 +66,15 @@ func parseArgs(args []string) (*pb.RunBuildArgs, error) {
 		return nil, ann(err)
 	}
 
-	ret := &pb.RunBuildArgs{}
+	ret := &pb.RunnerArgs{}
 	if err := proto.Unmarshal(decompressed, ret); err != nil {
 		return nil, ann(err)
 	}
 	return ret, nil
 }
 
-// Main runs a build runner, a program that bootstraps a user executable.
-func Main(args []string) int {
+// RunnerMain runs LUCI runner, a program that runs a LUCI executable.
+func RunnerMain(args []string) int {
 	if err := mainErr(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
@@ -91,6 +91,6 @@ func mainErr(rawArgs []string) error {
 		return err
 	}
 
-	_, err = (&buildRunner{}).Run(ctx, args)
+	_, err = (&runner{}).Run(ctx, args)
 	return err
 }
