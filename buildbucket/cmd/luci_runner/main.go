@@ -12,28 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Command run_annotations is a LUCI executable that wraps a command that
+// produces @@@ANNOTATIONS@@@, and converts annotations to build message.
 package main
 
 import (
-	"go.chromium.org/luci/common/clock/testclock"
+	"os"
 
-	"go.chromium.org/luci/buildbucket/runbuild"
-
-	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/luciexe"
 )
 
-var client = runbuild.Client{
-	BuildTimestamp: testclock.TestRecentTimeUTC,
-}
-
-func initExecutable() {
-	if err := client.Init(); err != nil {
-		panic(err)
-	}
-}
-
-func writeBuild(build *pb.Build) {
-	if err := client.WriteBuild(build); err != nil {
-		panic(err)
-	}
+func main() {
+	os.Exit(luciexe.RunnerMain(os.Args))
 }

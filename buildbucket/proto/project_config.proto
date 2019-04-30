@@ -348,11 +348,11 @@ message Builder {
   repeated string dimensions = 3;
 
   // Specifies that a recipe to run.
-  // DEPRECATED: use executable.
+  // DEPRECATED: use exe.
   Recipe recipe = 4;
 
   // What to run when a build is ready to start.
-  buildbucket.v2.Executable executable = 23;
+  buildbucket.v2.Executable exe = 23;
 
   // A JSON object representing Build.input.properties.
   // Individual object properties can be overridden with
