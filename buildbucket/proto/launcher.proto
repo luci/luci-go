@@ -28,8 +28,8 @@ message BuildSecrets {
   string build_token = 1;
 }
 
-// Arguments for runbuild command.
-message RunBuildArgs {
+// Arguments for luci_runner command.
+message RunnerArgs {
   message GitAuth {
     bool disable = 1;
     repeated string known_gerrit_hosts = 2;

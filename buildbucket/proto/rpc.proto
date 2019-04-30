@@ -300,9 +300,9 @@ message ScheduleBuildRequest {
   // Value for Build.critical.
   Trinary critical = 13;
 
-  // Overrides Builder.executable in the config.
+  // Overrides Builder.exe in the config.
   // Supported subfields: cipd_version.
-  Executable executable = 14;
+  Executable exe = 14;
 }
 
 // A request message for CancelBuild rpc.

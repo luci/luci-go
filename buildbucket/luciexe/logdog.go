@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runbuild
+package luciexe
 
 import (
 	"context"
@@ -96,7 +96,7 @@ func (l *logdogServer) Start(ctx context.Context) error {
 			Host:           l.CoordinatorHost,
 			Project:        l.Project,
 			Prefix:         l.Prefix,
-			SourceInfo:     []string{"runbuild"},
+			SourceInfo:     []string{"luci_runner"},
 			RPCTimeout:     defaultRPCTimeout,
 			PublishContext: withNonCancel(ctx),
 		}

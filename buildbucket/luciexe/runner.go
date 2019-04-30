@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runbuild
+package luciexe
 
 import (
 	"bytes"
@@ -52,28 +52,29 @@ const (
 	streamNamePrefix   = "u"
 )
 
-type buildRunner struct {
-	args         *pb.RunBuildArgs
+// runner runs a LUCI executable.
+type runner struct {
+	args         *pb.RunnerArgs
 	localLogFile string
 }
 
 // Run runs a user executable.
-func (r *buildRunner) Run(ctx context.Context, args *pb.RunBuildArgs) (*pb.Build, error) {
+func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) (*pb.Build, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// Validate and normalize parameters.
-	args = proto.Clone(args).(*pb.RunBuildArgs)
+	args = proto.Clone(args).(*pb.RunnerArgs)
 	if err := normalizeArgs(args); err != nil {
 		return nil, errors.Annotate(err, "invalid args").Err()
 	}
 
 	// Print our input.
-	runBuildJSON, err := indentedJSONPB(args)
+	argsJSON, err := indentedJSONPB(args)
 	if err != nil {
 		return nil, err
 	}
-	logging.Infof(ctx, "RunBuildArgs: %s", runBuildJSON)
+	logging.Infof(ctx, "RunnerArgs: %s", argsJSON)
 
 	// Prepare workdir.
 	if err := r.setupWorkDir(args.WorkDir); err != nil {
@@ -154,7 +155,7 @@ func (r *buildRunner) Run(ctx context.Context, args *pb.RunBuildArgs) (*pb.Build
 
 // setupWorkDir creates a work dir.
 // If workdir already exists, returns an error.
-func (r *buildRunner) setupWorkDir(workDir string) error {
+func (r *runner) setupWorkDir(workDir string) error {
 	switch _, err := os.Stat(workDir); {
 	case err == nil:
 		return errors.Reason("workdir %q already exists; it must not", workDir).Err()
@@ -173,7 +174,7 @@ func (r *buildRunner) setupWorkDir(workDir string) error {
 // runUserExecutable runs the user executable.
 // Requires LogDog server to be running.
 // Sends user executable stdout/stderr into logdogServ, with teeing enabled.
-func (r *buildRunner) runUserExecutable(ctx context.Context, args *pb.RunBuildArgs, userAuth *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (err error) {
+func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, userAuth *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -239,7 +240,7 @@ func (r *buildRunner) runUserExecutable(ctx context.Context, args *pb.RunBuildAr
 }
 
 // setupUserEnv prepares user subprocess environment.
-func (r *buildRunner) setupUserEnv(ctx context.Context, args *pb.RunBuildArgs, userAuth *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (environ.Env, error) {
+func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, userAuth *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (environ.Env, error) {
 	ret := environ.System()
 	userAuth.ExportIntoEnv(ret)
 	if err := logdogServ.ExportIntoEnv(ret); err != nil {
@@ -248,7 +249,7 @@ func (r *buildRunner) setupUserEnv(ctx context.Context, args *pb.RunBuildArgs, u
 	ret.Set("LOGDOG_NAMESPACE", logdogNamespace)
 
 	// Prepare user LUCI context.
-	ctx, err := lucictx.Set(ctx, "run_build", map[string]string{
+	ctx, err := lucictx.Set(ctx, "luci_executable", map[string]string{
 		"cache_dir": args.CacheDir,
 	})
 	if err != nil {
@@ -262,9 +263,9 @@ func (r *buildRunner) setupUserEnv(ctx context.Context, args *pb.RunBuildArgs, u
 
 	// Prepare a user temp dir.
 	// Note that we can't use workdir directly because some overzealous scripts
-	// like to remove everything they find under TEMPDIR, and it breaks runbuild
-	// internals that keep some files in workdir (in particular git and gsutil
-	// configs setup by AuthContext).
+	// like to remove everything they find under TEMPDIR, and it breaks LUCI
+	// runner internals that keep some files in workdir (in particular git and
+	// gsutil configs setup by AuthContext).
 	userTempDir := filepath.Join(args.WorkDir, "ut")
 	if err := os.MkdirAll(userTempDir, 0700); err != nil {
 		return environ.Env{}, errors.Annotate(err, "failed to create temp dir").Err()
@@ -278,7 +279,7 @@ func (r *buildRunner) setupUserEnv(ctx context.Context, args *pb.RunBuildArgs, u
 
 // hookStdoutStderr sends stdout/stderr to logdogServ and also tees to the
 // current process's stdout/stderr respectively.
-func (r *buildRunner) hookStdoutStderr(ctx context.Context, logdogServ *logdogServer, stdout, stderr io.ReadCloser, streamNamePrefix string) error {
+func (r *runner) hookStdoutStderr(ctx context.Context, logdogServ *logdogServer, stdout, stderr io.ReadCloser, streamNamePrefix string) error {
 	tsNow, err := ptypes.TimestampProto(clock.Now(ctx))
 	if err != nil {
 		return err
@@ -325,24 +326,24 @@ func readBuildSecrets(ctx context.Context) (*pb.BuildSecrets, error) {
 // The system auth context is used for running logdog and updating Buildbucket
 // build state. On Swarming all these actions will use bot-associated account
 // (specified in Swarming bot config), whose logical name (usually "system") is
-// provided via RunBuildArgs.luci_system_account.
+// provided via RunnerArgs.luci_system_account.
 //
 // The user context is used for actually running the user executable. It is the
-// context the runbuild starts with by default. On Swarming this will be the
+// context the runner starts with by default. On Swarming this will be the
 // context associated with service account specified in the Swarming task
 // definition.
-func setupAuth(ctx context.Context, args *pb.RunBuildArgs) (system, user *authctx.Context, err error) {
+func setupAuth(ctx context.Context, args *pb.RunnerArgs) (system, user *authctx.Context, err error) {
 	authArgs := args.GetAuth()
 
 	// Construct authentication option with the set of scopes to be used through
-	// out runbuild. This is superset of all scopes we might need. It is more
+	// out the runner. This is superset of all scopes we might need. It is more
 	// efficient to create a single token with all the scopes than make a bunch
 	// of smaller-scoped tokens. We trust Google APIs enough to send
 	// widely-scoped tokens to them.
 	//
 	// Note that the user subprocess are still free to request whatever scopes
 	// they need (though LUCI_CONTEXT protocol). The scopes here are only for
-	// parts of runbuild (LogDog client, Devshell proxy, etc).
+	// parts of the runner (LogDog client, Devshell proxy, etc).
 	//
 	// See https://developers.google.com/identity/protocols/googlescopes for list of
 	// available scopes.
@@ -357,7 +358,7 @@ func setupAuth(ctx context.Context, args *pb.RunBuildArgs) (system, user *authct
 
 	// If we are given a system logical account name, use it.
 	// Otherwise, we use whatever is default account now (don't switch to a system
-	// one). Happens when running runbuild manually locally.
+	// one). Happens when launching runner manually locally.
 	// It picks up the developer account.
 	systemCtx := ctx
 	if authArgs.GetLuciSystemAccount() != "" {
@@ -428,7 +429,7 @@ func validateRequiredPath(title, path string) error {
 	}
 }
 
-func normalizeArgs(a *pb.RunBuildArgs) error {
+func normalizeArgs(a *pb.RunnerArgs) error {
 	switch {
 	case a.BuildbucketHost == "":
 		return errors.Reason("buildbucket_host is required").Err()
@@ -457,7 +458,7 @@ func normalizeArgs(a *pb.RunBuildArgs) error {
 	return nil
 }
 
-func (r *buildRunner) startLogDog(ctx context.Context, args *pb.RunBuildArgs, systemAuth *authctx.Context, listener *buildListener) (*logdogServer, error) {
+func (r *runner) startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAuth *authctx.Context, listener *buildListener) (*logdogServer, error) {
 	logdogServ := &logdogServer{
 		WorkDir:                    args.WorkDir,
 		Authenticator:              systemAuth.Authenticator(),
@@ -472,7 +473,7 @@ func (r *buildRunner) startLogDog(ctx context.Context, args *pb.RunBuildArgs, sy
 }
 
 // globalLogTags returns tags to be added to all logdog streams by default.
-func globalLogTags(args *pb.RunBuildArgs) map[string]string {
+func globalLogTags(args *pb.RunnerArgs) map[string]string {
 	ret := make(map[string]string, 4)
 	ret[logDogViewerURLTag] = fmt.Sprintf("https://%s/build/%d", args.BuildbucketHost, args.Build.Id)
 

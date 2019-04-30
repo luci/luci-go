@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runbuild
+package luciexe
 
 import (
 	"io/ioutil"
@@ -39,12 +39,12 @@ import (
 //   package main
 //
 //   import
-//     "go.chromium.org/luci/buildbucket/runbuild"
+//     "go.chromium.org/luci/buildbucket/luciexe"
 //     "go.chromium.org/luci/buildbucket/proto"
 //   )
 //
 //   func main() int {
-//      var client runbuild.Client
+//      var client luciexe.Client
 //      client.Init()
 //      client.WriteBuild(&buildbucketpb.Build{
 //        Steps: []*buildbucketpb.Step{
@@ -104,7 +104,7 @@ func (c *Client) Init() error {
 }
 
 // WriteBuild sends a new version of Build message to the other side
-// of the protocol, that is runbuild and Buildbucket server.
+// of the protocol, that is the host of the LUCI executable.
 func (c *Client) WriteBuild(build *pb.Build) error {
 	c.assertInitialized()
 	buf, err := proto.Marshal(build)
