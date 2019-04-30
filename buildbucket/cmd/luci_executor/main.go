@@ -12,20 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build darwin dragonfly freebsd linux netbsd openbsd
-
-package runbuild
+// Command run_annotations is a LUCI executable that wraps a command that
+// produces @@@ANNOTATIONS@@@, and converts annotations to build message.
+package main
 
 import (
-	"context"
-	"path/filepath"
+	"os"
 
-	"go.chromium.org/luci/logdog/client/butler/streamserver"
+	"go.chromium.org/luci/buildbucket/luciexec"
 )
 
-// newLogDogStreamServerForPlatform creates a StreamServer instance usable on
-// POSIX.
-func newLogDogStreamServerForPlatform(ctx context.Context, workDir string) (streamserver.StreamServer, error) {
-	// POSIX, use UNIX domain socket.
-	return streamserver.NewUNIXDomainSocketServer(ctx, filepath.Join(workDir, "ld.sock"))
+func main() {
+	os.Exit(luciexec.ExecutorMain(os.Args))
 }
