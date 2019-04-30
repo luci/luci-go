@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4446271_8bcf5ff0",
+        "filename": "buildbucket/cmd/luci_runner/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-30T19:01:33Z",
+      "side": 1,
+      "message": "maybe \u0027annotation_runner\u0027? luci_runner makes it sound like we actually want this as part of LUCI :)",
+      "revId": "abca1d39d45aba4395954827c167202a2da40846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11eeecf7_0999013d",
+        "filename": "buildbucket/cmd/luci_runner/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-30T19:01:33Z",
+      "side": 1,
+      "message": "todo: factor out annotation stuff into this package?",
+      "range": {
+        "startLine": 26,
+        "startChar": 9,
+        "endLine": 26,
+        "endChar": 16
+      },
+      "revId": "abca1d39d45aba4395954827c167202a2da40846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
