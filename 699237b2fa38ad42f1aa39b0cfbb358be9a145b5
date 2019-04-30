@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "2dd1dd30_bd5884a6",
+        "filename": "buildbucket/cmd/luci_executor/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-04-30T18:25:27Z",
+      "side": 1,
+      "message": "luciexe is probably fine?",
+      "parentUuid": "68d91788_8bfa502f",
+      "range": {
+        "startLine": 22,
+        "startChar": 35,
+        "endLine": 22,
+        "endChar": 38
+      },
+      "revId": "699237b2fa38ad42f1aa39b0cfbb358be9a145b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "700b776e_6236115b",
         "filename": "buildbucket/exe/executor.go",
         "patchSetId": 1
