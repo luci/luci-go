@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command run_annotations is a LUCI executable that wraps a command that
-// produces @@@ANNOTATIONS@@@, and converts annotations to build message.
+// Command luci_runner runs a LUCI executable.
+// It is an implementation detail of Buildbucket.
 package main
 
 import (
