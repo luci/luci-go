@@ -12,7 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package runbuild implements LUCI user executable protocol, documented in
-// message Executable in
-// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
-package runbuild
+package main
+
+import (
+	"go.chromium.org/luci/common/clock/testclock"
+
+	"go.chromium.org/luci/buildbucket/luciexec"
+	pb "go.chromium.org/luci/buildbucket/proto"
+)
+
+var client = luciexec.Client{
+	BuildTimestamp: testclock.TestRecentTimeUTC,
+}
+
+func initExecutable() {
+	if err := client.Init(); err != nil {
+		panic(err)
+	}
+}
+
+func writeBuild(build *pb.Build) {
+	if err := client.WriteBuild(build); err != nil {
+		panic(err)
+	}
+}

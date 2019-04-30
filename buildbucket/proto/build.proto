@@ -218,7 +218,7 @@ message Build {
   repeated StringPair tags = 19;
 
   // What to run when the build is ready to start.
-  Executable executable = 24;
+  Executable exe = 24;
 }
 
 // Build infrastructure that was used for a particular build.
