@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runbuild
+package luciexe
 
 import (
 	"context"
@@ -66,7 +66,7 @@ func TestMain(t *testing.T) {
 		defer os.RemoveAll(tempDir)
 
 		run := func(executableName string, argsText string) *pb.Build {
-			args := &pb.RunBuildArgs{}
+			args := &pb.RunnerArgs{}
 			err := proto.UnmarshalText(argsText, args)
 			So(err, ShouldBeNil)
 
@@ -81,8 +81,8 @@ func TestMain(t *testing.T) {
 				"testdata/lib.go")
 			So(goBuild.Run(), ShouldBeNil)
 
-			runner := buildRunner{localLogFile: filepath.Join(tempDir, "logs")}
-			build, err := runner.Run(ctx, args)
+			r := runner{localLogFile: filepath.Join(tempDir, "logs")}
+			build, err := r.Run(ctx, args)
 			So(err, ShouldBeNil)
 			return build
 		}

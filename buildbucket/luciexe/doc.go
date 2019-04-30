@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package runbuild implements LUCI user executable protocol, documented in
+// Package luciexe implements LUCI Executable protocol, documented in
 // message Executable in
 // https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
-package runbuild
+package luciexe
