@@ -69,6 +69,30 @@
       "revId": "3382270ade9a2147eedc475c4836fc4b91090eb0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0711e8a_5636eb1b",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-04-30T18:42:40Z",
+      "side": 1,
+      "message": "There\u0027s a test at the moment which has a `lookPath` which just says \"Yes I did find a python, it is version \u003cspecified\u003e\", but asks for a different python version. Prior to my changes, the `lookPathResult` would come back from lookPath and then be disqualified by the following checks. If I rely on the `lookPath` function provided by the caller to properly use the filter, then I can remove this final check (which does duplicate work otherwise)",
+      "parentUuid": "e0ae877d_09252077",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 25
+      },
+      "revId": "3382270ade9a2147eedc475c4836fc4b91090eb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
