@@ -113,7 +113,7 @@ def _config(
         save all generated files and will never delete any file (in this case it
         is responsibility of the caller to make sure no stale output remains).
     fail_on_warnings: if set to True treat validation warnings as errors.
-        Default is False (i.e. warnings do to cause the validation to fail). If
+        Default is False (i.e. warnings do not cause the validation to fail). If
         set to True via `lucicfg.config` and you want to override it to False
         via command line flags use `-fail-on-warnings=false`.
   """
