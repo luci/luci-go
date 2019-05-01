@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "af14c4af_9d4460ee",
+        "filename": "vpython/python/find_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-05-01T03:32:36Z",
+      "side": 1,
+      "message": "Whoops, forgot to change this back; I\u0027ll fix that now. (this is from when I was trying to make this file pretend to be the appropriate python version)",
+      "range": {
+        "startLine": 93,
+        "startChar": 52,
+        "endLine": 93,
+        "endChar": 54
+      },
+      "revId": "bb1a1b3bb27f63b373d06b21206d4433d43f2562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
