@@ -66,9 +66,16 @@ func TestFind(t *testing.T) {
 		c := context.Background()
 
 		var lookPathVersion Version
-		testLookPath := func(c context.Context, target string) (*LookPathResult, error) {
+		testLookPath := func(c context.Context, target string, filter LookPathFilter) (*LookPathResult, error) {
 			path := filepath.Join(tdir, target)
 			if _, err := os.Stat(path); err != nil {
+				return nil, err
+			}
+			i := Interpreter{
+				Python: path,
+			}
+			i.cachedVersion = &lookPathVersion
+			if err := filter(c, &i); err != nil {
 				return nil, err
 			}
 			return &LookPathResult{Path: path, Version: lookPathVersion}, nil
@@ -83,7 +90,7 @@ func TestFind(t *testing.T) {
 			Convey(fmt.Sprintf(`Test case #%d (%s): find %q in %v`, i, kind, tc.version, tc.interpreters), func() {
 				for _, interpreter := range tc.interpreters {
 					path := filepath.Join(tdir, interpreter)
-					if err := filesystem.Touch(path, time.Time{}, 0644); err != nil {
+					if err := filesystem.Touch(path, time.Time{}, 0744); err != nil {
 						t.Fatalf("could not create interpreter %q: %s", path, err)
 					}
 				}
