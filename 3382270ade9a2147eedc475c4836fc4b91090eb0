@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "54f6a8c7_8cfc4c7a",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-05-01T02:56:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "60659c0a_6629e3ff",
+      "range": {
+        "startLine": 41,
+        "startChar": 29,
+        "endLine": 41,
+        "endChar": 48
+      },
+      "revId": "3382270ade9a2147eedc475c4836fc4b91090eb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6645b98_9942a96a",
         "filename": "vpython/python/find.go",
         "patchSetId": 2
@@ -108,6 +132,30 @@
       "side": 1,
       "message": "I think we should assume that lookPath properly uses the filter",
       "parentUuid": "c0711e8a_5636eb1b",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 25
+      },
+      "revId": "3382270ade9a2147eedc475c4836fc4b91090eb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2139797c_16a3a829",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1330864
+      },
+      "writtenOn": "2019-05-01T02:56:02Z",
+      "side": 1,
+      "message": "The test code is where the difficulty comes up; it\u0027s faking an interpreter by making a sentinel file just to signal \"You are supposed to succeed at this call\", and directly returning what version of python it is as a cached value. The filter function doesn\u0027t expect that... although if I changed it to expect an `Interpreter` rather than a string path, it could work. Alternately, if I changed it from just being a \"does it exist or not\" check, if it was a file which printed the expected version then that would suffice too; I did some testing with a \"python\" that was actually a batch script that just printed out \"2.8.0\".\n\nI\u0027ll see if either approach ends up looking nice.",
+      "parentUuid": "70c26fba_48c53c80",
       "range": {
         "startLine": 145,
         "startChar": 1,
