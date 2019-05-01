@@ -37,9 +37,6 @@ import (
 	"go.chromium.org/luci/gce/appengine/rpc"
 )
 
-// kindsFile is the name of the kinds config file.
-const kindsFile = "kinds.cfg"
-
 // projectsFile is the name of the projects config file.
 const projectsFile = "projects.cfg"
 
@@ -49,7 +46,6 @@ const vmsFile = "vms.cfg"
 // Config encapsulates the service config.
 type Config struct {
 	revision string
-	Kinds    *gce.Kinds
 	Projects *projects.Configs
 	VMs      *gce.Configs
 }
@@ -117,13 +113,7 @@ func newInterface(c context.Context) config.Interface {
 func fetch(c context.Context) (*Config, error) {
 	cli := getInterface(c)
 	set := cfgclient.CurrentServiceConfigSet(c)
-
-	// If VMs and kinds are both non-empty, then their revisions must match
-	// because VMs may depend on kinds. If VMs is empty but kinds is not,
-	// then kinds are declared but unused (which is fine). If kinds is empty
-	// but VMs is not, this may or may not be fine. Validation will tell us.
 	rev := ""
-
 	vms := &gce.Configs{}
 	switch vmsCfg, err := cli.GetConfig(c, set, vmsFile, false); {
 	case err == config.ErrNoConfig:
@@ -137,23 +127,6 @@ func fetch(c context.Context) (*Config, error) {
 			return nil, errors.Annotate(err, "failed to load %q", vmsFile).Err()
 		}
 	}
-
-	kinds := &gce.Kinds{}
-	switch kindsCfg, err := cli.GetConfig(c, set, kindsFile, false); {
-	case err == config.ErrNoConfig:
-		logging.Debugf(c, "%q not found", kindsFile)
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %q", kindsFile).Err()
-	default:
-		logging.Debugf(c, "found %q revision %s", kindsFile, kindsCfg.Revision)
-		if rev != "" && kindsCfg.Revision != rev {
-			return nil, errors.Reason("config revision mismatch").Err()
-		}
-		if err := proto.UnmarshalText(kindsCfg.Content, kinds); err != nil {
-			return nil, errors.Annotate(err, "failed to load %q", kindsFile).Err()
-		}
-	}
-
 	prjs := &projects.Configs{}
 	switch prjsCfg, err := cli.GetConfig(c, set, projectsFile, false); {
 	case err == config.ErrNoConfig:
@@ -171,7 +144,6 @@ func fetch(c context.Context) (*Config, error) {
 	}
 	return &Config{
 		revision: rev,
-		Kinds:    kinds,
 		Projects: prjs,
 		VMs:      vms,
 	}, nil
@@ -180,47 +152,11 @@ func fetch(c context.Context) (*Config, error) {
 // validate validates configs.
 func validate(c context.Context, cfg *Config) error {
 	v := &validation.Context{Context: c}
-	v.SetFile(kindsFile)
-	cfg.Kinds.Validate(v)
 	v.SetFile(projectsFile)
 	cfg.Projects.Validate(v)
 	v.SetFile(vmsFile)
 	cfg.VMs.Validate(v)
 	return v.Finalize()
-}
-
-// merge merges validated configs.
-// Each config's referenced Kind is used to fill out unset values in its attributes.
-func merge(c context.Context, cfg *Config) error {
-	kindsMap := cfg.Kinds.Map()
-	for _, v := range cfg.VMs.GetVms() {
-		if v.Kind != "" {
-			k, ok := kindsMap[v.Kind]
-			if !ok {
-				return errors.Reason("unknown kind %q", v.Kind).Err()
-			}
-			// Merge the config's attributes into a copy of the kind's.
-			// This ensures the config's attributes overwrite the kind's.
-			attrs := proto.Clone(k.Attributes).(*gce.VM)
-			// By default, proto.Merge concatenates repeated field values.
-			// Instead, make repeated fields in the config override the kind.
-			if len(v.Attributes.Disk) > 0 {
-				attrs.Disk = nil
-			}
-			if len(v.Attributes.Metadata) > 0 {
-				attrs.Metadata = nil
-			}
-			if len(v.Attributes.NetworkInterface) > 0 {
-				attrs.NetworkInterface = nil
-			}
-			if len(v.Attributes.Tag) > 0 {
-				attrs.Tag = nil
-			}
-			proto.Merge(attrs, v.Attributes)
-			v.Attributes = attrs
-		}
-	}
-	return nil
 }
 
 // deref dereferences VMs metadata by fetching referenced files.
@@ -383,11 +319,6 @@ func Import(c context.Context) error {
 	cfg, err := fetch(c)
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch configs").Err()
-	}
-
-	// Merge before validating. VMs may be invalid until referenced kinds are applied.
-	if err := merge(c, cfg); err != nil {
-		return errors.Annotate(err, "failed to merge kinds into configs").Err()
 	}
 
 	// Deref before validating. VMs may be invalid until metadata from file is imported.

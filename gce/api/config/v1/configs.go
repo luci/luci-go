@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
-// Validate validates these configs. Kinds must already be applied.
+// Validate validates these configs.
 func (cfgs *Configs) Validate(c *validation.Context) {
 	prefixes := make([]string, 0, len(cfgs.GetVms()))
 	for i, cfg := range cfgs.GetVms() {

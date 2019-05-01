@@ -144,16 +144,6 @@ func TestFetch(t *testing.T) {
 
 	Convey("fetch", t, func() {
 		Convey("invalid", func() {
-			Convey("kinds", func() {
-				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
-					"services/gce": map[string]string{
-						kindsFile: "invalid",
-					},
-				}))
-				_, err := fetch(c)
-				So(err, ShouldErrLike, "failed to load")
-			})
-
 			Convey("projects", func() {
 				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
 					"services/gce": map[string]string{
@@ -180,7 +170,6 @@ func TestFetch(t *testing.T) {
 				c := withInterface(gae.Use(context.Background()), memory.New(nil))
 				cfg, err := fetch(c)
 				So(err, ShouldBeNil)
-				So(cfg.Kinds, ShouldResemble, &gce.Kinds{})
 				So(cfg.Projects, ShouldResemble, &projects.Configs{})
 				So(cfg.VMs, ShouldResemble, &gce.Configs{})
 			})
@@ -191,7 +180,6 @@ func TestFetch(t *testing.T) {
 				}))
 				cfg, err := fetch(c)
 				So(err, ShouldBeNil)
-				So(cfg.Kinds, ShouldResemble, &gce.Kinds{})
 				So(cfg.Projects, ShouldResemble, &projects.Configs{})
 				So(cfg.VMs, ShouldResemble, &gce.Configs{})
 			})
@@ -199,161 +187,14 @@ func TestFetch(t *testing.T) {
 			Convey("explicit", func() {
 				c := withInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
 					"services/gce": {
-						kindsFile:    "",
 						projectsFile: "",
 						vmsFile:      "",
 					},
 				}))
 				cfg, err := fetch(c)
 				So(err, ShouldBeNil)
-				So(cfg.Kinds, ShouldResemble, &gce.Kinds{})
 				So(cfg.Projects, ShouldResemble, &projects.Configs{})
 				So(cfg.VMs, ShouldResemble, &gce.Configs{})
-			})
-		})
-	})
-}
-
-func TestMerge(t *testing.T) {
-	t.Parallel()
-
-	Convey("merge", t, func() {
-		c := context.Background()
-
-		Convey("empty", func() {
-			cfg := &Config{
-				Kinds: &gce.Kinds{
-					Kind: []*gce.Kind{
-						{
-							Name: "kind",
-							Attributes: &gce.VM{
-								Project: "project",
-								Zone:    "zone",
-							},
-						},
-					},
-				},
-			}
-			So(merge(c, cfg), ShouldBeNil)
-			So(cfg.VMs.GetVms(), ShouldHaveLength, 0)
-		})
-
-		Convey("unknown kind", func() {
-			cfg := &Config{
-				VMs: &gce.Configs{
-					Vms: []*gce.Config{
-						{
-							Kind: "kind",
-						},
-					},
-				},
-			}
-			So(merge(c, cfg), ShouldErrLike, "unknown kind")
-		})
-
-		Convey("merged", func() {
-			cfg := &Config{
-				Kinds: &gce.Kinds{
-					Kind: []*gce.Kind{
-						{
-							Name: "kind",
-							Attributes: &gce.VM{
-								Disk: []*gce.Disk{
-									{
-										Image: "image 1",
-									},
-								},
-								Metadata: []*gce.Metadata{
-									{
-										Metadata: &gce.Metadata_FromText{
-											FromText: "metadata 1",
-										},
-									},
-								},
-								NetworkInterface: []*gce.NetworkInterface{
-									{
-										Network: "network 1",
-									},
-								},
-								Project: "project 1",
-								Tag: []string{
-									"tag 1",
-								},
-								Zone: "zone",
-							},
-						},
-					},
-				},
-				VMs: &gce.Configs{
-					Vms: []*gce.Config{
-						{
-							Attributes: &gce.VM{
-								MachineType: "type",
-							},
-						},
-						{
-							Kind: "kind",
-							Attributes: &gce.VM{
-								Disk: []*gce.Disk{
-									{
-										Image: "image 2",
-									},
-								},
-								Metadata: []*gce.Metadata{
-									{
-										Metadata: &gce.Metadata_FromFile{
-											FromFile: "metadata 2",
-										},
-									},
-								},
-								NetworkInterface: []*gce.NetworkInterface{
-									{
-										Network: "network 2",
-									},
-								},
-								Project: "project 2",
-								Tag: []string{
-									"tag 2",
-								},
-							},
-						},
-					},
-				},
-			}
-			So(merge(c, cfg), ShouldBeNil)
-			So(cfg.VMs.GetVms(), ShouldResemble, []*gce.Config{
-				{
-					Attributes: &gce.VM{
-						MachineType: "type",
-					},
-				},
-				{
-					Kind: "kind",
-					Attributes: &gce.VM{
-						Disk: []*gce.Disk{
-							{
-								Image: "image 2",
-							},
-						},
-						Metadata: []*gce.Metadata{
-							{
-								Metadata: &gce.Metadata_FromFile{
-									FromFile: "metadata 2",
-								},
-							},
-						},
-						NetworkInterface: []*gce.NetworkInterface{
-							{
-								Network: "network 2",
-							},
-						},
-						Project: "project 2",
-						Tag: []string{
-							"tag 2",
-						},
-						Zone: "zone",
-					},
-				},
 			})
 		})
 	})
@@ -613,17 +454,6 @@ func TestValidate(t *testing.T) {
 		c := context.Background()
 
 		Convey("invalid", func() {
-			Convey("kinds", func() {
-				cfg := &Config{
-					Kinds: &gce.Kinds{
-						Kind: []*gce.Kind{
-							{},
-						},
-					},
-				}
-				So(validate(c, cfg), ShouldErrLike, "is required")
-			})
-
 			Convey("projects", func() {
 				cfg := &Config{
 					Projects: &projects.Configs{

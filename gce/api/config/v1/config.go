@@ -37,7 +37,7 @@ func (cfg *Config) ToProperty() (datastore.Property, error) {
 	return p, p.SetValue(proto.MarshalTextString(cfg), datastore.NoIndex)
 }
 
-// Validate validates this config. Kind must already be applied.
+// Validate validates this config.
 func (cfg *Config) Validate(c *validation.Context) {
 	c.Enter("amount")
 	cfg.GetAmount().Validate(c)
