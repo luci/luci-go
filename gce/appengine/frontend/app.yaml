@@ -4,6 +4,7 @@ api_version: go1
 
 instance_class: F4
 automatic_scaling:
+  max_concurrent_requests: 20
   min_idle_instances: 1
 
 handlers:
