@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "902d0db7_8e99ec1f",
+        "filename": "vpython/application/probe.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-01T20:47:10Z",
+      "side": 1,
+      "message": "nit: inline this\n\n   err \u003d lp.filter(c, \u0026python.Interpreter{Python: path})",
+      "revId": "74dc0c0b726f97351fee9ccc282806f24639a52c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acf792f6_236b3f01",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-01T20:47:10Z",
+      "side": 1,
+      "message": "nit: inline Interpreter",
+      "range": {
+        "startLine": 144,
+        "startChar": 18,
+        "endLine": 144,
+        "endChar": 19
+      },
+      "revId": "74dc0c0b726f97351fee9ccc282806f24639a52c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d932c10a_062b7e9c",
+        "filename": "vpython/python/find_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-01T20:47:10Z",
+      "side": 1,
+      "message": "nice! so you don\u0027t actually have to shell out to a fake python. I like it.",
+      "range": {
+        "startLine": 77,
+        "startChar": 3,
+        "endLine": 77,
+        "endChar": 37
+      },
+      "revId": "74dc0c0b726f97351fee9ccc282806f24639a52c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
