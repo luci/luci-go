@@ -37,6 +37,11 @@ type LookPathResult struct {
 	Version Version
 }
 
+// LookPathFilter is given a candidate python interpreter, and returns nil
+// if that interpreter passes the filter, and an error explaining why it
+// failed otherwise
+type LookPathFilter func(c context.Context, i *Interpreter) error
+
 // LookPathFunc attempts to find a file identified by "target", similar to
 // exec.LookPath.
 //
@@ -46,7 +51,7 @@ type LookPathResult struct {
 // function is responsible for trying known extensions as part of the lookup.
 //
 // A nil LookPathFunc will use exec.LookPath.
-type LookPathFunc func(c context.Context, target string) (*LookPathResult, error)
+type LookPathFunc func(c context.Context, target string, filter LookPathFilter) (*LookPathResult, error)
 
 // Find attempts to find a Python interpreter matching the supplied version
 // using PATH.
@@ -92,15 +97,31 @@ func findInterpreter(c context.Context, name string, vers Version, lookPath Look
 	if lookPath == nil {
 		lookPath = osExecLookPath
 	}
-	lpr, err := lookPath(c, name)
+
+	versionCheck := func(c context.Context, i *Interpreter) error {
+		if err := i.Normalize(); err != nil {
+			return err
+		}
+
+		iv, err := i.GetVersion(c)
+		if err != nil {
+			return errors.Annotate(err, "failed to get version for: %q", i.Python).Err()
+		}
+		if !vers.IsSatisfiedBy(iv) {
+			return errors.Reason("interpreter %q version %q does not satisfy %q", i.Python, iv, vers).Err()
+		}
+
+		return nil
+	}
+
+	lpr, err := lookPath(c, name, versionCheck)
 	if err != nil {
-		return nil, errors.Annotate(err, "could not find executable for: %q", name).Err()
+		return nil, errors.Annotate(err, "could not find appropriate executable for: %q", name).Err()
 	}
 
 	i := Interpreter{
 		Python: lpr.Path,
 	}
-
 	// If our LookPathResult included a target version, install that into the
 	// Interpreter, allowing it to use this cached value when GetVersion is
 	// called instead of needing to perform an additional lookup.
@@ -110,25 +131,19 @@ func findInterpreter(c context.Context, name string, vers Version, lookPath Look
 	if !lpr.Version.IsZero() {
 		i.cachedVersion = &lpr.Version
 	}
-	if err := i.Normalize(); err != nil {
-		return nil, err
-	}
-
-	iv, err := i.GetVersion(c)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get version for: %q", i.Python).Err()
-	}
-	if !vers.IsSatisfiedBy(iv) {
-		return nil, errors.Reason("interpreter %q version %q does not satisfy %q", i.Python, iv, vers).Err()
-	}
 
 	return &i, nil
 }
 
-func osExecLookPath(c context.Context, target string) (*LookPathResult, error) {
+func osExecLookPath(c context.Context, target string, filter LookPathFilter) (*LookPathResult, error) {
 	v, err := exec.LookPath(target)
 	if err != nil {
 		return nil, err
 	}
+	err = filter(c, &Interpreter{Python: v})
+	if err != nil {
+		return nil, err
+	}
+
 	return &LookPathResult{Path: v}, nil
 }
