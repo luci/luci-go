@@ -31,7 +31,7 @@ import (
 )
 
 // Build is a buildbucket build.
-// It is a more type-safe version of buildbucket.ApiCommonBuildMessage.
+// It is a more type-safe version of buildbucket.LegacyApiCommonBuildMessage.
 //
 // DEPRECATED: use BuildToV2.
 type Build struct {
@@ -151,7 +151,7 @@ type Output struct {
 // If an error is returned, the state of b is undefined.
 //
 // DEPRECATED: use BuildToV2.
-func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
+func (b *Build) ParseMessage(msg *v1.LegacyApiCommonBuildMessage) error {
 	status, err := StatusToV2(msg)
 	if err != nil {
 		return err
@@ -255,7 +255,7 @@ func (b *Build) ParseMessage(msg *v1.ApiCommonBuildMessage) error {
 // If a buildset is present in both b.BuildSets and b.Map, it is deduped.
 // Returned value has zero ClientOperationId.
 // Returns an error if properties could not be marshaled to JSON.
-func (b *Build) PutRequest() (*v1.ApiPutRequestMessage, error) {
+func (b *Build) PutRequest() (*v1.LegacyApiPutRequestMessage, error) {
 	tags := b.Tags.Copy()
 	tags.Del(v1.TagBuilder) // buildbucket adds it automatically
 	for _, bs := range b.Tags[v1.TagBuildSet] {
@@ -264,7 +264,7 @@ func (b *Build) PutRequest() (*v1.ApiPutRequestMessage, error) {
 		}
 	}
 
-	msg := &v1.ApiPutRequestMessage{
+	msg := &v1.LegacyApiPutRequestMessage{
 		Bucket: b.Bucket,
 		Tags:   tags.Format(),
 	}
