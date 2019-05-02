@@ -102,21 +102,6 @@ message VM {
   string zone = 9;
 }
 
-// A kind of VM.
-message Kind {
-  // The attributes of VMs of this kind.
-  VM attributes = 1;
-
-  // The name of this kind of VM.
-  string name = 2;
-}
-
-// A kinds config.
-message Kinds {
-  // Available kinds of VMs.
-  repeated Kind kind = 1;
-}
-
 // A length of time.
 message TimePeriod {
   oneof time {
@@ -174,18 +159,17 @@ message Config {
   Amount amount = 1;
 
   // The attributes of these VMs.
-  // Attributes here override attributes in the kind.
   VM attributes = 2;
-
-  // The name of a kind of VM.
-  string kind = 3;
 
   // The lifetime of these VMs.
   // At the end of their lifetime, each VM is deleted and replaced.
-  TimePeriod lifetime = 4;
+  TimePeriod lifetime = 3;
 
   // The prefix to use when naming these VMs.
-  string prefix = 5;
+  string prefix = 4;
+
+  // Should only be set by the server. The revision of this config.
+  string revision = 5;
 
   // The hostname of the Swarming server these VMs should connect to.
   string swarming = 6;
@@ -194,9 +178,6 @@ message Config {
   // If no Swarming bot has connected by the timeout,
   // the VM is deleted and replaced.
   TimePeriod timeout = 7;
-
-  // Should only be set by the server. The revision of this config.
-  string revision = 8;
 }
 
 // A config for several types of VMs.
