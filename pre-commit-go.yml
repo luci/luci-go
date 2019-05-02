@@ -21,7 +21,9 @@ modes:
         per_dir_default:
           min_coverage: 1
           max_coverage: 100
-        per_dir: {}
+        per_dir:
+          vpython/venv:
+            min_coverage: 0   # covered with smoke tests
       gofmt:
       - {}
       goimports:
@@ -61,7 +63,9 @@ modes:
         per_dir_default:
           min_coverage: 1
           max_coverage: 100
-        per_dir: {}
+        per_dir:
+          vpython/venv:
+            min_coverage: 0   # covered with smoke tests
       goimports:
       - {}
       test:
