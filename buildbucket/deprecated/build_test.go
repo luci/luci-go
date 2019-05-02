@@ -36,7 +36,7 @@ func TestBuild(t *testing.T) {
 		// Load test message.
 		msgBytes, err := ioutil.ReadFile("testdata/build.json")
 		So(err, ShouldBeNil)
-		msg := &v1.ApiCommonBuildMessage{}
+		msg := &v1.LegacyApiCommonBuildMessage{}
 		err = json.Unmarshal(msgBytes, msg)
 		So(err, ShouldBeNil)
 
@@ -169,7 +169,7 @@ func TestBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			actual, err := build.PutRequest()
 			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, &v1.ApiPutRequestMessage{
+			So(actual, ShouldResemble, &v1.LegacyApiPutRequestMessage{
 				Bucket:         "luci.chromium.try",
 				ParametersJson: string(paramsJSON),
 				Tags: []string{

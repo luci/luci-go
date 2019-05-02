@@ -32,12 +32,12 @@ func TestSearch(t *testing.T) {
 
 		// Mock buildbucket server.
 		responses := []struct {
-			body            ApiSearchResponseMessage
+			body            LegacyApiSearchResponseMessage
 			transientErrors int
 		}{
 			{
-				body: ApiSearchResponseMessage{
-					Builds: []*ApiCommonBuildMessage{
+				body: LegacyApiSearchResponseMessage{
+					Builds: []*LegacyApiCommonBuildMessage{
 						{Id: 1},
 						{Id: 2},
 					},
@@ -45,8 +45,8 @@ func TestSearch(t *testing.T) {
 				},
 			},
 			{
-				body: ApiSearchResponseMessage{
-					Builds: []*ApiCommonBuildMessage{
+				body: LegacyApiSearchResponseMessage{
+					Builds: []*LegacyApiCommonBuildMessage{
 						{Id: 3},
 						{Id: 4},
 					},
@@ -54,8 +54,8 @@ func TestSearch(t *testing.T) {
 				},
 			},
 			{
-				body: ApiSearchResponseMessage{
-					Builds: []*ApiCommonBuildMessage{
+				body: LegacyApiSearchResponseMessage{
+					Builds: []*LegacyApiCommonBuildMessage{
 						{Id: 5},
 					},
 				},
@@ -84,7 +84,7 @@ func TestSearch(t *testing.T) {
 		client.BasePath = server.URL
 
 		Convey("Run until finished", func() {
-			builds := make(chan *ApiCommonBuildMessage, 5)
+			builds := make(chan *LegacyApiCommonBuildMessage, 5)
 			cursor, err := client.Search().Run(builds, 0, nil)
 			So(err, ShouldBeNil)
 			for id := 1; id <= 5; id++ {
@@ -94,7 +94,7 @@ func TestSearch(t *testing.T) {
 		})
 		Convey("Run until ctx is cancelled", func() {
 			ctx, cancel := context.WithCancel(ctx)
-			builds := make(chan *ApiCommonBuildMessage)
+			builds := make(chan *LegacyApiCommonBuildMessage)
 			go func() {
 				<-builds
 				<-builds
@@ -105,7 +105,7 @@ func TestSearch(t *testing.T) {
 			So(err, ShouldEqual, context.Canceled)
 		})
 		Convey("Run with a partial response", func() {
-			builds := make(chan *ApiCommonBuildMessage, 5)
+			builds := make(chan *LegacyApiCommonBuildMessage, 5)
 			cursor, err := client.Search().Fields("builds(id)").Run(builds, 0, nil)
 			So(err, ShouldBeNil)
 			So(len(requests), ShouldBeGreaterThan, 0)
