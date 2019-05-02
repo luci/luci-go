@@ -194,14 +194,6 @@
       "description": "Encapsulates namespace, compression, and hash algorithm.",
       "id": "HandlersEndpointsV1Namespace",
       "properties": {
-        "compression": {
-          "default": "flate",
-          "type": "string"
-        },
-        "digest_hash": {
-          "default": "SHA-1",
-          "type": "string"
-        },
         "namespace": {
           "default": "default",
           "type": "string"

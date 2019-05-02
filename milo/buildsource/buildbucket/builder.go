@@ -73,7 +73,7 @@ func (b BuilderID) String() string {
 // The returned builds are sorted by build creation descending.
 // count defines maximum number of builds to fetch; if <0, defaults to 100.
 func fetchBuilds(c context.Context, client *bbv1.Service, bid BuilderID,
-	status string, limit int, cursor string) ([]*bbv1.ApiCommonBuildMessage, string, error) {
+	status string, limit int, cursor string) ([]*bbv1.LegacyApiCommonBuildMessage, string, error) {
 
 	c, _ = context.WithTimeout(c, bbRPCTimeout)
 	search := client.Search()
@@ -136,7 +136,7 @@ func getDebugBuilds(c context.Context, bid BuilderID, maxCompletedBuilds int, ta
 	}
 	defer resFile.Close()
 
-	res := &bbv1.ApiSearchResponseMessage{}
+	res := &bbv1.LegacyApiSearchResponseMessage{}
 	if err := json.NewDecoder(resFile).Decode(res); err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func backCursor(c context.Context, bid BuilderID, limit int, thisCursor, nextCur
 }
 
 // toMiloBuildsSummaries computes summary for each build in parallel.
-func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.ApiCommonBuildMessage) []*ui.BuildSummary {
+func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.LegacyApiCommonBuildMessage) []*ui.BuildSummary {
 	result := make([]*ui.BuildSummary, len(msgs))
 	// For each build, toMiloBuild may query Gerrit to fetch associated CL's
 	// author email. Unfortunately, as of June 2018 Gerrit is often taking >5s to

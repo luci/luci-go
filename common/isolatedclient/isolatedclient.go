@@ -195,21 +195,11 @@ func (i *Client) Push(c context.Context, state *PushState, source Source) (err e
 // Fetch downloads an item from the server.
 func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Writer) error {
 	// Perform initial request.
-	name := ""
-	switch i.h {
-	case crypto.SHA1:
-		name = "sha-1"
-	case crypto.SHA256:
-		name = "sha-256"
-	case crypto.SHA512:
-		name = "sha-512"
-	}
 	url := i.url + "/_ah/api/isolateservice/v1/retrieve"
 	in := &isolateservice.HandlersEndpointsV1RetrieveRequest{
 		Digest: string(digest),
 		Namespace: &isolateservice.HandlersEndpointsV1Namespace{
-			DigestHash: name,
-			Namespace:  i.namespace,
+			Namespace: i.namespace,
 		},
 		Offset: 0,
 	}

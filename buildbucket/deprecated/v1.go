@@ -42,7 +42,7 @@ var MalformedBuild = errors.BoolTag{Key: errors.NewTagKey("malformed buildbucket
 //
 // If build.Status is "", returns (Status_STATUS_UNSPECIFIED, nil).
 // Useful with partial buildbucket responses.
-func StatusToV2(build *v1.ApiCommonBuildMessage) (pb.Status, error) {
+func StatusToV2(build *v1.LegacyApiCommonBuildMessage) (pb.Status, error) {
 	switch build.Status {
 	case "":
 		return pb.Status_STATUS_UNSPECIFIED, nil
@@ -100,7 +100,7 @@ type v1Params struct {
 //
 // The returned build does not include steps.
 // Returns an error if msg is malformed.
-func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *pb.Build, err error) {
+func BuildToV2(msg *v1.LegacyApiCommonBuildMessage) (b *pb.Build, err error) {
 	// This implementation is a port of
 	// https://chromium.googlesource.com/infra/infra/+/d55f587c0f30b0297e4d134c698e7458baa39b7f/appengine/cr-buildbucket/v2/builds.py#21
 
@@ -262,7 +262,7 @@ func BucketNameToV2(v1Bucket string) (project string, bucket string) {
 
 // builderToV2 attempts to parse as many fields into bucket and project as possible,
 // and do project name validation if the project is available.
-func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (ret *pb.BuilderID, err error) {
+func builderToV2(msg *v1.LegacyApiCommonBuildMessage, tags strpair.Map, params *v1Params) (ret *pb.BuilderID, err error) {
 	ret = &pb.BuilderID{Builder: params.Builder}
 	if ret.Builder == "" {
 		ret.Builder = tags.Get(v1.TagBuilder) // Fallback: Grab builder name from tags.
