@@ -59,17 +59,21 @@ type lookPath struct {
 	// ResolveSelf once for any given application.
 	probeBase prober.Probe
 
+	filter python.LookPathFilter
+
 	env        environ.Env
 	lastPath   string
 	lastOutput string
 }
 
-func (lp *lookPath) look(c context.Context, target string) (*python.LookPathResult, error) {
+func (lp *lookPath) look(c context.Context, target string, filter python.LookPathFilter) (*python.LookPathResult, error) {
 	// Construct our probe, derived it from our "probeBase" and tailored to the
 	// specific "target" we're looking for.
 	probe := lp.probeBase
 	probe.Target = target
 	probe.CheckWrapper = lp.checkWrapper
+
+	lp.filter = filter
 
 	var result python.LookPathResult
 	var err error
@@ -98,7 +102,7 @@ func (lp *lookPath) look(c context.Context, target string) (*python.LookPathResu
 // It does this by running it "path -c ...." with CheckWrapperENV set. If
 // the target is a "vpython" wrapper, it will immediately exit with a non-zero
 // value (see Main). If it is not a valid Python program, its behavior is
-// undefined. If it is a valid Pytohn instance, it will exit with a Python
+// undefined. If it is a valid Python instance, it will exit with a Python
 // version string.
 //
 // As a side effect, the text output of the last version probe will be stored
@@ -142,6 +146,9 @@ func (lp *lookPath) checkWrapper(c context.Context, path string, env environ.Env
 		// which is an error.
 		err = errors.Annotate(err, "wrapper check returned non-zero").Err()
 	}
+
+	// If this isn't a wrapper, check if it meets our criteria
+	err = lp.filter(c, &python.Interpreter{Python: path})
 
 	return
 }
