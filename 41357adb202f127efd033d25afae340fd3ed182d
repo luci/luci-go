@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97a90e0c_25245685",
+        "filename": "server/portal/internal/assets/pages/page.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-03T22:47:49Z",
+      "side": 1,
+      "message": "the result looks like this: https://screenshot.googleplex.com/kheQAUcyTd4.png (e.g. compare to https://luci-scheduler-dev.appspot.com/admin/portal/tsmon)",
+      "revId": "41357adb202f127efd033d25afae340fd3ed182d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
