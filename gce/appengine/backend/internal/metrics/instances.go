@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package metrics includes tsmon metric support for internal use by backend.
 package metrics
 
 import (
@@ -23,28 +22,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-
-	"go.chromium.org/luci/gce/appengine/model"
 )
-
-var (
-	creationFailures = metric.NewCounter(
-		"gce/failures/creation",
-		"The number of failures during GCE instance creation.",
-		nil,
-		field.String("prefix"),
-		field.String("project"),
-		field.String("zone"),
-	)
-)
-
-// UpdateFailures increments failure counters.
-func UpdateFailures(c context.Context, creations int, vm *model.VM) {
-	creationFailures.Add(c, int64(creations), vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone())
-}
 
 var (
 	configuredInstances = metric.NewInt(
@@ -201,44 +181,4 @@ func updateInstances(c context.Context) {
 	}); err != nil {
 		errors.Log(c, errors.Annotate(err, "failed to fetch counts").Err())
 	}
-}
-
-func init() {
-	tsmon.RegisterGlobalCallback(updateInstances, configuredInstances, connectedInstances, createdInstances)
-}
-
-var (
-	quotaLimit = metric.NewFloat(
-		"gce/quota/limit",
-		"The GCE quota limit for a particular metric.",
-		nil,
-		field.String("metric"),
-		field.String("project"),
-		field.String("region"),
-	)
-
-	quotaRemaining = metric.NewFloat(
-		"gce/quota/remaining",
-		"The remaining GCE quota for a particular metric.",
-		nil,
-		field.String("metric"),
-		field.String("project"),
-		field.String("region"),
-	)
-
-	quotaUsage = metric.NewFloat(
-		"gce/quota/usage",
-		"The GCE quota being used for a particular metric.",
-		nil,
-		field.String("metric"),
-		field.String("project"),
-		field.String("region"),
-	)
-)
-
-// UpdateQuota sets GCE quota metrics.
-func UpdateQuota(c context.Context, limit, usage float64, metric, project, region string) {
-	quotaLimit.Set(c, limit, metric, project, region)
-	quotaRemaining.Set(c, limit-usage, metric, project, region)
-	quotaUsage.Set(c, usage, metric, project, region)
 }
