@@ -293,13 +293,17 @@ func (b *Build) Link() *Link {
 		panic("invalid build")
 	}
 	num := b.Id
+	// Prefer build number below, but if using buildbucket ID
+	// a b prefix is needed on the buildbucket ID for it to work.
+	numStr := fmt.Sprintf("b%d", num)
 	if b.Number != 0 {
 		num = int64(b.Number)
+		numStr = strconv.FormatInt(num, 10)
 	}
 	builder := b.Builder
 	return NewLink(
 		fmt.Sprintf("%d", num),
-		fmt.Sprintf("/p/%s/builders/%s/%s/%d", builder.Project, builder.Bucket, builder.Builder, num),
+		fmt.Sprintf("/p/%s/builders/%s/%s/%s", builder.Project, builder.Bucket, builder.Builder, numStr),
 		fmt.Sprintf("Build %d", num))
 }
 
