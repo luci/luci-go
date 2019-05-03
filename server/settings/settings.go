@@ -41,6 +41,9 @@ var (
 
 	// ErrBadType is returned if Get(...) receives unexpected type.
 	ErrBadType = errors.New("settings: bad type")
+
+	// ErrReadOnly is returned by Set(...) if the storage is read only.
+	ErrReadOnly = errors.New("settings: the storage is read only")
 )
 
 // Bundle contains all latest settings.
@@ -100,22 +103,33 @@ func (b *Bundle) get(key string, value interface{}) error {
 	return nil
 }
 
-// Storage knows how to fetch settings from permanent storage and mutate
-// them there. Methods of Storage can be called concurrently.
+// Storage knows how to fetch settings.
+//
+// May also optionally implement MutableStorage if it supports mutating
+// settings. Otherwise the settings are assumed to be updated via some external
+// mechanism.
+//
+// Methods of Storage can be called concurrently.
 type Storage interface {
 	// FetchAllSettings fetches all latest settings at once.
 	//
 	// Returns the settings and the duration they should be cached for by default.
 	FetchAllSettings(c context.Context) (*Bundle, time.Duration, error)
+}
+
+// MutableStorage knows how to fetch settings from permanent storage and mutate
+// them there.
+type MutableStorage interface {
+	Storage
 
 	// UpdateSetting updates a setting at the given key.
 	UpdateSetting(c context.Context, key string, value json.RawMessage, who, why string) error
 }
 
-// EventualConsistentStorage is Storage where settings changes take effect not
-// immediately but by some predefined moment in the future.
+// EventualConsistentStorage is MutableStorage where settings changes take
+// effect not immediately but by some predefined moment in the future.
 type EventualConsistentStorage interface {
-	Storage
+	MutableStorage
 
 	// GetConsistencyTime returns "last modification time" + "expiration period".
 	//
@@ -142,6 +156,12 @@ func New(storage Storage) *Settings {
 // GetStorage returns underlying Storage instance.
 func (s *Settings) GetStorage() Storage {
 	return s.storage
+}
+
+// IsMutable returns true if the storage supports MutableStorage interface.
+func (s *Settings) IsMutable() bool {
+	_, ok := s.storage.(MutableStorage)
+	return ok
 }
 
 // Get returns setting value (possibly cached) for the given key.
@@ -194,11 +214,14 @@ func (s *Settings) GetUncached(c context.Context, key string, value interface{})
 // New settings will apply only when existing in-memory cache expires.
 // In particular, Get() right after Set() may still return old value.
 func (s *Settings) Set(c context.Context, key string, value interface{}, who, why string) error {
+	if !s.IsMutable() {
+		return ErrReadOnly
+	}
 	blob, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
-	return s.storage.UpdateSetting(c, key, json.RawMessage(blob), who, why)
+	return s.storage.(MutableStorage).UpdateSetting(c, key, json.RawMessage(blob), who, why)
 }
 
 // SetIfChanged is like Set, but fetches an existing value and compares it to
@@ -207,6 +230,10 @@ func (s *Settings) Set(c context.Context, key string, value interface{}, who, wh
 // Avoids generating new revisions of settings if no changes are actually
 // made. Also logs who is making the change.
 func (s *Settings) SetIfChanged(c context.Context, key string, value interface{}, who, why string) error {
+	if !s.IsMutable() {
+		return ErrReadOnly
+	}
+
 	// 'value' must be a pointer to a struct. Construct a zero value of this
 	// kind of struct.
 	typ := reflect.TypeOf(value)
