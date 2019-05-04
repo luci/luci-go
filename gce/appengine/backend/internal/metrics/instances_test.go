@@ -23,16 +23,13 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/tsmon"
 
-	"go.chromium.org/luci/gce/api/config/v1"
-	"go.chromium.org/luci/gce/appengine/model"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestMetrics(t *testing.T) {
+func TestInstances(t *testing.T) {
 	t.Parallel()
 
-	Convey("Metrics", t, func() {
+	Convey("Instances", t, func() {
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
@@ -111,30 +108,6 @@ func TestMetrics(t *testing.T) {
 			})
 		})
 
-		Convey("UpdateFailures", func() {
-			fields := []interface{}{"prefix", "project", "zone"}
-
-			UpdateFailures(c, 1, &model.VM{
-				Attributes: config.VM{
-					Project: "project",
-					Zone:    "zone",
-				},
-				Hostname: "name-1",
-				Prefix:   "prefix",
-			})
-			So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 1)
-
-			UpdateFailures(c, 1, &model.VM{
-				Attributes: config.VM{
-					Project: "project",
-					Zone:    "zone",
-				},
-				Hostname: "name-1",
-				Prefix:   "prefix",
-			})
-			So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 2)
-		})
-
 		Convey("updateInstances", func() {
 			confFields := []interface{}{"prefix", "project"}
 			creaFields1 := []interface{}{"prefix", "project", "zone-1"}
@@ -193,20 +166,6 @@ func TestMetrics(t *testing.T) {
 			So(datastore.Get(c, &InstanceCount{
 				ID: ic.ID,
 			}), ShouldBeNil)
-		})
-
-		Convey("UpdateQuota", func() {
-			fields := []interface{}{"metric", "region", "project"}
-
-			UpdateQuota(c, 100.0, 25.0, "metric", "region", "project")
-			So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 100.0)
-			So(s.Get(c, quotaRemaining, time.Time{}, fields).(float64), ShouldEqual, 75.0)
-			So(s.Get(c, quotaUsage, time.Time{}, fields).(float64), ShouldEqual, 25.0)
-
-			UpdateQuota(c, 120.0, 40.0, "metric", "region", "project")
-			So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 120.0)
-			So(s.Get(c, quotaRemaining, time.Time{}, fields).(float64), ShouldEqual, 80.0)
-			So(s.Get(c, quotaUsage, time.Time{}, fields).(float64), ShouldEqual, 40.0)
 		})
 	})
 }
