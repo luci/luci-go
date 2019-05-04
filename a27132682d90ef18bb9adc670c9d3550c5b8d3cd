@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d1a37288_17df7483",
+        "filename": "common/system/signals/signals_unix.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-04T01:43:56Z",
+      "side": 1,
+      "message": "I noticed many existing usages of signal.Notify do not catch this. They are wrong: https://cs.chromium.org/search/?q\u003dsignal.Notify+lang:go\u0026sq\u003dpackage:chromium\u0026type\u003dcs \n\nos.Interrupt is Ctrl+C. SIGTERM is not covered by os.Interrupt.",
+      "range": {
+        "startLine": 26,
+        "startChar": 2,
+        "endLine": 26,
+        "endChar": 18
+      },
+      "revId": "a27132682d90ef18bb9adc670c9d3550c5b8d3cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
