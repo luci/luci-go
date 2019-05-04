@@ -40,12 +40,16 @@
           {{if $field.Placeholder}}
           placeholder="{{$field.Placeholder}}"
           {{end}}
-          name="{{$field.ID}}" value="{{$field.Value}}">
+          name="{{$field.ID}}" value="{{$field.Value}}"
+          {{if not $.Mutable}}readonly{{end}}>
       {{else if eq .Type "choice"}}
         <select class="form-control" aria-describedby="help-{{$field.ID}}"
           name="{{$field.ID}}" value="{{$field.Value}}">
           {{range $choice := $field.ChoiceVariants}}
-            <option {{if eq $field.Value $choice}}selected{{end}}>{{$choice}}</option>
+            <option
+              {{if eq $field.Value $choice}}selected{{else if not $.Mutable}}disabled{{end}}>
+              {{$choice}}
+            </option>
           {{end}}
         </select>
       {{else if eq $field.Type "static"}}
@@ -83,7 +87,7 @@
 
   <hr>
   <div class="form-group">
-    {{if .Fields}}
+    {{if and .Fields .Mutable}}
     <div class="col-sm-2">
       <button type="submit" class="btn btn-primary">Save settings</button>
     </div>
