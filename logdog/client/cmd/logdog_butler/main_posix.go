@@ -18,21 +18,12 @@ package main
 
 import (
 	"context"
-	"os"
-	"syscall"
 
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 )
 
 var platformStreamServerExamples = []string{
 	"unix:/var/run/butler.sock",
-}
-
-// interruptSignals is the set of signals to handle gracefully (e.g., flush,
-// shutdown).
-var interruptSignals = []os.Signal{
-	os.Interrupt,
-	syscall.SIGTERM,
 }
 
 func resolvePlatform(ctx context.Context, typ, spec string) (streamserver.StreamServer, error) {
