@@ -30,6 +30,7 @@ def _cq_group(
       watch=None,
       acls=None,
       allow_submit_with_open_deps=None,
+      allow_owner_if_submittable=None,
       tree_status_host=None,
       retry_config=None,
       verifiers=None
@@ -56,6 +57,14 @@ def _cq_group(
         dependencies and whether the CQ verified those open dependencies. In
         turn, if the Gerrit project config allows this, Gerrit will submit all
         dependent CLs first and then this CL.
+    allow_owner_if_submittable: Allow CL owner to trigger CQ dry or full run on
+        their own CL, even if not granted `acl.CQ_COMMITTER` or
+        `acl.CQ_COMMITTER`. Defaults to no such allowance.  CL owner is Gerrit
+        user owning a CL, i.e., its first patchset uploader, not to be confused
+        with OWNERS files. **WARNING**: using this option is not recommended if
+        you have sticky `Code-Review` label because this allows a malicious
+        developer to upload a good looking patchset at first, get code review
+        approval, and then upload a bad patchset and CQ it right away.
     tree_status_host: a hostname of the project tree status app (if any). It is
         used by the CQ to check the tree status before committing a CL. If the
         tree is closed, then the CQ will wait until it is reopened.
@@ -83,6 +92,12 @@ def _cq_group(
       'allow_submit_with_open_deps': validate.bool(
           'allow_submit_with_open_deps',
           allow_submit_with_open_deps,
+          required=False,
+      ),
+      'allow_owner_if_submittable': validate.int(
+          'allow_owner_if_submittable',
+          allow_owner_if_submittable,
+          default=cq.ACTION_NONE,
           required=False,
       ),
       'tree_status_host': validate.string('tree_status_host', tree_status_host, required=False),
