@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 
+	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
@@ -212,6 +213,15 @@ func TestManageBot(t *testing.T) {
 		})
 
 		Convey("valid", func() {
+			datastore.Put(c, &model.Config{
+				ID: "config",
+				Config: config.Config{
+					Amount: &config.Amount{
+						Default: 1,
+					},
+				},
+			})
+
 			Convey("deleted", func() {
 				err := manageBot(c, &tasks.ManageBot{
 					Id: "id",
@@ -221,7 +231,8 @@ func TestManageBot(t *testing.T) {
 
 			Convey("creating", func() {
 				datastore.Put(c, &model.VM{
-					ID: "id",
+					ID:     "id",
+					Config: "config",
 				})
 				err := manageBot(c, &tasks.ManageBot{
 					Id: "id",
@@ -234,8 +245,9 @@ func TestManageBot(t *testing.T) {
 					return http.StatusConflict, nil
 				}
 				datastore.Put(c, &model.VM{
-					ID:  "id",
-					URL: "url",
+					ID:     "id",
+					Config: "config",
+					URL:    "url",
 				})
 				err := manageBot(c, &tasks.ManageBot{
 					Id: "id",
@@ -250,6 +262,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Created:  1,
 						Hostname: "name",
 						Lifetime: 1,
@@ -269,6 +282,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Drained:  true,
 						Hostname: "name",
 						URL:      "url",
@@ -287,6 +301,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Created:  1,
 						Hostname: "name",
 						Timeout:  1,
@@ -306,6 +321,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 					})
@@ -327,6 +343,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 					})
@@ -353,6 +370,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 					})
@@ -385,6 +403,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 					})
@@ -410,6 +429,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Created:  1,
 						Lifetime: 1,
 						Hostname: "name",
@@ -437,6 +457,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Drained:  true,
 						Hostname: "name",
 						URL:      "url",
@@ -463,6 +484,7 @@ func TestManageBot(t *testing.T) {
 					}
 					datastore.Put(c, &model.VM{
 						ID:       "id",
+						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 					})

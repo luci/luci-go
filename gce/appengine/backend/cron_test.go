@@ -44,8 +44,7 @@ func TestCron(t *testing.T) {
 
 		Convey("countVMsAsync", func() {
 			Convey("none", func() {
-				err := countVMsAsync(c)
-				So(err, ShouldBeNil)
+				So(countVMsAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
 
@@ -53,8 +52,7 @@ func TestCron(t *testing.T) {
 				datastore.Put(c, &model.Config{
 					ID: "id",
 				})
-				err := countVMsAsync(c)
-				So(err, ShouldBeNil)
+				So(countVMsAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})
 		})
@@ -62,8 +60,7 @@ func TestCron(t *testing.T) {
 		Convey("createInstancesAsync", func() {
 			Convey("none", func() {
 				Convey("zero", func() {
-					err := createInstancesAsync(c)
-					So(err, ShouldBeNil)
+					So(createInstancesAsync(c), ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
@@ -72,8 +69,7 @@ func TestCron(t *testing.T) {
 						ID:  "id",
 						URL: "url",
 					})
-					err := createInstancesAsync(c)
-					So(err, ShouldBeNil)
+					So(createInstancesAsync(c), ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 			})
@@ -85,16 +81,14 @@ func TestCron(t *testing.T) {
 						Zone: "zone",
 					},
 				})
-				err := createInstancesAsync(c)
-				So(err, ShouldBeNil)
+				So(createInstancesAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})
 		})
 
 		Convey("expandConfigsAsync", func() {
 			Convey("none", func() {
-				err := expandConfigsAsync(c)
-				So(err, ShouldBeNil)
+				So(expandConfigsAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
 
@@ -107,8 +101,7 @@ func TestCron(t *testing.T) {
 						},
 					},
 				})
-				err := expandConfigsAsync(c)
-				So(err, ShouldBeNil)
+				So(expandConfigsAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})
 
@@ -123,26 +116,23 @@ func TestCron(t *testing.T) {
 						},
 					})
 				}
-				err := expandConfigsAsync(c)
-				So(err, ShouldBeNil)
+				So(expandConfigsAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
 			})
 		})
 
 		Convey("manageBotsAsync", func() {
 			Convey("none", func() {
-				Convey("zero", func() {
-					err := manageBotsAsync(c)
-					So(err, ShouldBeNil)
+				Convey("missing", func() {
+					So(manageBotsAsync(c), ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 
-				Convey("not created", func() {
+				Convey("url", func() {
 					datastore.Put(c, &model.VM{
 						ID: "id",
 					})
-					err := manageBotsAsync(c)
-					So(err, ShouldBeNil)
+					So(manageBotsAsync(c), ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
 			})
@@ -152,8 +142,7 @@ func TestCron(t *testing.T) {
 					ID:  "id",
 					URL: "url",
 				})
-				err := manageBotsAsync(c)
-				So(err, ShouldBeNil)
+				So(manageBotsAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})
 		})
@@ -168,8 +157,7 @@ func TestCron(t *testing.T) {
 
 		Convey("reportQuotasAsync", func() {
 			Convey("none", func() {
-				err := reportQuotasAsync(c)
-				So(err, ShouldBeNil)
+				So(reportQuotasAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
 
@@ -177,8 +165,7 @@ func TestCron(t *testing.T) {
 				datastore.Put(c, &model.Project{
 					ID: "id",
 				})
-				err := reportQuotasAsync(c)
-				So(err, ShouldBeNil)
+				So(reportQuotasAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 			})
 		})

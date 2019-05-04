@@ -90,11 +90,6 @@ func createInstancesAsync(c context.Context) error {
 	return trigger(c, &tasks.CreateInstance{}, datastore.NewQuery(model.VMKind).Eq("url", ""))
 }
 
-// drainVMsAsync schedules task queue tasks to drain each VM.
-func drainVMsAsync(c context.Context) error {
-	return trigger(c, &tasks.DrainVM{}, datastore.NewQuery(model.VMKind))
-}
-
 // expandConfigsAsync schedules task queue tasks to expand each config.
 func expandConfigsAsync(c context.Context) error {
 	return trigger(c, &tasks.ExpandConfig{}, datastore.NewQuery(model.ConfigKind))

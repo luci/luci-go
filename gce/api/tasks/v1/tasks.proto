@@ -37,12 +37,6 @@ message DestroyInstance {
   string url = 2;
 }
 
-// A task to drain a particular VM.
-message DrainVM {
-  // The ID of the VM to drain.
-  string id = 1;
-}
-
 // A task to create a particular VM.
 message CreateVM {
   // The ID of the VM to create.
