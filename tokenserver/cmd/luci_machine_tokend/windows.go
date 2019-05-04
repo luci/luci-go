@@ -17,14 +17,9 @@
 package main
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
-
-func interruptSignals() []os.Signal {
-	return []os.Signal{os.Interrupt}
-}
 
 // See https://msdn.microsoft.com/en-us/library/windows/desktop/aa365240(v=vs.85).aspx
 

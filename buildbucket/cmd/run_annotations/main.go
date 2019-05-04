@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/signal"
 	"sync"
 	"time"
 
@@ -32,6 +31,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/logdog/client/annotee"
 	"go.chromium.org/luci/logdog/client/annotee/annotation"
 )
@@ -80,7 +80,7 @@ func sendAnnotations(ctx context.Context, ann *milo.Step) error {
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
-	handleInterrupt(cancel)
+	signals.HandleInterrupt(cancel)
 
 	args := os.Args[1:]
 	if len(args) == 0 {
@@ -145,19 +145,4 @@ func main() {
 
 	// Send the final state.
 	check(sendAnnotations(ctx, processor.Finish().RootStep().Proto()))
-}
-
-func handleInterrupt(fn func()) {
-	sigC := make(chan os.Signal, 1)
-	signal.Notify(sigC, os.Kill, os.Interrupt)
-	handled := false
-	go func() {
-		for range sigC {
-			if handled {
-				os.Exit(1)
-			}
-			fn()
-			handled = true
-		}
-	}()
 }
