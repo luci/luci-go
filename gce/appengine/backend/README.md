@@ -68,10 +68,6 @@ on a particular entity. All cron jobs are idempotent.
 expandConfigsAsync iterates over all Configs and triggers
 [expandConfig](#expandConfig) for each.
 
-### drainVMsAsync
-
-drainVMsAsync iterates over all VMs and triggers [drainVM](#drainVM) for each.
-
 ### createInstancesAsync
 
 createInstancesAsync iterates over all VMs which have no corresponding instance
@@ -96,13 +92,6 @@ Config declares and triggers [createVM](#createVM) for each.
 
 createVM receives a single VM to create. It creates the VM if it doesn't exist.
 
-### drainVM
-
-drainVM receives a single VM to [drain](#drain). It checks if the referenced
-Config no longer exists or no longer references the given VM, and attempts to
-record the VM as drained if so, but doesn't fail if the VM has already been
-deleted.
-
 ### createInstance
 
 createInstance receives a single VM to create an instance for and attempts to
@@ -113,9 +102,11 @@ VM, but new creation tasks in GCE are not started for drained VMs.
 
 ### manageBot
 
-manageBot receives a single VM to manage a bot for. Management entails watching
-the Swarming server for changes in the bot's state and reacting accordingly. If
-Swarming reports that the bot has died or been deleted or terminated, triggers
+manageBot receives a single VM to manage a bot for. First checks if the Config
+referenced by the VM no longer exists or no longer references the given VM and
+[drains](#drain) the VM if it isn't already. Next, watches the Swarming server
+for changes in the bot's state and reacts accordingly. If Swarming reports that
+the bot has died or been deleted or terminated, triggers
 [destroyInstance](#destroyInstance). If the VM's deadline has been exceeded or
 the VM is [drained](#drained), triggers [terminateBot](#terminateBot).
 

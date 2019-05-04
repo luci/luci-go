@@ -238,22 +238,9 @@ func TestQueues(t *testing.T) {
 
 		Convey("drainVM", func() {
 			Convey("invalid", func() {
-				Convey("nil", func() {
-					err := drainVM(c, nil)
-					So(err, ShouldErrLike, "unexpected payload")
-				})
-
-				Convey("empty", func() {
-					err := drainVM(c, &tasks.DrainVM{})
-					So(err, ShouldErrLike, "ID is required")
-				})
-
 				Convey("config", func() {
-					datastore.Put(c, &model.VM{
+					err := drainVM(c, &model.VM{
 						ID: "id",
-					})
-					err := drainVM(c, &tasks.DrainVM{
-						Id: "id",
 					})
 					So(err, ShouldErrLike, "failed to fetch config")
 				})
@@ -261,19 +248,36 @@ func TestQueues(t *testing.T) {
 
 			Convey("valid", func() {
 				Convey("config", func() {
+					Convey("drained", func() {
+						datastore.Put(c, &model.Config{
+							ID: "config",
+							Config: config.Config{
+								Amount: &config.Amount{
+									Default: 2,
+								},
+							},
+						})
+						v := &model.VM{
+							ID:      "id",
+							Config:  "config",
+							Drained: true,
+						}
+						So(datastore.Put(c, v), ShouldBeNil)
+						So(drainVM(c, v), ShouldBeNil)
+						So(v.Drained, ShouldBeTrue)
+						So(datastore.Get(c, v), ShouldBeNil)
+						So(v.Drained, ShouldBeTrue)
+					})
+
 					Convey("deleted", func() {
-						datastore.Put(c, &model.VM{
+						v := &model.VM{
 							ID:     "id",
 							Config: "config",
-						})
-						err := drainVM(c, &tasks.DrainVM{
-							Id: "id",
-						})
-						So(err, ShouldBeNil)
-						v := &model.VM{
-							ID: "id",
 						}
-						datastore.Get(c, v)
+						So(datastore.Put(c, v), ShouldBeNil)
+						So(drainVM(c, v), ShouldBeNil)
+						So(v.Drained, ShouldBeTrue)
+						So(datastore.Get(c, v), ShouldBeNil)
 						So(v.Drained, ShouldBeTrue)
 					})
 
@@ -282,47 +286,19 @@ func TestQueues(t *testing.T) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 							})
-							datastore.Put(c, &model.VM{
+							v := &model.VM{
 								ID:     "id",
 								Config: "config",
-							})
-							err := drainVM(c, &tasks.DrainVM{
-								Id: "id",
-							})
-							So(err, ShouldBeNil)
-							v := &model.VM{
-								ID: "id",
 							}
-							datastore.Get(c, v)
+							So(datastore.Put(c, v), ShouldBeNil)
+							So(drainVM(c, v), ShouldBeNil)
+							So(v.Drained, ShouldBeTrue)
+							So(err, ShouldBeNil)
+							So(datastore.Get(c, v), ShouldBeNil)
 							So(v.Drained, ShouldBeTrue)
 						})
 
-						Convey("matches", func() {
-							datastore.Put(c, &model.Config{
-								ID: "config",
-								Config: config.Config{
-									Amount: &config.Amount{
-										Default: 2,
-									},
-								},
-							})
-							datastore.Put(c, &model.VM{
-								ID:     "id",
-								Config: "config",
-								Index:  2,
-							})
-							err := drainVM(c, &tasks.DrainVM{
-								Id: "id",
-							})
-							So(err, ShouldBeNil)
-							v := &model.VM{
-								ID: "id",
-							}
-							datastore.Get(c, v)
-							So(v.Drained, ShouldBeTrue)
-						})
-
-						Convey("exceeds", func() {
+						Convey("lesser", func() {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: config.Config{
@@ -331,23 +307,40 @@ func TestQueues(t *testing.T) {
 									},
 								},
 							})
-							datastore.Put(c, &model.VM{
+							v := &model.VM{
 								ID:     "id",
 								Config: "config",
 								Index:  2,
-							})
-							err := drainVM(c, &tasks.DrainVM{
-								Id: "id",
-							})
-							So(err, ShouldBeNil)
-							v := &model.VM{
-								ID: "id",
 							}
-							datastore.Get(c, v)
+							So(datastore.Put(c, v), ShouldBeNil)
+							So(drainVM(c, v), ShouldBeNil)
+							So(v.Drained, ShouldBeTrue)
+							So(datastore.Get(c, v), ShouldBeNil)
 							So(v.Drained, ShouldBeTrue)
 						})
 
-						Convey("active", func() {
+						Convey("equal", func() {
+							datastore.Put(c, &model.Config{
+								ID: "config",
+								Config: config.Config{
+									Amount: &config.Amount{
+										Default: 2,
+									},
+								},
+							})
+							v := &model.VM{
+								ID:     "id",
+								Config: "config",
+								Index:  2,
+							}
+							So(datastore.Put(c, v), ShouldBeNil)
+							So(drainVM(c, v), ShouldBeNil)
+							So(v.Drained, ShouldBeTrue)
+							So(datastore.Get(c, v), ShouldBeNil)
+							So(v.Drained, ShouldBeTrue)
+						})
+
+						Convey("greater", func() {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: config.Config{
@@ -356,19 +349,15 @@ func TestQueues(t *testing.T) {
 									},
 								},
 							})
-							datastore.Put(c, &model.VM{
+							v := &model.VM{
 								ID:     "id",
 								Config: "config",
 								Index:  2,
-							})
-							err := drainVM(c, &tasks.DrainVM{
-								Id: "id",
-							})
-							So(err, ShouldBeNil)
-							v := &model.VM{
-								ID: "id",
 							}
-							datastore.Get(c, v)
+							So(datastore.Put(c, v), ShouldBeNil)
+							So(drainVM(c, v), ShouldBeNil)
+							So(v.Drained, ShouldBeFalse)
+							So(datastore.Get(c, v), ShouldBeNil)
 							So(v.Drained, ShouldBeFalse)
 						})
 
@@ -396,44 +385,53 @@ func TestQueues(t *testing.T) {
 								},
 							})
 
-							Convey("matches", func() {
-								now := time.Time{}
-								So(now.Weekday(), ShouldEqual, time.Monday)
-								c, _ := testclock.UseTime(c, now)
-								datastore.Put(c, &model.VM{
-									ID:     "id",
-									Config: "config",
-									Index:  2,
-								})
-								err := drainVM(c, &tasks.DrainVM{
-									Id: "id",
-								})
-								So(err, ShouldBeNil)
-								v := &model.VM{
-									ID: "id",
-								}
-								datastore.Get(c, v)
-								So(v.Drained, ShouldBeTrue)
-							})
-
-							Convey("exceeds", func() {
+							Convey("lesser", func() {
 								now := time.Time{}.Add(time.Hour)
 								So(now.Weekday(), ShouldEqual, time.Monday)
 								So(now.Hour(), ShouldEqual, 1)
 								c, _ := testclock.UseTime(c, now)
-								datastore.Put(c, &model.VM{
+								v := &model.VM{
+									ID:     "id",
+									Config: "config",
+									Index:  4,
+								}
+								So(datastore.Put(c, v), ShouldBeNil)
+								So(drainVM(c, v), ShouldBeNil)
+								So(v.Drained, ShouldBeTrue)
+								So(datastore.Get(c, v), ShouldBeNil)
+								So(v.Drained, ShouldBeTrue)
+							})
+
+							Convey("equal", func() {
+								now := time.Time{}
+								So(now.Weekday(), ShouldEqual, time.Monday)
+								c, _ := testclock.UseTime(c, now)
+								v := &model.VM{
+									ID:     "id",
+									Config: "config",
+									Index:  3,
+								}
+								So(datastore.Put(c, v), ShouldBeNil)
+								So(drainVM(c, v), ShouldBeNil)
+								So(v.Drained, ShouldBeTrue)
+								So(datastore.Get(c, v), ShouldBeNil)
+								So(v.Drained, ShouldBeTrue)
+							})
+
+							Convey("greater", func() {
+								now := time.Time{}.Add(time.Hour)
+								So(now.Weekday(), ShouldEqual, time.Monday)
+								So(now.Hour(), ShouldEqual, 1)
+								c, _ := testclock.UseTime(c, now)
+								v := &model.VM{
 									ID:     "id",
 									Config: "config",
 									Index:  2,
-								})
-								err := drainVM(c, &tasks.DrainVM{
-									Id: "id",
-								})
-								So(err, ShouldBeNil)
-								v := &model.VM{
-									ID: "id",
 								}
-								datastore.Get(c, v)
+								So(datastore.Put(c, v), ShouldBeNil)
+								So(drainVM(c, v), ShouldBeNil)
+								So(v.Drained, ShouldBeFalse)
+								So(datastore.Get(c, v), ShouldBeNil)
 								So(v.Drained, ShouldBeFalse)
 							})
 						})
@@ -441,14 +439,13 @@ func TestQueues(t *testing.T) {
 				})
 
 				Convey("deleted", func() {
-					err := drainVM(c, &tasks.DrainVM{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
-					err = datastore.Get(c, &model.VM{
-						ID: "id",
-					})
-					So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+					v := &model.VM{
+						ID:     "id",
+						Config: "config",
+					}
+					So(drainVM(c, v), ShouldBeNil)
+					So(v.Drained, ShouldBeTrue)
+					So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
 				})
 			})
 		})

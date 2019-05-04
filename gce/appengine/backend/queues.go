@@ -99,27 +99,9 @@ func countVMs(c context.Context, payload proto.Message) error {
 	return nil
 }
 
-// drainVMQueue is the name of the drain VM task handler queue.
-const drainVMQueue = "drain-vm"
-
-// drainVM drains a given VM.
-func drainVM(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.DrainVM)
-	switch {
-	case !ok:
-		return errors.Reason("unexpected payload type %T", payload).Err()
-	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
-	}
-	vm := &model.VM{
-		ID: task.Id,
-	}
-	switch err := datastore.Get(c, vm); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil
-	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM").Err()
-	case vm.Drained:
+// drainVM drains a given VM if necessary.
+func drainVM(c context.Context, vm *model.VM) error {
+	if vm.Drained {
 		return nil
 	}
 	cfg := &model.Config{
@@ -127,7 +109,7 @@ func drainVM(c context.Context, payload proto.Message) error {
 	}
 	switch err := datastore.Get(c, cfg); {
 	case err == datastore.ErrNoSuchEntity:
-		// Config doesn't exist, drain the VM.
+		logging.Debugf(c, "config %q does not exist", cfg.ID)
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
@@ -135,15 +117,14 @@ func drainVM(c context.Context, payload proto.Message) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to parse amount").Err()
 	case amt > vm.Index:
-		// VM is configured to exist, don't drain the VM.
 		return nil
+	default:
+		logging.Debugf(c, "config %q only specifies %d VMs", cfg.ID, amt)
 	}
-	logging.Debugf(c, "draining VM")
 	return datastore.RunInTransaction(c, func(c context.Context) error {
-		// Double-check inside transaction.
-		// VM may already be drained or deleted.
 		switch err := datastore.Get(c, vm); {
 		case err == datastore.ErrNoSuchEntity:
+			vm.Drained = true
 			return nil
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
