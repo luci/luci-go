@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4849fb83_5812e832",
+        "filename": "common/system/signals/interrupt.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-05T21:48:43Z",
+      "side": 1,
+      "message": "https://godoc.org/os/signal#Notify recommends to make this channel buffered",
+      "revId": "690585128a4a2ea75d8c33bacdc9071ec8dc0b65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
