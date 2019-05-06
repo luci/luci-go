@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7cf004f1_e25a5738",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-06T23:05:30Z",
+      "side": 1,
+      "message": "Done.\n\nIt does not have to be a proto, but i strongly prefer protos for any protocols",
+      "parentUuid": "330adf4b_63007c53",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 156,
+        "endChar": 1
+      },
+      "revId": "c3d2091fa8bf163b93f133c6e7368272459f8278",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b66ca534_8b0e6cf0",
         "filename": "luci_notify/config/emailtemplate.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "c3d2091fa8bf163b93f133c6e7368272459f8278",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3061bddd_2ca8c5f0",
+        "filename": "luci_notify/config/emailtemplate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-06T23:05:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b66ca534_8b0e6cf0",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 18
+      },
+      "revId": "c3d2091fa8bf163b93f133c6e7368272459f8278",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "026abdbc_323bcd24",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-06T23:05:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9716b5f_67a19cb1",
+      "range": {
+        "startLine": 66,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 21
+      },
+      "revId": "c3d2091fa8bf163b93f133c6e7368272459f8278",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3c68cea_57d3d30a",
         "filename": "luci_notify/mailtmpl/bundle.go",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "dfc42132_a5f190ee",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-06T23:05:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3c68cea_57d3d30a",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 105,
+        "endChar": 0
+      },
+      "revId": "c3d2091fa8bf163b93f133c6e7368272459f8278",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c2e1780_f9dcee96",
         "filename": "luci_notify/mailtmpl/bundle.go",
         "patchSetId": 3
@@ -114,6 +210,30 @@
       "revId": "c3d2091fa8bf163b93f133c6e7368272459f8278",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72d95186_495a8a90",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-06T23:05:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c2e1780_f9dcee96",
+      "range": {
+        "startLine": 113,
+        "startChar": 15,
+        "endLine": 113,
+        "endChar": 30
+      },
+      "revId": "c3d2091fa8bf163b93f133c6e7368272459f8278",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
