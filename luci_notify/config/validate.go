@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/luci_notify/mailtmpl"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 )
@@ -149,18 +150,18 @@ func validateEmailTemplateFile(ctx *validation.Context, configSet, path string, 
 	}
 
 	// Validate file contents.
-	subject, body, err := splitEmailTemplateFile(string(content))
+	subject, body, err := mailtmpl.SplitTemplateFile(string(content))
 	if err != nil {
 		ctx.Error(err)
 	} else {
 		// Note: Parse does not return an error if the template attempts to
 		// call an undefined template, e.g. {{template "does-not-exist"}}
-		if _, err = text.New("subject").Funcs(EmailTemplateFuncs).Parse(subject); err != nil {
+		if _, err = text.New("subject").Funcs(mailtmpl.Funcs).Parse(subject); err != nil {
 			ctx.Error(err) // error includes template name
 		}
 		// Due to luci-config limitation, we cannot detect an invalid reference to
 		// a sub-template defined in a different file.
-		if _, err = html.New("body").Funcs(EmailTemplateFuncs).Parse(body); err != nil {
+		if _, err = html.New("body").Funcs(mailtmpl.Funcs).Parse(body); err != nil {
 			ctx.Error(err) // error includes template name
 		}
 	}

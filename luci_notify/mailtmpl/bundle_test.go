@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package mailtmpl
 
 import (
 	"testing"
@@ -21,32 +21,25 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-
-	notifypb "go.chromium.org/luci/luci_notify/api/config"
-	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/api/config"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestEmailGen(t *testing.T) {
+func TestBundle(t *testing.T) {
 	t.Parallel()
 
 	Convey(`bundle`, t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-config")
 
-		chromium := &config.Project{Name: "chromium", Revision: "deadbeef"}
-		chromiumKey := datastore.KeyForObj(c, chromium)
-		So(datastore.Put(c, chromium), ShouldBeNil)
-
-		templates := []*config.EmailTemplate{
+		templates := []*Template{
 			{
-				ProjectKey:          chromiumKey,
 				Name:                "default",
 				SubjectTextTemplate: "Build {{.Build.Id}} completed",
 				BodyHTMLTemplate:    `Build {{.Build.Id}} completed with status {{.Build.Status}}`,
 			},
 			{
-				ProjectKey:          chromiumKey,
 				Name:                "using_other_files",
 				SubjectTextTemplate: "",
 				BodyHTMLTemplate: `
@@ -55,19 +48,16 @@ Reusing templates from another files.
 {{template "steps" .}}`,
 			},
 			{
-				ProjectKey:          chromiumKey,
 				Name:                "inlineEntireFile",
 				SubjectTextTemplate: "this file is shared",
 				BodyHTMLTemplate:    `Build {{.Build.Id}}`,
 			},
 			{
-				ProjectKey:          chromiumKey,
 				Name:                "shared",
 				SubjectTextTemplate: "this file is shared",
 				BodyHTMLTemplate:    `{{define "steps"}}steps of build {{.Build.Id}} go here{{end}}`,
 			},
 			{
-				ProjectKey:          chromiumKey,
 				Name:                "bad",
 				SubjectTextTemplate: "bad template",
 				BodyHTMLTemplate:    `{{.FieldDoesNotExist}}`,
@@ -76,25 +66,12 @@ Reusing templates from another files.
 		So(datastore.Put(c, templates), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		bundle, err := getBundle(c, chromium.Name)
-		So(err, ShouldBeNil)
-
-		Convey("bundles are cached", func() {
-			secondBundle, err := getBundle(c, chromium.Name)
-			So(err, ShouldBeNil)
-			So(secondBundle, ShouldEqual, bundle) // pointers match
-		})
-
-		Convey("caching honors revision", func() {
-			chromium.Revision = "badcoffee"
-			So(datastore.Put(c, chromium), ShouldBeNil)
-			secondBundle, err := getBundle(c, chromium.Name)
-			So(err, ShouldBeNil)
-			So(secondBundle, ShouldNotEqual, bundle) // pointers mismatch, new bundle
-		})
+		bundle := NewBundle(templates)
+		So(bundle.Err, ShouldBeNil)
+		So(bundle.bodies.Lookup("default"), ShouldNotBeNil)
 
 		Convey(`GenerateEmail`, func() {
-			input := &notifypb.TemplateInput{
+			input := &config.TemplateInput{
 				BuildbucketHostname: "buildbucket.example.com",
 				Build: &buildbucketpb.Build{
 					Id: 54,
@@ -124,6 +101,37 @@ steps of build 54 go here`)
 				_, body := bundle.GenerateEmail("bad", input)
 				So(body, ShouldContainSubstring, "spartan")
 			})
+		})
+	})
+}
+
+func TestSplitTemplateFile(t *testing.T) {
+	t.Parallel()
+	Convey(`SplitTemplateFile`, t, func() {
+		Convey(`valid template`, func() {
+			_, _, err := SplitTemplateFile(`subject
+
+        body`)
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`empty`, func() {
+			_, _, err := SplitTemplateFile(``)
+			So(err, ShouldErrLike, "empty")
+		})
+
+		Convey(`less than three lines`, func() {
+			_, _, err := SplitTemplateFile(`subject
+        body`)
+			So(err, ShouldErrLike, "less than three lines")
+		})
+
+		Convey(`no blank line`, func() {
+			_, _, err := SplitTemplateFile(`subject
+        body
+        second line
+        `)
+			So(err, ShouldErrLike, "second line is not blank")
 		})
 	})
 }

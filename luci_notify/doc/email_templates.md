@@ -58,9 +58,9 @@ The following functions are available to templates in addition to the
 ## Template example
 
 ```html
-A {{.Build.Builder.Builder}} build completed
+A {{.Build.Builder | formatBuilderID}} build completed
 
-<a href="https://ci.chromium.org/b/{{.Build.Id}}">Build {{.Build.Number}}</a>
+<a href="https://{{.BuildbucketHostname}}/builds/{{.Build.Id}}">Build {{.Build.Number}}</a>
 has completed with status {{.Build.Status}}
 on `{{.Build.EndTime | time}}`
 ```
@@ -74,9 +74,9 @@ When rending, all template files are merged into one. Example:
 luci-notify/email-templates/default.template:
 
 ```html
-A {{.Build.Builder.Builder}} completed
+A {{.Build.Builder | formatBuilderID}} completed
 
-A <a href="https://ci.chromium.org/b/{{.Build.Id}}">build</a> has completed.
+A <a href="https://{{.BuildbucketHostname}}/builds/{{.Build.Id}}">build</a> has completed.
 
 Steps: {{template "steps" .}}
 

@@ -35,12 +35,14 @@ import (
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
 
+	"go.chromium.org/luci/luci_notify/api/config"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/internal"
+	"go.chromium.org/luci/luci_notify/mailtmpl"
 )
 
 // createEmailTasks constructs EmailTasks to be dispatched onto the task queue.
-func createEmailTasks(c context.Context, recipients []EmailNotify, input *EmailTemplateInput) ([]*tq.Task, error) {
+func createEmailTasks(c context.Context, recipients []EmailNotify, input *config.TemplateInput) ([]*tq.Task, error) {
 	// Get templates.
 	bundle, err := getBundle(c, input.Build.Builder.Project)
 	if err != nil {
@@ -54,7 +56,7 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *EmailT
 	for _, r := range recipients {
 		name := r.Template
 		if name == "" {
-			name = defaultTemplate.Name
+			name = mailtmpl.DefaultTemplateName
 		}
 
 		if _, ok := taskTemplates[name]; ok {
@@ -83,7 +85,7 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *EmailT
 	for _, r := range recipients {
 		name := r.Template
 		if name == "" {
-			name = defaultTemplate.Name
+			name = mailtmpl.DefaultTemplateName
 		}
 
 		emailKey := fmt.Sprintf("%d-%s-%s", input.Build.Id, name, r.Email)
@@ -164,7 +166,7 @@ func ComputeRecipients(notifications notifypb.Notifications, inputBlame []*gitpb
 // and 'email_notify' properties, then dispatches notifications if necessary.
 // Does not dispatch a notification for same email, template and build more than
 // once. Ignores current transaction in c, if any.
-func Notify(c context.Context, d *tq.Dispatcher, recipients []EmailNotify, templateParams *EmailTemplateInput) error {
+func Notify(c context.Context, d *tq.Dispatcher, recipients []EmailNotify, templateParams *config.TemplateInput) error {
 	c = datastore.WithoutTransaction(c)
 
 	// Remove unallowed recipients.

@@ -18,34 +18,24 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
-	"time"
 
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	configInterface "go.chromium.org/luci/config"
+	"go.chromium.org/luci/luci_notify/mailtmpl"
 )
-
-var EmailTemplateFuncs = map[string]interface{}{
-	"time": func(ts *timestamp.Timestamp) time.Time {
-		t, _ := ptypes.Timestamp(ts)
-		return t
-	},
-	"formatBuilderID": protoutil.FormatBuilderID,
-}
 
 // emailTemplateFilenameRegexp returns a regular expression for email template
 // file names.
 func emailTemplateFilenameRegexp(c context.Context) *regexp.Regexp {
-	appId := info.AppID(c)
-	pattern := fmt.Sprintf(`^%s+/email-templates/([a-z][a-z0-9_]*)\.template$`, regexp.QuoteMeta(appId))
-	return regexp.MustCompile(pattern)
+	return regexp.MustCompile(fmt.Sprintf(
+		`^%s+/email-templates/([a-z][a-z0-9_]*)%s$`,
+		regexp.QuoteMeta(info.AppID(c)),
+		regexp.QuoteMeta(mailtmpl.FileExt),
+	))
 }
 
 // EmailTemplate is a Datastore entity directly under Project entity that
@@ -68,6 +58,16 @@ type EmailTemplate struct {
 	// DefinitionURL is a URL to human-viewable page that contains the definition
 	// of this email template.
 	DefinitionURL string `gae:",noindex"`
+}
+
+// Template converts t to *mailtmpl.Template.
+func (t *EmailTemplate) Template() *mailtmpl.Template {
+	return &mailtmpl.Template{
+		Name:                t.Name,
+		SubjectTextTemplate: t.SubjectTextTemplate,
+		BodyHTMLTemplate:    t.BodyHTMLTemplate,
+		DefinitionURL:       t.DefinitionURL,
+	}
 }
 
 // fetchAllEmailTemplates fetches all valid email templates of the project from
@@ -98,7 +98,7 @@ func fetchAllEmailTemplates(c context.Context, configService configInterface.Int
 			return nil, errors.Annotate(err, "failed to fetch %q", f).Err()
 		}
 
-		subject, body, err := splitEmailTemplateFile(config.Content)
+		subject, body, err := mailtmpl.SplitTemplateFile(config.Content)
 		if err != nil {
 			// Should not happen. luci-config should not have passed this commit in
 			// because luci-notify exposes its validation code to luci-conifg.
@@ -114,25 +114,4 @@ func fetchAllEmailTemplates(c context.Context, configService configInterface.Int
 		}
 	}
 	return ret, nil
-}
-
-// splitEmailTemplateFile splits an email template file into subject and body.
-// Does not validate their syntaxes.
-// See notify.proto for file format.
-func splitEmailTemplateFile(content string) (subject, body string, err error) {
-	if len(content) == 0 {
-		return "", "", fmt.Errorf("empty file")
-	}
-
-	parts := strings.SplitN(content, "\n", 3)
-	switch {
-	case len(parts) < 3:
-		return "", "", fmt.Errorf("less than three lines")
-
-	case len(strings.TrimSpace(parts[1])) > 0:
-		return "", "", fmt.Errorf("second line is not blank: %q", parts[1])
-
-	default:
-		return strings.TrimSpace(parts[0]), strings.TrimSpace(parts[2]), nil
-	}
 }
