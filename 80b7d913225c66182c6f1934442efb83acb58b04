@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d21bb87_ae35d965",
+        "filename": "luci_notify/cmd/preview_email/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-06T22:54:21Z",
+      "side": 1,
+      "message": "add copyright header and \"Command preview_email is ...\" godoc comment.",
+      "revId": "80b7d913225c66182c6f1934442efb83acb58b04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
