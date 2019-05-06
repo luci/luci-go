@@ -94,11 +94,19 @@ var publicProtos = map[string]struct {
 	// CrOS testing project config.
 	//
 	// load(
+	//     "@proto//external/crostesting/build_irrelevance_config.proto",
+	//     build_irrelevance_config_pb="testplans")
+	// load(
 	//     "@proto//external/crostesting/source_tree_test_config.proto",
 	//     source_tree_test_config_pb="testplans")
 	// load(
 	//     "@proto//external/crostesting/target_test_requirements_config.proto",
 	//     target_test_requirements_config_pb="testplans")
+	"external/crostesting/build_irrelevance_config.proto": {
+		"testplans",
+		"testplans/build_irrelevance_config.proto",
+		"",
+	},
 	"external/crostesting/source_tree_test_config.proto": {
 		"testplans",
 		"testplans/source_tree_test_config.proto",
