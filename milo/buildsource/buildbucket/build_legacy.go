@@ -113,7 +113,7 @@ func GetSwarmingTaskID(c context.Context, buildAddress string) (host, taskId str
 // * Build Info Text
 // * Swarming Bot ID
 // TODO(hinoka, nodir): Delete after buildbucket v2.
-func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string, err error) {
+func extractDetails(msg *bbv1.LegacyApiCommonBuildMessage) (info string, botID string, err error) {
 	var resultDetails struct {
 		// TODO(nodir,iannucci): define a proto for build UI data
 		UI struct {
@@ -143,7 +143,7 @@ func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string,
 // Does not make RPCs.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBuildLegacy, error) {
+func toMiloBuildInMemory(c context.Context, msg *bbv1.LegacyApiCommonBuildMessage) (*ui.MiloBuildLegacy, error) {
 	// Parse the build message into a deprecated.Build struct, filling in the
 	// input and output properties that we expect to receive.
 	var b deprecated.Build
@@ -260,7 +260,7 @@ func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*u
 }
 
 // GetRawBuild fetches a buildbucket build given its address.
-func GetRawBuild(c context.Context, address string) (*bbv1.ApiCommonBuildMessage, error) {
+func GetRawBuild(c context.Context, address string) (*bbv1.LegacyApiCommonBuildMessage, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
@@ -285,7 +285,7 @@ func GetRawBuild(c context.Context, address string) (*bbv1.ApiCommonBuildMessage
 }
 
 // getStep fetches returns the Step annoations from LogDog.
-func getStep(c context.Context, bbBuildMessage *bbv1.ApiCommonBuildMessage) (*logDogTypes.StreamAddr, *miloProto.Step, error) {
+func getStep(c context.Context, bbBuildMessage *bbv1.LegacyApiCommonBuildMessage) (*logDogTypes.StreamAddr, *miloProto.Step, error) {
 	swarmingTags := strpair.ParseMap(bbBuildMessage.Tags)["swarming_tag"]
 	logLocation := strpair.ParseMap(swarmingTags).Get("log_location")
 	if logLocation == "" {
@@ -317,7 +317,7 @@ func GetBuildLegacy(c context.Context, address string, fetchFull bool) (*ui.Milo
 // TODO(hinoka): Some of this can be done concurrently. Investigate if this call
 // takes >500ms on average.
 // TODO(crbug.com/850113): stop loading steps from logdog.
-func ToMiloBuild(c context.Context, b *bbv1.ApiCommonBuildMessage, fetchFull bool) (*ui.MiloBuildLegacy, error) {
+func ToMiloBuild(c context.Context, b *bbv1.LegacyApiCommonBuildMessage, fetchFull bool) (*ui.MiloBuildLegacy, error) {
 	mb, err := toMiloBuildInMemory(c, b)
 	if err != nil {
 		return nil, err
@@ -352,7 +352,7 @@ func ToMiloBuild(c context.Context, b *bbv1.ApiCommonBuildMessage, fetchFull boo
 
 // getBlameLegacy fetches blame information from Gitiles.  This requires the
 // BuildSummary to be indexed in Milo.
-func getBlameLegacy(c context.Context, msg *bbv1.ApiCommonBuildMessage) []*ui.Commit {
+func getBlameLegacy(c context.Context, msg *bbv1.LegacyApiCommonBuildMessage) []*ui.Commit {
 	host, err := getHost(c)
 	if err != nil {
 		return []*ui.Commit{{

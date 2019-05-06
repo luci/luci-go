@@ -21,7 +21,7 @@
   "kind": "discovery#restDescription",
   "methods": {
     "backfill_tag_index": {
-      "description": "Backfills TagIndex entites from builds.",
+      "description": "Backfills TagIndex entities from builds.",
       "httpMethod": "POST",
       "id": "buildbucket.backfill_tag_index",
       "parameterOrder": [
@@ -56,11 +56,11 @@
       },
       "path": "builds/{id}/cancel",
       "request": {
-        "$ref": "ApiCancelRequestBodyMessage",
+        "$ref": "LegacyApiCancelRequestBodyMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -72,11 +72,11 @@
       "id": "buildbucket.cancel_batch",
       "path": "builds/cancel",
       "request": {
-        "$ref": "ApiCancelBatchRequestMessage",
+        "$ref": "LegacyApiCancelBatchRequestMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiCancelBatchResponseMessage"
+        "$ref": "LegacyApiCancelBatchResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -123,7 +123,7 @@
       },
       "path": "bucket/{bucket}/delete",
       "response": {
-        "$ref": "ApiDeleteManyBuildsResponse"
+        "$ref": "LegacyApiDeleteManyBuildsResponse"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -146,11 +146,11 @@
       },
       "path": "builds/{id}/fail",
       "request": {
-        "$ref": "ApiFailRequestBodyMessage",
+        "$ref": "LegacyApiFailRequestBodyMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -182,7 +182,7 @@
       },
       "path": "builds/{id}",
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -204,7 +204,7 @@
       },
       "path": "buckets/{bucket}",
       "response": {
-        "$ref": "ApiBucketMessage"
+        "$ref": "LegacyApiBucketMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -227,11 +227,11 @@
       },
       "path": "builds/{id}/heartbeat",
       "request": {
-        "$ref": "ApiHeartbeatRequestBodyMessage",
+        "$ref": "LegacyApiHeartbeatRequestBodyMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -243,11 +243,11 @@
       "id": "buildbucket.heartbeat_batch",
       "path": "heartbeat",
       "request": {
-        "$ref": "ApiHeartbeatBatchRequestMessage",
+        "$ref": "LegacyApiHeartbeatBatchRequestMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiHeartbeatBatchResponseMessage"
+        "$ref": "LegacyApiHeartbeatBatchResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -270,11 +270,11 @@
       },
       "path": "builds/{id}/lease",
       "request": {
-        "$ref": "ApiLeaseRequestBodyMessage",
+        "$ref": "LegacyApiLeaseRequestBodyMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -302,7 +302,7 @@
       },
       "path": "buckets/{bucket}/pause",
       "response": {
-        "$ref": "ApiPauseResponse"
+        "$ref": "LegacyApiPauseResponse"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -330,7 +330,7 @@
       },
       "path": "peek",
       "response": {
-        "$ref": "ApiSearchResponseMessage"
+        "$ref": "LegacyApiSearchResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -342,11 +342,11 @@
       "id": "buildbucket.put",
       "path": "builds",
       "request": {
-        "$ref": "ApiPutRequestMessage",
+        "$ref": "LegacyApiPutRequestMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -358,11 +358,11 @@
       "id": "buildbucket.put_batch",
       "path": "builds/batch",
       "request": {
-        "$ref": "ApiPutBatchRequestMessage",
+        "$ref": "LegacyApiPutBatchRequestMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiPutBatchResponseMessage"
+        "$ref": "LegacyApiPutBatchResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -385,7 +385,7 @@
       },
       "path": "builds/{id}/reset",
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -408,11 +408,11 @@
       },
       "path": "builds/{id}/retry",
       "request": {
-        "$ref": "ApiRetryRequestMessage",
+        "$ref": "LegacyApiRetryRequestMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -530,7 +530,7 @@
       },
       "path": "search",
       "response": {
-        "$ref": "ApiSearchResponseMessage"
+        "$ref": "LegacyApiSearchResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -553,11 +553,11 @@
       },
       "path": "builds/{id}/start",
       "request": {
-        "$ref": "ApiStartRequestBodyMessage",
+        "$ref": "LegacyApiStartRequestBodyMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -580,11 +580,11 @@
       },
       "path": "builds/{id}/succeed",
       "request": {
-        "$ref": "ApiSucceedRequestBodyMessage",
+        "$ref": "LegacyApiSucceedRequestBodyMessage",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ApiBuildResponseMessage"
+        "$ref": "LegacyApiBuildResponseMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -640,8 +640,8 @@
   "protocol": "rest",
   "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
   "schemas": {
-    "ApiBucketMessage": {
-      "id": "ApiBucketMessage",
+    "LegacyApiBucketMessage": {
+      "id": "LegacyApiBucketMessage",
       "properties": {
         "config_file_content": {
           "type": "string"
@@ -653,7 +653,7 @@
           "type": "string"
         },
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         },
         "name": {
           "required": true,
@@ -666,21 +666,21 @@
       },
       "type": "object"
     },
-    "ApiBuildResponseMessage": {
-      "id": "ApiBuildResponseMessage",
+    "LegacyApiBuildResponseMessage": {
+      "id": "LegacyApiBuildResponseMessage",
       "properties": {
         "build": {
-          "$ref": "ApiCommonBuildMessage",
+          "$ref": "LegacyApiCommonBuildMessage",
           "description": "Describes model.Build, see its docstring."
         },
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         }
       },
       "type": "object"
     },
-    "ApiCancelBatchRequestMessage": {
-      "id": "ApiCancelBatchRequestMessage",
+    "LegacyApiCancelBatchRequestMessage": {
+      "id": "LegacyApiCancelBatchRequestMessage",
       "properties": {
         "build_ids": {
           "items": {
@@ -695,26 +695,26 @@
       },
       "type": "object"
     },
-    "ApiCancelBatchResponseMessage": {
-      "id": "ApiCancelBatchResponseMessage",
+    "LegacyApiCancelBatchResponseMessage": {
+      "id": "LegacyApiCancelBatchResponseMessage",
       "properties": {
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         },
         "results": {
           "items": {
-            "$ref": "ApiCancelBatchResponseMessageOneResult"
+            "$ref": "LegacyApiCancelBatchResponseMessageOneResult"
           },
           "type": "array"
         }
       },
       "type": "object"
     },
-    "ApiCancelBatchResponseMessageOneResult": {
-      "id": "ApiCancelBatchResponseMessageOneResult",
+    "LegacyApiCancelBatchResponseMessageOneResult": {
+      "id": "LegacyApiCancelBatchResponseMessageOneResult",
       "properties": {
         "build": {
-          "$ref": "ApiCommonBuildMessage",
+          "$ref": "LegacyApiCommonBuildMessage",
           "description": "Describes model.Build, see its docstring."
         },
         "build_id": {
@@ -723,13 +723,13 @@
           "type": "string"
         },
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         }
       },
       "type": "object"
     },
-    "ApiCancelRequestBodyMessage": {
-      "id": "ApiCancelRequestBodyMessage",
+    "LegacyApiCancelRequestBodyMessage": {
+      "id": "LegacyApiCancelRequestBodyMessage",
       "properties": {
         "result_details_json": {
           "type": "string"
@@ -737,9 +737,9 @@
       },
       "type": "object"
     },
-    "ApiCommonBuildMessage": {
+    "LegacyApiCommonBuildMessage": {
       "description": "Describes model.Build, see its docstring.",
-      "id": "ApiCommonBuildMessage",
+      "id": "LegacyApiCommonBuildMessage",
       "properties": {
         "bucket": {
           "required": true,
@@ -885,17 +885,17 @@
       },
       "type": "object"
     },
-    "ApiDeleteManyBuildsResponse": {
-      "id": "ApiDeleteManyBuildsResponse",
+    "LegacyApiDeleteManyBuildsResponse": {
+      "id": "LegacyApiDeleteManyBuildsResponse",
       "properties": {
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         }
       },
       "type": "object"
     },
-    "ApiErrorMessage": {
-      "id": "ApiErrorMessage",
+    "LegacyApiErrorMessage": {
+      "id": "LegacyApiErrorMessage",
       "properties": {
         "message": {
           "required": true,
@@ -926,8 +926,8 @@
       },
       "type": "object"
     },
-    "ApiFailRequestBodyMessage": {
-      "id": "ApiFailRequestBodyMessage",
+    "LegacyApiFailRequestBodyMessage": {
+      "id": "LegacyApiFailRequestBodyMessage",
       "properties": {
         "failure_reason": {
           "enum": [
@@ -963,20 +963,20 @@
       },
       "type": "object"
     },
-    "ApiHeartbeatBatchRequestMessage": {
-      "id": "ApiHeartbeatBatchRequestMessage",
+    "LegacyApiHeartbeatBatchRequestMessage": {
+      "id": "LegacyApiHeartbeatBatchRequestMessage",
       "properties": {
         "heartbeats": {
           "items": {
-            "$ref": "ApiHeartbeatBatchRequestMessageOneHeartbeat"
+            "$ref": "LegacyApiHeartbeatBatchRequestMessageOneHeartbeat"
           },
           "type": "array"
         }
       },
       "type": "object"
     },
-    "ApiHeartbeatBatchRequestMessageOneHeartbeat": {
-      "id": "ApiHeartbeatBatchRequestMessageOneHeartbeat",
+    "LegacyApiHeartbeatBatchRequestMessageOneHeartbeat": {
+      "id": "LegacyApiHeartbeatBatchRequestMessageOneHeartbeat",
       "properties": {
         "build_id": {
           "format": "int64",
@@ -996,23 +996,23 @@
       },
       "type": "object"
     },
-    "ApiHeartbeatBatchResponseMessage": {
-      "id": "ApiHeartbeatBatchResponseMessage",
+    "LegacyApiHeartbeatBatchResponseMessage": {
+      "id": "LegacyApiHeartbeatBatchResponseMessage",
       "properties": {
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         },
         "results": {
           "items": {
-            "$ref": "ApiHeartbeatBatchResponseMessageOneHeartbeatResult"
+            "$ref": "LegacyApiHeartbeatBatchResponseMessageOneHeartbeatResult"
           },
           "type": "array"
         }
       },
       "type": "object"
     },
-    "ApiHeartbeatBatchResponseMessageOneHeartbeatResult": {
-      "id": "ApiHeartbeatBatchResponseMessageOneHeartbeatResult",
+    "LegacyApiHeartbeatBatchResponseMessageOneHeartbeatResult": {
+      "id": "LegacyApiHeartbeatBatchResponseMessageOneHeartbeatResult",
       "properties": {
         "build_id": {
           "format": "int64",
@@ -1020,7 +1020,7 @@
           "type": "string"
         },
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         },
         "lease_expiration_ts": {
           "format": "int64",
@@ -1029,8 +1029,8 @@
       },
       "type": "object"
     },
-    "ApiHeartbeatRequestBodyMessage": {
-      "id": "ApiHeartbeatRequestBodyMessage",
+    "LegacyApiHeartbeatRequestBodyMessage": {
+      "id": "LegacyApiHeartbeatRequestBodyMessage",
       "properties": {
         "lease_expiration_ts": {
           "format": "int64",
@@ -1045,8 +1045,8 @@
       },
       "type": "object"
     },
-    "ApiLeaseRequestBodyMessage": {
-      "id": "ApiLeaseRequestBodyMessage",
+    "LegacyApiLeaseRequestBodyMessage": {
+      "id": "LegacyApiLeaseRequestBodyMessage",
       "properties": {
         "lease_expiration_ts": {
           "format": "int64",
@@ -1055,12 +1055,12 @@
       },
       "type": "object"
     },
-    "ApiPauseResponse": {
-      "id": "ApiPauseResponse",
+    "LegacyApiPauseResponse": {
+      "id": "LegacyApiPauseResponse",
       "type": "object"
     },
-    "ApiPubSubCallbackMessage": {
-      "id": "ApiPubSubCallbackMessage",
+    "LegacyApiPubSubCallbackMessage": {
+      "id": "LegacyApiPubSubCallbackMessage",
       "properties": {
         "auth_token": {
           "type": "string"
@@ -1075,51 +1075,51 @@
       },
       "type": "object"
     },
-    "ApiPutBatchRequestMessage": {
-      "id": "ApiPutBatchRequestMessage",
+    "LegacyApiPutBatchRequestMessage": {
+      "id": "LegacyApiPutBatchRequestMessage",
       "properties": {
         "builds": {
           "items": {
-            "$ref": "ApiPutRequestMessage"
+            "$ref": "LegacyApiPutRequestMessage"
           },
           "type": "array"
         }
       },
       "type": "object"
     },
-    "ApiPutBatchResponseMessage": {
-      "id": "ApiPutBatchResponseMessage",
+    "LegacyApiPutBatchResponseMessage": {
+      "id": "LegacyApiPutBatchResponseMessage",
       "properties": {
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         },
         "results": {
           "items": {
-            "$ref": "ApiPutBatchResponseMessageOneResult"
+            "$ref": "LegacyApiPutBatchResponseMessageOneResult"
           },
           "type": "array"
         }
       },
       "type": "object"
     },
-    "ApiPutBatchResponseMessageOneResult": {
-      "id": "ApiPutBatchResponseMessageOneResult",
+    "LegacyApiPutBatchResponseMessageOneResult": {
+      "id": "LegacyApiPutBatchResponseMessageOneResult",
       "properties": {
         "build": {
-          "$ref": "ApiCommonBuildMessage",
+          "$ref": "LegacyApiCommonBuildMessage",
           "description": "Describes model.Build, see its docstring."
         },
         "client_operation_id": {
           "type": "string"
         },
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         }
       },
       "type": "object"
     },
-    "ApiPutRequestMessage": {
-      "id": "ApiPutRequestMessage",
+    "LegacyApiPutRequestMessage": {
+      "id": "LegacyApiPutRequestMessage",
       "properties": {
         "bucket": {
           "required": true,
@@ -1152,7 +1152,7 @@
           "type": "string"
         },
         "pubsub_callback": {
-          "$ref": "ApiPubSubCallbackMessage"
+          "$ref": "LegacyApiPubSubCallbackMessage"
         },
         "tags": {
           "items": {
@@ -1163,8 +1163,8 @@
       },
       "type": "object"
     },
-    "ApiRetryRequestMessage": {
-      "id": "ApiRetryRequestMessage",
+    "LegacyApiRetryRequestMessage": {
+      "id": "LegacyApiRetryRequestMessage",
       "properties": {
         "client_operation_id": {
           "type": "string"
@@ -1174,23 +1174,23 @@
           "type": "string"
         },
         "pubsub_callback": {
-          "$ref": "ApiPubSubCallbackMessage"
+          "$ref": "LegacyApiPubSubCallbackMessage"
         }
       },
       "type": "object"
     },
-    "ApiSearchResponseMessage": {
-      "id": "ApiSearchResponseMessage",
+    "LegacyApiSearchResponseMessage": {
+      "id": "LegacyApiSearchResponseMessage",
       "properties": {
         "builds": {
           "description": "Describes model.Build, see its docstring.",
           "items": {
-            "$ref": "ApiCommonBuildMessage"
+            "$ref": "LegacyApiCommonBuildMessage"
           },
           "type": "array"
         },
         "error": {
-          "$ref": "ApiErrorMessage"
+          "$ref": "LegacyApiErrorMessage"
         },
         "next_cursor": {
           "type": "string"
@@ -1198,8 +1198,8 @@
       },
       "type": "object"
     },
-    "ApiStartRequestBodyMessage": {
-      "id": "ApiStartRequestBodyMessage",
+    "LegacyApiStartRequestBodyMessage": {
+      "id": "LegacyApiStartRequestBodyMessage",
       "properties": {
         "canary": {
           "type": "boolean"
@@ -1214,8 +1214,8 @@
       },
       "type": "object"
     },
-    "ApiSucceedRequestBodyMessage": {
-      "id": "ApiSucceedRequestBodyMessage",
+    "LegacyApiSucceedRequestBodyMessage": {
+      "id": "LegacyApiSucceedRequestBodyMessage",
       "properties": {
         "lease_key": {
           "format": "int64",

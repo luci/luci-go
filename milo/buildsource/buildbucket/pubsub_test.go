@@ -58,10 +58,10 @@ func newMockClient(c context.Context, t *testing.T) (context.Context, *gomock.Co
 // Buildbucket timestamps round off to milliseconds, so define a reference.
 var RefTime = time.Date(2016, time.February, 3, 4, 5, 6, 0, time.UTC)
 
-func makeReq(build bbv1.ApiCommonBuildMessage) io.ReadCloser {
+func makeReq(build bbv1.LegacyApiCommonBuildMessage) io.ReadCloser {
 	bmsg := struct {
-		Build    bbv1.ApiCommonBuildMessage `json:"build"`
-		Hostname string                     `json:"hostname"`
+		Build    bbv1.LegacyApiCommonBuildMessage `json:"build"`
+		Hostname string                           `json:"hostname"`
 	}{build, "hostname"}
 	bm, _ := json.Marshal(bmsg)
 
@@ -98,8 +98,8 @@ func TestPubSub(t *testing.T) {
 		}
 		datastore.Put(c, builderSummary)
 
-		// We'll copy this ApiCommonBuildMessage base for convenience.
-		buildBase := bbv1.ApiCommonBuildMessage{
+		// We'll copy this LegacyApiCommonBuildMessage base for convenience.
+		buildBase := bbv1.LegacyApiCommonBuildMessage{
 			Bucket:    "luci.fake.bucket",
 			Tags:      []string{"builder:fake_builder"},
 			CreatedBy: string(identity.AnonymousIdentity),
@@ -216,7 +216,7 @@ func TestPubSub(t *testing.T) {
 			})
 
 			Convey("results in earlier update not being ingested", func() {
-				eBuild := bbv1.ApiCommonBuildMessage{
+				eBuild := bbv1.LegacyApiCommonBuildMessage{
 					Id:        2234,
 					Bucket:    "luci.fake.bucket",
 					Tags:      []string{"builder:fake_builder"},

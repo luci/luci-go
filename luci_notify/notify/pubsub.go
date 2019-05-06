@@ -382,7 +382,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		return nil, nil
 	}
 	var message struct {
-		Build    bbv1.ApiCommonBuildMessage
+		Build    bbv1.LegacyApiCommonBuildMessage
 		Hostname string
 	}
 	switch err := json.Unmarshal(msg.Message.Data, &message); {

@@ -65,7 +65,7 @@ func ValidateBuildAddress(address string) error {
 
 // GetByAddress fetches a build by its address.
 // Returns (nil, nil) if build is not found.
-func GetByAddress(c context.Context, client *Service, address string) (*ApiCommonBuildMessage, error) {
+func GetByAddress(c context.Context, client *Service, address string) (*LegacyApiCommonBuildMessage, error) {
 	id, _, _, _, _, err := ParseBuildAddress(address)
 	if err != nil {
 		return nil, err

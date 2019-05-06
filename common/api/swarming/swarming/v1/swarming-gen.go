@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,33 @@
 
 // Package swarming provides access to the .
 //
+// Creating a client
+//
 // Usage example:
 //
 //   import "go.chromium.org/luci/common/api/swarming/swarming/v1"
 //   ...
-//   swarmingService, err := swarming.New(oauthHttpClient)
+//   ctx := context.Background()
+//   swarmingService, err := swarming.NewService(ctx)
+//
+// In this example, Google Application Default Credentials are used for authentication.
+//
+// For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
+//
+// Other authentication options
+//
+// To use an API key for authentication (note: some APIs do not support API keys), use option.WithAPIKey:
+//
+//   swarmingService, err := swarming.NewService(ctx, option.WithAPIKey("AIza..."))
+//
+// To use an OAuth token (e.g., a user token obtained via a three-legged OAuth flow), use option.WithTokenSource:
+//
+//   config := &oauth2.Config{...}
+//   // ...
+//   token, err := config.Exchange(ctx, ...)
+//   swarmingService, err := swarming.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+//
+// See https://godoc.org/google.golang.org/api/option/ for details on options.
 package swarming // import "go.chromium.org/luci/common/api/swarming/swarming/v1"
 
 import (
@@ -37,6 +59,8 @@ import (
 
 	gensupport "google.golang.org/api/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	option "google.golang.org/api/option"
+	htransport "google.golang.org/api/transport/http"
 )
 
 // Always reference these packages, just in case the auto-generated code
@@ -64,6 +88,32 @@ const (
 	UserinfoEmailScope = "https://www.googleapis.com/auth/userinfo.email"
 )
 
+// NewService creates a new Service.
+func NewService(ctx context.Context, opts ...option.ClientOption) (*Service, error) {
+	scopesOption := option.WithScopes(
+		"https://www.googleapis.com/auth/userinfo.email",
+	)
+	// NOTE: prepend, so we don't override user-specified scopes.
+	opts = append([]option.ClientOption{scopesOption}, opts...)
+	client, endpoint, err := htransport.NewClient(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	s, err := New(client)
+	if err != nil {
+		return nil, err
+	}
+	if endpoint != "" {
+		s.BasePath = endpoint
+	}
+	return s, nil
+}
+
+// New creates a new Service. It uses the provided http.Client for requests.
+//
+// Deprecated: please use NewService instead.
+// To provide a custom HTTP client, use option.WithHTTPClient.
+// If you are using google.golang.org/api/googleapis/transport.APIKey, use option.WithAPIKey with NewService instead.
 func New(client *http.Client) (*Service, error) {
 	if client == nil {
 		return nil, errors.New("client is nil")
@@ -706,6 +756,34 @@ func (s *SwarmingRpcsClientPermissions) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// SwarmingRpcsContainment: How to contain the task's process. This is
+// highly OS specific. See https://crbug.com/808836.
+type SwarmingRpcsContainment struct {
+	LowerPriority bool `json:"lower_priority,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "LowerPriority") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "LowerPriority") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsContainment) MarshalJSON() ([]byte, error) {
+	type NoMethod SwarmingRpcsContainment
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // SwarmingRpcsDeletedResponse: Indicates whether a bot was deleted.
 type SwarmingRpcsDeletedResponse struct {
 	Deleted bool `json:"deleted,omitempty"`
@@ -774,8 +852,12 @@ func (s *SwarmingRpcsFileContent) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// SwarmingRpcsFilesRef: Defines a data tree reference, normally a
-// reference to a .isolated file.
+// SwarmingRpcsFilesRef: Defines a data tree reference for Swarming task
+// inputs or outputs. It can either be: - a reference to an isolated
+// file on an isolate server - a reference to an isolated file on a RBE
+// CAS server In the RBE CAS case, the isolatedserver must be set to GCP
+// name, and namespace must be set to "sha256-GCP". For the moment, RBE
+// CAS requires SHA-256 and doesn't support precompressed data.
 type SwarmingRpcsFilesRef struct {
 	Isolated string `json:"isolated,omitempty"`
 
@@ -1139,6 +1221,19 @@ func (s *SwarmingRpcsTaskList) MarshalJSON() ([]byte, error) {
 type SwarmingRpcsTaskOutput struct {
 	Output string `json:"output,omitempty"`
 
+	// Possible values:
+	//   "BOT_DIED"
+	//   "CANCELED"
+	//   "COMPLETED"
+	//   "EXPIRED"
+	//   "INVALID"
+	//   "KILLED"
+	//   "NO_RESOURCE"
+	//   "PENDING"
+	//   "RUNNING"
+	//   "TIMED_OUT"
+	State string `json:"state,omitempty"`
+
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
 	googleapi.ServerResponse `json:"-"`
@@ -1184,6 +1279,10 @@ type SwarmingRpcsTaskProperties struct {
 
 	Command []string `json:"command,omitempty"`
 
+	// Containment: How to contain the task's process. This is highly OS
+	// specific. See https://crbug.com/808836.
+	Containment *SwarmingRpcsContainment `json:"containment,omitempty"`
+
 	// Dimensions: Represents a mapping of string to string.
 	Dimensions []*SwarmingRpcsStringPair `json:"dimensions,omitempty"`
 
@@ -1201,8 +1300,12 @@ type SwarmingRpcsTaskProperties struct {
 
 	Idempotent bool `json:"idempotent,omitempty"`
 
-	// InputsRef: Defines a data tree reference, normally a reference to a
-	// .isolated file.
+	// InputsRef: Defines a data tree reference for Swarming task inputs or
+	// outputs. It can either be: - a reference to an isolated file on an
+	// isolate server - a reference to an isolated file on a RBE CAS server
+	// In the RBE CAS case, the isolatedserver must be set to GCP name, and
+	// namespace must be set to "sha256-GCP". For the moment, RBE CAS
+	// requires SHA-256 and doesn't support precompressed data.
 	InputsRef *SwarmingRpcsFilesRef `json:"inputs_ref,omitempty"`
 
 	IoTimeoutSecs int64 `json:"io_timeout_secs,omitempty,string"`
@@ -1480,8 +1583,12 @@ type SwarmingRpcsTaskResult struct {
 
 	Name string `json:"name,omitempty"`
 
-	// OutputsRef: Defines a data tree reference, normally a reference to a
-	// .isolated file.
+	// OutputsRef: Defines a data tree reference for Swarming task inputs or
+	// outputs. It can either be: - a reference to an isolated file on an
+	// isolate server - a reference to an isolated file on a RBE CAS server
+	// In the RBE CAS case, the isolatedserver must be set to GCP name, and
+	// namespace must be set to "sha256-GCP". For the moment, RBE CAS
+	// requires SHA-256 and doesn't support precompressed data.
 	OutputsRef *SwarmingRpcsFilesRef `json:"outputs_ref,omitempty"`
 
 	PerformanceStats *SwarmingRpcsPerformanceStats `json:"performance_stats,omitempty"`
@@ -4448,6 +4555,18 @@ func (r *TaskService) Stdout(taskId string) *TaskStdoutCall {
 	return c
 }
 
+// Length sets the optional parameter "length":
+func (c *TaskStdoutCall) Length(length int64) *TaskStdoutCall {
+	c.urlParams_.Set("length", fmt.Sprint(length))
+	return c
+}
+
+// Offset sets the optional parameter "offset":
+func (c *TaskStdoutCall) Offset(offset int64) *TaskStdoutCall {
+	c.urlParams_.Set("offset", fmt.Sprint(offset))
+	return c
+}
+
 // Fields allows partial responses to be retrieved. See
 // https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
@@ -4553,6 +4672,16 @@ func (c *TaskStdoutCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskOutp
 	//     "task_id"
 	//   ],
 	//   "parameters": {
+	//     "length": {
+	//       "format": "int64",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "offset": {
+	//       "format": "int64",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
 	//     "task_id": {
 	//       "location": "path",
 	//       "required": true,

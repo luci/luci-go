@@ -220,12 +220,12 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.DebugLog("PubSub topic is %q", topic)
 
 	// Prepare the request.
-	request := bbv1.ApiPutRequestMessage{
+	request := bbv1.LegacyApiPutRequestMessage{
 		Bucket:            cfg.Bucket,
 		ClientOperationId: fmt.Sprintf("%d", ctl.InvocationID()),
 		ParametersJson:    paramsJSON,
 		Tags:              tags,
-		PubsubCallback: &bbv1.ApiPubSubCallbackMessage{
+		PubsubCallback: &bbv1.LegacyApiPubSubCallbackMessage{
 			AuthToken: "...", // set a bit later, after printing this struct
 			Topic:     topic,
 		},
@@ -244,7 +244,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.Save(c)
 
 	// Send the request.
-	var resp *bbv1.ApiBuildResponseMessage
+	var resp *bbv1.LegacyApiBuildResponseMessage
 	err = m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
 		resp, err = bb.Put(&request).Context(c).Do()
 		return
@@ -320,7 +320,7 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 
 	// Ask Buildbucket to kill this build.
 	return utils.WrapAPIError(m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) error {
-		_, err := bb.Cancel(taskData.BuildID, &bbv1.ApiCancelRequestBodyMessage{}).Context(c).Do()
+		_, err := bb.Cancel(taskData.BuildID, &bbv1.LegacyApiCancelRequestBodyMessage{}).Context(c).Do()
 		return err
 	}))
 }
@@ -414,7 +414,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 	}
 
 	// Fetch build result from buildbucket.
-	var resp *bbv1.ApiBuildResponseMessage
+	var resp *bbv1.LegacyApiBuildResponseMessage
 	err = m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
 		resp, err = bb.Get(taskData.BuildID).Context(c).Do()
 		return
@@ -458,7 +458,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 
 // handleBuildResult processes buildbucket results message updating the state
 // of the invocation.
-func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r *bbv1.ApiCommonBuildMessage) {
+func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r *bbv1.LegacyApiCommonBuildMessage) {
 	ctl.DebugLog(
 		"Build %d: status %q, result %q, failure_reason %q, cancelation_reason %q",
 		r.Id, r.Status, r.Result, r.FailureReason, r.CancelationReason)

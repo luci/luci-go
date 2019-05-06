@@ -38,7 +38,7 @@ import (
 //
 // Returns nil only if the search results are exhausted.
 // May return context.Canceled.
-func (c *SearchCall) Fetch(limit int, ret retry.Factory) ([]*ApiCommonBuildMessage, string, error) {
+func (c *SearchCall) Fetch(limit int, ret retry.Factory) ([]*LegacyApiCommonBuildMessage, string, error) {
 	// Default page size to 100 because we are fetching everything.
 	maxBuildsKey := "max_builds"
 	origMaxBuilds := c.urlParams_.Get(maxBuildsKey)
@@ -47,7 +47,7 @@ func (c *SearchCall) Fetch(limit int, ret retry.Factory) ([]*ApiCommonBuildMessa
 		defer c.urlParams_.Set(maxBuildsKey, origMaxBuilds)
 	}
 
-	ch := make(chan *ApiCommonBuildMessage)
+	ch := make(chan *LegacyApiCommonBuildMessage)
 	var err error
 	var cursor string
 	go func() {
@@ -55,7 +55,7 @@ func (c *SearchCall) Fetch(limit int, ret retry.Factory) ([]*ApiCommonBuildMessa
 		cursor, err = c.Run(ch, limit, ret)
 	}()
 
-	var builds []*ApiCommonBuildMessage
+	var builds []*LegacyApiCommonBuildMessage
 	for b := range ch {
 		builds = append(builds, b)
 	}
@@ -66,7 +66,7 @@ func (c *SearchCall) Fetch(limit int, ret retry.Factory) ([]*ApiCommonBuildMessa
 // is defined by the server (10 as of Sep 2017).
 //
 // Run blocks on sending.
-func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, limit int, ret retry.Factory) (cursor string, err error) {
+func (c *SearchCall) Run(builds chan<- *LegacyApiCommonBuildMessage, limit int, ret retry.Factory) (cursor string, err error) {
 	if ret == nil {
 		ret = transient.Only(retry.Default)
 	}
@@ -103,7 +103,7 @@ func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, limit int, ret re
 	sent := 0
 outer:
 	for {
-		var res *ApiSearchResponseMessage
+		var res *LegacyApiSearchResponseMessage
 		err = retry.Retry(ctx, ret,
 			func() error {
 				var err error

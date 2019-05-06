@@ -38,7 +38,7 @@ func TestV1(t *testing.T) {
 		// Read test cases.
 		inputBytes, err := ioutil.ReadFile("testdata/v1_builds.json")
 		So(err, ShouldBeNil)
-		var input []*v1.ApiCommonBuildMessage
+		var input []*v1.LegacyApiCommonBuildMessage
 		err = json.Unmarshal(inputBytes, &input)
 		So(err, ShouldBeNil)
 
@@ -70,7 +70,7 @@ func TestV1(t *testing.T) {
 	})
 
 	Convey("StatusToV2", t, func() {
-		cases := map[pb.Status]*v1.ApiCommonBuildMessage{
+		cases := map[pb.Status]*v1.LegacyApiCommonBuildMessage{
 			0: {},
 
 			pb.Status_SCHEDULED: {

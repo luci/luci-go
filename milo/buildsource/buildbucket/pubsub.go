@@ -177,8 +177,8 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	}
 
 	event := struct {
-		Build    bbv1.ApiCommonBuildMessage `json:"build"`
-		Hostname string                     `json:"hostname"`
+		Build    bbv1.LegacyApiCommonBuildMessage `json:"build"`
+		Hostname string                           `json:"hostname"`
 	}{}
 	if err := json.Unmarshal(bData, &event); err != nil {
 		return errors.Annotate(err, "could not parse pubsub message data").Err()
