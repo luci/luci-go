@@ -1633,6 +1633,7 @@ luci.cq_group(
     # Optional arguments.
     acls = None,
     allow_submit_with_open_deps = None,
+    allow_owner_if_submittable = None,
     tree_status_host = None,
     retry_config = None,
     verifiers = None,
@@ -1650,6 +1651,7 @@ whenever there's a pending approved CL for a ref in the watched set.
 * **watch**: either a single [cq.refset(...)](#cq.refset) or a list of [cq.refset(...)](#cq.refset) (one per repo), defining what set of refs the CQ should monitor for pending CLs. Required.
 * **acls**: list of [acl.entry(...)](#acl.entry) objects with ACLs specific for this CQ group. Only `acl.CQ_*` roles are allowed here. By default ACLs are inherited from [luci.project(...)](#luci.project) definition. At least one `acl.CQ_COMMITTER` entry should be provided somewhere (either here or in [luci.project(...)](#luci.project)).
 * **allow_submit_with_open_deps**: controls how a CQ full run behaves when the current Gerrit CL has open dependencies (not yet submitted CLs on which *this* CL depends). If set to False (default), the CQ will abort a full run attempt immediately if open dependencies are detected. If set to True, then the CQ will not abort a full run, and upon passing all other verifiers, the CQ will attempt to submit the CL regardless of open dependencies and whether the CQ verified those open dependencies. In turn, if the Gerrit project config allows this, Gerrit will submit all dependent CLs first and then this CL.
+* **allow_owner_if_submittable**: allow CL owner to trigger CQ after getting `Code-Review` and other approvals regardless of `acl.CQ_COMMITTER` or `acl.CQ_DRY_RUNNER` roles. Only `cq.ACTION_*` are allowed here. Default is `cq.ACTION_NONE` which grants no additional permissions. CL owner is user owning a CL, i.e. its first patchset uploader, not to be confused with OWNERS files. **WARNING**: using this option is not recommended if you have sticky `Code-Review` label because this allows a malicious developer to upload a good looking patchset at first, get code review approval, and then upload a bad patchset and CQ it right away.
 * **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
 * **retry_config**: a new [cq.retry_config(...)](#cq.retry_config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
 * **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict entry is an alias for `luci.cq_tryjob_verifier(**entry)` and a string entry is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
@@ -2173,6 +2175,17 @@ See [scheduler.policy(...)](#scheduler.policy) for all details.
 
 CQ module exposes structs and enums useful when defining [luci.cq_group(...)](#luci.cq_group)
 entities.
+
+`cq.ACTION_*` constants define possible values for
+`allow_owner_if_submittable` field of [luci.cq_group(...)](#luci.cq_group):
+
+  * **cq.ACTION_NONE**: don't grant additional rights to CL owners beyond
+    permissions granted based on owner's roles `CQ_COMMITTER` or
+    `CQ_DRY_RUNNER` (if any).
+  * **cq.ACTION_DRY_RUN** grants the CL owner dry run permission, even if they
+    don't have `CQ_DRY_RUNNER` role.
+  * **cq.ACTION_COMMIT** grants the CL owner commit and dry run permissions,
+    even if they don't have `CQ_COMMITTER` role.
 
 `cq.RETRY_*` constants define some commonly used values for `retry_config`
 field of [luci.cq_group(...)](#luci.cq_group):

@@ -30,6 +30,7 @@ def _cq_group(
       watch=None,
       acls=None,
       allow_submit_with_open_deps=None,
+      allow_owner_if_submittable=None,
       tree_status_host=None,
       retry_config=None,
       verifiers=None
@@ -56,6 +57,15 @@ def _cq_group(
         dependencies and whether the CQ verified those open dependencies. In
         turn, if the Gerrit project config allows this, Gerrit will submit all
         dependent CLs first and then this CL.
+    allow_owner_if_submittable: allow CL owner to trigger CQ after getting
+        `Code-Review` and other approvals regardless of `acl.CQ_COMMITTER` or
+        `acl.CQ_DRY_RUNNER` roles. Only `cq.ACTION_*` are allowed here.
+        Default is `cq.ACTION_NONE` which grants no additional permissions.
+        CL owner is user owning a CL, i.e. its first patchset uploader, not to
+        be confused with OWNERS files. **WARNING**: using this option is not
+        recommended if you have sticky `Code-Review` label because this allows a
+        malicious developer to upload a good looking patchset at first, get code
+        review approval, and then upload a bad patchset and CQ it right away.
     tree_status_host: a hostname of the project tree status app (if any). It is
         used by the CQ to check the tree status before committing a CL. If the
         tree is closed, then the CQ will wait until it is reopened.
@@ -79,10 +89,16 @@ def _cq_group(
 
   graph.add_node(key, props = {
       'watch': watch,
-      'acls':  aclimpl.validate_acls(acls, allowed_roles=[acl.CQ_COMMITTER, acl.CQ_DRY_RUNNER]),
+      'acls': aclimpl.validate_acls(acls, allowed_roles=[acl.CQ_COMMITTER, acl.CQ_DRY_RUNNER]),
       'allow_submit_with_open_deps': validate.bool(
           'allow_submit_with_open_deps',
           allow_submit_with_open_deps,
+          required=False,
+      ),
+      'allow_owner_if_submittable': validate.int(
+          'allow_owner_if_submittable',
+          allow_owner_if_submittable,
+          default=cq.ACTION_NONE,
           required=False,
       ),
       'tree_status_host': validate.string('tree_status_host', tree_status_host, required=False),

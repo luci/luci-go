@@ -340,6 +340,11 @@ func TestValidation(t *testing.T) {
 				})
 			})
 			Convey("gerrit_cq_ability", func() {
+				Convey("sane defaults", func() {
+					So(v.GerritCqAbility.AllowSubmitWithOpenDeps, ShouldBeFalse)
+					So(v.GerritCqAbility.AllowOwnerIfSubmittable, ShouldEqual,
+						v2.Verifiers_GerritCQAbility_UNSET)
+				})
 				Convey("is required", func() {
 					v.GerritCqAbility = nil
 					validateProjectConfig(vctx, &cfg)
@@ -359,6 +364,11 @@ func TestValidation(t *testing.T) {
 					v.GerritCqAbility.DryRunAccessList = []string{""}
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "must not be empty")
+				})
+				Convey("may grant CL owners extra rights", func() {
+					v.GerritCqAbility.AllowOwnerIfSubmittable = v2.Verifiers_GerritCQAbility_COMMIT
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldBeNil)
 				})
 			})
 		})

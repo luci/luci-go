@@ -222,6 +222,27 @@ message Verifiers {
     // In turn, if Gerrit project config allows this, Gerrit will execute submit
     // of all dependent CLs first and then this CL.
     bool allow_submit_with_open_deps = 3;
+
+    // See `allow_owner_if_submittable` doc below.
+    enum CQAction {
+      UNSET = 0;
+      DRY_RUN = 1;
+      // COMMIT implies ability to trigger dry run as well.
+      COMMIT = 2;
+    }
+
+    // Optional. Allow CL owner to trigger CQ dry or full run on their own CL,
+    // even if not a member of `committer_list` or `dry_run_access_list`.
+    // Defaults to no such allowance.
+    //
+    // WARNING: using this option is not recommended if you have sticky
+    // Code-Review label because this allows a malicious developer to upload
+    // an good looking patchset at first, get code review approval,
+    // and then upload a bad patchset and CQ it right away.
+    //
+    // CL owner is Gerrit user owning a CL, i.e., its first patchset uploader.
+    // not to be confused with OWNERS files.
+    CQAction allow_owner_if_submittable = 4;
   }
 
   message TreeStatus {
