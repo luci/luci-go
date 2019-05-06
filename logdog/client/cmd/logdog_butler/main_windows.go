@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"os"
 
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 )
@@ -24,12 +23,6 @@ import (
 var platformStreamServerExamples = []string{
 	// This expands to: //localhost/pipe/<name>
 	"net.pipe:logdog-butler",
-}
-
-// interruptSignals is the set of signals to handle gracefully (e.g., flush,
-// shutdown).
-var interruptSignals = []os.Signal{
-	os.Interrupt,
 }
 
 func resolvePlatform(ctx context.Context, typ, spec string) (streamserver.StreamServer, error) {

@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,12 +14,17 @@
 
 // +build !windows
 
-package main
+package signals
 
 import (
 	"os"
+	"syscall"
 )
 
-func atomicRename(source, target string) error {
-	return os.Rename(source, target)
+// Interrupts returns signals to interpret as interrupts.
+func Interrupts() []os.Signal {
+	return []os.Signal{
+		os.Interrupt,
+		syscall.SIGTERM,
+	}
 }

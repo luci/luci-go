@@ -41,9 +41,10 @@ import (
 	"go.chromium.org/luci/common/logging/teelogger"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/tsmon"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/tokenserver/client"
@@ -157,7 +158,7 @@ func realMain() int {
 	}
 
 	ctx, cancel := context.WithTimeout(root, opts.Timeout)
-	catchInterrupt(cancel)
+	signals.HandleInterrupt(cancel)
 
 	statusReport := StatusReport{
 		Version: Version,

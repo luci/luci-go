@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/logging/gkelogger"
 	"go.chromium.org/luci/common/logging/teelogger"
 	"go.chromium.org/luci/common/runtime/profiling"
+	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
 	cfglib "go.chromium.org/luci/config"
@@ -249,7 +250,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 			panic("never reached")
 		}
 	}(c)
-	signal.Notify(signalC, os.Interrupt)
+	signal.Notify(signalC, signals.Interrupts()...)
 	defer func() {
 		signal.Stop(signalC)
 		close(signalC)
