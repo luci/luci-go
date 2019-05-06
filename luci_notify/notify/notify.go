@@ -218,5 +218,6 @@ func SendEmail(c context.Context, task proto.Message) error {
 		To:       emailTask.Recipients,
 		Subject:  emailTask.Subject,
 		HTMLBody: body,
+		ReplyTo:  emailTask.Recipients[0],
 	})
 }
