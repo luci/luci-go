@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/runtime/profiling"
+	"go.chromium.org/luci/common/system/signals"
 	grpcLogging "go.chromium.org/luci/grpc/logging"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/output"
@@ -309,7 +310,7 @@ func mainImpl(ctx context.Context, defaultAuthOpts auth.Options, argv []string) 
 	a.ncCtx = a.Context
 	a.Context, a.cancelFunc = context.WithCancel(a.Context)
 	signalC := make(chan os.Signal, 1)
-	signal.Notify(signalC, interruptSignals...)
+	signal.Notify(signalC, signals.Interrupts()...)
 	go func() {
 		signalled := false
 		for range signalC {

@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,31 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+// +build windows
+
+package signals
 
 import (
 	"os"
-	"os/signal"
 )
 
-// catchInterrupt handles SIGINT and SIGTERM signals.
-//
-// When caught for the first time, it calls the `handler`, assuming it will
-// gracefully shutdown the process.
-//
-// If called for the second time, it just kills the process right away.
-func catchInterrupt(handler func()) {
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, interruptSignals()...)
-	go func() {
-		stopCalled := false
-		for range sig {
-			if !stopCalled {
-				stopCalled = true
-				handler()
-			} else {
-				os.Exit(2)
-			}
-		}
-	}()
+// Interrupts returns signals to interpret as interrupts.
+func Interrupts() []os.Signal {
+	return []os.Signal{
+		os.Interrupt,
+	}
 }
