@@ -14,6 +14,7 @@ package notify;
 option go_package = "config";
 
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/build.proto";
 
 // ProjectConfig is a luci-notify configuration for a particular project.
 message ProjectConfig {
@@ -146,4 +147,10 @@ message Notifications {
 message GitilesCommits {
   // The Gitiles commits in this collection.
   repeated buildbucket.v2.GitilesCommit commits = 1;
+}
+
+message TemplateInput {
+    string buildbucket_hostname = 1;
+  buildbucket.v2.Build build = 2;
+  buildbucket.v2.Status old_status = 3;
 }

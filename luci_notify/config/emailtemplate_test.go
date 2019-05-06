@@ -24,39 +24,10 @@ import (
 	"go.chromium.org/luci/config/impl/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestEmailTemplate(t *testing.T) {
 	t.Parallel()
-
-	Convey(`splitEmailTemplateFile`, t, func() {
-		Convey(`valid template`, func() {
-			_, _, err := splitEmailTemplateFile(`subject
-
-        body`)
-			So(err, ShouldBeNil)
-		})
-
-		Convey(`empty`, func() {
-			_, _, err := splitEmailTemplateFile(``)
-			So(err, ShouldErrLike, "empty")
-		})
-
-		Convey(`less than three lines`, func() {
-			_, _, err := splitEmailTemplateFile(`subject
-        body`)
-			So(err, ShouldErrLike, "less than three lines")
-		})
-
-		Convey(`no blank line`, func() {
-			_, _, err := splitEmailTemplateFile(`subject
-        body
-        second line
-        `)
-			So(err, ShouldErrLike, "second line is not blank")
-		})
-	})
 
 	Convey("fetchAllEmailTemplates", t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-notify")
