@@ -348,6 +348,7 @@ luci.cq_group(
         acl.entry(acl.CQ_DRY_RUNNER, groups = ['dry-runners']),
     ],
     allow_submit_with_open_deps = True,
+    allow_owner_if_submittable = cq.ACTION_COMMIT,
     tree_status_host = 'tree-status.example.com',
 
     verifiers = [
@@ -428,6 +429,7 @@ lucicfg.emit(
 #       committer_list: "committers"
 #       dry_run_access_list: "dry-runners"
 #       allow_submit_with_open_deps: true
+#       allow_owner_if_submittable: COMMIT
 #     >
 #     tree_status: <
 #       url: "https://tree-status.example.com"
