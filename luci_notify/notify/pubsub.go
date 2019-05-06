@@ -164,8 +164,9 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		ProjectKey: datastore.KeyForObj(c, project),
 		ID:         builderID,
 	}
-	templateParams := &EmailTemplateInput{
-		Build: &build.Build,
+	templateInput := &notifypb.TemplateInput{
+		BuildbucketHostname: build.BuildbucketHostname,
+		Build:               &build.Build,
 	}
 
 	// Set up the initial list of recipients, derived from the build.
@@ -176,8 +177,8 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	notifyNoBlame := func(n notifypb.Notifications, oldStatus buildbucketpb.Status) error {
 		n = n.Filter(oldStatus, build.Status)
 		recipients = append(recipients, ComputeRecipients(n, nil, nil)...)
-		templateParams.OldStatus = oldStatus
-		return Notify(c, d, recipients, templateParams)
+		templateInput.OldStatus = oldStatus
+		return Notify(c, d, recipients, templateInput)
 	}
 
 	keepGoing := false
@@ -187,7 +188,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 			// Even if the builder isn't found, we may still want to notify if the build
 			// specifies email addresses to notify.
 			logging.Infof(c, "No builder %q found for project %q", builderID, build.Builder.Project)
-			return Notify(c, d, recipients, templateParams)
+			return Notify(c, d, recipients, templateInput)
 		case err != nil:
 			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
 		}
@@ -317,8 +318,8 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		// Notify, and include the blamelist.
 		n := builder.Notifications.Filter(builder.Status, build.Status)
 		recipients = append(recipients, ComputeRecipients(n, commits[:index], aggregateLogs)...)
-		templateParams.OldStatus = builder.Status
-		if err := Notify(c, d, recipients, templateParams); err != nil {
+		templateInput.OldStatus = builder.Status
+		if err := Notify(c, d, recipients, templateInput); err != nil {
 			return err
 		}
 		return datastore.Put(c, &updatedBuilder)
@@ -359,6 +360,7 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) error {
 
 // Build is buildbucketpb.Build along with the parsed 'email_notify' values.
 type Build struct {
+	BuildbucketHostname string
 	buildbucketpb.Build
 	EmailNotify []EmailNotify
 }
@@ -422,7 +424,8 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	}
 
 	return &Build{
-		Build:       *res,
-		EmailNotify: emails,
+		BuildbucketHostname: message.Hostname,
+		Build:               *res,
+		EmailNotify:         emails,
 	}, nil
 }
