@@ -84,58 +84,57 @@ func namePartFromDimensions(m stringmapflag.Value) string {
 type triggerRun struct {
 	commonFlags
 
-	// TODO(rogerta): move these flags to swarming/common.go once other commands
-	// are written and I see what parts are common.
-
-	// Isolate server.
+	// Task properties.
 	isolateServer string
 	namespace     string
+	isolated      string
+	dimensions    stringmapflag.Value
+	env           stringmapflag.Value
+	idempotent    bool
+	hardTimeout   int64
+	ioTimeout     int64
+	cipdPackage   stringmapflag.Value
+	outputs       common.Strings
 
-	// Task group.
-	isolated    string
-	dimensions  stringmapflag.Value
-	env         stringmapflag.Value
-	priority    int64
-	taskName    string
-	tags        common.Strings
-	dumpJSON    string
-	user        string
-	idempotent  bool
-	expiration  int
-	deadline    int
-	hardTimeout int64
-	ioTimeout   int64
-	rawCmd      bool
-	cipdPackage stringmapflag.Value
-	outputs     common.Strings
+	// Task request.
+	taskName   string
+	priority   int64
+	tags       common.Strings
+	user       string
+	expiration int
+
+	// Other.
+	rawCmd   bool
+	dumpJSON string
 }
 
 func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.commonFlags.Init(defaultAuthOpts)
 
-	// Isolate server.
+	// Task properties.
 	c.Flags.StringVar(&c.isolateServer, "isolate-server", "", "URL of the Isolate Server to use.")
 	c.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "The namespace to use on the Isolate Server.")
-
-	// Task group.
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
 	c.Flags.Var(&c.dimensions, "dimension", "Dimension to filter slaves on.")
 	c.Flags.Var(&c.env, "env", "Environment variables to set.")
-	c.Flags.Int64Var(&c.priority, "priority", 200, "The lower value, the more important the task.")
-	c.Flags.StringVar(&c.taskName, "task-name", "", "Display name of the task. Defaults to <base_name>/<dimensions>/<isolated hash>/<timestamp> if an  isolated file is provided, if a hash is provided, it defaults to <user>/<dimensions>/<isolated hash>/<timestamp>")
-	c.Flags.Var(&c.tags, "tag", "Tags to assign to the task.")
-	c.Flags.StringVar(&c.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
-	c.Flags.Var(&c.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
 	c.Flags.BoolVar(&c.idempotent, "idempotent", false, "When set, the server will actively try to find a previous task with the same parameter and return this result instead if possible.")
-	c.Flags.IntVar(&c.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
-	c.Flags.IntVar(&c.deadline, "deadline", 0, "TODO(rogerta)")
 	c.Flags.Int64Var(&c.hardTimeout, "hard-timeout", 60*60, "Seconds to allow the task to complete.")
 	c.Flags.Int64Var(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
-	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
-	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
 	c.Flags.Var(&c.cipdPackage, "cipd-package",
 		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[subdir:]pkgname=version`. "+
 			"Using an empty version will remove the package. The subdir is optional and defaults to '.'.")
+	c.Flags.Var(&c.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
+
+	// Task request.
+	c.Flags.StringVar(&c.taskName, "task-name", "", "Display name of the task. Defaults to <base_name>/<dimensions>/<isolated hash>/<timestamp> if an  isolated file is provided, if a hash is provided, it defaults to <user>/<dimensions>/<isolated hash>/<timestamp>")
+	c.Flags.Int64Var(&c.priority, "priority", 200, "The lower value, the more important the task.")
+	c.Flags.Var(&c.tags, "tag", "Tags to assign to the task.")
+	c.Flags.StringVar(&c.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
+	c.Flags.IntVar(&c.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
+
+	// Other.
+	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
+	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
 }
 
 func (c *triggerRun) Parse(args []string) error {
