@@ -5,10 +5,9 @@ package config
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	proto1 "go.chromium.org/luci/buildbucket/proto"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -495,13 +494,9 @@ func (m *GitilesCommits) GetCommits() []*proto1.GitilesCommit {
 	return nil
 }
 
-// Input to an email template.
 type TemplateInput struct {
-	// Buildbucket hostname, e.g. "cr-buildbucket.appspot.com".
-	BuildbucketHostname string `protobuf:"bytes,1,opt,name=buildbucket_hostname,json=buildbucketHostname,proto3" json:"buildbucket_hostname,omitempty"`
-	// The completed build.
-	Build *proto1.Build `protobuf:"bytes,2,opt,name=build,proto3" json:"build,omitempty"`
-	// State of the previous build in this builder.
+	BuildbucketHostname  string        `protobuf:"bytes,1,opt,name=buildbucket_hostname,json=buildbucketHostname,proto3" json:"buildbucket_hostname,omitempty"`
+	Build                *proto1.Build `protobuf:"bytes,2,opt,name=build,proto3" json:"build,omitempty"`
 	OldStatus            proto1.Status `protobuf:"varint,3,opt,name=old_status,json=oldStatus,proto3,enum=buildbucket.v2.Status" json:"old_status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
