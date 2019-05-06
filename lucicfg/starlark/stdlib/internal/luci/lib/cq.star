@@ -15,6 +15,7 @@
 """CQ related supporting structs and functions."""
 
 load('@stdlib//internal/validate.star', 'validate')
+load('@proto//luci/cq/project_config.proto', cq_pb='cq.config')
 
 
 # A struct returned by cq.refset(...).
@@ -142,6 +143,17 @@ def _validate_retry_config(attr, val, default=None, required=True):
 # CQ module exposes structs and enums useful when defining luci.cq_group(...)
 # entities.
 #
+# `cq.ACTION_*` constants define possible values for
+# `allow_owner_if_submittable` field of luci.cq_group(...):
+#
+#   * **cq.ACTION_NONE**: don't grant additional rights to CL owners beyond
+#     permissions granted based on owner's roles `CQ_COMMITTER` or
+#     `CQ_DRY_RUNNER` (if any).
+#   * **cq.ACTION_DRY_RUN** grants the CL owner dry run permission, even if they
+#     don't have `CQ_DRY_RUNNER` role.
+#   * **cq.ACTION_COMMIT** grants the CL owner commit and dry run permissions,
+#     even if they don't have `CQ_COMMITTER` role.
+#
 # `cq.RETRY_*` constants define some commonly used values for `retry_config`
 # field of luci.cq_group(...):
 #
@@ -159,6 +171,10 @@ def _validate_retry_config(attr, val, default=None, required=True):
 cq = struct(
     refset = _refset,
     retry_config = _retry_config,
+
+    ACTION_NONE = cq_pb.Verifiers.GerritCQAbility.UNSET,
+    ACTION_DRY_RUN = cq_pb.Verifiers.GerritCQAbility.DRY_RUN,
+    ACTION_COMMIT = cq_pb.Verifiers.GerritCQAbility.COMMIT,
 
     RETRY_NONE = _retry_config(),
     RETRY_TRANSIENT_FAILURES = _retry_config(
