@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 
+	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 
@@ -86,7 +87,7 @@ func TestNotify(t *testing.T) {
 					Template: "non-default",
 				},
 			}
-			tasks, err := createEmailTasks(c, emailNotify, &EmailTemplateInput{
+			tasks, err := createEmailTasks(c, emailNotify, &notifypb.TemplateInput{
 				Build:     &build.Build,
 				OldStatus: buildbucketpb.Status_SUCCESS,
 			})
@@ -121,7 +122,7 @@ func TestNotify(t *testing.T) {
 					Email: "jane@example.com",
 				},
 			}
-			tasks, err := createEmailTasks(c, emailNotify, &EmailTemplateInput{
+			tasks, err := createEmailTasks(c, emailNotify, &notifypb.TemplateInput{
 				Build:     &build.Build,
 				OldStatus: buildbucketpb.Status_SUCCESS,
 			})

@@ -164,7 +164,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		ProjectKey: datastore.KeyForObj(c, project),
 		ID:         builderID,
 	}
-	templateParams := &EmailTemplateInput{
+	templateParams := &notifypb.TemplateInput{
 		Build: &build.Build,
 	}
 
