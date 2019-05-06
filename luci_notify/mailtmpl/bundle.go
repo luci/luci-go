@@ -51,15 +51,15 @@ var Funcs = map[string]interface{}{
 // To render it, use NewBundle.
 type Template struct {
 	// Name identifies the email template. It is unique within a bundle.
-	Name string
+	Name string `gae:"$id"`
 
 	// SubjectTextTemplate is a text.Template of the email subject.
 	// See Funcs for available functions.
-	SubjectTextTemplate string
+	SubjectTextTemplate string `gae:",noindex"`
 
 	// BodyHTMLTemplate is a html.Template of the email body.
 	// See Funcs for available functions.
-	BodyHTMLTemplate string
+	BodyHTMLTemplate string `gae:",noindex"`
 
 	// URL to the template definition.
 	// Will be used in template error reports.
@@ -97,31 +97,29 @@ func NewBundle(templates []*Template) *Bundle {
 		return err
 	}
 
-	var errs errors.MultiError
+	onErr := func(err error) {
+		if b.Err == nil {
+			b.Err = err
+		}
+	}
 
 	hasDefault := false
 	for _, t := range templates {
 		if _, ok := b.templates[t.Name]; ok {
-			errs = append(errs, fmt.Errorf("duplicate template %q", t.Name))
+			onErr(fmt.Errorf("duplicate template %q", t.Name))
 		}
 		b.templates[t.Name] = t
 
-		if t.Name == DefaultTemplateName {
+		if t.Name == defaultTemplate.Name {
 			hasDefault = true
 		}
-		if err := addTemplate(t); err != nil {
-			errs = append(errs, errors.Annotate(addTemplate(t), "template %q", t.Name).Err())
-		}
+		onErr(errors.Annotate(addTemplate(t), "template %q", t.Name).Err())
 	}
 
 	if !hasDefault {
 		if err := addTemplate(defaultTemplate); err != nil {
 			panic(err)
 		}
-	}
-
-	if len(errs) > 0 {
-		b.Err = errs
 	}
 
 	return b
