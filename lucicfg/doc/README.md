@@ -1512,12 +1512,11 @@ from an external file via [io.read_file(...)](#io.read_file).
 
 #### Template input
 
-The input to both templates is a structure with fields
-
-* [Build](https://godoc.org/go.chromium.org/luci/buildbucket/proto#Build):
-  a recently completed build for which the email is being generated.
-* [OldStatus](https://godoc.org/go.chromium.org/luci/buildbucket/proto#Status):
-  previous status of the builder. Relevant for continuous builders.
+The input to both templates is a
+[TemplateInput](https://godoc.org/go.chromium.org/luci/luci_notify/api/config#TemplateInput)
+Go struct derived from
+[TemplateInput](https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/luci_notify/api/config/notify.proto?q=TemplateInput)
+proto message.
 
 #### Template functions
 
@@ -1574,6 +1573,23 @@ luci.notifier_template(
     body = '{{define "footer"}}Have a nice day!{{end}}',
 )
 ```
+
+
+#### Email preview
+
+[preview_email](http://godoc.org/go.chromium.org/luci/luci_notify/cmd/preview_email)
+command can render a template file to stdout.
+```shell
+  bb get -json -A 8914184822697034512 | preview_email ./default.template
+```
+
+This example uses bb tool, available in
+[depot_tools](https://chromium.googlesource.com/chromium/tools/depot_tools/).
+
+Command `preview_email` is available in
+[infra Go env](https://chromium.googlesource.com/infra/infra/+/master/go/README.md)
+and as a
+[CIPD package](https://chrome-infra-packages.appspot.com/p/infra/tools/preview_email).
 
 #### Error handling
 
