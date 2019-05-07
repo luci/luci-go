@@ -67,7 +67,7 @@ func main() {
 
 			TEMPLATE_FILE is a path to a email template file.
 
-			Example: fetch a live build from using bb tool and render an email
+			Example: fetch a live build using bb tool and render an email for it
 				bb get -json -A 8914184822697034512 | preview_email ./default.template
 		`))
 		flag.PrintDefaults()
