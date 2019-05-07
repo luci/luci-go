@@ -1297,9 +1297,32 @@
       "type": "object"
     },
     "SwarmingRpcsContainment": {
-      "description": "How to contain the task's process. This is highly OS specific. See https://crbug.com/808836.",
+      "description": "See proto/api/swarming.proto for description.",
       "id": "SwarmingRpcsContainment",
       "properties": {
+        "containment_type": {
+          "enum": [
+            "AUTO",
+            "JOB_OBJECT",
+            "NONE",
+            "NOT_SPECIFIED"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "type": "string"
+        },
+        "limit_processes": {
+          "format": "int64",
+          "type": "string"
+        },
+        "limit_total_committed_memory": {
+          "format": "int64",
+          "type": "string"
+        },
         "lower_priority": {
           "type": "boolean"
         }
@@ -1630,7 +1653,7 @@
         },
         "containment": {
           "$ref": "SwarmingRpcsContainment",
-          "description": "How to contain the task's process. This is highly OS specific. See https://crbug.com/808836."
+          "description": "See proto/api/swarming.proto for description."
         },
         "dimensions": {
           "description": "Represents a mapping of string to string.",

@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/flagenum"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 )
 
@@ -81,20 +82,40 @@ func namePartFromDimensions(m stringmapflag.Value) string {
 	return strings.Join(pairs, "_")
 }
 
+type containmentType string
+
+func (c *containmentType) String() string {
+	return string(*c)
+}
+
+func (c *containmentType) Set(v string) error {
+	return containmentChoices.FlagSet(c, v)
+}
+
+var containmentChoices = flagenum.Enum{
+	"none":       containmentType("NONE"),
+	"auto":       containmentType("AUTO"),
+	"job_object": containmentType("JOB_OBJECT"),
+}
+
 type triggerRun struct {
 	commonFlags
 
 	// Task properties.
-	isolateServer string
-	namespace     string
-	isolated      string
-	dimensions    stringmapflag.Value
-	env           stringmapflag.Value
-	idempotent    bool
-	hardTimeout   int64
-	ioTimeout     int64
-	cipdPackage   stringmapflag.Value
-	outputs       common.Strings
+	isolateServer             string
+	namespace                 string
+	isolated                  string
+	dimensions                stringmapflag.Value
+	env                       stringmapflag.Value
+	idempotent                bool
+	lowerPriority             bool
+	containmentType           containmentType
+	limitProcesses            int64
+	limitTotalCommittedMemory int64
+	hardTimeout               int64
+	ioTimeout                 int64
+	cipdPackage               stringmapflag.Value
+	outputs                   common.Strings
 
 	// Task request.
 	taskName   string
@@ -115,9 +136,14 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.isolateServer, "isolate-server", "", "URL of the Isolate Server to use.")
 	c.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "The namespace to use on the Isolate Server.")
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
-	c.Flags.Var(&c.dimensions, "dimension", "Dimension to filter slaves on.")
+	c.Flags.Var(&c.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	c.Flags.Var(&c.env, "env", "Environment variables to set.")
 	c.Flags.BoolVar(&c.idempotent, "idempotent", false, "When set, the server will actively try to find a previous task with the same parameter and return this result instead if possible.")
+	c.Flags.BoolVar(&c.lowerPriority, "lower-priority", false, "When set, the task will run with a lower process priority.")
+	c.containmentType = "NONE"
+	c.Flags.Var(&c.containmentType, "containment-type", "Specify which type of process containment to use. Choices are: "+containmentChoices.Choices())
+	c.Flags.Int64Var(&c.limitProcesses, "limit-processes", 0, "When set, limit the maximum number of concurrent processes the task can create.")
+	c.Flags.Int64Var(&c.limitTotalCommittedMemory, "limit-total-committed-memory", 0, "When set, limit the maximum total amount of memory committed by the processes in the task.")
 	c.Flags.Int64Var(&c.hardTimeout, "hard-timeout", 60*60, "Seconds to allow the task to complete.")
 	c.Flags.Int64Var(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
 	c.Flags.Var(&c.cipdPackage, "cipd-package",
@@ -266,6 +292,12 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) *
 		InputsRef:            inputsRefs,
 		Outputs:              c.outputs,
 		IoTimeoutSecs:        c.ioTimeout,
+		Containment: &swarming.SwarmingRpcsContainment{
+			LowerPriority:             c.lowerPriority,
+			ContainmentType:           string(c.containmentType),
+			LimitProcesses:            c.limitProcesses,
+			LimitTotalCommittedMemory: c.limitTotalCommittedMemory,
+		},
 	}
 
 	if len(c.cipdPackage) > 0 {
