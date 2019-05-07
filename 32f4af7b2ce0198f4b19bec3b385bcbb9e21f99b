@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1dba636b_072d9533",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-05-07T23:07:27Z",
+      "side": 1,
+      "message": "Maybe a hint for when to pass, or reference to https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/appengine/swarming/proto/api/swarming.proto#573?",
+      "range": {
+        "startLine": 142,
+        "startChar": 110,
+        "endLine": 142,
+        "endChar": 118
+      },
+      "revId": "32f4af7b2ce0198f4b19bec3b385bcbb9e21f99b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
