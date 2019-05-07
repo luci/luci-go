@@ -6,6 +6,9 @@ that can be found in the LICENSE file. -->
 <html lang="en">
 <meta charset="utf-8">
 <meta name="google" value="notranslate">
+{{ if .Reload }}
+<meta http-equiv="refresh" content="{{ .Reload }}">
+{{ end -}}
 <title>{{template "title" .}}</title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
