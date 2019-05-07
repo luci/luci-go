@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d83f65e6_050df2fe",
+        "filename": "scheduler/appengine/internal/triggers_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-07T23:43:58Z",
+      "side": 1,
+      "message": "nit: move into a separate import group before dot imports",
+      "range": {
+        "startLine": 22,
+        "startChar": 1,
+        "endLine": 22,
+        "endChar": 50
+      },
+      "revId": "75593e6e74e95f6d3b71d9171799e53c04f58577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "896a9adb_1a878427",
+        "filename": "scheduler/appengine/internal/triggers_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-07T23:43:58Z",
+      "side": 1,
+      "message": "t.Parallel()",
+      "revId": "75593e6e74e95f6d3b71d9171799e53c04f58577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "caab632e_f8953e51",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 494,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-07T23:43:58Z",
+      "side": 1,
+      "message": "this function needs a test",
+      "range": {
+        "startLine": 494,
+        "startChar": 5,
+        "endLine": 494,
+        "endChar": 22
+      },
+      "revId": "75593e6e74e95f6d3b71d9171799e53c04f58577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
