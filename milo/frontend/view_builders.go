@@ -105,8 +105,14 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 		return err
 	}
 
+	var reload *int
+	if tReload := GetReload(c.Request, -1); tReload >= 0 {
+		reload = &tReload
+	}
+
 	templates.MustRender(c.Context, c.Writer, "pages/builders_relative_time.html", templates.Args{
 		"Builders": hists,
+		"Reload":   reload,
 	})
 	return nil
 }
