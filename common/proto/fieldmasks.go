@@ -1,0 +1,183 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package proto
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"strconv"
+	"unicode"
+
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/genproto/protobuf/field_mask"
+)
+
+var (
+	fieldMaskType    = reflect.TypeOf((*field_mask.FieldMask)(nil))
+	protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
+)
+
+// FixFieldMasks reads FieldMask fields from a JSON-encoded message,
+// parses them as a string according to
+// https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
+// and converts them to a JSON object that Golang Protobuf library understands.
+// It is a workaround for a Golang Protobuf bug.
+//
+// messageType must be a struct, not a struct pointer.
+//
+// TODO(nodir): remove when https://github.com/golang/protobuf/issues/745 is
+// fixed.
+func FixFieldMasks(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
+	var msg map[string]interface{}
+	if err := json.Unmarshal(jsonMessage, &msg); err != nil {
+		return nil, err
+	}
+
+	if err := fixFieldMasks(make([]string, 0, 10), msg, messageType); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(msg)
+}
+
+func fixFieldMasks(fieldPath []string, msg map[string]interface{}, messageType reflect.Type) error {
+	fieldTypes := map[string]reflect.Type{}
+
+	addFieldType := func(p *proto.Properties, fieldType reflect.Type) {
+		jsonName := p.JSONName
+		if jsonName == "" {
+			// it set only for fields where the JSON name is different.
+			jsonName = p.OrigName
+		}
+		fieldTypes[jsonName] = fieldType
+	}
+
+	addFieldTypes := func(t reflect.Type, props []*proto.Properties) {
+		n := t.NumField()
+		fields := make(map[string]reflect.StructField, n)
+		for i := 0; i < n; i++ {
+			f := t.Field(i)
+			fields[f.Name] = f
+		}
+
+		for _, p := range props {
+			addFieldType(p, fields[p.Name].Type)
+		}
+	}
+
+	props := proto.GetProperties(messageType)
+	addFieldTypes(messageType, props.Prop)
+
+	for _, of := range props.OneofTypes {
+		addFieldType(of.Prop, of.Type.Elem().Field(of.Field).Type)
+	}
+
+	for name, val := range msg {
+		localPath := append(fieldPath, name)
+		typ := fieldTypes[name]
+		if typ == nil {
+			return fmt.Errorf("unexpected field path %q", name)
+		}
+		switch val := val.(type) {
+		case string:
+			if typ == fieldMaskType {
+				msg[name] = convertFieldMask(val)
+			}
+
+		case map[string]interface{}:
+			if typ.Implements(protoMessageType) {
+				fixFieldMasks(localPath, val, typ.Elem())
+			}
+
+		case []interface{}:
+			if typ.Kind() == reflect.Slice && typ.Elem().Implements(protoMessageType) {
+				subMsgType := typ.Elem().Elem()
+				for i, el := range val {
+					subMsg, ok := el.(map[string]interface{})
+					if ok {
+						elPath := append(localPath, strconv.Itoa(i))
+						fixFieldMasks(elPath, subMsg, subMsgType)
+					}
+				}
+			}
+		}
+
+	}
+	return nil
+}
+
+// convertFieldMask converts a FieldMask from a string according to
+// https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
+// and converts them to a JSON object that Golang Protobuf library understands.
+func convertFieldMask(s string) map[string]interface{} {
+	paths := parseFieldMaskString(s)
+	for i := range paths {
+		paths[i] = toSnakeCase(paths[i])
+	}
+	return map[string]interface{}{
+		"paths": paths,
+	}
+}
+
+func toSnakeCase(s string) string {
+	buf := &bytes.Buffer{}
+	buf.Grow(len(s) + 5) // accounts for 5 underscores
+	for _, c := range s {
+		if unicode.IsUpper(c) {
+			buf.WriteString("_")
+			buf.WriteRune(unicode.ToLower(c))
+		} else {
+			buf.WriteRune(c)
+		}
+	}
+	return buf.String()
+}
+
+// parseFieldMaskString parses a google.protobuf.FieldMask string according to
+// https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
+// Does not convert JSON names (e.g. fooBar) to original names (e.g. foo_bar).
+func parseFieldMaskString(s string) (paths []string) {
+	inQuote := false
+	var seps []int
+	for i, c := range s {
+		switch {
+		case c == '`':
+			inQuote = !inQuote
+
+		case inQuote:
+			continue
+
+		case c == ',':
+			seps = append(seps, i)
+		}
+	}
+
+	if len(seps) == 0 {
+		return []string{s}
+	}
+
+	paths = make([]string, 0, len(seps)+1)
+	for i := range seps {
+		start := 0
+		if i > 0 {
+			start = seps[i-1] + 1
+		}
+		paths = append(paths, s[start:seps[i]])
+	}
+	paths = append(paths, s[seps[len(seps)-1]+1:])
+	return paths
+}
