@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "13afe367_42ed00b4",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 1
+      },
+      "lineNbr": 881,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-08T18:58:45Z",
+      "side": 1,
+      "message": "do we really need this?",
+      "range": {
+        "startLine": 881,
+        "startChar": 17,
+        "endLine": 881,
+        "endChar": 27
+      },
+      "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4d4f605f_62932992",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 1
@@ -16,6 +39,63 @@
       "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c7cda450_b566ebbb",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-08T18:58:45Z",
+      "side": 1,
+      "message": "consider parameterizing this. Then updateShowDebugLogPref can be inlined",
+      "range": {
+        "startLine": 21,
+        "startChar": 23,
+        "endLine": 21,
+        "endChar": 38
+      },
+      "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0942d1e6_33bba5d9",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-08T18:58:45Z",
+      "side": 1,
+      "message": "nit: remove one blank line",
+      "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5b4ff41_e2c20240",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-08T18:58:45Z",
+      "side": 1,
+      "message": "updateShowDebugLogPref(this.checked);\n$(\u0027#steps\u0027).toggleClass(\u0027hide-debug-logs\u0027, !this.checked);",
+      "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -60,6 +140,23 @@
         "endLine": 57,
         "endChar": 5
       },
+      "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "805e6bf7_7ad8eff3",
+        "filename": "milo/frontend/view_build_legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-08T18:58:45Z",
+      "side": 1,
+      "message": "was this file changed intentionally?",
       "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
