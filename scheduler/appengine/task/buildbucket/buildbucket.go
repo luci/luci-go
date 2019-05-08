@@ -16,6 +16,7 @@
 package buildbucket
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -190,6 +191,10 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	}
 	for k, v := range req.Properties.GetFields() {
 		props.Fields[k] = v
+	}
+	var err error
+	if props.Fields["$recipe_engine/scheduler"], err = schedulerProperty(c, ctl); err != nil {
+		return fmt.Errorf("failed to generate scheduled property - %s", err)
 	}
 
 	// Prepare JSON blob for Buildbucket. encoding/json and jsonpb doesn't
@@ -478,4 +483,49 @@ func strProtoValue(s string) *structpb.Value {
 			StringValue: s,
 		},
 	}
+}
+
+// schedulerProperty returns "$recipe_engine/scheduler" property value.
+//
+// The schema of the property is defined in
+// https://chromium.googlesource.com/infra/luci/recipes-py/+/HEAD/recipe_modules/scheduler/__init__.py
+//
+// Note: this function is very inefficient.
+func schedulerProperty(ctx context.Context, ctl task.Controller) (*structpb.Value, error) {
+	buf := &bytes.Buffer{}
+
+	triggerList := &structpb.ListValue{}
+	m := &jsonpb.Marshaler{}
+	um := &jsonpb.Unmarshaler{}
+	for _, tInternal := range ctl.Request().IncomingTriggers {
+		buf.Reset()
+		tPublic := internal.ToPublicTrigger(tInternal)
+		if err := m.Marshal(buf, tPublic); err != nil {
+			return nil, err
+		}
+		tStruct := &structpb.Struct{}
+		if err := um.Unmarshal(buf, tStruct); err != nil {
+			return nil, err
+		}
+		triggerList.Values = append(triggerList.Values, &structpb.Value{
+			Kind: &structpb.Value_StructValue{StructValue: tStruct},
+		})
+	}
+
+	return &structpb.Value{
+		Kind: &structpb.Value_StructValue{
+			StructValue: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"hostname": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: info.DefaultVersionHostname(ctx),
+						},
+					},
+					"triggers": {
+						Kind: &structpb.Value_ListValue{ListValue: triggerList},
+					},
+				},
+			},
+		},
+	}, nil
 }

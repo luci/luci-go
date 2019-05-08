@@ -16,6 +16,7 @@ package buildbucket
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -26,6 +27,7 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/impl/memory"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/config/validation"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -145,6 +147,22 @@ func fakeController(testSrvURL string) *tasktest.TestController {
 			Builder: "builder",
 			Tags:    []string{"a:b", "c:d"},
 		},
+		Req: task.Request{
+			IncomingTriggers: []*internal.Trigger{
+				{
+					Id:    "trigger",
+					Title: "Trigger",
+					Url:   "https://trigger.example.com",
+					Payload: &internal.Trigger_Gitiles{
+						Gitiles: &api.GitilesTrigger{
+							Repo:     "https://chromium.googlesource.com/chromium/src",
+							Ref:      "refs/heads/master",
+							Revision: "deadbeef",
+						},
+					},
+				},
+			},
+		},
 		Client:       http.DefaultClient,
 		SaveCallback: func() error { return nil },
 		PrepareTopicCallback: func(publisher string) (string, string, error) {
@@ -162,11 +180,17 @@ func TestFullFlow(t *testing.T) {
 	Convey("LaunchTask and HandleNotification work", t, func(ctx C) {
 		mockRunning := true
 
+		var putRequest *bbv1.LegacyApiPutRequestMessage
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			resp := ""
 			switch {
 			case r.Method == "PUT" && r.URL.Path == "/_ah/api/buildbucket/v1/builds":
+				ctx.So(putRequest, ShouldBeNil)
+				putRequest = &bbv1.LegacyApiPutRequestMessage{}
+				err := json.NewDecoder(r.Body).Decode(putRequest)
+				ctx.So(err, ShouldBeNil)
+
 				// There's more stuff in actual response that we don't use.
 				resp = `{
 					"build": {
@@ -212,6 +236,43 @@ func TestFullFlow(t *testing.T) {
 			Status:   task.StatusRunning,
 			TaskData: []byte(`{"build_id":"9025781602559305888"}`),
 			ViewURL:  "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10",
+		})
+
+		So(putRequest, ShouldResemble, &bbv1.LegacyApiPutRequestMessage{
+			Bucket:            "test-bucket",
+			ClientOperationId: "1",
+			ParametersJson: normalizeJSON(`{
+				"builder_name": "builder",
+				"properties": {
+					"$recipe_engine/scheduler":{
+						"hostname": "app.example.com",
+						"triggers": [
+							{
+								"id": "trigger",
+								"title": "Trigger",
+								"url": "https://trigger.example.com",
+								"gitiles": {
+									"repo":     "https://chromium.googlesource.com/chromium/src",
+									"ref":      "refs/heads/master",
+									"revision": "deadbeef"
+								}
+							}
+						]
+					}
+				}
+			}`),
+			Tags: []string{
+				"builder:builder",
+				"scheduler_invocation_id:1",
+				"scheduler_job_id:some-project/some-job",
+				"user_agent:app",
+				"a:b",
+				"c:d",
+			},
+			PubsubCallback: &bbv1.LegacyApiPubSubCallbackMessage{
+				AuthToken: "auth_token",
+				Topic:     "topic",
+			},
 		})
 
 		// Added the timer.
@@ -345,4 +406,13 @@ func makePayload(repo, ref, rev string) *internal.Trigger_Gitiles {
 	return &internal.Trigger_Gitiles{
 		Gitiles: &api.GitilesTrigger{Repo: repo, Ref: ref, Revision: rev},
 	}
+}
+
+func normalizeJSON(jsonValue string) string {
+	var val interface{}
+	err := json.Unmarshal([]byte(jsonValue), &val)
+	So(err, ShouldBeNil)
+	ret, err := json.Marshal(val)
+	So(err, ShouldBeNil)
+	return string(ret)
 }
