@@ -46,31 +46,6 @@ import (
 	"go.chromium.org/luci/luci_notify/config"
 )
 
-var (
-	// buildFieldMask defines which buildbucketpb.Build fields to fetch and
-	// make available to email templates.
-	// If a message field is specified here without periods, e.g. "steps", all
-	// of its subfields are included too.
-	buildFieldMask = &field_mask.FieldMask{
-		Paths: []string{
-			"id",
-			"builder",
-			"number",
-			"created_by",
-			"create_time",
-			"start_time",
-			"end_time",
-			"update_time",
-			"status",
-			"input",
-			"output",
-			"steps",
-			"infra",
-			"tags",
-		},
-	}
-)
-
 func getBuilderID(b *Build) string {
 	return fmt.Sprintf("%s/%s", b.Builder.Bucket, b.Builder.Builder)
 }
@@ -405,8 +380,10 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 
 	logging.Infof(c, "fetching build %d", message.Build.Id)
 	res, err := buildsClient.GetBuild(c, &buildbucketpb.GetBuildRequest{
-		Id:     message.Build.Id,
-		Fields: buildFieldMask,
+		Id: message.Build.Id,
+		Fields: &field_mask.FieldMask{
+			Paths: []string{"*"},
+		},
 	})
 	switch {
 	case status.Code(err) == codes.NotFound:
