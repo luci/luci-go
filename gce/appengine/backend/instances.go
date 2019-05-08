@@ -77,29 +77,26 @@ func rateLimitExceeded(err *googleapi.Error) bool {
 	return false
 }
 
-// conflictingInstance deals with a GCE instance creation conflict.
-func conflictingInstance(c context.Context, vm *model.VM) error {
-	// Hostnames are required to be unique per project.
-	// A conflict only occurs in the case of name collision.
+// checkInstance fetches the GCE instance and either sets its creation details
+// or deletes the VM if the instance doesn't exist.
+func checkInstance(c context.Context, vm *model.VM) error {
 	srv := getCompute(c).Instances
 	call := srv.Get(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 	inst, err := call.Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
-				// Instance doesn't exist in this zone.
 				metrics.UpdateFailures(c, 1, vm)
 				if err := deleteVM(c, vm.ID, vm.Hostname); err != nil {
-					return errors.Annotate(err, "instance exists in another zone").Err()
+					return errors.Annotate(err, "instance not found").Err()
 				}
-				return errors.Reason("instance exists in another zone").Err()
+				return errors.Reason("instance not found").Err()
 			}
 			logErrors(c, gerr)
 		}
 		return errors.Annotate(err, "failed to fetch instance").Err()
 	}
-	// Instance exists in this zone.
-	logging.Debugf(c, "instance exists: %s", inst.SelfLink)
+	logging.Debugf(c, "created instance: %s", inst.SelfLink)
 	t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
 	if err != nil {
 		return errors.Annotate(err, "failed to parse instance creation time").Err()
@@ -139,7 +136,8 @@ func createInstance(c context.Context, payload proto.Message) error {
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusConflict {
-				return conflictingInstance(c, vm)
+				// An instance with this name already exists.
+				return checkInstance(c, vm)
 			}
 			logErrors(c, gerr)
 			metrics.UpdateFailures(c, 1, vm)
@@ -168,12 +166,7 @@ func createInstance(c context.Context, payload proto.Message) error {
 		return errors.Reason("failed to create instance").Err()
 	}
 	if op.Status == "DONE" {
-		logging.Debugf(c, "created instance: %s", op.TargetLink)
-		t, err := time.Parse(time.RFC3339, op.EndTime)
-		if err != nil {
-			return errors.Annotate(err, "failed to parse instance creation time").Err()
-		}
-		return setCreated(c, task.Id, op.TargetLink, t)
+		return checkInstance(c, vm)
 	}
 	// Instance creation is pending.
 	return nil
