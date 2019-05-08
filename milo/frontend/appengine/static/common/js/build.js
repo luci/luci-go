@@ -16,28 +16,44 @@ $(document).ready(function() {
     });
   });
 
-  function updateCookieSetting(value) {
+  function updateStepDisplayPref(displayPref) {
     const farFuture = new Date(2100, 0).toUTCString();
-    document.cookie = `stepDisplayPref=${value}; expires=${farFuture}; path=/`;
+    document.cookie = `stepDisplayPref=${displayPref}; expires=${farFuture}; path=/`;
   }
+
+  function updateShowDebugLogPref(debugLogsPref) {
+    const farFuture = new Date(2100, 0).toUTCString();
+    document.cookie = `showDebugLogsPref=${debugLogsPref}; expires=${farFuture}; path=/`;
+  }
+
 
   $('#showExpanded').click(function(e) {
     $('li.substeps').removeClass('collapsed');
     $('#steps').removeClass('non-green');
-    updateCookieSetting('expanded');
+    updateStepDisplayPref('expanded');
   });
 
   $('#showDefault').click(function(e) {
     $('li.substeps').removeClass('collapsed');
     $('li.substeps.green').addClass('collapsed');
     $('#steps').removeClass('non-green');
-    updateCookieSetting('default');
+    updateStepDisplayPref('default');
   });
 
   $('#showNonGreen').click(function(e) {
     $('li.substeps').removeClass('collapsed');
     $('#steps').addClass('non-green');
-    updateCookieSetting('non-green');
+    updateStepDisplayPref('non-green');
+  });
+
+  $('#showDebugLogs').changed(function(e) {
+    if (this.checked) {
+      updateShowDebugLogPref(true);
+      $('#steps').removeClass('hide-debug-logs');
+    } else {
+      updateShowDebugLogPref(false);
+      $('#steps').addClass('hide-debug-logs');
+    }
   });
 
   function createTimeline() {
