@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4d4f605f_62932992",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-08T01:48:47Z",
+      "side": 1,
+      "message": "feels like a proliferation of cookies is coming upon us, each sent by browser to milo on every request :(",
+      "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6dbd56c1_b4d8c381",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-08T01:48:47Z",
+      "side": 1,
+      "message": "if there is this code, why does milo need server-rendering to know which way the preference is? It still emits all the step just with the correct class name up front. Is this for rendering speed?",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 5
+      },
+      "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
