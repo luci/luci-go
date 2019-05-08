@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2230a69d_8c557ba1",
+        "filename": "server/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-08T21:07:24Z",
+      "side": 1,
+      "message": "that\u0027s an unusual port. Typically it is 8080. Is it a typo?",
+      "range": {
+        "startLine": 50,
+        "startChar": 26,
+        "endLine": 50,
+        "endChar": 30
+      },
+      "revId": "85ce01b6144c76ab8932b0564fd95b0553ef7ee1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
