@@ -192,7 +192,7 @@ func TestCreate(t *testing.T) {
 					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
-					So(err, ShouldErrLike, "instance exists in another zone")
+					So(err, ShouldErrLike, "instance not found")
 					v := &model.VM{
 						ID: "id",
 					}
@@ -261,13 +261,26 @@ func TestCreate(t *testing.T) {
 
 				Convey("done", func() {
 					rt.Handler = func(req interface{}) (int, interface{}) {
-						inst, ok := req.(*compute.Instance)
-						So(ok, ShouldBeTrue)
-						So(inst.Name, ShouldEqual, "name")
-						return http.StatusOK, &compute.Operation{
-							EndTime:    "2018-12-14T15:07:48.200-08:00",
-							Status:     "DONE",
-							TargetLink: "url",
+						switch rt.Type {
+						case reflect.TypeOf(compute.Instance{}):
+							// First call, to create the instance.
+							inst, ok := req.(*compute.Instance)
+							So(ok, ShouldBeTrue)
+							So(inst.Name, ShouldEqual, "name")
+							rt.Type = reflect.TypeOf(map[string]string{})
+							return http.StatusOK, &compute.Operation{
+								EndTime:    "2018-12-14T15:07:48.200-08:00",
+								Status:     "DONE",
+								TargetLink: "url",
+							}
+						default:
+							// Second call, to check the reason for the conflict.
+							// This request should have no body.
+							So(*(req.(*map[string]string)), ShouldHaveLength, 0)
+							return http.StatusOK, &compute.Instance{
+								CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
+								SelfLink:          "url",
+							}
 						}
 					}
 					rt.Type = reflect.TypeOf(compute.Instance{})
