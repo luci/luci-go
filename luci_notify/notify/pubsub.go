@@ -52,22 +52,7 @@ var (
 	// If a message field is specified here without periods, e.g. "steps", all
 	// of its subfields are included too.
 	buildFieldMask = &field_mask.FieldMask{
-		Paths: []string{
-			"id",
-			"builder",
-			"number",
-			"created_by",
-			"create_time",
-			"start_time",
-			"end_time",
-			"update_time",
-			"status",
-			"input",
-			"output",
-			"steps",
-			"infra",
-			"tags",
-		},
+		Paths: []string{ "*" },
 	}
 )
 

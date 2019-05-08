@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/genproto/protobuf/field_mask"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
@@ -133,7 +135,7 @@ func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildReque
 	ret := &pb.ScheduleBuildRequest{
 		RequestId:  uuid.New().String(),
 		Tags:       r.Tags(),
-		Fields:     completeBuildFieldMask,
+		Fields:     &field_mask.FieldMask{Paths: []string{"*"}},
 		Properties: &r.properties,
 	}
 
