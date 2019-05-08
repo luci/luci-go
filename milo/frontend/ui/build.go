@@ -96,6 +96,9 @@ type BuildPage struct {
 	// Mode to render the steps.
 	StepDisplayPref StepDisplayPref
 
+	// Iff true, show all log links whose name starts with '$'.
+	ShowDebugLogsPref bool
+
 	// timelineData caches the results from Timeline().
 	timelineData string
 
