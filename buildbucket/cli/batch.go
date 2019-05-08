@@ -15,8 +15,13 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"reflect"
+
+	"go.chromium.org/luci/common/proto"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
@@ -61,8 +66,16 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(ctx, fmt.Errorf("unexpected argument"))
 	}
 
+	requestBytes, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		return r.done(ctx, errors.Annotate(err, "failed to read stdin").Err())
+	}
+	requestBytes, err = proto.FixFieldMasks(requestBytes, reflect.TypeOf(pb.BatchRequest{}))
+	if err != nil {
+		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
+	}
 	req := &pb.BatchRequest{}
-	if err := jsonpb.Unmarshal(os.Stdin, req); err != nil {
+	if err := jsonpb.Unmarshal(bytes.NewReader(requestBytes), req); err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
 
