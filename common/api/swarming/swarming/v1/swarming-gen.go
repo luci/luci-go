@@ -756,12 +756,23 @@ func (s *SwarmingRpcsClientPermissions) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// SwarmingRpcsContainment: How to contain the task's process. This is
-// highly OS specific. See https://crbug.com/808836.
+// SwarmingRpcsContainment: See proto/api/swarming.proto for
+// description.
 type SwarmingRpcsContainment struct {
+	// Possible values:
+	//   "AUTO"
+	//   "JOB_OBJECT"
+	//   "NONE"
+	//   "NOT_SPECIFIED"
+	ContainmentType string `json:"containment_type,omitempty"`
+
+	LimitProcesses int64 `json:"limit_processes,omitempty,string"`
+
+	LimitTotalCommittedMemory int64 `json:"limit_total_committed_memory,omitempty,string"`
+
 	LowerPriority bool `json:"lower_priority,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "LowerPriority") to
+	// ForceSendFields is a list of field names (e.g. "ContainmentType") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -769,12 +780,13 @@ type SwarmingRpcsContainment struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "LowerPriority") to include
-	// in API requests with the JSON null value. By default, fields with
-	// empty values are omitted from API requests. However, any field with
-	// an empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "ContainmentType") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
 	NullFields []string `json:"-"`
 }
 
@@ -1279,8 +1291,7 @@ type SwarmingRpcsTaskProperties struct {
 
 	Command []string `json:"command,omitempty"`
 
-	// Containment: How to contain the task's process. This is highly OS
-	// specific. See https://crbug.com/808836.
+	// Containment: See proto/api/swarming.proto for description.
 	Containment *SwarmingRpcsContainment `json:"containment,omitempty"`
 
 	// Dimensions: Represents a mapping of string to string.
