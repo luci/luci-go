@@ -39,6 +39,30 @@
       "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fe20029_b8d223e9",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-08T03:29:51Z",
+      "side": 1,
+      "message": "idfk, I didn\u0027t write any of this :)\n\nI think it\u0027s so that it can serve the correctly-rendering page and also update without a refresh.",
+      "parentUuid": "6dbd56c1_b4d8c381",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 5
+      },
+      "revId": "d34b5a7cff7dd04da54ae6c0ac0919e817293474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
