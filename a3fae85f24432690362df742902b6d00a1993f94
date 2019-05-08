@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e321736_9d33a488",
+        "filename": "gce/appengine/backend/instances.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-08T01:52:53Z",
+      "side": 0,
+      "message": "i\u0027d preserve this part as a comment  -- it helps imagining when this case may happen.",
+      "range": {
+        "startLine": 93,
+        "startChar": 42,
+        "endLine": 93,
+        "endChar": 66
+      },
+      "revId": "a3fae85f24432690362df742902b6d00a1993f94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
