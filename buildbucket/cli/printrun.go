@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -29,17 +28,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-var completeBuildFieldMask *field_mask.FieldMask
 var idFieldMask = &field_mask.FieldMask{Paths: []string{"id"}}
-
-func init() {
-	completeBuildFieldMask = &field_mask.FieldMask{}
-	for _, p := range proto.GetProperties(reflect.TypeOf(pb.Build{})).Prop {
-		if !strings.HasPrefix(p.OrigName, "XXX") {
-			completeBuildFieldMask.Paths = append(completeBuildFieldMask.Paths, p.OrigName)
-		}
-	}
-}
 
 // printRun is a base command run for subcommands that print
 // builds.
@@ -90,7 +79,7 @@ func (r *printRun) FieldMask() (*field_mask.FieldMask, error) {
 		if r.properties || r.steps {
 			return nil, fmt.Errorf("-A is mutually exclusive with -p and -steps")
 		}
-		return proto.Clone(completeBuildFieldMask).(*field_mask.FieldMask), nil
+		return &field_mask.FieldMask{Paths: []string{"*"}}, nil
 	}
 
 	ret := &field_mask.FieldMask{
