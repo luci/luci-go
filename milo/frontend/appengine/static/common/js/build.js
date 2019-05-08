@@ -16,28 +16,33 @@ $(document).ready(function() {
     });
   });
 
-  function updateCookieSetting(value) {
+  function setCookie(name, value) {
     const farFuture = new Date(2100, 0).toUTCString();
-    document.cookie = `stepDisplayPref=${value}; expires=${farFuture}; path=/`;
+    document.cookie = `${name}=${value}; expires=${farFuture}; path=/`;
   }
 
   $('#showExpanded').click(function(e) {
     $('li.substeps').removeClass('collapsed');
     $('#steps').removeClass('non-green');
-    updateCookieSetting('expanded');
+    setCookie('stepDisplayPref', 'expanded')
   });
 
   $('#showDefault').click(function(e) {
     $('li.substeps').removeClass('collapsed');
     $('li.substeps.green').addClass('collapsed');
     $('#steps').removeClass('non-green');
-    updateCookieSetting('default');
+    setCookie('stepDisplayPref', 'default')
   });
 
   $('#showNonGreen').click(function(e) {
     $('li.substeps').removeClass('collapsed');
     $('#steps').addClass('non-green');
-    updateCookieSetting('non-green');
+    setCookie('stepDisplayPref', 'non-green')
+  });
+
+  $('#showDebugLogs').change(function(e) {
+    setCookie('showDebugLogsPref', this.checked)
+    $('#steps').toggleClass('hide-debug-logs', !this.checked);
   });
 
   function createTimeline() {

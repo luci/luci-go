@@ -60,7 +60,7 @@
   </div>
   <ul>
     {{ range .Logs }}
-      <li class="sublink">
+      <li class="sublink{{ if startswith .Name "$" }} debug-log{{ end }}">
         <a href="{{ .ViewUrl }}">{{ .Name }}</a>
         {{- if eq .Name "stdout" "stderr" }}
           [{{ logdogLink . true }}]
@@ -195,7 +195,15 @@
            {{- if eq .BuildPage.StepDisplayPref "non-green" }} checked{{ end }}>
     <label for="showNonGreen">Non-Green</label>
 
-    <ol id="steps" {{- if eq .BuildPage.StepDisplayPref "non-green" }} class="non-green"{{ end }}>
+    <br/>
+    Debug Logs:
+    <input type="checkbox" name="debug_hider" id="showDebugLogs"
+           {{- if .BuildPage.ShowDebugLogsPref }} checked{{ end }}>
+
+    <ol id="steps" class="
+      {{- if eq .BuildPage.StepDisplayPref "non-green" }} non-green{{ end -}}
+      {{- if not .BuildPage.ShowDebugLogsPref }} hide-debug-logs{{ end -}}
+      ">
       {{ range .BuildPage.Steps }}
         {{ template "step" . }}
       {{ end }}

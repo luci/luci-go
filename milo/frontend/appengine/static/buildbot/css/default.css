@@ -877,3 +877,7 @@ div.step-text:first-child {
 .non-green li.green {
   display: none;
 }
+
+.hide-debug-logs li.debug-log {
+  display: none;
+}
