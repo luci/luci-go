@@ -22,6 +22,30 @@
       "revId": "32f4af7b2ce0198f4b19bec3b385bcbb9e21f99b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6901d83a_6a6a4e4f",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-08T13:25:59Z",
+      "side": 1,
+      "message": "In practice these flags are the ones in https://cs.chromium.org/chromium/infra/luci/appengine/swarming/swarming_rpcs.py i.e. the cloud endpoints ones, not the proto ones, which makes things quite confusing.\n\nI\u0027ll do once I migrated to the pRPC, which is https://crbug.com/913953",
+      "parentUuid": "1dba636b_072d9533",
+      "range": {
+        "startLine": 142,
+        "startChar": 110,
+        "endLine": 142,
+        "endChar": 118
+      },
+      "revId": "32f4af7b2ce0198f4b19bec3b385bcbb9e21f99b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
