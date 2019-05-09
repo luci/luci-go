@@ -25,11 +25,13 @@ import (
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
 var (
 	fieldMaskType    = reflect.TypeOf((*field_mask.FieldMask)(nil))
+	structType       = reflect.TypeOf((*structpb.Struct)(nil))
 	protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
 )
 
@@ -69,7 +71,7 @@ func fixFieldMasks(fieldPath []string, msg map[string]interface{}, messageType r
 			}
 
 		case map[string]interface{}:
-			if typ.Implements(protoMessageType) {
+			if typ != structType && typ.Implements(protoMessageType) {
 				if err := fixFieldMasks(localPath, val, typ.Elem()); err != nil {
 					return err
 				}
