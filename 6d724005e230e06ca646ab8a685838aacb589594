@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "649954c4_3db4a8c7",
+        "filename": "buildbucket/luciexe/logdog.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-09T23:43:20Z",
+      "side": 1,
+      "message": "whoa... did you file a bug for this? Is there a smallish repro (e.g. use commit X, do Y, watch everything burn)?",
+      "range": {
+        "startLine": 129,
+        "startChar": 4,
+        "endLine": 129,
+        "endChar": 47
+      },
+      "revId": "6d724005e230e06ca646ab8a685838aacb589594",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
