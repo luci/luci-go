@@ -34,23 +34,15 @@ func TestReadBuildSecrets(t *testing.T) {
 		ctx := context.Background()
 		ctx = lucictx.SetSwarming(ctx, nil)
 
-		Convey("empty", func() {
-			secrets, err := readBuildSecrets(ctx)
-			So(err, ShouldBeNil)
-			So(secrets, ShouldBeNil)
+		secretBytes, err := proto.Marshal(&pb.BuildSecrets{
+			BuildToken: "build token",
 		})
+		So(err, ShouldBeNil)
 
-		Convey("build token", func() {
-			secretBytes, err := proto.Marshal(&pb.BuildSecrets{
-				BuildToken: "build token",
-			})
-			So(err, ShouldBeNil)
+		ctx = lucictx.SetSwarming(ctx, &lucictx.Swarming{SecretBytes: secretBytes})
 
-			ctx = lucictx.SetSwarming(ctx, &lucictx.Swarming{SecretBytes: secretBytes})
-
-			secrets, err := readBuildSecrets(ctx)
-			So(err, ShouldBeNil)
-			So(string(secrets.BuildToken), ShouldEqual, "build token")
-		})
+		secrets, err := readBuildSecrets(ctx)
+		So(err, ShouldBeNil)
+		So(string(secrets.BuildToken), ShouldEqual, "build token")
 	})
 }
