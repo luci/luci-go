@@ -12,37 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package luciexe
+// This LUCI executable marks the build as INFRA_FAILURE and exits.
+
+package main
 
 import (
-	"context"
-	"testing"
-
-	"github.com/golang/protobuf/proto"
-
-	"go.chromium.org/luci/lucictx"
-
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestReadBuildSecrets(t *testing.T) {
-	t.Parallel()
+func main() {
+	initExecutable()
+	build := client.InitBuild
 
-	Convey("readBuildSecrets", t, func() {
-		ctx := context.Background()
-		ctx = lucictx.SetSwarming(ctx, nil)
-
-		secretBytes, err := proto.Marshal(&pb.BuildSecrets{
-			BuildToken: "build token",
-		})
-		So(err, ShouldBeNil)
-
-		ctx = lucictx.SetSwarming(ctx, &lucictx.Swarming{SecretBytes: secretBytes})
-
-		secrets, err := readBuildSecrets(ctx)
-		So(err, ShouldBeNil)
-		So(string(secrets.BuildToken), ShouldEqual, "build token")
-	})
+	// Final build must have a terminal status.
+	build.Status = pb.Status_INFRA_FAILURE
+	writeBuild(build)
 }

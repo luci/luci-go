@@ -12,9 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// This LUCI executable marks the build as SUCCESS and exits.
+
 package main
+
+import (
+	pb "go.chromium.org/luci/buildbucket/proto"
+)
 
 func main() {
 	initExecutable()
-	writeBuild(client.InitBuild)
+	build := client.InitBuild
+
+	// Final build must have a terminal status.
+	build.Status = pb.Status_SUCCESS
+	writeBuild(build)
 }
