@@ -125,7 +125,7 @@ func TestCreate(t *testing.T) {
 
 					Convey("permanent", func() {
 						rt.Handler = func(req interface{}) (int, interface{}) {
-							return http.StatusBadRequest, nil
+							return http.StatusConflict, nil
 						}
 						rt.Type = reflect.TypeOf(compute.Instance{})
 						datastore.Put(c, &model.VM{
@@ -166,71 +166,6 @@ func TestCreate(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
-				})
-			})
-
-			Convey("conflict", func() {
-				Convey("zone", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
-						switch rt.Type {
-						case reflect.TypeOf(compute.Instance{}):
-							// First call, to create the instance.
-							rt.Type = reflect.TypeOf(map[string]string{})
-							return http.StatusConflict, nil
-						default:
-							// Second call, to check the reason for the conflict.
-							// This request should have no body.
-							So(*(req.(*map[string]string)), ShouldHaveLength, 0)
-							return http.StatusNotFound, nil
-						}
-					}
-					rt.Type = reflect.TypeOf(compute.Instance{})
-					datastore.Put(c, &model.VM{
-						ID:       "id",
-						Hostname: "name",
-					})
-					err := createInstance(c, &tasks.CreateInstance{
-						Id: "id",
-					})
-					So(err, ShouldErrLike, "instance not found")
-					v := &model.VM{
-						ID: "id",
-					}
-					So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
-				})
-
-				Convey("exists", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
-						switch rt.Type {
-						case reflect.TypeOf(compute.Instance{}):
-							// First call, to create the instance.
-							rt.Type = reflect.TypeOf(map[string]string{})
-							return http.StatusConflict, nil
-						default:
-							// Second call, to check the reason for the conflict.
-							// This request should have no body.
-							So(*(req.(*map[string]string)), ShouldHaveLength, 0)
-							return http.StatusOK, &compute.Instance{
-								CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
-								SelfLink:          "url",
-							}
-						}
-					}
-					rt.Type = reflect.TypeOf(compute.Instance{})
-					datastore.Put(c, &model.VM{
-						ID:       "id",
-						Hostname: "name",
-					})
-					err := createInstance(c, &tasks.CreateInstance{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
-					v := &model.VM{
-						ID: "id",
-					}
-					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Created, ShouldNotEqual, 0)
-					So(v.URL, ShouldEqual, "url")
 				})
 			})
 

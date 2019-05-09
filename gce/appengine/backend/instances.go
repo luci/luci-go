@@ -129,16 +129,13 @@ func createInstance(c context.Context, payload proto.Message) error {
 	logging.Debugf(c, "creating instance %q", vm.Hostname)
 	// Generate a request ID based on the hostname.
 	// Ensures duplicate operations aren't created in GCE.
+	// Request IDs are valid for 24 hours.
 	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("create-%s", vm.Hostname)))
 	srv := getCompute(c).Instances
 	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.GetInstance())
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			if gerr.Code == http.StatusConflict {
-				// An instance with this name already exists.
-				return checkInstance(c, vm)
-			}
 			logErrors(c, gerr)
 			metrics.UpdateFailures(c, 1, vm)
 			// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
@@ -213,8 +210,6 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 		return errors.Reason("instance does not exist: %s", task.Url).Err()
 	}
 	logging.Debugf(c, "destroying instance %q", vm.Hostname)
-	// Generate a request ID based on the hostname.
-	// Ensures duplicate operations aren't created in GCE.
 	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("destroy-%s", vm.Hostname)))
 	srv := getCompute(c).Instances
 	call := srv.Delete(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
