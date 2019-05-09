@@ -17,6 +17,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 
@@ -89,6 +90,12 @@ func cmdAdd(p Params) *subcommands.Command {
 					bb add -p foo=1 -p 'bar={"a": 2}' chromium/try/linux-rel
 				Different property names can be specified multiple times.
 			`))
+			r.Flags.BoolVar(&r.canary, "canary", false, doc(`
+				Force the build to use canary infrastructure.
+			`))
+			r.Flags.BoolVar(&r.noCanary, "nocanary", false, doc(`
+				Force the build to NOT use canary infrastructure.
+			`))
 			return r
 		},
 	}
@@ -100,12 +107,18 @@ type addRun struct {
 	commitFlag
 	tagsFlag
 
-	ref          string
-	experimental bool
-	properties   structpb.Struct
+	ref              string
+	experimental     bool
+	canary, noCanary bool
+	properties       structpb.Struct
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if r.canary && r.noCanary {
+		fmt.Fprintf(os.Stderr, "-canary and -nocanary are mutually exclusive\n")
+		return 1
+	}
+
 	ctx := cli.GetContext(a, r, env)
 	if err := r.initClients(ctx); err != nil {
 		return r.done(ctx, err)
@@ -137,6 +150,13 @@ func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildReque
 		Tags:       r.Tags(),
 		Fields:     &field_mask.FieldMask{Paths: []string{"*"}},
 		Properties: &r.properties,
+	}
+
+	switch {
+	case r.canary:
+		ret.Canary = pb.Trinary_YES
+	case r.noCanary:
+		ret.Canary = pb.Trinary_NO
 	}
 
 	if r.experimental {
