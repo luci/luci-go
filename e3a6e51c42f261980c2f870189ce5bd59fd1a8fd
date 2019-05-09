@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7dcaae13_ef047901",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-09T17:34:38Z",
+      "side": 1,
+      "message": "It would be nice to get a more thorough message here; I\u0027m not sure what the implications are for this.\n\nIt sounds like we won\u0027t be able to filter the contents of Struct fields after this? That sounds like a bug?",
+      "range": {
+        "startLine": 9,
+        "startChar": 11,
+        "endLine": 9,
+        "endChar": 13
+      },
+      "revId": "e3a6e51c42f261980c2f870189ce5bd59fd1a8fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
