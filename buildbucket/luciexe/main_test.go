@@ -23,25 +23,31 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.chromium.org/luci/common/logging"
-
 	"github.com/golang/protobuf/proto"
-
-	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/lucictx"
+	"github.com/golang/protobuf/ptypes"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/lucictx"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMain(t *testing.T) {
-	Convey("Main", t, func() {
+	t.Parallel()
+
+	Convey("Main", t, func(c C) {
 		ctx := context.Background()
 
 		ctx = gologger.StdConfig.Use(ctx)
 		ctx = logging.SetLevel(ctx, logging.Debug)
+
+		nowTS, err := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+		So(err, ShouldBeNil)
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		// Setup a fake local auth.
 		ctx = lucictx.SetLocalAuth(ctx, &lucictx.LocalAuth{
@@ -59,13 +65,11 @@ func TestMain(t *testing.T) {
 			DefaultAccountID: "task",
 		})
 
-		ctx = gologger.StdConfig.Use(ctx)
-
 		tempDir, err := ioutil.TempDir("", "")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
-		run := func(executableName string, argsText string) *pb.Build {
+		run := func(executableName string, argsText string) []*pb.UpdateBuildRequest {
 			args := &pb.RunnerArgs{}
 			err := proto.UnmarshalText(argsText, args)
 			So(err, ShouldBeNil)
@@ -81,14 +85,39 @@ func TestMain(t *testing.T) {
 				"testdata/lib.go")
 			So(goBuild.Run(), ShouldBeNil)
 
-			r := runner{localLogFile: filepath.Join(tempDir, "logs")}
-			build, err := r.Run(ctx, args)
+			var ret []*pb.UpdateBuildRequest
+			r := runner{
+				localLogFile: filepath.Join(tempDir, "logs"),
+				UpdateBuild: func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+					ret = append(ret, req)
+					reqJSON, err := indentedJSONPB(req)
+					c.So(err, ShouldBeNil)
+					logging.Infof(ctx, "UpdateBuildRequest: %s", reqJSON)
+					return nil
+				},
+			}
+			err = r.Run(ctx, args)
 			So(err, ShouldBeNil)
-			return build
+
+			So(ret, ShouldNotBeEmpty)
+			return ret
 		}
 
+		dummyInputBuild := `
+			buildbucket_host: "buildbucket.example.com"
+			logdog_host: "logdog.example.com"
+			build {
+				id: 1
+				builder {
+					project: "chromium"
+					bucket: "try"
+					builder: "linux-rel"
+				}
+			}
+		`
+
 		Convey("echo", func() {
-			build := run("echo", `
+			updates := run("success", `
 				buildbucket_host: "buildbucket.example.com"
 				logdog_host: "logdog.example.com"
 				build {
@@ -100,14 +129,44 @@ func TestMain(t *testing.T) {
 					}
 				}
 			`)
-			So(build, ShouldResembleProtoText, `
-				id: 1
-				builder {
-					project: "chromium"
-					bucket: "try"
-					builder: "linux-rel"
+			// Assert the final update.
+			So(updates[len(updates)-1], ShouldResembleProtoText, `
+				build {
+					id: 1
+					builder {
+						project: "chromium"
+						bucket: "try"
+						builder: "linux-rel"
+					}
+					status: SUCCESS
+				}
+				update_mask {
+					paths: "build.steps"
+					paths: "build.output.properties"
+					paths: "build.output.gitiles_commit"
+					paths: "build.summary_markdown"
 				}
 			`)
+		})
+
+		Convey("final UpdateBuild does not set status to SUCCESS", func() {
+			updates := run("success", dummyInputBuild)
+			final := updates[len(updates)-1]
+			So(final.UpdateMask.Paths, ShouldNotContain, "build.status")
+		})
+
+		Convey("final UpdateBuild set status to INFRA_FAILURE", func() {
+			updates := run("infra_failure", dummyInputBuild)
+			final := updates[len(updates)-1]
+			So(final.UpdateMask.Paths, ShouldContain, "build.status")
+			So(final.Build.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+		})
+
+		Convey("Cancels pending steps", func() {
+			updates := run("pending_step", dummyInputBuild)
+			final := updates[len(updates)-1]
+			So(final.Build.Steps[0].Status, ShouldEqual, pb.Status_CANCELED)
+			So(final.Build.Steps[0].EndTime, ShouldResembleProto, nowTS)
 		})
 	})
 }

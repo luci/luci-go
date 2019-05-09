@@ -23,10 +23,12 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	grpcLogging "go.chromium.org/luci/grpc/logging"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
@@ -123,7 +125,12 @@ func (l *logdogServer) Start(ctx context.Context) error {
 		TeeStdout:                  os.Stdout,
 		TeeStderr:                  os.Stderr,
 	}
-	butler, err := butler.New(ctx, cfg)
+
+	// Using testclock breaks stopping the butler.
+	// Enforce system clock.
+	butlerCtx := clock.Set(ctx, clock.GetSystemClock())
+
+	butler, err := butler.New(butlerCtx, cfg)
 
 	if err != nil {
 		return err
