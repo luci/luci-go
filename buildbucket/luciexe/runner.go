@@ -29,6 +29,11 @@ import (
 	"sync"
 	"time"
 
+	"go.chromium.org/luci/buildbucket/protoutil"
+	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -37,6 +42,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -54,8 +60,10 @@ const (
 
 // runner runs a LUCI executable.
 type runner struct {
-	args         *pb.RunnerArgs
 	localLogFile string
+
+	// UpdateBuild is used to update build on the server.
+	UpdateBuild func(context.Context, *pb.UpdateBuildRequest) error
 }
 
 // Run runs a user executable.
@@ -140,16 +148,22 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) (*pb.Build, error
 	if build == nil {
 		return nil, errors.Reason("user executable did not send a build").Err()
 	}
+	processFinalBuild(ctx, build)
 
 	// Print the final build state.
 	buildJSON, err := indentedJSONPB(build)
 	if err != nil {
-		return build, err
+		return nil, err
 	}
 	logging.Infof(ctx, "final build state: %s", buildJSON)
 
-	// TODO(nodir): make a final UpdateBuild call.
-
+	if r.UpdateBuild != nil {
+		// The final update is critical.
+		// If it fails, it is fatal to the build.
+		if err := r.updateBuild(ctx, build, true); err != nil {
+			return nil, errors.Annotate(err, "final UpdateBuild failed").Err()
+		}
+	}
 	return build, nil
 }
 
@@ -165,7 +179,6 @@ func (r *runner) setupWorkDir(workDir string) error {
 
 	default:
 		return err
-
 	}
 
 	return errors.Annotate(os.MkdirAll(workDir, 0700), "failed to create %q", workDir).Err()
@@ -303,21 +316,6 @@ func (r *runner) hookStdoutStderr(ctx context.Context, logdogServ *logdogServer,
 		return err
 	}
 	return nil
-}
-
-// readBuildSecrets reads BuildSecrets message from swarming secret bytes,
-// if any.
-func readBuildSecrets(ctx context.Context) (*pb.BuildSecrets, error) {
-	swarming := lucictx.GetSwarming(ctx)
-	if swarming == nil {
-		return nil, nil
-	}
-
-	secrets := &pb.BuildSecrets{}
-	if err := proto.Unmarshal(swarming.SecretBytes, secrets); err != nil {
-		return nil, err
-	}
-	return secrets, nil
 }
 
 // setupAuth prepares systemAuth and userAuth contexts based on incoming
@@ -492,4 +490,81 @@ func globalLogTags(args *pb.RunnerArgs) map[string]string {
 		ret["swarming.bot_id"] = v
 	}
 	return ret
+}
+
+// processFinalBuildState adjusts the final state of the build if needed.
+func processFinalBuild(ctx context.Context, build *pb.Build) {
+	if err := validateFinalBuildState(build); err != nil {
+		build.SummaryMarkdown = fmt.Sprintf("Invalid final build state: %s. Marking as INFRA_FAILURE", err)
+		build.Status = pb.Status_INFRA_FAILURE
+	}
+
+	// Mark incomplete steps as canceled.
+	endTime, err := ptypes.TimestampProto(clock.Now(ctx))
+	if err != nil {
+		panic(err)
+	}
+	for _, s := range build.Steps {
+		if !protoutil.IsEnded(s.Status) {
+			s.Status = pb.Status_CANCELED
+			if s.SummaryMarkdown != "" {
+				s.SummaryMarkdown += "\n"
+			}
+			s.SummaryMarkdown += "step was canceled because it did not end before build ended"
+			s.EndTime = endTime
+		}
+	}
+}
+
+// validateFinalBuildState validates the build after LUCI executable
+// finished.
+func validateFinalBuildState(build *pb.Build) error {
+	if !protoutil.IsEnded(build.Status) {
+		return fmt.Errorf("expected a terminal build status, got %s", build.Status)
+	}
+	return nil
+}
+
+// Update updates the build on the server.
+// If final is true, may update finalize the build.
+// May return a transient error.
+func (r *runner) updateBuild(ctx context.Context, build *pb.Build, final bool) error {
+	req := &pb.UpdateBuildRequest{
+		Build: proto.Clone(build).(*pb.Build),
+		UpdateMask: &field_mask.FieldMask{
+			Paths: []string{
+				"build.steps",
+				"build.output.properties",
+				"build.output.gitiles_commit",
+				"build.summary_mardown",
+			},
+		},
+	}
+
+	if final {
+		// If the build has failed, update the build status.
+		// If it succeeded, do not set it just yet, since there are more ways
+		// the build can fail.
+		switch {
+		case !protoutil.IsEnded(build.Status):
+			return fmt.Errorf("build status %q is not final", build.Status)
+		case build.Status != pb.Status_SUCCESS:
+			req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.status")
+		}
+	}
+
+	// Make the RPC.
+	err := r.UpdateBuild(ctx, req)
+	switch status.Code(errors.Unwrap(err)) {
+	case codes.OK:
+		// We've actually updated the build.
+		return nil
+
+	case codes.InvalidArgument:
+		// This is fatal.
+		return err
+
+	default:
+		return transient.Tag.Apply(err)
+	}
 }

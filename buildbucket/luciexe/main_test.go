@@ -37,7 +37,9 @@ import (
 )
 
 func TestMain(t *testing.T) {
-	Convey("Main", t, func() {
+	t.Parallel()
+
+	Convey("Main", t, func(c C) {
 		ctx := context.Background()
 
 		ctx = gologger.StdConfig.Use(ctx)
@@ -59,13 +61,11 @@ func TestMain(t *testing.T) {
 			DefaultAccountID: "task",
 		})
 
-		ctx = gologger.StdConfig.Use(ctx)
-
 		tempDir, err := ioutil.TempDir("", "")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
-		run := func(executableName string, argsText string) *pb.Build {
+		run := func(executableName string, argsText string) (finalBuild *pb.Build, updateRequests []*pb.UpdateBuildRequest) {
 			args := &pb.RunnerArgs{}
 			err := proto.UnmarshalText(argsText, args)
 			So(err, ShouldBeNil)
@@ -81,14 +81,39 @@ func TestMain(t *testing.T) {
 				"testdata/lib.go")
 			So(goBuild.Run(), ShouldBeNil)
 
-			r := runner{localLogFile: filepath.Join(tempDir, "logs")}
-			build, err := r.Run(ctx, args)
+			r := runner{
+				localLogFile: filepath.Join(tempDir, "logs"),
+				UpdateBuild: func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+					updateRequests = append(updateRequests, req)
+					reqJSON, err := indentedJSONPB(req)
+					c.So(err, ShouldBeNil)
+					logging.Infof(ctx, "UpdateBuildRequest: %s", reqJSON)
+					return nil
+				},
+			}
+			finalBuild, err = r.Run(ctx, args)
 			So(err, ShouldBeNil)
-			return build
+
+			So(updateRequests, ShouldNotBeEmpty)
+			So(updateRequests[len(updateRequests)-1].Build, ShouldResembleProto, finalBuild)
+			return
 		}
 
+		dummyInputBuild := `
+			buildbucket_host: "buildbucket.example.com"
+			logdog_host: "logdog.example.com"
+			build {
+				id: 1
+				builder {
+					project: "chromium"
+					bucket: "try"
+					builder: "linux-rel"
+				}
+			}
+		`
+
 		Convey("echo", func() {
-			build := run("echo", `
+			finalBuild, _ := run("echo", `
 				buildbucket_host: "buildbucket.example.com"
 				logdog_host: "logdog.example.com"
 				build {
@@ -100,14 +125,28 @@ func TestMain(t *testing.T) {
 					}
 				}
 			`)
-			So(build, ShouldResembleProtoText, `
+			So(finalBuild, ShouldResembleProtoText, `
 				id: 1
 				builder {
 					project: "chromium"
 					bucket: "try"
 					builder: "linux-rel"
 				}
+				status: SUCCESS
 			`)
+		})
+
+		Convey("final UpdateBuild does not set status to SUCCESS", func() {
+			_, updateBuildRequests := run("echo", dummyInputBuild)
+			finalUpdate := updateBuildRequests[len(updateBuildRequests)-1]
+			So(finalUpdate.UpdateMask.Paths, ShouldNotContain, "build.status")
+		})
+
+		Convey("final UpdateBuild set status to INFRA_FAILURE", func() {
+			_, updateBuildRequests := run("infra_fail", dummyInputBuild)
+			finalUpdate := updateBuildRequests[len(updateBuildRequests)-1]
+			So(finalUpdate.UpdateMask.Paths, ShouldContain, "build.status")
+			So(finalUpdate.Build.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 		})
 	})
 }

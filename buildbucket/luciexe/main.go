@@ -25,10 +25,15 @@ import (
 	"os"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/lucictx"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -73,6 +78,21 @@ func parseArgs(args []string) (*pb.RunnerArgs, error) {
 	return ret, nil
 }
 
+// readBuildSecrets reads BuildSecrets message from swarming secret bytes,
+// if any.
+func readBuildSecrets(ctx context.Context) (*pb.BuildSecrets, error) {
+	swarming := lucictx.GetSwarming(ctx)
+	if swarming == nil {
+		return nil, nil
+	}
+
+	secrets := &pb.BuildSecrets{}
+	if err := proto.Unmarshal(swarming.SecretBytes, secrets); err != nil {
+		return nil, err
+	}
+	return secrets, nil
+}
+
 // RunnerMain runs LUCI runner, a program that runs a LUCI executable.
 func RunnerMain(args []string) int {
 	if err := mainErr(args); err != nil {
@@ -91,6 +111,33 @@ func mainErr(rawArgs []string) error {
 		return err
 	}
 
-	_, err = (&runner{}).Run(ctx, args)
+	secrets, err := readBuildSecrets(ctx)
+	switch {
+	case err != nil:
+		return err
+	case secrets.GetBuildToken() == "":
+		return fmt.Errorf("no build token found. Is this running on Swarming and the task has secret bytes?")
+	}
+	client := newBuildsClient(args)
+
+	r := &runner{
+		UpdateBuild: func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+			// Insert the build token into the context.
+			ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
+			_, err := client.UpdateBuild(ctx, req)
+			return err
+		},
+	}
+	_, err = r.Run(ctx, args)
 	return err
+}
+
+func newBuildsClient(args *pb.RunnerArgs) pb.BuildsClient {
+	opts := prpc.DefaultOptions()
+	opts.Insecure = lhttp.IsLocalHost(args.BuildbucketHost)
+
+	return pb.NewBuildsPRPCClient(&prpc.Client{
+		Host:    args.BuildbucketHost,
+		Options: opts,
+	})
 }
