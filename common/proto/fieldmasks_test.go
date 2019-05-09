@@ -52,6 +52,7 @@ func TestFixFieldMasks(t *testing.T) {
 				}`,
 			)
 		})
+
 		Convey("Works", func() {
 			testFix(
 				buildbucketpb.GetBuildRequest{},
@@ -64,6 +65,22 @@ func TestFixFieldMasks(t *testing.T) {
 							"id",
 							"create_time"
 						]
+					}
+				}`,
+			)
+		})
+
+		Convey("Properties", func() {
+			testFix(
+				buildbucketpb.ScheduleBuildRequest{},
+				`{
+					"properties": {
+						"foo": "bar"
+					}
+				}`,
+				`{
+					"properties": {
+						"foo": "bar"
 					}
 				}`,
 			)
