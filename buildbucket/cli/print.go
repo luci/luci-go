@@ -144,8 +144,20 @@ func (p *printer) Build(b *pb.Build) {
 		p.summary(b.SummaryMarkdown)
 	}
 
+	var systemTags []string
 	if b.Input.GetExperimental() {
-		p.keyword("Experimental")
+		systemTags = append(systemTags, "Experimental")
+	}
+	if b.GetInfra().GetBuildbucket().GetCanary() {
+		systemTags = append(systemTags, "Canary")
+	}
+	if len(systemTags) > 0 {
+		for i, t := range systemTags {
+			if i > 0 {
+				p.f(" ")
+			}
+			p.keyword(t)
+		}
 		p.f("\n")
 	}
 
