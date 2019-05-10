@@ -85,9 +85,17 @@ var publicProtos = map[string]struct {
 	// load(
 	//     "@proto//external/cros/builder_config.proto",
 	//     builder_config_pb="chromiumos")
+	// load(
+	//     "@proto//external/cros/common.proto",
+	//     common_pb="chromiumos")
 	"external/cros/builder_config.proto": {
 		"chromiumos",
 		"chromiumos/builder_config.proto",
+		"",
+	},
+	"external/cros/common.proto": {
+		"chromiumos",
+		"chromiumos/common.proto",
 		"",
 	},
 
