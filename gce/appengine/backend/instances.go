@@ -86,11 +86,11 @@ func checkInstance(c context.Context, vm *model.VM) error {
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
-				metrics.UpdateFailures(c, 1, vm)
+				metrics.UpdateFailures(c, gerr.Code, vm)
 				if err := deleteVM(c, vm.ID, vm.Hostname); err != nil {
 					return errors.Annotate(err, "instance not found").Err()
 				}
-				return errors.Reason("instance not found").Err()
+				return errors.Annotate(err, "instance not found").Err()
 			}
 			logErrors(c, gerr)
 		}
@@ -137,18 +137,17 @@ func createInstance(c context.Context, payload proto.Message) error {
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(c, gerr)
-			metrics.UpdateFailures(c, 1, vm)
+			metrics.UpdateFailures(c, gerr.Code, vm)
 			// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
 			if rateLimitExceeded(gerr) {
-				return errors.Reason("rate limit exceeded creating instance").Err()
+				return errors.Annotate(err, "rate limit exceeded creating instance").Err()
 			}
 			if gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500 {
-				return errors.Reason("transiently failed to create instance").Err()
+				return errors.Annotate(err, "transiently failed to create instance").Err()
 			}
 			if err := deleteVM(c, task.Id, vm.Hostname); err != nil {
 				return errors.Annotate(err, "failed to create instance").Err()
 			}
-			return errors.Reason("failed to create instance").Err()
 		}
 		return errors.Annotate(err, "failed to create instance").Err()
 	}
@@ -156,7 +155,7 @@ func createInstance(c context.Context, payload proto.Message) error {
 		for _, err := range op.Error.Errors {
 			logging.Errorf(c, "%s: %s", err.Code, err.Message)
 		}
-		metrics.UpdateFailures(c, 1, vm)
+		metrics.UpdateFailures(c, 200, vm)
 		if err := deleteVM(c, task.Id, vm.Hostname); err != nil {
 			return errors.Annotate(err, "failed to create instance").Err()
 		}

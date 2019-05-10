@@ -120,7 +120,6 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(c, gerr)
-			return errors.Reason("failed to fetch bot events").Err()
 		}
 		return errors.Annotate(err, "failed to fetch bot events").Err()
 	}
@@ -178,7 +177,6 @@ func manageBot(c context.Context, payload proto.Message) error {
 				return manageMissingBot(c, vm)
 			}
 			logErrors(c, gerr)
-			return errors.Reason("failed to fetch bot").Err()
 		}
 		return errors.Annotate(err, "failed to fetch bot").Err()
 	}
@@ -237,7 +235,6 @@ func terminateBot(c context.Context, payload proto.Message) error {
 				return nil
 			}
 			logErrors(c, gerr)
-			return errors.Reason("failed to terminate bot").Err()
 		}
 		return errors.Annotate(err, "failed to terminate bot").Err()
 	}
@@ -295,7 +292,6 @@ func deleteBot(c context.Context, payload proto.Message) error {
 				return deleteVM(c, task.Id, vm.Hostname)
 			}
 			logErrors(c, gerr)
-			return errors.Reason("failed to delete bot").Err()
 		}
 		return errors.Annotate(err, "failed to delete bot").Err()
 	}

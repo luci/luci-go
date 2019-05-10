@@ -28,6 +28,7 @@ var (
 		"gce/failures/creation",
 		"The number of failures during GCE instance creation.",
 		nil,
+		field.Int("code"),
 		field.String("prefix"),
 		field.String("project"),
 		field.String("zone"),
@@ -35,6 +36,6 @@ var (
 )
 
 // UpdateFailures increments failure counters.
-func UpdateFailures(c context.Context, creations int, vm *model.VM) {
-	creationFailures.Add(c, int64(creations), vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone())
+func UpdateFailures(c context.Context, code int, vm *model.VM) {
+	creationFailures.Add(c, int64(1), code, vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone())
 }
