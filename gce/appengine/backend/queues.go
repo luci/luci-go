@@ -274,7 +274,6 @@ func reportQuota(c context.Context, payload proto.Message) error {
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(c, gerr)
-			return errors.Reason("failed to fetch quota").Err()
 		}
 		return errors.Annotate(err, "failed to fetch quota").Err()
 	}
