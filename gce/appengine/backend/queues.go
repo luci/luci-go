@@ -71,17 +71,14 @@ func countVMs(c context.Context, payload proto.Message) error {
 	}
 
 	// Get the actual (connected, created) counts.
-	var keys []*datastore.Key
-	q := datastore.NewQuery(model.VMKind).Eq("config", task.Id)
-	if err := datastore.GetAll(c, q, &keys); err != nil {
-		return errors.Annotate(err, "failed to fetch VMs").Err()
-	}
 	vm := &model.VM{}
-	for _, k := range keys {
+	q := datastore.NewQuery(model.VMKind).Eq("config", task.Id)
+	if err := datastore.Run(c, q, func(k *datastore.Key) error {
 		id := k.StringID()
 		vm.ID = id
 		switch err := datastore.Get(c, vm); {
 		case err == datastore.ErrNoSuchEntity:
+			return nil
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
 		default:
@@ -91,7 +88,10 @@ func countVMs(c context.Context, payload proto.Message) error {
 			if vm.Connected > 0 {
 				vms.AddConnected(1, vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
 			}
+			return nil
 		}
+	}); err != nil {
+		return errors.Annotate(err, "failed to fetch VMs").Err()
 	}
 	if err := vms.Update(c, task.Id); err != nil {
 		return errors.Annotate(err, "failed to update count").Err()
