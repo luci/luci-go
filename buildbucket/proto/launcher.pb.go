@@ -73,16 +73,13 @@ type RunnerArgs struct {
 	Auth  *RunnerArgs_Auth `protobuf:"bytes,4,opt,name=auth,proto3" json:"auth,omitempty"`
 	// Where to put temp files and create CWD for the user executable.
 	// MUST not exist.
-	// MUST be absolute.
 	// Required.
 	WorkDir string `protobuf:"bytes,5,opt,name=work_dir,json=workDir,proto3" json:"work_dir,omitempty"`
 	// Path to the user executable.
-	// MUST be absolute.
 	// Required.
 	ExecutablePath string `protobuf:"bytes,6,opt,name=executable_path,json=executablePath,proto3" json:"executable_path,omitempty"`
 	// Path to a directory where each subdirectory is a cache dir.
 	// Managed by Swarming.
-	// MUST be absolute.
 	// Required.
 	CacheDir             string   `protobuf:"bytes,7,opt,name=cache_dir,json=cacheDir,proto3" json:"cache_dir,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
