@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "08b2d01c_476c9ebe",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-12T07:08:13Z",
+      "side": 0,
+      "message": "If it can\u0027t be absolute, please specify what it\u0027s relative to.",
+      "revId": "130c38791b4122ff2c198036bb76a2b35cf7e36f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
