@@ -62,6 +62,7 @@ func (m *BuildSecrets) GetBuildToken() string {
 }
 
 // Arguments for luci_runner command.
+// All paths are relateive to the runner process' working directory.
 type RunnerArgs struct {
 	// Buildbucket service hostname, e.g. "cr-buildbucket.appspot.com".
 	BuildbucketHost string `protobuf:"bytes,1,opt,name=buildbucket_host,json=buildbucketHost,proto3" json:"buildbucket_host,omitempty"`
@@ -73,16 +74,13 @@ type RunnerArgs struct {
 	Auth  *RunnerArgs_Auth `protobuf:"bytes,4,opt,name=auth,proto3" json:"auth,omitempty"`
 	// Where to put temp files and create CWD for the user executable.
 	// MUST not exist.
-	// MUST be absolute.
 	// Required.
 	WorkDir string `protobuf:"bytes,5,opt,name=work_dir,json=workDir,proto3" json:"work_dir,omitempty"`
 	// Path to the user executable.
-	// MUST be absolute.
 	// Required.
 	ExecutablePath string `protobuf:"bytes,6,opt,name=executable_path,json=executablePath,proto3" json:"executable_path,omitempty"`
 	// Path to a directory where each subdirectory is a cache dir.
 	// Managed by Swarming.
-	// MUST be absolute.
 	// Required.
 	CacheDir             string   `protobuf:"bytes,7,opt,name=cache_dir,json=cacheDir,proto3" json:"cache_dir,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`

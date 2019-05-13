@@ -29,6 +29,7 @@ message BuildSecrets {
 }
 
 // Arguments for luci_runner command.
+// All paths are relateive to the runner process' working directory.
 message RunnerArgs {
   message GitAuth {
     bool disable = 1;
@@ -63,18 +64,15 @@ message RunnerArgs {
 
   // Where to put temp files and create CWD for the user executable.
   // MUST not exist.
-  // MUST be absolute.
   // Required.
   string work_dir = 5;
 
   // Path to the user executable.
-  // MUST be absolute.
   // Required.
   string executable_path = 6;
 
   // Path to a directory where each subdirectory is a cache dir.
   // Managed by Swarming.
-  // MUST be absolute.
   // Required.
   string cache_dir = 7;
 }
