@@ -418,15 +418,11 @@ func indentedJSONPB(m proto.Message) ([]byte, error) {
 	return indented.Bytes(), nil
 }
 
-func validateRequiredPath(title, path string) error {
-	switch {
-	case path == "":
-		return errors.Reason("%s is required", title).Err()
-	case !filepath.IsAbs(path):
-		return errors.Reason("%s must be absolute", title).Err()
-	default:
-		return nil
+func normalizePath(title, path string) (string, error) {
+	if path == "" {
+		return "", errors.Reason("%s is required", title).Err()
 	}
+	return filepath.Abs(path)
 }
 
 func normalizeArgs(a *pb.RunnerArgs) error {
@@ -439,22 +435,16 @@ func normalizeArgs(a *pb.RunnerArgs) error {
 		return errors.Reason("build.id is required").Err()
 	}
 
-	if err := validateRequiredPath("work_dir", a.WorkDir); err != nil {
-		return err
-	}
-	if err := validateRequiredPath("executable_path", a.ExecutablePath); err != nil {
-		return err
-	}
-	if err := validateRequiredPath("cache_dir", a.CacheDir); err != nil {
-		return err
-	}
-
 	var err error
-	a.WorkDir, err = filepath.Abs(a.WorkDir)
-	if err != nil {
-		return errors.Annotate(err, "bad workdir").Err()
+	if a.WorkDir, err = normalizePath("work_dir", a.WorkDir); err != nil {
+		return err
 	}
-
+	if a.ExecutablePath, err = normalizePath("executable_path", a.ExecutablePath); err != nil {
+		return err
+	}
+	if a.CacheDir, err = normalizePath("cache_dir", a.CacheDir); err != nil {
+		return err
+	}
 	return nil
 }
 
