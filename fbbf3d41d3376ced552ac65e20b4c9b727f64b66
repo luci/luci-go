@@ -22,6 +22,30 @@
       "revId": "fbbf3d41d3376ced552ac65e20b4c9b727f64b66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d55729a7_e59bbf96",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-13T23:26:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d2e0d80e_2728c765",
+      "range": {
+        "startLine": 58,
+        "startChar": 2,
+        "endLine": 58,
+        "endChar": 40
+      },
+      "revId": "fbbf3d41d3376ced552ac65e20b4c9b727f64b66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
