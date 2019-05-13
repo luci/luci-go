@@ -16,6 +16,24 @@
       "revId": "130c38791b4122ff2c198036bb76a2b35cf7e36f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "699d15e4_85f15b3a",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-13T17:14:16Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "08b2d01c_476c9ebe",
+      "revId": "130c38791b4122ff2c198036bb76a2b35cf7e36f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
