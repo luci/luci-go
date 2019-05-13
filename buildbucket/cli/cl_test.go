@@ -115,5 +115,16 @@ func TestParseCL(t *testing.T) {
 				Change: 123,
 			})
 		})
+
+		Convey("https://chrome-internal-review.googlesource.com/c/src/+/1/2", func() {
+			actual, err := parseCL("https://chrome-internal-review.googlesource.com/c/src/+/1/2")
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, &pb.GerritChange{
+				Host:     "chrome-internal-review.googlesource.com",
+				Project:  "src",
+				Change:   1,
+				Patchset: 2,
+			})
+		})
 	})
 }

@@ -92,7 +92,7 @@ func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Cl
 	return ret, nil
 }
 
-var regexCL = regexp.MustCompile(`(\w+-review\.googlesource\.com)/(#/)?c/(([^\+]+)/\+/)?(\d+)(/(\d+))?`)
+var regexCL = regexp.MustCompile(`((\w+-)+review\.googlesource\.com)/(#/)?c/(([^\+]+)/\+/)?(\d+)(/(\d+))?`)
 var regexCLCRRev = regexp.MustCompile(`crrev\.com/([ci])/(\d+)(/(\d+))?`)
 
 // parseCL tries to retrieve a CL info from a string.
@@ -117,9 +117,9 @@ func parseCL(s string) (*pb.GerritChange, error) {
 		patchSet = m[4]
 	} else if m := regexCL.FindStringSubmatch(s); m != nil {
 		ret.Host = m[1]
-		ret.Project = m[4]
-		change = m[5]
-		patchSet = m[7]
+		ret.Project = m[5]
+		change = m[6]
+		patchSet = m[8]
 	}
 
 	if ret.Host == "" {
