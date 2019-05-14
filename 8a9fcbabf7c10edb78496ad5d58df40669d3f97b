@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc1e0bc7_39d9c351",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-14T23:40:58Z",
+      "side": 0,
+      "message": "Strictly speaking this was a bug. GetFields explicitly states the map must not be mutated. In practice this could have caused race conditions and panics if we have more than one log sink (like we actually do in logdog GKE workers). I guess we don\u0027t log errors often enough to catch this as a real race.",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 62
+      },
+      "revId": "8a9fcbabf7c10edb78496ad5d58df40669d3f97b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
