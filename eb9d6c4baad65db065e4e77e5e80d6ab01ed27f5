@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09f25600_ac012f29",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-14T20:36:05Z",
+      "side": 1,
+      "message": "s/a cache directory/the cache directory\n\nOr just \u0027If a build requested a cache, it is available on build startup\u0027",
+      "range": {
+        "startLine": 255,
+        "startChar": 37,
+        "endLine": 255,
+        "endChar": 38
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87a99d89_bfcb38db",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-14T20:36:05Z",
+      "side": 1,
+      "message": "previous run on that bot.",
+      "range": {
+        "startLine": 257,
+        "startChar": 25,
+        "endLine": 257,
+        "endChar": 28
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed8e269a_708a9df9",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-14T20:36:05Z",
+      "side": 1,
+      "message": "This would be a good use of parentheses, i.e.  (if the cache wasn\u0027t evicted).\n\nI would move this parenthetical to the end as well so that the \u0027main\u0027 case stays together, i.e.\n\n  The next time another build requests the same cache and runs on the same bot, the files will still be there (unless the cache was evicted, perhaps due to disk space reasons).",
+      "range": {
+        "startLine": 261,
+        "startChar": 7,
+        "endLine": 261,
+        "endChar": 34
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63e7f92c_bb5a4abf",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-14T20:36:05Z",
+      "side": 1,
+      "message": "before the build starts.\n\n(i.e. they\u0027re not eliminated mid build)",
+      "range": {
+        "startLine": 267,
+        "startChar": 69,
+        "endLine": 267,
+        "endChar": 75
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbb90a19_54babc15",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-14T20:36:05Z",
+      "side": 1,
+      "message": "maybe also \u0027This corresponds to the path \"cache/builder\" relative to the task root\u0027.",
+      "range": {
+        "startLine": 275,
+        "startChar": 7,
+        "endLine": 275,
+        "endChar": 9
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b7eb126_3872647d",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-14T20:36:05Z",
+      "side": 1,
+      "message": "should we do this automatically? i.e. prefix with bucket name or something? Or have swarming namespace based on the \u0027pool\u0027 dimension (won\u0027t help flex pools though)?",
+      "range": {
+        "startLine": 282,
+        "startChar": 9,
+        "endLine": 283,
+        "endChar": 64
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e17aa080_7a2efdc7",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-14T20:36:05Z",
+      "side": 1,
+      "message": "This is relative to \u003ctask_cwd\u003e/cache though, right? a.k.a. `api.path[\u0027cache\u0027].join(name)`",
+      "range": {
+        "startLine": 286,
+        "startChar": 9,
+        "endLine": 286,
+        "endChar": 17
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1c43036_267baf3b",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-14T20:36:05Z",
+      "side": 1,
+      "message": "Should this be an int instead of a Duration then? Or you\u0027re using Duration because it has a nice JSONPB representation?",
+      "range": {
+        "startLine": 292,
+        "startChar": 9,
+        "endLine": 292,
+        "endChar": 26
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
