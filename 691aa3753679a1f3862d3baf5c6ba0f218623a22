@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e8326e3b_23954f6d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-14T01:50:28Z",
+      "side": 1,
+      "message": "While kitchen (or whatever the replacement is called) may not use it, other task processes *may* use it. \"system\" account is a part of the LUCI task environment. For example, we may theoretically have a tool \"upload_to_gs\" that uses a system account (+gsutil auth) to upload stuff to GS from within a task. By using system account, ACLs for this tool can be configured on per bot_group basis (no on per-individual task basis).\n\nThis mechanism is intended to be used by Goma eventually...\n\nIf we want to reverse this decision, we need to stop exposing \"system\" account to tasks completely (it is pretty easy to do, just a LUCI_CONTEXT change).",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 71
+      },
+      "revId": "691aa3753679a1f3862d3baf5c6ba0f218623a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdc7712d_9774d728",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-14T01:50:28Z",
+      "side": 1,
+      "message": "This is not 100% correct. Git auth will be used for all hosts that reply with HTTP 401 or 403 to a request without credentials AND on all hosts mentioned here. Without this knob requests to public hosts are sent anonymously and they hit quota really fast :(\n\nSo maybe rename it to known_public_gerrit_hosts? I dropped \u0027public\u0027 in kitchen version to avoid making CLI flag ridiculously long.",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 73
+      },
+      "revId": "691aa3753679a1f3862d3baf5c6ba0f218623a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
