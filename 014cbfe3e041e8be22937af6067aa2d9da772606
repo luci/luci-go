@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5f724b5b_eb5cd1f2",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-14T21:29:48Z",
+      "side": 1,
+      "message": "Is this alright to include in HTML as is or it should be represented by \u0026hellip;?",
+      "range": {
+        "startLine": 90,
+        "startChar": 27,
+        "endLine": 90,
+        "endChar": 29
+      },
+      "revId": "014cbfe3e041e8be22937af6067aa2d9da772606",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
