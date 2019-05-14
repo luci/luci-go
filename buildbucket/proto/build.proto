@@ -271,6 +271,9 @@ message BuildInfra {
 
     // Swarming dimensions of the bot used for the task.
     repeated StringPair bot_dimensions = 6;
+
+    // Swarming task containment for the task.
+    Containment containment = 7;
   }
 
   // LogDog-specific information.
