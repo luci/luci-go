@@ -36,7 +36,7 @@ import "go.chromium.org/luci/buildbucket/proto/step.proto";
 // a build at completion time and does not change after that.
 // All fields are included.
 //
-// Next id: 26.
+// Next id: 27.
 message Build {
   // Defines what to build/test.
   //
@@ -276,6 +276,10 @@ message Build {
 
   // Caches requested by this build.
   repeated CacheEntry caches = 25;
+
+  // If YES, use the canary build infrastructure.
+  // If UNSET, Buildbucket server may choose YES/NO value automatically.
+  Trinary canary = 26;
 }
 
 // Build infrastructure that was used for a particular build.
