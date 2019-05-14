@@ -22,6 +22,30 @@
       "revId": "9970bf3bc65a3789ebe8e7baee6bca4380da5e8a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d3b8880_933c0329",
+        "filename": "swarming/utils/large.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-14T21:42:03Z",
+      "side": 1,
+      "message": "I see, moved to isolated.",
+      "parentUuid": "e0701093_644acb0d",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "9970bf3bc65a3789ebe8e7baee6bca4380da5e8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
