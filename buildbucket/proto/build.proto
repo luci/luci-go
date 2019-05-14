@@ -18,6 +18,7 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
@@ -35,7 +36,7 @@ import "go.chromium.org/luci/buildbucket/proto/step.proto";
 // a build at completion time and does not change after that.
 // All fields are included.
 //
-// Next id: 25.
+// Next id: 26.
 message Build {
   // Defines what to build/test.
   //
@@ -106,6 +107,59 @@ message Build {
     //
     // V1 equivalent: this supersedes all got_revision output property.
     GitilesCommit gitiles_commit = 3;
+  }
+
+  // Describes a cache directory persisted on a bot.
+  //
+  // If a build requested a cache, a cache directory is available on build
+  // startup. If the cache was present on the bot, the directory contains files
+  // from the previous run.
+  // The build can read/write to the cache directory while it runs.
+  // After build completes, the cache directory is persisted.
+  // Next time another build requests the same cache and runs on the same bot,
+  // if the cache wasn't evicted, the files will still be there.
+  //
+  // One bot can keep multiple caches at the same time and one build can request
+  // multiple different caches.
+  // A cache is identified by its name and mapped to a path.
+  //
+  // If the bot is running out of space, caches are evicted in LRU manner.
+  //
+  // Builder cache.
+  //
+  // Buildbucket implicitly declares cache
+  //   {"name": "<hash(project/bucket/builder)>", "path": "builder"}.
+  // This means that any LUCI builder has a "personal disk space" on the bot.
+  // Builder cache is often a good start before customizing caching.
+  // In recipes, it is available at api.buildbucket.builder_cache_path.
+  message CacheEntry {
+    // Identifier of the cache. Required. Length is limited to 128.
+    // Must be unique in the build.
+    //
+    // If the pool of swarming bots is shared among multiple LUCI projects and
+    // projects use same cache name, the cache will be shared across projects.
+    // To avoid affecting and being affected by other projects, prefix the cache
+    // name with something project-specific, e.g. "v8-".
+    string name = 1;
+
+    // Relative path where the cache in mapped into. Required.
+    // Must use POSIX format (forward slashes).
+    // In most cases, it does not need slashes at all.
+    // Must be unique in the build.
+    string path = 2;
+
+    // Number of seconds to wait for a bot with a warm cache to pick up the
+    // task, before falling back to a bot with a cold (non-existent) cache.
+    //
+    // The default is 0, which means that no preference will be chosen for a bot
+    // with this or without this cache, and a bot without this cache may be
+    // chosen instead.
+    //
+    // If no bot has this cache warm, the task will skip this wait and will
+    // immediately fallback to a cold cache request.
+    //
+    // The value must be multiples of 60 seconds.
+    google.protobuf.Duration wait_for_warm_cache = 3;
   }
 
   reserved 5; // view_url
@@ -219,6 +273,9 @@ message Build {
 
   // What to run when the build is ready to start.
   Executable exe = 24;
+
+  // Caches requested by this build.
+  repeated CacheEntry caches = 25;
 }
 
 // Build infrastructure that was used for a particular build.
