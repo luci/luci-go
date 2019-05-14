@@ -79,6 +79,15 @@ var funcMap = template.FuncMap{
 	"toLower":          strings.ToLower,
 	"toTime":           toTime,
 	"join":             strings.Join,
+	"trimLong":         trimLongString,
+}
+
+// trimLongString returns a potentially shortened string with "&hellip;" suffix.
+func trimLongString(maxLength int, s string) string {
+	if len(s) <= maxLength {
+		return s
+	}
+	return s[:maxLength-1] + "&hellip;"
 }
 
 // localTime returns a <span> element with t in human format
