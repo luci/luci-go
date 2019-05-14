@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e0701093_644acb0d",
+        "filename": "swarming/utils/large.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-14T15:05:46Z",
+      "side": 1,
+      "message": "I don\u0027t like \"utils\" as a package name because we could have many of these in luci-go and it\u0027s actively discouraged in Go; https://blog.golang.org/package-names. I\u0027d recommend to put it directly in the swarming package. One challenge is that the new Go run_isolated should not import swarming package, so maybe it should be in a isolated package instead.\n\nAlso an historical note; a long time ago, there was client/\u003cproject\u003e and server/\u003cproject\u003e and eventually project started moving to \u003cproject\u003e/. I\u0027m fine with moving the code, taking cipd or lucicfg as examples.",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "9970bf3bc65a3789ebe8e7baee6bca4380da5e8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
