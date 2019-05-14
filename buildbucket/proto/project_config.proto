@@ -76,40 +76,11 @@ message Builder {
   reserved 13; // auto_builder_dimension of the old format.
   reserved 15; // experimental of the old format.
 
-
   // Describes a cache directory persisted on a bot.
+  // Prerequisite reading in BuildInfra.Swarming.CacheEntry message in
+  // build.proto.
   //
-  // If a build requested a cache, a cache directory is available on build
-  // startup. If the cache was present on the bot, the directory contains files
-  // from the previous run.
-  // The build can read/write to the cache directory while it runs.
-  // After build completes, the cache directory is persisted.
-  // Next time another build requests the same cache and runs on the same bot,
-  // if the cache wasn't evicted, the files will still be there.
-  //
-  // One bot can keep multiple caches at the same time and one build can request
-  // multiple different caches.
-  // A cache is identified by its name and mapped to a path.
-  // In recipes-based builds, the path is relative to api.paths['cache'] dir.
-  // For example, a cache {"name": "foo", "path": "bar"} maps foo to bar and
-  // the cache dir is available at
-  //   my_cache = api.path['cache'].join('bar')
-  //
-  // If the bot is running out of space, caches are evicted in LRU manner.
-  //
-  // Renaming a cache is equivalent to clearing it from the builder perspective.
-  // The files will still be there, but eventually will be purged by GC.
-  //
-  // Builder cache.
-  //
-  // Buildbucket implicitly declares cache
-  //   {"name": "<hash(bucket/builder)>", "path": "builder"}.
-  // This means that any LUCI builder has a "personal disk space" on the bot.
-  // Builder cache is often a good start before customizing caching.
-  // In recipes, it is available at api.path['cache'].join('builder').
-  //
-  // In order to share the builder cache among multiple builders, it can be
-  // overridden:
+  // To share a builder cache among multiple builders, it can be overridden:
   //
   //   builders {
   //     name: "a"
@@ -126,34 +97,21 @@ message Builder {
   //     }
   //   }
   //
-  // Builders "a" and "b" share their builder cache. If an "a" build ran on a bot
-  // and left some files in the builder cache and then a "b" build runs on the
-  // same bot, the same files will be available in the builder cache.
+  // Builders "a" and "b" share their builder cache. If an "a" build ran on a
+  // bot and left some files in the builder cache and then a "b" build runs on
+  // the same bot, the same files will be available in the builder cache.
   message CacheEntry {
     // Identifier of the cache. Required. Length is limited to 128.
-    //
-    // If the pool of swarming bots is shared among multiple LUCI projects and
-    // projects use same cache name, the cache will be shared across projects.
-    // To avoid affecting and being affected by other projects, prefix the cache
-    // name with something project-specific, e.g. "v8-".
+    // See also BuildInfra.Swarming.CacheEntry.name in build.proto.
     string name = 1;
 
     // Relative path where the cache in mapped into. Required.
-    // Must use POSIX format (forward slashes).
-    // In most cases, it does not need slashes at all.
-    // Must be unique in the given builder.
+    // See also BuildInfra.Swarming.CacheEntry.path in build.proto.
     string path = 2;
 
     // Number of seconds to wait for a bot with a warm cache to pick up the
     // task, before falling back to a bot with a cold (non-existent) cache.
-    //
-    // The default is 0, which means that no preference will be chosen for a bot
-    // with this or without this cache, and a bot without this cache may be
-    // chosen instead.
-    //
-    // If no bot has this cache warm, the task will skip this wait and will
-    // immediately fallback to a cold cache request.
-    //
+    // See also BuildInfra.Swarming.CacheEntry.wait_for_warm_cache in build.proto.
     // The value must be multiples of 60 seconds.
     int32 wait_for_warm_cache_secs = 3;
   }
