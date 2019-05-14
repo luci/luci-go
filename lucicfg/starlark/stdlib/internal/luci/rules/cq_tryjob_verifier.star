@@ -28,6 +28,7 @@ def _cq_tryjob_verifier(
       experiment_percentage=None,
       location_regexp=None,
       location_regexp_exclude=None,
+      owner_whitelist=None,
       equivalent_builder=None,
       equivalent_builder_percentage=None,
       equivalent_builder_whitelist=None
@@ -163,6 +164,9 @@ def _cq_tryjob_verifier(
     location_regexp_exclude: a list of regexps that define a set of files to
         completely skip when evaluating whether the verifier should be applied
         to a CL or not. See the explanation above for all details.
+    owner_whitelist: a list of groups with accounts of CL owners
+        to enable this builder for. If set, only CLs owned by someone from any
+        one of these groups will be verified by this builder.
     equivalent_builder: an optional alternative builder for the CQ to choose
         instead. If provided, the CQ will choose only one of the equivalent
         builders as required based purely on the given CL and CL's owner and
@@ -203,6 +207,10 @@ def _cq_tryjob_verifier(
   if location_regexp_exclude and not location_regexp:
     location_regexp = ['.*']
 
+  owner_whitelist = validate.list('owner_whitelist', owner_whitelist)
+  for o in owner_whitelist:
+    validate.string('owner_whitelist', o)
+
   # 'equivalent_builder' has same format as 'builder', except it is optional.
   equiv_ext, equiv_builder = None, None
   if equivalent_builder:
@@ -242,6 +250,7 @@ def _cq_tryjob_verifier(
       ),
       'location_regexp': location_regexp,
       'location_regexp_exclude': location_regexp_exclude,
+      'owner_whitelist': owner_whitelist,
   })
   if cq_group:
     graph.add_edge(parent=keys.cq_group(cq_group), child=key)

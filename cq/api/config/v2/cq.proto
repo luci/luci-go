@@ -388,9 +388,9 @@ message Verifiers {
       repeated string location_regexp = 6;
       repeated string location_regexp_exclude = 7;
 
-      // If set, this builder will only be triggered when the CL owner is listed
-      // here.
-      repeated string owners_whitelist_group = 8;
+      // If set, this builder will only be triggered if the CL owner (who first
+      // uploaded the CL) is a member of at least one of these groups.
+      repeated string owner_whitelist_group = 8;
     }
 
     message EquivalentBuilder {

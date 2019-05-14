@@ -838,6 +838,7 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
       name = name,
       disable_reuse = verifier.props.disable_reuse,
       experiment_percentage = verifier.props.experiment_percentage,
+      owner_whitelist_group = verifier.props.owner_whitelist,
       location_regexp = verifier.props.location_regexp,
       location_regexp_exclude = verifier.props.location_regexp_exclude,
       equivalent_to = _cq_equivalent_to(verifier, project),
