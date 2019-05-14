@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4c7c3e57_2421bd69",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-14T03:26:37Z",
+      "side": 1,
+      "message": "I remembered more about this issue. There\u0027s currently no mechanism to propagate various env vars needed for gsutil/git/docker/etc. auth to indirect consumers of \"system\" account. So even if kitchen sets up all necessary proxies, our hypothetical upload_to_gs script won\u0027t know how to contact them.\n\nSo this change is fine, it doesn\u0027t remove any capabilities (since they didn\u0027t exist).",
+      "parentUuid": "e8326e3b_23954f6d",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 71
+      },
+      "revId": "691aa3753679a1f3862d3baf5c6ba0f218623a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fdc7712d_9774d728",
         "filename": "buildbucket/proto/launcher.proto",
         "patchSetId": 4
