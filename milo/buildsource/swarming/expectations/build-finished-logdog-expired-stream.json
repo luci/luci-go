@@ -77,5 +77,6 @@
     }
   ],
   "Blame": null,
-  "StepDisplayPref": "default"
+  "StepDisplayPref": "default",
+  "ShowDebugLogsPref": false
 }

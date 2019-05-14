@@ -59,6 +59,9 @@ type MiloBuildLegacy struct {
 
 	// Mode to render the steps.
 	StepDisplayPref StepDisplayPref
+
+	// Iff true, show all log links whose name starts with '$'.
+	ShowDebugLogsPref bool
 }
 
 var statusPrecendence = map[model.Status]int{
@@ -378,3 +381,11 @@ type Navigation struct {
 // LinkSet is an ordered collection of Link objects that will be rendered on the
 // same line.
 type LinkSet []*Link
+
+// IsDebugLink returns true iff the first link in the linkset starts with "$".
+func (l LinkSet) IsDebugLink() bool {
+	if len(l) > 0 {
+		return strings.HasPrefix(l[0].Label, "$")
+	}
+	return false
+}

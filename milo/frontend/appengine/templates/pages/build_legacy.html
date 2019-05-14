@@ -78,7 +78,7 @@
       {{ end }}
     {{- end }}
     {{ range .SubLink }}
-      <li class="sublink">{{.HTML}}</li>
+      <li class="sublink {{- if .IsDebugLink }} debug-log{{end}}">{{.HTML}}</li>
     {{ end }}
     {{ if not (or .MainLink .SubLink) }}
       <li class="sublink"> - no logs - </li>
@@ -232,7 +232,15 @@
              {{- if eq .Build.StepDisplayPref "non-green" }} checked{{ end }}>
       <label for="showNonGreen">Non-Green</label>
 
-      <ol id="steps" {{- if eq .Build.StepDisplayPref "non-green" }} class="non-green"{{ end }}>
+      <br/>
+      Debug Logs:
+      <input type="checkbox" name="debug_hider" id="showDebugLogs"
+             {{- if .Build.ShowDebugLogsPref }} checked{{ end }}>
+
+      <ol id="steps" class="
+        {{- if eq .Build.StepDisplayPref "non-green" }} non-green{{ end -}}
+        {{- if not .Build.ShowDebugLogsPref }} hide-debug-logs{{ end -}}
+        ">
 
         {{ with .Build.Summary }}
           {{ if .SubLink }}

@@ -1346,5 +1346,6 @@
       "File": []
     }
   ],
-  "StepDisplayPref": "default"
+  "StepDisplayPref": "default",
+  "ShowDebugLogsPref": false
 }
