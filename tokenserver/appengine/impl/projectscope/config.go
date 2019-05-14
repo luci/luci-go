@@ -54,15 +54,20 @@ func importIdentities(c context.Context, cfg *config.ProjectsCfg) error {
 	// but do this after we have a stronger story for warning about config changes which are
 	// about to remove an identity config from a project since this can cause an outage.
 	for _, project := range cfg.Projects {
+		identity := &projectidentity.ProjectIdentity{
+			Project: project.Id,
+		}
 		if project.IdentityConfig != nil && project.IdentityConfig.ServiceAccountEmail != "" {
-			identity := &projectidentity.ProjectIdentity{
-				Project: project.Id,
-				Email:   project.IdentityConfig.ServiceAccountEmail,
-			}
+			identity.Email = project.IdentityConfig.ServiceAccountEmail
 			logging.Infof(c, "updating project scoped account: %v", identity)
 			if _, err := storage.Update(c, identity); err != nil {
 				logging.Errorf(c, "failed to update project scoped account: %v", identity)
 				return err
+			}
+		} else {
+			logging.Warningf(c, "removing project scoped account: %v", identity)
+			if err := storage.Delete(c, identity); err != nil {
+				logging.Errorf(c, "failed to remove project scoped account: %v", identity)
 			}
 		}
 	}
