@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "264c471c_0a94a785",
+        "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_MacTests.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 11025,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-14T23:49:59Z",
+      "side": 1,
+      "message": "welp, it got auto-escaped\n\nI guess using \"...\" directly is OK...",
+      "range": {
+        "startLine": 11025,
+        "startChar": 31,
+        "endLine": 11025,
+        "endChar": 36
+      },
+      "revId": "e20a4e168e7a88ad952b8cb5df9ebf4a026098ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "358418dd_92883f47",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-14T23:49:59Z",
+      "side": 1,
+      "message": "Btw this doesn\u0027t work with UTF8 strings correctly. Do we care?",
+      "range": {
+        "startLine": 90,
+        "startChar": 8,
+        "endLine": 90,
+        "endChar": 23
+      },
+      "revId": "e20a4e168e7a88ad952b8cb5df9ebf4a026098ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
