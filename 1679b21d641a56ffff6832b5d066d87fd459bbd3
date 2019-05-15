@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c7ac59a1_7dc0735e",
+        "filename": "appengine/tq/tq_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-15T22:30:16Z",
+      "side": 1,
+      "message": "i think you are abusing existing tests -- they aren\u0027t about distinct queue names.\nIMO, add new convey block where you create 3 handlers, two of which of the same queue and assert there are exactly 2 distinct queue names,",
+      "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c800a72_b53d7412",
+        "filename": "gce/appengine/backend/cron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-15T22:30:16Z",
+      "side": 1,
+      "message": "is it really that expensive that you need to do it in async task each?",
+      "range": {
+        "startLine": 108,
+        "startChar": 19,
+        "endLine": 108,
+        "endChar": 76
+      },
+      "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28c7c1f7_8c18ad46",
+        "filename": "gce/appengine/backend/internal/metrics/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-15T22:30:16Z",
+      "side": 1,
+      "message": "I think it should be standalone func UpdateTaskCount or RecordTaskCount, instantiating TaskCount{} internally.\n\nThen, I think, lowercase taskCount type should also work.",
+      "range": {
+        "startLine": 73,
+        "startChar": 21,
+        "endLine": 73,
+        "endChar": 27
+      },
+      "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e0da525_883dfbb8",
+        "filename": "gce/appengine/backend/internal/metrics/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-15T22:30:16Z",
+      "side": 1,
+      "message": "i think this code can be refactored into standalone func (can be follow up), since the logic is the same with instance metrics. WDYT?\n\nat the very least, perhaps make 10*time.Minute a constant.",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 3
+      },
+      "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
