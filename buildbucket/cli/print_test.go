@@ -47,6 +47,7 @@ var buildJSON = `
   "updateTime": "2019-03-26T18:37:14.629154Z",
   "status": "SUCCESS",
   "summaryMarkdown": "it was ok",
+  "canary": true,
   "input": {
     "experimental": true,
     "properties": {
@@ -123,8 +124,7 @@ var buildJSON = `
   ],
   "infra": {
     "buildbucket": {
-      "serviceConfigRevision": "80aefcf1d2f6c25894a968312eca86ba0f80737c",
-      "canary": true
+      "serviceConfigRevision": "80aefcf1d2f6c25894a968312eca86ba0f80737c"
     },
     "swarming": {
       "hostname": "chromium-swarm.appspot.com",
