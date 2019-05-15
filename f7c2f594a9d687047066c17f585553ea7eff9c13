@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0ecf49f2_cebab329",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-15T18:26:34Z",
+      "side": 1,
+      "message": "The reason I was asking to define the relative to the task root is because this documentation (as written) implies that recipes are a requirement. Since you claim that the actual paths are an \"implementation detail\", this implies that no luci executable other than recipes is supported.",
+      "range": {
+        "startLine": 294,
+        "startChar": 12,
+        "endLine": 294,
+        "endChar": 19
+      },
+      "revId": "f7c2f594a9d687047066c17f585553ea7eff9c13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
