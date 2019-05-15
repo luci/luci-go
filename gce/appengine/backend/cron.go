@@ -104,3 +104,22 @@ func manageBotsAsync(c context.Context) error {
 func reportQuotasAsync(c context.Context) error {
 	return trigger(c, &tasks.ReportQuota{}, datastore.NewQuery(model.ProjectKind))
 }
+
+// countTasksAsync schedules task queue tasks to count tasks for each queue.
+func countTasksAsync(c context.Context) error {
+	dsp := getDispatcher(c)
+	queues := dsp.GetQueues()
+	t := make([]*tq.Task, len(queues))
+	for i, q := range queues {
+		t[i] = &tq.Task{
+			Payload: &tasks.CountTasks{
+				Id: q,
+			},
+		}
+	}
+	logging.Debugf(c, "scheduling %d tasks", len(t))
+	if err := dsp.AddTask(c, t...); err != nil {
+		return errors.Annotate(err, "failed to schedule tasks").Err()
+	}
+	return nil
+}

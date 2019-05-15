@@ -24,6 +24,7 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/taskqueue"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -36,6 +37,32 @@ import (
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 )
+
+// countTasksQueue is the name of the count tasks task handler queue.
+const countTasksQueue = "count-tasks"
+
+// countTasks counts the tasks for a given task queue.
+func countTasks(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.CountTasks)
+	switch {
+	case !ok:
+		return errors.Reason("unexpected payload type %T", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("ID is required").Err()
+	}
+	s, err := taskqueue.Stats(c, task.Id)
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "failed to get %q task queue stats", task.Id).Err()
+	case len(s) < 1:
+		return errors.Reason("failed to get %q task queue stats", task.Id).Err()
+	}
+	t := &metrics.TaskCount{}
+	if err := t.Update(c, task.Id, s[0].InFlight, s[0].Tasks); err != nil {
+		return errors.Annotate(err, "failed to update count").Err()
+	}
+	return nil
+}
 
 // countVMsQueue is the name of the count VMs task handler queue.
 const countVMsQueue = "count-vms"

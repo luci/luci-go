@@ -9,6 +9,12 @@ package tasks;
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/gce/api/config/v1/config.proto";
 
+// A task to count the tasks in a task queue.
+message CountTasks {
+  // The ID of the task queue whose tasks to count.
+  string id = 1;
+}
+
 // A task to count the VMs in a config.
 message CountVMs {
   // The ID of the config whose VMs to count.

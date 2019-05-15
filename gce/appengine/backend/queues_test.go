@@ -58,6 +58,36 @@ func TestQueues(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
+		Convey("countTasks", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					err := countTasks(c, nil)
+					So(err, ShouldErrLike, "unexpected payload")
+				})
+
+				Convey("empty", func() {
+					err := countTasks(c, &tasks.CountTasks{})
+					So(err, ShouldErrLike, "ID is required")
+				})
+			})
+
+			Convey("valid", func() {
+				Convey("error", func() {
+					err := countTasks(c, &tasks.CountTasks{
+						Id: "id",
+					})
+					So(err, ShouldErrLike, "failed to get")
+				})
+
+				Convey("ok", func() {
+					err := countTasks(c, &tasks.CountTasks{
+						Id: countTasksQueue,
+					})
+					So(err, ShouldBeNil)
+				})
+			})
+		})
+
 		Convey("countVMs", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {

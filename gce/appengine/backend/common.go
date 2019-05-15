@@ -47,6 +47,7 @@ func getDispatcher(c context.Context) *tq.Dispatcher {
 
 // registerTasks registers task handlers with the given *tq.Dispatcher.
 func registerTasks(dsp *tq.Dispatcher) {
+	dsp.RegisterTask(&tasks.CountTasks{}, countTasks, countTasksQueue, nil)
 	dsp.RegisterTask(&tasks.CountVMs{}, countVMs, countVMsQueue, nil)
 	dsp.RegisterTask(&tasks.CreateInstance{}, createInstance, createInstanceQueue, nil)
 	dsp.RegisterTask(&tasks.CreateVM{}, createVM, createVMQueue, nil)
@@ -138,6 +139,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		next(c)
 	})
 	dsp.InstallRoutes(r, mw)
+	r.GET("/internal/cron/count-tasks", mw, newHTTPHandler(countTasksAsync))
 	r.GET("/internal/cron/count-vms", mw, newHTTPHandler(countVMsAsync))
 	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstancesAsync))
 	r.GET("/internal/cron/expand-configs", mw, newHTTPHandler(expandConfigsAsync))

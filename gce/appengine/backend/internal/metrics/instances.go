@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 )
@@ -181,4 +182,8 @@ func updateInstances(c context.Context) {
 	}); err != nil {
 		errors.Log(c, errors.Annotate(err, "failed to fetch counts").Err())
 	}
+}
+
+func init() {
+	tsmon.RegisterGlobalCallback(updateInstances, configuredInstances, connectedInstances, createdInstances)
 }

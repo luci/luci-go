@@ -42,6 +42,19 @@ func TestCron(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
+		Convey("countTasksAsync", func() {
+			Convey("none", func() {
+				c = withDispatcher(c, &tq.Dispatcher{})
+				So(countTasksAsync(c), ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("many", func() {
+				So(countTasksAsync(c), ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldNotBeEmpty)
+			})
+		})
+
 		Convey("countVMsAsync", func() {
 			Convey("none", func() {
 				So(countVMsAsync(c), ShouldBeNil)

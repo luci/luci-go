@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"net/http/httptest"
+	"sort"
 	"testing"
 	"time"
 
@@ -85,6 +86,7 @@ func TestDispatcher(t *testing.T) {
 			// matter what proto type we use here as long as it is registered in
 			// protobuf type registry.
 			d.RegisterTask(&duration.Duration{}, handler, "", nil)
+			So(d.GetQueues(), ShouldResemble, []string{"default"})
 			installRoutes()
 
 			err := d.AddTask(ctx, &Task{
@@ -150,6 +152,7 @@ func TestDispatcher(t *testing.T) {
 		Convey("Deleting unknown task returns nil", func() {
 			handler := func(c context.Context, payload proto.Message) error { return nil }
 			d.RegisterTask(&duration.Duration{}, handler, "default", nil)
+			So(d.GetQueues(), ShouldResemble, []string{"default"})
 
 			So(d.DeleteTask(ctx, &Task{
 				Payload:          &duration.Duration{Seconds: 123},
@@ -161,6 +164,9 @@ func TestDispatcher(t *testing.T) {
 			handler := func(c context.Context, payload proto.Message) error { return nil }
 			d.RegisterTask(&duration.Duration{}, handler, "default", nil)
 			d.RegisterTask(&empty.Empty{}, handler, "another-q", nil)
+			queues := d.GetQueues()
+			sort.Strings(queues)
+			So(queues, ShouldResemble, []string{"another-q", "default"})
 			installRoutes()
 
 			t := []*Task{}
@@ -220,6 +226,7 @@ func TestDispatcher(t *testing.T) {
 			}
 
 			d.RegisterTask(&duration.Duration{}, handler, "", nil)
+			So(d.GetQueues(), ShouldResemble, []string{"default"})
 			installRoutes()
 
 			goodBody := `{"type":"google.protobuf.Duration","body":"123.000s"}`
