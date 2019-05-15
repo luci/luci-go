@@ -93,6 +93,30 @@
       "revId": "e20a4e168e7a88ad952b8cb5df9ebf4a026098ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8fa77bee_baa8c730",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-15T19:56:56Z",
+      "side": 1,
+      "message": "-1 is not the issue here\n\ntrimming string on some random byte that may not align with utf8 code point is the issue. E.g. https://stackoverflow.com/questions/46415894/golang-truncate-strings-with-special-characters-without-corrupting-data",
+      "parentUuid": "31969d2a_bb7d8de5",
+      "range": {
+        "startLine": 90,
+        "startChar": 8,
+        "endLine": 90,
+        "endChar": 23
+      },
+      "revId": "e20a4e168e7a88ad952b8cb5df9ebf4a026098ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
