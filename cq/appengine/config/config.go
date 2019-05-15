@@ -407,6 +407,16 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 			validateLocationRegexp(ctx, "location_regexp", b.LocationRegexp)
 			validateLocationRegexp(ctx, "location_regexp_exclude", b.LocationRegexpExclude)
 		}
+		if len(b.OwnerWhitelistGroup) > 0 {
+			specialities = append(specialities, "owner_whitelist_group")
+			for i, g := range b.OwnerWhitelistGroup {
+				if g == "" {
+					ctx.Enter("owner_whitelist_group #%d", i+1)
+					ctx.Errorf("must not be empty string")
+					ctx.Exit()
+				}
+			}
+		}
 
 		switch len(specialities) {
 		case 1:
@@ -419,7 +429,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		case 0:
 			canStartTriggeringTree = append(canStartTriggeringTree, b.Name)
 		default:
-			ctx.Errorf("combining %s features not allowed", specialities)
+			ctx.Errorf("combining %s features not yet allowed", specialities)
 		}
 	})
 

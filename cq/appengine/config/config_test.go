@@ -489,6 +489,23 @@ func TestTryjobValidation(t *testing.T) {
 				`duplicate name "c/d/e"`)
 		})
 
+		Convey("owner_whitelist_group", func() {
+			So(validate(`builders { name: "a/b/c" owner_whitelist_group: "ok" }`), ShouldBeNil)
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					owner_whitelist_group: "ok"
+				}`), ShouldBeNil)
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					owner_whitelist_group: "ok"
+					owner_whitelist_group: ""
+					owner_whitelist_group: "also-ok"
+				}`), ShouldErrLike,
+				"must not be empty string")
+		})
+
 		Convey("no combinations", func() {
 			So(validate(`
 				builders {
@@ -496,7 +513,15 @@ func TestTryjobValidation(t *testing.T) {
 					experiment_percentage: 1
 					equivalent_to {name: "c/d/e"}}`),
 				ShouldErrLike,
-				"combining [equivalent_to experiment_percentage] features not allowed")
+				"combining [equivalent_to experiment_percentage] features not yet allowed")
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					experiment_percentage: 1
+					owner_whitelist_group: "owners"
+				}`),
+				ShouldErrLike,
+				"combining [experiment_percentage owner_whitelist_group] features not yet allowed")
 			So(validate(`
 				builders {
 					name: "a/b/c"
@@ -505,7 +530,7 @@ func TestTryjobValidation(t *testing.T) {
 				}
 				builders { name: "c/d/e" } `),
 				ShouldErrLike,
-				"combining [triggered_by location_regexp[_exclude]] features not allowed")
+				"combining [triggered_by location_regexp[_exclude]] features not yet allowed")
 		})
 
 		Convey("triggered_by", func() {
