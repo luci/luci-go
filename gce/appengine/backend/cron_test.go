@@ -42,6 +42,28 @@ func TestCron(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
+		Convey("countTasks", func() {
+			dsp := &tq.Dispatcher{}
+			c = withDispatcher(c, dsp)
+			q := datastore.NewQuery("TaskCount")
+
+			Convey("none", func() {
+				So(countTasks(c), ShouldBeNil)
+				var k []*datastore.Key
+				So(datastore.GetAll(c, q, &k), ShouldBeNil)
+				So(k, ShouldBeEmpty)
+			})
+
+			Convey("many", func() {
+				dsp.RegisterTask(&tasks.CountVMs{}, countVMs, countVMsQueue, nil)
+				dsp.RegisterTask(&tasks.ManageBot{}, manageBot, manageBotQueue, nil)
+				So(countTasks(c), ShouldBeNil)
+				var k []*datastore.Key
+				So(datastore.GetAll(c, q, &k), ShouldBeNil)
+				So(k, ShouldHaveLength, 2)
+			})
+		})
+
 		Convey("countVMsAsync", func() {
 			Convey("none", func() {
 				So(countVMsAsync(c), ShouldBeNil)
