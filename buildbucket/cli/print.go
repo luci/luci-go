@@ -148,7 +148,7 @@ func (p *printer) Build(b *pb.Build) {
 	if b.Input.GetExperimental() {
 		systemTags = append(systemTags, "Experimental")
 	}
-	if b.GetInfra().GetBuildbucket().GetCanary() {
+	if b.Canary {
 		systemTags = append(systemTags, "Canary")
 	}
 	if len(systemTags) > 0 {
