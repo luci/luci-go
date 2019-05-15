@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "526df3a9_ec9e59b4",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T19:41:23Z",
+      "side": 1,
+      "message": "hm, indeed it is something different",
+      "parentUuid": "2d139cb1_e0d704df",
+      "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a900c9f_4135e0bd",
         "filename": "common/logging/gkelogger/logger.go",
         "patchSetId": 3
@@ -72,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "920335a3_06712799",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T19:41:23Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "3b85913e_d996dd92",
+      "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e69e2477_80359149",
         "filename": "common/logging/gkelogger/logger.go",
         "patchSetId": 3
@@ -101,6 +137,24 @@
       "side": 1,
       "message": "No, it\u0027s not a generic writer. It writes log entries.",
       "parentUuid": "e69e2477_80359149",
+      "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5898b0d0_9a781bb7",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T19:41:23Z",
+      "side": 1,
+      "message": "i am talking specifically about serialization (that is running on Write at a time)",
+      "parentUuid": "c939bda3_2b6a1d4f",
       "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
