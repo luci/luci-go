@@ -157,6 +157,7 @@ func BuildToV2(msg *v1.LegacyApiCommonBuildMessage) (b *pb.Build, err error) {
 
 		Status:          status,
 		SummaryMarkdown: resultDetails.UI.Info,
+		Canary:          msg.Canary,
 
 		Input: &pb.Build_Input{
 			Experimental: msg.Experimental,
@@ -164,9 +165,7 @@ func BuildToV2(msg *v1.LegacyApiCommonBuildMessage) (b *pb.Build, err error) {
 		Output: &pb.Build_Output{},
 
 		Infra: &pb.BuildInfra{
-			Buildbucket: &pb.BuildInfra_Buildbucket{
-				Canary: msg.Canary,
-			},
+			Buildbucket: &pb.BuildInfra_Buildbucket{},
 			Swarming: &pb.BuildInfra_Swarming{
 				Hostname:           tags.Get("swarming_hostname"),
 				TaskId:             tags.Get("swarming_task_id"),

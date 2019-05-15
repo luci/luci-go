@@ -36,7 +36,7 @@ import "go.chromium.org/luci/buildbucket/proto/step.proto";
 // a build at completion time and does not change after that.
 // All fields are included.
 //
-// Next id: 25.
+// Next id: 26.
 message Build {
   // Defines what to build/test.
   //
@@ -220,6 +220,9 @@ message Build {
 
   // What to run when the build is ready to start.
   Executable exe = 24;
+
+  // If true, use the canary build infrastructure.
+  bool canary = 25;
 }
 
 // Build infrastructure that was used for a particular build.
@@ -227,14 +230,11 @@ message BuildInfra {
 
   // Buildbucket-specific information, captured at the build creation time.
   message Buildbucket {
+    reserved 4; // field "canary" was moved to Build message.
+
     // Version of swarming task template. Defines
     // versions of kitchen, git, git wrapper, python, vpython, etc.
     string service_config_revision = 2;
-
-    // Whether canary version of the swarming task template was used for this
-    // build.
-    bool canary = 4;
-
     // Properties that were specified in ScheduleBuildRequest to create this
     // build.
     //
