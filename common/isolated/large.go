@@ -47,7 +47,6 @@ func Pack(values []int64) ([]byte, error) {
 		for value > 127 {
 			if _, err := w.Write([]byte{byte(1<<7 | value&0x7f)}); err != nil {
 				return nil, fmt.Errorf("failed to write: %v", err)
-
 			}
 			value >>= 7
 		}
