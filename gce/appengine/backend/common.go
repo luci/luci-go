@@ -138,6 +138,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		next(c)
 	})
 	dsp.InstallRoutes(r, mw)
+	r.GET("/internal/cron/count-tasks", mw, newHTTPHandler(countTasks))
 	r.GET("/internal/cron/count-vms", mw, newHTTPHandler(countVMsAsync))
 	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstancesAsync))
 	r.GET("/internal/cron/expand-configs", mw, newHTTPHandler(expandConfigsAsync))

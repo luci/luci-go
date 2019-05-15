@@ -220,6 +220,19 @@ func (d *Dispatcher) RegisterTask(prototype proto.Message, cb Handler, queue str
 	}
 }
 
+// GetQueues returns the names of task queues known to the dispatcher.
+func (d *Dispatcher) GetQueues() []string {
+	queues := stringset.New(0)
+
+	d.mu.RLock()
+	for _, h := range d.handlers {
+		queues.Add(h.queue)
+	}
+	d.mu.RUnlock()
+
+	return queues.ToSlice()
+}
+
 // runBatchesPerQueue is a generic parallel task distributor. It solves the
 // problems that:
 //  - "tasks" may be assigned to different queues, and tasks assigned to the

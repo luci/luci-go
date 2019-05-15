@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"net/http/httptest"
+	"sort"
 	"testing"
 	"time"
 
@@ -277,6 +278,35 @@ func TestDispatcher(t *testing.T) {
 			rw = execute(`{"type":"unknown.proto.type","body":"{}"}`)
 			So(rw.Code, ShouldEqual, 202) // no retry!
 			So(rw.Body.String(), ShouldStartWith, "Bad payload, can't deserialize")
+		})
+
+		Convey("GetQueues", func() {
+			// Never called.
+			handler := func(c context.Context, payload proto.Message) error {
+				panic("handler was called in GetQueues")
+				return nil
+			}
+
+			Convey("empty queue name", func() {
+				d.RegisterTask(&duration.Duration{}, handler, "", nil)
+				So(d.GetQueues(), ShouldResemble, []string{"default"})
+			})
+
+			Convey("multiple queue names", func() {
+				d.RegisterTask(&duration.Duration{}, handler, "default", nil)
+				d.RegisterTask(&empty.Empty{}, handler, "another", nil)
+				queues := d.GetQueues()
+				sort.Strings(queues)
+				So(queues, ShouldResemble, []string{"another", "default"})
+			})
+
+			Convey("duplicated queue names", func() {
+				d.RegisterTask(&duration.Duration{}, handler, "default", nil)
+				d.RegisterTask(&empty.Empty{}, handler, "default", nil)
+				queues := d.GetQueues()
+				sort.Strings(queues)
+				So(queues, ShouldResemble, []string{"default"})
+			})
 		})
 	})
 }
