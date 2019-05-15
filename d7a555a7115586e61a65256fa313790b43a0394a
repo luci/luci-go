@@ -158,6 +158,24 @@
       "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "356869f0_94a67566",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-15T19:59:27Z",
+      "side": 1,
+      "message": "I don\u0027t think it is a good abstraction to have in common/, considering it is trivially implemented wherever it is needed. common/ is already a dumpster of random trivial non-discoverable sometimes even unused crap.",
+      "parentUuid": "5898b0d0_9a781bb7",
+      "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
