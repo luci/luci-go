@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "91acf2e1_96095ecf",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T14:25:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09f25600_ac012f29",
+      "range": {
+        "startLine": 255,
+        "startChar": 37,
+        "endLine": 255,
+        "endChar": 38
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87a99d89_bfcb38db",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ac90d56_42c4302b",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T14:25:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "87a99d89_bfcb38db",
+      "range": {
+        "startLine": 257,
+        "startChar": 25,
+        "endLine": 257,
+        "endChar": 28
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "8d0a3da5_cb589575",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T14:25:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed8e269a_708a9df9",
+      "range": {
+        "startLine": 261,
+        "startChar": 7,
+        "endLine": 261,
+        "endChar": 34
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63e7f92c_bb5a4abf",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 5
@@ -91,6 +163,30 @@
       "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "217e72ed_0179aa6b",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T14:25:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63e7f92c_bb5a4abf",
+      "range": {
+        "startLine": 267,
+        "startChar": 69,
+        "endLine": 267,
+        "endChar": 75
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "b2876a00_96707a8c",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T14:25:59Z",
+      "side": 1,
+      "message": "that\u0027s impl detail",
+      "parentUuid": "cbb90a19_54babc15",
+      "range": {
+        "startLine": 275,
+        "startChar": 7,
+        "endLine": 275,
+        "endChar": 9
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6b7eb126_3872647d",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 5
@@ -128,6 +248,30 @@
       "writtenOn": "2019-05-14T20:36:05Z",
       "side": 1,
       "message": "should we do this automatically? i.e. prefix with bucket name or something? Or have swarming namespace based on the \u0027pool\u0027 dimension (won\u0027t help flex pools though)?",
+      "range": {
+        "startLine": 282,
+        "startChar": 9,
+        "endLine": 283,
+        "endChar": 64
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6b61e75_2e6e122f",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T14:25:59Z",
+      "side": 1,
+      "message": "flex pool is the only case where this may be a problem. Normally projects do not share bots, so there is no problem",
+      "parentUuid": "6b7eb126_3872647d",
       "range": {
         "startLine": 282,
         "startChar": 9,
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "6e093a7b_22666125",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T14:25:59Z",
+      "side": 1,
+      "message": "it is relative ti api.path[\u0027cache\u0027].join(path)\n\ntask cwd is impl detail",
+      "parentUuid": "e17aa080_7a2efdc7",
+      "range": {
+        "startLine": 286,
+        "startChar": 9,
+        "endLine": 286,
+        "endChar": 17
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d1c43036_267baf3b",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 5
@@ -183,6 +351,30 @@
       "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7dd8da4_7beafb3f",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-15T14:25:59Z",
+      "side": 1,
+      "message": "forgot to update this (this entire doc was moved, this text is mostly unchanged). done",
+      "parentUuid": "d1c43036_267baf3b",
+      "range": {
+        "startLine": 292,
+        "startChar": 9,
+        "endLine": 292,
+        "endChar": 26
+      },
+      "revId": "eb9d6c4baad65db065e4e77e5e80d6ab01ed27f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
