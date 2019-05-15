@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b82f8261_6c3c0c1c",
+        "filename": "common/isolated/filepath.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-15T12:40:12Z",
+      "side": 1,
+      "message": "https://golang.org/pkg/path/filepath/#WalkFunc\n\"In the case of an error, the info argument will be nil.\"\n\nso you should do this at the top of every Walk() call:\n\nif err !\u003d nil {\n  return err\n}",
+      "revId": "0d16fa174c47aebf430ace91c3a521b946358313",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "679533cb_e22b7533",
+        "filename": "common/isolated/filepath.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-15T12:40:12Z",
+      "side": 1,
+      "message": "You already receive info, so you should skip the call at line 31, it\u0027s 2x the stat() needed.\n\nAlso you can inline inline line 62.",
+      "revId": "0d16fa174c47aebf430ace91c3a521b946358313",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69e6e069_6a10165f",
+        "filename": "common/isolated/filepath.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-15T12:40:12Z",
+      "side": 1,
+      "message": "Same",
+      "revId": "0d16fa174c47aebf430ace91c3a521b946358313",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99bef597_c295e039",
+        "filename": "common/isolated/filepath.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-15T12:40:12Z",
+      "side": 1,
+      "message": "This code will eventually be deleted (hopefully), so I don\u0027t think it\u0027s worth referring to it here.",
+      "range": {
+        "startLine": 93,
+        "startChar": 24,
+        "endLine": 93,
+        "endChar": 44
+      },
+      "revId": "0d16fa174c47aebf430ace91c3a521b946358313",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
