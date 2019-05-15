@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aab3931d_b77bf95f",
+        "filename": "common/isolated/filepath.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-15T16:57:52Z",
+      "side": 1,
+      "message": "Please do it right at the start for early exit.",
+      "revId": "7121afc434546e0faaa9edb178bf387e4ddf018b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
