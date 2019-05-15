@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2d139cb1_e0d704df",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-15T18:00:56Z",
+      "side": 1,
+      "message": "Err.. And? It has different structure, JSON fields are named differently.",
+      "parentUuid": "9af18934_22a9becb",
+      "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9a900c9f_4135e0bd",
         "filename": "common/logging/gkelogger/logger.go",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "3b85913e_d996dd92",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-15T18:00:56Z",
+      "side": 1,
+      "message": "I prefer not to import separate library just for a struct. Also list of field in this struct is reduced only to ones that are really understood by GKE logging pipeline.",
+      "parentUuid": "9a900c9f_4135e0bd",
+      "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e69e2477_80359149",
         "filename": "common/logging/gkelogger/logger.go",
         "patchSetId": 3
@@ -47,6 +83,24 @@
       "writtenOn": "2019-05-15T17:14:23Z",
       "side": 1,
       "message": "can you generalize this aspect to a SerializedWriter somewhere in common/",
+      "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c939bda3_2b6a1d4f",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-15T18:00:56Z",
+      "side": 1,
+      "message": "No, it\u0027s not a generic writer. It writes log entries.",
+      "parentUuid": "e69e2477_80359149",
       "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
