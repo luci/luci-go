@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6391b246_27d4556e",
+        "filename": "appengine/tq/tq_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-05-15T23:34:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7ac59a1_7dc0735e",
+      "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c800a72_b53d7412",
         "filename": "gce/appengine/backend/cron.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc911d77_df5c6fe1",
+        "filename": "gce/appengine/backend/cron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-05-15T23:34:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c800a72_b53d7412",
+      "range": {
+        "startLine": 108,
+        "startChar": 19,
+        "endLine": 108,
+        "endChar": 76
+      },
+      "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "6dccd831_940e1935",
+        "filename": "gce/appengine/backend/internal/metrics/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-05-15T23:34:26Z",
+      "side": 1,
+      "message": "Maybe, but I\u0027m trying to keep the same pattern as InstanceCount. I want to see if there\u0027s a way I can generalize the pattern of \"precompute metric, write to datastore, read from datastore to report in global callback\". For now I\u0027ll keep it like this.",
+      "parentUuid": "28c7c1f7_8c18ad46",
+      "range": {
+        "startLine": 73,
+        "startChar": 21,
+        "endLine": 73,
+        "endChar": 27
+      },
+      "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e0da525_883dfbb8",
         "filename": "gce/appengine/backend/internal/metrics/tasks.go",
         "patchSetId": 1
@@ -85,6 +151,30 @@
       "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22c32cb4_ce633f39",
+        "filename": "gce/appengine/backend/internal/metrics/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-05-15T23:34:26Z",
+      "side": 1,
+      "message": "Most likely. I need to think about the best way to generalize though (see above comment). Actually, I\u0027m not even sure 10*time.Minute should be a constant. 10 minutes was chosen for InstanceCount because it could time out or read incomplete results from the datastore that cause a count to be temporarily missing. For this the timeout can be shorter because the known queue names are all held in memory and there\u0027s only a problem if the RPC to fetch queue stats times out.",
+      "parentUuid": "2e0da525_883dfbb8",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 3
+      },
+      "revId": "1679b21d641a56ffff6832b5d066d87fd459bbd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
