@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2fbf21ff_31939b4e",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-05-16T22:55:18Z",
+      "side": 1,
+      "message": "Yeah, this is the intranet IP like 10.1.0.1 or 192.168.0.1 on a home network. GCE has this as non-repeated.",
+      "parentUuid": "ff4ac0a6_2afa446f",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 25
+      },
+      "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "25d2c05b_9662eb76",
         "filename": "gce/api/instances/v1/service.proto",
         "patchSetId": 1
@@ -80,6 +104,30 @@
       "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a29cba9_a55c55c9",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-05-16T22:55:18Z",
+      "side": 1,
+      "message": "This way matches config/v1/config.proto which itself matches GCE.",
+      "parentUuid": "351d0576_8177d165",
+      "range": {
+        "startLine": 24,
+        "startChar": 2,
+        "endLine": 24,
+        "endChar": 10
+      },
+      "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
