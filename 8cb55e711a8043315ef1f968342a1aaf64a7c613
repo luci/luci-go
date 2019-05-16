@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d4157f8_e2547126",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-16T13:36:26Z",
+      "side": 1,
+      "message": "I\u0027d prefer to move these constant out at the top for clarity.",
+      "revId": "8cb55e711a8043315ef1f968342a1aaf64a7c613",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2608ffd_a678046d",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-16T13:36:26Z",
+      "side": 1,
+      "message": "Doing this will reduce memory allocation. Here it\u0027s not important, but I do this as an habit to reduce heap fragmentation:\n\n  newCommand :\u003d make([]string, 0, len(command))",
+      "revId": "8cb55e711a8043315ef1f968342a1aaf64a7c613",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
