@@ -39,6 +39,47 @@
       "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30fe1ca1_088a9dc4",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-16T18:21:10Z",
+      "side": 1,
+      "message": "hm, gerrit ate my updated comments. Please ignore the empty string thing, i misread the CL earlier.",
+      "parentUuid": "25d2c05b_9662eb76",
+      "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "351d0576_8177d165",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-16T18:21:10Z",
+      "side": 1,
+      "message": "you can upgrade it to repeated later, right now it doesn\u0027t seem useful to have it as a list.",
+      "range": {
+        "startLine": 24,
+        "startChar": 2,
+        "endLine": 24,
+        "endChar": 10
+      },
+      "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
