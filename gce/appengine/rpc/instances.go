@@ -70,20 +70,30 @@ func (*Instances) Delete(c context.Context, req *instances.DeleteRequest) (*empt
 // *model.VM.
 func toInstance(vm *model.VM) *instances.Instance {
 	inst := &instances.Instance{
-		Id:             vm.ID,
-		ConfigRevision: vm.Revision,
-		Disks:          make([]*instances.Disk, len(vm.Attributes.Disk)),
-		Drained:        vm.Drained,
-		Hostname:       vm.Hostname,
-		Lifetime:       vm.Lifetime,
-		Project:        vm.Attributes.Project,
-		Swarming:       vm.Swarming,
-		Timeout:        vm.Timeout,
-		Zone:           vm.Attributes.Zone,
+		Id:                vm.ID,
+		ConfigRevision:    vm.Revision,
+		Disks:             make([]*instances.Disk, len(vm.Attributes.Disk)),
+		Drained:           vm.Drained,
+		Hostname:          vm.Hostname,
+		NetworkInterfaces: make([]*instances.NetworkInterface, len(vm.NetworkInterfaces)),
+		Lifetime:          vm.Lifetime,
+		Project:           vm.Attributes.Project,
+		Swarming:          vm.Swarming,
+		Timeout:           vm.Timeout,
+		Zone:              vm.Attributes.Zone,
 	}
 	for i, d := range vm.Attributes.Disk {
 		inst.Disks[i] = &instances.Disk{
 			Image: d.Image,
+		}
+	}
+	for i, n := range vm.NetworkInterfaces {
+		inst.NetworkInterfaces[i] = &instances.NetworkInterface{
+			InternalIp: n.InternalIP,
+		}
+		// GCE currently supports at most one external IP address per network interface.
+		if n.ExternalIP != "" {
+			inst.NetworkInterfaces[i].ExternalIps = []string{n.ExternalIP}
 		}
 	}
 	if vm.Created > 0 {

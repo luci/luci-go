@@ -16,6 +16,14 @@ message Disk {
   string image = 1;
 }
 
+// A network interface associated with a GCE instance.
+message NetworkInterface {
+  // The internal IP address associated with this network interface.
+  string internal_ip = 1;
+  // The external IP addresses associated with this network interface.
+  repeated string external_ips = 2;
+}
+
 // A GCE instance configured to exist.
 // The instance actually exists iff the created timestamp is set.
 message Instance {
@@ -58,6 +66,9 @@ message Instance {
 
   // The disks associated with this instance.
   repeated Disk disks = 12;
+
+  // The network interfaces associated with this instance.
+  repeated NetworkInterface network_interfaces = 13;
 }
 
 // A request to delete an instance.

@@ -169,7 +169,7 @@ func TestCreate(t *testing.T) {
 				})
 			})
 
-			Convey("creates", func() {
+			Convey("created", func() {
 				Convey("pending", func() {
 					rt.Handler = func(req interface{}) (int, interface{}) {
 						inst, ok := req.(*compute.Instance)
@@ -214,7 +214,31 @@ func TestCreate(t *testing.T) {
 							So(*(req.(*map[string]string)), ShouldHaveLength, 0)
 							return http.StatusOK, &compute.Instance{
 								CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
-								SelfLink:          "url",
+								NetworkInterfaces: []*compute.NetworkInterface{
+									{
+										NetworkIP: "0.0.0.1",
+									},
+									{
+										AccessConfigs: []*compute.AccessConfig{
+											{
+												NatIP: "2.0.0.0",
+											},
+										},
+										NetworkIP: "0.0.0.2",
+									},
+									{
+										AccessConfigs: []*compute.AccessConfig{
+											{
+												NatIP: "3.0.0.0",
+											},
+											{
+												NatIP: "3.0.0.1",
+											},
+										},
+										NetworkIP: "0.0.0.3",
+									},
+								},
+								SelfLink: "url",
 							}
 						}
 					}
@@ -232,6 +256,19 @@ func TestCreate(t *testing.T) {
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Created, ShouldNotEqual, 0)
+					So(v.NetworkInterfaces, ShouldResemble, []model.NetworkInterface{
+						{
+							InternalIP: "0.0.0.1",
+						},
+						{
+							ExternalIP: "2.0.0.0",
+							InternalIP: "0.0.0.2",
+						},
+						{
+							ExternalIP: "3.0.0.0",
+							InternalIP: "0.0.0.3",
+						},
+					})
 					So(v.URL, ShouldEqual, "url")
 				})
 			})
