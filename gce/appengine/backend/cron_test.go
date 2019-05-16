@@ -208,6 +208,15 @@ func TestCron(t *testing.T) {
 					Id: "id",
 				})
 			})
+
+			Convey("deduplicated", func() {
+				datastore.Put(c, &model.VM{
+					ID: "id",
+				})
+				So(trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), ShouldBeNil)
+				So(trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
 		})
 	})
 }

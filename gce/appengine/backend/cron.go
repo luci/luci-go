@@ -64,12 +64,14 @@ func payloadFactory(t tasks.Task) payloadFn {
 }
 
 // trigger triggers a task queue task for each key returned by the given query.
+// Each task will be deduplicated based on the ID of the key it was created for.
 func trigger(c context.Context, t tasks.Task, q *datastore.Query) error {
 	tasks := make([]*tq.Task, 0)
 	newPayload := payloadFactory(t)
 	addTask := func(k *datastore.Key) {
 		tasks = append(tasks, &tq.Task{
-			Payload: newPayload(k.StringID()),
+			DeduplicationKey: k.StringID(),
+			Payload:          newPayload(k.StringID()),
 		})
 	}
 	if err := datastore.Run(c, q, addTask); err != nil {

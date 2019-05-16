@@ -226,9 +226,11 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	}
 	t := make([]*tq.Task, amt)
 	for i := int32(0); i < amt; i++ {
+		id := fmt.Sprintf("%s-%d", cfg.Prefix, i)
 		t[i] = &tq.Task{
+			DeduplicationKey: id,
 			Payload: &tasks.CreateVM{
-				Id:         fmt.Sprintf("%s-%d", cfg.Prefix, i),
+				Id:         id,
 				Attributes: cfg.Attributes,
 				Config:     task.Id,
 				Created: &timestamp.Timestamp{

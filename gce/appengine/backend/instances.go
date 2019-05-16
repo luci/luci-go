@@ -184,6 +184,7 @@ func createInstance(c context.Context, payload proto.Message) error {
 // destroyInstanceAsync schedules a task queue task to destroy a GCE instance.
 func destroyInstanceAsync(c context.Context, id, url string) error {
 	t := &tq.Task{
+		DeduplicationKey: id,
 		Payload: &tasks.DestroyInstance{
 			Id:  id,
 			Url: url,

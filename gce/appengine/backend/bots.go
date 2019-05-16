@@ -187,6 +187,7 @@ func manageBot(c context.Context, payload proto.Message) error {
 // terminateBotAsync schedules a task queue task to terminate a Swarming bot.
 func terminateBotAsync(c context.Context, id, hostname string) error {
 	t := &tq.Task{
+		DeduplicationKey: id,
 		Payload: &tasks.TerminateBot{
 			Id:       id,
 			Hostname: hostname,
@@ -244,6 +245,7 @@ func terminateBot(c context.Context, payload proto.Message) error {
 // deleteBotAsync schedules a task queue task to delete a Swarming bot.
 func deleteBotAsync(c context.Context, id, hostname string) error {
 	t := &tq.Task{
+		DeduplicationKey: id,
 		Payload: &tasks.DeleteBot{
 			Id:       id,
 			Hostname: hostname,
