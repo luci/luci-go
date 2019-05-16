@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff4ac0a6_2afa446f",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-16T18:20:29Z",
+      "side": 1,
+      "message": "is there always just one?",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 25
+      },
+      "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25d2c05b_9662eb76",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-16T18:20:29Z",
+      "side": 1,
+      "message": "please mention it can contain empty strings.",
+      "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
