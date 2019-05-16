@@ -1652,6 +1652,7 @@ luci.cq_group(
     allow_owner_if_submittable = None,
     tree_status_host = None,
     retry_config = None,
+    cancel_stale_tryjobs = None,
     verifiers = None,
 )
 ```
@@ -1670,6 +1671,7 @@ whenever there's a pending approved CL for a ref in the watched set.
 * **allow_owner_if_submittable**: allow CL owner to trigger CQ after getting `Code-Review` and other approvals regardless of `acl.CQ_COMMITTER` or `acl.CQ_DRY_RUNNER` roles. Only `cq.ACTION_*` are allowed here. Default is `cq.ACTION_NONE` which grants no additional permissions. CL owner is user owning a CL, i.e. its first patchset uploader, not to be confused with OWNERS files. **WARNING**: using this option is not recommended if you have sticky `Code-Review` label because this allows a malicious developer to upload a good looking patchset at first, get code review approval, and then upload a bad patchset and CQ it right away.
 * **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
 * **retry_config**: a new [cq.retry_config(...)](#cq.retry_config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
+* **cancel_stale_tryjobs**: **EXPERIMENTAL. Follow https://crbug.com/909895.** TODO(tandrii): update this doc once https://crbug.com/909895 is ready. controls what CQ does with not yet finished tryjobs if a new non-trivially different patchset is uploaded. Such tryjobs will not be useful to CQ any more, so you may choose to cancel them for efficiency reasons. If set to False (current default), CQ will NOT cancel them. If set to True, CQ will cancel such tryjobs.
 * **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict entry is an alias for `luci.cq_tryjob_verifier(**entry)` and a string entry is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
 
 

@@ -750,6 +750,7 @@ def _cq_config_group(cq_group, project, triggering_map):
   seen = {}  # _cq_builder_name(...) -> verifier node that added it
   tryjob = cq_pb.Verifiers.Tryjob(
       retry_config = _cq_retry_config(cq_group.props.retry_config),
+      cancel_stale_tryjobs = _cq_toggle(cq_group.props.cancel_stale_tryjobs),
       builders = sorted([
           _cq_tryjob_builder(v, cq_group, project, seen)
           for v in graph.children(cq_group.key, kind=kinds.CQ_TRYJOB_VERIFIER)
@@ -913,6 +914,13 @@ def _cq_builder_name(builder, project):
       builder.props.bucket,
       builder.props.name,
   )
+
+
+def _cq_toggle(val):
+  """Bool|None => cq_pb.Toggle."""
+  if val == None:
+    return cq_pb.UNSET
+  return cq_pb.YES if val else cq_pb.NO
 
 
 ################################################################################
