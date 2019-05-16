@@ -24,6 +24,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 
+	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/datastore"
@@ -37,7 +38,22 @@ import (
 )
 
 // setCreated sets the GCE instance as created in the datastore if it isn't already.
-func setCreated(c context.Context, id, url string, at time.Time) error {
+func setCreated(c context.Context, id string, inst *compute.Instance) error {
+	t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
+	if err != nil {
+		return errors.Annotate(err, "failed to parse instance creation time").Err()
+	}
+	nics := make([]model.NetworkInterface, len(inst.NetworkInterfaces))
+	for i, n := range inst.NetworkInterfaces {
+		if len(n.AccessConfigs) > 0 {
+			// GCE currently supports at most one access config per network interface.
+			nics[i].ExternalIP = n.AccessConfigs[0].NatIP
+			if len(n.AccessConfigs) > 1 {
+				logging.Warningf(c, "network interface %q has more than one access config", n.Name)
+			}
+		}
+		nics[i].InternalIP = n.NetworkIP
+	}
 	vm := &model.VM{
 		ID: id,
 	}
@@ -45,12 +61,13 @@ func setCreated(c context.Context, id, url string, at time.Time) error {
 		if err := datastore.Get(c, vm); err != nil {
 			return errors.Annotate(err, "failed to fetch VM").Err()
 		}
-		if vm.URL != "" {
+		if vm.Created > 0 {
 			// Already created.
 			return nil
 		}
-		vm.Created = at.Unix()
-		vm.URL = url
+		vm.Created = t.Unix()
+		vm.NetworkInterfaces = nics
+		vm.URL = inst.SelfLink
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
@@ -97,11 +114,7 @@ func checkInstance(c context.Context, vm *model.VM) error {
 		return errors.Annotate(err, "failed to fetch instance").Err()
 	}
 	logging.Debugf(c, "created instance: %s", inst.SelfLink)
-	t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
-	if err != nil {
-		return errors.Annotate(err, "failed to parse instance creation time").Err()
-	}
-	return setCreated(c, vm.ID, inst.SelfLink, t)
+	return setCreated(c, vm.ID, inst)
 }
 
 // createInstanceQueue is the name of the create instance task handler queue.

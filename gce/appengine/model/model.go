@@ -68,6 +68,16 @@ type Project struct {
 // VMKind is a VM entity's kind in the datastore.
 const VMKind = "VM"
 
+// NetworkInterface is a network interface attached to a GCE instance.
+type NetworkInterface struct {
+	// ExternalIP is an external network address assigned to a GCE instance.
+	// GCE currently supports at most one external IP address per network
+	// interface.
+	ExternalIP string
+	// Internal is an internal network address assigned to a GCE instance.
+	InternalIP string
+}
+
 // VM is a root entity representing a configured VM.
 // GCE instances should be created for each VM entity.
 type VM struct {
@@ -98,6 +108,9 @@ type VM struct {
 	Index int32 `gae:"index"`
 	// Lifetime is the number of seconds the GCE instance should live for.
 	Lifetime int64 `gae:"lifetime"`
+	// NetworkInterfaces is a slice of network interfaces attached to this created
+	// GCE instance. Empty if the instance is not yet created.
+	NetworkInterfaces []NetworkInterface `gae:"network_interfaces"`
 	// Prefix is the prefix to use when naming the GCE instance.
 	Prefix string `gae:"prefix"`
 	// Revision is the config revision this VM was created from.
