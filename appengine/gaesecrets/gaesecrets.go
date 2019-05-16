@@ -23,13 +23,13 @@ package gaesecrets
 import (
 	"context"
 	"crypto/rand"
-	"fmt"
 	"io"
 	"strings"
 	"time"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/caching"
@@ -81,7 +81,7 @@ type storeImpl struct {
 }
 
 // GetSecret returns a secret by its key.
-func (s *storeImpl) GetSecret(k secrets.Key) (secrets.Secret, error) {
+func (s *storeImpl) GetSecret(k string) (secrets.Secret, error) {
 	secret, err := secretsCache.LRU(s.ctx).GetOrCreate(s.ctx, s.cfg.Prefix+":"+string(k), func() (interface{}, time.Duration, error) {
 		secret, err := s.getSecretFromDatastore(k)
 		if err != nil {
@@ -92,12 +92,12 @@ func (s *storeImpl) GetSecret(k secrets.Key) (secrets.Secret, error) {
 	if err != nil {
 		return secrets.Secret{}, err
 	}
-	return secret.(secrets.Secret).Clone(), nil
+	return secret.(secrets.Secret), nil
 }
 
 // getSecretImpl uses non-transactional datastore (txnBuf.GetNoTxn) to grab a
 // secret.
-func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error) {
+func (s *storeImpl) getSecretFromDatastore(k string) (secrets.Secret, error) {
 	// Switch to default namespace.
 	c, err := info.Namespace(s.ctx, "")
 	if err != nil {
@@ -121,9 +121,6 @@ func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error
 		if ent.Secret, err = s.generateSecret(); err != nil {
 			return secrets.Secret{}, transient.Tag.Apply(err)
 		}
-		if ent.SecretID, err = s.generateSecretID(ent.Created); err != nil {
-			return secrets.Secret{}, transient.Tag.Apply(err)
-		}
 		err = ds.RunInTransaction(c, func(c context.Context) error {
 			newOne := secretEntity{ID: ent.ID}
 			switch err := ds.Get(c, &newOne); err {
@@ -142,10 +139,7 @@ func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error
 	}
 
 	return secrets.Secret{
-		Current: secrets.NamedBlob{
-			ID:   ent.SecretID,
-			Blob: ent.Secret,
-		},
+		Current: ent.Secret,
 	}, nil
 }
 
@@ -155,27 +149,14 @@ func (s *storeImpl) generateSecret() ([]byte, error) {
 	return out, err
 }
 
-const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-func (s *storeImpl) generateSecretID(ts time.Time) (string, error) {
-	rnd := make([]byte, 4)
-	if _, err := io.ReadFull(s.cfg.Entropy, rnd); err != nil {
-		return "", err
-	}
-	for i := range rnd {
-		rnd[i] = letters[int(rnd[i])%len(letters)]
-	}
-	return fmt.Sprintf("%s%02d%02d", string(rnd), ts.Month(), ts.Day()), nil
-}
-
 ////
 
 type secretEntity struct {
-	_kind string `gae:"$kind,gaesecrets.Secret"`
+	_kind  string         `gae:"$kind,gaesecrets.Secret"`
+	_extra ds.PropertyMap `gae:"-,extra"`
 
 	ID string `gae:"$id"`
 
-	Secret   []byte `gae:",noindex"` // blob with the secret
-	SecretID string `gae:",noindex"` // ID of the Secret blob
-	Created  time.Time
+	Secret  []byte `gae:",noindex"` // blob with the secret
+	Created time.Time
 }
