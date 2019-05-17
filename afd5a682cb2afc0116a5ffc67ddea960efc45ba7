@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "470c6a21_a0965636",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-17T13:44:31Z",
+      "side": 1,
+      "message": "Ah ok I was confused, it\u0027s about the cipd client, ignore me.",
+      "parentUuid": "f83cec62_3ea32b80",
+      "range": {
+        "startLine": 94,
+        "startChar": 55,
+        "endLine": 94,
+        "endChar": 63
+      },
+      "revId": "afd5a682cb2afc0116a5ffc67ddea960efc45ba7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "67cc27ec_ec2416c9",
         "filename": "common/isolated/command.go",
         "patchSetId": 5
