@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -114,12 +115,12 @@ func (s *State) Middleware(c *router.Context, next router.Handler) {
 		}
 		ctx := c.Context
 		contentLength := c.Request.ContentLength
-		nrw := newResponseWriter(c.Writer)
+		nrw := iotools.NewResponseWriter(c.Writer)
 		c.Writer = nrw
 		defer func() {
 			dur := clock.Now(ctx).Sub(started)
 			metric.UpdateServerMetrics(ctx, c.HandlerPath, nrw.Status(), dur,
-				contentLength, nrw.Size(), userAgent[0])
+				contentLength, nrw.ResponseSize(), userAgent[0])
 		}()
 		next(c)
 		s.flushIfNeeded(ctx, req, state, settings)
