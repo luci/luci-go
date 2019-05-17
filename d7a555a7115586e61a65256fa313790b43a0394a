@@ -176,6 +176,24 @@
       "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6aa3ac6f_843a5461",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-17T20:40:06Z",
+      "side": 1,
+      "message": "fine",
+      "parentUuid": "356869f0_94a67566",
+      "revId": "d7a555a7115586e61a65256fa313790b43a0394a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
