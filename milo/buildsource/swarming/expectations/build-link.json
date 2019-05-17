@@ -66,6 +66,13 @@
             "URL": "https://chromium.googlesource.com/external/github.com/luci/recipes-py/+/master/doc/workflow.md",
             "AriaLabel": "step link for Confused? README here"
           }
+        ],
+        [
+          {
+            "Label": "$debug",
+            "URL": "/swarming/task/build-link/steps/recipe_bootstrap/0/logs/s__debug/0",
+            "AriaLabel": "log link for $debug"
+          }
         ]
       ],
       "PendingTime": {
@@ -95,5 +102,6 @@
     }
   ],
   "Blame": null,
-  "StepDisplayPref": "default"
+  "StepDisplayPref": "default",
+  "ShowDebugLogsPref": false
 }

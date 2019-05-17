@@ -7,5 +7,7 @@
 @@@CURRENT_TIMESTAMP@1457949602@@@
 @@@STEP_STARTED@@@
 @@@STEP_LINK@Confused? README here@https://chromium.googlesource.com/external/github.com/luci/recipes-py/+/master/doc/workflow.md@@@
+@@@STEP_LOG_LINE@$debug@I am some stuff@@@
+@@@STEP_LOG_END@$debug@@@
 
 Some output

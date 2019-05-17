@@ -102,7 +102,11 @@
       <input type="radio" name="hider" id="showNonGreen" checked>
       <label for="showNonGreen">Non-Green</label>
 
-      <ol id="steps" class="non-green">
+      <br/>
+      Debug Logs:
+      <input type="checkbox" name="debug_hider" id="showDebugLogs">
+
+      <ol id="steps" class=" non-green hide-debug-logs">
 
         
           
@@ -149,6 +153,8 @@
       <li class="sublink"><a href="/swarming/task/build-link/steps/recipe_bootstrap/0/stdout" aria-label="log link for stdout">stdout</a></li>
     
       <li class="sublink"><a href="https://chromium.googlesource.com/external/github.com/luci/recipes-py/&#43;/master/doc/workflow.md" aria-label="step link for Confused? README here">Confused? README here</a></li>
+    
+      <li class="sublink debug-log"><a href="/swarming/task/build-link/steps/recipe_bootstrap/0/logs/s__debug/0" aria-label="log link for $debug">$debug</a></li>
     
     
   </ul>

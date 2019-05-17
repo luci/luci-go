@@ -114,6 +114,7 @@ func renderBuildLegacy(c *router.Context, build *ui.MiloBuildLegacy, renderTimel
 	}
 
 	build.StepDisplayPref = getStepDisplayPrefCookie(c)
+	build.ShowDebugLogsPref = getShowDebugLogsPrefCookie(c)
 	build.Fix(c.Context)
 
 	templates.MustRender(c.Context, c.Writer, "pages/build_legacy.html", templates.Args{
