@@ -71,6 +71,10 @@ type Server struct {
 	started bool            // true inside and after ListenAndServe
 	stopped bool            // true inside and after Shutdown
 	done    chan struct{}   // closed after Shutdown returns
+
+	bgrCtx    context.Context    // root context for background work, canceled in Shutdown
+	bgrCancel context.CancelFunc // cancels bgrCtx
+	bgrWg     sync.WaitGroup     // waits for runInBackground goroutines to stop
 }
 
 // New constructs a new server instance.
@@ -96,6 +100,10 @@ func New(opts Options) *Server {
 
 	// TODO(vadimsh): Populate admin routes (admin portal, pprof).
 	srv.RegisterHTTP(opts.AdminAddr)
+
+	// Prepare the context used for background work. It is canceled as soon as we
+	// enter the shutdown sequence.
+	srv.bgrCtx, srv.bgrCancel = context.WithCancel(srv.ctx)
 
 	return srv
 }
@@ -195,7 +203,10 @@ func (s *Server) Shutdown() {
 
 	logging.Infof(s.ctx, "Shutting down the server...")
 
-	// Stop them all in parallel. Each Shutdown call blocks until the
+	// Tell all runInBackground goroutines to stop.
+	s.bgrCancel()
+
+	// Stop all http.Servers in parallel. Each Shutdown call blocks until the
 	// corresponding server is stopped.
 	wg := sync.WaitGroup{}
 	wg.Add(len(s.httpSrv))
@@ -207,6 +218,9 @@ func (s *Server) Shutdown() {
 		}()
 	}
 	wg.Wait()
+
+	// Wait for all background goroutines to stop.
+	s.bgrWg.Wait()
 
 	// Notify ListenAndServe that it can exit now.
 	s.stopped = true
@@ -226,6 +240,18 @@ func (s *Server) serveLoop(srv *http.Server) error {
 		return srv.Serve(l)
 	}
 	return fmt.Errorf("test listener is not set")
+}
+
+// runInBackground starts a goroutine that does some background work.
+//
+// It is expected to exit soon after its context is canceled.
+func (s *Server) runInBackground(activity string, f func(context.Context)) {
+	ctx := logging.SetField(s.bgrCtx, "activity", activity)
+	s.bgrWg.Add(1)
+	go func() {
+		defer s.bgrWg.Done()
+		f(ctx)
+	}()
 }
 
 // rootMiddleware prepares the per-request context.
