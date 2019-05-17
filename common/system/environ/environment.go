@@ -147,11 +147,11 @@ func (e *Env) Remove(k string) bool {
 // the callback function, fn, for each key/value pair. If fn returns true, the
 // key is removed from the environment.
 func (e *Env) RemoveMatch(fn func(k, v string) bool) {
-	e.iterate(func(realKey, k, v string) bool {
+	e.iterate(func(realKey, k, v string) error {
 		if fn(k, v) {
 			delete(e.env, realKey)
 		}
-		return true
+		return nil
 	})
 }
 
@@ -246,27 +246,28 @@ func (e Env) Clone() Env {
 }
 
 // Internal iteration function. Invokes cb for every entry in the environment.
-// If the callback returns false, iteration stops.
+// If the callback returns error, iteration stops and returns that error.
 //
 // It is safe to mutate the environment map during iteration.
 //
 // realKey is the real, normalized map key. envKey and envValue are the split
 // map value.
-func (e *Env) iterate(cb func(realKey, envKey, envValue string) bool) {
+func (e *Env) iterate(cb func(realKey, envKey, envValue string) error) error {
 	for k, v := range e.env {
 		envKey, envValue := Split(v)
-		if !cb(k, envKey, envValue) {
-			break
+		if err := cb(k, envKey, envValue); err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
 // Iter iterates through all of the key/value pairs in Env and invokes the
 // supplied callback, cb, for each element.
 //
-// If the callback returns false, iteration will stop immediately.
-func (e Env) Iter(cb func(k, v string) bool) {
-	e.iterate(func(_, k, v string) bool { return cb(k, v) })
+// If the callback returns error, iteration will stop immediately.
+func (e Env) Iter(cb func(k, v string) error) error {
+	return e.iterate(func(_, k, v string) error { return cb(k, v) })
 }
 
 // Split splits the supplied environment variable value into a key/value pair.
