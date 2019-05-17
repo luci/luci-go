@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98d01d9b_6b343408",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-17T07:17:12Z",
+      "side": 1,
+      "message": "You probably don\u0027t want this question in the commit message.\n\nI think the proposed change here is fine, though it\u0027s a bit \nawkward to just stop the loop now (you\u0027d have to define a sentinel\nerror).",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 40
+      },
+      "revId": "bae406df22edaf0091a801b908875781cc5dc2d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
