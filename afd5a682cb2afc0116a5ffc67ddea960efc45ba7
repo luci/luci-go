@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f83cec62_3ea32b80",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-17T13:34:00Z",
+      "side": 1,
+      "message": "Do you mean that binaryPath is list?\nI thought this has info for cipd itself instead of packages installed by cipd, but that is not true?",
+      "parentUuid": "6d5bca64_c5aecca3",
+      "range": {
+        "startLine": 94,
+        "startChar": 55,
+        "endLine": 94,
+        "endChar": 63
+      },
+      "revId": "afd5a682cb2afc0116a5ffc67ddea960efc45ba7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "67cc27ec_ec2416c9",
         "filename": "common/isolated/command.go",
         "patchSetId": 5
@@ -39,6 +63,24 @@
       "revId": "afd5a682cb2afc0116a5ffc67ddea960efc45ba7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4740cfe1_9d88e056",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-17T13:34:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67cc27ec_ec2416c9",
+      "revId": "afd5a682cb2afc0116a5ffc67ddea960efc45ba7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
