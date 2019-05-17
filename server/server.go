@@ -17,13 +17,15 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
-	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -33,13 +35,15 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 )
 
 // Options are exposed as command line flags.
 type Options struct {
-	Prod      bool   // must be set when running in production
-	HTTPAddr  string // address to bind the main listening socket to
-	AdminAddr string // address to bind the admin socket to
+	Prod           bool   // must be set when running in production
+	HTTPAddr       string // address to bind the main listening socket to
+	AdminAddr      string // address to bind the admin socket to
+	RootSecretPath string // path to a JSON file with the root secret key
 
 	testListeners map[string]net.Listener // addr => net.Listener, for tests
 }
@@ -55,6 +59,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to")
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to")
+	f.StringVar(&o.RootSecretPath, "root-secret-path", o.RootSecretPath, "Path to a JSON file with the root secret key")
 }
 
 // Server is responsible for initializing and launching the serving environment.
@@ -75,6 +80,8 @@ type Server struct {
 	bgrCtx    context.Context    // root context for background work, canceled in Shutdown
 	bgrCancel context.CancelFunc // cancels bgrCtx
 	bgrWg     sync.WaitGroup     // waits for runInBackground goroutines to stop
+
+	secrets *secrets.DerivedStore // indirectly used to derive XSRF tokens and such
 }
 
 // New constructs a new server instance.
@@ -82,20 +89,22 @@ type Server struct {
 // It hosts one or more HTTP servers and starts and stops them in unison. It is
 // also responsible for preparing contexts for incoming requests.
 func New(opts Options) *Server {
+	srv := &Server{
+		ctx:     context.Background(),
+		opts:    opts,
+		done:    make(chan struct{}),
+		secrets: secrets.NewDerivedStore(secrets.Secret{}),
+	}
+
 	// TODO(vadimsh): Use JSON format when opts.Prod is true so that fluentd can
 	// understand it.
-	ctx := gologger.StdConfig.Use(context.Background())
-	ctx = caching.WithProcessCacheData(ctx, caching.NewProcessCacheData())
+	srv.ctx = gologger.StdConfig.Use(srv.ctx)
+	srv.ctx = caching.WithProcessCacheData(srv.ctx, caching.NewProcessCacheData())
+	srv.ctx = secrets.Set(srv.ctx, srv.secrets)
 
 	// TODO(vadimsh): Install settings via settings.Use(...).
-	// TODO(vadimsh): Install secrets via secrets.Set(...).
 	// TODO(vadimsh): Install auth via auth.Initialize(...).
 
-	srv := &Server{
-		ctx:  ctx,
-		opts: opts,
-		done: make(chan struct{}),
-	}
 	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
 
 	// TODO(vadimsh): Populate admin routes (admin portal, pprof).
@@ -153,6 +162,11 @@ func (s *Server) ListenAndServe() error {
 	s.m.Unlock()
 	if wasRunning {
 		panic("the server has already been started")
+	}
+
+	if err := s.initSecrets(); err != nil {
+		logging.WithError(err).Errorf(s.ctx, "Failed to initialize secrets store")
+		return errors.Annotate(err, "failed to initialize secrets store").Err()
 	}
 
 	// Catch SIGTERM while inside this function.
@@ -239,7 +253,7 @@ func (s *Server) serveLoop(srv *http.Server) error {
 	if l, _ := s.opts.testListeners[srv.Addr]; l != nil {
 		return srv.Serve(l)
 	}
-	return fmt.Errorf("test listener is not set")
+	return errors.Reason("test listener is not set").Err()
 }
 
 // runInBackground starts a goroutine that does some background work.
@@ -264,4 +278,57 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 
 	c.Context = cacheContext.Wrap(ctx)
 	next(c)
+}
+
+// initSecrets reads the initial root secret and launches a job to periodically
+// reread it.
+//
+// Absence of the secret when the server starts is a fatal error. But if the
+// server managed to stars successfully but can't re-read the secret later (e.g.
+// the file disappeared), it logs the error and keeps using the cached secret.
+func (s *Server) initSecrets() error {
+	secret, err := s.readRootSecret()
+	if err != nil {
+		return err
+	}
+	s.secrets.SetRoot(secret)
+	s.runInBackground("secrets", func(c context.Context) {
+		for {
+			if r := <-clock.After(c, time.Minute); r.Err != nil {
+				return // the context is canceled
+			}
+			secret, err := s.readRootSecret()
+			if err != nil {
+				logging.WithError(err).Errorf(c, "Failed to re-read the root secret, using the cached one")
+			} else {
+				s.secrets.SetRoot(secret)
+			}
+		}
+	})
+	return nil
+}
+
+// readRootSecret reads the secret from a path specified via -root-secret-path.
+func (s *Server) readRootSecret() (secrets.Secret, error) {
+	if s.opts.RootSecretPath == "" {
+		if !s.opts.Prod {
+			return secrets.Secret{Current: []byte("dev-non-secret")}, nil
+		}
+		return secrets.Secret{}, errors.Reason("-root-secret-path is required when running in prod mode").Err()
+	}
+
+	f, err := os.Open(s.opts.RootSecretPath)
+	if err != nil {
+		return secrets.Secret{}, err
+	}
+	defer f.Close()
+
+	secret := secrets.Secret{}
+	if err = json.NewDecoder(f).Decode(&secret); err != nil {
+		return secrets.Secret{}, errors.Annotate(err, "not a valid JSON").Err()
+	}
+	if len(secret.Current) == 0 {
+		return secrets.Secret{}, errors.Reason("`current` field in the root secret is empty, this is not allowed").Err()
+	}
+	return secret, nil
 }
