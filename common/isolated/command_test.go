@@ -20,6 +20,8 @@ import (
 	"runtime"
 	"testing"
 
+	"go.chromium.org/luci/common/system/environ"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -76,5 +78,47 @@ func TestProcessCommand(t *testing.T) {
 			filepath.Join("out", "result.txt"),
 			filepath.Join("cfgdir", "config"),
 		})
+	})
+}
+
+func TestGetCommandEnv(t *testing.T) {
+	t.Parallel()
+	originalEnvironSystem := environSystem
+	defer func() {
+		environSystem = originalEnvironSystem
+	}()
+
+	Convey("GetCommandEnv", t, func() {
+		environSystem = func() environ.Env {
+			return environ.New([]string{
+				"C=foo",
+				"D=bar",
+				"E=baz",
+				"PATH=/bin",
+			})
+		}
+
+		env, err := getCommandEnv(context.Background(), "/a", nil, "/b", environ.New([]string{
+			"A=a",
+			"B=",
+			"C=",
+			"E=${ISOLATED_OUTDIR}/eggs",
+		}), map[string][]string{"D": {"foo"}}, "/spam", "")
+
+		So(err, ShouldBeNil)
+
+		_, ok := env.Get("B")
+		So(ok, ShouldBeFalse)
+
+		_, ok = env.Get("C")
+		So(ok, ShouldBeFalse)
+
+		if runtime.GOOS == "windows" {
+			So(env.GetEmpty("D"), ShouldEqual, `\b\foo;bar`)
+		} else {
+			So(env.GetEmpty("D"), ShouldEqual, "/b/foo:bar")
+		}
+
+		So(env.GetEmpty("E"), ShouldEqual, string(filepath.Separator)+filepath.Join("spam", "eggs"))
 	})
 }
