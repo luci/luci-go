@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d5bca64_c5aecca3",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-17T13:06:30Z",
+      "side": 1,
+      "message": "I thought this would be a list of paths, because there can be multiple packages installed.",
+      "range": {
+        "startLine": 94,
+        "startChar": 55,
+        "endLine": 94,
+        "endChar": 63
+      },
+      "revId": "afd5a682cb2afc0116a5ffc67ddea960efc45ba7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67cc27ec_ec2416c9",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-17T13:06:30Z",
+      "side": 1,
+      "message": "style nit: I\u0027m generally not a fan of complex inlined calls inside a condition, because it makes reading much harder. Reading line 108 makes it more tedious to find which err it\u0027s referring to, as there\u0027s an err at line 102 just before that is completely unrelated.",
+      "revId": "afd5a682cb2afc0116a5ffc67ddea960efc45ba7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
