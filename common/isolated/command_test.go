@@ -18,7 +18,10 @@ import (
 	"context"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
+
+	"go.chromium.org/luci/common/system/environ"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -75,6 +78,77 @@ func TestProcessCommand(t *testing.T) {
 			"program" + executableSuffix,
 			filepath.Join("out", "result.txt"),
 			filepath.Join("cfgdir", "config"),
+		})
+	})
+}
+
+func TestGetCommandEnv(t *testing.T) {
+	t.Parallel()
+	originalEnvironSystem := environSystem
+	defer func() {
+		environSystem = originalEnvironSystem
+	}()
+
+	Convey("GetCommandEnv", t, func() {
+		environSystem = func() environ.Env {
+			return environ.New([]string{
+				"C=foo",
+				"D=bar",
+				"E=baz",
+				"PATH=/bin",
+			})
+		}
+
+		Convey("simple case", func() {
+			env, err := getCommandEnv(context.Background(), "/a", nil, "/b", environ.New([]string{
+				"A=a",
+				"B=",
+				"C=",
+				"E=${ISOLATED_OUTDIR}/eggs",
+			}), map[string][]string{"D": {"foo"}}, "/spam", "")
+
+			So(err, ShouldBeNil)
+
+			_, ok := env.Get("B")
+			So(ok, ShouldBeFalse)
+
+			_, ok = env.Get("C")
+			So(ok, ShouldBeFalse)
+
+			if runtime.GOOS == "windows" {
+				So(env.GetEmpty("D"), ShouldEqual, `\b\foo;bar`)
+			} else {
+				So(env.GetEmpty("D"), ShouldEqual, "/b/foo:bar")
+			}
+
+			So(env.GetEmpty("E"), ShouldEqual, string(filepath.Separator)+filepath.Join("spam", "eggs"))
+		})
+
+		Convey("cipdInfo", func() {
+			env, err := getCommandEnv(context.Background(), "tmp", &cipdInfo{
+				binaryPath: "cipddir/cipd",
+				cacheDir:   ".cipd/cache",
+			}, "", environ.Env{}, nil, "", "")
+			So(err, ShouldBeNil)
+
+			expected := map[string]string{
+				"C":              "foo",
+				"CIPD_CACHE_DIR": ".cipd/cache",
+				"D":              "bar",
+				"E":              "baz",
+				"PATH": strings.Join([]string{"cipddir", "/bin"},
+					string(filepath.ListSeparator)),
+				"TMPDIR": "tmp",
+			}
+
+			if runtime.GOOS == "windows" {
+				expected["TMP"] = "tmp"
+				expected["TEMP"] = "tmp"
+			} else if runtime.GOOS == "darwin" {
+				expected["MAC_CHROMIUM_TMPDIR"] = "tmp"
+			}
+
+			So(env.Map(), ShouldResemble, expected)
 		})
 	})
 }
