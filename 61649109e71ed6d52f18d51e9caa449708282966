@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8b0ae44c_72bb8166",
+        "filename": "common/logging/gkelogger/tracker.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-17T20:45:26Z",
+      "side": 1,
+      "message": "nit: consider atomic.AddInt32(ptr, 1)\nslightly more generic",
+      "range": {
+        "startLine": 50,
+        "startChar": 9,
+        "endLine": 50,
+        "endChar": 19
+      },
+      "revId": "61649109e71ed6d52f18d51e9caa449708282966",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
