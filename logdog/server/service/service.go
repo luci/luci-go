@@ -156,8 +156,9 @@ type Service struct {
 // Run performs service-wide initialization and invokes the specified run
 // function.
 func (s *Service) Run(c context.Context, f func(context.Context) error) {
-	// Log to Stdout using JSON log lines.
-	c = teelogger.Use(c, gkelogger.GetFactory(os.Stdout))
+	// Log to Stdout using fluentd-compatible JSON log lines.
+	sink := &gkelogger.Sink{Out: os.Stdout}
+	c = teelogger.Use(c, gkelogger.Factory(sink, gkelogger.LogEntry{}))
 
 	// If a service name isn't specified, default to the base of the current
 	// executable.

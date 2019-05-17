@@ -19,16 +19,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
+	"io"
 	"testing"
-	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func use(ctx context.Context, out io.Writer, proto LogEntry) context.Context {
+	return logging.SetFactory(ctx, Factory(&Sink{Out: out}, proto))
+}
 
 func read(b *bytes.Buffer) *LogEntry {
 	var result LogEntry
@@ -40,34 +42,35 @@ func read(b *bytes.Buffer) *LogEntry {
 
 func TestLogger(t *testing.T) {
 	t.Parallel()
+
 	c := context.Background()
 	c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 	buf := bytes.NewBuffer([]byte{})
 
-	Convey("Basic Debug", t, func() {
-		l := jsonLogger{ctx: c, out: buf, lock: &sync.Mutex{}}
-		l.Debugf("test message")
-		So(read(buf), ShouldResemble, &LogEntry{
-			Message:  "test message",
-			Severity: "debug",
-			Time:     clock.Now(c).Format(time.RFC3339Nano),
-		})
-	})
-
-	Convey("Basic in context", t, func() {
-		c = Use(c, buf)
+	Convey("Basic", t, func() {
+		c = use(c, buf, LogEntry{TraceID: "hi"})
 		logging.Infof(c, "test context")
 		So(read(buf), ShouldResemble, &LogEntry{
 			Message:  "test context",
 			Severity: "info",
-			Time:     clock.Now(c).Format(time.RFC3339Nano),
+			Time:     "1454472306.7",
+			TraceID:  "hi", // copied from the prototype
 		})
 	})
 
-	Convey("Basic in Fields", t, func() {
-		c = Use(c, buf)
+	Convey("Simple fields", t, func() {
+		c = use(c, buf, LogEntry{})
 		logging.NewFields(map[string]interface{}{"foo": "bar"}).Infof(c, "test field")
 		e := read(buf)
 		So(e.Fields["foo"], ShouldEqual, "bar")
+	})
+
+	Convey("Error field", t, func() {
+		c = use(c, buf, LogEntry{})
+		c = logging.SetField(c, "foo", "bar")
+		logging.WithError(fmt.Errorf("boom")).Infof(c, "boom")
+		e := read(buf)
+		So(e.Fields["foo"], ShouldEqual, "bar")             // still works
+		So(e.Fields[logging.ErrorKey], ShouldEqual, "boom") // also works
 	})
 }
