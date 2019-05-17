@@ -128,6 +128,30 @@
       "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ec80116_efc71241",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-17T00:30:29Z",
+      "side": 1,
+      "message": "I see. SGTM.",
+      "parentUuid": "2a29cba9_a55c55c9",
+      "range": {
+        "startLine": 24,
+        "startChar": 2,
+        "endLine": 24,
+        "endChar": 10
+      },
+      "revId": "ddcb7d26fa17adce73266d2c77a27e2dbdc20d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
