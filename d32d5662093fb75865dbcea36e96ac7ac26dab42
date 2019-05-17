@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a396f08_0b450ed2",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-17T21:06:34Z",
+      "side": 1,
+      "message": "as a user of server package, can I customize this? planned?",
+      "revId": "d32d5662093fb75865dbcea36e96ac7ac26dab42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
