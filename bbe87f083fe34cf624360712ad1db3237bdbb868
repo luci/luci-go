@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "55211b8d_5fb96d17",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-17T21:05:38Z",
+      "side": 1,
+      "message": "nit: consider moving this large comment and L138-154 to a separate func. This currently occupies most of server.New()",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 133,
+        "endChar": 32
+      },
+      "revId": "bbe87f083fe34cf624360712ad1db3237bdbb868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "934a6c65_7f8204c4",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-17T21:05:38Z",
+      "side": 1,
+      "message": "i assume all global server logs are logged with same operation id for the duration of server lifetime.\nare you sure stackdriver does not assume something like \"there is \u003c\u003d N log entries per operation\"? How exactly is this correlated? If this is UI-level grouping?",
+      "range": {
+        "startLine": 151,
+        "startChar": 33,
+        "endLine": 151,
+        "endChar": 42
+      },
+      "revId": "bbe87f083fe34cf624360712ad1db3237bdbb868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
