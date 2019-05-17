@@ -164,10 +164,10 @@ func TestEnvironmentManipulation(t *testing.T) {
 
 			Convey(`Can perform iteration`, func() {
 				buildMap := make(map[string]string)
-				env.Iter(func(k, v string) bool {
+				So(env.Iter(func(k, v string) error {
 					buildMap[k] = v
-					return true
-				})
+					return nil
+				}), ShouldBeNil)
 				So(env.Map(), ShouldResemble, buildMap)
 			})
 
