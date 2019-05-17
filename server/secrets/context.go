@@ -28,12 +28,12 @@ var (
 // Factory knows how to make a new Store.
 type Factory func(context.Context) Store
 
-type contextKey int
+var contextKey = "secrets.Store"
 
 // Get grabs a Store by calling Factory stored in the context. If one hasn't
 // been set, it returns nil.
 func Get(c context.Context) Store {
-	if f, ok := c.Value(contextKey(0)).(Factory); ok && f != nil {
+	if f, ok := c.Value(&contextKey).(Factory); ok && f != nil {
 		return f(c)
 	}
 	return nil
@@ -41,7 +41,7 @@ func Get(c context.Context) Store {
 
 // SetFactory sets the function to produce Store instances when Get(c) is used.
 func SetFactory(c context.Context, f Factory) context.Context {
-	return context.WithValue(c, contextKey(0), f)
+	return context.WithValue(c, &contextKey, f)
 }
 
 // Set injects the Store object in the context to be returned by Get as is.
@@ -52,12 +52,13 @@ func Set(c context.Context, s Store) context.Context {
 	return SetFactory(c, func(context.Context) Store { return s })
 }
 
-// GetSecret is shortcut for grabbing a Store from the context and using its
-// GetSecret method. If the context doesn't have Store set,
-// returns ErrNoStoreConfigured.
-func GetSecret(c context.Context, k Key) (Secret, error) {
+// GetSecret is a shortcut for grabbing a Store from the context and using its
+// GetSecret method.
+//
+// If the context doesn't have Store set, returns ErrNoStoreConfigured.
+func GetSecret(c context.Context, key string) (Secret, error) {
 	if s := Get(c); s != nil {
-		return s.GetSecret(k)
+		return s.GetSecret(key)
 	}
 	return Secret{}, ErrNoStoreConfigured
 }

@@ -69,7 +69,7 @@ func (a TokenAlgo) digestLen() int {
 type TokenKind struct {
 	Algo       TokenAlgo
 	Expiration time.Duration // how long generated token lives
-	SecretKey  secrets.Key   // name of the secret key in secrets.Store
+	SecretKey  string        // name of the secret key in secrets.Store
 	Version    byte          // tokens with another version will be rejected
 }
 
@@ -117,7 +117,7 @@ func (k *TokenKind) Generate(c context.Context, state []byte, embedded map[strin
 	if err != nil {
 		return "", err
 	}
-	mac, err := computeMAC(k.Algo, secret.Current.Blob, dataToAuth(k.Version, public, state))
+	mac, err := computeMAC(k.Algo, secret.Current, dataToAuth(k.Version, public, state))
 	if err != nil {
 		return "", err
 	}
@@ -171,7 +171,7 @@ func (k *TokenKind) Validate(c context.Context, token string, state []byte) (map
 	}
 	goodToken := false
 	for _, blob := range secret.Blobs() {
-		goodMac, err := computeMAC(k.Algo, blob.Blob, toAuth)
+		goodMac, err := computeMAC(k.Algo, blob, toAuth)
 		if err != nil {
 			return nil, err
 		}

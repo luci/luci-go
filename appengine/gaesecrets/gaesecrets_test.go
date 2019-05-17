@@ -33,8 +33,7 @@ func TestWorks(t *testing.T) {
 		// Autogenerates one.
 		s1, err := secrets.GetSecret(c, "key1")
 		So(err, ShouldBeNil)
-		So(len(s1.Current.ID), ShouldEqual, 8)
-		So(len(s1.Current.Blob), ShouldEqual, 32)
+		So(len(s1.Current), ShouldEqual, 32)
 
 		// Returns same one.
 		s2, err := secrets.GetSecret(c, "key1")
