@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
 )
 
 const (
@@ -77,4 +78,84 @@ func processCommand(ctx context.Context, command []string, outDir, botFile strin
 		newCommand = append(newCommand, newArg)
 	}
 	return newCommand, nil
+}
+
+type cipdInfo struct {
+	binaryPath string
+	cacheDir   string
+}
+
+// environSystem is used for mocking in test.
+var environSystem = environ.System
+
+// getCommandEnv returns full OS environment to run a command in.
+// Sets up TEMP, puts directory with cipd binary in front of PATH, exposes
+// CIPD_CACHE_DIR env var, and installs all env_prefixes.
+func getCommandEnv(ctx context.Context, tmpDir string, cipdInfo *cipdInfo, runDir string, env environ.Env, envPrefixes map[string][]string, outDir, botFile string) (environ.Env, error) {
+	out := environSystem()
+
+	err := env.Iter(func(k, v string) error {
+		if v == "" {
+			out.Remove(k)
+			return nil
+		}
+		p, err := replaceParameters(ctx, v, outDir, botFile)
+		if err != nil {
+			return fmt.Errorf("failed to call replaceParameters for %s: %v", v, err)
+		}
+		out.Set(k, p)
+		return nil
+	})
+	if err != nil {
+		return environ.Env{}, err
+	}
+
+	if cipdInfo != nil {
+		binDir := filepath.Dir(cipdInfo.binaryPath)
+		out.Set("PATH", binDir+string(filepath.ListSeparator)+out.GetEmpty("PATH"))
+		out.Set("CIPD_CACHE_DIR", cipdInfo.cacheDir)
+	}
+
+	for key, paths := range envPrefixes {
+		newPaths := make([]string, 0, len(paths))
+		for _, p := range paths {
+			newPaths = append(newPaths, filepath.Clean(filepath.Join(runDir, p)))
+		}
+		if cur, ok := out.Get(key); ok {
+			newPaths = append(newPaths, cur)
+		}
+		out.Set(key, strings.Join(newPaths, string(filepath.ListSeparator)))
+	}
+
+	// * python respects $TMPDIR, $TEMP, and $TMP in this order, regardless of
+	//   platform. So $TMPDIR must be set on all platforms.
+	//   https://github.com/python/cpython/blob/2.7/Lib/tempfile.py#L155
+	out.Set("TMPDIR", tmpDir)
+	if runtime.GOOS == "windows" {
+		// * chromium's base utils uses GetTempPath().
+		//    https://cs.chromium.org/chromium/src/base/files/file_util_win.cc?q=GetTempPath
+		// * Go uses GetTempPath().
+		// * GetTempDir() uses %TMP%, then %TEMP%, then other stuff. So %TMP% must be
+		//   set.
+		//   https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-gettemppathw
+		out.Set("TMP", tmpDir)
+		// https://blogs.msdn.microsoft.com/oldnewthing/20150417-00/?p=44213
+		out.Set("TEMP", tmpDir)
+	} else if runtime.GOOS == "darwin" {
+		// * Chromium uses an hack on macOS before calling into
+		//   NSTemporaryDirectory().
+		//   https://cs.chromium.org/chromium/src/base/files/file_util_mac.mm?q=GetTempDir
+		//   https://developer.apple.com/documentation/foundation/1409211-nstemporarydirectory
+		out.Set("MAC_CHROMIUM_TMPDIR", tmpDir)
+	} else {
+		// TMPDIR is specified as the POSIX standard envvar for the temp directory.
+		// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.html
+		// * mktemp on linux respects $TMPDIR.
+		// * Chromium respects $TMPDIR on linux.
+		//   https://cs.chromium.org/chromium/src/base/files/file_util_posix.cc?q=GetTempDir
+		// * Go uses $TMPDIR.
+		//   https://go.googlesource.com/go/+/go1.10.3/src/os/file_unix.go#307
+	}
+
+	return out, nil
 }
