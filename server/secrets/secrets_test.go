@@ -16,12 +16,15 @@ package secrets
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestBlobs(t *testing.T) {
+func TestSecret(t *testing.T) {
+	t.Parallel()
+
 	Convey("Blobs works", t, func() {
 		s := Secret{
 			Current: []byte("s1"),
@@ -36,9 +39,56 @@ func TestBlobs(t *testing.T) {
 			[]byte("s3"),
 		})
 	})
+
+	Convey("Equal works", t, func() {
+		s1 := Secret{
+			Current: []byte("1"),
+			Previous: [][]byte{
+				[]byte("2"),
+				[]byte("3"),
+			},
+		}
+		s2 := Secret{
+			Current: []byte("1"),
+			Previous: [][]byte{
+				[]byte("2"),
+			},
+		}
+		s3 := Secret{
+			Current: []byte("zzz"),
+			Previous: [][]byte{
+				[]byte("2"),
+				[]byte("3"),
+			},
+		}
+		s4 := Secret{
+			Current: []byte("1"),
+			Previous: [][]byte{
+				[]byte("2"),
+				[]byte("zzz"),
+			},
+		}
+		So(s1.Equal(s1), ShouldBeTrue)
+		So(s1.Equal(s2), ShouldBeFalse)
+		So(s1.Equal(s3), ShouldBeFalse)
+		So(s1.Equal(s4), ShouldBeFalse)
+	})
+
+	Convey("JSON serialization", t, func() {
+		blob, _ := json.Marshal(&Secret{
+			Current: []byte("1"),
+			Previous: [][]byte{
+				[]byte("2"),
+				[]byte("3"),
+			},
+		})
+		So(string(blob), ShouldResemble, `{"current":"MQ==","previous":["Mg==","Mw=="]}`)
+	})
 }
 
 func TestContext(t *testing.T) {
+	t.Parallel()
+
 	Convey("Works", t, func() {
 		c := Set(context.Background(), StaticStore{
 			"key": Secret{Current: []byte("secret")},

@@ -15,6 +15,7 @@
 package secrets
 
 import (
+	"bytes"
 	"errors"
 )
 
@@ -27,8 +28,8 @@ var (
 // previous values. Previous values are important when key is being rotated:
 // there may be valid outstanding derivatives of previous values of the secret.
 type Secret struct {
-	Current  []byte   // current value of the secret, always set
-	Previous [][]byte // optional list of previous values, most recent first
+	Current  []byte   `json:"current"`            // current value of the secret, always set
+	Previous [][]byte `json:"previous,omitempty"` // optional list of previous values, most recent first
 }
 
 // Blobs returns current blob and all previous blobs as one array.
@@ -37,6 +38,25 @@ func (s Secret) Blobs() [][]byte {
 	out = append(out, s.Current)
 	out = append(out, s.Previous...)
 	return out
+}
+
+// Equal returns true if secrets are equal.
+//
+// Does *not* run in constant time. Shouldn't be used in a cryptographic
+// context due to susceptibility to timing attacks.
+func (s Secret) Equal(a Secret) bool {
+	switch {
+	case len(s.Previous) != len(a.Previous):
+		return false
+	case !bytes.Equal(s.Current, a.Current):
+		return false
+	}
+	for i, blob := range s.Previous {
+		if !bytes.Equal(blob, a.Previous[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 // Store knows how to retrieve (or autogenerate) a secret given its key.
