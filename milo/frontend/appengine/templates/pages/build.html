@@ -225,11 +225,11 @@
       </tr>
       <tr>
         <td class="left">Pending</td>
-        <td id="duration">{{ duration .BuildPage.CreateTime .BuildPage.StartTime .CurrentTime }}</td>
+        <td id="duration">{{ duration .BuildPage.CreateTime .BuildPage.StartTime .BuildPage.EndTime .BuildPage.Now }}</td>
       </tr>
       <tr class="alt">
         <td class="left">Execution</td>
-        <td id="duration">{{ duration .BuildPage.StartTime .BuildPage.EndTime .CurrentTime }}</td>
+        <td id="duration">{{ duration .BuildPage.StartTime .BuildPage.EndTime .BuildPage.Now }}</td>
       </tr>
     </table>
   </div>
