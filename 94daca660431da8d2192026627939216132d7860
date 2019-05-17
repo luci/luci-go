@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6c24b395_0833ddc5",
+        "filename": "server/secrets/secrets.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-17T18:03:57Z",
+      "side": 1,
+      "message": "Timing attacks. Added comment.",
+      "parentUuid": "a1252c87_e8430fe2",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 11
+      },
+      "revId": "94daca660431da8d2192026627939216132d7860",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51fee1ba_532ee7ce",
         "filename": "server/secrets/secrets_test.go",
         "patchSetId": 4
@@ -36,6 +60,30 @@
       "writtenOn": "2019-05-17T06:41:24Z",
       "side": 1,
       "message": "TIL: I didn\u0027t realize blobs are auto encoded this way.",
+      "range": {
+        "startLine": 85,
+        "startChar": 47,
+        "endLine": 85,
+        "endChar": 53
+      },
+      "revId": "94daca660431da8d2192026627939216132d7860",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a0ec20ae_80ef5191",
+        "filename": "server/secrets/secrets_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-17T18:03:57Z",
+      "side": 1,
+      "message": "Yeah, I wasn\u0027t sure [][]byte is supported, thus added this test.",
+      "parentUuid": "51fee1ba_532ee7ce",
       "range": {
         "startLine": 85,
         "startChar": 47,
