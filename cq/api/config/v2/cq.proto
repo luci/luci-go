@@ -257,6 +257,11 @@ message Verifiers {
     // Optional, defaulting to no retries whatsoever.
     RetryConfig retry_config = 2;
 
+    // EXPERIMENTAL. WORK IN PROGRESS. https://crbug.com/909895.
+    // Optional. If YES, running or not-yet-started tryjobs will be cancelled as
+    // soon as substantially different patchset is uploaded to a CL.
+    Toggle cancel_stale_tryjobs = 3;
+
     message Builder {
       // Next field number: 9
 

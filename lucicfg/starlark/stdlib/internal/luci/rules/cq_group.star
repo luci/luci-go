@@ -33,6 +33,7 @@ def _cq_group(
       allow_owner_if_submittable=None,
       tree_status_host=None,
       retry_config=None,
+      cancel_stale_tryjobs=None,
       verifiers=None
   ):
   """Defines a set of refs to be watched by the CQ and a set of verifiers to run
@@ -72,6 +73,13 @@ def _cq_group(
     retry_config: a new cq.retry_config(...) struct or one of `cq.RETRY_*`
         constants that define how CQ should retry failed builds. See
         [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
+    cancel_stale_tryjobs: **EXPERIMENTAL. Follow https://crbug.com/909895.**
+        TODO(tandrii): update this doc once https://crbug.com/909895 is ready.
+        controls what CQ does with not yet finished tryjobs if a new
+        non-trivially different patchset is uploaded. Such tryjobs will not be
+        useful to CQ any more, so you may choose to cancel them for efficiency
+        reasons. If set to False (current default), CQ will NOT cancel them.
+        If set to True, CQ will cancel such tryjobs.
     verifiers: a list of luci.cq_tryjob_verifier(...) specifying what checks to
         run on a pending CL. See luci.cq_tryjob_verifier(...) for all details.
         As a shortcut, each entry can also either be a dict or a string. A dict
@@ -106,6 +114,11 @@ def _cq_group(
           'retry_config',
           retry_config,
           default=cq.RETRY_TRANSIENT_FAILURES,
+          required=False,
+      ),
+      'cancel_stale_tryjobs': validate.bool(
+          'cancel_stale_tryjobs',
+          cancel_stale_tryjobs,
           required=False,
       ),
   })
