@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "71d6f8e6_d844c4ec",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-17T20:39:23Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 288,
+        "startChar": 21,
+        "endLine": 288,
+        "endChar": 25
+      },
+      "revId": "dc23cf28bfb7497cdb010ebf2097d75629fe49c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "41fddfa5_f39544cb",
         "filename": "server/server_test.go",
         "patchSetId": 1
