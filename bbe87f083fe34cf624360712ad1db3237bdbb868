@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c76043b2_0c638303",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-18T01:02:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "55211b8d_5fb96d17",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 133,
+        "endChar": 32
+      },
+      "revId": "bbe87f083fe34cf624360712ad1db3237bdbb868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "934a6c65_7f8204c4",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "bbe87f083fe34cf624360712ad1db3237bdbb868",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea0acafa_d3f876c5",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-18T01:02:11Z",
+      "side": 1,
+      "message": "\u003e i assume all global server logs are logged with same operation id for the duration of server lifetime.\n\nYeah (if by \"server\" you mean a single concrete process).\n\n\u003e are you sure stackdriver does not assume something like \"there is \u003c\u003d N log entries per operation\"? \n\nNo, but based on how operation.id is actually used (see below), I think it is unlikely.\n\n\u003e How exactly is this correlated? If this is UI-level grouping?\n\nIt is not interpreter by UI in any way. But operation.id field is indexed by the storage, so you can ask Cloud Logging for all log entries with given operation ID. In practice, when looking at a log record in Stackdriver UI, you can expand its properties, click on \"operation.id\" field and then click \"Show more logs like this\", and it will construct necessary query.",
+      "parentUuid": "934a6c65_7f8204c4",
+      "range": {
+        "startLine": 151,
+        "startChar": 33,
+        "endLine": 151,
+        "endChar": 42
+      },
+      "revId": "bbe87f083fe34cf624360712ad1db3237bdbb868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
