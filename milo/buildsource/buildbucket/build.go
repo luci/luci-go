@@ -402,13 +402,14 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 	}
 	link, err := getBugLink(ctx, b)
 	logging.Infof(c, "Got all the things")
+	now, _ := ptypes.TimestampProto(clock.Now(c))
 	return &ui.BuildPage{
 		Build:           ui.Build{b},
 		Blame:           blame,
 		RelatedBuilds:   relatedBuilds,
 		BuildBugLink:    link,
 		BuildbucketHost: host,
-		Now:             clock.Now(c),
+		Now:             now,
 		BlamelistError:  blameErr,
 		ForcedBlamelist: forceBlamelist,
 	}, err

@@ -30,6 +30,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
@@ -106,7 +107,7 @@ type BuildPage struct {
 	steps []*Step
 
 	// Now is the current time, used for generating step intervals.
-	Now time.Time
+	Now *timestamp.Timestamp
 
 	// BlamelistError holds errors related to the blamelist.
 	// This determines the behavior of clicking the "blamelist" tab.
@@ -117,9 +118,10 @@ type BuildPage struct {
 }
 
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
+	now, _ := ptypes.TimestampProto(clock.Now(c))
 	return &BuildPage{
 		Build: Build{b},
-		Now:   clock.Now(c),
+		Now:   now,
 	}
 }
 
@@ -178,12 +180,10 @@ func (bp *BuildPage) Steps() []*Step {
 	// which is always true in the build proto.
 	stepMap := map[string]*Step{}
 	for _, step := range bp.Build.Steps {
-		i := common.ToInterval(step.GetStartTime(), step.GetEndTime())
-		i.Now = bp.Now
 		s := &Step{
 			Step:      step,
 			Collapsed: collapseGreen && step.Status == buildbucketpb.Status_SUCCESS,
-			Interval:  i,
+			Interval:  common.ToInterval(step.GetStartTime(), step.GetEndTime(), bp.Now),
 		}
 		stepMap[step.Name] = s
 		switch nameParts := strings.Split(step.Name, "|"); len(nameParts) {
