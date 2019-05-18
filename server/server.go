@@ -134,6 +134,11 @@ func New(opts Options) *Server {
 
 	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
 
+	// Health check/readiness probe endpoint.
+	srv.Routes.GET("/health", router.MiddlewareChain{}, func(c *router.Context) {
+		c.Writer.Write([]byte("OK"))
+	})
+
 	// TODO(vadimsh): Populate admin routes (admin portal, pprof).
 	srv.RegisterHTTP(opts.AdminAddr)
 
