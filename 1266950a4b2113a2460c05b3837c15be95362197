@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "332d9e9f_5e88c85e",
+        "filename": "milo/common/time.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-18T03:39:42Z",
+      "side": 1,
+      "message": "earliest",
+      "range": {
+        "startLine": 71,
+        "startChar": 51,
+        "endLine": 71,
+        "endChar": 56
+      },
+      "revId": "1266950a4b2113a2460c05b3837c15be95362197",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8865e6fa_a7349e04",
+        "filename": "milo/common/time.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-18T03:39:42Z",
+      "side": 1,
+      "message": "earliestEnd",
+      "range": {
+        "startLine": 78,
+        "startChar": 6,
+        "endLine": 78,
+        "endChar": 14
+      },
+      "revId": "1266950a4b2113a2460c05b3837c15be95362197",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb9fa474_fc51e135",
+        "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_scheduled.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-18T03:39:42Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "1266950a4b2113a2460c05b3837c15be95362197",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
