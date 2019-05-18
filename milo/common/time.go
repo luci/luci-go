@@ -55,22 +55,42 @@ func (in Interval) Duration() time.Duration {
 	return 0
 }
 
-func ToInterval(start, end *timestamp.Timestamp) (result Interval) {
+func ToInterval(start, end, now *timestamp.Timestamp) (result Interval) {
 	if t, err := ptypes.Timestamp(start); err == nil {
 		result.Start = t
 	}
 	if t, err := ptypes.Timestamp(end); err == nil {
 		result.End = t
 	}
+	if t, err := ptypes.Timestamp(now); err == nil {
+		result.Now = t
+	}
 	return
 }
 
-func Duration(start, end *timestamp.Timestamp, now time.Time) string {
-	in := ToInterval(start, end)
-	in.Now = now
-	if in.Started() && (in.Ended() || !in.Now.IsZero()) {
-		return HumanDuration(in.Duration())
+// Duration returns duration between start and the earliest of ends.
+// Ignores nil ends.
+// Fallbacks to "N/A" on insufficient data.
+func Duration(start *timestamp.Timestamp, ends ...*timestamp.Timestamp) string {
+	if start != nil {
+		startTime, _ := ptypes.Timestamp(start)
+
+		var earliestEnd time.Time
+		for _, ts := range ends {
+			if ts == nil {
+				continue
+			}
+			t, _ := ptypes.Timestamp(ts)
+			if earliestEnd.IsZero() || t.Before(earliestEnd) {
+				earliestEnd = t
+			}
+		}
+
+		if startTime.Before(earliestEnd) {
+			return HumanDuration(earliestEnd.Sub(startTime))
+		}
 	}
+
 	return "N/A"
 }
 
