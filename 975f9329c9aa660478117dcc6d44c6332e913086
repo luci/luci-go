@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "1d6a351c_a9a42d38",
+        "filename": "server/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-18T22:57:06Z",
+      "side": 1,
+      "message": "b.ResetTimer() before the loop",
+      "revId": "975f9329c9aa660478117dcc6d44c6332e913086",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "65a925ee_758a8918",
         "filename": "server/server_test.go",
         "patchSetId": 1
