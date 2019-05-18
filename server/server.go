@@ -17,18 +17,26 @@ package server
 
 import (
 	"context"
+	cryptorand "crypto/rand"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
+	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gkelogger"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
 
@@ -45,7 +53,11 @@ type Options struct {
 	AdminAddr      string // address to bind the admin socket to
 	RootSecretPath string // path to a JSON file with the root secret key
 
-	testListeners map[string]net.Listener // addr => net.Listener, for tests
+	testCtx       context.Context          // base context for tests
+	testSeed      int64                    // used to seed rng in tests
+	testStdout    gkelogger.LogEntryWriter // mocks stdout in tests
+	testStderr    gkelogger.LogEntryWriter // mocks stderr in tests
+	testListeners map[string]net.Listener  // addr => net.Listener, for tests
 }
 
 // Register registers the command line flags.
@@ -69,13 +81,20 @@ func (o *Options) Register(f *flag.FlagSet) {
 type Server struct {
 	Routes *router.Router // HTTP routes exposed via opts.HTTPAddr
 
-	ctx     context.Context // the root server context, holds all global state
-	opts    Options         // options passed to New
-	m       sync.Mutex      // protects fields below
-	httpSrv []*http.Server  // all registered HTTP servers
-	started bool            // true inside and after ListenAndServe
-	stopped bool            // true inside and after Shutdown
-	done    chan struct{}   // closed after Shutdown returns
+	ctx  context.Context // the root server context, holds all global state
+	opts Options         // options passed to New
+
+	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
+	stderr gkelogger.LogEntryWriter // for logging to stderr, nil in dev mode
+
+	m       sync.Mutex     // protects fields below
+	httpSrv []*http.Server // all registered HTTP servers
+	started bool           // true inside and after ListenAndServe
+	stopped bool           // true inside and after Shutdown
+	done    chan struct{}  // closed after Shutdown returns
+
+	rndM sync.Mutex // protects rnd
+	rnd  *rand.Rand // used to generate trace and operation IDs
 
 	bgrCtx    context.Context    // root context for background work, canceled in Shutdown
 	bgrCancel context.CancelFunc // cancels bgrCtx
@@ -89,16 +108,24 @@ type Server struct {
 // It hosts one or more HTTP servers and starts and stops them in unison. It is
 // also responsible for preparing contexts for incoming requests.
 func New(opts Options) *Server {
+	seed := opts.testSeed
+	if seed == 0 {
+		if err := binary.Read(cryptorand.Reader, binary.BigEndian, &seed); err != nil {
+			panic(err)
+		}
+	}
+
 	srv := &Server{
 		ctx:     context.Background(),
 		opts:    opts,
 		done:    make(chan struct{}),
+		rnd:     rand.New(rand.NewSource(seed)),
 		secrets: secrets.NewDerivedStore(secrets.Secret{}),
 	}
-
-	// TODO(vadimsh): Use JSON format when opts.Prod is true so that fluentd can
-	// understand it.
-	srv.ctx = gologger.StdConfig.Use(srv.ctx)
+	if opts.testCtx != nil {
+		srv.ctx = opts.testCtx
+	}
+	srv.initLogging()
 	srv.ctx = caching.WithProcessCacheData(srv.ctx, caching.NewProcessCacheData())
 	srv.ctx = secrets.Set(srv.ctx, srv.secrets)
 
@@ -268,16 +295,134 @@ func (s *Server) runInBackground(activity string, f func(context.Context)) {
 	}()
 }
 
+// genUniqueID returns pseudo-random hex string of given even length.
+func (s *Server) genUniqueID(l int) string {
+	b := make([]byte, l/2)
+	s.rndM.Lock()
+	s.rnd.Read(b)
+	s.rndM.Unlock()
+	return hex.EncodeToString(b)
+}
+
 // rootMiddleware prepares the per-request context.
 func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
+	// Either grab Trace ID from X-Cloud-Trace-Context header or generate a new
+	// random one. By using X-Cloud-Trace-Context we tell Stackdriver to associate
+	// logs with existing traces. This header may be set by Google HTTPs load
+	// balancer itself, see https://cloud.google.com/load-balancing/docs/https.
+	//
+	// TraceID is also used to group log lines together in Stackdriver UI, even if
+	// such trace doesn't actually exist.
+	traceID := getCloudTraceID(c.Request)
+	if traceID == "" {
+		traceID = s.genUniqueID(32)
+	}
+
+	// Track how many response bytes are sent and what status is set.
+	rw := iotools.NewResponseWriter(c.Writer)
+	c.Writer = rw
+
+	// Observe maximum emitted severity to use it as an overall severity for the
+	// request log entry.
+	severityTracker := gkelogger.SeverityTracker{Out: s.stdout}
+
+	// Log the overall request information when the request finishes. Use TraceID
+	// to correlate this log entry with entries emitted by the request handler
+	// below.
+	started := clock.Now(s.ctx)
+	defer func() {
+		now := clock.Now(s.ctx)
+		entry := gkelogger.LogEntry{
+			Severity: severityTracker.MaxSeverity(),
+			Time:     gkelogger.FormatTime(now),
+			TraceID:  traceID,
+			RequestInfo: &gkelogger.RequestInfo{
+				Method:       c.Request.Method,
+				URL:          getRequestURL(c.Request),
+				Status:       rw.Status(),
+				RequestSize:  fmt.Sprintf("%d", c.Request.ContentLength),
+				ResponseSize: fmt.Sprintf("%d", rw.ResponseSize()),
+				UserAgent:    c.Request.UserAgent(),
+				RemoteIP:     getRemoteIP(c.Request),
+				Latency:      fmt.Sprintf("%fs", now.Sub(started).Seconds()),
+			},
+		}
+		if s.opts.Prod {
+			s.stderr.Write(&entry)
+		} else {
+			logging.Infof(s.ctx, "%d %s %q (%s)",
+				entry.RequestInfo.Status,
+				entry.RequestInfo.Method,
+				entry.RequestInfo.URL,
+				entry.RequestInfo.Latency,
+			)
+		}
+	}()
+
 	ctx, cancel := context.WithTimeout(s.ctx, time.Minute)
 	defer cancel()
 
-	// TODO(vadimsh): Configure pre-request logger.
+	// Make the request logger emit log entries with same TraceID.
+	if s.opts.Prod {
+		ctx = logging.SetFactory(ctx, gkelogger.Factory(&severityTracker, gkelogger.LogEntry{
+			TraceID:   traceID,
+			Operation: &gkelogger.Operation{ID: s.genUniqueID(32)},
+		}))
+	}
+
 	ctx = caching.WithRequestCache(ctx)
 
 	c.Context = cacheContext.Wrap(ctx)
 	next(c)
+}
+
+// initLogging initializes the server logging.
+//
+// Called very early during server startup process. Many server fields may not
+// be initialized yet, be careful.
+//
+// When running in production uses the ugly looking JSON format that is hard to
+// read by humans but which is parsed by google-fluentd.
+//
+// To support per-request log grouping in Stackdriver Logs UI emit two log
+// streams:
+//  * stderr: top-level HTTP requests (conceptually "200 GET /path").
+//  * stdout: all application logs, correlated with HTTP logs in a particular
+//    way (see the link below).
+//
+// This technique is primarily intended for GAE Flex, but it works anywhere:
+// https://cloud.google.com/appengine/articles/logging#linking_app_logs_and_requests
+//
+// Stderr stream is also used to log all global activities that happens
+// outside of any request handler (stuff like initialization, shutdown,
+// background goroutines, etc).
+//
+// In non-production mode use the human-friendly format and a single log stream.
+func (s *Server) initLogging() {
+	if !s.opts.Prod {
+		s.ctx = gologger.StdConfig.Use(s.ctx)
+		return
+	}
+
+	if s.opts.testStdout != nil {
+		s.stdout = s.opts.testStdout
+	} else {
+		s.stdout = &gkelogger.Sink{Out: os.Stdout}
+	}
+
+	if s.opts.testStderr != nil {
+		s.stderr = s.opts.testStderr
+	} else {
+		s.stderr = &gkelogger.Sink{Out: os.Stderr}
+	}
+
+	s.ctx = logging.SetFactory(s.ctx,
+		gkelogger.Factory(s.stderr, gkelogger.LogEntry{
+			Operation: &gkelogger.Operation{
+				ID: s.genUniqueID(32), // correlate all global server logs together
+			},
+		}),
+	)
 }
 
 // initSecrets reads the initial root secret and launches a job to periodically
@@ -331,4 +476,63 @@ func (s *Server) readRootSecret() (secrets.Secret, error) {
 		return secrets.Secret{}, errors.Reason("`current` field in the root secret is empty, this is not allowed").Err()
 	}
 	return secret, nil
+}
+
+// getCloudTraceID extract Trace ID from X-Cloud-Trace-Context header.
+func getCloudTraceID(r *http.Request) string {
+	// hdr has form "<trace-id>/<span-id>;<trace-options>".
+	hdr := r.Header.Get("X-Cloud-Trace-Context")
+	idx := strings.IndexByte(hdr, '/')
+	if idx == -1 {
+		return ""
+	}
+	return hdr[:idx]
+}
+
+// getRemoteIP extracts end-user IP address from X-Forwarded-For header.
+func getRemoteIP(r *http.Request) string {
+	// X-Forwarded-For header is set by Cloud Load Balancer and has format:
+	//   [<untrusted part>,]<IP that connected to LB>,<unimportant>[,<more>].
+	//
+	// <untrusted part> is present if the original request from the Internet comes
+	// with X-Forwarded-For header. We can't trust IPs specified there. We assume
+	// Cloud Load Balancer sanitizes the format of this field though.
+	//
+	// <IP that connected to LB> is what we are after.
+	//
+	// <unimportant> is "global forwarding rule external IP" which we don't care
+	// about.
+	//
+	// <more> is present only if we proxy the request through more layers of
+	// load balancers *while it is already inside GKE cluster*. We assume we don't
+	// do that (if we ever do, Options{...} should be extended with a setting that
+	// specifies how many layers of load balancers to skip to get to the original
+	// IP).
+	//
+	// See https://cloud.google.com/load-balancing/docs/https for more info.
+	forwardedFor := strings.Split(r.Header.Get("X-Forwarded-For"), ",")
+	if len(forwardedFor) >= 2 {
+		return forwardedFor[len(forwardedFor)-2]
+	}
+
+	// Fallback to the peer IP if X-Forwarded-For is not set. Happens when
+	// connecting to the server's port directly from within the cluster.
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return "0.0.0.0"
+	}
+	return ip
+}
+
+// getRequestURL reconstructs original request URL to log it (best effort).
+func getRequestURL(r *http.Request) string {
+	proto := r.Header.Get("X-Forwarded-Proto")
+	if proto != "https" {
+		proto = "http"
+	}
+	host := r.Host
+	if r.Host == "" {
+		host = "127.0.0.1"
+	}
+	return fmt.Sprintf("%s://%s%s", proto, host, r.RequestURI)
 }
