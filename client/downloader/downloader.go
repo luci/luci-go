@@ -28,9 +28,11 @@ import (
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -117,6 +119,9 @@ type Options struct {
 	//
 	// Default: 8
 	MaxConcurrentJobs int
+
+	// Cache is used to save/load isolated items to/from cache.
+	Cache cache.Cache
 }
 
 // normalizePathSeparator returns path having os native path separator.
@@ -402,13 +407,61 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 		if details.Mode != nil {
 			mode = *details.Mode
 		}
-		f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
-		if err != nil {
-			d.addError(fileType, name, err)
-			return
+
+		// Used for copy to cache.
+		var f io.Writer
+
+		{
+			fw, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
+			if err != nil {
+				d.addError(fileType, name, err)
+				return
+			}
+			defer fw.Close()
+			f = fw
 		}
-		defer f.Close()
-		if err := d.c.Fetch(d.ctx, details.Digest, d.track(f)); err != nil {
+
+		wg, ctx := errgroup.WithContext(d.ctx)
+		pr, pw := io.Pipe()
+		defer pr.Close()
+
+		cache := d.options.Cache
+		if cache != nil {
+			// check cache
+			r, err := cache.Read(details.Digest)
+			if err != nil && !os.IsNotExist(err) {
+				d.addError(fileType, name, fmt.Errorf("failed to read from cache: %v", err))
+				return
+			}
+
+			if err == nil {
+				defer r.Close()
+				_, err := io.Copy(f, r)
+				if err != nil {
+					d.addError(fileType, name, fmt.Errorf("failed to copy from cache: %v", err))
+					return
+				}
+				d.completeFile(name, details)
+				return
+			}
+
+			// store file to cache when cache miss case.
+			f = io.MultiWriter(f, pw)
+
+			wg.Go(func() error {
+				if err := cache.Add(details.Digest, pr); err != nil {
+					return fmt.Errorf("failed to add to cache: %v", err)
+				}
+				return nil
+			})
+		}
+
+		wg.Go(func() error {
+			defer pw.Close()
+			return d.c.Fetch(ctx, details.Digest, d.track(f))
+		})
+
+		if err := wg.Wait(); err != nil {
 			d.addError(fileType, name, err)
 			return
 		}
