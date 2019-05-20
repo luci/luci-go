@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -42,42 +43,11 @@ func TestServer(t *testing.T) {
 	Convey("Works", t, func() {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
-		tmpSecret, err := tempSecret()
+		srv, err := newTestServer(ctx)
 		So(err, ShouldBeNil)
-		defer os.Remove(tmpSecret.Name())
-
-		stdoutLogs := logsRecorder{}
-		stderrLogs := logsRecorder{}
-
-		srv := New(Options{
-			Prod:           true,
-			HTTPAddr:       "main_addr",
-			AdminAddr:      "admin_addr",
-			RootSecretPath: tmpSecret.Name(),
-
-			testCtx:    ctx,
-			testSeed:   1,
-			testStdout: &stdoutLogs,
-			testStderr: &stderrLogs,
-
-			// Bind to auto-assigned ports.
-			testListeners: map[string]net.Listener{
-				"main_addr":  setupListener(),
-				"admin_addr": setupListener(),
-			},
-		})
-
-		mainPort := srv.opts.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
-		mainAddr := fmt.Sprintf("http://127.0.0.1:%d", mainPort)
-
-		// Run the serving loop in parallel.
-		serveErr := errorEvent{signal: make(chan struct{})}
-		go func() { serveErr.Set(srv.ListenAndServe()) }()
-
-		Reset(func() {
-			srv.Shutdown()
-			So(serveErr.Get(), ShouldBeNil)
-		})
+		defer srv.cleanup()
+		srv.ServeInBackground()
+		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
 
 		Convey("Logging", func() {
 			srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
@@ -88,7 +58,7 @@ func TestServer(t *testing.T) {
 				c.Writer.Write([]byte("Hello, world"))
 			})
 
-			resp, err := httpGet(mainAddr+"/test", &serveErr, map[string]string{
+			resp, err := srv.Get("/test", map[string]string{
 				"User-Agent":            "Test-user-agent",
 				"X-Cloud-Trace-Context": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/00001;trace=TRUE",
 				"X-Forwarded-For":       "1.1.1.1,2.2.2.2,3.3.3.3",
@@ -97,14 +67,14 @@ func TestServer(t *testing.T) {
 			So(resp, ShouldEqual, "Hello, world")
 
 			// Stderr log captures details about the request.
-			So(stderrLogs.Last(1), ShouldResemble, []gkelogger.LogEntry{
+			So(srv.stderr.Last(1), ShouldResemble, []gkelogger.LogEntry{
 				{
 					Severity: "warning",
 					Time:     "1454472307.7",
 					TraceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					RequestInfo: &gkelogger.RequestInfo{
 						Method:       "GET",
-						URL:          mainAddr + "/test",
+						URL:          srv.mainAddr + "/test",
 						Status:       201,
 						RequestSize:  "0",
 						ResponseSize: "12", // len("Hello, world")
@@ -115,7 +85,7 @@ func TestServer(t *testing.T) {
 				},
 			})
 			// Stdout log captures individual log lines.
-			So(stdoutLogs.Last(2), ShouldResemble, []gkelogger.LogEntry{
+			So(srv.stdout.Last(2), ShouldResemble, []gkelogger.LogEntry{
 				{
 					Severity: "info",
 					Message:  "Info log",
@@ -146,12 +116,150 @@ func TestServer(t *testing.T) {
 					c.Writer.Write([]byte(s.Current))
 				}
 			})
-			resp, err := httpGet(mainAddr+"/secret", &serveErr, nil)
+			resp, err := srv.Get("/secret", nil)
 			So(err, ShouldBeNil)
 			So(resp, ShouldNotBeEmpty)
 		})
 	})
 }
+
+func BenchmarkServer(b *testing.B) {
+	srv, err := newTestServer(context.Background())
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer srv.cleanup()
+
+	// The route we are going to hit from the benchmark.
+	srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
+		logging.Infof(c.Context, "Hello, world")
+		secrets.GetSecret(c.Context, "key-name") // e.g. checking XSRF token
+		c.Writer.Write([]byte("Hello, world"))
+	})
+
+	// Don't actually store logs from all many-many iterations of the loop below.
+	srv.stdout.discard = true
+	srv.stderr.discard = true
+
+	// Launch the server and wait for it to start serving to make sure all guts
+	// are initialized.
+	srv.ServeInBackground()
+	defer srv.StopBackgroundServing()
+	if _, err = srv.Get("/health", nil); err != nil {
+		b.Fatal(err)
+	}
+
+	// Actual benchmark loop. Note that we bypass network layer here completely
+	// (by not using http.DefaultClient).
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		req, err := http.NewRequest("GET", "/test", nil)
+		if err != nil {
+			b.Fatal(err)
+		}
+		req.Header.Set("X-Cloud-Trace-Context", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/00001;trace=TRUE")
+		req.Header.Set("X-Forwarded-For", "1.1.1.1,2.2.2.2,3.3.3.3")
+		rr := httptest.NewRecorder()
+		srv.Routes.ServeHTTP(rr, req)
+		if rr.Code != http.StatusOK {
+			b.Fatalf("unexpected status %d", rr.Code)
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type testServer struct {
+	*Server
+
+	stdout logsRecorder
+	stderr logsRecorder
+
+	mainAddr string
+	cleanup  func()
+	serveErr errorEvent
+}
+
+func newTestServer(ctx context.Context) (*testServer, error) {
+	srv := &testServer{
+		serveErr: errorEvent{signal: make(chan struct{})},
+	}
+
+	tmpSecret, err := tempSecret()
+	if err != nil {
+		return nil, err
+	}
+	srv.cleanup = func() { os.Remove(tmpSecret.Name()) }
+
+	srv.Server = New(Options{
+		Prod:           true,
+		HTTPAddr:       "main_addr",
+		AdminAddr:      "admin_addr",
+		RootSecretPath: tmpSecret.Name(),
+
+		testCtx:    ctx,
+		testSeed:   1,
+		testStdout: &srv.stdout,
+		testStderr: &srv.stderr,
+
+		// Bind to auto-assigned ports.
+		testListeners: map[string]net.Listener{
+			"main_addr":  setupListener(),
+			"admin_addr": setupListener(),
+		},
+	})
+
+	mainPort := srv.opts.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
+	srv.mainAddr = fmt.Sprintf("http://127.0.0.1:%d", mainPort)
+
+	return srv, nil
+}
+
+func (s *testServer) ServeInBackground() {
+	go func() { s.serveErr.Set(s.ListenAndServe()) }()
+}
+
+func (s *testServer) StopBackgroundServing() error {
+	s.Shutdown()
+	return s.serveErr.Get()
+}
+
+// Get makes a blocking request, aborting it if the server dies.
+func (s *testServer) Get(uri string, headers map[string]string) (resp string, err error) {
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		var req *http.Request
+		if req, err = http.NewRequest("GET", s.mainAddr+uri, nil); err != nil {
+			return
+		}
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+		var res *http.Response
+		if res, err = http.DefaultClient.Do(req); err != nil {
+			return
+		}
+		defer res.Body.Close()
+		var blob []byte
+		if blob, err = ioutil.ReadAll(res.Body); err != nil {
+			return
+		}
+		if res.StatusCode >= 400 {
+			err = fmt.Errorf("unexpected status %d", res.StatusCode)
+		}
+		resp = string(blob)
+	}()
+
+	select {
+	case <-s.serveErr.signal:
+		err = s.serveErr.Get()
+	case <-done:
+	}
+	return
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 func tempSecret() (out *os.File, err error) {
 	var f *os.File
@@ -179,6 +287,8 @@ func setupListener() net.Listener {
 	return l
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 type errorEvent struct {
 	err    atomic.Value
 	signal chan struct{} // closed after 'err' is populated
@@ -197,47 +307,18 @@ func (e *errorEvent) Get() error {
 	return err
 }
 
-// httpGet makes a blocking request, aborting it if 'abort' is signaled.
-func httpGet(addr string, abort *errorEvent, headers map[string]string) (resp string, err error) {
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		var req *http.Request
-		if req, err = http.NewRequest("GET", addr, nil); err != nil {
-			return
-		}
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
-		var res *http.Response
-		if res, err = http.DefaultClient.Do(req); err != nil {
-			return
-		}
-		defer res.Body.Close()
-		var blob []byte
-		if blob, err = ioutil.ReadAll(res.Body); err != nil {
-			return
-		}
-		if res.StatusCode >= 400 {
-			err = fmt.Errorf("unexpected status %d", res.StatusCode)
-		}
-		resp = string(blob)
-	}()
-
-	select {
-	case <-abort.signal:
-		err = abort.Get()
-	case <-done:
-	}
-	return
-}
+////////////////////////////////////////////////////////////////////////////////
 
 type logsRecorder struct {
-	m    sync.Mutex
-	logs []gkelogger.LogEntry
+	discard bool
+	m       sync.Mutex
+	logs    []gkelogger.LogEntry
 }
 
 func (r *logsRecorder) Write(e *gkelogger.LogEntry) {
+	if r.discard {
+		return
+	}
 	r.m.Lock()
 	r.logs = append(r.logs, *e)
 	r.m.Unlock()
