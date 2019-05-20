@@ -85,6 +85,15 @@ func TestFuncs(t *testing.T) {
 					ShouldEqual,
 					"<a href=\"https://foo&amp;bar%3cbaz%22aaa%3ebbb\">https://foo&amp;bar&lt;baz&#34;aaa&gt;bbb</a>")
 			})
+
+			Convey("trimLongString", func() {
+				Convey("short", func() {
+					So(trimLongString(4, "😀😀😀😀"), ShouldEqual, "😀😀😀😀")
+				})
+				Convey("long", func() {
+					So(trimLongString(4, "😀😀😀😀😀"), ShouldEqual, "😀😀😀…")
+				})
+			})
 		})
 
 		Convey("Redirect unauthorized users to login page for projects with access restrictions", func() {
