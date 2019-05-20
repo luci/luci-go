@@ -15,14 +15,10 @@
 package cli
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
@@ -53,10 +49,6 @@ func cmdCollect(p Params) *subcommands.Command {
 			r.Flags.DurationVar(&r.intervalArg, "interval", time.Minute, doc(`
 				duration to wait between requests
 			`))
-			r.Flags.StringVar(&r.outputArg, "json-output", "", doc(`
-					path to the file into which build details are written;
-					nothing is written if unspecified
-			`))
 			return r
 		},
 		Advanced: true,
@@ -66,7 +58,6 @@ func cmdCollect(p Params) *subcommands.Command {
 type collectRun struct {
 	baseCommandRun
 	intervalArg time.Duration
-	outputArg   string
 }
 
 var getRequestFieldMask = &field_mask.FieldMask{
@@ -103,7 +94,7 @@ func dedupInt64s(nums []int64) []int64 {
 	return res
 }
 
-func collectBuildDetails(ctx context.Context, client pb.BuildsClient, buildIDs []int64, sleep func()) (map[int64]*pb.Build, error) {
+func collectBuildDetails(ctx context.Context, client pb.BuildsClient, buildIDs []int64, sleep func()) error {
 	buildIDs = dedupInt64s(buildIDs)
 	ended := make(map[int64]*pb.Build, len(buildIDs))
 	for {
@@ -127,7 +118,7 @@ func collectBuildDetails(ctx context.Context, client pb.BuildsClient, buildIDs [
 		logging.Infof(ctx, "checking build statuses...")
 		bresp, err := client.Batch(ctx, breq)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		for _, resp := range bresp.Responses {
@@ -139,7 +130,7 @@ func collectBuildDetails(ctx context.Context, client pb.BuildsClient, buildIDs [
 				logging.Warningf(ctx, "transient %s error: %s", code, error.Message)
 
 			case code != codes.OK:
-				return nil, fmt.Errorf("RPC error %s: %s", code, error.Message)
+				return fmt.Errorf("RPC error %s: %s", code, error.Message)
 
 			case build.Status&pb.Status_ENDED_MASK != 0:
 				ended[build.Id] = build
@@ -154,28 +145,7 @@ func collectBuildDetails(ctx context.Context, client pb.BuildsClient, buildIDs [
 		sleep()
 	}
 
-	return ended, nil
-}
-
-func writeBuildDetails(buildIDs []int64, buildDetails map[int64]*pb.Build, outputPath string) error {
-	outputFile, err := os.Create(outputPath)
-	if err != nil {
-		return err
-	}
-	defer outputFile.Close()
-
-	rawMessages := make([]json.RawMessage, len(buildIDs))
-	m := &jsonpb.Marshaler{}
-	buf := bytes.Buffer{}
-	for i, buildID := range buildIDs {
-		buf.Reset()
-		if err := m.Marshal(&buf, buildDetails[buildID]); err != nil {
-			return err
-		}
-		rawMessages[i] = append(json.RawMessage{}, buf.Bytes()...)
-	}
-
-	return json.NewEncoder(outputFile).Encode(rawMessages)
+	return nil
 }
 
 func (r *collectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -191,19 +161,8 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		return r.done(ctx, err)
 	}
 
-	buildDetails, err := collectBuildDetails(ctx, r.client, buildIDs, func() {
+	return r.done(ctx, collectBuildDetails(ctx, r.client, buildIDs, func() {
 		logging.Infof(ctx, "waiting %s before trying again...", r.intervalArg)
 		time.Sleep(r.intervalArg)
-	})
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	if r.outputArg != "" {
-		if err := writeBuildDetails(buildIDs, buildDetails, r.outputArg); err != nil {
-			return r.done(ctx, err)
-		}
-	}
-
-	return r.done(ctx, nil)
+	}))
 }

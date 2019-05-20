@@ -16,8 +16,6 @@ package cli
 
 import (
 	"context"
-	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -31,22 +29,6 @@ func TestCollect(t *testing.T) {
 	t.Parallel()
 
 	Convey("Collect", t, func() {
-		Convey("writeBuildDetails", func() {
-			file, err := ioutil.TempFile("", "builds")
-			So(err, ShouldBeNil)
-			file.Close()
-			defer os.Remove(file.Name())
-
-			writeBuildDetails([]int64{123, 456}, map[int64]*pb.Build{
-				123: {Id: 123},
-				456: {Id: 456},
-			}, file.Name())
-
-			buf, err := ioutil.ReadFile(file.Name())
-			So(err, ShouldBeNil)
-			So(string(buf), ShouldEqual, "[{\"id\":\"123\"},{\"id\":\"456\"}]\n")
-		})
-
 		Convey("collectBuildDetails", func() {
 			ctx := context.Background()
 			sleepCalls := 0
