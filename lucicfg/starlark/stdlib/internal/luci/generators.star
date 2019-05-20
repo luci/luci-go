@@ -795,7 +795,7 @@ def _cq_config_group(cq_group, project, triggering_map):
       verifiers = cq_pb.Verifiers(
           gerrit_cq_ability = gerrit_cq_ability,
           tree_status = tree_status,
-          tryjob = tryjob,
+          tryjob = tryjob if tryjob.builders else None,
       ),
   )
 
