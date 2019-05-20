@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a0567b4_496ef099",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-20T20:11:26Z",
+      "side": 1,
+      "message": "nit:\n\tcount :\u003d 0\n\tfor i :\u003d range s {\n\t\tcount++\n\t\tif count \u003d\u003d maxRuneCount {\n\t\t\treturn s[:i] + \"...\"\n\t\t}\n\t}\n\tpanic(\"unreachable\")",
+      "range": {
+        "startLine": 98,
+        "startChar": 0,
+        "endLine": 107,
+        "endChar": 19
+      },
+      "revId": "d4188b7ac50a50e3b174430d8aea755a9d17de15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
