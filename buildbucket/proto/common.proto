@@ -182,6 +182,6 @@ enum Trinary {
 message RequestedDimension {
   string key = 1;
   string value = 2;
-  // If set, ignore this dimension after this duraiton.
+  // If set, ignore this dimension after this duration.
   google.protobuf.Duration expiration = 3;
 }
