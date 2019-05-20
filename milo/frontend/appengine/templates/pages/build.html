@@ -295,7 +295,7 @@
     {{ range . }}
       <tr>
         <td class="left">{{.Name}}</td>
-        <td class="middle"><abbr title="{{.Value}}">{{.Value}}</abbr></td>
+        <td class="middle"><abbr title="{{.Value}}">{{.Value | trimLong 1024}}</abbr></td>
       </tr>
     {{ end }}
     </table>

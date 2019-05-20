@@ -15,6 +15,7 @@
 package frontend
 
 import (
+	"unicode/utf8"
 	"bytes"
 	"context"
 	"fmt"
@@ -79,6 +80,31 @@ var funcMap = template.FuncMap{
 	"toLower":          strings.ToLower,
 	"toTime":           toTime,
 	"join":             strings.Join,
+	"trimLong":         trimLongString,
+}
+
+// trimLongString returns a potentially shortened string with "…" suffix.
+// If maxRuneCount < 1, panics.
+func trimLongString(maxRuneCount int, s string) string {
+	if maxRuneCount < 1 {
+		panic("maxRunCount must be >= 1")
+	}
+
+	if utf8.RuneCountInString(s) <= maxRuneCount {
+		return s
+	}
+
+	// Take first maxRuneCount-1 runes.
+	w := 0
+	count := 0
+	for i := range s {
+		w = i
+		count++
+		if count == maxRuneCount {
+			break
+		}
+	}
+	return s[:w] + "…"
 }
 
 // localTime returns a <span> element with t in human format
