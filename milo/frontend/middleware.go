@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -79,6 +80,29 @@ var funcMap = template.FuncMap{
 	"toLower":          strings.ToLower,
 	"toTime":           toTime,
 	"join":             strings.Join,
+	"trimLong":         trimLongString,
+}
+
+// trimLongString returns a potentially shortened string with "…" suffix.
+// If maxRuneCount < 1, panics.
+func trimLongString(maxRuneCount int, s string) string {
+	if maxRuneCount < 1 {
+		panic("maxRunCount must be >= 1")
+	}
+
+	if utf8.RuneCountInString(s) <= maxRuneCount {
+		return s
+	}
+
+	// Take first maxRuneCount-1 runes.
+	count := 0
+	for i := range s {
+		count++
+		if count == maxRuneCount {
+			return s[:i] + "…"
+		}
+	}
+	panic("unreachable")
 }
 
 // localTime returns a <span> element with t in human format
