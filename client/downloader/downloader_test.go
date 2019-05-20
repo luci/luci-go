@@ -121,6 +121,9 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	Convey(`A downloader should be able to download the isolated.`, t, func() {
 		tmpDir, err := ioutil.TempDir("", "isolated")
 		So(err, ShouldBeNil)
+		defer func() {
+			So(os.RemoveAll(tmpDir), ShouldBeNil)
+		}()
 
 		mu := sync.Mutex{}
 		var files []string
