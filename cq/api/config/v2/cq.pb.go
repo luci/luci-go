@@ -419,8 +419,8 @@ func (m *ConfigGroup_Gerrit_Project) GetCrosMigration() *ConfigGroup_Gerrit_Proj
 	return nil
 }
 
-// DO NOT USE. TODO(crbug/909059, tandrii): delete this.
-// HACK(cbrug/909059). Only for CrOS during LUCI CQ migration.
+// DO NOT USE. TODO(crbug/965615, tandrii): delete this.
+// HACK(cbrug/965615). Only for CrOS during LUCI CQ migration.
 type ConfigGroup_Gerrit_Project_CrOSMigration struct {
 	// % of new CQ attempts which LUCI CQ will process itself.
 	// The rest will be delegated to legacy CrOS CQ.
