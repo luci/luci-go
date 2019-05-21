@@ -115,8 +115,8 @@ message ConfigGroup {
       // "refs/heads/experimental/foobar".
       repeated string ref_regexp = 2;
 
-      // DO NOT USE. TODO(crbug/909059, tandrii): delete this.
-      // HACK(cbrug/909059). Only for CrOS during LUCI CQ migration.
+      // DO NOT USE. TODO(crbug/965615, tandrii): delete this.
+      // HACK(cbrug/965615). Only for CrOS during LUCI CQ migration.
       message CrOSMigration {
         // % of new CQ attempts which LUCI CQ will process itself.
         // The rest will be delegated to legacy CrOS CQ.
