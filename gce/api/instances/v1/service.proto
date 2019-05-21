@@ -94,6 +94,11 @@ message ListRequest {
   // The value of next_page_token received in a ListResponse. Used to get the
   // next page of instances. If empty, gets the first page.
   string page_token = 2;
+
+  // A filter to apply when listing instances. Currently the only supported
+  // filter is "disks.image=<image>" where <image> is the name of the image to
+  // filter for.
+  string filter = 4;
 }
 
 // A response to a request to list instances.

@@ -117,7 +117,9 @@ func TestVM(t *testing.T) {
 
 	Convey("VM", t, func() {
 		c := memory.Use(context.Background())
-		v := &VM{ID: "id"}
+		v := &VM{
+			ID: "id",
+		}
 		err := datastore.Get(c, v)
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
@@ -129,13 +131,33 @@ func TestVM(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		err = datastore.Get(c, v)
-		So(err, ShouldBeNil)
+		So(datastore.Get(c, v), ShouldBeNil)
 		So(v, ShouldResemble, &VM{
 			ID: "id",
 			Attributes: config.VM{
 				Project: "project",
 			},
+		})
+
+		Convey("IndexAttributes", func() {
+			v.IndexAttributes()
+			So(v.AttributesIndexed, ShouldBeEmpty)
+
+			v := &VM{
+				ID: "id",
+				Attributes: config.VM{
+					Disk: []*config.Disk{
+						{
+							Image: "image-1",
+						},
+						{
+							Image: "image-2",
+						},
+					},
+				},
+			}
+			v.IndexAttributes()
+			So(v.AttributesIndexed, ShouldResemble, []string{"disk.image:image-1", "disk.image:image-2"})
 		})
 	})
 
