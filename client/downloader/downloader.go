@@ -28,9 +28,11 @@ import (
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -117,6 +119,9 @@ type Options struct {
 	//
 	// Default: 8
 	MaxConcurrentJobs int
+
+	// Cache is used to save/load isolated items to/from cache.
+	Cache cache.Cache
 }
 
 // normalizePathSeparator returns path having os native path separator.
@@ -402,16 +407,65 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 		if details.Mode != nil {
 			mode = *details.Mode
 		}
-		f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
+
+		if d.options.Cache == nil {
+			// no cache use case.
+			f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
+			if err != nil {
+				d.addError(fileType, name, err)
+				return
+			}
+			defer f.Close()
+			if err := d.c.Fetch(d.ctx, details.Digest, d.track(f)); err != nil {
+				d.addError(fileType, name, err)
+				return
+			}
+			d.completeFile(name, details)
+			return
+		}
+
+		cache := d.options.Cache
+		err := cache.Hardlink(details.Digest, filename, os.FileMode(mode))
 		if err != nil {
-			d.addError(fileType, name, err)
-			return
+			if !os.IsNotExist(err) {
+				d.addError(fileType, name, errors.Annotate(err, "failed to link from cache").Err())
+				return
+			}
+			// cache miss case
+			pr, pw := io.Pipe()
+
+			wg, ctx := errgroup.WithContext(d.ctx)
+			wg.Go(func() error {
+				err := d.c.Fetch(ctx, details.Digest, d.track(pw))
+				if perr := pw.CloseWithError(err); perr != nil {
+					return errors.Annotate(perr, "failed to close pipe writer").Err()
+				}
+				return err
+			})
+
+			wg.Go(func() error {
+				err := cache.Add(details.Digest, pr)
+				if perr := pr.CloseWithError(err); perr != nil {
+					return errors.Annotate(perr, "failed to close pipe reader").Err()
+
+				}
+				return err
+			})
+
+			err = wg.Wait()
+			if err != nil {
+				d.addError(fileType, name, errors.Annotate(err, "failed to read from cache").Err())
+
+				return
+			}
+
+			err = cache.Hardlink(details.Digest, filename, os.FileMode(mode))
+			if err != nil {
+				d.addError(fileType, name, errors.Annotate(err, "failed to link from cache").Err())
+				return
+			}
 		}
-		defer f.Close()
-		if err := d.c.Fetch(d.ctx, details.Digest, d.track(f)); err != nil {
-			d.addError(fileType, name, err)
-			return
-		}
+
 		d.completeFile(name, details)
 	}, func() {
 		d.addError(fileType, name, d.ctx.Err())
