@@ -493,6 +493,10 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 			if err != nil {
 				return nil, err
 			}
+			var reload *int
+			if tReload := GetReload(e.Request, -1); tReload >= 0 {
+				reload = &tReload
+			}
 
 			project := e.Params.ByName("project")
 			group := e.Params.ByName("group")
@@ -509,6 +513,7 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 				"Request":     e.Request,
 				"Navi":        ProjectLinks(c, project, group),
 				"ProjectID":   project,
+				"Reload":      reload,
 			}, nil
 		},
 		FuncMap: funcMap,

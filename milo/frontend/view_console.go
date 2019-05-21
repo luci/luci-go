@@ -559,14 +559,8 @@ func ConsoleHandler(c *router.Context) error {
 		return err
 	}
 
-	var reload *int
-	if tReload := GetReload(c.Request, -1); tReload >= 0 {
-		reload = &tReload
-	}
-
 	templates.MustRender(c.Context, c.Writer, "pages/console.html", templates.Args{
 		"Console": consoleRenderer{result},
-		"Reload":  reload,
 		"Expand":  con.Def.DefaultExpand,
 	})
 	return nil
@@ -613,15 +607,9 @@ func ConsolesHandler(c *router.Context, projectID string) error {
 		consoles = append(consoles, full)
 	}
 
-	var reload *int
-	if tReload := GetReload(c.Request, -1); tReload >= 0 {
-		reload = &tReload
-	}
-
 	templates.MustRender(c.Context, c.Writer, "pages/builder_groups.html", templates.Args{
 		"ProjectID": projectID,
 		"Consoles":  consoles,
-		"Reload":    reload,
 	})
 	return nil
 }
