@@ -16,6 +16,8 @@ package rpc
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -177,8 +179,14 @@ func (*Instances) Get(c context.Context, req *instances.GetRequest) (*instances.
 
 // List handles a request to list instances.
 func (*Instances) List(c context.Context, req *instances.ListRequest) (*instances.ListResponse, error) {
-	if req.GetPrefix() == "" {
+	switch {
+	case req.GetPrefix() == "":
 		return nil, status.Errorf(codes.InvalidArgument, "prefix is required")
+	case req.Filter != "":
+		// TODO(crbug/964591): Support entire filtering grammar.
+		if !strings.HasPrefix(req.Filter, "disks.image=") {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid filter expression %q", req.Filter)
+		}
 	}
 	rsp := &instances.ListResponse{}
 	// TODO(smut): Handle page tokens.
@@ -186,6 +194,12 @@ func (*Instances) List(c context.Context, req *instances.ListRequest) (*instance
 		return rsp, nil
 	}
 	q := datastore.NewQuery(model.VMKind).Eq("prefix", req.Prefix)
+	if req.Filter != "" {
+		// TODO(crbug/964591): Support other filters.
+		// No compound indices exist, so only simple filters will be supported.
+		img := strings.TrimPrefix(req.Filter, "disks.image=")
+		q = q.Eq("attributes_indexed", fmt.Sprintf("disk.image:%s", img))
+	}
 	if err := datastore.Run(c, q, func(vm *model.VM, f datastore.CursorCB) error {
 		rsp.Instances = append(rsp.Instances, toInstance(vm))
 		return nil

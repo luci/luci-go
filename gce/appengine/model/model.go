@@ -16,6 +16,7 @@
 package model
 
 import (
+	"fmt"
 	"strings"
 
 	"google.golang.org/api/compute/v1"
@@ -92,6 +93,10 @@ type VM struct {
 	// Indexing is not useful here since this field contains textproto.
 	// noindex is not respected here. See config.VM.ToProperty.
 	Attributes config.VM `gae:"attributes,noindex"`
+	// AttributesIndexed is a slice of strings in "key:value" form where the key is
+	// the path to a field in Attributes and the value is its associated value.
+	// Allows fields from Attributes to be indexed.
+	AttributesIndexed []string `gae:"attributes_indexed"`
 	// Config is the ID of the config this VM was created from.
 	Config string `gae:"config"`
 	// Connected is the Unix time when the GCE instance connected to Swarming.
@@ -104,6 +109,8 @@ type VM struct {
 	Drained bool `gae:"drained"`
 	// Hostname is the short hostname of the GCE instance to create.
 	Hostname string `gae:"hostname"`
+	// Image is the source image for the boot disk of the GCE instance.
+	Image string `gae:"image"`
 	// Index is this VM's number with respect to its config.
 	Index int32 `gae:"index"`
 	// Lifetime is the number of seconds the GCE instance should live for.
@@ -121,6 +128,14 @@ type VM struct {
 	Timeout int64 `gae:"timeout"`
 	// URL is the URL of the created GCE instance.
 	URL string `gae:"url"`
+}
+
+// IndexAttributes sets indexable fields of vm.Attributes in AttributesIndexed.
+func (vm *VM) IndexAttributes() {
+	vm.AttributesIndexed = make([]string, len(vm.Attributes.Disk))
+	for i, d := range vm.Attributes.Disk {
+		vm.AttributesIndexed[i] = fmt.Sprintf("disk.image:%s", d.Image)
+	}
 }
 
 // getDisks returns a []*compute.AttachedDisk representation of this VM's disks.
