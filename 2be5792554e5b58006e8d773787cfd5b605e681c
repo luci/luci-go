@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a00c9c7_e4da11e6",
+        "filename": "server/portal/handlers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-21T23:14:38Z",
+      "side": 1,
+      "message": "proceed to proceed?",
+      "range": {
+        "startLine": 194,
+        "startChar": 24,
+        "endLine": 194,
+        "endChar": 43
+      },
+      "revId": "2be5792554e5b58006e8d773787cfd5b605e681c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
