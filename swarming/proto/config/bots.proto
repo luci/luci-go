@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package swarming;
+package swarming.config;
 
 option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
 
@@ -57,90 +57,6 @@ message BotsCfg {
 }
 
 
-// A daily schedule for Machine Provider leases.
-//
-// Allows a MachineType to be resized during specific UTC hours.
-message DailySchedule {
-  // UTC time to resize the MachineType.
-  //
-  // Formatted as "<hour>:<minute>".
-  string start = 1;
-
-  // UTC time to resize the MachineType.
-  //
-  // Formatted as "<hour>:<minute>". Must be strictly later than start.
-  string end = 2;
-
-  // Days of the week to resize the MachineType.
-  //
-  // 0 - 6 (Mon - Sun).
-  repeated int32 days_of_the_week = 3;
-
-  // Target size to set this MachineType to.
-  //
-  // If omitted, defaults to zero.
-  int32 target_size = 4;
-}
-
-// A load-based schedule for Machine Provider leases.
-//
-// Allows a MachineType to be resized according to Swarming bot utilization.
-message LoadBased {
-  // Minimum size the MachineType may be resized to.
-  //
-  // If omitted, defaults to zero.
-  int32 minimum_size = 1;
-
-  // Maximum size the MachineType may be resized to.
-  //
-  // If omitted, defaults to zero.
-  int32 maximum_size = 2;
-}
-
-
-// A schedule for Machine Provider leases.
-message Schedule {
-  // Schedule to repeat every day.
-  repeated DailySchedule daily = 1;
-  // Load-based schedule.
-  repeated LoadBased load_based = 2;
-}
-
-
-// A type of machine to lease from the Machine Provider.
-message MachineType {
-  // Name for this type of machine. Must be globally unique.
-  string name = 1;
-
-  // Human-readable description for this type of machine.
-  string description = 2;
-
-  // Number of seconds ahead of lease_duration_ts to release leases.
-  //
-  // If omitted, defaults to zero. Must not be specified for indefinite leases.
-  int32 early_release_secs = 3;
-
-  oneof lease_duration {
-    // Duration to lease each machine for.
-    int32 lease_duration_secs = 4;
-
-    // Lease indefinitely.
-    bool lease_indefinitely = 8;
-  }
-
-  // Machine Provider dimensions describing this machine.
-  //
-  // Each string should be in the format "<key>:<value>".
-  repeated string mp_dimensions = 5;
-
-  // Target number of machines of this type to have leased at once.
-  int32 target_size = 6;
-
-  // Schedule for machines of this type.
-  Schedule schedule = 7;
-}
-
-
 // A group of bots that share authentication method, dimensions and owners.
 //
 // Union of bot_id, bot_id_prefix, and machine_type define a set of bots that
@@ -152,6 +68,8 @@ message MachineType {
 //
 // TODO(vadimsh): Introduce explicit field "use_as_default" instead.
 message BotGroup {
+  reserved 3;
+
   // Explicit enumeration of bot IDs belonging to this group.
   //
   // It supports subset of bash brace expansion syntax, in particular ranges
@@ -164,9 +82,6 @@ message BotGroup {
 
   // A prefix to match against bot ID string.
   repeated string bot_id_prefix = 2;
-
-  // A type of machine to lease from the Machine Provider.
-  repeated MachineType machine_type = 3;
 
   ////////////////////////
 
