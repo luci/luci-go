@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4d47e7db_2b98b88a",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-21T03:50:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "198c4d18_a256adf5",
+      "revId": "485a47ad7d2b836b52a555f0b3e5480b980abdf0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "80c66599_3ba9a393",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 5
@@ -33,6 +51,24 @@
       "revId": "485a47ad7d2b836b52a555f0b3e5480b980abdf0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05d512e5_fcad04d1",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-21T03:50:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "80c66599_3ba9a393",
+      "revId": "485a47ad7d2b836b52a555f0b3e5480b980abdf0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "14ba1f96_5820f8e3",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-21T03:50:48Z",
+      "side": 1,
+      "message": "\u003e This could should use cache.Hardlink() when possible. In the python code there\u0027s no threshold, but a 4k~16kbb is probably a good one.\n\nwhat do you mean for threshold?\nBetter to copy file less than 4~16kb or better to use hardlink for file less than 4~16kb?",
+      "parentUuid": "d2c1ab3a_1dca7d2f",
+      "revId": "485a47ad7d2b836b52a555f0b3e5480b980abdf0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b784a815_f88d610e",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 5
@@ -64,6 +118,24 @@
       "writtenOn": "2019-05-20T15:20:14Z",
       "side": 1,
       "message": "I\u0027d prefer:\n- store in cache\n- then copy / hardlink\n\nIt\u0027d be less CPU and I/O intensive and would probably remove the need for variable \u0027f\u0027 at line 412.",
+      "revId": "485a47ad7d2b836b52a555f0b3e5480b980abdf0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2824735e_6c8d1762",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 449,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-21T03:50:48Z",
+      "side": 1,
+      "message": "Done with completely separated logic.",
+      "parentUuid": "b784a815_f88d610e",
       "revId": "485a47ad7d2b836b52a555f0b3e5480b980abdf0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
