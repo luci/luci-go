@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging/gkelogger"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/settings"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -120,6 +121,20 @@ func TestServer(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resp, ShouldNotBeEmpty)
 		})
+
+		Convey("Settings", func() {
+			srv.Routes.GET("/settings", router.MiddlewareChain{}, func(c *router.Context) {
+				var val struct{ Val string }
+				if err := settings.Get(c.Context, "settings-key", &val); err != nil {
+					c.Writer.WriteHeader(500)
+				} else {
+					c.Writer.Write([]byte(val.Val))
+				}
+			})
+			resp, err := srv.Get("/settings", nil)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, "settings-value")
+		})
 	})
 }
 
@@ -132,8 +147,10 @@ func BenchmarkServer(b *testing.B) {
 
 	// The route we are going to hit from the benchmark.
 	srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
+		var val struct{ Val string }
 		logging.Infof(c.Context, "Hello, world")
 		secrets.GetSecret(c.Context, "key-name") // e.g. checking XSRF token
+		settings.Get(c.Context, "settings-key", &val)
 		c.Writer.Write([]byte("Hello, world"))
 	})
 
@@ -180,22 +197,48 @@ type testServer struct {
 	serveErr errorEvent
 }
 
-func newTestServer(ctx context.Context) (*testServer, error) {
-	srv := &testServer{
+func newTestServer(ctx context.Context) (srv *testServer, err error) {
+	srv = &testServer{
 		serveErr: errorEvent{signal: make(chan struct{})},
 	}
 
-	tmpSecret, err := tempSecret()
+	// Contortions to delete temp files on all possible failures.
+	var cleanup []*os.File
+	doCleanup := func() {
+		for _, f := range cleanup {
+			os.Remove(f.Name())
+		}
+	}
+	defer func() {
+		if err != nil {
+			doCleanup()
+		} else {
+			srv.cleanup = doCleanup
+		}
+	}()
+
+	tmpSecret, err := tempJSONFile(&secrets.Secret{Current: []byte("test secret")})
 	if err != nil {
 		return nil, err
 	}
-	srv.cleanup = func() { os.Remove(tmpSecret.Name()) }
+	cleanup = append(cleanup, tmpSecret)
+
+	tmpSettings, err := tempJSONFile(map[string]interface{}{
+		"settings-key": map[string]string{
+			"Val": "settings-value",
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	cleanup = append(cleanup, tmpSettings)
 
 	srv.Server = New(Options{
 		Prod:           true,
 		HTTPAddr:       "main_addr",
 		AdminAddr:      "admin_addr",
 		RootSecretPath: tmpSecret.Name(),
+		SettingsPath:   tmpSettings.Name(),
 
 		testCtx:    ctx,
 		testSeed:   1,
@@ -261,7 +304,7 @@ func (s *testServer) Get(uri string, headers map[string]string) (resp string, er
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func tempSecret() (out *os.File, err error) {
+func tempJSONFile(body interface{}) (out *os.File, err error) {
 	var f *os.File
 	defer func() {
 		if f != nil && err != nil {
@@ -272,8 +315,7 @@ func tempSecret() (out *os.File, err error) {
 	if err != nil {
 		return nil, err
 	}
-	secret := secrets.Secret{Current: []byte("test secret")}
-	if err := json.NewEncoder(f).Encode(&secret); err != nil {
+	if err := json.NewEncoder(f).Encode(body); err != nil {
 		return nil, err
 	}
 	return f, f.Close()
