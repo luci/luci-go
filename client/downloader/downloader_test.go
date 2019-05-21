@@ -29,6 +29,7 @@ import (
 	"sync"
 	"testing"
 
+	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -214,4 +215,67 @@ func genTar(t *testing.T) []byte {
 		t.Fatal(err)
 	}
 	return b.Bytes()
+}
+
+func TestDownloaderWithCache(t *testing.T) {
+	t.Parallel()
+	Convey(`TestDownloaderWithCache`, t, func() {
+		ctx := context.Background()
+
+		miss := []byte("cache miss")
+		hit := []byte("cache hit")
+		namespace := isolatedclient.DefaultNamespace
+		h := isolated.GetHash(namespace)
+		server := isolatedfake.New()
+		misshash := server.Inject(namespace, miss)
+		hithash := isolated.HashBytes(isolated.GetHash(namespace), hit)
+
+		missPath := filepath.Join("foo", "miss.txt")
+		hitPath := filepath.Join("foo", "hit.txt")
+		isolated1 := isolated.New(h)
+
+		isolated1.Files = map[string]isolated.File{
+			missPath: isolated.BasicFile(misshash, 0664, int64(len(miss))),
+			hitPath:  isolated.BasicFile(hithash, 0664, int64(len(hit))),
+		}
+		isolated1bytes, _ := json.Marshal(&isolated1)
+		isolated1hash := server.Inject(namespace, isolated1bytes)
+
+		isolatedFiles := stringset.NewFromSlice([]string{
+			missPath,
+			hitPath,
+		}...)
+
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+		client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
+
+		tmpDir, err := ioutil.TempDir("", "isolated")
+		So(err, ShouldBeNil)
+		defer func() {
+			So(os.RemoveAll(tmpDir), ShouldBeNil)
+		}()
+
+		mu := sync.Mutex{}
+		var files []string
+		policy := cache.Policies{
+			MaxSize:  1024,
+			MaxItems: 1024,
+		}
+		memcache := cache.NewMemory(policy, namespace)
+		So(memcache.Add(hithash, bytes.NewReader(hit)), ShouldBeNil)
+
+		d := New(ctx, client, isolated1hash, tmpDir, &Options{
+			FileCallback: func(name string, _ *isolated.File) {
+				mu.Lock()
+				files = append(files, name)
+				mu.Unlock()
+			},
+			Cache: memcache,
+		})
+		So(d.Wait(), ShouldBeNil)
+		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
+
+		So(memcache.Touch(misshash), ShouldBeTrue)
+	})
 }
