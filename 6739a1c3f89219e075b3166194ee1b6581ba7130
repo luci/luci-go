@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "03ac53a0_abefaba1",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-21T13:52:26Z",
+      "side": 1,
+      "message": "In practice this is not really needed because d.options is not a pointer, so in practice reading the value is fast.",
+      "revId": "6739a1c3f89219e075b3166194ee1b6581ba7130",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97724e5a_08229418",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-21T13:52:26Z",
+      "side": 1,
+      "message": "style nit: I\u0027d remove this line. I personally never put an empty line immediately before } or immediately after {",
+      "revId": "6739a1c3f89219e075b3166194ee1b6581ba7130",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec6049b8_b0be796a",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-21T13:52:26Z",
+      "side": 1,
+      "message": "You can inline into next line",
+      "revId": "6739a1c3f89219e075b3166194ee1b6581ba7130",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33aac006_43052492",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 458,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-21T13:52:26Z",
+      "side": 1,
+      "message": "Same here",
+      "revId": "6739a1c3f89219e075b3166194ee1b6581ba7130",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ceaf4ec6_eaa0af24",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-21T13:52:26Z",
+      "side": 1,
+      "message": "You can inline into next line, it\u0027s a bit long but still mostly fits.",
+      "revId": "6739a1c3f89219e075b3166194ee1b6581ba7130",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
