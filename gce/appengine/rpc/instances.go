@@ -147,8 +147,15 @@ func getByHostname(c context.Context, hostname string) (*instances.Instance, err
 		return nil, status.Errorf(codes.NotFound, "no VM found with hostname %q", hostname)
 	default:
 		inst := toInstance(vms[0])
-		if vmtoken.Has(c) && !vmtoken.Matches(c, inst.Hostname, inst.Zone, inst.Project) {
-			return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
+		if vmtoken.Has(c) {
+			if !vmtoken.Matches(c, inst.Hostname, inst.Zone, inst.Project) {
+				return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
+			}
+			// Allow VMs to view minimal self-information.
+			inst = &instances.Instance{
+				Hostname: inst.Hostname,
+				Swarming: inst.Swarming,
+			}
 		}
 		return inst, nil
 	}
