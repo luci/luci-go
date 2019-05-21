@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "62db4cda_f12d76ad",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-21T12:05:45Z",
+      "side": 1,
+      "message": "I think it\u0027d be more readable with:\n\nif err !\u003d nil {\n  if !os.IsNotExist(err) {\n    d.addError(fileType, name, fmt.Errorf(\"failed to link from cache: %v\", err))\n    return\n  }\n\n  (rest of the code..)\n}\n\ninstead of line 460-463, because at that point it\u0027s hard to know which \"err\" variable it refers to.",
+      "revId": "1fd5d43a3e4e53727725a09c5808209a1a0f2955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29eccf23_3341f7f2",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-21T12:05:45Z",
+      "side": 1,
+      "message": "I realized we kinda messed the API as we cannot do it without an io.Pipe, maybe fix it later, albeit it\u0027s not a big deal, increasing CPU utilization for no reason.",
+      "revId": "1fd5d43a3e4e53727725a09c5808209a1a0f2955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bfe8b4e_177e19ba",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-21T12:05:45Z",
+      "side": 1,
+      "message": "Generally code in this repo uses: https://godoc.org/go.chromium.org/luci/common/errors#Annotate\n\nbut there\u0027s a lot of fmt.Errorf() around because this code predates the common/errors package.",
+      "revId": "1fd5d43a3e4e53727725a09c5808209a1a0f2955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2099be19_e3ad5ea3",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-21T12:05:45Z",
+      "side": 1,
+      "message": "You are aliasing err, here you can do \"err \u003d ...\" vs \"err :\u003d ...\".\nSame for line 455.",
+      "revId": "1fd5d43a3e4e53727725a09c5808209a1a0f2955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
