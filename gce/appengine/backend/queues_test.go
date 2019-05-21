@@ -166,6 +166,9 @@ func TestQueues(t *testing.T) {
 								},
 							},
 						},
+						AttributesIndexed: []string{
+							"disk.image:image",
+						},
 						Config:   "config",
 						Hostname: "prefix-2-fpll",
 						Index:    2,

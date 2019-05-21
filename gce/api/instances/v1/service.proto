@@ -91,9 +91,13 @@ message ListRequest {
   // The prefix to list instances for.
   string prefix = 1;
 
+  // A filter to apply when listing instances.
+  // https://cloud.google.com/apis/design/standard_fields.
+  string filter = 2;
+
   // The value of next_page_token received in a ListResponse. Used to get the
   // next page of instances. If empty, gets the first page.
-  string page_token = 2;
+  string page_token = 3;
 }
 
 // A response to a request to list instances.
