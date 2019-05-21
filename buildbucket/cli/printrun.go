@@ -26,6 +26,7 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/sync/parallel"
 )
 
 var idFieldMask = &field_mask.FieldMask{Paths: []string{"id"}}
@@ -138,12 +139,59 @@ func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) error {
 // PrintAndDone calls fn for each argument, prints builds and returns exit code.
 // fn is called concurrently, but builds are printed in the same order
 // as args.
-func (r *printRun) PrintAndDone(ctx context.Context, args []string, fn func(context.Context, string) (*pb.Build, error)) int {
+func (r *printRun) PrintAndDone(ctx context.Context, args []string, ordered bool, fn buildFunc) int {
 	stdout, stderr := newStdioPrinters(r.noColor)
-	return r.printAndDone(ctx, stdout, stderr, args, fn)
+
+	resultC := make(chan buildResult, 256)
+	go func() {
+		defer close(resultC)
+		argC := argChan(args)
+		if ordered {
+			r.runOrdered(ctx, argC, resultC, fn)
+		} else {
+			r.runUnordered(ctx, argC, resultC, fn)
+		}
+	}()
+
+	// Print the results in the order of args.
+	first := true
+	perfect := true
+	for res := range resultC {
+		if res.err != nil {
+			perfect = false
+			if !first {
+				stderr.f("\n")
+			}
+			stderr.f("arg %q: ", res.arg)
+			stderr.Error(res.err)
+			stderr.f("\n")
+			if stderr.Err != nil {
+				return r.done(ctx, stderr.Err)
+			}
+		} else {
+			if err := r.printBuild(stdout, res.build, first); err != nil {
+				return r.done(ctx, err)
+			}
+		}
+		first = false
+	}
+	if !perfect {
+		return 1
+	}
+	return 0
 }
 
-func (r *printRun) printAndDone(ctx context.Context, stdout, stderr *printer, args []string, fn func(context.Context, string) (*pb.Build, error)) int {
+type buildResult struct {
+	arg   string
+	build *pb.Build
+	err   error
+}
+
+type buildFunc func(c context.Context, arg string) (*pb.Build, error)
+
+// runOrdered runs fn for each arg in argC and reports results to resultC
+// in order of args.
+func (r *printRun) runOrdered(ctx context.Context, argC <-chan string, resultC chan<- buildResult, fn buildFunc) {
 	// Prepare workspace.
 	type workItem struct {
 		arg   string
@@ -151,7 +199,6 @@ func (r *printRun) printAndDone(ctx context.Context, stdout, stderr *printer, ar
 		done  chan error
 	}
 	work := make(chan *workItem)
-	results := make(chan *workItem, 256)
 
 	// Prepare 16 concurrent workers.
 	for i := 0; i < 16; i++ {
@@ -164,47 +211,41 @@ func (r *printRun) printAndDone(ctx context.Context, stdout, stderr *printer, ar
 		}()
 	}
 
-	// Add work. Close the work space when work is done.
+	// Add work. Close the workspace when the work is done.
+	resultItems := make(chan *workItem)
 	go func() {
-		for a := range argChan(args) {
+		for a := range argC {
+			item := &workItem{arg: a, done: make(chan error)}
+			work <- item
+			resultItems <- item
+		}
+		close(work)
+		close(resultItems)
+	}()
+
+	for i := range resultItems {
+		resultC <- buildResult{
+			arg:   i.arg,
+			build: i.build,
+			err:   <-i.done,
+		}
+	}
+}
+
+func (r *printRun) runUnordered(ctx context.Context, argC <-chan string, resultC chan<- buildResult, fn buildFunc) {
+	parallel.WorkPool(512, func(work chan<- func() error) {
+		for arg := range argC {
 			if ctx.Err() != nil {
 				break
 			}
-			item := &workItem{arg: a, done: make(chan error)}
-			work <- item
-			results <- item
-		}
-		close(work)
-		close(results)
-	}()
-
-	// Print the results in the order of args.
-	first := true
-	perfect := true
-	for i := range results {
-		err := <-i.done
-		if err != nil {
-			perfect = false
-			if !first {
-				stderr.f("\n")
-			}
-			stderr.f("arg %q: ", i.arg)
-			stderr.Error(err)
-			stderr.f("\n")
-			if stderr.Err != nil {
-				return r.done(ctx, stderr.Err)
-			}
-		} else {
-			if err := r.printBuild(stdout, i.build, first); err != nil {
-				return r.done(ctx, err)
+			arg := arg
+			work <- func() error {
+				build, err := fn(ctx, arg)
+				resultC <- buildResult{arg, build, err}
+				return nil
 			}
 		}
-		first = false
-	}
-	if !perfect {
-		return 1
-	}
-	return 0
+	})
 }
 
 // argChan returns a channel of args.
