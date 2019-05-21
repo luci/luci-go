@@ -74,6 +74,15 @@ type Config struct {
 	// outlive it.
 	AnonymousTransport AnonymousTransportProvider
 
+	// EndUserIP takes a request and returns IP address of a user that sent it.
+	//
+	// If nil, a default implementation is used. It simply returns r.RemoteAddr.
+	//
+	// A custom implementation may parse X-Forwarded-For header (or other headers)
+	// depending on how load balancers and proxies in front the server populate
+	// them.
+	EndUserIP func(r *http.Request) string
+
 	// IsDevMode is true when running the server locally during development.
 	//
 	// Setting this to true changes default deadlines. For instance, GAE dev
