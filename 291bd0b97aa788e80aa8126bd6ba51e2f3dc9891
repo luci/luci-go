@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "61738fd9_cef9b455",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-21T22:19:36Z",
+      "side": 1,
+      "message": "This is not a backward compatible change (some *.star code will need to be change, concretely this: https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/master/starlark/common/lib/swarming.star#7).\n\nPlease bump version number to 1.7.6: https://chromium.googlesource.com/infra/luci/luci-go/+/master/lucicfg/version.go",
+      "range": {
+        "startLine": 184,
+        "startChar": 1,
+        "endLine": 186,
+        "endChar": 73
+      },
+      "revId": "291bd0b97aa788e80aa8126bd6ba51e2f3dc9891",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
