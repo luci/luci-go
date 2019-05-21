@@ -23,6 +23,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/step.proto";
+import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 
 // A single build, identified by an int64 id.
 // Belongs to a builder.
@@ -335,6 +336,9 @@ message BuildInfra {
 
     // Caches requested by this build.
     repeated CacheEntry caches = 7;
+
+    // Swarming task containment for the task.
+    swarming.v1.Containment containment = 8;
   }
 
   // LogDog-specific information.
