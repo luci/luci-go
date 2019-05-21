@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b7e5807_b8fa6ac0",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-21T23:19:36Z",
+      "side": 1,
+      "message": "not useful for filter. It says \"see go/filtering\". It\u0027s not at all clear how to use it w/o reading that design doc to the end.",
+      "range": {
+        "startLine": 95,
+        "startChar": 5,
+        "endLine": 95,
+        "endChar": 57
+      },
+      "revId": "234069a21c2b5bb2d22e9e30cb8db95ba37f87a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ce93322_2d27fdbf",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-21T23:19:36Z",
+      "side": 1,
+      "message": "I think it\u0027s time to stop changing these numbers since GCE-P is in prod and there may be clients using its API. This would be a breaking change.",
+      "range": {
+        "startLine": 100,
+        "startChar": 22,
+        "endLine": 100,
+        "endChar": 24
+      },
+      "revId": "234069a21c2b5bb2d22e9e30cb8db95ba37f87a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
