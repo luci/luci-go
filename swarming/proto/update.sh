@@ -19,6 +19,7 @@ cd "$(dirname $0)"
 
 echo "- Copy the proto files from luci-py"
 LUCI_ROOT=../../../../../../luci
+LUCI_ROOT=~/src/luci-py
 cp ${LUCI_ROOT}/appengine/swarming/proto/api/*.proto api
 cp ${LUCI_ROOT}/appengine/swarming/proto/config/*.proto config
 
