@@ -181,21 +181,21 @@ var publicProtos = map[string]struct {
 
 	// Swarming service configs.
 	//
-	// load("@proto//luci/swarming/bots.proto", bots_pb="swarming")
-	// load("@proto//luci/swarming/config.proto", config_pb="swarming")
-	// load("@proto//luci/swarming/pools.proto", pools_pb="swarming")
+	// load("@proto//luci/swarming/bots.proto", bots_pb="swarming.config")
+	// load("@proto//luci/swarming/config.proto", config_pb="swarming.config")
+	// load("@proto//luci/swarming/pools.proto", pools_pb="swarming.config")
 	"luci/swarming/bots.proto": {
-		"swarming",
+		"swarming.config",
 		"go.chromium.org/luci/swarming/proto/config/bots.proto",
 		"https://luci-config.appspot.com/schemas/services/swarming:bots.cfg",
 	},
 	"luci/swarming/config.proto": {
-		"swarming",
+		"swarming.config",
 		"go.chromium.org/luci/swarming/proto/config/config.proto",
 		"https://luci-config.appspot.com/schemas/services/swarming:settings.cfg",
 	},
 	"luci/swarming/pools.proto": {
-		"swarming",
+		"swarming.config",
 		"go.chromium.org/luci/swarming/proto/config/pools.proto",
 		"https://luci-config.appspot.com/schemas/services/swarming:pools.cfg",
 	},
