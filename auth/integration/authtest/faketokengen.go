@@ -16,6 +16,8 @@ package authtest
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -26,7 +28,6 @@ import (
 // Defaults for FakeTokenGenerator.
 const (
 	DefaultFakeEmail    = "fake_test@example.com"
-	DefaultFakeToken    = "fake_test_token"
 	DefaultFakeLifetime = 5 * time.Minute
 )
 
@@ -34,22 +35,41 @@ const (
 // data.
 //
 // Useful for integration tests that involve local auth server.
+//
+// Each GenerateToken call returns a token "fake_token_<N>", where N starts
+// from 0 and incremented for each call. If KeepRecord is true, each generated
+// token is recorded along with a list of scopes that were used to generate it.
+// Use TokenScopes() to see what scopes have been used to generate a particular
+// token.
 type FakeTokenGenerator struct {
-	Email    string        // email of the default account (default "fake_test@example.com")
-	Token    string        // access token to return (default "fake_test_token")
-	Lifetime time.Duration // lifetime of the returned token (default 5 min)
+	Email      string        // email of the default account (default "fake_test@example.com")
+	Lifetime   time.Duration // lifetime of the returned token (default 5 min)
+	KeepRecord bool          // if true, record all generated tokens
+
+	m    sync.Mutex
+	n    int
+	toks map[string][]string // fake token => list of its scopes
 }
 
 // GenerateToken is part of TokenGenerator interface.
 func (f *FakeTokenGenerator) GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
-	token := f.Token
-	if token == "" {
-		token = DefaultFakeToken
+	f.m.Lock()
+	defer f.m.Unlock()
+
+	token := fmt.Sprintf("fake_token_%d", f.n)
+	f.n++
+	if f.KeepRecord {
+		if f.toks == nil {
+			f.toks = make(map[string][]string, 1)
+		}
+		f.toks[token] = append([]string(nil), scopes...)
 	}
+
 	tokenLifetime := f.Lifetime
 	if tokenLifetime == 0 {
 		tokenLifetime = DefaultFakeLifetime
 	}
+
 	return &oauth2.Token{
 		AccessToken: token,
 		Expiry:      clock.Now(ctx).Add(tokenLifetime),
@@ -62,4 +82,14 @@ func (f *FakeTokenGenerator) GetEmail() (string, error) {
 		return DefaultFakeEmail, nil
 	}
 	return f.Email, nil
+}
+
+// TokenScopes returns scopes that were used to generate given fake token.
+//
+// Returns nil for unknown tokens or if KeepRecord is false and tokens weren't
+// recorded.
+func (f *FakeTokenGenerator) TokenScopes(token string) []string {
+	f.m.Lock()
+	defer f.m.Unlock()
+	return f.toks[token]
 }

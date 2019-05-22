@@ -16,6 +16,7 @@ package authtest
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -33,9 +34,11 @@ func TestFakeTokenGenerator(t *testing.T) {
 	Convey("Works", t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
+		gen := FakeTokenGenerator{KeepRecord: true}
+
 		srv := localauth.Server{
 			TokenGenerators: map[string]localauth.TokenGenerator{
-				"authtest": &FakeTokenGenerator{},
+				"authtest": &gen,
 			},
 			DefaultAccountID: "authtest",
 		}
@@ -43,20 +46,27 @@ func TestFakeTokenGenerator(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer srv.Stop(ctx)
 
-		auth := auth.NewAuthenticator(lucictx.SetLocalAuth(ctx, la), auth.SilentLogin, auth.Options{})
+		for idx, scope := range []string{"A", "B"} {
+			auth := auth.NewAuthenticator(lucictx.SetLocalAuth(ctx, la), auth.SilentLogin, auth.Options{
+				Scopes: []string{scope, "zzz"},
+			})
 
-		email, err := auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, DefaultFakeEmail)
+			email, err := auth.GetEmail()
+			So(err, ShouldBeNil)
+			So(email, ShouldEqual, DefaultFakeEmail)
 
-		tok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, DefaultFakeToken)
+			tok, err := auth.GetAccessToken(time.Minute)
+			So(err, ShouldBeNil)
+			So(tok.AccessToken, ShouldEqual, fmt.Sprintf("fake_token_%d", idx))
 
-		// Expiry is rounded to integer number of seconds, since that's the
-		// granularity of OAuth token expiration. Compare int unix timestamps to
-		// account for that.
-		So(tok.Expiry.Unix(), ShouldEqual,
-			testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix())
+			// Expiry is rounded to integer number of seconds, since that's the
+			// granularity of OAuth token expiration. Compare int unix timestamps to
+			// account for that.
+			So(tok.Expiry.Unix(), ShouldEqual,
+				testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix())
+		}
+
+		So(gen.TokenScopes("fake_token_0"), ShouldResemble, []string{"A", "zzz"})
+		So(gen.TokenScopes("fake_token_1"), ShouldResemble, []string{"B", "zzz"})
 	})
 }
