@@ -79,6 +79,7 @@ func toInstance(vm *model.VM) *instances.Instance {
 		Hostname:          vm.Hostname,
 		NetworkInterfaces: make([]*instances.NetworkInterface, len(vm.NetworkInterfaces)),
 		Lifetime:          vm.Lifetime,
+		Prefix:            vm.Prefix,
 		Project:           vm.Attributes.Project,
 		Swarming:          vm.Swarming,
 		Timeout:           vm.Timeout,
@@ -179,32 +180,49 @@ func (*Instances) Get(c context.Context, req *instances.GetRequest) (*instances.
 
 // List handles a request to list instances.
 func (*Instances) List(c context.Context, req *instances.ListRequest) (*instances.ListResponse, error) {
-	switch {
-	case req.GetPrefix() == "":
-		return nil, status.Errorf(codes.InvalidArgument, "prefix is required")
-	case req.Filter != "":
-		// TODO(crbug/964591): Support entire filtering grammar.
+	if req == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "request must not be nil")
+	}
+	var cur datastore.Cursor
+	var err error
+	if req.PageToken != "" {
+		if cur, err = datastore.DecodeCursor(c, req.PageToken); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid page token %q", req.PageToken)
+		}
+	}
+	if req.PageSize < 1 || req.PageSize > 200 {
+		req.PageSize = 200
+	}
+
+	q := datastore.NewQuery(model.VMKind).Limit(req.PageSize).Start(cur)
+	if req.Prefix != "" {
+		q = q.Eq("prefix", req.Prefix)
+	}
+	if req.Filter != "" {
+		// TODO(crbug/964591): Support other filters.
+		// No compound indices exist, so only simple filters are supported:
+		// https://cloud.google.com/datastore/docs/concepts/indexes#index_configuration.
 		if !strings.HasPrefix(req.Filter, "disks.image=") {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid filter expression %q", req.Filter)
 		}
-	}
-	rsp := &instances.ListResponse{}
-	// TODO(smut): Handle page tokens.
-	if req.GetPageToken() != "" {
-		return rsp, nil
-	}
-	q := datastore.NewQuery(model.VMKind).Eq("prefix", req.Prefix)
-	if req.Filter != "" {
-		// TODO(crbug/964591): Support other filters.
-		// No compound indices exist, so only simple filters will be supported.
 		img := strings.TrimPrefix(req.Filter, "disks.image=")
 		q = q.Eq("attributes_indexed", fmt.Sprintf("disk.image:%s", img))
 	}
-	if err := datastore.Run(c, q, func(vm *model.VM, f datastore.CursorCB) error {
+
+	rsp := &instances.ListResponse{}
+	var getCur datastore.CursorCB
+	if err = datastore.Run(c, q, func(vm *model.VM, f datastore.CursorCB) error {
 		rsp.Instances = append(rsp.Instances, toInstance(vm))
+		getCur = f
 		return nil
 	}); err != nil {
 		return nil, errors.Annotate(err, "failed to fetch instances").Err()
+	}
+	if getCur != nil {
+		if cur, err = getCur(); err != nil {
+			return nil, errors.Annotate(err, "failed to fetch cursor").Err()
+		}
+		rsp.NextPageToken = cur.String()
 	}
 	return rsp, nil
 }

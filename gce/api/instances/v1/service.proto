@@ -69,6 +69,9 @@ message Instance {
 
   // The network interfaces associated with this instance.
   repeated NetworkInterface network_interfaces = 13;
+
+  // The prefix associated with this instance.
+  string prefix = 14;
 }
 
 // A request to delete an instance.
@@ -94,6 +97,9 @@ message ListRequest {
   // The value of next_page_token received in a ListResponse. Used to get the
   // next page of instances. If empty, gets the first page.
   string page_token = 2;
+
+  // The maximum number of results to include in the response.
+  int32 page_size = 3;
 
   // A filter to apply when listing instances. Currently the only supported
   // filter is "disks.image=<image>" where <image> is the name of the image to
