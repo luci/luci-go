@@ -197,8 +197,14 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 		s.user = &User{Identity: identity.AnonymousIdentity}
 	}
 
+	// Grab an end user IP as a string and convert it to net.IP to use in IP
+	// whitelist check below.
+	remoteAddr := r.RemoteAddr
+	if cfg.EndUserIP != nil {
+		remoteAddr = cfg.EndUserIP(r)
+	}
 	var err error
-	s.peerIP, err = parseRemoteIP(r.RemoteAddr)
+	s.peerIP, err = parseRemoteIP(remoteAddr)
 	if err != nil {
 		panic(fmt.Errorf("auth: bad remote_addr: %v", err))
 	}

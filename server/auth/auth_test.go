@@ -50,7 +50,9 @@ func TestAuthenticate(t *testing.T) {
 				userTok:  &oauth2.Token{AccessToken: "abc.def"},
 			}},
 		}
-		c, err := auth.Authenticate(c, makeRequest())
+		req := makeRequest()
+		req.RemoteAddr = "1.2.3.4"
+		c, err := auth.Authenticate(c, req)
 		So(err, ShouldBeNil)
 
 		So(CurrentUser(c), ShouldResemble, &User{
@@ -58,6 +60,8 @@ func TestAuthenticate(t *testing.T) {
 			Email:    "abc@example.com",
 			ClientID: "some_client_id",
 		})
+
+		So(GetState(c).PeerIP().String(), ShouldEqual, "1.2.3.4")
 
 		url, err := LoginURL(c, "login")
 		So(err, ShouldBeNil)
@@ -70,6 +74,24 @@ func TestAuthenticate(t *testing.T) {
 		tok, err := GetState(c).UserCredentials()
 		So(err, ShouldBeNil)
 		So(tok, ShouldResemble, &oauth2.Token{AccessToken: "abc.def"})
+	})
+
+	Convey("Custom EndUserIP implementation", t, func() {
+		req := makeRequest()
+		req.Header.Add("X-Custom-IP", "4.5.6.7")
+
+		c := injectTestDB(context.Background(), &fakeDB{})
+		c = ModifyConfig(c, func(cfg Config) Config {
+			cfg.EndUserIP = func(r *http.Request) string { return r.Header.Get("X-Custom-IP") }
+			return cfg
+		})
+
+		auth := Authenticator{
+			Methods: []Method{fakeAuthMethod{email: "zzz@example.com"}},
+		}
+		c, err := auth.Authenticate(c, req)
+		So(err, ShouldBeNil)
+		So(GetState(c).PeerIP().String(), ShouldEqual, "4.5.6.7")
 	})
 
 	Convey("No methods given", t, func() {
