@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f5d6824_797072b8",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-22T23:43:38Z",
+      "side": 1,
+      "message": "nit: del empty line",
+      "revId": "e005b8541180eed84c99d62464fad0c3517e45ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
