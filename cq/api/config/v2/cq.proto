@@ -140,6 +140,17 @@ message ConfigGroup {
 
   // Defines how to verify a CL before submitting it. Required.
   Verifiers verifiers = 2;
+
+  // EXPERIMENTAL! TODO(tandrii, crbug/966115): add better doc or remove.
+  //
+  // If set, this ConfigGroup will be used if no other ConfigGroup matches"
+  //
+  // At most 1 config_group can be YES.
+  //
+  // Example use is to define specific config_group for refs/heads/master,
+  // and fallback one for refs/heads/* which will pick up all CLs on
+  // non-master branches.
+  Toggle fallback = 5;
 }
 
 // EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
