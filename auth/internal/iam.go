@@ -33,8 +33,8 @@ type iamTokenProvider struct {
 	cacheKey  CacheKey
 }
 
-// NewIAMTokenProvider returns TokenProvider that uses SignBlob IAM API to
-// sign assertions on behalf of some service account.
+// NewIAMTokenProvider returns TokenProvider that uses generateAccessToken IAM
+// API to grab tokens belonging to some service account.
 func NewIAMTokenProvider(ctx context.Context, actAs string, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
 	return &iamTokenProvider{
 		actAs:     actAs,
