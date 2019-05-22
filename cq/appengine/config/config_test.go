@@ -159,20 +159,9 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldNotBeNil)
 			})
-			Convey("at least 1 Config Group", func() {
-				cfg.ConfigGroups = nil
-				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "at least 1 config_group is required")
-			})
-			Convey("no obviously overlaping config_groups", func() {
-				cfg.ConfigGroups = append(cfg.ConfigGroups, cfg.ConfigGroups[0])
-				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "aliases config_group #1")
-			})
-			Convey("2nd heuristic against overlaping config_groups", func() {
-				// Store original valid first and only ConfigGroup.
+			Convey("config_groups", func() {
+
 				orig := cfg.ConfigGroups[0]
-				cfg.ConfigGroups = nil
 				add := func(refRegexps ...string) {
 					// Add new regexps sequence with constant valid gerrit url and project and
 					// the same valid verifers.
@@ -191,18 +180,63 @@ func TestValidation(t *testing.T) {
 						Verifiers: orig.Verifiers,
 					})
 				}
-				Convey("infra/config", func() {
-					add("refs/heads/infra/config")
-					add("refs/.+")
+
+				Convey("at least 1 Config Group", func() {
+					cfg.ConfigGroups = nil
 					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, `ref "refs/heads/infra/config" matches config_groups [0 1]`)
+					So(vctx.Finalize(), ShouldErrLike, "at least 1 config_group is required")
 				})
-				Convey("master", func() {
-					add() // default, meaning refs/heads/master.
-					add("refs/branch-heads/.+")
+
+				Convey("at most 1 fallback", func() {
+					cfg.ConfigGroups = nil
 					add("refs/heads/.+")
+					cfg.ConfigGroups[0].Fallback = v2.Toggle_YES
+					add("refs/branch-heads/.+")
+					cfg.ConfigGroups[1].Fallback = v2.Toggle_YES
 					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, `ref "refs/heads/master" matches config_groups [0 2]`)
+					So(vctx.Finalize(), ShouldErrLike, "At most 1 config_group with fallback=YES allowed")
+				})
+
+				Convey("no obviously overlaping config_groups", func() {
+					cfg.ConfigGroups = nil
+					add("refs/heads/.+")
+					add("refs/heads/.+")
+					Convey("without fallback", func() {
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, "aliases config_group #1")
+					})
+					Convey("with fallback", func() {
+						// TODO(tandrii): strictly speaking, for exact same watched
+						// gerrit/project/refs fallback=YES is effectively noop.
+						cfg.ConfigGroups[1].Fallback = v2.Toggle_YES
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldBeNil)
+					})
+				})
+
+				Convey("2nd heuristic against overlaping config_groups", func() {
+					// Store original valid first and only ConfigGroup.
+					cfg.ConfigGroups = nil
+					Convey("infra/config", func() {
+						add("refs/heads/infra/config")
+						add("refs/.+")
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, `ref "refs/heads/infra/config" matches config_groups [0 1]`)
+					})
+					Convey("master", func() {
+						add() // default, meaning refs/heads/master.
+						add("refs/branch-heads/.+")
+						add("refs/heads/.+")
+						Convey("without fallback", func() {
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldErrLike, `ref "refs/heads/master" matches config_groups [0 2]`)
+						})
+						Convey("with fallback", func() {
+							cfg.ConfigGroups[2].Fallback = v2.Toggle_YES
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldBeNil)
+						})
+					})
 				})
 			})
 		})
