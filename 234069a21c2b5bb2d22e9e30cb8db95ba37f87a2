@@ -93,6 +93,30 @@
       "revId": "234069a21c2b5bb2d22e9e30cb8db95ba37f87a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "acdfbd5b_5be994a2",
+        "filename": "gce/api/instances/v1/service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-22T00:10:39Z",
+      "side": 1,
+      "message": "is there a builtin restriction i\u0027m not aware of?",
+      "parentUuid": "70710825_404986a2",
+      "range": {
+        "startLine": 100,
+        "startChar": 22,
+        "endLine": 100,
+        "endChar": 24
+      },
+      "revId": "234069a21c2b5bb2d22e9e30cb8db95ba37f87a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
