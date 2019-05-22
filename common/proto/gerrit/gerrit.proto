@@ -55,6 +55,11 @@ service Gerrit {
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
   rpc AbandonChange(AbandonChangeRequest) returns (ChangeInfo);
+
+  // Gets Mergeable status for a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
+  rpc GetMergeable(GetMergeableRequest) returns (MergeableInfo);
 }
 
 // Specifies what extra information to include in the response.

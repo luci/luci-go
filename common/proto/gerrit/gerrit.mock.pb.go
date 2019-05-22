@@ -175,6 +175,26 @@ func (mr *MockGerritClientMockRecorder) AbandonChange(ctx, in interface{}, opts 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritClient)(nil).AbandonChange), varargs...)
 }
 
+// GetMergeable mocks base method
+func (m *MockGerritClient) GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMergeable", varargs...)
+	ret0, _ := ret[0].(*MergeableInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMergeable indicates an expected call of GetMergeable
+func (mr *MockGerritClientMockRecorder) GetMergeable(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritClient)(nil).GetMergeable), varargs...)
+}
+
 // MockGerritServer is a mock of GerritServer interface
 type MockGerritServer struct {
 	ctrl     *gomock.Controller
@@ -301,4 +321,19 @@ func (m *MockGerritServer) AbandonChange(arg0 context.Context, arg1 *AbandonChan
 func (mr *MockGerritServerMockRecorder) AbandonChange(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritServer)(nil).AbandonChange), arg0, arg1)
+}
+
+// GetMergeable mocks base method
+func (m *MockGerritServer) GetMergeable(arg0 context.Context, arg1 *GetMergeableRequest) (*MergeableInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMergeable", arg0, arg1)
+	ret0, _ := ret[0].(*MergeableInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMergeable indicates an expected call of GetMergeable
+func (mr *MockGerritServerMockRecorder) GetMergeable(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritServer)(nil).GetMergeable), arg0, arg1)
 }
