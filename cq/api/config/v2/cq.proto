@@ -140,6 +140,17 @@ message ConfigGroup {
 
   // Defines how to verify a CL before submitting it. Required.
   Verifiers verifiers = 2;
+
+  // EXPERIMENTAL! TODO(tandrii, crbug/966115): add better doc.
+  // If set, this config_group gerrit/project/ref_regexps are checked iff no
+  // other config_group matched a Gerrit CL.
+  //
+  // At most 1 config_group can be YES.
+  //
+  // Example use is to define specific config_group for refs/heads/master,
+  // and fallback one for refs/heads/* which will pick up all CLs on
+  // non-master branches.
+  Toggle fallback = 5;
 }
 
 // EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
