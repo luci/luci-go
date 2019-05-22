@@ -42,8 +42,10 @@ import (
 
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/middleware"
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/settings"
 )
 
 // Options are exposed as command line flags.
@@ -52,6 +54,7 @@ type Options struct {
 	HTTPAddr       string // address to bind the main listening socket to
 	AdminAddr      string // address to bind the admin socket to
 	RootSecretPath string // path to a JSON file with the root secret key
+	SettingsPath   string // path to a JSON file with app settings
 
 	testCtx       context.Context          // base context for tests
 	testSeed      int64                    // used to seed rng in tests
@@ -72,6 +75,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to")
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to")
 	f.StringVar(&o.RootSecretPath, "root-secret-path", o.RootSecretPath, "Path to a JSON file with the root secret key")
+	f.StringVar(&o.SettingsPath, "settings-path", o.SettingsPath, "Path to a JSON file with app settings")
 }
 
 // Server is responsible for initializing and launching the serving environment.
@@ -100,7 +104,8 @@ type Server struct {
 	bgrCancel context.CancelFunc // cancels bgrCtx
 	bgrWg     sync.WaitGroup     // waits for runInBackground goroutines to stop
 
-	secrets *secrets.DerivedStore // indirectly used to derive XSRF tokens and such
+	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such
+	settings *settings.ExternalStorage // backing store for settings.Get(...) API
 }
 
 // New constructs a new server instance.
@@ -116,11 +121,12 @@ func New(opts Options) *Server {
 	}
 
 	srv := &Server{
-		ctx:     context.Background(),
-		opts:    opts,
-		done:    make(chan struct{}),
-		rnd:     rand.New(rand.NewSource(seed)),
-		secrets: secrets.NewDerivedStore(secrets.Secret{}),
+		ctx:      context.Background(),
+		opts:     opts,
+		done:     make(chan struct{}),
+		rnd:      rand.New(rand.NewSource(seed)),
+		secrets:  secrets.NewDerivedStore(secrets.Secret{}),
+		settings: &settings.ExternalStorage{},
 	}
 	if opts.testCtx != nil {
 		srv.ctx = opts.testCtx
@@ -128,8 +134,14 @@ func New(opts Options) *Server {
 	srv.initLogging()
 	srv.ctx = caching.WithProcessCacheData(srv.ctx, caching.NewProcessCacheData())
 	srv.ctx = secrets.Set(srv.ctx, srv.secrets)
+	if !opts.Prod && opts.SettingsPath == "" {
+		// In dev mode use settings backed by memory.
+		srv.ctx = settings.Use(srv.ctx, settings.New(&settings.MemoryStorage{}))
+	} else {
+		// In prod mode use setting backed by a file, see also initSettings().
+		srv.ctx = settings.Use(srv.ctx, settings.New(srv.settings))
+	}
 
-	// TODO(vadimsh): Install settings via settings.Use(...).
 	// TODO(vadimsh): Install auth via auth.Initialize(...).
 
 	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
@@ -139,8 +151,12 @@ func New(opts Options) *Server {
 		c.Writer.Write([]byte("OK"))
 	})
 
-	// TODO(vadimsh): Populate admin routes (admin portal, pprof).
-	srv.RegisterHTTP(opts.AdminAddr)
+	// Install endpoints accessible through admin port.
+	admin := srv.RegisterHTTP(opts.AdminAddr)
+	admin.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
+	})
+	portal.InstallHandlers(admin, router.MiddlewareChain{}, portal.AssumeTrustedPort)
 
 	// Prepare the context used for background work. It is canceled as soon as we
 	// enter the shutdown sequence.
@@ -199,6 +215,10 @@ func (s *Server) ListenAndServe() error {
 	if err := s.initSecrets(); err != nil {
 		logging.WithError(err).Errorf(s.ctx, "Failed to initialize secrets store")
 		return errors.Annotate(err, "failed to initialize secrets store").Err()
+	}
+	if err := s.initSettings(); err != nil {
+		logging.WithError(err).Errorf(s.ctx, "Failed to initialize settings")
+		return errors.Annotate(err, "failed to initialize settings").Err()
 	}
 
 	// Catch SIGTERM while inside this function.
@@ -481,6 +501,45 @@ func (s *Server) readRootSecret() (secrets.Secret, error) {
 		return secrets.Secret{}, errors.Reason("`current` field in the root secret is empty, this is not allowed").Err()
 	}
 	return secret, nil
+}
+
+// initSettings reads the initial settings and launches a job to periodically
+// reread them.
+//
+// Does nothing is if -settings-path is not set: settings are optional. If
+// -settings-path is set, it must point to a structurally valid JSON file or
+// the server will fail to start.
+func (s *Server) initSettings() error {
+	if s.opts.SettingsPath == "" {
+		if s.opts.Prod {
+			logging.Infof(s.ctx, "Not using settings, -settings-path is not set")
+		}
+		return nil
+	}
+	if err := s.loadSettings(s.ctx); err != nil {
+		return err
+	}
+	s.runInBackground("settings", func(c context.Context) {
+		for {
+			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
+				return // the context is canceled
+			}
+			if err := s.loadSettings(c); err != nil {
+				logging.WithError(err).Errorf(c, "Failed to reload settings, using the cached ones")
+			}
+		}
+	})
+	return nil
+}
+
+// loadSettings loads settings from a path specified via -settings-path.
+func (s *Server) loadSettings(c context.Context) error {
+	f, err := os.Open(s.opts.SettingsPath)
+	if err != nil {
+		return errors.Annotate(err, "failed to open settings file").Err()
+	}
+	defer f.Close()
+	return s.settings.Load(c, f)
 }
 
 // getCloudTraceID extract Trace ID from X-Cloud-Trace-Context header.
