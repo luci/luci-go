@@ -104,9 +104,18 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 		ctx.Errorf("at least 1 config_group is required")
 		return
 	}
+
+	fallbackGroupIdx := -1
 	for i, g := range cfg.ConfigGroups {
 		ctx.Enter("config_group #%d", i+1)
 		validateConfigGroup(ctx, g)
+		switch {
+		case g.Fallback == v2.Toggle_YES && fallbackGroupIdx == -1:
+			fallbackGroupIdx = i
+		case g.Fallback == v2.Toggle_YES:
+			ctx.Errorf("At most 1 config_group with fallback=YES allowed "+
+				"(already declared in config_group #%d", fallbackGroupIdx+1)
+		}
 		ctx.Exit()
 	}
 	bestEffortDisjointGroups(ctx, cfg)
@@ -130,6 +139,9 @@ func bestEffortDisjointGroups(ctx *validation.Context, cfg *v2.Config) {
 	seen := map[refKey]int{}
 
 	for grIdx, gr := range cfg.ConfigGroups {
+		if gr.Fallback == v2.Toggle_YES {
+			continue
+		}
 		for gIdx, g := range gr.Gerrit {
 			for pIdx, p := range g.Projects {
 				refRegexps := p.RefRegexp
