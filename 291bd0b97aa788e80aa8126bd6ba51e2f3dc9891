@@ -22,6 +22,30 @@
       "revId": "291bd0b97aa788e80aa8126bd6ba51e2f3dc9891",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "984a2662_b298b486",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-22T14:44:45Z",
+      "side": 1,
+      "message": "Done.\nOh is it painly enough to not do the rename? I don\u0027t feel strongly about it.",
+      "parentUuid": "61738fd9_cef9b455",
+      "range": {
+        "startLine": 184,
+        "startChar": 1,
+        "endLine": 186,
+        "endChar": 73
+      },
+      "revId": "291bd0b97aa788e80aa8126bd6ba51e2f3dc9891",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
