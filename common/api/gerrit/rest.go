@@ -120,6 +120,30 @@ type revisionInfo struct {
 	Files  map[string]*fileInfo `json:"files"`
 }
 
+type mergeableInfo struct {
+	SubmitType    string   `json:"submit_type"`
+	Strategy      string   `json:"strategy"`
+	Mergeable     bool     `json:"mergeable"`
+	CommitMerged  bool     `json:"commit_merged"`
+	ContentMerged bool     `json:"content_merged"`
+	Conflicts     []string `json:"conflicts"`
+	MergeableInto []string `json:"mergeable_into"'`
+}
+
+func (mi *mergeableInfo) ToProto() *gerritpb.MergeableInfo {
+	// Convert something like 'simple-two-way-in-core' to 'SIMPLE_TWO_WAY_IN_CORE'.
+	strategyEnumName := strings.ReplaceAll(strings.ToUpper(mi.Strategy), "-", "_")
+	return &gerritpb.MergeableInfo{
+		SubmitType:    gerritpb.MergeableInfo_SubmitType(gerritpb.MergeableInfo_SubmitType_value[mi.SubmitType]),
+		Strategy:      gerritpb.MergeableStrategy(gerritpb.MergeableStrategy_value[strategyEnumName]),
+		Mergeable:     mi.Mergeable,
+		CommitMerged:  mi.CommitMerged,
+		ContentMerged: mi.ContentMerged,
+		Conflicts:     mi.Conflicts,
+		MergeableInto: mi.MergeableInto,
+	}
+}
+
 func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 	ret := &gerritpb.ChangeInfo{
 		Number:          ci.Number,
@@ -260,6 +284,16 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 	}
 	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
 		return nil, errors.Annotate(err, "abandon change").Err()
+	}
+	return resp.ToProto(), nil
+}
+
+func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error) {
+	var resp mergeableInfo
+	path := fmt.Sprintf("/changes/%s/revisions/%s/mergeable", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
+	var data struct{}
+	if _, err := c.call(ctx, "GET", path, url.Values{}, &data, &resp); err != nil {
+		return nil, errors.Annotate(err, "get mergeable").Err()
 	}
 	return resp.ToProto(), nil
 }
