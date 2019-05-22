@@ -54,6 +54,11 @@ func (v *VM) Validate(c *validation.Context) {
 	if len(v.GetDisk()) == 0 {
 		c.Errorf("at least one disk is required")
 	}
+	for i, d := range v.GetDisk() {
+		c.Enter("disk %d", i)
+		d.Validate(c)
+		c.Exit()
+	}
 	if v.GetMachineType() == "" {
 		c.Errorf("machine type is required")
 	}
