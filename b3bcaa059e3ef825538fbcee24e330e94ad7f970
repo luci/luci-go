@@ -22,6 +22,30 @@
       "revId": "b3bcaa059e3ef825538fbcee24e330e94ad7f970",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d178ae5_8c38ace9",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-05-22T23:54:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bf8ac636_391f2206",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 39,
+        "endChar": 27
+      },
+      "revId": "b3bcaa059e3ef825538fbcee24e330e94ad7f970",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
