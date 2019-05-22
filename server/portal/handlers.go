@@ -43,12 +43,22 @@ import (
 	"go.chromium.org/luci/server/portal/internal/assets"
 )
 
+// AssumeTrustedPort can be passed as auth.Method to InstallHandlers to indicate
+// that portal endpoints are being exposed on an internal port accessible only
+// to cluster administrators and no additional auth checks are required (or they
+// are not possible).
+var AssumeTrustedPort auth.Method = trustedPortAuth{}
+
 // InstallHandlers installs HTTP handlers that implement admin UI.
 //
 // `adminAuth` is the method that will be used to authenticate the access
 // (regardless of what's installed in the base context). It must be able to
 // distinguish admins (aka superusers) from non-admins. It is needed because
 // settings UI must be usable even before auth system is configured.
+//
+// `adminAuth` can be a special value portal.AssumeTrustedPort which completely
+// disables all authentication and authorization checks (by delegating them to
+// the network layer).
 func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth auth.Method) {
 	tmpl := &templates.Bundle{
 		Loader:          templates.AssetsLoader(assets.Assets()),
@@ -59,7 +69,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 		},
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
 			logoutURL, err := auth.LogoutURL(c, "/")
-			if err != nil {
+			if err != nil && err != auth.ErrNoUsersAPI {
 				return nil, err
 			}
 			return templates.Args{
@@ -105,6 +115,22 @@ func replyError(c context.Context, rw http.ResponseWriter, err error) {
 ////////////////////////////////////////////////////////////////////////////////
 // Auth related helpers.
 
+// trustedPortAuth is auth.Method that assumes all request are coming from a
+// super-admin through a trusted internal port.
+type trustedPortAuth struct{}
+
+// Authenticate is part of auth.Method interface.
+//
+// It returns User with Anonymous identity that has Superuser bit set: we
+// know *some* admin is accessing endpoints (thus we set Superuser bit), but
+// don't know who they are exactly (thus setting Anonymous identity).
+func (trustedPortAuth) Authenticate(context.Context, *http.Request) (*auth.User, error) {
+	return &auth.User{
+		Identity:  identity.AnonymousIdentity,
+		Superuser: true,
+	}, nil
+}
+
 // adminBypassDB skips IP whitelist checks (assuming no IPs are whitelisted) and
 // errors on all other checks.
 //
@@ -144,8 +170,9 @@ func adminAutologin(c *router.Context, next router.Handler) {
 	u := auth.CurrentUser(c.Context)
 
 	// Redirect anonymous users to a login page that redirects back to the current
-	// page.
-	if u.Identity == identity.AnonymousIdentity {
+	// page. Don't do it if this anonymous user is also marked as Superuser, which
+	// happens when using AssumeTrustedPort auth method.
+	if u.Identity == identity.AnonymousIdentity && !u.Superuser {
 		// Make the current URL relative to the host.
 		destURL := *c.Request.URL
 		destURL.Host = ""
@@ -164,7 +191,7 @@ func adminAutologin(c *router.Context, next router.Handler) {
 		return
 	}
 
-	// Non anonymous users must be admins to proceed.
+	// Only superusers can proceed.
 	if !u.Superuser {
 		c.Writer.WriteHeader(http.StatusForbidden)
 		templates.MustRender(c.Context, c.Writer, "pages/access_denied.html", nil)
