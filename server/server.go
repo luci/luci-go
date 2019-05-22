@@ -31,6 +31,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
 	"go.chromium.org/luci/common/errors"
@@ -40,6 +42,9 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
 
+	clientauth "go.chromium.org/luci/auth"
+
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/portal"
@@ -50,11 +55,13 @@ import (
 
 // Options are exposed as command line flags.
 type Options struct {
-	Prod           bool   // must be set when running in production
-	HTTPAddr       string // address to bind the main listening socket to
-	AdminAddr      string // address to bind the admin socket to
-	RootSecretPath string // path to a JSON file with the root secret key
-	SettingsPath   string // path to a JSON file with app settings
+	Prod           bool               // must be set when running in production
+	HTTPAddr       string             // address to bind the main listening socket to
+	AdminAddr      string             // address to bind the admin socket to
+	RootSecretPath string             // path to a JSON file with the root secret key
+	SettingsPath   string             // path to a JSON file with app settings
+	ClientAuth     clientauth.Options // base settings for client auth options
+	TokenCacheDir  string             // where to cache auth tokens (optional)
 
 	testCtx       context.Context          // base context for tests
 	testSeed      int64                    // used to seed rng in tests
@@ -76,6 +83,24 @@ func (o *Options) Register(f *flag.FlagSet) {
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to")
 	f.StringVar(&o.RootSecretPath, "root-secret-path", o.RootSecretPath, "Path to a JSON file with the root secret key")
 	f.StringVar(&o.SettingsPath, "settings-path", o.SettingsPath, "Path to a JSON file with app settings")
+	f.StringVar(
+		&o.ClientAuth.ServiceAccountJSONPath,
+		"service-account-json",
+		o.ClientAuth.ServiceAccountJSONPath,
+		"Path to a JSON file with service account private key",
+	)
+	f.StringVar(
+		&o.ClientAuth.ActAsServiceAccount,
+		"act-as",
+		o.ClientAuth.ActAsServiceAccount,
+		"Act as this service account",
+	)
+	f.StringVar(
+		&o.TokenCacheDir,
+		"token-cache-dir",
+		o.TokenCacheDir,
+		"Where to cache auth tokens (optional)",
+	)
 }
 
 // Server is responsible for initializing and launching the serving environment.
@@ -106,6 +131,15 @@ type Server struct {
 
 	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such
 	settings *settings.ExternalStorage // backing store for settings.Get(...) API
+
+	authM        sync.RWMutex
+	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
+}
+
+// scopedAuth holds TokenSource and Authenticator that produced it.
+type scopedAuth struct {
+	source oauth2.TokenSource
+	authen *clientauth.Authenticator
 }
 
 // New constructs a new server instance.
@@ -120,13 +154,16 @@ func New(opts Options) *Server {
 		}
 	}
 
+	// Configure base server subsystems by injecting them into the root context
+	// inherited later by all requests.
 	srv := &Server{
-		ctx:      context.Background(),
-		opts:     opts,
-		done:     make(chan struct{}),
-		rnd:      rand.New(rand.NewSource(seed)),
-		secrets:  secrets.NewDerivedStore(secrets.Secret{}),
-		settings: &settings.ExternalStorage{},
+		ctx:          context.Background(),
+		opts:         opts,
+		done:         make(chan struct{}),
+		rnd:          rand.New(rand.NewSource(seed)),
+		secrets:      secrets.NewDerivedStore(secrets.Secret{}),
+		settings:     &settings.ExternalStorage{},
+		authPerScope: map[string]scopedAuth{},
 	}
 	if opts.testCtx != nil {
 		srv.ctx = opts.testCtx
@@ -142,7 +179,16 @@ func New(opts Options) *Server {
 		srv.ctx = settings.Use(srv.ctx, settings.New(srv.settings))
 	}
 
-	// TODO(vadimsh): Install auth via auth.Initialize(...).
+	// Configure auth subsystem. The rest of the initialization happens in
+	// initAuth() later, when launching the server.
+	srv.ctx = auth.Initialize(srv.ctx, &auth.Config{
+		DBProvider:          nil, // TODO(vadimsh): Implement.
+		Signer:              nil, // TODO(vadimsh): Implement.
+		AccessTokenProvider: srv.getAccessToken,
+		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
+		EndUserIP:           getRemoteIP,
+		IsDevMode:           !srv.opts.Prod,
+	})
 
 	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
 
@@ -219,6 +265,10 @@ func (s *Server) ListenAndServe() error {
 	if err := s.initSettings(); err != nil {
 		logging.WithError(err).Errorf(s.ctx, "Failed to initialize settings")
 		return errors.Annotate(err, "failed to initialize settings").Err()
+	}
+	if err := s.initAuth(); err != nil {
+		logging.WithError(err).Errorf(s.ctx, "Failed to initialize auth")
+		return errors.Annotate(err, "failed to initialize auth").Err()
 	}
 
 	// Catch SIGTERM while inside this function.
@@ -540,6 +590,127 @@ func (s *Server) loadSettings(c context.Context) error {
 	}
 	defer f.Close()
 	return s.settings.Load(c, f)
+}
+
+// initAuth finishes auth system initialization by pre-warming caches and
+// verifying auth tokens can actually be minted (i.e. supplied credentials are
+// valid).
+//
+// If this fails, the server refuses to start.
+//
+// TODO(vadimsh): Do the initial fetch of AuthDB and start a goroutine that
+// refreshes it.
+func (s *Server) initAuth() error {
+	// The default value for ClientAuth.SecretsDir is usually hardcoded to point
+	// to where the token cache is located on developer machines (~/.config/...).
+	// This location often doesn't exist when running from inside a container.
+	// The token cache is also not really needed for production services that use
+	// service accounts (they don't need cached refresh tokens). So in production
+	// mode totally ignore default ClientAuth.SecretsDir and use whatever was
+	// passed as -token-cache-dir. If it is empty (default), then no on-disk token
+	// cache is used at all.
+	//
+	// If -token-cache-dir was explicitly set, always use it (even in dev mode).
+	// This is useful when running containers locally: developer's credentials
+	// on the host machine can be mounted inside the container.
+	if s.opts.Prod || s.opts.TokenCacheDir != "" {
+		s.opts.ClientAuth.SecretsDir = s.opts.TokenCacheDir
+	}
+
+	// Note: we initialize a token source for one arbitrary set of scopes here. In
+	// many practical cases this is sufficient to verify that credentials are
+	// valid. For example, when we use service account JSON key, if we can
+	// generate a token with *some* scope (meaning Cloud accepted our signature),
+	// we can generate tokens with *any* scope, since there's no restrictions on
+	// what scopes are accessible to a service account, as long as the private key
+	// is valid (which we just verified by generating some token).
+	au, err := s.initTokenSource([]string{clientauth.OAuthScopeEmail})
+	if err != nil {
+		return errors.Annotate(err, "failed to initialize the token source").Err()
+	}
+	if _, err := au.source.Token(); err != nil {
+		return errors.Annotate(err, "failed to mint an initial token").Err()
+	}
+
+	// Report who we are running as. Useful when debugging access issues.
+	switch email, err := au.authen.GetEmail(); {
+	case err == nil:
+		logging.Infof(s.ctx, "Running as %s", email)
+	case err == clientauth.ErrNoEmail:
+		logging.Warningf(s.ctx, "Running as <unknown>, cautiously proceeding...")
+	case err != nil:
+		return errors.Annotate(err, "failed to check service account email").Err()
+	}
+	return nil
+}
+
+// getAccessToken generates OAuth access tokens to use for requests made by
+// the server itself.
+//
+// It should implement caching internally. This function may be called very
+// often, concurrently, from multiple goroutines.
+func (s *Server) getAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
+	key := strings.Join(scopes, " ")
+
+	s.authM.RLock()
+	au, ok := s.authPerScope[key]
+	s.authM.RUnlock()
+
+	if !ok {
+		var err error
+		au, err = s.initTokenSource(scopes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return au.source.Token()
+}
+
+// initTokenSource initializes a token source for a given list of scopes.
+//
+// If such token source was already initialized, just returns it and its
+// parent authenticator.
+func (s *Server) initTokenSource(scopes []string) (au scopedAuth, err error) {
+	key := strings.Join(scopes, " ")
+
+	s.authM.Lock()
+	defer s.authM.Unlock()
+
+	if au, ok := s.authPerScope[key]; ok {
+		return au, nil
+	}
+
+	// Use ClientAuth as a base template for options, so users of Server{...} have
+	// ability to customize various aspects of token generation.
+	opts := s.opts.ClientAuth
+	opts.Scopes = scopes
+
+	// Note: we are using the root context here (not request-scoped context passed
+	// to getAccessToken) because the authenticator *outlives* the request (by
+	// being cached), thus it needs a long-living context.
+	ctx := logging.SetField(s.ctx, "activity", "auth")
+	au.authen = clientauth.NewAuthenticator(ctx, clientauth.SilentLogin, opts)
+	au.source, err = au.authen.TokenSource()
+
+	if err != nil {
+		// ErrLoginRequired may happen only when running the server locally using
+		// developer's credentials. Let them know how the problem can be fixed.
+		if !s.opts.Prod && err == clientauth.ErrLoginRequired {
+			if opts.ActAsServiceAccount != "" {
+				// Per clientauth.Options doc, IAM is the scope required to use
+				// ActAsServiceAccount feature.
+				scopes = []string{clientauth.OAuthScopeIAM}
+			}
+			logging.Errorf(s.ctx, "Looks like you run the server locally and it doesn't have credentials for some OAuth scopes")
+			logging.Errorf(s.ctx, "Run the following command to set them up: ")
+			logging.Errorf(s.ctx, "  $ luci-auth login -scopes %q", strings.Join(scopes, " "))
+		}
+		return scopedAuth{}, err
+	}
+
+	s.authPerScope[key] = au
+	return au, nil
 }
 
 // getCloudTraceID extract Trace ID from X-Cloud-Trace-Context header.
