@@ -230,7 +230,7 @@ type ConfigGroup struct {
 	Verifiers *Verifiers `protobuf:"bytes,2,opt,name=verifiers,proto3" json:"verifiers,omitempty"`
 	// EXPERIMENTAL! TODO(tandrii, crbug/966115): add better doc or remove.
 	//
-	// If set, this ConfigGroup will be used if no other ConfigGroup matches"
+	// If set, this ConfigGroup will be used if no other ConfigGroup matches.
 	//
 	// At most 1 config_group can be YES.
 	//
