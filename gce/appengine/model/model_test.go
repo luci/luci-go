@@ -148,10 +148,10 @@ func TestVM(t *testing.T) {
 				Attributes: config.VM{
 					Disk: []*config.Disk{
 						{
-							Image: "image-1",
+							Image: "global/images/image-1",
 						},
 						{
-							Image: "image-2",
+							Image: "projects/project/global/images/image-2",
 						},
 					},
 				},

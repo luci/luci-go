@@ -65,7 +65,9 @@ func TestValidateConfig(t *testing.T) {
 			cfg := &Config{
 				Attributes: &VM{
 					Disk: []*Disk{
-						{},
+						{
+							Image: "global/images/image",
+						},
 					},
 					MachineType: "type",
 					NetworkInterface: []*NetworkInterface{
