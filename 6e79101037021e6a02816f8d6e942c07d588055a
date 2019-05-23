@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9008e2bf_8c89ac88",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-05-23T22:16:27Z",
+      "side": 1,
+      "message": "Good to know. Thanks!",
+      "parentUuid": "e5fcd24d_7270bb3f",
+      "range": {
+        "startLine": 320,
+        "startChar": 73,
+        "endLine": 321,
+        "endChar": 66
+      },
+      "revId": "6e79101037021e6a02816f8d6e942c07d588055a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "320888b6_8b4a4169",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "6e79101037021e6a02816f8d6e942c07d588055a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2be2dc1_bccbb2cc",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-05-23T22:16:27Z",
+      "side": 1,
+      "message": "Thanks. I like to prevent future developer pain whenever possible!",
+      "parentUuid": "320888b6_8b4a4169",
+      "range": {
+        "startLine": 319,
+        "startChar": 0,
+        "endLine": 323,
+        "endChar": 3
+      },
+      "revId": "6e79101037021e6a02816f8d6e942c07d588055a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
