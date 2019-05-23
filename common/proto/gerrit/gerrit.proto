@@ -405,3 +405,72 @@ message ReviewResult {
     // additions were rejected.
     map<string, int32> labels = 1;
 }
+
+enum MergeableStrategy {
+  MERGEABLE_STRATEGY_UNSPECIFIED = 0;
+  RECURSIVE = 1;
+  RESOLVE = 2;
+  SIMPLE_TWO_WAY_IN_CORE = 3;
+  OURS = 4;
+  THEIRS = 5;
+}
+
+message GetMergeableRequest {
+  // The change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // Unique ID for the revision to query.
+  // See
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+  string revision_id = 3;
+
+  // The source to merge from, e.g. a complete or abbreviated commit SHA-1, a
+  // complete reference name, a short reference name under refs/heads,
+  // refs/tags, or refs/remotes namespace, etc.
+  string source = 4;
+
+  // The strategy of the merge.
+  MergeableStrategy strategy = 5;
+}
+
+// Contains information about the mergeability of a change.
+//
+// See
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#mergeable-info
+message MergeableInfo {
+  enum SubmitType {
+    SUBMIT_TYPE_UNSPECIFIED = 0;
+    MERGE_IF_NECESSARY = 1;
+    FAST_FORWARD_ONLY = 2;
+    REBASE_IF_NECESSARY = 3;
+    REBASE_ALWAYS = 4;
+    MERGE_ALWAYS = 5;
+    CHERRY_PICK = 6;
+  }
+  // Submit type used for this change.
+  SubmitType submit_type = 1;
+
+  // The strategy of the merge.
+  MergeableStrategy strategy = 2;
+
+  // true if this change is cleanly mergeable, false otherwise.
+  bool mergeable = 3;
+
+  // true if this change is already merged, false otherwise.
+  bool commit_merged = 4;
+
+  // true if the content of this change is already merged, false otherwise.
+  bool content_merged = 5;
+
+  // A list of paths with conflicts.
+  repeated string conflicts = 6;
+
+  // A list of other branch names where this change could merge cleanly.
+  repeated string mergeable_into = 7;
+}
+
