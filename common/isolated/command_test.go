@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/common/system/environ"
 
@@ -149,6 +150,46 @@ func TestGetCommandEnv(t *testing.T) {
 			}
 
 			So(env.Map(), ShouldResemble, expected)
+		})
+	})
+}
+
+func TestRunCommand(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skipf("TODO(tikuta): support windows")
+	}
+
+	t.Parallel()
+
+	Convey("TestRunCommand", t, func() {
+		ctx := context.Background()
+
+		// TODO(tikuta): do not use external command.
+
+		Convey("normal", func() {
+			exitCode, timeout, err := runCommand(ctx, []string{"sh"}, ".", environ.Env{}, time.Minute, time.Minute)
+
+			So(exitCode, ShouldEqual, 0)
+			So(timeout, ShouldBeFalse)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("timeout", func() {
+			exitCode, timeout, err := runCommand(ctx, []string{"sleep", "3"}, ".", environ.Env{}, 0, time.Minute)
+
+			So(exitCode, ShouldEqual, -1)
+			So(timeout, ShouldBeTrue)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("context timeout", func() {
+			ctx, cancel := context.WithTimeout(ctx, 0)
+			defer cancel()
+			exitCode, timeout, err := runCommand(ctx, []string{"sleep", "3"}, ".", environ.Env{}, time.Minute, time.Minute)
+
+			So(exitCode, ShouldEqual, -1)
+			So(timeout, ShouldBeTrue)
+			So(err, ShouldResemble, context.DeadlineExceeded)
 		})
 	})
 }
