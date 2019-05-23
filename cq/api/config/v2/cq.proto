@@ -73,6 +73,7 @@ enum Toggle {
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
 message ConfigGroup {
+  reserved 3; // allow_cq_depend.
 
   // Enumerates repositories on a Gerrit instance for which CQ should work.
   message Gerrit {
@@ -131,9 +132,6 @@ message ConfigGroup {
   // At least 1 Gerrit instance with repositories to work with is required.
   repeated Gerrit gerrit = 1;
 
-  // EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
-  // Enables support for detecting deps via CQ-Depend: footers.
-  Toggle allow_cq_depend = 3;
   // EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
   // Enables support for attempt spanning >1 CL.
   CombineCLs combine_cls = 4;
