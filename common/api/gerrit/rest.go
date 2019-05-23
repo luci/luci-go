@@ -120,6 +120,38 @@ type revisionInfo struct {
 	Files  map[string]*fileInfo `json:"files"`
 }
 
+type mergeableInfo struct {
+	SubmitType    string   `json:"submit_type"`
+	Strategy      string   `json:"strategy"`
+	Mergeable     bool     `json:"mergeable"`
+	CommitMerged  bool     `json:"commit_merged"`
+	ContentMerged bool     `json:"content_merged"`
+	Conflicts     []string `json:"conflicts"`
+	MergeableInto []string `json:"mergeable_into"'`
+}
+
+func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
+	// Convert something like 'simple-two-way-in-core' to 'SIMPLE_TWO_WAY_IN_CORE'.
+	strategyEnumName := strings.ReplaceAll(strings.ToUpper(mi.Strategy), "-", "_")
+	strategyEnumNum, found := gerritpb.MergeableStrategy_value[strategyEnumName]
+	if !found {
+		return nil, fmt.Errorf("no MergeableStrategy enum value for %q", strategyEnumName)
+	}
+	submitTypeEnumNum, found := gerritpb.MergeableInfo_SubmitType_value[mi.SubmitType]
+	if !found {
+		return nil, fmt.Errorf("no SubmitType enum value for %q", mi.SubmitType)
+	}
+	return &gerritpb.MergeableInfo{
+		SubmitType:    gerritpb.MergeableInfo_SubmitType(submitTypeEnumNum),
+		Strategy:      gerritpb.MergeableStrategy(strategyEnumNum),
+		Mergeable:     mi.Mergeable,
+		CommitMerged:  mi.CommitMerged,
+		ContentMerged: mi.ContentMerged,
+		Conflicts:     mi.Conflicts,
+		MergeableInto: mi.MergeableInto,
+	}, nil
+}
+
 func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 	ret := &gerritpb.ChangeInfo{
 		Number:          ci.Number,
@@ -262,6 +294,16 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 		return nil, errors.Annotate(err, "abandon change").Err()
 	}
 	return resp.ToProto(), nil
+}
+
+func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error) {
+	var resp mergeableInfo
+	path := fmt.Sprintf("/changes/%s/revisions/%s/mergeable", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
+	var data struct{}
+	if _, err := c.call(ctx, "GET", path, url.Values{}, &data, &resp); err != nil {
+		return nil, errors.Annotate(err, "get mergeable").Err()
+	}
+	return resp.ToProto()
 }
 
 // call executes a request to Gerrit REST API with JSON input/output.

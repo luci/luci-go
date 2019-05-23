@@ -226,6 +226,53 @@ func TestRestChangeEditFileContent(t *testing.T) {
 	})
 }
 
+func TestGetMergeable(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("GetMergeable basic", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+        {
+          "submit_type": "CHERRY_PICK",
+          "strategy": "simple-two-way-in-core",
+          "mergeable": true,
+          "commit_merged": false,
+          "content_merged": false,
+          "conflicts": [
+            "conflict1",
+            "conflict2"
+          ],
+          "mergeable_into": [
+            "my_branch_1"
+          ]
+        }`)
+		})
+		defer srv.Close()
+
+		mi, err := c.GetMergeable(ctx, &gerritpb.GetMergeableRequest{
+			Number:     42,
+			Project:    "someproject",
+			RevisionId: "somerevision",
+		})
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/revisions/somerevision/mergeable")
+		So(mi, ShouldResemble, &gerritpb.MergeableInfo{
+			SubmitType:    gerritpb.MergeableInfo_CHERRY_PICK,
+			Strategy:      gerritpb.MergeableStrategy_SIMPLE_TWO_WAY_IN_CORE,
+			Mergeable:     true,
+			CommitMerged:  false,
+			ContentMerged: false,
+			Conflicts:     []string{"conflict1", "conflict2"},
+			MergeableInto: []string{"my_branch_1"},
+		})
+	})
+}
+
 func newMockPbClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, gerritpb.GerritClient) {
 	// TODO(tandrii): rename this func once newMockClient name is no longer used in the same package.
 	srv := httptest.NewServer(http.HandlerFunc(handler))
