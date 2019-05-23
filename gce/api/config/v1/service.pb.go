@@ -13,6 +13,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -414,6 +416,23 @@ type ConfigurationServer interface {
 	Get(context.Context, *GetRequest) (*Config, error)
 	// List returns existing configs.
 	List(context.Context, *ListRequest) (*ListResponse, error)
+}
+
+// UnimplementedConfigurationServer can be embedded to have forward compatible implementations.
+type UnimplementedConfigurationServer struct {
+}
+
+func (*UnimplementedConfigurationServer) Delete(ctx context.Context, req *DeleteRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (*UnimplementedConfigurationServer) Ensure(ctx context.Context, req *EnsureRequest) (*Config, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ensure not implemented")
+}
+func (*UnimplementedConfigurationServer) Get(ctx context.Context, req *GetRequest) (*Config, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (*UnimplementedConfigurationServer) List(ctx context.Context, req *ListRequest) (*ListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 
 func RegisterConfigurationServer(s prpc.Registrar, srv ConfigurationServer) {

@@ -144,7 +144,8 @@ func TestVM(t *testing.T) {
 				vm := &VM{
 					Disk: []*Disk{
 						{
-							Type: "{{.Zone}}/type",
+							Image: "global/images/image",
+							Type:  "{{.Zone}}/type",
 						},
 					},
 					MachineType: "type",

@@ -134,7 +134,7 @@ type VM struct {
 func (vm *VM) IndexAttributes() {
 	vm.AttributesIndexed = make([]string, len(vm.Attributes.Disk))
 	for i, d := range vm.Attributes.Disk {
-		vm.AttributesIndexed[i] = fmt.Sprintf("disk.image:%s", d.Image)
+		vm.AttributesIndexed[i] = fmt.Sprintf("disk.image:%s", d.GetImageBase())
 	}
 }
 
