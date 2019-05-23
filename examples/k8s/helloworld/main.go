@@ -22,10 +22,14 @@ import (
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 func main() {
-	opts := server.Options{}
+	opts := server.Options{
+		ClientAuth: chromeinfra.DefaultAuthOptions(),
+	}
 	opts.Register(flag.CommandLine)
 	flag.Parse()
 
