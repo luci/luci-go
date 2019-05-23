@@ -22,6 +22,30 @@
       "revId": "61dd402023a3bd08ef297f49acfc0fe8b6d34f08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76598938_8d6a0961",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2019-05-23T18:08:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d9293dc_69f61ee3",
+      "range": {
+        "startLine": 136,
+        "startChar": 32,
+        "endLine": 138,
+        "endChar": 96
+      },
+      "revId": "61dd402023a3bd08ef297f49acfc0fe8b6d34f08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
