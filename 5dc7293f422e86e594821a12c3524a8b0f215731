@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4ec0599d_ef135090",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-23T18:10:47Z",
+      "side": 1,
+      "message": "%q\n(just in case)",
+      "range": {
+        "startLine": 138,
+        "startChar": 63,
+        "endLine": 138,
+        "endChar": 64
+      },
+      "revId": "5dc7293f422e86e594821a12c3524a8b0f215731",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b8125cd_143b12c4",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-23T18:10:47Z",
+      "side": 1,
+      "message": "please, the same for this.",
+      "range": {
+        "startLine": 141,
+        "startChar": 49,
+        "endLine": 141,
+        "endChar": 107
+      },
+      "revId": "5dc7293f422e86e594821a12c3524a8b0f215731",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
