@@ -299,8 +299,7 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error) {
 	var resp mergeableInfo
 	path := fmt.Sprintf("/changes/%s/revisions/%s/mergeable", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
-	var data struct{}
-	if _, err := c.call(ctx, "GET", path, url.Values{}, &data, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp); err != nil {
 		return nil, errors.Annotate(err, "get mergeable").Err()
 	}
 	return resp.ToProto()
@@ -317,6 +316,12 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 
 	var rawData []byte
 	if data != nil {
+		if method == "GET" {
+			// This error prevents a more cryptic HTTP error that would otherwise be
+			// returned by Gerrit if you try to call it with a GET request and a request
+			// body.
+			return -1, fmt.Errorf("data cannot be provided for a GET request")
+		}
 		var err error
 		rawData, err = json.Marshal(data)
 		if err != nil {
