@@ -69,6 +69,24 @@
       "revId": "86edfc5bb6f899543098b3f62cb4e13b352c6b50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15573de4_935dcede",
+        "filename": "common/system/exec2/exec_unix.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-24T14:19:35Z",
+      "side": 1,
+      "message": "I mean that it will call exec.Cmd.Start() instead of exec2.Cmd.Start(); this is not a virtual function. So waitCh will not be set properly in this case.\n\nAn option is to do it purely in Wait() instead. I think it\u0027d be fine, something like\n\nc.mu.Lock()\nif c.waitCh \u003d\u003d nil {\n  c.waitCh \u003d make(chan error)\n  go func() {\n    c.waitCh \u003c- c.Cmd.Wait()\n    close(c.waitCh)\n  }()\n}\nc.mu.Unlock()\n(rest...)\n\nthen add to Cmd above:\n  mu sync.Mutext",
+      "parentUuid": "294e45b5_b1928e28",
+      "revId": "86edfc5bb6f899543098b3f62cb4e13b352c6b50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
