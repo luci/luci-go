@@ -222,7 +222,8 @@ func terminateBot(c context.Context, payload proto.Message) error {
 		return errors.Annotate(err, "failed to fetch VM").Err()
 	case vm.Hostname != task.Hostname:
 		// Instance is already destroyed and replaced. Don't terminate the new bot.
-		return errors.Reason("bot %q does not exist", task.Hostname).Err()
+		logging.Debugf(c, "bot %q does not exist", task.Hostname)
+		return nil
 	}
 	logging.Debugf(c, "terminating bot %q: %s", vm.Hostname, vm.Swarming)
 	srv := getSwarming(c, vm.Swarming)

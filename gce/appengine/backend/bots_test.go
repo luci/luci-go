@@ -546,6 +546,23 @@ func TestTerminateBot(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 
+			Convey("replaced", func() {
+				datastore.Put(c, &model.VM{
+					ID:       "id",
+					Hostname: "new",
+				})
+				err := terminateBot(c, &tasks.TerminateBot{
+					Id:       "id",
+					Hostname: "old",
+				})
+				So(err, ShouldBeNil)
+				v := &model.VM{
+					ID: "id",
+				}
+				So(datastore.Get(c, v), ShouldBeNil)
+				So(v.Hostname, ShouldEqual, "new")
+			})
+
 			Convey("error", func() {
 				rt.Handler = func(req interface{}) (int, interface{}) {
 					return http.StatusInternalServerError, nil
@@ -562,7 +579,7 @@ func TestTerminateBot(t *testing.T) {
 				v := &model.VM{
 					ID: "id",
 				}
-				datastore.Get(c, v)
+				So(datastore.Get(c, v), ShouldBeNil)
 				So(v.Hostname, ShouldEqual, "name")
 			})
 

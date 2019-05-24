@@ -313,13 +313,30 @@ func TestDestroyInstance(t *testing.T) {
 		})
 
 		Convey("valid", func() {
-			Convey("deleted", func() {
+			Convey("missing", func() {
 				err := destroyInstance(c, &tasks.DestroyInstance{
 					Id:  "id",
 					Url: "url",
 				})
 				So(err, ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("replaced", func() {
+				datastore.Put(c, &model.VM{
+					ID:  "id",
+					URL: "new",
+				})
+				err := destroyInstance(c, &tasks.DestroyInstance{
+					Id:  "id",
+					Url: "old",
+				})
+				So(err, ShouldBeNil)
+				v := &model.VM{
+					ID: "id",
+				}
+				So(datastore.Get(c, v), ShouldBeNil)
+				So(v.URL, ShouldEqual, "new")
 			})
 
 			Convey("error", func() {
