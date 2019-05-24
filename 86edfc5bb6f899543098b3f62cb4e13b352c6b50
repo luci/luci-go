@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6ee877e6_90632ab3",
+        "filename": "common/system/exec2/exec_unix.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-24T14:06:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6142f509_81d9229a",
+      "revId": "86edfc5bb6f899543098b3f62cb4e13b352c6b50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "915fe6d4_a1c0e813",
         "filename": "common/system/exec2/exec_unix.go",
         "patchSetId": 7
@@ -30,6 +48,24 @@
       "writtenOn": "2019-05-24T13:50:42Z",
       "side": 1,
       "message": "Oh I just realized why it\u0027s a problem, it\u0027s because Run will call Start but not the right one. So in practice embedding doesn\u0027t work out well. Dang.\n\nI started reading os.Process.wait() implementation, then stumbled upon https://github.com/golang/go/issues/25965, did a bit of research and commented there.\n\nI\u0027m still ambivalent about the whole thing.",
+      "revId": "86edfc5bb6f899543098b3f62cb4e13b352c6b50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "294e45b5_b1928e28",
+        "filename": "common/system/exec2/exec_unix.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-24T14:06:23Z",
+      "side": 1,
+      "message": "\u003e Oh I just realized why it\u0027s a problem, it\u0027s because Run will call Start but not the right one. So in practice embedding doesn\u0027t work out well. Dang.\n\u003e \n\nWhat do you mean \"Run will call Start but not the right one.\" ?\nhttps://golang.org/src/os/exec/exec.go?s\u003d9685:9710#L304\n\nIt seems to call cmd.Start ?",
+      "parentUuid": "915fe6d4_a1c0e813",
       "revId": "86edfc5bb6f899543098b3f62cb4e13b352c6b50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
