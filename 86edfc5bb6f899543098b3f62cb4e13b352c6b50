@@ -87,6 +87,24 @@
       "revId": "86edfc5bb6f899543098b3f62cb4e13b352c6b50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "817e2442_50d2862d",
+        "filename": "common/system/exec2/exec_unix.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-24T14:36:08Z",
+      "side": 1,
+      "message": "I got, then I\u0027d like to use sync.Once for that.",
+      "parentUuid": "15573de4_935dcede",
+      "revId": "86edfc5bb6f899543098b3f62cb4e13b352c6b50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
