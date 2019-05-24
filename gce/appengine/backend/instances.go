@@ -219,7 +219,8 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 		return errors.Annotate(err, "failed to fetch VM").Err()
 	case vm.URL != task.Url:
 		// Instance is already destroyed and replaced. Don't destroy the new one.
-		return errors.Reason("instance does not exist: %s", task.Url).Err()
+		logging.Debugf(c, "instance does not exist: %s", task.Url)
+		return nil
 	}
 	logging.Debugf(c, "destroying instance %q", vm.Hostname)
 	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("destroy-%s", vm.Hostname)))
