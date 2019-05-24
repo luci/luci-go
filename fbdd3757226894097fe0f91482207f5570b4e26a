@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef1af640_00b4f9bc",
+        "filename": "lucicfg/graph/keyset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-24T23:28:54Z",
+      "side": 1,
+      "message": "redundant given next line\u0027s condition.",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 20
+      },
+      "revId": "fbdd3757226894097fe0f91482207f5570b4e26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07e4f7e9_625cb1f2",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-24T23:28:54Z",
+      "side": 1,
+      "message": "Their",
+      "range": {
+        "startLine": 169,
+        "startChar": 31,
+        "endLine": 169,
+        "endChar": 35
+      },
+      "revId": "fbdd3757226894097fe0f91482207f5570b4e26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
