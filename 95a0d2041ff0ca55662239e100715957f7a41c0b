@@ -63,6 +63,57 @@
       "revId": "95a0d2041ff0ca55662239e100715957f7a41c0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d81196cf_b9fa272a",
+        "filename": "common/system/exec/exec_unix.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-24T12:42:34Z",
+      "side": 1,
+      "message": "I\u0027d prefer the following signature:\n\nfunc CommandContext(ctx, context.Context, name string, arg ...string) *Cmd",
+      "revId": "95a0d2041ff0ca55662239e100715957f7a41c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e69e3ad0_0b6751ee",
+        "filename": "common/system/exec/exec_unix.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-24T12:42:34Z",
+      "side": 1,
+      "message": "These functions are useful. The ones above, less so.",
+      "revId": "95a0d2041ff0ca55662239e100715957f7a41c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6666ae01_40886dd4",
+        "filename": "common/system/exec/exec_unix.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-24T12:42:34Z",
+      "side": 1,
+      "message": "Oh yeah that\u0027s a good idea, this is so annoying.",
+      "revId": "95a0d2041ff0ca55662239e100715957f7a41c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
