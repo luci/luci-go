@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "be2b4586_2d46cece",
+        "filename": "common/system/exec2/exec2_unix.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-24T15:13:05Z",
+      "side": 1,
+      "message": "style nit: I generally never keep an empty line before a closing bracket.",
+      "revId": "35a6439a46cef86d41dcddc2dd31712738442889",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
