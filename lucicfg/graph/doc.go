@@ -26,16 +26,22 @@
 //
 // Each node:
 //   * Has a unique identifier, called key. A key is a list of
-//     (string kind, string id) pairs. Once constructed, a key is an opaque
-//     label (e.g. there's no way to explore what's inside the key through
-//     Starlark, to keep the API simple). Examples of keys:
+//     (string kind, string id) pairs. Examples of keys:
 //        [luci.bucket("ci")]
 //        [luci.bucket("ci"), luci.builder("infra-builder")]
 //   * Has a props dict of arbitrary properties (all keys are strings, values
 //     are arbitrary).
 //   * Has a captured stack trace of where in Starlark it was defined (for error
 //     messages).
-//   * Is immutable
+//   * Is immutable.
+//
+// Key kinds support special syntax to express special sorts of kinds:
+//   * '_...' kinds are "private". When printing nodes names, (kind, id) pairs
+//     where the kind is private are silently skipped.
+//   * '@...' kinds are "namespace kinds". There may be at most one namespace
+//     kind in a key, and it must come first. When printing node names, the
+//     namespace ID is conveyed by "<id>:" prefix (instead of "<id>/"). If <id>
+//     is empty, the namespace qualifier is completely omitted.
 //
 // Structs exposed by this package are not safe for concurrent use without
 // external locking.

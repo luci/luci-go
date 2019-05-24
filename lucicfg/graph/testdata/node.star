@@ -23,14 +23,22 @@ def test_add_node_ok():
 test_add_node_ok()
 
 
-def test_private_kind():
-  g = new_graph()
-  k = g.key('_skipped', 'skipped', 'kind', 'name')
-  g.add_node(k)
-  g.finalize()
-  assert.eq(str(g.node(k)), 'kind("name")')
+def test_stringification():
+  def key_to_node_str(*pairs):
+    g = new_graph()
+    k = g.key(*pairs)
+    g.add_node(k)
+    g.finalize()
+    return str(g.node(k))
 
-test_private_kind()
+  assert.eq(key_to_node_str('b', 'b1', 'kind', 'name'), 'kind("b1/name")')
+  assert.eq(key_to_node_str('_skip', 'skip', 'kind', 'name'), 'kind("name")')
+  assert.eq(key_to_node_str('@n', 'ns', 'b', 'b1', 'kind', 'name'), 'kind("ns:b1/name")')
+  assert.eq(key_to_node_str('@n', 'ns', '_skip', 'skip', 'kind', 'name'), 'kind("ns:name")')
+  assert.eq(key_to_node_str('@n', '', 'b', 'b1', 'kind', 'name'), 'kind("b1/name")')
+  assert.eq(key_to_node_str('@n', '', '_skip', 'skip', 'kind', 'name'), 'kind("name")')
+
+test_stringification()
 
 
 def test_node_can_be_used_in_sets():

@@ -142,22 +142,42 @@ func (n *Node) listParents() []*Node {
 // String is a part of starlark.Value interface.
 //
 // Returns a node title as derived from the kind of last component of its key
-// and IDs of all key components whose kind doesn't start with '_'. It's not
-// 1-to-1 mapping to the full information in the key, but usually good enough to
-// identify the node in error messages.
+// and IDs of all key components. It's not 1-to-1 mapping to the full info in
+// the key, but usually good enough to identify the node in error messages.
+//
+// Key components with kinds that start with '_' are skipped.
+//
+// If the kind of the first key component starts with '@' and its ID ("<id>") is
+// not empty, the final string will have a form 'kind("<id>:a/b/c")'.
 func (n *Node) String() string {
 	ids := make([]string, 0, 5) // overestimate
+
+	// Traverse the (kind, id) list starting from tail.
 	p := n.Key
+	kind := ""
 	for p != nil {
-		if !strings.HasPrefix(p.Kind(), "_") {
+		if kind = p.Kind(); !strings.HasPrefix(kind, "_") {
 			ids = append(ids, p.ID())
 		}
 		p = p.Container()
 	}
+
+	// Reverse the result to get head-to-tail order.
 	for l, r := 0, len(ids)-1; l < r; l, r = l+1, r-1 {
 		ids[l], ids[r] = ids[r], ids[l]
 	}
-	return fmt.Sprintf("%s(%q)", n.Key.Kind(), strings.Join(ids, "/"))
+
+	// Deal with namespaced keys. Their root container kind (last visited) has
+	// form "@...".
+	pfx := ""
+	if strings.HasPrefix(kind, "@") {
+		if ns := ids[0]; ns != "" {
+			pfx = ns + ":"
+		}
+		ids = ids[1:]
+	}
+
+	return fmt.Sprintf("%s(%q)", n.Key.Kind(), pfx+strings.Join(ids, "/"))
 }
 
 // Type is a part of starlark.Value interface.
