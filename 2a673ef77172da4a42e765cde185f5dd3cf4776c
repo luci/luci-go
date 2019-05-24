@@ -46,6 +46,30 @@
       "revId": "2a673ef77172da4a42e765cde185f5dd3cf4776c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "489fe283_5d781fb6",
+        "filename": "lucicfg/graph/keyset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-24T23:40:36Z",
+      "side": 0,
+      "message": "right, perfect!",
+      "parentUuid": "3031e717_26536c5c",
+      "range": {
+        "startLine": 33,
+        "startChar": 3,
+        "endLine": 33,
+        "endChar": 40
+      },
+      "revId": "2a673ef77172da4a42e765cde185f5dd3cf4776c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
