@@ -30,7 +30,8 @@ type KeySet struct {
 
 // Key returns a *Key given a list of (kind, id) pairs.
 //
-// Assumes strings don't have zero bytes. No other restrictions.
+// There can be at most one kind that starts with '@...' (aka "namespace kind"),
+// and it must come first (if present).
 func (k *KeySet) Key(pairs ...string) (*Key, error) {
 	switch {
 	case len(pairs) == 0:
@@ -42,6 +43,12 @@ func (k *KeySet) Key(pairs ...string) (*Key, error) {
 	for _, s := range pairs {
 		if strings.IndexByte(s, 0) != -1 {
 			return nil, fmt.Errorf("bad key path element %q, has zero byte inside", s)
+		}
+	}
+
+	for i := 2; i < len(pairs); i += 2 {
+		if strings.HasPrefix(pairs[i], "@") {
+			return nil, fmt.Errorf("kind %q can appear only at the start of the key path", pairs[i])
 		}
 	}
 

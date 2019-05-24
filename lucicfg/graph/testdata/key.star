@@ -18,6 +18,13 @@ def test_keys_work():
   d[k1] = '1'
   assert.eq(d[k2], '1')
 
+  # '@' in front is OK.
+  g.key('@t1', 'id')
+  g.key('@t1', 'id', 't2', 'id')
+
+  # '@' in IDs is not syntactically significant.
+  g.key('t1', '@id')
+
 
 def test_keys_attrs():
   g = new_graph()
@@ -41,6 +48,10 @@ def test_keys_fail():
       lambda: g.key('t1', None),
       'all arguments must be strings, arg #1 was NoneType')
   assert.fails(lambda: g.key('t1', 'i1\x00sneaky'), 'has zero byte inside')
+
+  assert.fails(
+      lambda: g.key('t1', 'id', '@t1', 'id'),
+      'kind "@t1" can appear only at the start of the key path')
 
 
 def test_keys_incomparable():
