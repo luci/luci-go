@@ -57,11 +57,23 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.notifier -> luci.notifier_template
 
 
-def _global_key(kind, attr, ref):
+def _namespaced_key(*pairs):
+  """Returns a key namespaced to the current project.
+
+  Args:
+    pairs: key path inside the current project namespace.
+
+  Returns:
+    graph.key.
+  """
+  return graph.key(kinds.LUCI_NS, '', *pairs)
+
+
+def _project_scoped_key(kind, attr, ref):
   """Returns a key either by grabbing it from the keyset or constructing.
 
   Args:
-    kind: kind of the key to return;
+    kind: kind of the key to return.
     attr: field name that supplies 'ref', for error messages.
     ref: either a keyset or a string "<name>".
 
@@ -70,13 +82,11 @@ def _global_key(kind, attr, ref):
   """
   if graph.is_keyset(ref):
     return ref.get(kind)
-  return graph.key(kind, validate.string(attr, ref))
+  return graph.key(kinds.LUCI_NS, '', kind, validate.string(attr, ref))
 
 
 def _bucket_scoped_key(kind, attr, ref):
-  """Returns either a bucket-scoped or a global key of the given kind.
-
-  Bucket-scoped keys have (BUCKET, <name>) as the first component of the key.
+  """Returns either a bucket-scoped or a project-scoped key of the given kind.
 
   Args:
     kind: kind of the key to return.
@@ -90,12 +100,17 @@ def _bucket_scoped_key(kind, attr, ref):
     return ref.get(kind)
   chunks = validate.string(attr, ref).split('/', 1)
   if len(chunks) == 1:
-    return graph.key(kind, chunks[0])
-  return graph.key(kinds.BUCKET, chunks[0], kind, chunks[1])
+    return graph.key(kinds.LUCI_NS, '', kind, chunks[0])
+  return graph.key(kinds.LUCI_NS, '', kinds.BUCKET, chunks[0], kind, chunks[1])
 
 
 # Kinds is a enum-like struct with node kinds of various LUCI config nodes.
 kinds = struct(
+    # This kind is used to namespace nodes from different projects:
+    #   * ("@luci.ns", "", ...) - keys of nodes in the current project.
+    #   * ("@luci.ns", "<name>", ...) - keys of nodes in another project.
+    LUCI_NS = '@luci.ns',
+
     # Publicly declarable nodes.
     PROJECT = 'luci.project',
     LOGDOG = 'luci.logdog',
@@ -127,34 +142,34 @@ kinds = struct(
 # Keys is a collection of key constructors for various LUCI config nodes.
 keys = struct(
     # Publicly declarable nodes.
-    project = lambda: graph.key(kinds.PROJECT, '...'),  # singleton
-    logdog = lambda: graph.key(kinds.LOGDOG, '...'),  # singleton
-    bucket = lambda ref: _global_key(kinds.BUCKET, 'bucket', ref),
-    recipe = lambda ref: _global_key(kinds.RECIPE, 'recipe', ref),
+    project = lambda: _namespaced_key(kinds.PROJECT, '...'),
+    logdog = lambda: _namespaced_key(kinds.LOGDOG, '...'),
+    bucket = lambda ref: _project_scoped_key(kinds.BUCKET, 'bucket', ref),
+    recipe = lambda ref: _project_scoped_key(kinds.RECIPE, 'recipe', ref),
 
     # TODO(vadimsh): Make them accept keysets if necessary. These currently
     # require strings, not keysets. They are currently not directly used by
     # anything, only through 'builder_ref' and 'triggerer' nodes. As such, they
     # are never consumed via keysets.
-    builder = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.BUILDER, name),
-    gitiles_poller = lambda bucket, name: graph.key(kinds.BUCKET, bucket, kinds.GITILES_POLLER, name),
+    builder = lambda bucket, name: _namespaced_key(kinds.BUCKET, bucket, kinds.BUILDER, name),
+    gitiles_poller = lambda bucket, name: _namespaced_key(kinds.BUCKET, bucket, kinds.GITILES_POLLER, name),
 
-    milo = lambda: graph.key(kinds.MILO, '...'),  # singleton
-    list_view = lambda ref: _global_key(kinds.LIST_VIEW, 'list_view', ref),
-    console_view = lambda ref: _global_key(kinds.CONSOLE_VIEW, 'console_view', ref),
+    milo = lambda: _namespaced_key(kinds.MILO, '...'),
+    list_view = lambda ref: _project_scoped_key(kinds.LIST_VIEW, 'list_view', ref),
+    console_view = lambda ref: _project_scoped_key(kinds.CONSOLE_VIEW, 'console_view', ref),
 
-    cq = lambda: graph.key(kinds.CQ, '...'),  # singleton
-    cq_group = lambda ref: _global_key(kinds.CQ_GROUP, 'cq_group', ref),
+    cq = lambda: _namespaced_key(kinds.CQ, '...'),
+    cq_group = lambda ref: _project_scoped_key(kinds.CQ_GROUP, 'cq_group', ref),
 
-    notifier = lambda ref: _global_key(kinds.NOTIFIER, 'notifies', ref),
-    notifier_template = lambda ref: _global_key(kinds.NOTIFIER_TEMPLATE, 'template', ref),
+    notifier = lambda ref: _project_scoped_key(kinds.NOTIFIER, 'notifies', ref),
+    notifier_template = lambda ref: _project_scoped_key(kinds.NOTIFIER_TEMPLATE, 'template', ref),
 
     # Internal nodes (declared internally as dependency of other nodes).
     builder_ref = lambda ref, attr='triggers': _bucket_scoped_key(kinds.BUILDER_REF, attr, ref),
     triggerer = lambda ref, attr='triggered_by': _bucket_scoped_key(kinds.TRIGGERER, attr, ref),
-    milo_entries_root = lambda: graph.key(kinds.MILO_ENTRIES_ROOT, '...'),
-    milo_view = lambda name: graph.key(kinds.MILO_VIEW, name),
-    cq_verifiers_root = lambda: graph.key(kinds.CQ_VERIFIERS_ROOT, '...'),
+    milo_entries_root = lambda: _namespaced_key(kinds.MILO_ENTRIES_ROOT, '...'),
+    milo_view = lambda name: _namespaced_key(kinds.MILO_VIEW, name),
+    cq_verifiers_root = lambda: _namespaced_key(kinds.CQ_VERIFIERS_ROOT, '...'),
 
     # Generates a key of the given kind and name within some auto-generated
     # unique container key.
