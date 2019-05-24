@@ -1,0 +1,68 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4211a51_586d56ce",
+        "filename": "common/system/exec/exec_unix.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-24T12:39:33Z",
+      "side": 1,
+      "message": "I never feel good about aliasing the package name of a package in the standard library. I makes usage of this code really confusing, it\u0027s harder to read the code and understanding it without having to look at which package is imported at the top.\n\nI\u0027m fine with something silly like \"exec2\". In practice then you should use the same semantics as exec.",
+      "revId": "95a0d2041ff0ca55662239e100715957f7a41c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c89e9e92_6b829178",
+        "filename": "common/system/exec/exec_unix.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-24T12:39:33Z",
+      "side": 1,
+      "message": "\u003e \"fileds\" is a possible misspelling of \"fields\".\n\nPlease Fix",
+      "parentUuid": "13d8ac82_514c4aa6",
+      "range": {
+        "startLine": 30,
+        "startChar": 14,
+        "endLine": 30,
+        "endChar": 20
+      },
+      "revId": "95a0d2041ff0ca55662239e100715957f7a41c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f030d0ad_11809094",
+        "filename": "common/system/exec/exec_unix.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-24T12:39:33Z",
+      "side": 1,
+      "message": "I\u0027d prefer it to be Cmd, so:\n\ntype Command struct {\n  *exec.Cmd\n  ...\n}\n\nand then you override only the needed functions.",
+      "range": {
+        "startLine": 31,
+        "startChar": 5,
+        "endLine": 31,
+        "endChar": 9
+      },
+      "revId": "95a0d2041ff0ca55662239e100715957f7a41c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
