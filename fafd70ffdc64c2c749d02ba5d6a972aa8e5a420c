@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6eabe658_5c1522da",
+        "filename": "lucicfg/graph/key.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-25T02:02:45Z",
+      "side": 1,
+      "message": "outermost",
+      "range": {
+        "startLine": 127,
+        "startChar": 40,
+        "endLine": 127,
+        "endChar": 50
+      },
+      "revId": "fafd70ffdc64c2c749d02ba5d6a972aa8e5a420c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
