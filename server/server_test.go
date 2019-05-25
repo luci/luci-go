@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -31,6 +32,14 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gkelogger"
+
+	"go.chromium.org/luci/lucictx"
+
+	clientauth "go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/integration/authtest"
+	"go.chromium.org/luci/auth/integration/localauth"
+
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/settings"
@@ -112,7 +121,7 @@ func TestServer(t *testing.T) {
 			srv.Routes.GET("/secret", router.MiddlewareChain{}, func(c *router.Context) {
 				s, err := secrets.GetSecret(c.Context, "secret_name")
 				if err != nil {
-					c.Writer.WriteHeader(500)
+					http.Error(c.Writer, err.Error(), 500)
 				} else {
 					c.Writer.Write([]byte(s.Current))
 				}
@@ -126,14 +135,54 @@ func TestServer(t *testing.T) {
 			srv.Routes.GET("/settings", router.MiddlewareChain{}, func(c *router.Context) {
 				var val struct{ Val string }
 				if err := settings.Get(c.Context, "settings-key", &val); err != nil {
-					c.Writer.WriteHeader(500)
+					http.Error(c.Writer, err.Error(), 500)
 				} else {
 					c.Writer.Write([]byte(val.Val))
 				}
 			})
 			resp, err := srv.Get("/settings", nil)
 			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, "settings-value")
+			So(resp, ShouldEqual, "settings-value")
+		})
+
+		Convey("Client auth", func() {
+			srv.Routes.GET("/client-auth", router.MiddlewareChain{}, func(c *router.Context) {
+				scopes := strings.Split(c.Request.Header.Get("Ask-Scope"), " ")
+				ts, err := auth.GetTokenSource(c.Context, auth.AsSelf, auth.WithScopes(scopes...))
+				if err != nil {
+					http.Error(c.Writer, err.Error(), 500)
+					return
+				}
+				tok, err := ts.Token()
+				if err != nil {
+					http.Error(c.Writer, err.Error(), 500)
+				} else {
+					c.Writer.Write([]byte(tok.AccessToken))
+				}
+			})
+
+			call := func(scope string) string {
+				resp, err := srv.Get("/client-auth", map[string]string{"Ask-Scope": scope})
+				So(err, ShouldBeNil)
+				// If something is really-really broken, the test can theoretically
+				// pick up *real* LUCI_CONTEXT auth and somehow see real tokens. This
+				// is unlikely (if anything, scopes like "A" are not valid). But if
+				// this happens, make sure not to log such tokens.
+				if !strings.HasPrefix(resp, "fake_token_") {
+					t.Fatalf("Not a fake token! Refusing to log it and exiting.")
+				}
+				return resp
+			}
+
+			So(call("A B"), ShouldEqual, "fake_token_1")
+			So(call("B C"), ShouldEqual, "fake_token_2")
+			So(call("A B"), ShouldEqual, "fake_token_1") // reused the cached token
+
+			// 0-th token is generated during startup in initAuth() to test creds.
+			So(srv.tokens.TokenScopes("fake_token_0"), ShouldResemble, []string{clientauth.OAuthScopeEmail})
+			// Tokens generated via calls above.
+			So(srv.tokens.TokenScopes("fake_token_1"), ShouldResemble, []string{"A", "B"})
+			So(srv.tokens.TokenScopes("fake_token_2"), ShouldResemble, []string{"B", "C"})
 		})
 	})
 }
@@ -151,12 +200,19 @@ func BenchmarkServer(b *testing.B) {
 		logging.Infof(c.Context, "Hello, world")
 		secrets.GetSecret(c.Context, "key-name") // e.g. checking XSRF token
 		settings.Get(c.Context, "settings-key", &val)
+		for i := 0; i < 10; i++ {
+			// E.g. calling bunch of Cloud APIs.
+			ts, _ := auth.GetTokenSource(c.Context, auth.AsSelf, auth.WithScopes("A", "B", "C"))
+			ts.Token()
+		}
 		c.Writer.Write([]byte("Hello, world"))
 	})
 
-	// Don't actually store logs from all many-many iterations of the loop below.
+	// Don't actually store logs and tokens from all many-many iterations of
+	// the loop below.
 	srv.stdout.discard = true
 	srv.stderr.discard = true
+	srv.tokens.KeepRecord = false
 
 	// Launch the server and wait for it to start serving to make sure all guts
 	// are initialized.
@@ -192,6 +248,8 @@ type testServer struct {
 	stdout logsRecorder
 	stderr logsRecorder
 
+	tokens authtest.FakeTokenGenerator
+
 	mainAddr string
 	cleanup  func()
 	serveErr errorEvent
@@ -200,11 +258,29 @@ type testServer struct {
 func newTestServer(ctx context.Context) (srv *testServer, err error) {
 	srv = &testServer{
 		serveErr: errorEvent{signal: make(chan struct{})},
+		tokens: authtest.FakeTokenGenerator{
+			KeepRecord: true,
+		},
 	}
 
-	// Contortions to delete temp files on all possible failures.
+	// Run the server in the fake LUCI_CONTEXT auth context, so almost all auth
+	// code paths are exercised, but we still use fake tokens.
+	authSrv := localauth.Server{
+		TokenGenerators: map[string]localauth.TokenGenerator{
+			"authtest": &srv.tokens,
+		},
+		DefaultAccountID: "authtest",
+	}
+	la, err := authSrv.Start(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ctx = lucictx.SetLocalAuth(ctx, la)
+
+	// Contortions to cleanup on all possible failures.
 	var cleanup []*os.File
 	doCleanup := func() {
+		authSrv.Stop(ctx)
 		for _, f := range cleanup {
 			os.Remove(f.Name())
 		}
@@ -239,6 +315,7 @@ func newTestServer(ctx context.Context) (srv *testServer, err error) {
 		AdminAddr:      "admin_addr",
 		RootSecretPath: tmpSecret.Name(),
 		SettingsPath:   tmpSettings.Name(),
+		ClientAuth:     clientauth.Options{Method: clientauth.LUCIContextMethod},
 
 		testCtx:    ctx,
 		testSeed:   1,
