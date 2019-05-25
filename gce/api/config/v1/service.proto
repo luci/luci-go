@@ -34,6 +34,9 @@ message ListRequest {
   // The value of next_page_token received in a ListResponse. Used to get the
   // next page of configs. If empty, gets the first page.
   string page_token = 1;
+
+  // The maximum number of results to include in the response.
+  int32 page_size = 2;
 }
 
 // A response to a request to list configs.
