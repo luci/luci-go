@@ -68,6 +68,15 @@ func (k *Key) Kind() string {
 	return k.pairs[len(k.pairs)-2]
 }
 
+// Root returns a key with the first (kind, id) pair of this key.
+func (k *Key) Root() *Key {
+	r, err := k.set.Key(k.pairs[:2]...)
+	if err != nil {
+		panic(err) // 'k' has been validated, all its components are thus also valid
+	}
+	return r
+}
+
 // Less returns true if this key is lexicographically before another key.
 func (k *Key) Less(an *Key) bool {
 	return k.cmp < an.cmp
@@ -115,6 +124,7 @@ func (k *Key) AttrNames() []string {
 		"container", // graph.key(...) of the owning container or None
 		"id",        // key ID string
 		"kind",      // key Kind string
+		"root",      // graph.key(...) of the outermost owning container (or self)
 	}
 }
 
@@ -130,6 +140,8 @@ func (k *Key) Attr(name string) (starlark.Value, error) {
 		return starlark.String(k.ID()), nil
 	case "kind":
 		return starlark.String(k.Kind()), nil
+	case "root":
+		return k.Root(), nil
 	default:
 		return nil, nil // per Attr(...) contract
 	}
