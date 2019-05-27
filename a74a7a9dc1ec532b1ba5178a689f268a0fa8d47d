@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cf9d87d3_b125a5e9",
+        "filename": "starlark/builtins/stacktrace.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-05-27T12:53:05Z",
+      "side": 1,
+      "message": "I was expecting th.CallStack()[skip:] ?\n\nThe documentation at https://godoc.org/go.starlark.net/starlark#Thread.CallStack doesn\u0027t even tell which order the call stack is in.",
+      "revId": "a74a7a9dc1ec532b1ba5178a689f268a0fa8d47d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
