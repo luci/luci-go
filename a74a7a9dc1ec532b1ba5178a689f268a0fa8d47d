@@ -16,6 +16,24 @@
       "revId": "a74a7a9dc1ec532b1ba5178a689f268a0fa8d47d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d9cb654_c43bf2da",
+        "filename": "starlark/builtins/stacktrace.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-05-27T13:15:21Z",
+      "side": 1,
+      "message": "Innermost frames is at the last of CallStack().\nThat seems natural for me by considering how the stack is made.\nhttps://github.com/google/starlark-go/blob/47ec06841dbebd22858703426bb09ee7e1b42f73/starlark/eval.go#L1018\n\nAnd skip is used to skip some innermost frames.",
+      "parentUuid": "cf9d87d3_b125a5e9",
+      "revId": "a74a7a9dc1ec532b1ba5178a689f268a0fa8d47d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
