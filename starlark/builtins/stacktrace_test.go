@@ -92,9 +92,7 @@ out = str(func1())
 		So(err, ShouldErrLike, "stacktrace: bad 'skip' value -1")
 	})
 
-	// TODO(tikuta): Use Convey after importing
-	// https://github.com/google/starlark-go/commit/daf30b69ce81217a37e152ea3cd2144d83dadacf
-	SkipConvey("Fails on wrong type", t, func() {
+	Convey("Fails on wrong type", t, func() {
 		_, err := runScript(`stacktrace('zzz')`)
 		So(err, ShouldErrLike, "stacktrace: for parameter skip: got string, want int")
 	})
