@@ -139,7 +139,7 @@ const (
 	// some load(...) statement.
 	ThreadLoading
 
-	// ThreadLoading indicates a thread that is evaluating a module referred to by
+	// ThreadExecing indicates a thread that is evaluating a module referred to by
 	// some exec(...) statement.
 	ThreadExecing
 )
