@@ -85,7 +85,7 @@ func ShouldContainErr(actual interface{}, expected ...interface{}) string {
 //   So(err, ShouldErrLike, "EOF")       // `err.Error()` ShouldContainSubstring "EOF"
 //   So(nilErr, ShouldErrLike)           // nilErr ShouldBeNil
 //   So(nilErr, ShouldErrLike, nil)      // nilErr ShouldBeNil
-//   So(nonNilErr, ShouldErrLike, "foo") // nonNilErr ShouldNotBeNil
+//   So(nonNilErr, ShouldErrLike, "")    // nonNilErr ShouldNotBeNil
 func ShouldErrLike(actual interface{}, expected ...interface{}) string {
 	if len(expected) == 0 {
 		return assertions.ShouldBeNil(actual)
