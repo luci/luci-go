@@ -47,9 +47,13 @@ assert.fails(to_jsonpb_too_many_args, 'to_jsonpb: got 3 arguments, want at most 
 # None argument.
 def to_jsonpb_with_none():
   proto.to_jsonpb(None)
-assert.fails(to_jsonpb_with_none, 'for parameter 1: got NoneType, want proto.Message')
+# TODO(tikuta): comment in after importing
+# https://github.com/google/starlark-go/commit/daf30b69ce81217a37e152ea3cd2144d83dadacf
+# assert.fails(to_jsonpb_with_none, 'to_jsonpb: for parameter msg: got NoneType, want proto.Message')
 
 # Wrongly typed argument.
 def to_jsonpb_with_int():
   proto.to_jsonpb(1)
-assert.fails(to_jsonpb_with_int, 'for parameter 1: got int, want proto.Message')
+# TODO(tikuta): comment in after importing
+# https://github.com/google/starlark-go/commit/daf30b69ce81217a37e152ea3cd2144d83dadacf
+# assert.fails(to_jsonpb_with_int, 'to_jsonpb: for parameter msg: got int, want proto.Message')
