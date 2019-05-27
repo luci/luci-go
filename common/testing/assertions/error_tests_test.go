@@ -89,6 +89,7 @@ func TestShouldErrLike(t *testing.T) {
 		})
 		Convey("nil actual", func() {
 			So(ShouldErrLike(nil, "wut"), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
+			So(ShouldErrLike(nil, ""), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
 		})
 		Convey("not an err", func() {
 			So(ShouldErrLike(100, "wut"), ShouldContainSubstring, "Expected: 'error interface support'")
@@ -96,6 +97,8 @@ func TestShouldErrLike(t *testing.T) {
 		Convey("string actual", func() {
 			So(ShouldErrLike(e, "is for error"), ShouldEqual, "")
 			So(ShouldErrLike(ce, "customError"), ShouldEqual, "")
+			So(ShouldErrLike(e, ""), ShouldEqual, "")
+			So(ShouldErrLike(ce, ""), ShouldEqual, "")
 		})
 		Convey("error actual", func() {
 			So(ShouldErrLike(e, e), ShouldEqual, "")
