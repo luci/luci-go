@@ -25,4 +25,16 @@ message Input {
   // If false, CQ would try to submit CL(s) if all other checks pass.
   // If true, CQ won't try to submit.
   bool dry_run = 2;
+
+  // If true, CQ will not take this build into account while deciding whether CL
+  // is good or not. See also `experiment_percentage` of CQ's config file.
+  bool experimental = 3;
+  // If true, CQ triggered this build directly, otherwise typically indicates
+  // a child build triggered by a CQ triggered one (possibly indirectly).
+  //
+  // Can be spoofed. *DO NOT USE FOR SECURITY CHECKS.*
+  //
+  // One possible use is to distinguish which builds must be cancelled manually,
+  // and which (top_level=True) CQ would cancel itself.
+  bool top_level = 4;
 }
