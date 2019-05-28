@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package swarming;
+package swarming.config;
 
 option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
 
@@ -370,6 +370,8 @@ message ExternalSchedulerConfig {
   //
   // Note of care: if this list is empty, that means all requests in the pool
   // are eligible to be forwarded to it.
+  //
+  // Note: To be deprecated, in favor of: any_dimensions and all_dimensions.
   repeated string dimensions = 3;
 
   // If not enabled, this external scheduler config will be ignored. This
@@ -377,6 +379,31 @@ message ExternalSchedulerConfig {
   // with empty dimentions list would cause all requests to be routed to
   // that config).
   bool enabled = 4;
+
+  bool fallback_when_empty = 5 [deprecated=true];
+
+  // A task or bot must have all of these dimensions in order to match this
+  // dimension set.
+  //
+  // Note: Support not yet implemented.
+  repeated string all_dimensions = 6;
+
+  // If any_dimensions is defined, a task or bot must have any of these
+  // dimensions in order to match this dimension set.
+  //
+  // Note: Support not yet implemented.
+  repeated string any_dimensions = 7;
+
+  // If true, allows the swarming native scheduler to reap tasks that would
+  // otherwise be owned by this external scheduler, if the external scheduler
+  // returns no results.
+  //
+  // This field should be enabled temporarily when first turning on a new
+  // external scheduler config, to allow tasks that existing prior to that time
+  // to still have a chance to run. After prior tasks have aged out of the
+  // system, this flag should be disabled, to get stricter consistency between
+  // swarming's state and external scheduler's state.
+  bool allow_es_fallback = 8;
 }
 
 message ExternalServices {
