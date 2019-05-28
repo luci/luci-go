@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "82e01088_326b1f68",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-28T18:21:31Z",
+      "side": 1,
+      "message": "Yeah, I also think so, but I just CANT STOP MYSELF 🤯🤪 (removed this passage for now, I don\u0027t actually have a crystal ball to predict the future).\n(In all seriousness, I\u0027m aware of the complexity, and try to keep it under the cover. I tried to make a flexible reusable base and probable overdone it a bit...)",
+      "parentUuid": "e0069cf1_df762ade",
+      "range": {
+        "startLine": 308,
+        "startChar": 2,
+        "endLine": 309,
+        "endChar": 8
+      },
+      "revId": "7d0cb883f6184c27ae075297129f7df1b177cdea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ead89ea_87980c89",
         "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "59ae22cb_4076a3ea",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 492,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-28T18:21:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ead89ea_87980c89",
+      "range": {
+        "startLine": 492,
+        "startChar": 35,
+        "endLine": 492,
+        "endChar": 43
+      },
+      "revId": "7d0cb883f6184c27ae075297129f7df1b177cdea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8044c0c7_328818c7",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "7d0cb883f6184c27ae075297129f7df1b177cdea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8975e542_99cb72aa",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-28T18:21:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8044c0c7_328818c7",
+      "range": {
+        "startLine": 105,
+        "startChar": 49,
+        "endLine": 105,
+        "endChar": 51
+      },
+      "revId": "7d0cb883f6184c27ae075297129f7df1b177cdea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
