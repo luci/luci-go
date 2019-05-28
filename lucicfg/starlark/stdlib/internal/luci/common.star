@@ -85,23 +85,47 @@ def _project_scoped_key(kind, attr, ref):
   return graph.key(kinds.LUCI_NS, '', kind, validate.string(attr, ref))
 
 
-def _bucket_scoped_key(kind, attr, ref):
+def _bucket_scoped_key(kind, attr, ref, allow_external=False):
   """Returns either a bucket-scoped or a project-scoped key of the given kind.
 
   Args:
     kind: kind of the key to return.
     attr: field name that supplies 'ref', for error messages.
-    ref: either a keyset, a string "<bucket>/<name>" or just "<name>".
+    ref: either a keyset, a string "<bucket>/<name>" or just "<name>". If it is
+        a string, it may optionally be prefixed with "<project>:" prefix to
+        indicate that this is a reference to a node in another project.
+    allow_external: True if it is OK to return a key from another project.
 
   Returns:
     graph.key of the requested kind.
   """
   if graph.is_keyset(ref):
-    return ref.get(kind)
-  chunks = validate.string(attr, ref).split('/', 1)
+    key = ref.get(kind)
+    if key.root.kind != kinds.LUCI_NS:
+      fail('unexpected key %s' % key)
+    if key.root.id and not allow_external:
+      fail('reference to %s in external project %r is not allowed here' % (kind, key.root.id))
+    return key
+
+  chunks = validate.string(attr, ref).split(':', 1)
+  if len(chunks) == 2:
+    proj, ref = chunks[0], chunks[1]
+    if proj and not allow_external:
+      fail('reference to %s in external project %r is not allowed here' % (kind, proj))
+  else:
+    proj, ref = '', chunks[0]
+
+  chunks = ref.split('/', 1)
   if len(chunks) == 1:
-    return graph.key(kinds.LUCI_NS, '', kind, chunks[0])
-  return graph.key(kinds.LUCI_NS, '', kinds.BUCKET, chunks[0], kind, chunks[1])
+    return graph.key(kinds.LUCI_NS, proj, kind, chunks[0])
+  return graph.key(kinds.LUCI_NS, proj, kinds.BUCKET, chunks[0], kind, chunks[1])
+
+
+def _builder_ref_key(ref, attr='triggers', allow_external=False):
+  """Returns luci.builder_ref key, auto-instantiating external nodes."""
+  if allow_external:
+    _maybe_add_external_builder(ref)
+  return _bucket_scoped_key(kinds.BUILDER_REF, attr, ref, allow_external=allow_external)
 
 
 # Kinds is a enum-like struct with node kinds of various LUCI config nodes.
@@ -165,7 +189,7 @@ keys = struct(
     notifier_template = lambda ref: _project_scoped_key(kinds.NOTIFIER_TEMPLATE, 'template', ref),
 
     # Internal nodes (declared internally as dependency of other nodes).
-    builder_ref = lambda ref, attr='triggers': _bucket_scoped_key(kinds.BUILDER_REF, attr, ref),
+    builder_ref = _builder_ref_key,
     triggerer = lambda ref, attr='triggered_by': _bucket_scoped_key(kinds.TRIGGERER, attr, ref),
     milo_entries_root = lambda: _namespaced_key(kinds.MILO_ENTRIES_ROOT, '...'),
     milo_view = lambda name: _namespaced_key(kinds.MILO_VIEW, name),
@@ -219,7 +243,7 @@ def _builder_ref_add(target):
   graph.add_node(short, idempotent=True)  # there may be such node already
   graph.add_edge(short, target)
 
-  full = keys.builder_ref("%s/%s" % (bucket, builder))
+  full = keys.builder_ref('%s/%s' % (bucket, builder))
   graph.add_node(full)
   graph.add_edge(full, target)
 
@@ -271,6 +295,47 @@ builder_ref = struct(
 
 
 ################################################################################
+## Rudimentary hacky support for externally-defined builders.
+
+
+def _maybe_add_external_builder(ref):
+  """If 'ref' points to an external builder, defines corresponding nodes.
+
+  Kicks in if 'ref' is a string that has form "<project>:<bucket>/<name>".
+  Declares necessary luci.builder(...) and luci.builder_ref(...) nodes
+  namespaced to the corresponding external project.
+  """
+  if type(ref) != 'string' or ':' not in ref:
+    return
+  proj, rest = ref.split(':', 1)
+  if '/' not in rest:
+    return
+  bucket, name = rest.split('/', 1)
+
+  # TODO(vadimsh): This is very tightly coupled to the implementation of
+  # luci.builder(...) rule. It basically sets up same structure of nodes,
+  # except it doesn't fully populate luci.builder props (because we don't know
+  # them), and doesn't link the builder node to the project root (because we
+  # don't want to generate cr-buildbucket.cfg entry for it).
+
+  builder = graph.key(kinds.LUCI_NS, proj, kinds.BUCKET, bucket, kinds.BUILDER, name)
+  graph.add_node(builder, idempotent = True, props = {
+      'name': name,
+      'bucket': bucket,
+      'project': proj,
+  })
+
+  # This is roughly what _builder_ref_add does, except namespaced to 'proj'.
+  refs = [
+      graph.key(kinds.LUCI_NS, proj, kinds.BUILDER_REF, name),
+      graph.key(kinds.LUCI_NS, proj, kinds.BUCKET, bucket, kinds.BUILDER_REF, name),
+  ]
+  for ref in refs:
+    graph.add_node(ref, idempotent=True)
+    graph.add_edge(ref, builder)
+
+
+################################################################################
 ## triggerer implementation.
 
 
@@ -317,7 +382,7 @@ def _triggerer_add(owner, idempotent=False):
   graph.add_node(short, idempotent=True)
   graph.add_edge(owner, short)
 
-  full = keys.triggerer("%s/%s" % (bucket, name))
+  full = keys.triggerer('%s/%s' % (bucket, name))
   graph.add_node(full, idempotent=idempotent)
   graph.add_edge(owner, full)
 
@@ -373,7 +438,6 @@ triggerer = struct(
 )
 
 
-
 ################################################################################
 ## Helpers for defining milo views (lists or consoles).
 
@@ -420,7 +484,8 @@ def _view_add_view(key, entry_kind, entry_ctor, entries, props):
 def _view_add_entry(kind, view, builder, buildbot, props=None):
   """Adds *_view_entry node.
 
-  Common implementation for list_view_node and console_view_node.
+  Common implementation for list_view_node and console_view_node. Allows
+  referring to builders defined in other projects.
 
   Args:
     kind: a kind of the node to add (e.g. LIST_VIEW_ENTRY).
@@ -433,7 +498,7 @@ def _view_add_entry(kind, view, builder, buildbot, props=None):
     A keyset with the added key.
   """
   if builder != None:
-    builder = keys.builder_ref(builder, attr='builder')
+    builder = keys.builder_ref(builder, attr='builder', allow_external=True)
   buildbot = validate.string('buildbot', buildbot, required=False)
 
   if builder == None and buildbot == None:

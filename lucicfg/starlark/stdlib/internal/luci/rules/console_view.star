@@ -102,6 +102,10 @@ def _console_view(
           category = 'ci',
       )
 
+  Note that consoles support builders defined in other projects. See
+  [Referring to builders in other projects](#external_builders) for more
+  details.
+
   #### Console headers
 
   Consoles can have headers which are collections of links, oncall rotation

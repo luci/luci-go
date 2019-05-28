@@ -55,6 +55,7 @@
 {{ $acl_entry_ref := LinkifySymbols "acl.entry(...)" }}
 {{ $bucket_ref := LinkifySymbols "luci.bucket(...)" }}
 {{ $builder_ref := LinkifySymbols "luci.builder(...)" }}
+{{ $console_view_ref := LinkifySymbols "luci.console_view(...)" }}
 {{ $console_view_entry_ref := LinkifySymbols "luci.console_view_entry(...)" }}
 {{ $cq_group_ref := LinkifySymbols "luci.cq_group(...)" }}
 {{ $exec_ref := LinkifySymbols "exec(...)" }}
@@ -388,6 +389,33 @@ names everywhere is a chore. For that reason `lucicfg` allows to omit the bucket
 name if the resulting reference is non-ambiguous. In the example above, if we
 remove one of the builders, `builder = 'Linux'` reference becomes valid.
 
+
+### Referring to builders in other projects {#external_builders}
+
+*** note
+**Experimental.** This feature is not yet supported in all contexts. If you want
+to refer to an external builder in some rule, check the rule's documentation
+to verify it supports such usage. If the documentation doesn't mention external
+builders support, then the rule doesn't support it.
+***
+
+Some LUCI Services allow one project to refer to resources in another project.
+For example, a {{$console_view_ref}} can display builders that belong to another
+LUCI project, side-by-side with the builders from the project the console
+belongs to.
+
+Such external builders can be referred to via their fully qualified name in
+the format `<project>:<bucket>/<name>`. Note that `<bucket>` part can't be
+omitted.
+
+For example:
+
+```python
+luci.console_view_entry(
+    builder = 'chromium:ci/Linux Builder',
+    ...
+)
+```
 
 ### Defining cron schedules {#schedules_doc}
 
