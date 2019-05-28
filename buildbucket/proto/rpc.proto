@@ -354,7 +354,8 @@ message BuildPredicate {
   // Otherwise it may be experimental or non-experimental.
   bool include_experimental = 8;
 
-  // A build must be in this build range.
+  // A build must be in this build range. BuildRange and TimeRange
+  // are mutually exclusive and cannot be specified together.
   // A pair of SearchBuildsRequest.predicate.build.end_build_id and
   // SearchBuildsRequest.page_size=1 can be used to find the previous build.
   BuildRange build = 9;
