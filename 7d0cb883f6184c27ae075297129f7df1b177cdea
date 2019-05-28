@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e0069cf1_df762ade",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-28T06:23:15Z",
+      "side": 1,
+      "message": "tbVERYh, I think this looks over-engineering to me, until we are able to converge our gazillion of repos into 1 or 2.",
+      "range": {
+        "startLine": 308,
+        "startChar": 2,
+        "endLine": 309,
+        "endChar": 8
+      },
+      "revId": "7d0cb883f6184c27ae075297129f7df1b177cdea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ead89ea_87980c89",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 492,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-28T06:23:15Z",
+      "side": 1,
+      "message": "other (another implies \"an\"). Same for readme.",
+      "range": {
+        "startLine": 492,
+        "startChar": 35,
+        "endLine": 492,
+        "endChar": 43
+      },
+      "revId": "7d0cb883f6184c27ae075297129f7df1b177cdea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8044c0c7_328818c7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/console_view.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-28T06:23:15Z",
+      "side": 1,
+      "message": "and here :)",
+      "range": {
+        "startLine": 105,
+        "startChar": 49,
+        "endLine": 105,
+        "endChar": 51
+      },
+      "revId": "7d0cb883f6184c27ae075297129f7df1b177cdea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

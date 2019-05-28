@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4ab8a26_8c9526ad",
+        "filename": "lucicfg/doc/templates/README.mdt",
+        "patchSetId": 1
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-28T06:23:15Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 399,
+        "startChar": 31,
+        "endLine": 399,
+        "endChar": 32
+      },
+      "revId": "0d21a86d14fa54978db58c664d846a9d4374369c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
