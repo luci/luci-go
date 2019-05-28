@@ -22,6 +22,30 @@
       "revId": "0f06c35c9d2950e4cfd470e22c48773227ce88e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a052a4fc_6ab36835",
+        "filename": "cq/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-28T19:16:56Z",
+      "side": 1,
+      "message": ":) Added an example of build cancelation.",
+      "parentUuid": "3d55625f_aeb2f4df",
+      "range": {
+        "startLine": 35,
+        "startChar": 21,
+        "endLine": 35,
+        "endChar": 54
+      },
+      "revId": "0f06c35c9d2950e4cfd470e22c48773227ce88e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
