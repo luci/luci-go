@@ -18,9 +18,6 @@ load('@stdlib//internal/validate.star', 'validate')
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
 
 
-# TODO(vadimsh): Support builders from different projects.
-
-
 def _console_view_entry(
       ctx,
       builder=None,
@@ -59,9 +56,11 @@ def _console_view_entry(
         luci.console_view_entry(console_view = 'CI builders', builder = name)
 
   Args:
-    builder: a builder to add, see luci.builder(...). Can be omitted for **extra
-        deprecated** case of Buildbot-only views. `buildbot` field must be set
-        in this case.
+    builder: a builder to add, see luci.builder(...). Can also be a reference
+        to a builder defined in another project. See [Referring to builders in
+        other projects](#external_builders) for more details. Can be omitted
+        for **extra deprecated** case of Buildbot-only views. `buildbot` field
+        must be set in this case.
     short_name: a shorter name of the builder. The recommendation is to keep
         this name as short as reasonable, as longer names take up more
         horizontal space.

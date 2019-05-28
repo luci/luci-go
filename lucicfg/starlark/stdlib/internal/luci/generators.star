@@ -656,7 +656,10 @@ def _milo_builder_pb(entry, view, project_name, seen):
   seen[builder.key] = entry
 
   builder_pb.name.append('buildbucket/%s/%s' % (
-      lagacy_bucket_name(builder.props.bucket, project_name),
+      lagacy_bucket_name(
+          builder.props.bucket,
+          builder.props.project or project_name,
+      ),
       builder.props.name,
   ))
   return builder_pb

@@ -199,6 +199,7 @@ def _builder(
   props = {
       'name': name,
       'bucket': bucket_key.id,
+      'project': '',  # means "whatever is being defined right now"
       'properties': validate.str_dict('properties', properties),
       'service_account': validate.string('service_account', service_account, required=False),
       'caches': swarming.validate_caches('caches', caches),

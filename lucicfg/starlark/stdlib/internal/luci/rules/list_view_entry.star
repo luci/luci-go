@@ -42,9 +42,11 @@ def _list_view_entry(ctx, builder=None, *, list_view=None, buildbot=None):
       )
 
   Args:
-    builder: a builder to add, see luci.builder(...). Can be omitted for **extra
-        deprecated** case of Buildbot-only views. `buildbot` field must be set
-        in this case.
+    builder: a builder to add, see luci.builder(...). Can also be a reference
+        to a builder defined in another project. See [Referring to builders in
+        other projects](#external_builders) for more details. Can be omitted
+        for **extra deprecated** case of Buildbot-only views. `buildbot` field
+        must be set in this case.
     list_view: a list view to add the builder to. Can be omitted if
         `list_view_entry` is used inline inside some luci.list_view(...)
         declaration.

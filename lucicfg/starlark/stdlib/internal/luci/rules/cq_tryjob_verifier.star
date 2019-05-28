@@ -19,6 +19,10 @@ load('@stdlib//internal/validate.star', 'validate')
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
 
 
+# TODO(vadimsh): Replace 'external/<project>/...' with mechanism used by
+# console views: builder_ref(..., allow_external=True).
+
+
 def _cq_tryjob_verifier(
       ctx,
       builder=None,
