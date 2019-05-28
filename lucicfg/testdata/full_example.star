@@ -360,9 +360,9 @@ luci.cq_group(
         # An alias for luci.cq_tryjob_verifier(**{...}).
         {'builder': 'try/generically named builder', 'disable_reuse': True},
         # An alias for luci.cq_tryjob_verifier(<builder>).
-        'external/*/master.buildbot/tester',
+        '*:master.buildbot/tester',
         luci.cq_tryjob_verifier(
-            builder = 'external/another-project/try/zzz',
+            builder = 'another-project:try/zzz',
             owner_whitelist = ['another-project-committers'],
         ),
     ],

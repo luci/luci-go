@@ -19,10 +19,6 @@ load('@stdlib//internal/validate.star', 'validate')
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
 
 
-# TODO(vadimsh): Replace 'external/<project>/...' with mechanism used by
-# console views: builder_ref(..., allow_external=True).
-
-
 def _cq_tryjob_verifier(
       ctx,
       builder=None,
@@ -140,13 +136,10 @@ def _cq_tryjob_verifier(
 
   Args:
     builder: a builder to launch when verifying a CL, see luci.builder(...).
-        As an **experimental** and **unstable** extension, can also be a string
-        that starts with `external/`. It indicates that this builder is defined
-        elsewhere, and its name should be passed to the CQ as is. In particular,
-        to reference a builder in another LUCI project, use
-        `external/<project>/<bucket>/<builder>` (e.g. `external/other/try/tester`).
-        To reference a Buildbot builder use `external/*/<master>/<builder>`,
-        e.g. `external/*/master.tryserver.chromium.android/android_tester`.
+        Can also be a reference to a builder defined in another project. See
+        [Referring to builders in other projects](#external_builders) for more
+        details. For **deprecated case** of referring to a Buildbot builder,
+        use `*:<master>/<builder>`, e.g. `*:master.tryserver.chromium/android`.
         Required.
     cq_group: a CQ group to add the verifier to. Can be omitted if
         `cq_tryjob_verifier` is used inline inside some luci.cq_group(...)
@@ -174,14 +167,7 @@ def _cq_tryjob_verifier(
     equivalent_builder: an optional alternative builder for the CQ to choose
         instead. If provided, the CQ will choose only one of the equivalent
         builders as required based purely on the given CL and CL's owner and
-        **regardless** of the possibly already completed try jobs. As an
-        **experimental** and **unstable** extension, can also be a string that
-        starts with `external/`. It indicates that this builder is defined
-        elsewhere, and its name should be passed to the CQ as is. In particular,
-        to reference a builder in another LUCI project, use
-        `external/<project>/<bucket>/<builder>` (e.g. 'external/other/try/tester').
-        To reference a Buildbot builder use `external/*/<master>/<builder>`,
-        e.g. `external/*/master.tryserver.chromium.android/android_tester`.
+        **regardless** of the possibly already completed try jobs.
     equivalent_builder_percentage: a percentage expressing probability of the CQ
         triggering `equivalent_builder` instead of `builder`. A choice itself is
         made deterministically based on CL alone, hereby all CQ attempts on all
@@ -197,8 +183,7 @@ def _cq_tryjob_verifier(
         someone from this group have a chance to be verified by the equivalent
         builder. All other CLs are verified via the main builder.
   """
-  # Either one of 'external' or 'builder' will be set, but never both.
-  external, builder = _parse_builder_name('builder', builder)
+  builder = keys.builder_ref(builder, attr='builder', allow_external=True)
 
   location_regexp = validate.list('location_regexp', location_regexp)
   for r in location_regexp:
@@ -216,9 +201,10 @@ def _cq_tryjob_verifier(
     validate.string('owner_whitelist', o)
 
   # 'equivalent_builder' has same format as 'builder', except it is optional.
-  equiv_ext, equiv_builder = None, None
   if equivalent_builder:
-    equiv_ext, equiv_builder = _parse_builder_name('equivalent_builder', equivalent_builder)
+    equivalent_builder = keys.builder_ref(
+        equivalent_builder, attr='equivalent_builder', allow_external=True)
+
   equivalent_builder_percentage = validate.float(
       'equivalent_builder_percentage',
       equivalent_builder_percentage,
@@ -241,9 +227,8 @@ def _cq_tryjob_verifier(
   # Note: name of this node is important only for error messages. It isn't
   # showing up in any generated files and by construction it can't accidentally
   # collide with some other name.
-  key = keys.unique(kinds.CQ_TRYJOB_VERIFIER, builder.id if builder else external)
+  key = keys.unique(kinds.CQ_TRYJOB_VERIFIER, builder.id)
   graph.add_node(key, props = {
-      'external': external,
       'disable_reuse': validate.bool('disable_reuse', disable_reuse, required=False),
       'experiment_percentage': validate.float(
           'experiment_percentage',
@@ -258,28 +243,25 @@ def _cq_tryjob_verifier(
   })
   if cq_group:
     graph.add_edge(parent=keys.cq_group(cq_group), child=key)
-  if builder:
-    graph.add_edge(parent=key, child=builder)
+  graph.add_edge(parent=key, child=builder)
 
   # Need to setup a node to represent 'equivalent_builder' so that lucicfg can
   # verify (via the graph integrity check) that such builder was actually
   # defined somewhere. Note that we can't add 'equivalent_builder' as another
   # child of 'cq_tryjob_verifier' node, since then it would be ambiguous which
   # child builder_ref node is the "main one" and which is the equivalent.
-  if equiv_ext or equiv_builder:
+  if equivalent_builder:
     # Note: this key is totally invisible.
     eq_key = keys.unique(
         kind = kinds.CQ_EQUIVALENT_BUILDER,
-        name = equiv_builder.id if equiv_builder else equiv_ext,
+        name = equivalent_builder.id,
     )
     graph.add_node(eq_key, props = {
-        'external': equiv_ext,
         'percentage': equivalent_builder_percentage,
         'whitelist': equivalent_builder_whitelist,
     })
     graph.add_edge(parent=key, child=eq_key)
-    if equiv_builder:
-      graph.add_edge(parent=eq_key, child=equiv_builder)
+    graph.add_edge(parent=eq_key, child=equivalent_builder)
 
   # This is used to detect cq_tryjob_verifier nodes that aren't connected to any
   # cq_group. Such orphan nodes aren't allowed.
@@ -287,12 +269,6 @@ def _cq_tryjob_verifier(
   graph.add_edge(parent=keys.cq_verifiers_root(), child=key)
 
   return graph.keyset(key)
-
-
-def _parse_builder_name(attr, builder):
-  if type(builder) == 'string' and builder.startswith('external/'):
-    return builder[len('external/'):], None
-  return None, keys.builder_ref(builder, attr=attr)
 
 
 cq_tryjob_verifier = lucicfg.rule(impl = _cq_tryjob_verifier)

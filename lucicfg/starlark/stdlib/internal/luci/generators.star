@@ -825,15 +825,14 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
     project: luci.project node (for project name).
     seen: map[builder name as in *.cfg => cq.cq_tryjob_verifier that added it].
   """
-  # Generate the name of the builder in CQ format. Note: 'builder_node' may be
-  # None here for 'external/...' builders.
-  name, builder_node = _cq_builder_from_node(verifier, project)
+  builder = _cq_builder_from_node(verifier)
+  name = _cq_builder_name(builder, project)
 
   # Make sure there are no dups.
   if name in seen:
     error(
         'verifier that references %s was already added to %s, previous declaration:\n%s' %
-        (builder_node or name, cq_group, seen[name].trace),
+        (builder, cq_group, seen[name].trace),
         trace=verifier.trace)
     return None
   seen[name] = verifier
@@ -849,30 +848,21 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
   )
 
 
-def _cq_builder_from_node(node, project):
-  """Given a CQ node returns 'builder' node and name of the builder for CQ.
+def _cq_builder_from_node(node):
+  """Given a CQ node returns corresponding 'builder' node by following refs.
 
   Args:
     node: either 'cq_tryjob_verifier' or 'cq_equivalent_builder' node.
-    project: 'project' node.
 
   Returns:
-    (Name of the builder for CQ config, corresponding 'builder' node or None).
+    Corresponding 'builder' node.
   """
-  # Either has an externally supplied name.
-  if node.props.external:
-    return node.props.external, None
-
-  # Or must have single builder_ref child, which we resolve to a concrete
-  # luci.builder(...) node.
+  # Per cq_tryjob_verifier implementation, the node MUST have single builder_ref
+  # child, which we resolve to a concrete luci.builder(...) node.
   refs = graph.children(node.key, kinds.BUILDER_REF)
   if len(refs) != 1:
     fail('impossible result %s' % (refs,))
-  builder = builder_ref.follow(refs[0], context_node=node)
-
-  # Currently all BUILDER nodes belong to the same single project since lucicfg
-  # doesn't support more than one project.
-  return _cq_builder_name(builder, project), builder
+  return builder_ref.follow(refs[0], context_node=node)
 
 
 def _cq_equivalent_to(verifier, project):
@@ -888,9 +878,8 @@ def _cq_equivalent_to(verifier, project):
   if len(nodes) > 1:
     fail('impossible result %s' % (nodes,))
   equiv_builder = nodes[0]
-  equiv_builder_name, _ = _cq_builder_from_node(equiv_builder, project)
   return cq_pb.Verifiers.Tryjob.EquivalentBuilder(
-      name = equiv_builder_name,
+      name = _cq_builder_name(_cq_builder_from_node(equiv_builder), project),
       percentage = equiv_builder.props.percentage,
       owner_whitelist_group = equiv_builder.props.whitelist,
   )
@@ -913,7 +902,7 @@ def _cq_triggering_map(project):
 def _cq_builder_name(builder, project):
   """Given Builder node returns a string reference to it for CQ config."""
   return '%s/%s/%s' % (
-      project.props.name,
+      builder.props.project or project.props.name,
       builder.props.bucket,
       builder.props.name,
   )
