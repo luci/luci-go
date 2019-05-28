@@ -53,6 +53,7 @@ out = str(s)
   main:8: in <toplevel>
   main:3: in func1
   main:6: in func2
+  <builtin>: in stacktrace
 `)
 	})
 
@@ -62,7 +63,7 @@ def func1():
   return func2()
 
 def func2():
-  return stacktrace(skip=1)
+  return stacktrace(skip=2)
 
 out = str(func1())
 `)
@@ -79,11 +80,11 @@ def func1():
   return func2()
 
 def func2():
-  return stacktrace(skip=4)
+  return stacktrace(skip=5)
 
 out = str(func1())
 `)
-		So(err, ShouldErrLike, "stacktrace: the stack is not deep enough to skip 4 levels, has only 3 frames")
+		So(err, ShouldErrLike, "stacktrace: the stack is not deep enough to skip 5 levels, has only 4 frames")
 	})
 
 	Convey("Fails on negative skip", t, func() {

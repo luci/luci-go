@@ -24,4 +24,5 @@ error("another err", trace=s)
 #   ...
 #   //testdata/misc/errors_like.star:???: in func2
 #   //testdata/misc/errors_like.star:???: in capture_stack
+#   <builtin>: in stacktrace
 # Error: ??? err

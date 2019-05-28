@@ -17,7 +17,6 @@ package builtins
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"go.starlark.net/starlark"
 )
@@ -40,18 +39,12 @@ type CapturedStacktrace struct {
 // Returns an error if the stack is not deep enough to skip the requested number
 // of frames.
 func CaptureStacktrace(th *starlark.Thread, skip int) (*CapturedStacktrace, error) {
-	f := th.Caller()
-	skipped := 0
-	for skipped < skip && f != nil {
-		f = f.Parent()
-		skipped++
+	if th.CallStackDepth() <= skip {
+		return nil, fmt.Errorf("stacktrace: the stack is not deep enough to skip %d levels, has only %d frames", skip, th.CallStackDepth())
 	}
-	if f == nil {
-		return nil, fmt.Errorf("stacktrace: the stack is not deep enough to skip %d levels, has only %d frames", skip, skipped)
-	}
-	buf := strings.Builder{}
-	f.WriteBacktrace(&buf)
-	return &CapturedStacktrace{buf.String()}, nil
+
+	stack := th.CallStack()[:th.CallStackDepth()-skip]
+	return &CapturedStacktrace{stack.String()}, nil
 }
 
 // Type is part of starlark.Value interface.

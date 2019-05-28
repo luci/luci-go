@@ -507,7 +507,7 @@ func (intr *Interpreter) LoadSource(th *starlark.Thread, ref string) (string, er
 func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
 	th := &starlark.Thread{
 		Print: func(th *starlark.Thread, msg string) {
-			position := th.Caller().Position()
+			position := th.CallFrame(1).Pos
 			if intr.Logger != nil {
 				intr.Logger(position.Filename(), int(position.Line), msg)
 			} else {

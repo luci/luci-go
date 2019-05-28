@@ -17,8 +17,9 @@ def test_add_node_ok():
   assert.eq(n.props.prop, ['v1', 'v2'])
   assert.eq(str(n.trace),
       'Traceback (most recent call last):\n'
-      + '  testdata/node.star:23: in <toplevel>\n'
-      + '  testdata/node.star:7: in test_add_node_ok\n')
+      + '  testdata/node.star:24: in <toplevel>\n'
+      + '  testdata/node.star:7: in test_add_node_ok\n'
+      + '  <builtin>: in add_node\n')
 
 test_add_node_ok()
 
