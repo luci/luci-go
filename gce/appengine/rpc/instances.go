@@ -180,25 +180,14 @@ func (*Instances) Get(c context.Context, req *instances.GetRequest) (*instances.
 
 // List handles a request to list instances.
 func (*Instances) List(c context.Context, req *instances.ListRequest) (*instances.ListResponse, error) {
-	if req == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "request must not be nil")
+	q, err := pageQuery(c, req, datastore.NewQuery(model.VMKind))
+	if err != nil {
+		return nil, err
 	}
-	var cur datastore.Cursor
-	var err error
-	if req.PageToken != "" {
-		if cur, err = datastore.DecodeCursor(c, req.PageToken); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid page token %q", req.PageToken)
-		}
-	}
-	if req.PageSize < 1 || req.PageSize > 200 {
-		req.PageSize = 200
-	}
-
-	q := datastore.NewQuery(model.VMKind).Limit(req.PageSize).Start(cur)
-	if req.Prefix != "" {
+	if req.GetPrefix() != "" {
 		q = q.Eq("prefix", req.Prefix)
 	}
-	if req.Filter != "" {
+	if req.GetFilter() != "" {
 		// TODO(crbug/964591): Support other filters.
 		// No compound indices exist, so only simple filters are supported:
 		// https://cloud.google.com/datastore/docs/concepts/indexes#index_configuration.
@@ -219,7 +208,8 @@ func (*Instances) List(c context.Context, req *instances.ListRequest) (*instance
 		return nil, errors.Annotate(err, "failed to fetch instances").Err()
 	}
 	if getCur != nil {
-		if cur, err = getCur(); err != nil {
+		cur, err := getCur()
+		if err != nil {
 			return nil, errors.Annotate(err, "failed to fetch cursor").Err()
 		}
 		rsp.NextPageToken = cur.String()
