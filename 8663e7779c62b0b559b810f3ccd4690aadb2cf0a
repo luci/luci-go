@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16013dca_5b9f7a96",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-28T23:29:03Z",
+      "side": 1,
+      "message": "could you copy this into \"create_time\" field too?",
+      "range": {
+        "startLine": 357,
+        "startChar": 42,
+        "endLine": 358,
+        "endChar": 61
+      },
+      "revId": "8663e7779c62b0b559b810f3ccd4690aadb2cf0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
