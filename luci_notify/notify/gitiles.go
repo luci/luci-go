@@ -40,7 +40,11 @@ type HistoryFunc func(c context.Context, host, project, oldRevision, newRevision
 func gitilesHistory(c context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
 	c, _ = context.WithTimeout(c, 30*time.Second)
 
-	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	opts := []auth.RPCOption{
+		auth.WithProject(project),
+		auth.WithScopes(gitiles.OAuthScope),
+	}
+	transport, err := auth.GetRPCTransport(c, auth.AsProject, opts...)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
