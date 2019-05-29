@@ -95,30 +95,45 @@ def _cq_group(
   for w in validate.list('watch', watch, required=True):
     cqimpl.validate_refset('watch', w)
 
+  # Merge explicitly passed ACLs with ones provided via 'defaults'.
+  acls = aclimpl.validate_acls(acls, allowed_roles=[acl.CQ_COMMITTER, acl.CQ_DRY_RUNNER])
+  acls.extend(ctx.defaults.acls.get() or [])
+
+  def_allow_owner_if_submittable = ctx.defaults.allow_owner_if_submittable.get()
+  if def_allow_owner_if_submittable == None:
+    def_allow_owner_if_submittable = cq.ACTION_NONE
+
   graph.add_node(key, props = {
       'watch': watch,
-      'acls': aclimpl.validate_acls(acls, allowed_roles=[acl.CQ_COMMITTER, acl.CQ_DRY_RUNNER]),
+      'acls': acls,
       'allow_submit_with_open_deps': validate.bool(
           'allow_submit_with_open_deps',
           allow_submit_with_open_deps,
+          default=ctx.defaults.allow_submit_with_open_deps.get(),
           required=False,
       ),
       'allow_owner_if_submittable': validate.int(
           'allow_owner_if_submittable',
           allow_owner_if_submittable,
-          default=cq.ACTION_NONE,
+          default=def_allow_owner_if_submittable,
           required=False,
       ),
-      'tree_status_host': validate.string('tree_status_host', tree_status_host, required=False),
+      'tree_status_host': validate.string(
+          'tree_status_host',
+          tree_status_host,
+          default=ctx.defaults.tree_status_host.get(),
+          required=False,
+      ),
       'retry_config': cqimpl.validate_retry_config(
           'retry_config',
           retry_config,
-          default=cq.RETRY_TRANSIENT_FAILURES,
+          default=ctx.defaults.retry_config.get() or cq.RETRY_TRANSIENT_FAILURES,
           required=False,
       ),
       'cancel_stale_tryjobs': validate.bool(
           'cancel_stale_tryjobs',
           cancel_stale_tryjobs,
+          default=ctx.defaults.cancel_stale_tryjobs.get(),
           required=False,
       ),
   })
@@ -136,4 +151,18 @@ def _cq_group(
   return graph.keyset(key)
 
 
-cq_group = lucicfg.rule(impl = _cq_group)
+def _validate_acls(acls):
+  return aclimpl.validate_acls(acls, allowed_roles=[acl.CQ_COMMITTER, acl.CQ_DRY_RUNNER])
+
+
+cq_group = lucicfg.rule(
+    impl = _cq_group,
+    defaults = validate.vars_with_validators({
+        'acls': lambda _attr, val: _validate_acls(val),
+        'allow_submit_with_open_deps': validate.bool,
+        'allow_owner_if_submittable': validate.int,
+        'tree_status_host': validate.string,
+        'retry_config': cqimpl.validate_retry_config,
+        'cancel_stale_tryjobs': validate.bool,
+    }),
+)
