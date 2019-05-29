@@ -112,7 +112,10 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 	// Prepare a build listener.
 	var listenerErr error
 	var listenerErrMU sync.Mutex
-	listener := newBuildListener(streamNamePrefix, func(err error) {
+	builds := make(chan *pb.Build)
+	defer close(builds)
+
+	listener := newBuildListener(streamNamePrefix, builds, func(err error) {
 		logging.Errorf(ctx, "%s", err)
 
 		listenerErrMU.Lock()
@@ -123,6 +126,11 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 			cancel()
 		}
 	})
+
+	updater := buildUpdater(func(ctx context.Context, build *pb.Build) error {
+		return r.updateBuild(ctx, build, false)
+	})
+	go updater.Run(ctx, builds)
 
 	// Start a local LogDog server.
 	logdogServ, err := r.startLogDog(ctx, args, systemAuth, listener)
