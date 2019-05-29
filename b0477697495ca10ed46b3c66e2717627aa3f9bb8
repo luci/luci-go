@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "854a5e0d_83328981",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1251153
+      },
+      "writtenOn": "2019-05-29T15:10:27Z",
+      "side": 1,
+      "message": "Done. I changed this to a type-alias since it only had one property.",
+      "parentUuid": "8472b442_6554d72b",
+      "revId": "b0477697495ca10ed46b3c66e2717627aa3f9bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef65a59a_7c628e6e",
         "filename": "buildbucket/luciexe/updater.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "b0477697495ca10ed46b3c66e2717627aa3f9bb8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4439c202_b7689d6a",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1251153
+      },
+      "writtenOn": "2019-05-29T15:10:27Z",
+      "side": 1,
+      "message": "Updated to implement this in terms of whether the returned error is transient.",
+      "parentUuid": "ef65a59a_7c628e6e",
+      "range": {
+        "startLine": 139,
+        "startChar": 3,
+        "endLine": 139,
+        "endChar": 9
+      },
+      "revId": "b0477697495ca10ed46b3c66e2717627aa3f9bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
