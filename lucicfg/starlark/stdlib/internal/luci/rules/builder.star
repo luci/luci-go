@@ -110,41 +110,31 @@ def _builder(
     executable: an executable to run, e.g. a luci.recipe(...). Required.
 
     properties: a dict with string keys and JSON-serializable values, defining
-        properties to pass to the executable. Supports the module-scoped
-        defaults. They are merged (non-recursively) with the explicitly passed
-        properties.
+        properties to pass to the executable.
     service_account: an email of a service account to run the executable under:
         the executable (and various tools it calls, e.g. gsutil) will be able to
         make outbound HTTP calls that have an OAuth access token belonging to
-        this service account (provided it is registered with LUCI). Supports
-        the module-scoped default.
+        this service account (provided it is registered with LUCI).
     caches: a list of swarming.cache(...) objects describing Swarming named
         caches that should be present on the bot. See swarming.cache(...) doc
-        for more details. Supports the module-scoped defaults. They are joined
-        with the explicitly passed caches.
+        for more details.
     execution_timeout: how long to wait for a running build to finish before
         forcefully aborting it and marking the build as timed out. If None,
-        defer the decision to Buildbucket service. Supports the module-scoped
-        default.
+        defer the decision to Buildbucket service.
 
     dimensions: a dict with swarming dimensions, indicating requirements for
         a bot to execute the build. Keys are strings (e.g. `os`), and values are
         either strings (e.g. `Linux`), swarming.dimension(...) objects (for
-        defining expiring dimensions) or lists of thereof. Supports the
-        module-scoped defaults. They are merged (non-recursively) with the
-        explicitly passed dimensions.
+        defining expiring dimensions) or lists of thereof.
     priority: int [1-255] or None, indicating swarming task priority, lower is
         more important. If None, defer the decision to Buildbucket service.
-        Supports the module-scoped default.
     swarming_tags: a list of tags (`k:v` strings) to assign to the Swarming task
         that runs the builder. Each tag will also end up in `swarming_tag`
-        Buildbucket tag, for example `swarming_tag:builder:release`. Supports
-        the module-scoped defaults. They are joined with the explicitly passed
-        tags.
+        Buildbucket tag, for example `swarming_tag:builder:release`.
     expiration_timeout: how long to wait for a build to be picked up by a
         matching bot (based on `dimensions`) before canceling the build and
         marking it as expired. If None, defer the decision to Buildbucket
-        service. Supports the module-scoped default.
+        service.
 
     schedule: string with a cron schedule that describes when to run this
         builder. See [Defining cron schedules](#schedules_doc) for the expected
@@ -158,19 +148,18 @@ def _builder(
         it runs, triggering requests accumulate in a queue. Once the build
         finishes, if the queue is not empty, a new build starts right away,
         "consuming" all pending requests. See scheduler.policy(...) doc for more
-        details. Supports the module-scoped default.
+        details.
 
     build_numbers: if True, generate monotonically increasing contiguous numbers
         for each build, unique within the builder. If None, defer the decision
-        to Buildbucket service. Supports the module-scoped default.
+        to Buildbucket service.
     experimental: if True, by default a new build in this builder will be marked
         as experimental. This is seen from the executable and it may behave
         differently (e.g. avoiding any side-effects). If None, defer the
-        decision to Buildbucket service. Supports the module-scoped default.
+        decision to Buildbucket service.
     task_template_canary_percentage: int [0-100] or None, indicating percentage
         of builds that should use a canary swarming task template. If None,
-        defer the decision to Buildbucket service. Supports the module-scoped
-        default.
+        defer the decision to Buildbucket service.
     repo: URL of a primary git repository (starting with `https://`) associated
         with the builder, if known. It is in particular important when using
         luci.notifier(...) to let LUCI know what git history it should use to
@@ -181,13 +170,34 @@ def _builder(
 
     luci_migration_host: deprecated setting that was important during the
         migration from Buildbot to LUCI. Refer to Buildbucket docs for the
-        meaning. Supports the module-scoped default.
+        meaning.
 
     triggers: builders this builder triggers.
     triggered_by: builders or pollers this builder is triggered by.
     notifies: list of luci.notifier(...) the builder notifies when it changes
         its status. This relation can also be defined via `notified_by` field in
         luci.notifier(...).
+
+  ModuleDefaults:
+    properties: the explicitly passed properties are merged (non-recursively) on
+        top of the defaults: non-None entries override corresponding entries in
+        the defaults, and None entries are ignored.
+    service_account: the explicitly passed value overrides the default.
+    caches: the explicitly passed caches are joined with the defaults.
+    execution_timeout: the explicitly passed value overrides the default.
+    dimensions: the explicitly passed dimensions are merged (non-recursively) on
+        top of the defaults: non-None entries override corresponding entries in
+        the defaults, and None entries are ignored.
+    priority: the explicitly passed value overrides the default.
+    swarming_tags: the explicitly passed tags are joined with the defaults.
+    expiration_timeout: the explicitly passed value overrides the default.
+    triggering_policy: the explicitly passed value overrides the default.
+    build_numbers: the explicitly passed value overrides the default.
+    experimental: the explicitly passed value overrides the default.
+    task_template_canary_percentage: the explicitly passed value overrides
+        the default.
+    repo: the explicitly passed value overrides the default.
+    luci_migration_host: the explicitly passed value overrides the default.
   """
   name = validate.string('name', name)
   bucket_key = keys.bucket(bucket)
@@ -302,6 +312,7 @@ builder = lucicfg.rule(
         'build_numbers': validate.bool,
         'experimental': validate.bool,
         'task_template_canary_percentage': lambda attr, val: validate.int(attr, val, min=1, max=100),
+        'repo': validate.repo_url,
         'luci_migration_host': validate.string,
     }),
 )
