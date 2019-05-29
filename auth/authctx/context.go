@@ -364,7 +364,15 @@ func (ac *Context) ExportIntoEnv(env environ.Env) environ.Env {
 	}
 
 	if ac.EnableFirebaseAuth && !ac.anonymous {
-		// Point firebase to the generated token.
+		// This env var is supposed to contain a refresh token. Its presence
+		// switches Firebase into "CI mode" where it doesn't try to grab credentials
+		// from disk or via gcloud. The actual value doesn't matter, since we
+		// replace the endpoint that consumes this token below.
+		env.Set("FIREBASE_TOKEN", "ignored-non-empty-value")
+		// Instruct Firebase to use the local server for "refreshing" the token.
+		// Usually this is "https://www.googleapis.com" and it takes a refresh token
+		// and returns an access token. We replace it with a local version that
+		// just returns task account access tokens.
 		env.Set("FIREBASE_TOKEN_URL", ac.firebaseTokenURL)
 	}
 
