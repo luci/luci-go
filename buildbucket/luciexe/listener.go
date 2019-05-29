@@ -42,7 +42,8 @@ type buildListener struct {
 
 	onErr func(error)
 
-	build   *pb.Build // most recently extracted Build message.
+	build   *pb.Build        // most recently extracted Build message.
+	builds  chan<- *pb.Build // channel of builds, emitted as they are received.
 	buildMU sync.Mutex
 }
 
@@ -50,15 +51,19 @@ type buildListener struct {
 //
 // Root build proto will be expected at "<streamNamePrefix>/build.proto".
 // All logs of its steps and of steps of sub-builds must have this prefix.
-func newBuildListener(streamNamePrefix string, onErr func(error)) *buildListener {
+func newBuildListener(streamNamePrefix string, builds chan<- *pb.Build, onErr func(error)) *buildListener {
 	if onErr == nil {
 		panic("onErr is nil")
+	}
+	if builds == nil {
+		panic("builds is nil")
 	}
 
 	streamNamePrefix = strings.TrimSuffix(streamNamePrefix, "/") + "/"
 	return &buildListener{
 		streamNamePrefix: streamNamePrefix,
 		buildStreamName:  streamNamePrefix + BuildStreamName,
+		builds:           builds,
 		onErr:            onErr,
 	}
 }
@@ -107,10 +112,8 @@ func (l *buildListener) processBuildLogEntry(log *logpb.LogEntry) error {
 
 	l.buildMU.Lock()
 	l.build = build
+	l.builds <- l.build
 	l.buildMU.Unlock()
-
-	// TODO(nodir): make UpdateBuild call.
-
 	return nil
 }
 
