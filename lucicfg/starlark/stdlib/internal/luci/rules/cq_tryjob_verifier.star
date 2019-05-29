@@ -161,9 +161,9 @@ def _cq_tryjob_verifier(
     location_regexp_exclude: a list of regexps that define a set of files to
         completely skip when evaluating whether the verifier should be applied
         to a CL or not. See the explanation above for all details.
-    owner_whitelist: a list of groups with accounts of CL owners
-        to enable this builder for. If set, only CLs owned by someone from any
-        one of these groups will be verified by this builder.
+    owner_whitelist: a list of groups with accounts of CL owners to enable this
+        builder for. If set, only CLs owned by someone from any one of these
+        groups will be verified by this builder.
     equivalent_builder: an optional alternative builder for the CQ to choose
         instead. If provided, the CQ will choose only one of the equivalent
         builders as required based purely on the given CL and CL's owner and
@@ -177,28 +177,29 @@ def _cq_tryjob_verifier(
         of the two builders to trigger will be made only for CLs owned by the
         accounts in the whitelisted group. Defaults to 0, meaning the equivalent
         builder is never triggered by the CQ, but an existing build can be
-        re-used.
+        re-used. Ignored if `equivalent_builder` is not used.
     equivalent_builder_whitelist: a group name with accounts to enable the
         equivalent builder substitution for. If set, only CLs that are owned by
         someone from this group have a chance to be verified by the equivalent
-        builder. All other CLs are verified via the main builder.
+        builder. All other CLs are verified via the main builder. Ignored if
+        `equivalent_builder` is not used.
   """
   builder = keys.builder_ref(builder, attr='builder', allow_external=True)
 
-  location_regexp = validate.list('location_regexp', location_regexp)
-  for r in location_regexp:
-    validate.string('location_regexp', r)
-  location_regexp_exclude = validate.list('location_regexp_exclude', location_regexp_exclude)
-  for r in location_regexp_exclude:
-    validate.string('location_regexp_exclude', r)
+  if location_regexp == None:
+    location_regexp = ctx.defaults.location_regexp.get()
+  location_regexp = validate.str_list('location_regexp', location_regexp)
+
+  if location_regexp_exclude == None:
+    location_regexp_exclude = ctx.defaults.location_regexp_exclude.get()
+  location_regexp_exclude = validate.str_list('location_regexp_exclude', location_regexp_exclude)
 
   # Note: CQ does this itself implicitly, but we want configs to be explicit.
   if location_regexp_exclude and not location_regexp:
     location_regexp = ['.*']
 
-  owner_whitelist = validate.list('owner_whitelist', owner_whitelist)
-  for o in owner_whitelist:
-    validate.string('owner_whitelist', o)
+  owner_whitelist = validate.str_list('owner_whitelist', owner_whitelist)
+  owner_whitelist.extend(ctx.defaults.owner_whitelist.get() or [])
 
   # 'equivalent_builder' has same format as 'builder', except it is optional.
   if equivalent_builder:
@@ -210,31 +211,33 @@ def _cq_tryjob_verifier(
       equivalent_builder_percentage,
       min=0.0,
       max=100.0,
+      default=ctx.defaults.equivalent_builder_percentage.get(),
       required=False,
   )
   equivalent_builder_whitelist = validate.string(
       'equivalent_builder_whitelist',
       equivalent_builder_whitelist,
+      default=ctx.defaults.equivalent_builder_whitelist.get(),
       required=False,
   )
-
-  if not equivalent_builder:
-    if equivalent_builder_percentage != None:
-      fail('"equivalent_builder_percentage" can be used only together with "equivalent_builder"')
-    if equivalent_builder_whitelist != None:
-      fail('"equivalent_builder_whitelist" can be used only together with "equivalent_builder"')
 
   # Note: name of this node is important only for error messages. It isn't
   # showing up in any generated files and by construction it can't accidentally
   # collide with some other name.
   key = keys.unique(kinds.CQ_TRYJOB_VERIFIER, builder.id)
   graph.add_node(key, props = {
-      'disable_reuse': validate.bool('disable_reuse', disable_reuse, required=False),
+      'disable_reuse': validate.bool(
+          'disable_reuse',
+          disable_reuse,
+          default=ctx.defaults.disable_reuse.get(),
+          required=False,
+      ),
       'experiment_percentage': validate.float(
           'experiment_percentage',
           experiment_percentage,
           min=0.0,
           max=100.0,
+          default=ctx.defaults.experiment_percentage.get(),
           required=False,
       ),
       'location_regexp': location_regexp,
@@ -271,4 +274,15 @@ def _cq_tryjob_verifier(
   return graph.keyset(key)
 
 
-cq_tryjob_verifier = lucicfg.rule(impl = _cq_tryjob_verifier)
+cq_tryjob_verifier = lucicfg.rule(
+    impl = _cq_tryjob_verifier,
+    defaults = validate.vars_with_validators({
+        'disable_reuse': validate.bool,
+        'experiment_percentage': lambda attr, val: validate.float(attr, val, min=0.0, max=100.0),
+        'location_regexp': validate.str_list,
+        'location_regexp_exclude': validate.str_list,
+        'owner_whitelist': validate.str_list,
+        'equivalent_builder_percentage': lambda attr, val: validate.float(attr, val, min=0.0, max=100.0),
+        'equivalent_builder_whitelist': validate.string,
+    }),
+)

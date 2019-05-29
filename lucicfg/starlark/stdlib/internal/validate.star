@@ -209,6 +209,26 @@ def _list(attr, val, required=False):
   return val
 
 
+def _str_list(attr, val, regexp=None, allow_empty=False, required=False):
+  """Validates that the value is a list of strings.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    regexp: a regular expression to check each string in the list against.
+    allow_empty: if True, accept empty strings as valid.
+    required: if False, allow 'val' to be None or empty, return empty list in
+        this case.
+
+  Returns:
+    The validated list.
+  """
+  val = _list(attr, val, required=required)
+  for s in val:
+    _string(attr, s, regexp=regexp, allow_empty=allow_empty)
+  return val
+
+
 def _str_dict(attr, val, required=False):
   """Validates that the value is a dict with non-empty string keys.
 
@@ -352,6 +372,7 @@ validate = struct(
     bool = _bool,
     duration = _duration,
     list = _list,
+    str_list = _str_list,
     str_dict = _str_dict,
     struct = _struct,
     type = _type,
