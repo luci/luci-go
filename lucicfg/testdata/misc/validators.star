@@ -86,6 +86,19 @@ def test_validate_list():
   assert.fails(lambda: call('a', [], required=True), 'missing required field "a"')
 
 
+def test_validate_str_list():
+  call = validate.str_list
+  assert.eq(call('a', []), [])
+  assert.eq(call('a', None), [])
+  assert.eq(call('a', ['a', 'b']), ['a', 'b'])
+  assert.eq(call('a', [''], allow_empty=True), [''])
+  assert.fails(lambda: call('a', 0), 'bad "a": got int, want list')
+  assert.fails(lambda: call('a', [], required=True), 'missing required field "a"')
+  assert.fails(lambda: call('a', None, required=True), 'missing required field "a"')
+  assert.fails(lambda: call('a', ['']), 'bad "a": must not be empty')
+  assert.fails(lambda: call('a', ['Z'], regexp='/d'), 'bad "a": "Z" should match "/d"')
+
+
 def test_validate_str_dict():
   call = validate.str_dict
   assert.eq(call('a', {'k': 1}), {'k': 1})
@@ -127,6 +140,7 @@ test_validate_float()
 test_validate_bool()
 test_validate_duration()
 test_validate_list()
+test_validate_str_list()
 test_validate_str_dict()
 test_validate_struct()
 test_validate_type()

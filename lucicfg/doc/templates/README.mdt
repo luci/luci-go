@@ -31,6 +31,21 @@
 {{$sym.Doc.Returns | LinkifySymbols}}
 {{end}}
 
+{{- $defaults := "ModuleDefaults" | $sym.Doc.FieldsBlock}}
+{{- if $defaults.Fields}}
+#### Module-scoped defaults {#{{$sym.Anchor "mod-defs"}}}
+
+This rule supports specifying defaults that apply to all calls made from a
+module where such defaults were declared. Supported fields and how their
+explicitly passed values are combined with corresponding module-scoped defaults
+(see [Specifying default values for all invocations of a rule](#module_defaults)
+for more details):
+
+{{range $defaults.Fields}}
+* **{{.Name | EscapeMD}}**: {{.Desc | LinkifySymbols}}
+{{- end}}
+{{- end}}
+
 {{end}}
 {{end}}
 
@@ -389,6 +404,10 @@ names everywhere is a chore. For that reason `lucicfg` allows to omit the bucket
 name if the resulting reference is non-ambiguous. In the example above, if we
 remove one of the builders, `builder = 'Linux'` reference becomes valid.
 
+
+### Specifying default values for all invocations of a rule {#module_defaults}
+
+TODO
 
 ### Referring to builders in other projects {#external_builders}
 
