@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98e5f98f_8ac995d9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-29T02:29:49Z",
+      "side": 1,
+      "message": "oops, forgot to use it (will fix in next patch set)",
+      "range": {
+        "startLine": 315,
+        "startChar": 8,
+        "endLine": 315,
+        "endChar": 34
+      },
+      "revId": "3082ebe99a611783341119eb0cd85e10431a0354",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a8db28c_6519f1d1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_group.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-29T02:29:49Z",
+      "side": 1,
+      "message": "err.. it should be _validate_acls, get carried away with Ctrl+C/Ctrl+V combination",
+      "range": {
+        "startLine": 99,
+        "startChar": 9,
+        "endLine": 99,
+        "endChar": 89
+      },
+      "revId": "3082ebe99a611783341119eb0cd85e10431a0354",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c02e3e4_62ca3b85",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_group.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-05-29T02:29:49Z",
+      "side": 1,
+      "message": "in case you are wondering what\u0027s the principle:\n1. Fields that accept keyset (~\u003d reference to other nodes) are NEVER in defaults.\n2. Fields that do not make sense to be identical for everything are not in defaults. This is more complicated rule... For example, duplicating \u0027watch\u0027 in many groups makes no sense. I also decided duplicating location_regexp/location_regexp_exclude makes no sense, but this is debatable...\n\nSince this is somewhat arbitrary, docs are important.",
+      "range": {
+        "startLine": 161,
+        "startChar": 2,
+        "endLine": 166,
+        "endChar": 46
+      },
+      "revId": "3082ebe99a611783341119eb0cd85e10431a0354",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
