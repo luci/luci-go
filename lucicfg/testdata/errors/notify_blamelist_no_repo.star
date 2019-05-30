@@ -76,11 +76,11 @@ luci.builder(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/notify_blamelist_no_repo.star:61: in <toplevel>
+#   //testdata/errors/notify_blamelist_no_repo.star: in <toplevel>
 #   ...
 # Error: cannot deduce a primary repo for luci.builder("bucket/ambiguous pollers"), which is observed by a luci.notifier with notify_blamelist=True; add repo=... field
 #
 # Traceback (most recent call last):
-#   //testdata/errors/notify_blamelist_no_repo.star:69: in <toplevel>
+#   //testdata/errors/notify_blamelist_no_repo.star: in <toplevel>
 #   ...
 # Error: cannot deduce a primary repo for luci.builder("bucket/no repo at all"), which is observed by a luci.notifier with notify_blamelist=True; add repo=... field

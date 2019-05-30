@@ -11,6 +11,6 @@ luci.cq_group(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/cq/wrong_role.star:3: in <toplevel>
+#   //testdata/cq/wrong_role.star: in <toplevel>
 #   ...
 # Error: bad "acls": role BUILDBUCKET_READER is not allowed in this context

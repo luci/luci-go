@@ -15,6 +15,7 @@
 package builtins
 
 import (
+	"fmt"
 	"testing"
 
 	"go.starlark.net/starlark"
@@ -26,14 +27,17 @@ import (
 func TestStacktrace(t *testing.T) {
 	t.Parallel()
 
-	runScript := func(code string) (starlark.Value, error) {
+	runScript := func(code string) (string, error) {
 		out, err := starlark.ExecFile(&starlark.Thread{}, "main", code, starlark.StringDict{
 			"stacktrace": Stacktrace,
 		})
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		return out["out"], nil
+		if s, ok := out["out"].(starlark.String); ok {
+			return NormalizeStacktrace(s.GoString()), nil
+		}
+		return "", fmt.Errorf("not a string: %s", out["out"])
 	}
 
 	Convey("Works", t, func() {
@@ -49,10 +53,10 @@ s = func1()
 out = str(s)
 `)
 		So(err, ShouldBeNil)
-		So(out.(starlark.String).GoString(), ShouldEqual, `Traceback (most recent call last):
-  main:8: in <toplevel>
-  main:3: in func1
-  main:6: in func2
+		So(out, ShouldEqual, `Traceback (most recent call last):
+  main: in <toplevel>
+  main: in func1
+  main: in func2
   <builtin>: in stacktrace
 `)
 	})
@@ -68,9 +72,9 @@ def func2():
 out = str(func1())
 `)
 		So(err, ShouldBeNil)
-		So(out.(starlark.String).GoString(), ShouldEqual, `Traceback (most recent call last):
-  main:8: in <toplevel>
-  main:3: in func1
+		So(out, ShouldEqual, `Traceback (most recent call last):
+  main: in <toplevel>
+  main: in func1
 `)
 	})
 
@@ -95,5 +99,29 @@ out = str(func1())
 	Convey("Fails on wrong type", t, func() {
 		_, err := runScript(`stacktrace('zzz')`)
 		So(err, ShouldErrLike, "stacktrace: for parameter skip: got string, want int")
+	})
+}
+
+func TestNormalizeStacktrace(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		in := `Traceback (most recent call last):
+  main:8:1: in <toplevel>
+  main:3:2: in func1
+  main:6:3: in func2
+  <builtin>: in stacktrace
+
+  skipped line
+`
+		out := `Traceback (most recent call last):
+  main: in <toplevel>
+  main: in func1
+  main: in func2
+  <builtin>: in stacktrace
+
+  skipped line
+`
+		So(NormalizeStacktrace(in), ShouldEqual, out)
 	})
 }

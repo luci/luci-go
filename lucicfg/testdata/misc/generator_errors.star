@@ -19,16 +19,16 @@ lucicfg.generator(impl = gen4)
 # Expect errors:
 #
 # Traceback (most recent call last):
-#   //testdata/misc/generator_errors.star:2: in gen1
+#   //testdata/misc/generator_errors.star: in gen1
 #   <builtin>: in fail
 # Error: gen1 failed
 #
 # Traceback (most recent call last):
-#   //testdata/misc/generator_errors.star:5: in <toplevel>
+#   //testdata/misc/generator_errors.star: in <toplevel>
 #   <builtin>: in stacktrace
 # Error: gen2 failed
 #
 # Traceback (most recent call last):
-#   //testdata/misc/generator_errors.star:5: in <toplevel>
+#   //testdata/misc/generator_errors.star: in <toplevel>
 #   <builtin>: in stacktrace
 # Error: dedupped error

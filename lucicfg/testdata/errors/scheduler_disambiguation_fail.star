@@ -34,6 +34,6 @@ luci.builder(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/scheduler_disambiguation_fail.star:27: in <toplevel>
+#   //testdata/errors/scheduler_disambiguation_fail.star: in <toplevel>
 #   ...
 # Error: luci.builder("b1/b1-p") and luci.gitiles_poller("b1/p") cause ambiguities in the scheduler config file, pick names that don't start with a bucket name

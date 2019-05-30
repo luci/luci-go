@@ -32,6 +32,6 @@ luci.builder(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/triggering_builder_no_account.star:15: in <toplevel>
+#   //testdata/errors/triggering_builder_no_account.star: in <toplevel>
 #   ...
 # Error: luci.builder("ci/b1") needs service_account set, it triggers other builders: luci.builder("ci/b2"), luci.builder("ci/b3")

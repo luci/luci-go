@@ -59,6 +59,6 @@ luci.cq_group(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/cq/dup_triggered_by.star:53: in <toplevel>
+#   //testdata/cq/dup_triggered_by.star: in <toplevel>
 #   ...
 # Error: this builder is triggered by multiple builders in its CQ group which confuses CQ config generator

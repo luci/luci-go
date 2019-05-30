@@ -21,6 +21,6 @@ luci.builder(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/none_dimension.star:9: in <toplevel>
+#   //testdata/errors/none_dimension.star: in <toplevel>
 #   ...
 # Error: bad dimension "key": None value is not allowed

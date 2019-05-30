@@ -15,6 +15,6 @@ luci.builder(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/builder_without_recipe.star:9: in <toplevel>
+#   //testdata/errors/builder_without_recipe.star: in <toplevel>
 #   ...
 # Error: missing required field "recipe"

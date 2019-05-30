@@ -15,6 +15,6 @@ luci.builder(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/wrong_kind.star:7: in <toplevel>
+#   //testdata/errors/wrong_kind.star: in <toplevel>
 #   ...
 # Error: expecting luci.bucket, got luci.recipe

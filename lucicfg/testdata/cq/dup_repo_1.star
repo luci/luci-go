@@ -14,9 +14,9 @@ luci.cq_group(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/cq/dup_repo_1.star:6: in <toplevel>
+#   //testdata/cq/dup_repo_1.star: in <toplevel>
 #   ...
 # Error: ref regexp "refs/heads/master" of "https://example.googlesource.com/a/repo" is already covered by a cq_group, previous declaration:
 # Traceback (most recent call last):
-#   //testdata/cq/dup_repo_1.star:6: in <toplevel>
+#   //testdata/cq/dup_repo_1.star: in <toplevel>
 #   ...
