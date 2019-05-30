@@ -17,6 +17,7 @@ package builtins
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"go.starlark.net/starlark"
 )
@@ -46,13 +47,14 @@ func (f *Failure) Backtrace() string {
 	return tr.String() + "Error: " + f.Message
 }
 
-// Fail is fail(msg, trace=None) builtin.
+// Fail is fail(*args, sep=" ", trace=None) builtin.
 //
-//  def fail(msg, trace=None):
+//  def fail(*args, sep=" ", trace=None):
 //    """Aborts the script execution with an error message."
 //
 //    Args:
-//      msg: the error message string.
+//      args: values to print in the message.
+//      sep: separator to use between values from `args`.
 //      trace: a trace (as returned by stacktrace()) to attach to the error.
 //    """
 //
@@ -65,10 +67,10 @@ func (f *Failure) Backtrace() string {
 // tests that use assert.fails(...) should be careful with using the failure
 // collector (or just don't use it at all).
 var Fail = starlark.NewBuiltin("fail", func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	var msg starlark.String
+	sep := " "
 	var trace starlark.Value
-	err := starlark.UnpackArgs("fail", args, kwargs,
-		"msg", &msg,
+	err := starlark.UnpackArgs("fail", nil, kwargs,
+		"sep?", &sep,
 		"trace?", &trace)
 	if err != nil {
 		return nil, err
@@ -81,16 +83,29 @@ var Fail = starlark.NewBuiltin("fail", func(th *starlark.Thread, _ *starlark.Bui
 		}
 	}
 
+	buf := strings.Builder{}
+	for i, v := range args {
+		if i > 0 {
+			buf.WriteString(sep)
+		}
+		if s, ok := starlark.AsString(v); ok {
+			buf.WriteString(s)
+		} else {
+			buf.WriteString(v.String())
+		}
+	}
+	msg := buf.String()
+
 	if fc := GetFailureCollector(th); fc != nil {
 		failTrace, _ := CaptureStacktrace(th, 0)
 		fc.failure = &Failure{
-			Message:   msg.GoString(),
+			Message:   msg,
 			UserTrace: userTrace,
 			FailTrace: failTrace,
 		}
 	}
 
-	return nil, errors.New(msg.GoString())
+	return nil, errors.New(msg)
 })
 
 // A key in thread.Locals to hold *FailureCollector.

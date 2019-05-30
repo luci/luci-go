@@ -53,9 +53,9 @@ def capture():
 
 s = capture()
 
-fail("boo", trace=s)
+fail("boo", 123, ['z'], None, trace=s)
 `)
-		So(err.Error(), ShouldEqual, "boo")
+		So(err.Error(), ShouldEqual, `boo 123 ["z"] None`)
 		So(NormalizeStacktrace(err.(*Failure).Backtrace()),
 			ShouldContainSubstring, "main: in capture")
 	})
