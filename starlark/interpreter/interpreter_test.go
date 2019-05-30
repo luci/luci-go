@@ -184,11 +184,12 @@ func TestInterpreter(t *testing.T) {
 
 	Convey("Predeclared can access the context", t, func() {
 		fromCtx := ""
+		type key struct{}
 		_, _, err := runIntr(intrParams{
-			ctx: context.WithValue(context.Background(), 123, "ctx value"),
+			ctx: context.WithValue(context.Background(), key{}, "ctx value"),
 			predeclared: starlark.StringDict{
 				"call_me": starlark.NewBuiltin("call_me", func(th *starlark.Thread, _ *starlark.Builtin, _ starlark.Tuple, _ []starlark.Tuple) (starlark.Value, error) {
-					fromCtx = Context(th).Value(123).(string)
+					fromCtx = Context(th).Value(key{}).(string)
 					return starlark.None, nil
 				}),
 			},
