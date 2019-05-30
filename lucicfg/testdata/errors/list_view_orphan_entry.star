@@ -23,6 +23,6 @@ luci.list_view_entry('b')
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/list_view_orphan_entry.star:21: in <toplevel>
+#   //testdata/errors/list_view_orphan_entry.star: in <toplevel>
 #   ...
 # Error: luci.list_view_entry("b") is not added to any view, either remove or comment it out

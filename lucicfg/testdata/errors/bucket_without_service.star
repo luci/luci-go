@@ -10,6 +10,6 @@ luci.bucket(name = 'ci')
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/bucket_without_service.star:1: in <toplevel>
+#   //testdata/errors/bucket_without_service.star: in <toplevel>
 #   ...
 # Error: missing "buildbucket" in luci.project(...), it is required for defining buckets

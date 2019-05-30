@@ -17,6 +17,8 @@ package builtins
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"go.starlark.net/starlark"
 )
@@ -26,10 +28,6 @@ import (
 // At the present time it can only be stringified (via str(...) in Starlark or
 // via .String() in Go).
 type CapturedStacktrace struct {
-	// Note that *starlark.Frame is mutated after it is "captured". So we either
-	// need to do a deep copy of the linked list of frames, or just render it to
-	// the string right away. We opt for the later, since it is simpler and the
-	// public interface supports only stringification anyway.
 	backtrace string
 }
 
@@ -89,3 +87,26 @@ var Stacktrace = starlark.NewBuiltin("stacktrace", func(th *starlark.Thread, _ *
 		return CaptureStacktrace(th, lvl)
 	}
 })
+
+// This matches "<module>:<line>:<col>: in <func>" where <line>:<col> is
+// optional.
+var stackLineRe = regexp.MustCompile(`^(\s*)(.*?): in (.*)$`)
+
+// NormalizeStacktrace removes mentions of line and column numbers from a
+// rendered stack trace: "main:1:5: in <toplevel>" => "main: in <toplevel>".
+//
+// Useful when comparing stack traces in tests to make the comparison less
+// brittle.
+func NormalizeStacktrace(trace string) string {
+	lines := strings.Split(trace, "\n")
+	for i := range lines {
+		if m := stackLineRe.FindStringSubmatch(lines[i]); m != nil {
+			space, module, funcname := m[1], m[2], m[3]
+			if idx := strings.IndexRune(module, ':'); idx != -1 {
+				module = module[:idx]
+			}
+			lines[i] = fmt.Sprintf("%s%s: in %s", space, module, funcname)
+		}
+	}
+	return strings.Join(lines, "\n")
+}

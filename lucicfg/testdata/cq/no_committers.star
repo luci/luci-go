@@ -11,6 +11,6 @@ luci.cq_group(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/cq/no_committers.star:3: in <toplevel>
+#   //testdata/cq/no_committers.star: in <toplevel>
 #   ...
 # Error: at least one CQ_COMMITTER acl.entry must be specified (either here or in luci.project)

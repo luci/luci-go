@@ -75,14 +75,14 @@ luci.builder(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/ambiguous_references.star:54: in <toplevel>
+#   //testdata/errors/ambiguous_references.star: in <toplevel>
 #   ...
 # Error: ambiguous reference "ambiguous builder" in luci.gitiles_poller("b1/ambiguous"), possible variants:
 #   luci.builder("b1/ambiguous builder")
 #   luci.builder("b2/ambiguous builder")
 #
 # Traceback (most recent call last):
-#   //testdata/errors/ambiguous_references.star:65: in <toplevel>
+#   //testdata/errors/ambiguous_references.star: in <toplevel>
 #   ...
 # Error: ambiguous reference "ambiguous builder" in luci.builder("b1/triggered"), possible variants:
 #   luci.builder("b1/ambiguous builder")

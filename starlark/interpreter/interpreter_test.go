@@ -233,10 +233,12 @@ func TestInterpreter(t *testing.T) {
 				"mod2.star": `load("//mod1.star", "a")`,
 			},
 		})
-		So(err, ShouldErrLike, `cannot load //mod1.star: Traceback (most recent call last):
-  //mod1.star:1: in <toplevel>
+		So(normalizeErr(err), ShouldEqual, `Traceback (most recent call last):
+  //main.star: in <toplevel>
+Error: cannot load //mod1.star: Traceback (most recent call last):
+  //mod1.star: in <toplevel>
 Error: cannot load //mod2.star: Traceback (most recent call last):
-  //mod2.star:1: in <toplevel>
+  //mod2.star: in <toplevel>
 Error: cannot load //mod1.star: cycle in the module dependency graph`)
 	})
 
@@ -251,11 +253,11 @@ Error: cannot load //mod1.star: cycle in the module dependency graph`)
 				`,
 			},
 		})
-		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `Traceback (most recent call last):
-  //main.star:1: in <toplevel>
+		So(normalizeErr(err), ShouldEqual, `Traceback (most recent call last):
+  //main.star: in <toplevel>
 Error: cannot load //mod.star: Traceback (most recent call last):
-  //mod.star:4: in <toplevel>
-  //mod.star:3: in f
+  //mod.star: in <toplevel>
+  //mod.star: in f
 Error: invalid call of non-function (NoneType)`)
 	})
 
@@ -325,13 +327,13 @@ Error: invalid call of non-function (NoneType)`)
 				`,
 			},
 		})
-		So(err.(*starlark.EvalError).Backtrace(), ShouldEqual, `Traceback (most recent call last):
-  //main.star:4: in <toplevel>
-  //main.star:3: in f
+		So(normalizeErr(err), ShouldEqual, `Traceback (most recent call last):
+  //main.star: in <toplevel>
+  //main.star: in f
   <builtin>: in exec
 Error: exec //exec.star failed: Traceback (most recent call last):
-  //exec.star:4: in <toplevel>
-  //exec.star:3: in f
+  //exec.star: in <toplevel>
+  //exec.star: in f
 Error: invalid call of non-function (NoneType)`)
 	})
 

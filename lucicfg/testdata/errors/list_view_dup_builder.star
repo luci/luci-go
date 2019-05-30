@@ -29,9 +29,9 @@ luci.list_view(
 # Expect errors like:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/list_view_dup_builder.star:25: in <toplevel>
+#   //testdata/errors/list_view_dup_builder.star: in <toplevel>
 #   ...
 # Error: builder luci.builder("ci/b") was already added to luci.list_view("View"), previous declaration:
 # Traceback (most recent call last):
-#   //testdata/errors/list_view_dup_builder.star:21: in <toplevel>
+#   //testdata/errors/list_view_dup_builder.star: in <toplevel>
 #   ...

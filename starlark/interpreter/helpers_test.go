@@ -24,6 +24,7 @@ import (
 	"testing"
 	"unicode"
 
+	"go.chromium.org/luci/starlark/builtins"
 	"go.starlark.net/starlark"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -162,4 +163,15 @@ func runScript(body string) error {
 		stdlib: map[string]string{"builtins.star": body},
 	})
 	return err
+}
+
+// normalizeErr takes an error and extracts a normalized stack trace from it.
+func normalizeErr(err error) string {
+	if err == nil {
+		return ""
+	}
+	if evalErr, ok := err.(*starlark.EvalError); ok {
+		return builtins.NormalizeStacktrace(evalErr.Backtrace())
+	}
+	return builtins.NormalizeStacktrace(err.Error())
 }

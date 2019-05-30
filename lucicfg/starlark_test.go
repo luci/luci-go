@@ -31,6 +31,7 @@ import (
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarktest"
 )
@@ -126,10 +127,13 @@ func TestAllStarlark(t *testing.T) {
 					return true
 				})
 
+				// Strip line and column numbers from backtraces.
+				normalized := builtins.NormalizeStacktrace(allErrs.String())
+
 				if expectErrExct != "" {
-					errorOnDiff(t, allErrs.String(), expectErrExct)
+					errorOnDiff(t, normalized, expectErrExct)
 				} else {
-					errorOnPatternMismatch(t, allErrs.String(), expectErrLike)
+					errorOnPatternMismatch(t, normalized, expectErrLike)
 				}
 				return nil
 			}
