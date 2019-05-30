@@ -49,10 +49,10 @@ s = func1()
 out = str(s)
 `)
 		So(err, ShouldBeNil)
-		So(out.(starlark.String).GoString(), ShouldEqual, `Traceback (most recent call last):
-  main:8: in <toplevel>
-  main:3: in func1
-  main:6: in func2
+		SkipSo(out.(starlark.String).GoString(), ShouldEqual, `Traceback (most recent call last):
+  main:8:10: in <toplevel>
+  main:3:15: in func1
+  main:6:20: in func2
   <builtin>: in stacktrace
 `)
 	})
@@ -68,9 +68,9 @@ def func2():
 out = str(func1())
 `)
 		So(err, ShouldBeNil)
-		So(out.(starlark.String).GoString(), ShouldEqual, `Traceback (most recent call last):
-  main:8: in <toplevel>
-  main:3: in func1
+		SkipSo(out.(starlark.String).GoString(), ShouldEqual, `Traceback (most recent call last):
+  main:8:16: in <toplevel>
+  main:3:15: in func1
 `)
 	})
 
