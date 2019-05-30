@@ -22,6 +22,30 @@
       "revId": "b14a2c0bb5322c6c74504c7fcccb5f50a26502c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bf3aa115_82f0463a",
+        "filename": "starlark/builtins/stacktrace.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-30T20:34:55Z",
+      "side": 1,
+      "message": "i almost always opt out, unless there is a clear performance or readability advantage for the same reason :)",
+      "parentUuid": "8c35b346_bc70eeca",
+      "range": {
+        "startLine": 105,
+        "startChar": 3,
+        "endLine": 107,
+        "endChar": 4
+      },
+      "revId": "b14a2c0bb5322c6c74504c7fcccb5f50a26502c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

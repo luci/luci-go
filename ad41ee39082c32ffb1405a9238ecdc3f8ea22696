@@ -22,6 +22,30 @@
       "revId": "ad41ee39082c32ffb1405a9238ecdc3f8ea22696",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "92c423e9_f1be6585",
+        "filename": "starlark/builtins/stacktrace.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-05-30T20:34:55Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "63bce30b_f02dbd5a",
+      "range": {
+        "startLine": 29,
+        "startChar": 13,
+        "endLine": 29,
+        "endChar": 29
+      },
+      "revId": "ad41ee39082c32ffb1405a9238ecdc3f8ea22696",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
