@@ -41,8 +41,9 @@ type Input struct {
 	TopLevel bool `protobuf:"varint,4,opt,name=top_level,json=topLevel,proto3" json:"top_level,omitempty"`
 	// List of CLs constituting CQ attempt for which this build was triggered.
 	//
-	// The CLs are ordered s.t. applying them in this order minimizes number of CLs
-	// that will be applied before their dependencies *for the same repository*.
+	// The CLs are ordered s.t. applying them in this order approximately
+	// minimizes the number of CLs that will be applied before their dependencies
+	// *for the same repository*.
 	//
 	// For example, with 5 CLs spanning 2 projects like this:
 	//         A2 -> A1
