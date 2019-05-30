@@ -42,7 +42,7 @@ func TestFail(t *testing.T) {
 	Convey("Works with default trace", t, func() {
 		err := runScript(`fail("boo")`)
 		So(err.Error(), ShouldEqual, "boo")
-		SkipSo(err.(*Failure).Backtrace(), ShouldContainSubstring, "main:1:5: in <toplevel>")
+		So(err.(*Failure).Backtrace(), ShouldContainSubstring, "main:1: in <toplevel>")
 	})
 
 	Convey("Works with custom trace", t, func() {
@@ -55,6 +55,6 @@ s = capture()
 fail("boo", trace=s)
 `)
 		So(err.Error(), ShouldEqual, "boo")
-		SkipSo(err.(*Failure).Backtrace(), ShouldContainSubstring, "main:3:19: in capture")
+		So(err.(*Failure).Backtrace(), ShouldContainSubstring, "main:3: in capture")
 	})
 }
