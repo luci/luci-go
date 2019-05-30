@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39f38977_74b93701",
+        "filename": "vpython/spec/load.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-05-30T23:49:58Z",
+      "side": 1,
+      "message": "why this? Though I think this is ignored; we override the \u0027common spec names\u0027 in infra: https://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/src/infra/tools/vpython/main.go",
+      "range": {
+        "startLine": 46,
+        "startChar": 9,
+        "endLine": 46,
+        "endChar": 16
+      },
+      "revId": "72c6018e576749278895bb254beec16f9d666bc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
