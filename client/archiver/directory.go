@@ -104,17 +104,23 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 				if err != nil {
 					return fmt.Errorf("Stat(%s): %s", l, err)
 				}
-				if strings.HasPrefix(l, dir) {
-					c <- &walkItem{fullPath: l[len(dir)+1:], relPath: relPath, info: info, inTreeSymlink: true}
+				// This is super annoying here especially on macOS, as when using
+				// TMPDIR, dir could have /var/folders/ while l has
+				// /private/var/folders/. Handle this case specifically.
+				realDir, err := filepath.EvalSymlinks(dir)
+				if err != nil {
+					return fmt.Errorf("EvalSymlinks(%s): %s", dir, err)
+				}
+				if strings.HasPrefix(l, realDir) {
+					c <- &walkItem{fullPath: l[len(realDir)+1:], relPath: relPath, info: info, inTreeSymlink: true}
 					return nil
 				}
-
+				// Found a symlink that pointed out of tree.
 				if info.IsDir() {
 					linkedView := view.NewSymlinkedView(relPath, l)
 					return filepath.Walk(l, walkWithLinks(l, linkedView))
-				} else {
-					c <- &walkItem{fullPath: l, relPath: relPath, info: info}
 				}
+				c <- &walkItem{fullPath: l, relPath: relPath, info: info}
 				return nil
 			}
 
