@@ -15,6 +15,7 @@
 package admin
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -74,17 +75,17 @@ func TestVisitAndMarkTags(t *testing.T) {
 			}
 
 			// Mark all k:1 tags.
-			err := visitAndMarkTags(ctx, 1, keys, func(t *model.Tag) string {
+			err := visitAndMarkTags(ctx, 1, keys, func(t *model.Tag) (string, error) {
 				if t.Tag == "k:1" {
-					return "why not?"
+					return "why not?", nil
 				}
-				return ""
+				return "", nil
 			})
 			So(err, ShouldBeNil)
 
 			// Mark all tags (in a different job).
-			err = visitAndMarkTags(ctx, 2, keys, func(t *model.Tag) string {
-				return "all"
+			err = visitAndMarkTags(ctx, 2, keys, func(t *model.Tag) (string, error) {
+				return "all", nil
 			})
 			So(err, ShouldBeNil)
 
@@ -154,8 +155,8 @@ func TestVisitAndMarkTags(t *testing.T) {
 			}
 
 			// Mark all discovered tags.
-			err := visitAndMarkTags(ctx, 1, keys, func(t *model.Tag) string {
-				return "all"
+			err := visitAndMarkTags(ctx, 1, keys, func(t *model.Tag) (string, error) {
+				return "all", nil
 			})
 			So(err, ShouldBeNil)
 
@@ -174,6 +175,33 @@ func TestVisitAndMarkTags(t *testing.T) {
 				keys[2],
 				keys[0],
 			})
+		})
+
+		Convey("Handles callback errors", func() {
+			keys := []*datastore.Key{
+				attachTag(i1, "k:1"),
+				attachTag(i1, "k:2"),
+				attachTag(i1, "k:3"),
+			}
+
+			boomErr := fmt.Errorf("boom")
+
+			// Fail on the second tag.
+			err := visitAndMarkTags(ctx, 1, keys, func(t *model.Tag) (string, error) {
+				if t.Tag == "k:2" {
+					return "ignored", boomErr
+				}
+				return "marked", nil
+			})
+			So(err, ShouldEqual, boomErr) // exact same error
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Recorded successfully processed tags.
+			var marked []markedTag
+			So(datastore.GetAll(ctx, queryMarkedTags(1), &marked), ShouldBeNil)
+			So(marked, ShouldHaveLength, 1)
+			So(marked[0].Tag, ShouldEqual, "k:1")
 		})
 	})
 }

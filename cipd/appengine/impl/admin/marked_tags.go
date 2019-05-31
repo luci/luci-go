@@ -115,27 +115,32 @@ func multiGetTags(c context.Context, keys []*datastore.Key, cb func(*datastore.K
 // with the human-readable reason why the tag was marked.
 //
 // Such marked tags are then stored in the datastore and later can be queried.
-func visitAndMarkTags(c context.Context, job mapper.JobID, keys []*datastore.Key, cb func(*model.Tag) string) error {
+//
+// Aborts on a first error.
+func visitAndMarkTags(c context.Context, job mapper.JobID, keys []*datastore.Key, cb func(*model.Tag) (string, error)) error {
 	var marked []*markedTag
 	err := multiGetTags(c, keys, func(key *datastore.Key, tag *model.Tag) error {
-		if why := cb(tag); why != "" {
-			mt := &markedTag{
-				Job: job,
-				Key: key,
-				Tag: tag.Tag,
-				Why: why,
-			}
-			mt.genID()
-			marked = append(marked, mt)
+		why, err := cb(tag)
+		if why == "" || err != nil {
+			return err
 		}
+		mt := &markedTag{
+			Job: job,
+			Key: key,
+			Tag: tag.Tag,
+			Why: why,
+		}
+		mt.genID()
+		marked = append(marked, mt)
 		return nil
 	})
-	if err != nil {
-		return err
+
+	// Store whatever we managed to mark, even if eventually we got an error.
+	if len(marked) != 0 {
+		if dsErr := datastore.Put(c, marked); dsErr != nil {
+			return errors.Annotate(dsErr, "failed to store %d markedTag(s)", len(marked)).Tag(transient.Tag).Err()
+		}
 	}
 
-	if err := datastore.Put(c, marked); err != nil {
-		return errors.Annotate(err, "failed to store %d markedTag(s)", len(marked)).Tag(transient.Tag).Err()
-	}
-	return nil
+	return err
 }

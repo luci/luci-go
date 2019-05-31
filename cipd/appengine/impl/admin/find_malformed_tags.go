@@ -47,11 +47,11 @@ func init() {
 }
 
 func findMalformedTagsMapper(c context.Context, job mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
-	return visitAndMarkTags(c, job, keys, func(t *model.Tag) string {
+	return visitAndMarkTags(c, job, keys, func(t *model.Tag) (string, error) {
 		if err := common.ValidateInstanceTag(t.Tag); err != nil {
-			return err.Error()
+			return err.Error(), nil
 		}
-		return ""
+		return "", nil
 	})
 }
 
