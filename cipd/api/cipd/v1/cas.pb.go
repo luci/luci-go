@@ -10,6 +10,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -757,6 +759,23 @@ type StorageServer interface {
 	//   FAILED_PRECONDITION if the upload operation is in PUBLISHED or VERIFYING
 	//      state (i.e. finished or being finalized now).
 	CancelUpload(context.Context, *CancelUploadRequest) (*UploadOperation, error)
+}
+
+// UnimplementedStorageServer can be embedded to have forward compatible implementations.
+type UnimplementedStorageServer struct {
+}
+
+func (*UnimplementedStorageServer) GetObjectURL(ctx context.Context, req *GetObjectURLRequest) (*ObjectURL, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetObjectURL not implemented")
+}
+func (*UnimplementedStorageServer) BeginUpload(ctx context.Context, req *BeginUploadRequest) (*UploadOperation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BeginUpload not implemented")
+}
+func (*UnimplementedStorageServer) FinishUpload(ctx context.Context, req *FinishUploadRequest) (*UploadOperation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FinishUpload not implemented")
+}
+func (*UnimplementedStorageServer) CancelUpload(ctx context.Context, req *CancelUploadRequest) (*UploadOperation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelUpload not implemented")
 }
 
 func RegisterStorageServer(s prpc.Registrar, srv StorageServer) {

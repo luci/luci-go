@@ -13,6 +13,8 @@ import (
 	_struct "github.com/golang/protobuf/ptypes/struct"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -2905,6 +2907,71 @@ type RepositoryServer interface {
 	//   ABORTED if the instance has some failed processors associated with it,
 	//       such instance is effectively broken and should not be used.
 	DescribeClient(context.Context, *DescribeClientRequest) (*DescribeClientResponse, error)
+}
+
+// UnimplementedRepositoryServer can be embedded to have forward compatible implementations.
+type UnimplementedRepositoryServer struct {
+}
+
+func (*UnimplementedRepositoryServer) GetPrefixMetadata(ctx context.Context, req *PrefixRequest) (*PrefixMetadata, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPrefixMetadata not implemented")
+}
+func (*UnimplementedRepositoryServer) GetInheritedPrefixMetadata(ctx context.Context, req *PrefixRequest) (*InheritedPrefixMetadata, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInheritedPrefixMetadata not implemented")
+}
+func (*UnimplementedRepositoryServer) UpdatePrefixMetadata(ctx context.Context, req *PrefixMetadata) (*PrefixMetadata, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePrefixMetadata not implemented")
+}
+func (*UnimplementedRepositoryServer) GetRolesInPrefix(ctx context.Context, req *PrefixRequest) (*RolesInPrefixResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRolesInPrefix not implemented")
+}
+func (*UnimplementedRepositoryServer) ListPrefix(ctx context.Context, req *ListPrefixRequest) (*ListPrefixResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPrefix not implemented")
+}
+func (*UnimplementedRepositoryServer) HidePackage(ctx context.Context, req *PackageRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HidePackage not implemented")
+}
+func (*UnimplementedRepositoryServer) UnhidePackage(ctx context.Context, req *PackageRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnhidePackage not implemented")
+}
+func (*UnimplementedRepositoryServer) DeletePackage(ctx context.Context, req *PackageRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePackage not implemented")
+}
+func (*UnimplementedRepositoryServer) RegisterInstance(ctx context.Context, req *Instance) (*RegisterInstanceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterInstance not implemented")
+}
+func (*UnimplementedRepositoryServer) ListInstances(ctx context.Context, req *ListInstancesRequest) (*ListInstancesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListInstances not implemented")
+}
+func (*UnimplementedRepositoryServer) SearchInstances(ctx context.Context, req *SearchInstancesRequest) (*SearchInstancesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchInstances not implemented")
+}
+func (*UnimplementedRepositoryServer) CreateRef(ctx context.Context, req *Ref) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRef not implemented")
+}
+func (*UnimplementedRepositoryServer) DeleteRef(ctx context.Context, req *DeleteRefRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRef not implemented")
+}
+func (*UnimplementedRepositoryServer) ListRefs(ctx context.Context, req *ListRefsRequest) (*ListRefsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRefs not implemented")
+}
+func (*UnimplementedRepositoryServer) AttachTags(ctx context.Context, req *AttachTagsRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AttachTags not implemented")
+}
+func (*UnimplementedRepositoryServer) DetachTags(ctx context.Context, req *DetachTagsRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DetachTags not implemented")
+}
+func (*UnimplementedRepositoryServer) ResolveVersion(ctx context.Context, req *ResolveVersionRequest) (*Instance, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResolveVersion not implemented")
+}
+func (*UnimplementedRepositoryServer) GetInstanceURL(ctx context.Context, req *GetInstanceURLRequest) (*ObjectURL, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInstanceURL not implemented")
+}
+func (*UnimplementedRepositoryServer) DescribeInstance(ctx context.Context, req *DescribeInstanceRequest) (*DescribeInstanceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DescribeInstance not implemented")
+}
+func (*UnimplementedRepositoryServer) DescribeClient(ctx context.Context, req *DescribeClientRequest) (*DescribeClientResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DescribeClient not implemented")
 }
 
 func RegisterRepositoryServer(s prpc.Registrar, srv RepositoryServer) {

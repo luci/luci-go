@@ -73,7 +73,7 @@ func queryMarkedTags(job mapper.JobID) *datastore.Query {
 // On overall RPC error returns a transient error.
 //
 // If it managed to fetch something, calls cb(key, tag) sequentially for
-// all tags there were found (silently skipping missing ones). If a tag was not
+// all tags that were found (silently skipping missing ones). If a tag was not
 // fetched for some other reason, returns the error right away.
 //
 // If the callback returns an error this error is returned immediately by
