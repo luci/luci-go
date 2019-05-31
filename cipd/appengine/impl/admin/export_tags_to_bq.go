@@ -45,7 +45,7 @@ func init() {
 		Func: exportTagsToBQ,
 		Config: mapper.JobConfig{
 			Query:         mapper.Query{Kind: "InstanceTag"},
-			ShardCount:    512,
+			ShardCount:    256,
 			PageSize:      256, // note: 500 is a strict limit imposed by GetMulti
 			TrackProgress: true,
 		},
