@@ -868,6 +868,11 @@ func (impl *repoImpl) ListInstances(c context.Context, r *api.ListInstancesReque
 func (impl *repoImpl) SearchInstances(c context.Context, r *api.SearchInstancesRequest) (resp *api.SearchInstancesResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
+	who := auth.CurrentIdentity(c)
+	for _, t := range r.Tags {
+		logging.Infof(c, "SearchInstances: %s %s %s:%s", who, r.Package, t.Key, t.Value)
+	}
+
 	result, nextPage, err := impl.paginatedQuery(c, paginatedQueryOpts{
 		Package:   r.Package,
 		PageSize:  r.PageSize,
