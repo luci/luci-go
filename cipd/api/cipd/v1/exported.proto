@@ -1,0 +1,36 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cipd;
+
+option go_package = "api";
+
+import "google/protobuf/timestamp.proto";
+
+
+// ExportedTag defines a schema for 'exported_tags_<jobid>' BigQuery tables.
+//
+// It is populated by EXPORT_TAGS_TO_BQ mapper job and can be used for various
+// adhoc analysis of tags.
+message ExportedTag {
+  string id = 1;                              // (pkg, inst, id) is full tag key
+  string instance = 2;                        // an instance ID, e.g. "AdPcH..."
+  string package = 3;                         // a package name, e.g. "a/b/c"
+  string key = 4;                             // key portion of the tag
+  string value = 5;                           // value portion of the tag
+  string attached_by = 6;                     // who added it, "user:<email>"
+  google.protobuf.Timestamp attached_ts = 7;  // when it was added
+}

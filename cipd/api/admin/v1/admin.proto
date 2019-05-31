@@ -46,6 +46,8 @@ enum MapperKind {
   ENUMERATE_PACKAGES = 1;
   // Find tags that don't pass ValidateInstanceTag and marks them.
   FIND_MALFORMED_TAGS = 2;
+  // Exports all tags into a BigQuery table 'exported_tags'.
+  EXPORT_TAGS_TO_BQ = 3;
 }
 
 
