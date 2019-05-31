@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a6519a37_ba93ab30",
+        "filename": "cipd/api/cipd/v1/exported.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-31T19:47:54Z",
+      "side": 1,
+      "message": "i didn\u0027t understand this...",
+      "range": {
+        "startLine": 29,
+        "startChar": 47,
+        "endLine": 29,
+        "endChar": 80
+      },
+      "revId": "bc9efba3fe8ec68de297941d1cda017e32f8affc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "475e37f6_b3605ef5",
+        "filename": "cipd/appengine/impl/admin/export_tags_to_bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-05-31T19:47:54Z",
+      "side": 1,
+      "message": "til",
+      "range": {
+        "startLine": 120,
+        "startChar": 5,
+        "endLine": 120,
+        "endChar": 24
+      },
+      "revId": "bc9efba3fe8ec68de297941d1cda017e32f8affc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
