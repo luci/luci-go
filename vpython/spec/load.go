@@ -30,10 +30,11 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
-// Suffix is the filesystem suffix for a script's partner specification file.
+// DefaultPartnerSuffix is the default filesystem suffix for a script's partner
+// specification file.
 //
 // See LoadForScript for more information.
-const Suffix = ".vpython"
+const DefaultPartnerSuffix = ".vpython"
 
 // DefaultCommonSpecNames is the name of the "common" specification file.
 //
@@ -42,7 +43,7 @@ const Suffix = ".vpython"
 // and will use the first file named CommonName that it finds. This enables
 // repository-wide and shared environment specifications.
 var DefaultCommonSpecNames = []string{
-	"common" + Suffix,
+	"common.vpython",
 }
 
 const (
@@ -90,6 +91,10 @@ type Loader struct {
 	//
 	// Names will be considered in the order that they appear.
 	CommonSpecNames []string
+
+	// PartnerSuffix is the filesystem suffix for a script's partner spec file. If
+	// empty, DefaultPartnerSuffix will be used.
+	PartnerSuffix string
 }
 
 // LoadForScript attempts to load a spec file for the specified script. If
@@ -220,8 +225,12 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 }
 
 func (l *Loader) findForScript(path string, isModule bool) (string, error) {
+	if l.PartnerSuffix == "" {
+		l.PartnerSuffix = DefaultPartnerSuffix
+	}
+
 	if !isModule {
-		path += Suffix
+		path += l.PartnerSuffix
 		if st, err := os.Stat(path); err != nil || st.IsDir() {
 			// File does not exist at this path.
 			return "", nil
@@ -245,7 +254,7 @@ func (l *Loader) findForScript(path string, isModule bool) (string, error) {
 		}
 
 		// Does a spec file exist for this path?
-		specPath := path + Suffix
+		specPath := path + l.PartnerSuffix
 		switch st, err := os.Stat(specPath); {
 		case err == nil && !st.IsDir():
 			// Found the file.
