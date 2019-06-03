@@ -30,6 +30,7 @@ var ErrTimeout = errors.Reason("timeout").Err()
 type Cmd struct {
 	*exec.Cmd
 
+	attr   attr
 	waitCh chan error
 	once   sync.Once
 }
@@ -46,12 +47,17 @@ func CommandContext(ctx context.Context, name string, arg ...string) *Cmd {
 	return cmd
 }
 
+// Start starts command with appropriate setup.
+func (c *Cmd) Start() error {
+	return c.start()
+}
+
 // Wait waits for timeout.
 func (c *Cmd) Wait(timeout time.Duration) error {
 	c.once.Do(func() {
 		c.waitCh = make(chan error)
 		go func() {
-			c.waitCh <- c.Cmd.Wait()
+			c.waitCh <- c.wait()
 			close(c.waitCh)
 		}()
 	})
@@ -64,7 +70,12 @@ func (c *Cmd) Wait(timeout time.Duration) error {
 	}
 }
 
-// Terminate sends SIGTERM.
+// Terminate sends SIGTERM on unix or CTRL+BREAK on windows.
 func (c *Cmd) Terminate() error {
 	return c.terminate()
+}
+
+// ExitCode returns exit code.
+func (c *Cmd) ExitCode() int {
+	return c.exitCode()
 }
