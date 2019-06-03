@@ -17,7 +17,6 @@ package archiver
 import (
 	"context"
 	"io/ioutil"
-	"log"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -30,10 +29,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func init() {
-	log.SetOutput(ioutil.Discard)
-}
 
 func TestArchiverEmpty(t *testing.T) {
 	t.Parallel()

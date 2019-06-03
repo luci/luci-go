@@ -91,73 +91,6 @@ func TestPushDirectory(t *testing.T) {
 	basicFile := func(contents string) isolated.File {
 		return isolated.BasicFile(isolated.HashBytes(h, []byte(contents)), int(mode), int64(len(contents)))
 	}
-	expectValidPush := func(t *testing.T, root string, nodes []fileNode, blacklist []string) {
-		server := isolatedfake.New()
-		ts := httptest.NewServer(server)
-		defer ts.Close()
-		a := New(context.Background(), isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
-
-		for _, node := range nodes {
-			if node.symlink != nil {
-				continue
-			}
-			fullPath := filepath.Join(root, node.relPath)
-			So(ioutil.WriteFile(fullPath, []byte(node.contents), mode), ShouldBeNil)
-		}
-
-		item := PushDirectory(a, root, "", blacklist)
-		So(item.Error(), ShouldBeNil)
-		So(item.DisplayName, ShouldResemble, filepath.Base(root)+".isolated")
-		item.WaitForHashed()
-		So(a.Close(), ShouldBeNil)
-
-		expected := map[string]map[isolated.HexDigest]string{namespace: {}}
-		expectedMisses := 1
-		expectedBytesPushed := 0
-		files := make(map[string]isolated.File)
-		for _, node := range nodes {
-			if node.expectIgnored {
-				continue
-			}
-			files[node.relPath] = node.expectedFile
-			if node.symlink != nil && node.symlink.inTree {
-				continue
-			}
-			expectedBytesPushed += int(len(node.contents))
-			expectedMisses++
-			digest := isolated.HashBytes(h, []byte(node.contents))
-			expected[namespace][digest] = node.contents
-		}
-
-		isolatedData := isolated.Isolated{
-			Algo:    "sha-1",
-			Files:   files,
-			Version: isolated.IsolatedFormatVersion,
-		}
-		encoded, err := json.Marshal(isolatedData)
-		So(err, ShouldBeNil)
-		isolatedEncoded := string(encoded) + "\n"
-		isolatedHash := isolated.HashBytes(h, []byte(isolatedEncoded))
-		expected[namespace][isolatedHash] = isolatedEncoded
-		expectedBytesPushed += len(isolatedEncoded)
-
-		actual := map[string]map[isolated.HexDigest]string{}
-		for n, c := range server.Contents() {
-			actual[n] = map[isolated.HexDigest]string{}
-			for k, v := range c {
-				actual[n][k] = string(v)
-			}
-		}
-		So(actual, ShouldResemble, expected)
-		So(item.Digest(), ShouldResemble, isolatedHash)
-
-		stats := a.Stats()
-		So(stats.TotalMisses(), ShouldResemble, expectedMisses)
-		So(stats.TotalBytesPushed(), ShouldResemble, units.Size(expectedBytesPushed))
-		So(stats.TotalHits(), ShouldResemble, 0)
-		So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
-		So(server.Error(), ShouldBeNil)
-	}
 
 	cases := []testCase{
 		{
@@ -323,16 +256,87 @@ func TestPushDirectory(t *testing.T) {
 					t.Fatal(err)
 				}
 			}()
-			for _, node := range testCase.nodes {
-				fullPath := filepath.Join(tmpDir, node.relPath)
-				if node.symlink == nil {
-					So(os.MkdirAll(filepath.Dir(fullPath), 0700), ShouldBeNil)
-				} else {
-					linkname := strings.Replace(node.symlink.name, "$ROOT", tmpDir, 1)
-					So(os.Symlink(node.symlink.src, linkname), ShouldBeNil)
-				}
-			}
-			expectValidPush(t, tmpDir, testCase.nodes, testCase.blacklist)
+			expectValidPush(t, tmpDir, testCase.nodes, testCase.blacklist, namespace, mode)
 		})
 	}
+}
+
+func expectValidPush(t *testing.T, root string, nodes []fileNode, blacklist []string, namespace string, mode os.FileMode) {
+	h := isolated.GetHash(namespace)
+	server := isolatedfake.New()
+	ts := httptest.NewServer(server)
+	defer ts.Close()
+	a := New(context.Background(), isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
+
+	// Create the directories and symlinks.
+	for _, node := range nodes {
+		fullPath := filepath.Join(root, node.relPath)
+		if node.symlink == nil {
+			So(os.MkdirAll(filepath.Dir(fullPath), 0700), ShouldBeNil)
+		} else {
+			linkname := strings.Replace(node.symlink.name, "$ROOT", root, 1)
+			So(os.Symlink(node.symlink.src, linkname), ShouldBeNil)
+		}
+	}
+	// Write the files.
+	for _, node := range nodes {
+		if node.symlink != nil {
+			continue
+		}
+		fullPath := filepath.Join(root, node.relPath)
+		So(ioutil.WriteFile(fullPath, []byte(node.contents), mode), ShouldBeNil)
+	}
+
+	item := PushDirectory(a, root, "", blacklist)
+	So(item.Error(), ShouldBeNil)
+	So(item.DisplayName, ShouldResemble, filepath.Base(root)+".isolated")
+	item.WaitForHashed()
+	So(a.Close(), ShouldBeNil)
+
+	expected := map[string]map[isolated.HexDigest]string{namespace: {}}
+	expectedMisses := 1
+	expectedBytesPushed := 0
+	files := make(map[string]isolated.File)
+	for _, node := range nodes {
+		if node.expectIgnored {
+			continue
+		}
+		files[node.relPath] = node.expectedFile
+		if node.symlink != nil && node.symlink.inTree {
+			continue
+		}
+		expectedBytesPushed += int(len(node.contents))
+		expectedMisses++
+		digest := isolated.HashBytes(h, []byte(node.contents))
+		expected[namespace][digest] = node.contents
+	}
+
+	isolatedData := isolated.Isolated{
+		Algo:    "sha-1",
+		Files:   files,
+		Version: isolated.IsolatedFormatVersion,
+	}
+	encoded, err := json.Marshal(isolatedData)
+	So(err, ShouldBeNil)
+	isolatedEncoded := string(encoded) + "\n"
+	isolatedHash := isolated.HashBytes(h, []byte(isolatedEncoded))
+	expected[namespace][isolatedHash] = isolatedEncoded
+	expectedBytesPushed += len(isolatedEncoded)
+
+	actual := map[string]map[isolated.HexDigest]string{}
+	for n, c := range server.Contents() {
+		actual[n] = map[isolated.HexDigest]string{}
+		for k, v := range c {
+			actual[n][k] = string(v)
+		}
+	}
+	So(actual, ShouldResemble, expected)
+	So(item.Digest(), ShouldResemble, isolatedHash)
+
+	stats := a.Stats()
+	So(stats.TotalMisses(), ShouldResemble, expectedMisses)
+	So(stats.TotalBytesPushed(), ShouldResemble, units.Size(expectedBytesPushed))
+	So(stats.TotalHits(), ShouldResemble, 0)
+	So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
+	So(server.Error(), ShouldBeNil)
 }
