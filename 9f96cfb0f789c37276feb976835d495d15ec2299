@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3b9c79a4_1e1ef457",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-03T15:18:55Z",
+      "side": 1,
+      "message": "I\u0027d prefer this and wait() to be moved close to kill() below.",
+      "revId": "9f96cfb0f789c37276feb976835d495d15ec2299",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74bfc5d2_a9ee3985",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-03T15:18:55Z",
+      "side": 1,
+      "message": "failed",
+      "range": {
+        "startLine": 57,
+        "startChar": 31,
+        "endLine": 57,
+        "endChar": 36
+      },
+      "revId": "9f96cfb0f789c37276feb976835d495d15ec2299",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c37f7d1_eccb8e89",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-03T15:18:55Z",
+      "side": 1,
+      "message": "In some case, we may shell out frequently. I think it\u0027d be worth a sync.Once().",
+      "revId": "9f96cfb0f789c37276feb976835d495d15ec2299",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4777c914_fe6d07d0",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-03T15:18:55Z",
+      "side": 1,
+      "message": "I think I\u0027d prefer a:\n\nsuccess :\u003d false\n\ndefer func() {\n  if !success {\n    c.kill()\n    c.wait()\n  }\n}()\n\nand at line 127:\n\ndefer func() {\n  if !success {\n    windows.CloseHandle(job)\n  }\n}()\n\nand finally at line 140:\n\nsuccess \u003d true",
+      "revId": "9f96cfb0f789c37276feb976835d495d15ec2299",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
