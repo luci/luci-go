@@ -22,6 +22,30 @@
       "revId": "9f75cc88e2eb8fbf763684787293f167c356a5a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf9f1dbf_d567f544",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-03T04:22:35Z",
+      "side": 1,
+      "message": "OK. I\u0027ll ask advice about what should we do here.",
+      "parentUuid": "5d25fa97_dae0d995",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 25
+      },
+      "revId": "9f75cc88e2eb8fbf763684787293f167c356a5a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
