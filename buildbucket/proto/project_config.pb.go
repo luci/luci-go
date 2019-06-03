@@ -331,7 +331,7 @@ type Builder struct {
 	//   This is a shortcut for "0:<key>:<value>", see below.
 	// - "<expiration_secs>:<key>:<value>" - wait for up to expiration_secs.
 	//   for a bot with the dimension.
-	//   Supports mutliple values for different keys and expiration_secs.
+	//   Supports multiple values for different keys and expiration_secs.
 	//   expiration_secs must be a multiple of 60.
 	//
 	// When merging a set of dimensions S1 into S2, all dimensions in S1 with a
@@ -777,7 +777,7 @@ func (m *Builder_Recipe) GetPropertiesJ() []string {
 
 // Configuration of buildbucket-swarming integration for one bucket.
 type Swarming struct {
-	// DEPERECATED. Use builder_defaults.swarming_host instead.
+	// DEPRECATED. Use builder_defaults.swarming_host instead.
 	// Setting this fields sets builder_defaults.swarming_host.
 	Hostname string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	// DEPRECATED, IGNORED.

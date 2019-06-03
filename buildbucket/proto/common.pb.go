@@ -578,7 +578,7 @@ func (m *TimeRange) GetEndTime() *timestamp.Timestamp {
 type RequestedDimension struct {
 	Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-	// If set, ignore this dimension after this duraiton.
+	// If set, ignore this dimension after this duration.
 	Expiration           *duration.Duration `protobuf:"bytes,3,opt,name=expiration,proto3" json:"expiration,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
