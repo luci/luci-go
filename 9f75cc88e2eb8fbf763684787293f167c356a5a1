@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d25fa97_dae0d995",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-03T03:57:15Z",
+      "side": 1,
+      "message": "Then, why code only has LUCI\u0027s copyrights?\nWill you ask OSS advisory on the expected licensing here?",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 25
+      },
+      "revId": "9f75cc88e2eb8fbf763684787293f167c356a5a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
