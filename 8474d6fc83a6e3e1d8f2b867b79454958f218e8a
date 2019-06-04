@@ -22,6 +22,30 @@
       "revId": "8474d6fc83a6e3e1d8f2b867b79454958f218e8a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d172487_6a5115a1",
+        "filename": "cipd/appengine/impl/model/deletion.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-04T00:39:57Z",
+      "side": 1,
+      "message": "thanks!",
+      "parentUuid": "bbc840fd_540cd74e",
+      "range": {
+        "startLine": 90,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 1
+      },
+      "revId": "8474d6fc83a6e3e1d8f2b867b79454958f218e8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
