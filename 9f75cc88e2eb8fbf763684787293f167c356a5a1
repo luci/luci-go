@@ -46,6 +46,30 @@
       "revId": "9f75cc88e2eb8fbf763684787293f167c356a5a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf608025_d811690e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-04T05:25:44Z",
+      "side": 1,
+      "message": "I changed to only have Go\u0027s copyright for copied sources.\nShould I wait answer from OSS advisory here?",
+      "parentUuid": "cf9f1dbf_d567f544",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 25
+      },
+      "revId": "9f75cc88e2eb8fbf763684787293f167c356a5a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
