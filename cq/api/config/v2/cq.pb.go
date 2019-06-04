@@ -820,9 +820,6 @@ type Verifiers_Tryjob_Builder struct {
 	// Examples:
 	//   "chromium/try/linux-tester"
 	//   "other-project/try/shared-try-builder"
-	//
-	// For legacy buckets on buildbot, use * as project placeholder, e.g.,
-	//   "*/master.tryserver.example/linux-tester"
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Optional. If true, a fresh build will be required for each CQ attempt.
 	//
