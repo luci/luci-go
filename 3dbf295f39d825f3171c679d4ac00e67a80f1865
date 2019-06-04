@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "64338dc0_b8cb5ac9",
+        "filename": "common/system/exec2/exec2.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-04T12:57:04Z",
+      "side": 1,
+      "message": "Because of the way that Start() is now implemented on Windows, I changed mind and I think it would be better to not embed it. The rationale is that calling:\n\n  c :\u003d exec2.CommandContext(...)\n  c.Cmd.Start()\n  c.Wait()\n\nwould mess things up. This can be done in a follow up if you agree.",
+      "revId": "3dbf295f39d825f3171c679d4ac00e67a80f1865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3de50ba9_a89fa2e5",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-04T12:57:04Z",
+      "side": 1,
+      "message": "I personally really like when globals are at the top.",
+      "revId": "3dbf295f39d825f3171c679d4ac00e67a80f1865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd33f97a_2b75104f",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-04T12:57:04Z",
+      "side": 1,
+      "message": "Note that we\u0027ll have to enable the use of CREATE_NEW_CONSOLE eventually.",
+      "revId": "3dbf295f39d825f3171c679d4ac00e67a80f1865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
