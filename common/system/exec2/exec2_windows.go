@@ -37,7 +37,7 @@ type attr struct {
 }
 
 func (c *Cmd) setupCmd() {
-	c.Cmd.SysProcAttr = &syscall.SysProcAttr{
+	c.cmd.SysProcAttr = &syscall.SysProcAttr{
 		CreationFlags: windows.CREATE_SUSPENDED,
 	}
 	c.attr.exitCode = -1
@@ -57,9 +57,9 @@ func createJobObject() (windows.Handle, error) {
 func (c *Cmd) start() error {
 	// TODO(tikuta): use os/exec package if https://github.com/golang/go/issues/32404 is fixed.
 	sysattr := &syscall.ProcAttr{
-		Dir: c.Dir,
-		Env: c.Env,
-		Sys: c.SysProcAttr,
+		Dir: c.cmd.Dir,
+		Env: c.cmd.Env,
+		Sys: c.cmd.SysProcAttr,
 	}
 
 	if sysattr.Env == nil {
@@ -72,12 +72,12 @@ func (c *Cmd) start() error {
 
 	sysattr.Files = append(sysattr.Files, devnull.Fd(), os.Stdout.Fd(), os.Stderr.Fd())
 
-	lp, err := internal.LookExtensions(c.Path, c.Dir)
+	lp, err := internal.LookExtensions(c.cmd.Path, c.cmd.Dir)
 	if err != nil {
 		return errors.Annotate(err, "failed to call lookExtensions").Err()
 	}
-	c.Path = lp
-	process, thread, err := internal.StartProcess(c.Path, c.Args, sysattr)
+	c.cmd.Path = lp
+	process, thread, err := internal.StartProcess(c.cmd.Path, c.cmd.Args, sysattr)
 	if err != nil {
 		return errors.Annotate(err, "failed to call startProcess").Err()
 	}

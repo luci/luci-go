@@ -25,27 +25,27 @@ import (
 type attr struct{}
 
 func (c *Cmd) setupCmd() {
-	c.SysProcAttr = &syscall.SysProcAttr{
+	c.cmd.SysProcAttr = &syscall.SysProcAttr{
 		// Use process group to kill all child processes.
 		Setpgid: true,
 	}
 }
 
 func (c *Cmd) start() error {
-	return c.Cmd.Start()
+	return c.cmd.Start()
 }
 
 func (c *Cmd) terminate() error {
-	if err := c.Process.Signal(syscall.SIGTERM); err != nil {
+	if err := c.cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		return errors.Annotate(err, "failed to send SIGTERM").Err()
 	}
 	return nil
 }
 
 func (c *Cmd) wait() error {
-	return c.Cmd.Wait()
+	return c.cmd.Wait()
 }
 
 func (c *Cmd) exitCode() int {
-	return c.ProcessState.ExitCode()
+	return c.cmd.ProcessState.ExitCode()
 }

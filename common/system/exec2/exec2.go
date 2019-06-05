@@ -28,7 +28,7 @@ var ErrTimeout = errors.Reason("timeout").Err()
 
 // Cmd is like exec.Cmd, but has fields for timeout support.
 type Cmd struct {
-	*exec.Cmd
+	cmd *exec.Cmd
 
 	attr   attr
 	waitCh chan error
@@ -39,7 +39,7 @@ type Cmd struct {
 // default and supports timeout in Wait function.
 func CommandContext(ctx context.Context, name string, arg ...string) *Cmd {
 	cmd := &Cmd{
-		Cmd: exec.CommandContext(ctx, name, arg...),
+		cmd: exec.CommandContext(ctx, name, arg...),
 	}
 
 	cmd.setupCmd()
