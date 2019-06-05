@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ea89f53_cf5c6198",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-05T21:59:15Z",
+      "side": 1,
+      "message": "this reflect-heavy code is very hard to read, almost as bad as C++ templates with SFINAE before C++11 :(\n\nGiven that this is Go, have you considered generating paging instead?\n\nIf we have to stick to such reflect horror, can we move this into luci/gae to make it generally useful and so more worthy paying the higher cost of maintenance?",
+      "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
