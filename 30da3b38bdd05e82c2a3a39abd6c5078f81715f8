@@ -46,6 +46,30 @@
       "revId": "30da3b38bdd05e82c2a3a39abd6c5078f81715f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "69aa1733_814ad601",
+        "filename": "client/archiver/archiver.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-06-05T23:44:43Z",
+      "side": 1,
+      "message": "I was under the impression the performance hit is on the order of nanoseconds, and hence not generally a concern... It\u0027s not a big deal either way, I was just surprised because `defer` was used right above :) [What\u0027s happening in Stats() is less trivial, sure]",
+      "parentUuid": "407301dd_d4cdee3b",
+      "range": {
+        "startLine": 419,
+        "startChar": 6,
+        "endLine": 419,
+        "endChar": 12
+      },
+      "revId": "30da3b38bdd05e82c2a3a39abd6c5078f81715f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
