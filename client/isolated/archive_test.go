@@ -19,8 +19,10 @@ import (
 	"context"
 	"crypto"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -145,6 +147,85 @@ func TestArchive(t *testing.T) {
 				So(digest, ShouldResemble, isolatedData.Hash)
 			})
 		}
+	})
+}
+
+func TestArchiveFail(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	Convey(`Fails to archive a file`, t, func() {
+		server := isolatedfake.New()
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+
+		Convey(`File missing`, func() {
+			server := isolatedfake.New()
+			ts := httptest.NewServer(server)
+			defer ts.Close()
+			a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+
+			tmpDir, err := ioutil.TempDir("", "archiver")
+			So(err, ShouldBeNil)
+			defer func() {
+				if err := os.RemoveAll(tmpDir); err != nil {
+					t.Fail()
+				}
+			}()
+
+			// This will trigger an eventual Cancel().
+			nonexistent := filepath.Join(tmpDir, "nonexistent")
+			item1 := a.PushFile("foo", nonexistent, 0)
+			So(item1.DisplayName, ShouldResemble, "foo")
+
+			fileName := filepath.Join(tmpDir, "existent")
+			So(ioutil.WriteFile(fileName, []byte("foo"), 0600), ShouldBeNil)
+			item2 := a.PushFile("existent", fileName, 0)
+			item1.WaitForHashed()
+			item2.WaitForHashed()
+			So(item1.Error(), ShouldResemble, fmt.Errorf("source(foo) failed: open %s/nonexistent: no such file or directory", tmpDir))
+			So(item2.Error(), ShouldResemble, context.Canceled)
+			// TODO(maruel): https://crbug.com/969145
+			So(a.Close(), ShouldResemble, context.Canceled)
+			So(server.Error(), ShouldBeNil)
+		})
+
+		Convey(`Server error`, func() {
+			server := isolatedfake.New()
+			expectedErr := errors.New("expected")
+			// Override the handler to fail.
+			server.ServeMux = *http.NewServeMux()
+			server.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+				ioutil.ReadAll(req.Body)
+				req.Body.Close()
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.WriteHeader(400)
+				j := json.NewEncoder(w)
+				out := map[string]string{"error": expectedErr.Error()}
+				if err := j.Encode(out); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			})
+			ts := httptest.NewServer(server)
+			defer ts.Close()
+			a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+
+			tmpDir, err := ioutil.TempDir("", "archiver")
+			So(err, ShouldBeNil)
+			defer func() {
+				if err := os.RemoveAll(tmpDir); err != nil {
+					t.Fail()
+				}
+			}()
+
+			// This will trigger an eventual Cancel().
+			fileName := filepath.Join(tmpDir, "existent")
+			So(ioutil.WriteFile(fileName, []byte("foo"), 0600), ShouldBeNil)
+			item := a.PushFile("existent", fileName, 0)
+			item.WaitForHashed()
+			So(item.Error(), ShouldResemble, nil)
+			// TODO(maruel): https://crbug.com/969145
+			So(a.Close(), ShouldResemble, context.Canceled)
+		})
 	})
 }
 
