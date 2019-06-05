@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "179c1e8d_8407ce1e",
+        "filename": "client/archiver/archiver.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-06-05T21:33:32Z",
+      "side": 1,
+      "message": "Curiosity: is there a reason not to use defer here?",
+      "range": {
+        "startLine": 419,
+        "startChar": 6,
+        "endLine": 419,
+        "endChar": 12
+      },
+      "revId": "30da3b38bdd05e82c2a3a39abd6c5078f81715f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
