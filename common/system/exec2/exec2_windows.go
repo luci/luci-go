@@ -121,8 +121,7 @@ func (c *Cmd) start() error {
 }
 
 func (c *Cmd) terminate() error {
-	// TODO(tikuta): use GenerateConsoleCtrlEvent
-	return c.kill()
+	return windows.GenerateConsoleCtrlEvent(windows.CTRL_BREAK_EVENT, uint32(c.cmd.Process.Pid))
 }
 
 func (c *Cmd) wait() error {
