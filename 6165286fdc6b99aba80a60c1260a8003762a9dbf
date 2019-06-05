@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5496c9d8_b8c1f6bf",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-05T06:20:40Z",
+      "side": 1,
+      "message": "defined but not used?  Or implicitly used?",
+      "range": {
+        "startLine": 93,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 33
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd653d73_add3dd76",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-05T06:20:40Z",
+      "side": 1,
+      "message": "why not wait for job?\nwaiting for attr.process might mean waiting for the process, and it might not wait for child processes.",
+      "range": {
+        "startLine": 135,
+        "startChar": 1,
+        "endLine": 135,
+        "endChar": 72
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3ce6bbd_03c9b900",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-05T06:20:40Z",
+      "side": 1,
+      "message": "this can be redundant if job object is available because terminatejobobject or closing job object means termination of the process.",
+      "range": {
+        "startLine": 153,
+        "startChar": 11,
+        "endLine": 153,
+        "endChar": 26
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dfc738c_f904a44c",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-05T06:20:40Z",
+      "side": 1,
+      "message": "possible job object leak?\nwhen do you close job object?",
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fe01cb0_d4473c0f",
+        "filename": "common/system/exec2/internal/dummy.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-05T06:20:40Z",
+      "side": 1,
+      "message": "Will you explain more on what error this function mitigates?",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 44
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
