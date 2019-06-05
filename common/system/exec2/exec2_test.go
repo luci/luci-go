@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(tikuta): Support windows.
-// +build !windows
-
 package exec2
 
 import (
@@ -27,25 +24,34 @@ import (
 )
 
 func TestExec(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip()
-	}
-
 	t.Parallel()
 
 	Convey("TestExec", t, func() {
 		ctx := context.Background()
+
 		Convey("normal", func() {
-			cmd := CommandContext(ctx, "echo")
+			var args []string
+			if runtime.GOOS == "windows" {
+				args = []string{"cmd.exe", "/c"}
+			}
+			args = append(args, "echo")
+			cmd := CommandContext(ctx, args[0], args[1:]...)
+
 			So(cmd.Start(), ShouldBeNil)
 
 			So(cmd.Wait(time.Second), ShouldBeNil)
 
-			So(cmd.ProcessState.ExitCode(), ShouldEqual, 0)
+			So(cmd.ExitCode(), ShouldEqual, 0)
 		})
 
 		Convey("timeout", func() {
-			cmd := CommandContext(ctx, "sleep", "1000")
+			var args []string
+			if runtime.GOOS == "windows" {
+				args = []string{"powershell.exe", "-Command", `"Start-Sleep -s 1000"`}
+			} else {
+				args = []string{"sleep", "1000"}
+			}
+			cmd := CommandContext(ctx, args[0], args[1:]...)
 
 			So(cmd.Start(), ShouldBeNil)
 
@@ -53,12 +59,24 @@ func TestExec(t *testing.T) {
 
 			So(cmd.Terminate(), ShouldBeNil)
 
-			So(cmd.Wait(time.Second).Error(), ShouldEqual, "signal: terminated")
+			if runtime.GOOS == "windows" {
+				So(cmd.Wait(time.Second), ShouldBeNil)
+			} else {
+				So(cmd.Wait(time.Second).Error(), ShouldEqual, "signal: terminated")
+			}
 
-			So(cmd.ProcessState.ExitCode(), ShouldEqual, -1)
+			if runtime.GOOS == "windows" {
+				So(cmd.ExitCode(), ShouldEqual, 1)
+			} else {
+				So(cmd.ExitCode(), ShouldEqual, -1)
+			}
 		})
 
 		Convey("context timeout", func() {
+			if runtime.GOOS == "windows" {
+				// TODO(tikuta): support context timeout on windows
+				return
+			}
 			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
 			defer cancel()
 			cmd := CommandContext(ctx, "sleep", "1000")
@@ -67,7 +85,7 @@ func TestExec(t *testing.T) {
 
 			So(cmd.Wait(time.Second).Error(), ShouldEqual, "signal: killed")
 
-			So(cmd.ProcessState.ExitCode(), ShouldEqual, -1)
+			So(cmd.ExitCode(), ShouldEqual, -1)
 		})
 
 	})
