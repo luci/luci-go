@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f1c14bb_6879847e",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-05T07:52:23Z",
+      "side": 1,
+      "message": "If we follow this behavior, exitCode might return -1 until process finishes?\nhttps://golang.org/pkg/os/#ProcessState.ExitCode",
+      "revId": "685c574b61de298979c7990b2f1b775b6caea8f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
