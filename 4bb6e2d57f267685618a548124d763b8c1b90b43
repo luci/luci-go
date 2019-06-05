@@ -34,6 +34,24 @@
       "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6298e933_8318097c",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-05T23:25:47Z",
+      "side": 1,
+      "message": "by generating I meant a tool to be run by \"go generate\" to generate a dedicated pageQuery function taking a query and templated upon entity type and resulting proto message.",
+      "parentUuid": "5103fd74_1afe7d5b",
+      "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
