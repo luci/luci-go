@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea9a4f81_0ff11560",
+        "filename": "client/isolated/archive_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T22:25:21Z",
+      "side": 1,
+      "message": "you don\u0027t need this?",
+      "range": {
+        "startLine": 162,
+        "startChar": 0,
+        "endLine": 164,
+        "endChar": 19
+      },
+      "revId": "0ce9ac64bb2e770205f64ec4ce98230f8ed49adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19d6fa15_bdc79af7",
+        "filename": "client/isolated/archive_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T22:25:21Z",
+      "side": 1,
+      "message": "why not So(err, ShouldBeNil)?",
+      "revId": "0ce9ac64bb2e770205f64ec4ce98230f8ed49adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd398e77_b6ff8455",
+        "filename": "client/isolated/archive_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T22:25:21Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "0ce9ac64bb2e770205f64ec4ce98230f8ed49adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69ef2046_4a3fcac5",
+        "filename": "client/isolated/archive_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T22:25:21Z",
+      "side": 1,
+      "message": "why not So(err, ShouldBeNil)?",
+      "revId": "0ce9ac64bb2e770205f64ec4ce98230f8ed49adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
