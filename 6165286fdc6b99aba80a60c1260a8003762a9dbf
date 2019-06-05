@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "dc817fbd_0b8f8ff4",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T06:35:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5496c9d8_b8c1f6bf",
+      "range": {
+        "startLine": 93,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 33
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cd653d73_add3dd76",
         "filename": "common/system/exec2/exec2_windows.go",
         "patchSetId": 13
@@ -36,6 +60,30 @@
       "writtenOn": "2019-06-05T06:20:40Z",
       "side": 1,
       "message": "why not wait for job?\nwaiting for attr.process might mean waiting for the process, and it might not wait for child processes.",
+      "range": {
+        "startLine": 135,
+        "startChar": 1,
+        "endLine": 135,
+        "endChar": 72
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f29b093_87f7bd25",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T06:35:17Z",
+      "side": 1,
+      "message": "I don\u0027t set time limit for job, so wait for job is not activated now.\nhttps://docs.microsoft.com/en-us/windows/desktop/procthread/job-objects#managing-job-objects\n\nWe\u0027ll use IOCP to know process status.\nhttps://docs.microsoft.com/en-us/windows/desktop/api/WinNT/ns-winnt-_jobobject_associate_completion_port",
+      "parentUuid": "cd653d73_add3dd76",
       "range": {
         "startLine": 135,
         "startChar": 1,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "f0c3e17b_f926d49e",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T06:35:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3ce6bbd_03c9b900",
+      "range": {
+        "startLine": 153,
+        "startChar": 11,
+        "endLine": 153,
+        "endChar": 26
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6dfc738c_f904a44c",
         "filename": "common/system/exec2/exec2_windows.go",
         "patchSetId": 13
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "10d4da33_61b43295",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T06:35:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6dfc738c_f904a44c",
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1fe01cb0_d4473c0f",
         "filename": "common/system/exec2/internal/dummy.go",
         "patchSetId": 13
@@ -99,6 +189,30 @@
       "writtenOn": "2019-06-05T06:20:40Z",
       "side": 1,
       "message": "Will you explain more on what error this function mitigates?",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 44
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36200d70_0039dea5",
+        "filename": "common/system/exec2/internal/dummy.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T06:35:17Z",
+      "side": 1,
+      "message": "In linux, pre-commit-go tries to check common/system/exec2/internal, but this package does not have code for linux and pcg showed failure.\nhttps://logs.chromium.org/logs/infra/buildbucket/cr-buildbucket.appspot.com/8911520031179459280/+/steps/presubmit/0/stdout\n\nThis is workaround for that.",
+      "parentUuid": "1fe01cb0_d4473c0f",
       "range": {
         "startLine": 17,
         "startChar": 0,
