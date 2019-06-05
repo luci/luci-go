@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "01dcdbf1_3d52698a",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-05T07:16:00Z",
+      "side": 1,
+      "message": "The code seems to still remains in patch set 14?\nIf it is implicitly used, will you mention that in the comment?  Since this looks like dead code, people would remove that.",
+      "parentUuid": "dc817fbd_0b8f8ff4",
+      "range": {
+        "startLine": 93,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 33
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cd653d73_add3dd76",
         "filename": "common/system/exec2/exec2_windows.go",
         "patchSetId": 13
@@ -213,6 +237,30 @@
       "side": 1,
       "message": "In linux, pre-commit-go tries to check common/system/exec2/internal, but this package does not have code for linux and pcg showed failure.\nhttps://logs.chromium.org/logs/infra/buildbucket/cr-buildbucket.appspot.com/8911520031179459280/+/steps/presubmit/0/stdout\n\nThis is workaround for that.",
       "parentUuid": "1fe01cb0_d4473c0f",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 44
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3884dd31_c0499e27",
+        "filename": "common/system/exec2/internal/dummy.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-05T07:16:00Z",
+      "side": 1,
+      "message": "Will you also write that in the function comment?\n\nThe following comment is outside of this CL, but\nI believe pcg should have the way to ignore this kinds of cases.\nWe want presubmit checks for code written by us, but we should not be interested in the presubmit check for 3rd party code.  Also, having the option to ignore the case might be better than having this kinds of workaround in the code.",
+      "parentUuid": "36200d70_0039dea5",
       "range": {
         "startLine": 17,
         "startChar": 0,

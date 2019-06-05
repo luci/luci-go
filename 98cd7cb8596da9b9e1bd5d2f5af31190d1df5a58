@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3268322_a7692df3",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-05T07:16:00Z",
+      "side": 1,
+      "message": "I just started to wonder when we can release the resource if we do not execute kill().",
+      "revId": "98cd7cb8596da9b9e1bd5d2f5af31190d1df5a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
