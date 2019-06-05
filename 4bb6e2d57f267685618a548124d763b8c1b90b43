@@ -52,6 +52,24 @@
       "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c60c62c_1719fa5b",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-06-05T23:35:47Z",
+      "side": 1,
+      "message": "I think that\u0027s as bad as copy/pasting this code without reflection three times for each List RPC. You think this code is really that bad? Aside from extra reflect function calls wrapping stuff (e.g. return values wrapped in []reflect.Value{reflect.ValueOf(return value)}), in places what\u0027s the issue? The most complex part is L167-185 and even that is just:\n1. fetch cursor if there is one\n2. forward fetched result to the callback\n3. stop if we\u0027re done",
+      "parentUuid": "6298e933_8318097c",
+      "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
