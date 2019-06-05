@@ -22,6 +22,30 @@
       "revId": "30da3b38bdd05e82c2a3a39abd6c5078f81715f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "407301dd_d4cdee3b",
+        "filename": "client/archiver/archiver.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-05T23:36:58Z",
+      "side": 1,
+      "message": "For really trivial code, I occasionally not use defer since it\u0027s slightly less performant.\nhttps://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html#defer_is_expensive_or_is_it\n\nThat said it\u0027s not a big deal either way.",
+      "parentUuid": "179c1e8d_8407ce1e",
+      "range": {
+        "startLine": 419,
+        "startChar": 6,
+        "endLine": 419,
+        "endChar": 12
+      },
+      "revId": "30da3b38bdd05e82c2a3a39abd6c5078f81715f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
