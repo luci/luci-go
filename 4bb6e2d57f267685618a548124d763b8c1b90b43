@@ -16,6 +16,24 @@
       "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5103fd74_1afe7d5b",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-06-05T22:44:51Z",
+      "side": 1,
+      "message": "\u003egenerating\nMeaning what, a factory func that returns a paging function?\n\n\u003ereflect horror\nCouldn\u0027t figure out how else to generalize. I\u0027m basically reflect-inspecting where I would otherwise use generics (I want \"cb interface{}\" to be \"cb func(?) error\" or similar).\n\n\u003emove this\nSure, this definitely generalizes because page size, page token, and next page token are all standard fields:\nhttps://cloud.google.com/apis/design/standard_fields",
+      "parentUuid": "8ea89f53_cf5c6198",
+      "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
