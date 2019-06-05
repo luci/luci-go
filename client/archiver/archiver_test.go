@@ -16,6 +16,7 @@ package archiver
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
@@ -146,7 +147,7 @@ func TestArchiverCancel(t *testing.T) {
 		item2 := a.PushFile("existent", fileName, 0)
 		item1.WaitForHashed()
 		item2.WaitForHashed()
-		So(a.Close(), ShouldResemble, context.Canceled)
+		So(a.Close(), ShouldResemble, fmt.Errorf("source(foo) failed: open %s%cnonexistent: no such file or directory", tmpDir, filepath.Separator))
 		So(server.Error(), ShouldBeNil)
 	})
 }
