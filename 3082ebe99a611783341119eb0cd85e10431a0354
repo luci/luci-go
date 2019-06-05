@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "f41d2291_95c007fd",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 844,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-05T03:27:28Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 844,
+        "startChar": 30,
+        "endLine": 844,
+        "endChar": 41
+      },
+      "revId": "3082ebe99a611783341119eb0cd85e10431a0354",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "98e5f98f_8ac995d9",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 5
@@ -68,6 +91,53 @@
       "revId": "3082ebe99a611783341119eb0cd85e10431a0354",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1c4c4c0c_b8c23c6a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_group.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-05T03:27:28Z",
+      "side": 1,
+      "message": "\u003e I also decided duplicating location_regexp/location_regexp_exclude makes no sense, but this is debatable...\n\nyes, debatable, but I agree with the decision. We could make them defaults if there is wide enough demand, which for now I can\u0027t even imagine.\n\nThe same applies to owner_whitelist.",
+      "parentUuid": "6c02e3e4_62ca3b85",
+      "range": {
+        "startLine": 161,
+        "startChar": 2,
+        "endLine": 166,
+        "endChar": 46
+      },
+      "revId": "3082ebe99a611783341119eb0cd85e10431a0354",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d210508b_9aeaf620",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-05T03:27:28Z",
+      "side": 1,
+      "message": "i thought you decided against this.",
+      "range": {
+        "startLine": 282,
+        "startChar": 8,
+        "endLine": 283,
+        "endChar": 53
+      },
+      "revId": "3082ebe99a611783341119eb0cd85e10431a0354",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
