@@ -16,6 +16,24 @@
       "revId": "5fab2d9a17b8ee7252411eec8885b959063e3baf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5c13f75_0a4cd83a",
+        "filename": "common/isolatedclient/isolatedfake/isolatedfake.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-05T20:39:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7d0badb_27f2f48b",
+      "revId": "5fab2d9a17b8ee7252411eec8885b959063e3baf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
