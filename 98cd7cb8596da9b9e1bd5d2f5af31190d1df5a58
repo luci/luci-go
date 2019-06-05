@@ -16,6 +16,24 @@
       "revId": "98cd7cb8596da9b9e1bd5d2f5af31190d1df5a58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d5d2beb_c7053ba6",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T07:38:13Z",
+      "side": 1,
+      "message": "release job in wait if kill is not called.",
+      "parentUuid": "f3268322_a7692df3",
+      "revId": "98cd7cb8596da9b9e1bd5d2f5af31190d1df5a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

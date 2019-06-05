@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "d73517fd_f904364a",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T07:38:13Z",
+      "side": 1,
+      "message": "oops.",
+      "parentUuid": "01dcdbf1_3d52698a",
+      "range": {
+        "startLine": 93,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 33
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cd653d73_add3dd76",
         "filename": "common/system/exec2/exec2_windows.go",
         "patchSetId": 13
@@ -261,6 +285,30 @@
       "side": 1,
       "message": "Will you also write that in the function comment?\n\nThe following comment is outside of this CL, but\nI believe pcg should have the way to ignore this kinds of cases.\nWe want presubmit checks for code written by us, but we should not be interested in the presubmit check for 3rd party code.  Also, having the option to ignore the case might be better than having this kinds of workaround in the code.",
       "parentUuid": "36200d70_0039dea5",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 44
+      },
+      "revId": "6165286fdc6b99aba80a60c1260a8003762a9dbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f645de5_46cccfe5",
+        "filename": "common/system/exec2/internal/dummy.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-05T07:38:13Z",
+      "side": 1,
+      "message": "changed to configuration of pre-commit-go",
+      "parentUuid": "3884dd31_c0499e27",
       "range": {
         "startLine": 17,
         "startChar": 0,
