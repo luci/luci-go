@@ -36,28 +36,6 @@ const contentType = "application/json; charset=utf-8"
 
 type jsonAPI func(r *http.Request) interface{}
 
-type failure interface {
-	Fail(err error)
-}
-
-// handlerJSON converts a jsonAPI http handler to a proper http.Handler.
-func handlerJSON(f failure, handler jsonAPI) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//log.Printf("%s", r.URL)
-		if r.Header.Get("Content-Type") != contentType {
-			f.Fail(fmt.Errorf("invalid content type: %q", r.Header.Get("Content-Type")))
-			return
-		}
-		defer r.Body.Close()
-		out := handler(r)
-		w.Header().Set("Content-Type", contentType)
-		j := json.NewEncoder(w)
-		if err := j.Encode(out); err != nil {
-			f.Fail(err)
-		}
-	})
-}
-
 func gsURLWithDigestQuery(host, path, namespace, digest string) *url.URL {
 	v := url.Values{}
 	v.Add("namespace", namespace)
@@ -67,18 +45,8 @@ func gsURLWithDigestQuery(host, path, namespace, digest string) *url.URL {
 }
 
 // IsolatedFake is a functional fake in-memory isolated server.
-type IsolatedFake interface {
-	http.Handler
-	// Contents returns all the uncompressed data on the fake isolated server,
-	// per namespace.
-	Contents() map[string]map[isolated.HexDigest][]byte
-	// Inject adds uncompressed data in the fake isolated server.
-	Inject(namespace string, data []byte) isolated.HexDigest
-	Error() error
-}
-
-type isolatedFake struct {
-	mux *http.ServeMux
+type IsolatedFake struct {
+	http.ServeMux
 
 	mu       sync.Mutex
 	err      error
@@ -87,9 +55,8 @@ type isolatedFake struct {
 }
 
 // New create a HTTP router that implements an isolated server.
-func New() IsolatedFake {
-	s := &isolatedFake{
-		mux:      http.NewServeMux(),
+func New() *IsolatedFake {
+	s := &IsolatedFake{
 		contents: map[string]map[isolated.HexDigest][]byte{},
 		staging:  map[string]map[isolated.HexDigest][]byte{},
 	}
@@ -99,23 +66,19 @@ func New() IsolatedFake {
 	s.handleJSON("/_ah/api/isolateservice/v1/finalize_gs_upload", s.finalizeGSUpload)
 	s.handleJSON("/_ah/api/isolateservice/v1/store_inline", s.storeInline)
 	s.handleJSON("/_ah/api/isolateservice/v1/retrieve", s.retrieve)
-	s.mux.HandleFunc("/fake/cloudstorage/upload", s.fakeCloudStorageUpload)
-	s.mux.HandleFunc("/fake/cloudstorage/download", s.fakeCloudStorageDownload)
+	s.HandleFunc("/fake/cloudstorage/upload", s.fakeCloudStorageUpload)
+	s.HandleFunc("/fake/cloudstorage/download", s.fakeCloudStorageDownload)
 
 	// Fail on anything else.
-	s.mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		s.Fail(fmt.Errorf("unknown endpoint %q", req.URL))
+	s.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		s.fail(fmt.Errorf("unknown endpoint %q", req.URL))
 	})
 	return s
 }
 
-// Private details.
-
-func (s *isolatedFake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
-}
-
-func (s *isolatedFake) Contents() map[string]map[isolated.HexDigest][]byte {
+// Contents returns all the uncompressed data on the fake isolated server,
+// per namespace.
+func (s *IsolatedFake) Contents() map[string]map[isolated.HexDigest][]byte {
 	// Make a copy of the maps for safety. Only the actual content is not copied.
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -129,7 +92,8 @@ func (s *isolatedFake) Contents() map[string]map[isolated.HexDigest][]byte {
 	return out
 }
 
-func (s *isolatedFake) Inject(namespace string, data []byte) isolated.HexDigest {
+// Inject adds uncompressed data in the fake isolated server.
+func (s *IsolatedFake) Inject(namespace string, data []byte) isolated.HexDigest {
 	h := isolated.HashBytes(isolated.GetHash(namespace), data)
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -140,46 +104,67 @@ func (s *isolatedFake) Inject(namespace string, data []byte) isolated.HexDigest 
 	return h
 }
 
-func (s *isolatedFake) Fail(err error) {
+// fail injects an error.
+func (s *IsolatedFake) fail(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.failLocked(err)
 }
 
-func (s *isolatedFake) Error() error {
+// Error returns any registered error.
+//
+// It can either be due to a server side error (improper API use) or an error
+// injected by fail().
+func (s *IsolatedFake) Error() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.err
 }
 
-func (s *isolatedFake) failLocked(err error) {
+// Private details.
+
+func (s *IsolatedFake) failLocked(err error) {
 	if s.err == nil {
 		s.err = err
 	}
 }
 
-func (s *isolatedFake) handleJSON(path string, handler jsonAPI) {
-	s.mux.Handle(path, handlerJSON(s, handler))
+func (s *IsolatedFake) handleJSON(path string, handler jsonAPI) {
+	// handlerJSON converts a jsonAPI http handler to a proper http.Handler.
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Type") != contentType {
+			s.fail(fmt.Errorf("invalid content type: %q", r.Header.Get("Content-Type")))
+			return
+		}
+		defer r.Body.Close()
+		out := handler(r)
+		w.Header().Set("Content-Type", contentType)
+		j := json.NewEncoder(w)
+		if err := j.Encode(out); err != nil {
+			s.fail(err)
+		}
+	})
+	s.Handle(path, h)
 }
 
-func (s *isolatedFake) serverDetails(r *http.Request) interface{} {
+func (s *IsolatedFake) serverDetails(r *http.Request) interface{} {
 	content, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		s.Fail(err)
+		s.fail(err)
 	}
 	if string(content) != "{}" {
-		s.Fail(fmt.Errorf("unexpected content %#v", string(content)))
+		s.fail(fmt.Errorf("unexpected content %#v", string(content)))
 	}
 	return map[string]string{"server_version": "v1"}
 }
 
-func (s *isolatedFake) preupload(r *http.Request) interface{} {
+func (s *IsolatedFake) preupload(r *http.Request) interface{} {
 	data := &isolateservice.HandlersEndpointsV1DigestCollection{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
-		s.Fail(err)
+		s.fail(err)
 	}
 	if data.Namespace == nil {
-		s.Fail(fmt.Errorf("unexpected namespace %#v", data.Namespace.Namespace))
+		s.fail(fmt.Errorf("unexpected namespace %#v", data.Namespace.Namespace))
 	}
 	out := &isolateservice.HandlersEndpointsV1UrlCollection{}
 	namespace := data.Namespace.Namespace
@@ -204,41 +189,41 @@ func (s *isolatedFake) preupload(r *http.Request) interface{} {
 	return out
 }
 
-func (s *isolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *http.Request) {
+func (s *IsolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if r.Header.Get("Content-Type") != "application/octet-stream" {
 		w.WriteHeader(400)
-		s.Fail(fmt.Errorf("invalid content type: %q", r.Header.Get("Content-Type")))
+		s.fail(fmt.Errorf("invalid content type: %q", r.Header.Get("Content-Type")))
 		return
 	}
 	if r.Method != "PUT" {
 		w.WriteHeader(405)
-		s.Fail(fmt.Errorf("invalid method: %q", r.Method))
+		s.fail(fmt.Errorf("invalid method: %q", r.Method))
 		return
 	}
 	namespace := r.URL.Query().Get("namespace")
 	if namespace == "" {
 		w.WriteHeader(400)
-		s.Fail(fmt.Errorf("missing namespace"))
+		s.fail(fmt.Errorf("missing namespace"))
 		return
 	}
 	decompressor, err := isolated.GetDecompressor(namespace, r.Body)
 	if err != nil {
 		w.WriteHeader(500)
-		s.Fail(err)
+		s.fail(err)
 		return
 	}
 	defer decompressor.Close()
 	raw, err := ioutil.ReadAll(decompressor)
 	if err != nil {
 		w.WriteHeader(500)
-		s.Fail(err)
+		s.fail(err)
 		return
 	}
 	digest := isolated.HexDigest(r.URL.Query().Get("digest"))
 	if digest != isolated.HashBytes(isolated.GetHash(namespace), raw) {
 		w.WriteHeader(400)
-		s.Fail(fmt.Errorf("invalid digest %#v", digest))
+		s.fail(fmt.Errorf("invalid digest %#v", digest))
 		return
 	}
 
@@ -251,71 +236,71 @@ func (s *isolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(200)
 }
 
-func (s *isolatedFake) fakeCloudStorageDownload(w http.ResponseWriter, r *http.Request) {
+func (s *IsolatedFake) fakeCloudStorageDownload(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if r.Method != "GET" {
 		w.WriteHeader(405)
-		s.Fail(fmt.Errorf("invalid method: %q", r.Method))
+		s.fail(fmt.Errorf("invalid method: %q", r.Method))
 		return
 	}
 	namespace := r.URL.Query().Get("namespace")
 	store, ok := s.contents[namespace]
 	if !ok {
 		w.WriteHeader(404)
-		s.Fail(fmt.Errorf("namespace not found: %q", namespace))
+		s.fail(fmt.Errorf("namespace not found: %q", namespace))
 		return
 	}
 	digest := isolated.HexDigest(r.URL.Query().Get("digest"))
 	data, ok := store[digest]
 	if !ok {
 		w.WriteHeader(404)
-		s.Fail(fmt.Errorf("file not found: %q", digest))
+		s.fail(fmt.Errorf("file not found: %q", digest))
 		return
 	}
 	var buf bytes.Buffer
 	compressor, err := isolated.GetCompressor(namespace, &buf)
 	if err != nil {
 		w.WriteHeader(500)
-		s.Fail(err)
+		s.fail(err)
 		return
 	}
 	if _, err := io.CopyBuffer(compressor, bytes.NewReader(data), nil); err != nil {
 		compressor.Close()
 		w.WriteHeader(500)
-		s.Fail(err)
+		s.fail(err)
 		return
 	}
 	if err := compressor.Close(); err != nil {
 		w.WriteHeader(500)
-		s.Fail(err)
+		s.fail(err)
 		return
 	}
 	w.Write(buf.Bytes())
 }
 
-func (s *isolatedFake) finalizeGSUpload(r *http.Request) interface{} {
+func (s *IsolatedFake) finalizeGSUpload(r *http.Request) interface{} {
 	data := &isolateservice.HandlersEndpointsV1FinalizeRequest{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	prefix := "ticket:"
 	if !strings.HasPrefix(data.UploadTicket, prefix) {
 		err := fmt.Errorf("unexpected ticket %#v", data.UploadTicket)
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	parts := strings.SplitN(data.UploadTicket[len(prefix):], ",", 2)
 	if len(parts) != 2 {
 		err := fmt.Errorf("unexpected ticket %#v", data.UploadTicket)
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	namespace := parts[0]
 	digest := isolated.HexDigest(parts[1])
 	if !digest.Validate(isolated.GetHash(namespace)) {
 		err := fmt.Errorf("invalid digest %#v", digest)
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 
@@ -339,24 +324,24 @@ func (s *isolatedFake) finalizeGSUpload(r *http.Request) interface{} {
 	return map[string]string{"ok": "true"}
 }
 
-func (s *isolatedFake) storeInline(r *http.Request) interface{} {
+func (s *IsolatedFake) storeInline(r *http.Request) interface{} {
 	data := &isolateservice.HandlersEndpointsV1StorageRequest{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 
 	prefix := "ticket:"
 	if !strings.HasPrefix(data.UploadTicket, prefix) {
 		err := fmt.Errorf("unexpected ticket %#v", data.UploadTicket)
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 
 	parts := strings.SplitN(data.UploadTicket[len(prefix):], ",", 2)
 	if len(parts) != 2 {
 		err := fmt.Errorf("unexpected ticket %#v", data.UploadTicket)
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	namespace := parts[0]
@@ -364,28 +349,28 @@ func (s *isolatedFake) storeInline(r *http.Request) interface{} {
 	h := isolated.GetHash(namespace)
 	if !digest.Validate(h) {
 		err := fmt.Errorf("invalid digest %#v", digest)
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	blob, err := base64.StdEncoding.DecodeString(data.Content)
 	if err != nil {
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	decompressor, err := isolated.GetDecompressor(namespace, bytes.NewReader(blob))
 	if err != nil {
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	defer decompressor.Close()
 	raw, err := ioutil.ReadAll(decompressor)
 	if err != nil {
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	if digest != isolated.HashBytes(h, raw) {
 		err := fmt.Errorf("invalid digest %#v", digest)
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 
@@ -398,23 +383,23 @@ func (s *isolatedFake) storeInline(r *http.Request) interface{} {
 	return map[string]string{"ok": "true"}
 }
 
-func (s *isolatedFake) retrieve(r *http.Request) interface{} {
+func (s *IsolatedFake) retrieve(r *http.Request) interface{} {
 	data := &isolateservice.HandlersEndpointsV1RetrieveRequest{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	digest := isolated.HexDigest(data.Digest)
 	namespace := data.Namespace.Namespace
 	if _, ok := s.contents[namespace]; !ok {
 		err := fmt.Errorf("no such digest %#v", digest)
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	rawContent, ok := s.contents[namespace][digest]
 	if !ok {
 		err := fmt.Errorf("no such digest %#v", digest)
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	if len(rawContent) > 1024 {
@@ -428,16 +413,16 @@ func (s *isolatedFake) retrieve(r *http.Request) interface{} {
 	var buf bytes.Buffer
 	compressor, err := isolated.GetCompressor(namespace, &buf)
 	if err != nil {
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	if _, err := io.CopyBuffer(compressor, bytes.NewReader(rawContent), nil); err != nil {
 		compressor.Close()
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	if err := compressor.Close(); err != nil {
-		s.Fail(err)
+		s.fail(err)
 		return map[string]string{"err": err.Error()}
 	}
 	return &isolateservice.HandlersEndpointsV1RetrievedContent{
