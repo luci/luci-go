@@ -38,7 +38,7 @@ type attr struct {
 
 func (c *Cmd) setupCmd() {
 	c.cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: windows.CREATE_SUSPENDED,
+		CreationFlags: windows.CREATE_SUSPENDED | windows.CREATE_NEW_CONSOLE,
 	}
 	c.attr.exitCode = -1
 }
