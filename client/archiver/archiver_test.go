@@ -16,10 +16,12 @@ package archiver
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"go.chromium.org/luci/common/data/text/units"
@@ -146,7 +148,13 @@ func TestArchiverCancel(t *testing.T) {
 		item2 := a.PushFile("existent", fileName, 0)
 		item1.WaitForHashed()
 		item2.WaitForHashed()
-		So(a.Close(), ShouldResemble, context.Canceled)
+		msg := "no such file or directory"
+		if runtime.GOOS == "windows" {
+			// Warning: this string is localized.
+			msg = "The system cannot find the file specified."
+		}
+		fileErr := fmt.Errorf("source(foo) failed: open %s%cnonexistent: %s", tmpDir, filepath.Separator, msg)
+		So(a.Close(), ShouldResemble, fileErr)
 		So(server.Error(), ShouldBeNil)
 	})
 }

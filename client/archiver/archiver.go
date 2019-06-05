@@ -263,6 +263,9 @@ func (i *PendingItem) SetErr(err error) {
 	if err == nil {
 		panic("internal error")
 	}
+	if err != context.Canceled && err != context.DeadlineExceeded && i.a != nil {
+		i.a.setErr(err)
+	}
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	if i.err == nil {
@@ -342,7 +345,8 @@ type Archiver struct {
 	progress progress.Progress
 
 	// Mutable.
-	mu sync.Mutex
+	mu  sync.Mutex
+	err error
 
 	// stats uses a separate mutex for performance.
 	statsMu sync.Mutex
@@ -372,6 +376,11 @@ func (a *Archiver) Close() error {
 	// Documentation says that not calling cancel() could cause a leak, so call
 	// it, but not before taking the context's error, if any.
 	a.cancel()
+	a.mu.Lock()
+	if a.err != nil {
+		err = a.err
+	}
+	a.mu.Unlock()
 	return err
 }
 
@@ -400,6 +409,14 @@ func (a *Archiver) Stats() *Stats {
 	a.statsMu.Lock()
 	defer a.statsMu.Unlock()
 	return a.stats.deepCopy()
+}
+
+func (a *Archiver) setErr(err error) {
+	a.mu.Lock()
+	if a.err == nil {
+		a.err = err
+	}
+	a.mu.Unlock()
 }
 
 func (a *Archiver) push(item *PendingItem) *PendingItem {

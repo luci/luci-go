@@ -188,8 +188,7 @@ func TestArchiveFail(t *testing.T) {
 				msg = "The system cannot find the file specified."
 			}
 			fileErr := fmt.Errorf("source(foo) failed: open %s%cnonexistent: %s", tmpDir, filepath.Separator, msg)
-			// TODO(maruel): https://crbug.com/969145
-			So(a.Close(), ShouldResemble, context.Canceled)
+			So(a.Close(), ShouldResemble, fileErr)
 			So(item1.Error(), ShouldResemble, fileErr)
 			// There can be a race with item2 having time to be sent or not, but if
 			// there's an error, it must be context.Canceled.
@@ -233,8 +232,8 @@ func TestArchiveFail(t *testing.T) {
 			item := a.PushFile("existent", fileName, 0)
 			item.WaitForHashed()
 			So(item.Error(), ShouldResemble, nil)
-			// TODO(maruel): https://crbug.com/969145
-			So(a.Close(), ShouldResemble, context.Canceled)
+			// TODO(maruel): Fix isolatedclient to surface the error expectedErr.
+			So(a.Close(), ShouldResemble, errors.New("contains(1) failed: gave up after 1 attempts: http request failed: Bad Request (HTTP 400)"))
 		})
 	})
 }
