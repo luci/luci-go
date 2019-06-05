@@ -88,3 +88,5 @@ ignore_patterns:
 - 'testdata'
 - .*
 - _*
+# this is third party code.
+- 'startprocess_windows.go'
