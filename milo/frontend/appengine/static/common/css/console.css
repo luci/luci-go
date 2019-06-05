@@ -617,3 +617,7 @@
   border-style: solid;
   border-radius: 0.25em;
 }
+
+.experimental {
+  opacity: 0.5;
+}
