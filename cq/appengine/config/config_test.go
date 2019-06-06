@@ -457,7 +457,11 @@ func TestTryjobValidation(t *testing.T) {
 			`), ShouldErrLike, "duplicate")
 
 			So(validate(`
-				builders {name: "*/buildbot/b"}
+			  builders {name: "*/master/c"}
+			`), ShouldErrLike, "Buildbot")
+
+			So(validate(`
+				builders {name: "m/n/o"}
 			  builders {name: "a/b/c" equivalent_to {name: "x/y/z"}}
 			`), ShouldBeNil)
 		})

@@ -279,9 +279,6 @@ message Verifiers {
       // Examples:
       //   "chromium/try/linux-tester"
       //   "other-project/try/shared-try-builder"
-      //
-      // For legacy buckets on buildbot, use * as project placeholder, e.g.,
-      //   "*/master.tryserver.example/linux-tester"
       string name = 1;
 
       // Optional. If true, a fresh build will be required for each CQ attempt.

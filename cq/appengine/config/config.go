@@ -505,6 +505,10 @@ func validateBuilderName(ctx *validation.Context, name string, knownNames string
 			return
 		}
 	}
+	if parts[0] == "*" {
+		ctx.Errorf("Buildbot builders are no longer allowed in CQ")
+		return
+	}
 }
 
 func validateEquivalentBuilder(ctx *validation.Context, b *v2.Verifiers_Tryjob_EquivalentBuilder, equiNames stringset.Set) {
