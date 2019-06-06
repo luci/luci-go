@@ -334,32 +334,33 @@ func (i *PendingItem) link(child *PendingItem) {
 //   - Uploading cache misses.
 type Archiver struct {
 	// Immutable.
-	ctx       context.Context
-	cancel    func()
-	c         *isolatedclient.Client
-	closeLock sync.Mutex
-	stage1    chan *PendingItem
-	wg        sync.WaitGroup
-	progress  progress.Progress
+	ctx      context.Context
+	cancel   func()
+	c        *isolatedclient.Client
+	stage1   chan *PendingItem
+	wg       sync.WaitGroup
+	progress progress.Progress
 
 	// Mutable.
-	statsLock sync.Mutex
-	stats     Stats
+	mu sync.Mutex
+
+	// stats uses a separate mutex for performance.
+	statsMu sync.Mutex
+	stats   Stats
 }
 
 // Close waits for all pending files to be done. If an error occured during
 // processing, it is returned.
 func (a *Archiver) Close() error {
 	// This is done so asynchronously calling push() won't crash.
-
-	a.closeLock.Lock()
+	a.mu.Lock()
 	ok := false
 	if a.stage1 != nil {
 		close(a.stage1)
 		a.stage1 = nil
 		ok = true
 	}
-	a.closeLock.Unlock()
+	a.mu.Unlock()
 
 	if !ok {
 		return errors.New("was already closed")
@@ -396,8 +397,8 @@ func (a *Archiver) PushFile(displayName, path string, priority int64) *PendingIt
 
 // Stats returns a copy of the statistics.
 func (a *Archiver) Stats() *Stats {
-	a.statsLock.Lock()
-	defer a.statsLock.Unlock()
+	a.statsMu.Lock()
+	defer a.statsMu.Unlock()
 	return a.stats.deepCopy()
 }
 
@@ -414,18 +415,22 @@ func (a *Archiver) push(item *PendingItem) *PendingItem {
 
 func (a *Archiver) pushLocked(item *PendingItem) bool {
 	// The close(a.stage1) call is always occurring with the lock held.
-	a.closeLock.Lock()
-	defer a.closeLock.Unlock()
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	if a.stage1 == nil {
 		// Archiver was closed.
 		return false
 	}
 	// stage1DedupeLoop must never block and must be as fast as it can because it
-	// is done while holding a.closeLock.
+	// is done while holding a.mu.
 	a.stage1 <- item
 	return true
 }
 
+// stage1DedupeLoop merges duplicate entries.
+//
+// This can happen when a lot of isolated files are archives, referencing to
+// common entries.
 func (a *Archiver) stage1DedupeLoop(in <-chan *PendingItem, out chan<- *PendingItem) {
 	seen := map[string]*PendingItem{}
 	// Create our own goroutine-local channel buffer, which doesn't need to be
@@ -454,7 +459,7 @@ func (a *Archiver) stage1DedupeLoop(in <-chan *PendingItem, out chan<- *PendingI
 		}
 
 		// This loop must never block and must be as fast as it can as it is
-		// functionally equivalent to running with a.closeLock held.
+		// functionally equivalent to running with a.mu held.
 		if err := a.ctx.Err(); err != nil {
 			item.SetErr(err)
 			item.done()
@@ -490,6 +495,7 @@ func (a *Archiver) stage1DedupeLoop(in <-chan *PendingItem, out chan<- *PendingI
 	}
 }
 
+// stage2HashLoop hashes individual files.
 func (a *Archiver) stage2HashLoop(in <-chan *PendingItem, out chan<- *PendingItem, parallelism int) {
 	pool := common.NewGoroutinePriorityPool(a.ctx, parallelism)
 	defer func() {
@@ -498,7 +504,7 @@ func (a *Archiver) stage2HashLoop(in <-chan *PendingItem, out chan<- *PendingIte
 	for file := range in {
 		// This loop will implicitly buffer when stage1 is too fast by creating a
 		// lot of hung goroutines in pool. This permits reducing the contention on
-		// a.closeLock.
+		// a.mu.
 		// TODO(tandrii): Implement backpressure in GoroutinePool, e.g. when it
 		// exceeds 20k or something similar.
 		item := file
@@ -527,6 +533,10 @@ func (a *Archiver) stage2HashLoop(in <-chan *PendingItem, out chan<- *PendingIte
 	}
 }
 
+// stage3LookupLoop queries the server to determine which files must be
+// uploaded.
+//
+// It is the first stage where the client contacts the server.
 func (a *Archiver) stage3LookupLoop(in <-chan *PendingItem, out chan<- *PendingItem, parallelism int, batchingDelay time.Duration, batchSize int) {
 	pool := common.NewGoroutinePool(a.ctx, parallelism)
 	defer func() {
@@ -567,6 +577,7 @@ func (a *Archiver) stage3LookupLoop(in <-chan *PendingItem, out chan<- *PendingI
 	}
 }
 
+// stage4UploadLoop uploads the cache misses.
 func (a *Archiver) stage4UploadLoop(in <-chan *PendingItem, parallelism int) {
 	pool := common.NewGoroutinePriorityPool(a.ctx, parallelism)
 	defer func() {
@@ -601,9 +612,9 @@ func (a *Archiver) doContains(out chan<- *PendingItem, items []*PendingItem) {
 	for index, state := range states {
 		size := items[index].digestItem.Size
 		if state == nil {
-			a.statsLock.Lock()
+			a.statsMu.Lock()
 			a.stats.Hits = append(a.stats.Hits, units.Size(size))
-			a.statsLock.Unlock()
+			a.statsMu.Unlock()
 			items[index].done()
 		} else {
 			items[index].state = state
@@ -631,8 +642,8 @@ func (a *Archiver) doUpload(item *PendingItem) {
 	item.done()
 	size := units.Size(item.digestItem.Size)
 	u := &UploadStat{time.Since(start), size, item.DisplayName}
-	a.statsLock.Lock()
+	a.statsMu.Lock()
 	a.stats.Pushed = append(a.stats.Pushed, u)
-	a.statsLock.Unlock()
+	a.statsMu.Unlock()
 	logging.Infof(a.ctx, "Uploaded %7s: %s", size, item.DisplayName)
 }
