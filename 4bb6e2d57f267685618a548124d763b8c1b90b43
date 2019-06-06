@@ -70,6 +70,41 @@
       "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc4a789b_74fb10b1",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-06T01:33:01Z",
+      "side": 1,
+      "message": "\u003e I think that\u0027s as bad as copy/pasting this code without reflection three times for each List RPC\n\nGo folks definitely think it\u0027s fine. And while I still grind my teeth, I learned to appreciate such copy-pasta:\n * it is cheap to maintain, though bloats your repo and binary\n * code intelligence tooling (e.g., autocompletion) is able to deduce more (actual Type instead of interface{}}.\n * resulting code is faster if it is in hot path (but binary bloat hampers that), however I realize here speed is not important.\n\nSo long as you promise to move it out of gce and into common libs, i\u0027m fine with reflection.\nAs discussed offline, I think this code should be split up into 2:\n * one goes into datastore package as a new func alongside Run, maybe RunPaged.\n * another one goes somewhere in luci-go common libs and works with canonical protobuf messages for paging.",
+      "parentUuid": "3c60c62c_1719fa5b",
+      "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecd90b66_2f17925c",
+        "filename": "gce/appengine/rpc/common_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-06T01:33:01Z",
+      "side": 1,
+      "message": "i realize that you have coverage from other places, but for such a complex code one should have dedicated test. Luckily expected behavior is clear.",
+      "revId": "4bb6e2d57f267685618a548124d763b8c1b90b43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

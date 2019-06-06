@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "14a224b5_7ef6f221",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-06T01:33:01Z",
+      "side": 0,
+      "message": "upper cap is still a good thing to have, since RAM isn\u0027t infinite. \nI guess one simulate this via datastore.Stop, right? If so, perhaps document?",
+      "range": {
+        "startLine": 115,
+        "startChar": 15,
+        "endLine": 115,
+        "endChar": 25
+      },
+      "revId": "1fd2adf9b08eeca082070c1d3698574c68193bc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
