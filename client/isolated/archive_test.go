@@ -183,8 +183,7 @@ func TestArchiveFail(t *testing.T) {
 				msg = "The system cannot find the file specified."
 			}
 			fileErr := fmt.Errorf("source(foo) failed: open %s%cnonexistent: %s", tmpDir, filepath.Separator, msg)
-			// TODO(maruel): https://crbug.com/969145
-			So(a.Close(), ShouldResemble, context.Canceled)
+			So(a.Close(), ShouldResemble, fileErr)
 			So(item1.Error(), ShouldResemble, fileErr)
 			// There can be a race with item2 having time to be sent or not, but if
 			// there's an error, it must be context.Canceled.
@@ -199,13 +198,15 @@ func TestArchiveFail(t *testing.T) {
 			// Override the handler to fail.
 			server.ServeMux = *http.NewServeMux()
 			server.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-				ioutil.ReadAll(req.Body)
-				req.Body.Close()
-				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				w.WriteHeader(400)
-				j := json.NewEncoder(w)
-				out := map[string]string{"error": expectedErr.Error()}
-				So(j.Encode(out), ShouldBeNil)
+				Convey(`Return error`, t, func() {
+					ioutil.ReadAll(req.Body)
+					req.Body.Close()
+					w.Header().Set("Content-Type", "application/json; charset=utf-8")
+					w.WriteHeader(400)
+					j := json.NewEncoder(w)
+					out := map[string]string{"error": expectedErr.Error()}
+					So(j.Encode(out), ShouldBeNil)
+				})
 			})
 			a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 
@@ -221,8 +222,8 @@ func TestArchiveFail(t *testing.T) {
 			item := a.PushFile("existent", fileName, 0)
 			item.WaitForHashed()
 			So(item.Error(), ShouldResemble, nil)
-			// TODO(maruel): https://crbug.com/969145
-			So(a.Close(), ShouldResemble, context.Canceled)
+			// TODO(maruel): Fix isolatedclient to surface the error expectedErr.
+			So(a.Close(), ShouldResemble, errors.New("contains(1) failed: gave up after 1 attempts: http request failed: Bad Request (HTTP 400)"))
 		})
 	})
 }
