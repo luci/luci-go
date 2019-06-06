@@ -113,6 +113,9 @@ var publicProtos = map[string]struct {
 	// load(
 	//     "@proto//external/crostesting/target_test_requirements_config.proto",
 	//     target_test_requirements_config_pb="testplans")
+	// load(
+	//     "@proto//external/crostesting/test_level_tweak.proto",
+	//     test_level_tweak_pb="testplans")
 	"external/crostesting/build_irrelevance_config.proto": {
 		"testplans",
 		"testplans/build_irrelevance_config.proto",
@@ -131,6 +134,11 @@ var publicProtos = map[string]struct {
 	"external/crostesting/target_test_requirements_config.proto": {
 		"testplans",
 		"testplans/target_test_requirements_config.proto",
+		"",
+	},
+	"external/crostesting/test_level_tweak.proto": {
+		"testplans",
+		"testplans/test_level_tweak.proto",
 		"",
 	},
 
