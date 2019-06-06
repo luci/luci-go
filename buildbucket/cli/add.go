@@ -130,7 +130,7 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 	}
 
 	i := 0
-	return r.PrintAndDone(ctx, args, func(ctx context.Context, builder string) (*pb.Build, error) {
+	return r.PrintAndDone(ctx, args, argOrder, func(ctx context.Context, builder string) (*pb.Build, error) {
 		i++
 		req := proto.Clone(baseReq).(*pb.ScheduleBuildRequest)
 		req.RequestId += fmt.Sprintf("-%d", i)

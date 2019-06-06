@@ -25,6 +25,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
 
+	"go.chromium.org/luci/common/sync/parallel"
+
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -135,67 +137,52 @@ func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) error {
 	return p.Err
 }
 
+type runOrder int
+
+const (
+	unordered runOrder = iota
+	argOrder
+)
+
 // PrintAndDone calls fn for each argument, prints builds and returns exit code.
 // fn is called concurrently, but builds are printed in the same order
 // as args.
-func (r *printRun) PrintAndDone(ctx context.Context, args []string, fn func(context.Context, string) (*pb.Build, error)) int {
+func (r *printRun) PrintAndDone(ctx context.Context, args []string, order runOrder, fn buildFunc) int {
 	stdout, stderr := newStdioPrinters(r.noColor)
-	return r.printAndDone(ctx, stdout, stderr, args, fn)
-}
 
-func (r *printRun) printAndDone(ctx context.Context, stdout, stderr *printer, args []string, fn func(context.Context, string) (*pb.Build, error)) int {
-	// Prepare workspace.
-	type workItem struct {
-		arg   string
-		build *pb.Build
-		done  chan error
-	}
-	work := make(chan *workItem)
-	results := make(chan *workItem, 256)
-
-	// Prepare 16 concurrent workers.
-	for i := 0; i < 16; i++ {
-		go func() {
-			for item := range work {
-				var err error
-				item.build, err = fn(ctx, item.arg)
-				item.done <- err
-			}
-		}()
+	jobs := len(args)
+	if jobs == 0 {
+		jobs = 32
 	}
 
-	// Add work. Close the work space when work is done.
+	resultC := make(chan buildResult, 256)
 	go func() {
-		for a := range argChan(args) {
-			if ctx.Err() != nil {
-				break
-			}
-			item := &workItem{arg: a, done: make(chan error)}
-			work <- item
-			results <- item
+		defer close(resultC)
+		argC := argChan(args)
+		if order == argOrder {
+			r.runOrdered(ctx, jobs, argC, resultC, fn)
+		} else {
+			r.runUnordered(ctx, jobs, argC, resultC, fn)
 		}
-		close(work)
-		close(results)
 	}()
 
 	// Print the results in the order of args.
 	first := true
 	perfect := true
-	for i := range results {
-		err := <-i.done
-		if err != nil {
+	for res := range resultC {
+		if res.err != nil {
 			perfect = false
 			if !first {
 				stderr.f("\n")
 			}
-			stderr.f("arg %q: ", i.arg)
-			stderr.Error(err)
+			stderr.f("arg %q: ", res.arg)
+			stderr.Error(res.err)
 			stderr.f("\n")
 			if stderr.Err != nil {
 				return r.done(ctx, stderr.Err)
 			}
 		} else {
-			if err := r.printBuild(stdout, i.build, first); err != nil {
+			if err := r.printBuild(stdout, res.build, first); err != nil {
 				return r.done(ctx, err)
 			}
 		}
@@ -205,6 +192,74 @@ func (r *printRun) printAndDone(ctx context.Context, stdout, stderr *printer, ar
 		return 1
 	}
 	return 0
+}
+
+type buildResult struct {
+	arg   string
+	build *pb.Build
+	err   error
+}
+
+type buildFunc func(c context.Context, arg string) (*pb.Build, error)
+
+// runOrdered runs fn for each arg in argC and reports results to resultC
+// in the same order.
+func (r *printRun) runOrdered(ctx context.Context, jobs int, argC <-chan string, resultC chan<- buildResult, fn buildFunc) {
+	// Prepare workspace.
+	type workItem struct {
+		arg   string
+		build *pb.Build
+		done  chan error
+	}
+	work := make(chan *workItem)
+
+	// Prepare concurrent workers.
+	for i := 0; i < jobs; i++ {
+		go func() {
+			for item := range work {
+				var err error
+				item.build, err = fn(ctx, item.arg)
+				item.done <- err
+			}
+		}()
+	}
+
+	// Add work. Close the workspace when the work is done.
+	resultItems := make(chan *workItem)
+	go func() {
+		for a := range argC {
+			item := &workItem{arg: a, done: make(chan error)}
+			work <- item
+			resultItems <- item
+		}
+		close(work)
+		close(resultItems)
+	}()
+
+	for i := range resultItems {
+		resultC <- buildResult{
+			arg:   i.arg,
+			build: i.build,
+			err:   <-i.done,
+		}
+	}
+}
+
+// runUnordered is like runOrdered, but unordered.
+func (r *printRun) runUnordered(ctx context.Context, jobs int, argC <-chan string, resultC chan<- buildResult, fn buildFunc) {
+	parallel.WorkPool(jobs, func(work chan<- func() error) {
+		for arg := range argC {
+			if ctx.Err() != nil {
+				break
+			}
+			arg := arg
+			work <- func() error {
+				build, err := fn(ctx, arg)
+				resultC <- buildResult{arg, build, err}
+				return nil
+			}
+		}
+	})
 }
 
 // argChan returns a channel of args.
