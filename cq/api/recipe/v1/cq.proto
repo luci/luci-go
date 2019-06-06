@@ -69,7 +69,4 @@ message CL {
     // Gerrit CL, aka change.
     buildbucket.v2.GerritChange gerrit = 1;
   }
-  // List of CLs on which this one depends. Each integer here is an index to the
-  // dependency among `Input.cls`.
-  repeated int32 deps = 11;
 }
