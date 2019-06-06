@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
-	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth"
@@ -116,57 +115,6 @@ func (r *baseCommandRun) done(ctx context.Context, err error) int {
 		return 1
 	}
 	return 0
-}
-
-// retrieveBuildIDs converts build arguments to int64 build ids,
-// where a build argument can be an int64 build or a
-// "<project>/<bucket>/<builder>/<build_number>" string.
-func (r *baseCommandRun) retrieveBuildIDs(ctx context.Context, builds []string) (buildIDs []int64, err error) {
-	return retrieveBuildIDs(builds, func(req *pb.BatchRequest) (*pb.BatchResponse, error) {
-		return r.client.Batch(ctx, req)
-	})
-}
-
-func retrieveBuildIDs(builds []string, callBatch func(*pb.BatchRequest) (*pb.BatchResponse, error)) (buildIDs []int64, err error) {
-	buildIDs = make([]int64, len(builds))
-	batchReq := &pb.BatchRequest{
-		Requests: make([]*pb.BatchRequest_Request, 0, len(builds)),
-	}
-	indexes := make([]int, 0, len(builds))
-	idFieldMask := &field_mask.FieldMask{Paths: []string{"id"}}
-	for i, b := range builds {
-		getBuild, err := protoutil.ParseGetBuildRequest(b)
-		if err != nil {
-			return nil, fmt.Errorf("invalid build %q: %s", b, err)
-		}
-		if getBuild.Builder == nil {
-			buildIDs[i] = getBuild.Id
-		} else {
-			getBuild.Fields = idFieldMask
-			batchReq.Requests = append(batchReq.Requests, &pb.BatchRequest_Request{
-				Request: &pb.BatchRequest_Request_GetBuild{GetBuild: getBuild},
-			})
-			indexes = append(indexes, i)
-		}
-	}
-
-	if len(batchReq.Requests) == 0 {
-		return buildIDs, nil
-	}
-
-	res, err := callBatch(batchReq)
-	for i, res := range res.Responses {
-		j := indexes[i]
-		switch codes.Code(res.GetError().GetCode()) {
-		case codes.OK:
-			buildIDs[j] = res.GetGetBuild().Id
-		case codes.NotFound:
-			return nil, fmt.Errorf("build %q not found", builds[j])
-		default:
-			return nil, err
-		}
-	}
-	return buildIDs, nil
 }
 
 // retrieveBuildID converts a build string into a build id.

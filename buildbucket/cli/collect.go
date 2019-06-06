@@ -16,13 +16,12 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/maruel/subcommands"
-	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -46,6 +45,7 @@ func cmdCollect(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &collectRun{}
 			r.RegisterDefaultFlags(p)
+			r.RegisterFieldFlags()
 			r.Flags.DurationVar(&r.intervalArg, "interval", time.Minute, doc(`
 				duration to wait between requests
 			`))
@@ -56,96 +56,8 @@ func cmdCollect(p Params) *subcommands.Command {
 }
 
 type collectRun struct {
-	baseCommandRun
+	printRun
 	intervalArg time.Duration
-}
-
-var getRequestFieldMask = &field_mask.FieldMask{
-	Paths: []string{
-		// Include all output properties, which are omitted by default.
-		"output",
-
-		// Since we add output props above, we must list default fields too.
-		"builder",
-		"create_time",
-		"created_by",
-		"end_time",
-		"id",
-		"input.experimental",
-		"input.gerrit_changes",
-		"input.gitiles_commit",
-		"number",
-		"start_time",
-		"status",
-		"update_time",
-	},
-}
-
-// dedupInt64s dedups int64s.
-func dedupInt64s(nums []int64) []int64 {
-	seen := make(map[int64]struct{}, len(nums))
-	res := make([]int64, 0, len(nums))
-	for _, x := range nums {
-		if _, ok := seen[x]; !ok {
-			seen[x] = struct{}{}
-			res = append(res, x)
-		}
-	}
-	return res
-}
-
-func collectBuildDetails(ctx context.Context, client pb.BuildsClient, buildIDs []int64, sleep func()) error {
-	buildIDs = dedupInt64s(buildIDs)
-	ended := make(map[int64]*pb.Build, len(buildIDs))
-	for {
-		breq := &pb.BatchRequest{}
-		for _, id := range buildIDs {
-			if _, ok := ended[id]; ok {
-				continue
-			}
-
-			getReq := &pb.GetBuildRequest{
-				Id:     id,
-				Fields: getRequestFieldMask,
-			}
-			breq.Requests = append(breq.Requests, &pb.BatchRequest_Request{
-				Request: &pb.BatchRequest_Request_GetBuild{
-					GetBuild: getReq,
-				},
-			})
-		}
-
-		logging.Infof(ctx, "checking build statuses...")
-		bresp, err := client.Batch(ctx, breq)
-		if err != nil {
-			return err
-		}
-
-		for _, resp := range bresp.Responses {
-			error := resp.GetError()
-			code := codes.Code(error.GetCode())
-			build := resp.GetGetBuild()
-			switch {
-			case grpcutil.IsTransientCode(code):
-				logging.Warningf(ctx, "transient %s error: %s", code, error.Message)
-
-			case code != codes.OK:
-				return fmt.Errorf("RPC error %s: %s", code, error.Message)
-
-			case build.Status&pb.Status_ENDED_MASK != 0:
-				ended[build.Id] = build
-				logging.Infof(ctx, "%d ended: %s", build.Id, build.Status)
-			}
-		}
-
-		logging.Infof(ctx, "%d are running/pending", len(buildIDs)-len(ended))
-		if len(buildIDs) == len(ended) {
-			break
-		}
-		sleep()
-	}
-
-	return nil
 }
 
 func (r *collectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -154,15 +66,34 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		return r.done(ctx, err)
 	}
 
-	// TODO(nodir): switch from Batch to concurrent requests.
-	// Delete baseCommandRun.retrieveBuildIDs.
-	buildIDs, err := r.retrieveBuildIDs(ctx, args)
+	fields, err := r.FieldMask()
 	if err != nil {
 		return r.done(ctx, err)
 	}
 
-	return r.done(ctx, collectBuildDetails(ctx, r.client, buildIDs, func() {
-		logging.Infof(ctx, "waiting %s before trying again...", r.intervalArg)
-		time.Sleep(r.intervalArg)
-	}))
+	return r.PrintAndDone(ctx, args, unordered, func(ctx context.Context, arg string) (*pb.Build, error) {
+		req, err := protoutil.ParseGetBuildRequest(arg)
+		if err != nil {
+			return nil, err
+		}
+		req.Fields = fields
+
+		for {
+			build, err := r.client.GetBuild(ctx, req)
+			switch code := grpcutil.Code(err); {
+			case grpcutil.IsTransientCode(code):
+				logging.Warningf(ctx, "transient error: %s", err)
+
+			case code != codes.OK:
+				return nil, err
+
+			case build.Status&pb.Status_ENDED_MASK == 0:
+				logging.Infof(ctx, "build %d is still %s; sleeping for %s", build.Id, build.Status, r.intervalArg)
+				time.Sleep(r.intervalArg)
+
+			default:
+				return build, nil
+			}
+		}
+	})
 }

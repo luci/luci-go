@@ -15,20 +15,17 @@
 package cli
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"strconv"
 	"sync"
 	"testing"
-	"time"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPrintAndDone(t *testing.T) {
@@ -36,20 +33,22 @@ func TestPrintAndDone(t *testing.T) {
 
 	Convey("printAndDone", t, func(c C) {
 		ctx := context.Background()
-		stdout := &bytes.Buffer{}
-		stderr := &bytes.Buffer{}
-		nowFn := func() time.Time { return testclock.TestRecentTimeUTC }
-		stdoutPrinter := newPrinter(stdout, true, nowFn)
-		stderrPrinter := newPrinter(stderr, true, nowFn)
 
-		call := func(args []string, fn func(string) (*pb.Build, error)) (exitCode int) {
+		call := func(args []string, fn func(string) (*pb.Build, error)) []buildResult {
 			run := &printRun{id: true}
-			exitCode = run.printAndDone(ctx, stdoutPrinter, stderrPrinter, args, func(ctx context.Context, arg string) (*pb.Build, error) {
-				return fn(arg)
-			})
-			So(stdoutPrinter.Err, ShouldBeNil)
-			So(stderrPrinter.Err, ShouldBeNil)
-			return
+			resultC := make(chan buildResult)
+			go func() {
+				run.runOrdered(ctx, 16, argChan(args), resultC, func(ctx context.Context, arg string) (*pb.Build, error) {
+					return fn(arg)
+				})
+				close(resultC)
+			}()
+
+			var ret []buildResult
+			for r := range resultC {
+				ret = append(ret, r)
+			}
+			return ret
 		}
 
 		Convey("actual args", func() {
@@ -64,30 +63,34 @@ func TestPrintAndDone(t *testing.T) {
 			So(actualArgs, ShouldResemble, stringset.NewFromSlice("1", "2"))
 		})
 
-		Convey("perfect", func() {
-			exitCode := call([]string{"1"}, func(arg string) (*pb.Build, error) {
-				return &pb.Build{SummaryMarkdown: arg}, nil
+		Convey("one build", func() {
+			build := &pb.Build{SummaryMarkdown: "1"}
+			res := call([]string{"1"}, func(arg string) (*pb.Build, error) {
+				return build, nil
 			})
-			So(exitCode, ShouldEqual, 0)
+			So(res[0].arg, ShouldEqual, "1")
+			So(res[0].err, ShouldBeNil)
+			So(res[0].build, ShouldResembleProto, build)
 		})
 
-		Convey("imperfect", func() {
-			exitCode := call([]string{"1", "2"}, func(arg string) (*pb.Build, error) {
-				if arg == "2" {
-					return nil, fmt.Errorf("bad")
+		Convey("two builds", func() {
+			build := &pb.Build{SummaryMarkdown: "1"}
+			res := call([]string{"1", "2"}, func(arg string) (*pb.Build, error) {
+				if arg == "1" {
+					return build, nil
 				}
-				return &pb.Build{SummaryMarkdown: arg}, nil
+				return nil, fmt.Errorf("bad")
 			})
-			So(exitCode, ShouldEqual, 1)
-		})
 
-		Convey("printed", func() {
-			call([]string{"1", "2"}, func(arg string) (*pb.Build, error) {
-				id, err := strconv.ParseInt(arg, 10, 64)
-				c.So(err, ShouldBeNil)
-				return &pb.Build{Id: id}, nil
-			})
-			So(stdout.String(), ShouldEqual, "1\n2\n")
+			So(res, ShouldHaveLength, 2)
+
+			So(res[0].arg, ShouldEqual, "1")
+			So(res[0].err, ShouldBeNil)
+			So(res[0].build, ShouldResembleProto, build)
+
+			So(res[1].arg, ShouldEqual, "2")
+			So(res[1].err, ShouldErrLike, "bad")
+			So(res[1].build, ShouldBeNil)
 		})
 	})
 }
