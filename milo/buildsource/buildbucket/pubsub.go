@@ -138,6 +138,7 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 		},
 		Version:      mustTimestamp(b.UpdateTime).UnixNano(),
 		Experimental: b.GetInput().GetExperimental(),
+		Critical:     b.GetCritical(),
 	}
 	if task := swarming.GetTaskId(); task != "" {
 		bs.ContextURI = append(
