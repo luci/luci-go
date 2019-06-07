@@ -215,7 +215,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	// Make sure Buildbucket can publish PubSub messages, grab token that would
 	// identify this invocation when receiving PubSub notifications.
-	serverURL := makeServerUrl(cfg.Server)
+	serverURL := makeServerURL(cfg.Server)
 	ctl.DebugLog("Preparing PubSub topic for %q", serverURL)
 	topic, authToken, err := ctl.PrepareTopic(c, serverURL)
 	if err != nil {
@@ -356,7 +356,7 @@ func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnl
 	return nil, fmt.Errorf("no debug state")
 }
 
-func makeServerUrl(s string) string {
+func makeServerURL(s string) string {
 	if strings.HasPrefix(s, "http://") {
 		// Used only in tests where we hardcode http in cfg.Server because local server is http not https.
 		return s
@@ -382,7 +382,7 @@ func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb 
 	}
 
 	cfg := ctl.Task().(*messages.BuildbucketTask)
-	service.BasePath = makeServerUrl(cfg.Server) + "/_ah/api/buildbucket/v1/"
+	service.BasePath = makeServerURL(cfg.Server) + "/_ah/api/buildbucket/v1/"
 
 	return cb(c, service)
 }

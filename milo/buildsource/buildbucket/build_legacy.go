@@ -47,7 +47,7 @@ import (
 // TODO(hinoka): BuildInfo and Skia requires this.
 // Remove this when buildbucket v2 is out and Skia is on Kitchen.
 // TODO(nodir): delete this. It is used only in deprecated BuildInfo API.
-func GetSwarmingTaskID(c context.Context, buildAddress string) (host, taskId string, err error) {
+func GetSwarmingTaskID(c context.Context, buildAddress string) (host, taskID string, err error) {
 	host, err = getHost(c)
 	if err != nil {
 		return
@@ -100,8 +100,8 @@ func GetSwarmingTaskID(c context.Context, buildAddress string) (host, taskId str
 	}
 
 	host = build.Tags.Get("swarming_hostname")
-	taskId = build.Tags.Get("swarming_task_id")
-	if host == "" || taskId == "" {
+	taskID = build.Tags.Get("swarming_task_id")
+	if host == "" || taskID == "" {
 		err = errors.New("not a valid LUCI build")
 	}
 	return
@@ -300,7 +300,7 @@ func getStep(c context.Context, bbBuildMessage *bbv1.LegacyApiCommonBuildMessage
 	return addr, step, err
 }
 
-// GetBuild is a shortcut for GetRawBuild and ToMiloBuild.
+// GetBuildLegacy is a shortcut for GetRawBuild and ToMiloBuild.
 func GetBuildLegacy(c context.Context, address string, fetchFull bool) (*ui.MiloBuildLegacy, error) {
 	bbBuildMessage, err := GetRawBuild(c, address)
 	if err != nil {

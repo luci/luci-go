@@ -32,8 +32,8 @@ import (
 // vlansFilename is the name of the config file enumerating VLANs.
 const vlansFilename = "vlans.cfg"
 
-// vlanMaxId is the highest ID a VLAN may have.
-const vlanMaxId = 65535
+// vlanMaxID is the highest ID a VLAN may have.
+const vlanMaxID = 65535
 
 // vlanMinCIDRBlockSuffix is the minimum suffix of a CIDR block.
 // This limits the length of CIDR blocks. Each block contains 2^(32 - suffix) IP addresses.
@@ -73,8 +73,8 @@ func validateVLANs(c *validation.Context, cfg *configPB.VLANs) {
 		switch _, ok := vlans[vlan.Id]; {
 		case vlan.Id < 1:
 			c.Errorf("VLAN ID %d must be positive", vlan.Id)
-		case vlan.Id > vlanMaxId:
-			c.Errorf("VLAN ID %d must not exceed %d", vlan.Id, vlanMaxId)
+		case vlan.Id > vlanMaxID:
+			c.Errorf("VLAN ID %d must not exceed %d", vlan.Id, vlanMaxID)
 		case ok:
 			c.Errorf("duplicate VLAN %d", vlan.Id)
 		}

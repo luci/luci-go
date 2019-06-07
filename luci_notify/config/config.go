@@ -133,9 +133,9 @@ func clearDeadProjects(c context.Context, liveProjects stringset.Set) error {
 }
 
 // deleteProject deletes a Project entity and all of its descendants.
-func deleteProject(c context.Context, projectId string) error {
+func deleteProject(c context.Context, projectID string) error {
 	return datastore.RunInTransaction(c, func(c context.Context) error {
-		project := &Project{Name: projectId}
+		project := &Project{Name: projectID}
 		ancestorKey := datastore.KeyForObj(c, project)
 		return parallel.FanOutIn(func(work chan<- func() error) {
 			work <- func() error {
@@ -188,7 +188,7 @@ func updateProjects(c context.Context) error {
 				cfg.ConfigSet.Project(), curRev, cfg.Revision)
 
 			work <- func() error {
-				projectId := cfg.ConfigSet.Project()
+				projectID := cfg.ConfigSet.Project()
 				project := &notifypb.ProjectConfig{}
 				if err := proto.UnmarshalText(cfg.Content, project); err != nil {
 					return errors.Annotate(err, "unmarshalling project config").Err()
@@ -201,20 +201,20 @@ func updateProjects(c context.Context) error {
 					return errors.Annotate(err, "validating project config").Err()
 				}
 
-				emailTemplates, err := fetchAllEmailTemplates(c, lucicfg, projectId)
+				emailTemplates, err := fetchAllEmailTemplates(c, lucicfg, projectID)
 				if err != nil {
 					return errors.Annotate(err, "failed to fetch email templates").Err()
 				}
 
 				parsedConfigSet := &parsedProjectConfigSet{
-					ProjectID:      projectId,
+					ProjectID:      projectID,
 					ProjectConfig:  project,
 					EmailTemplates: emailTemplates,
 					Revision:       cfg.Revision,
 					ViewURL:        cfg.ViewURL,
 				}
 				if err := updateProject(c, parsedConfigSet); err != nil {
-					return errors.Annotate(err, "importing project %q", projectId).Err()
+					return errors.Annotate(err, "importing project %q", projectID).Err()
 				}
 				return nil
 			}

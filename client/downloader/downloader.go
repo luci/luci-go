@@ -195,7 +195,7 @@ func (d *Downloader) Start() {
 }
 
 // Wait waits for the completion of the download, and returns either `nil` if
-// no errors occured during the operation, or an `errors.MultiError` otherwise.
+// no errors occurred during the operation, or an `errors.MultiError` otherwise.
 //
 // This will Start() the Downloader, if it hasn't been started already.
 //

@@ -106,12 +106,12 @@ func (mf *MultiFlag) GetOutput() io.Writer {
 func (mf *MultiFlag) Parse(value string) error {
 	option, params := parseOptionParams(value)
 	if len(option) == 0 {
-		return errors.New("Option cannot be empty.")
+		return errors.New("option cannot be empty")
 	}
 
 	mf.Selected = mf.GetOptionFor(option)
 	if mf.Selected == nil {
-		return fmt.Errorf("Invalid option: %v", option)
+		return fmt.Errorf("invalid option: %v", option)
 	}
 	return mf.Selected.Run(params)
 }

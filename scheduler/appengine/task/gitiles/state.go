@@ -80,9 +80,8 @@ func loadStateEntry(c context.Context, jobID, repo string) (*Repository, error) 
 	entry := &Repository{ID: id}
 	if err := ds.Get(c, entry); err == ds.ErrNoSuchEntity {
 		return nil, err
-	} else {
-		return entry, transient.Tag.Apply(err)
 	}
+	return entry, transient.Tag.Apply(err)
 }
 
 func saveStateEntry(c context.Context, jobID, repo string, compressedBytes []byte) error {

@@ -59,7 +59,7 @@ var (
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport: func(c context.Context) http.RoundTripper {
-			return &contextAwareUrlFetch{c}
+			return &contextAwareURLFetch{c}
 		},
 		IsDevMode: appengine.IsDevAppServer(),
 	}

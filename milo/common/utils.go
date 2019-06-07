@@ -55,9 +55,8 @@ func TagGRPC(c context.Context, err error) error {
 		// Mask the errors, so they look the same.
 		if loggedIn {
 			return errors.Reason("not found").Tag(grpcutil.NotFoundTag).Err()
-		} else {
-			return errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
 		}
+		return errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
 	}
 	return grpcutil.ToGRPCErr(err)
 }
