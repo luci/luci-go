@@ -24,13 +24,13 @@ import (
 )
 
 var statusFlagValues = map[string]pb.Status{
-	"scheduled":    pb.Status_SCHEDULED,
-	"started":      pb.Status_STARTED,
-	"ended":        pb.Status_ENDED_MASK,
-	"success":      pb.Status_SUCCESS,
-	"failure":      pb.Status_FAILURE,
-	"infra_faiure": pb.Status_INFRA_FAILURE,
-	"canceled":     pb.Status_CANCELED,
+	"scheduled":     pb.Status_SCHEDULED,
+	"started":       pb.Status_STARTED,
+	"ended":         pb.Status_ENDED_MASK,
+	"success":       pb.Status_SUCCESS,
+	"failure":       pb.Status_FAILURE,
+	"infra_failure": pb.Status_INFRA_FAILURE,
+	"canceled":      pb.Status_CANCELED,
 }
 
 var statusFlagNames map[pb.Status]string
