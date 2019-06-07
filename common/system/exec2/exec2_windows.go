@@ -155,6 +155,10 @@ func (c *Cmd) wait() error {
 	}
 	c.attr.jobMu.Unlock()
 
+	if ec != 0 {
+		return errors.Reason("exit status %d", ec).Err()
+	}
+
 	return nil
 }
 
