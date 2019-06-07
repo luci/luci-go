@@ -90,3 +90,29 @@ func TestExec(t *testing.T) {
 
 	})
 }
+
+func TestSetEnv(t *testing.T) {
+	t.Parallel()
+
+	Convey("TestSetEnv", t, func() {
+		ctx := context.Background()
+
+		var cmd *Cmd
+		if runtime.GOOS == "windows" {
+			cmd = CommandContext(ctx, "powershell.exe", "-Command", `
+if ($envvar -eq "envvar") {
+  exit 0
+}
+exit 1
+`)
+		} else {
+			cmd = CommandContext(ctx, "/bin/bash", "-c", `[[ "$envvar" == "envvar" ]]`)
+		}
+
+		cmd.SetEnv([]string{"envvar=envvar"})
+
+		So(cmd.Start(), ShouldBeNil)
+		So(cmd.Wait(time.Second), ShouldBeNil)
+		So(cmd.ExitCode(), ShouldEqual, 0)
+	})
+}
