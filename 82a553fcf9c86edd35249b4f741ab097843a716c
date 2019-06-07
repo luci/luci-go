@@ -22,6 +22,30 @@
       "revId": "82a553fcf9c86edd35249b4f741ab097843a716c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aaa4a724_bf13e492",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 475,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-06-07T21:41:54Z",
+      "side": 1,
+      "message": "Yes more readable, thanks. Done.",
+      "parentUuid": "97ce3345_96e21b7f",
+      "range": {
+        "startLine": 475,
+        "startChar": 2,
+        "endLine": 475,
+        "endChar": 7
+      },
+      "revId": "82a553fcf9c86edd35249b4f741ab097843a716c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
