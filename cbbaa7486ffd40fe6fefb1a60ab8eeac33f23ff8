@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "48f7138c_c05e209d",
+        "filename": "cipd/appengine/impl/cas/cas_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-06-07T21:35:52Z",
+      "side": 1,
+      "message": "IMO move above L244 so it\u0027s above the first usage.",
+      "revId": "cbbaa7486ffd40fe6fefb1a60ab8eeac33f23ff8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "972d243c_711113fe",
+        "filename": "lucictx/lucictx.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-06-07T21:35:52Z",
+      "side": 1,
+      "message": "l is indistinguishable from I (and even 1) in some fonts, but I don\u0027t mind too much.",
+      "revId": "cbbaa7486ffd40fe6fefb1a60ab8eeac33f23ff8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "670e3c22_197efabd",
+        "filename": "milo/buildsource/buildbot/html_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-06-07T21:35:52Z",
+      "side": 1,
+      "message": "-this",
+      "range": {
+        "startLine": 17,
+        "startChar": 20,
+        "endLine": 17,
+        "endChar": 24
+      },
+      "revId": "cbbaa7486ffd40fe6fefb1a60ab8eeac33f23ff8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
