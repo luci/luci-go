@@ -42,6 +42,10 @@ func (c *Cmd) terminate() error {
 	return nil
 }
 
+func (c *Cmd) kill() error {
+	return c.cmd.Process.Kill()
+}
+
 func (c *Cmd) wait() error {
 	return c.cmd.Wait()
 }
