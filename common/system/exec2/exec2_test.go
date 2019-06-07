@@ -16,6 +16,10 @@ package exec2
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
@@ -23,35 +27,62 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func build(src string) (string, error) {
+	tmpdir, err := ioutil.TempDir("", "test")
+	if err != nil {
+		return "", err
+	}
+
+	binary := filepath.Join(tmpdir, "exe.exe")
+	cmd := exec.Command("go", "build", "-o", binary, src)
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+	return binary, nil
+}
+
 func TestExec(t *testing.T) {
 	t.Parallel()
 
 	Convey("TestExec", t, func() {
 		ctx := context.Background()
 
-		Convey("normal", func() {
-			var args []string
-			if runtime.GOOS == "windows" {
-				args = []string{"cmd.exe", "/c"}
-			}
-			args = append(args, "echo")
-			cmd := CommandContext(ctx, args[0], args[1:]...)
+		var err error
+		var testBinary string
 
-			So(cmd.Start(), ShouldBeNil)
+		defer func() {
+			So(os.RemoveAll(filepath.Dir(testBinary)), ShouldBeNil)
+		}()
 
-			So(cmd.Wait(time.Second), ShouldBeNil)
+		Convey("exit", func() {
+			testBinary, err = build(filepath.Join("testdata", "exit.go"))
+			So(err, ShouldBeNil)
 
-			So(cmd.ExitCode(), ShouldEqual, 0)
+			Convey("exit 0", func() {
+				cmd := CommandContext(ctx, testBinary)
+				So(cmd.Start(), ShouldBeNil)
+
+				So(cmd.Wait(time.Second), ShouldBeNil)
+
+				So(cmd.ExitCode(), ShouldEqual, 0)
+
+			})
+
+			Convey("exit 42", func() {
+				cmd := CommandContext(ctx, testBinary, "42")
+				So(cmd.Start(), ShouldBeNil)
+
+				So(cmd.Wait(time.Second), ShouldBeError, "exit status 42")
+
+				So(cmd.ExitCode(), ShouldEqual, 42)
+			})
 		})
 
 		Convey("timeout", func() {
-			var args []string
-			if runtime.GOOS == "windows" {
-				args = []string{"powershell.exe", "-Command", `"Start-Sleep -s 1000"`}
-			} else {
-				args = []string{"sleep", "1000"}
-			}
-			cmd := CommandContext(ctx, args[0], args[1:]...)
+			testBinary, err = build(filepath.Join("testdata", "timeout.go"))
+			So(err, ShouldBeNil)
+
+			cmd := CommandContext(ctx, testBinary)
 
 			So(cmd.Start(), ShouldBeNil)
 
@@ -60,7 +91,7 @@ func TestExec(t *testing.T) {
 			So(cmd.Terminate(), ShouldBeNil)
 
 			if runtime.GOOS == "windows" {
-				So(cmd.Wait(time.Second), ShouldBeNil)
+				So(cmd.Wait(time.Second), ShouldBeError, "exit status 1")
 			} else {
 				So(cmd.Wait(time.Second).Error(), ShouldEqual, "signal: terminated")
 			}
@@ -73,13 +104,18 @@ func TestExec(t *testing.T) {
 		})
 
 		Convey("context timeout", func() {
+			testBinary, err = build(filepath.Join("testdata", "timeout.go"))
+			So(err, ShouldBeNil)
+
 			if runtime.GOOS == "windows" {
 				// TODO(tikuta): support context timeout on windows
 				return
 			}
+
 			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
 			defer cancel()
-			cmd := CommandContext(ctx, "sleep", "1000")
+
+			cmd := CommandContext(ctx, testBinary)
 
 			So(cmd.Start(), ShouldBeNil)
 
