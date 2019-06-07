@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ab04d8d_a4a822be",
+        "filename": "common/system/exec2/exec2_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-07T16:47:26Z",
+      "side": 1,
+      "message": "here, outdir is a better name.",
+      "range": {
+        "startLine": 30,
+        "startChar": 16,
+        "endLine": 30,
+        "endChar": 22
+      },
+      "revId": "64fb861b653ebac2a83bc4f53c647d8724aa5bad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cff8def7_3c0010fc",
+        "filename": "common/system/exec2/exec2_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-07T16:47:26Z",
+      "side": 1,
+      "message": "You should do filepath.Join(\"testdata\", src) here to reduce copy paste below.",
+      "range": {
+        "startLine": 32,
+        "startChar": 50,
+        "endLine": 32,
+        "endChar": 53
+      },
+      "revId": "64fb861b653ebac2a83bc4f53c647d8724aa5bad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e2c71e8_a9dded2d",
+        "filename": "common/system/exec2/exec2_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-07T16:47:26Z",
+      "side": 1,
+      "message": "Personally, I\u0027d remove the empty lines and keep it dense. I don\u0027t see much value in the empty lines.",
+      "revId": "64fb861b653ebac2a83bc4f53c647d8724aa5bad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
