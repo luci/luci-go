@@ -75,6 +75,11 @@ func (c *Cmd) Terminate() error {
 	return c.terminate()
 }
 
+// Kill kills process.
+func (c *Cmd) Kill() error {
+	return c.kill()
+}
+
 // ExitCode returns exit code.
 func (c *Cmd) ExitCode() int {
 	return c.exitCode()
