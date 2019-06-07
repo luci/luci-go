@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97ce3345_96e21b7f",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 475,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-07T21:18:32Z",
+      "side": 1,
+      "message": "looks like the variable is repurposed here. Took my some time to understand how this works.\n\nI think it would be more readable if:\n- the class variable in L370 was placed right before the switch @L423 (too)\n- and was renamed to \"console\" (to be consistent with \"status\")",
+      "range": {
+        "startLine": 475,
+        "startChar": 2,
+        "endLine": 475,
+        "endChar": 7
+      },
+      "revId": "82a553fcf9c86edd35249b4f741ab097843a716c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
