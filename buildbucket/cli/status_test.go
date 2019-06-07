@@ -52,10 +52,10 @@ func TestStatusFlag(t *testing.T) {
 				So(status, ShouldEqual, pb.Status_SUCCESS)
 			})
 			Convey("unspecified", func() {
-				So(f.Set("unspecified"), ShouldErrLike, `invalid status "unspecified"; expected one of canceled, ended, failure, infra_faiure, scheduled, started, success`)
+				So(f.Set("unspecified"), ShouldErrLike, `invalid status "unspecified"; expected one of canceled, ended, failure, infra_failure, scheduled, started, success`)
 			})
 			Convey("garbage", func() {
-				So(f.Set("garbage"), ShouldErrLike, `invalid status "garbage"; expected one of canceled, ended, failure, infra_faiure, scheduled, started, success`)
+				So(f.Set("garbage"), ShouldErrLike, `invalid status "garbage"; expected one of canceled, ended, failure, infra_failure, scheduled, started, success`)
 			})
 		})
 	})
