@@ -57,6 +57,30 @@
       "revId": "c7b968bfeb700b872814fce5ae678aa56e9f3f64",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72e2c64a_52776113",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-06-07T20:37:07Z",
+      "side": 1,
+      "message": "Good ideas. Done.",
+      "parentUuid": "b2da9592_df6180fc",
+      "range": {
+        "startLine": 371,
+        "startChar": 1,
+        "endLine": 371,
+        "endChar": 12
+      },
+      "revId": "c7b968bfeb700b872814fce5ae678aa56e9f3f64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
