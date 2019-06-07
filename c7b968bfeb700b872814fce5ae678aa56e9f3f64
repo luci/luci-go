@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "83fe0acd_fc826978",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-07T18:42:21Z",
+      "side": 1,
+      "message": "nit: please move to the import block below. This one is reserved to stdlib",
+      "revId": "c7b968bfeb700b872814fce5ae678aa56e9f3f64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2da9592_df6180fc",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-07T18:42:21Z",
+      "side": 1,
+      "message": "the switch @L423 unconditionally sets this variant, so this value does not matter.\nAlso the variable is read only right after the switch.\nWhy not place this line right before the switch, and remove all `nonCritical \u003d false` from cases",
+      "range": {
+        "startLine": 371,
+        "startChar": 1,
+        "endLine": 371,
+        "endChar": 12
+      },
+      "revId": "c7b968bfeb700b872814fce5ae678aa56e9f3f64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
