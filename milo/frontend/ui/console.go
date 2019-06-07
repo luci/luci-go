@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"strings"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -366,7 +367,6 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 
 	status := "None"
 	link := "#"
-	class := ""
 
 	// Below is a state machine for rendering a single builder's column.
 	// In essence, the state machine takes 3 inputs: the current state, and
@@ -417,10 +417,12 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			nextNextBuild = br.Build[i+2] != nil
 		}
 
+		console := ""
+		nonCritical := false
 		var nextState int
 		switch state {
 		case empty:
-			class = "empty-cell"
+			console = "empty-cell"
 			switch {
 			case nextBuild && nextNextBuild:
 				nextState = cell
@@ -430,7 +432,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 				nextState = empty
 			}
 		case top:
-			class = "cell-top"
+			console = "cell-top"
 			status = build.Summary.Status.String()
 			link = build.SelfLink()
 			switch {
@@ -440,7 +442,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 				nextState = middle
 			}
 		case middle:
-			class = "cell-middle"
+			console = "cell-middle"
 			switch {
 			case nextNextBuild:
 				nextState = bottom
@@ -448,7 +450,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 				nextState = middle
 			}
 		case bottom:
-			class = "cell-bottom"
+			console = "cell-bottom"
 			switch {
 			case nextNextBuild:
 				nextState = cell
@@ -456,9 +458,10 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 				nextState = top
 			}
 		case cell:
-			class = "cell"
+			console = "cell"
 			status = build.Summary.Status.String()
 			link = build.SelfLink()
+			nonCritical = build.Critical == buildbucketpb.Trinary_NO
 			switch {
 			case nextNextBuild:
 				nextState = cell
@@ -469,10 +472,14 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			panic("Unrecognized state")
 		}
 		// Write current state's information.
+		class := fmt.Sprintf("console-%s status-%s", console, status)
+		if nonCritical {
+			class += " non-critical"
+		}
 		must(fmt.Fprintf(buffer,
-			`<div class="console-cell-container"><a class="console-%s status-%s" href="%s" title="%s">`+
+			`<div class="console-cell-container"><a class="%s" href="%s" title="%s">`+
 				`<span class="console-cell-text">%s</span></a><div class="console-cell-spacer"></div></div>`,
-			class, status, link,
+			class, link,
 			template.HTMLEscapeString(br.BuilderName()),
 			br.ShortName))
 
