@@ -155,6 +155,12 @@ type BuildSummary struct {
 	// recipe).
 	Experimental bool
 
+	// If NO, then the build status SHOULD NOT be used to assess correctness of
+	// the input gitiles_commit or gerrit_changes.
+	// For example, if a pre-submit build has failed, CQ MAY still land the CL.
+	// For example, if a post-submit build has failed, CLs MAY continue landing.
+	Critical buildbucketpb.Trinary
+
 	// Ignore all extra fields when reading/writing
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
