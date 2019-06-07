@@ -132,7 +132,7 @@ type mergeableInfo struct {
 
 func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
 	// Convert something like 'simple-two-way-in-core' to 'SIMPLE_TWO_WAY_IN_CORE'.
-	strategyEnumName := strings.ReplaceAll(strings.ToUpper(mi.Strategy), "-", "_")
+	strategyEnumName := strings.Replace(strings.ToUpper(mi.Strategy), "-", "_", -1)
 	strategyEnumNum, found := gerritpb.MergeableStrategy_value[strategyEnumName]
 	if !found {
 		return nil, fmt.Errorf("no MergeableStrategy enum value for %q", strategyEnumName)
