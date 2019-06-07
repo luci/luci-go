@@ -17,6 +17,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"go.chromium.org/luci/buildbucket/proto"
 	"html/template"
 	"net/url"
 	"strings"
@@ -367,6 +368,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	status := "None"
 	link := "#"
 	class := ""
+	nonCritical := false
 
 	// Below is a state machine for rendering a single builder's column.
 	// In essence, the state machine takes 3 inputs: the current state, and
@@ -421,6 +423,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		switch state {
 		case empty:
 			class = "empty-cell"
+			nonCritical = false
 			switch {
 			case nextBuild && nextNextBuild:
 				nextState = cell
@@ -433,6 +436,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			class = "cell-top"
 			status = build.Summary.Status.String()
 			link = build.SelfLink()
+			nonCritical = false
 			switch {
 			case nextNextBuild:
 				nextState = bottom
@@ -441,6 +445,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			}
 		case middle:
 			class = "cell-middle"
+			nonCritical = false
 			switch {
 			case nextNextBuild:
 				nextState = bottom
@@ -449,6 +454,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			}
 		case bottom:
 			class = "cell-bottom"
+			nonCritical = false
 			switch {
 			case nextNextBuild:
 				nextState = cell
@@ -459,6 +465,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			class = "cell"
 			status = build.Summary.Status.String()
 			link = build.SelfLink()
+			nonCritical = build.Critical == buildbucketpb.Trinary_NO
 			switch {
 			case nextNextBuild:
 				nextState = cell
@@ -469,10 +476,14 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			panic("Unrecognized state")
 		}
 		// Write current state's information.
+		class := fmt.Sprintf("console-%s status-%s", class, status)
+		if nonCritical {
+			class += " non-critical"
+		}
 		must(fmt.Fprintf(buffer,
-			`<div class="console-cell-container"><a class="console-%s status-%s" href="%s" title="%s">`+
+			`<div class="console-cell-container"><a class="%s" href="%s" title="%s">`+
 				`<span class="console-cell-text">%s</span></a><div class="console-cell-spacer"></div></div>`,
-			class, status, link,
+			class, link,
 			template.HTMLEscapeString(br.BuilderName()),
 			br.ShortName))
 
