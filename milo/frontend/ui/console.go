@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"strings"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -417,6 +418,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			nextNextBuild = br.Build[i+2] != nil
 		}
 
+		nonCritical := false
 		var nextState int
 		switch state {
 		case empty:
@@ -459,6 +461,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			class = "cell"
 			status = build.Summary.Status.String()
 			link = build.SelfLink()
+			nonCritical = build.Critical == buildbucketpb.Trinary_NO
 			switch {
 			case nextNextBuild:
 				nextState = cell
@@ -469,10 +472,14 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			panic("Unrecognized state")
 		}
 		// Write current state's information.
+		class := fmt.Sprintf("console-%s status-%s", class, status)
+		if nonCritical {
+			class += " non-critical"
+		}
 		must(fmt.Fprintf(buffer,
-			`<div class="console-cell-container"><a class="console-%s status-%s" href="%s" title="%s">`+
+			`<div class="console-cell-container"><a class="%s" href="%s" title="%s">`+
 				`<span class="console-cell-text">%s</span></a><div class="console-cell-spacer"></div></div>`,
-			class, status, link,
+			class, link,
 			template.HTMLEscapeString(br.BuilderName()),
 			br.ShortName))
 
