@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ef3d402_34b95ea6",
+        "filename": "common/system/exec2/exec2_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-07T12:17:24Z",
+      "side": 1,
+      "message": "This could cause a call to os.RemoveAll(\"\") in some case. 😨 I\u0027d recommend to create the temporary directory here instead of in build().",
+      "revId": "65f37568c8cb00176d4168b85fd9b3d69602f172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51b2e0d0_565a4522",
+        "filename": "common/system/exec2/exec2_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-07T12:17:24Z",
+      "side": 1,
+      "message": "Let\u0027s use something larger like 10 seconds; when running a lot of tests in parallel on a non-SSD on Windows with an anti-virus, the latency can be atrocious.",
+      "revId": "65f37568c8cb00176d4168b85fd9b3d69602f172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a24a65e_e3e2b8b5",
+        "filename": "common/system/exec2/exec2_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-07T12:17:24Z",
+      "side": 1,
+      "message": "Same",
+      "revId": "65f37568c8cb00176d4168b85fd9b3d69602f172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ccbadf2_bcac0a8e",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-07T12:17:24Z",
+      "side": 1,
+      "message": "Why not exec.ExitError?",
+      "revId": "65f37568c8cb00176d4168b85fd9b3d69602f172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "260d1c87_34333f2f",
+        "filename": "common/system/exec2/testdata/timeout.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-07T12:17:24Z",
+      "side": 1,
+      "message": "You can do:\n\nselect {}",
+      "revId": "65f37568c8cb00176d4168b85fd9b3d69602f172",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
