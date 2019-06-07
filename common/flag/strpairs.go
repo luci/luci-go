@@ -25,7 +25,7 @@ import (
 // strpairsFlag implements the flag.Getter returned by StrPairs.
 type stringPairsFlag strpair.Map
 
-// StrPairs returns a flag.Getter for parsing strpair.Map from a
+// StringPairs returns a flag.Getter for parsing strpair.Map from a
 // a set of colon-separated strings.
 // Example: -f a:1 -f a:2 -f b:3
 // Panics if m is nil.

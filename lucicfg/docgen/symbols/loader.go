@@ -69,7 +69,7 @@ func (l *Loader) init() {
 	}
 }
 
-// Loads loads the module and all modules it references, populating the
+// Load loads the module and all modules it references, populating the
 // loader's state with information about exported symbols.
 //
 // Returns a struct with a list of symbols defined in the module.

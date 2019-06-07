@@ -37,7 +37,7 @@ func (jt Time) MarshalJSON() ([]byte, error) {
 	return json.Marshal(jt.UTC().Format(time.RFC3339Nano))
 }
 
-// MarshalJSON implements json.Unmarshaler.
+// UnmarshalJSON implements json.Unmarshaler.
 func (jt *Time) UnmarshalJSON(b []byte) error {
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {

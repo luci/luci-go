@@ -604,7 +604,7 @@ func TestListInstances(t *testing.T) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
-		fakeApiInst := func(id string) *api.Instance {
+		fakeAPIInst := func(id string) *api.Instance {
 			return &api.Instance{
 				Package:  "a/b",
 				Instance: fakeObjectRef(id),
@@ -628,7 +628,7 @@ func TestListInstances(t *testing.T) {
 					PageSize: 2,
 				},
 				out: &api.ListInstancesResponse{
-					Instances:     []*api.Instance{fakeApiInst("0"), fakeApiInst("1")},
+					Instances:     []*api.Instance{fakeAPIInst("0"), fakeAPIInst("1")},
 					NextPageToken: "page_tok",
 				},
 			})
@@ -640,7 +640,7 @@ func TestListInstances(t *testing.T) {
 					PageToken: "page_tok",
 				},
 				out: &api.ListInstancesResponse{
-					Instances: []*api.Instance{fakeApiInst("2")},
+					Instances: []*api.Instance{fakeAPIInst("2")},
 				},
 			})
 

@@ -77,12 +77,12 @@ func handleBuildbotBuild(c *router.Context) error {
 }
 
 // handleLUCIBuildLegacy renders a LUCI build.
-func handleLUCIBuildLegacy(c *router.Context, bucket, builder, numberOrId string) error {
+func handleLUCIBuildLegacy(c *router.Context, bucket, builder, numberOrID string) error {
 	var address string
-	if strings.HasPrefix(numberOrId, "b") {
-		address = numberOrId[1:]
+	if strings.HasPrefix(numberOrID, "b") {
+		address = numberOrID[1:]
 	} else {
-		address = fmt.Sprintf("%s/%s/%s", bucket, builder, numberOrId)
+		address = fmt.Sprintf("%s/%s/%s", bucket, builder, numberOrID)
 	}
 
 	build, err := buildbucket.GetBuildLegacy(c.Context, address, true)

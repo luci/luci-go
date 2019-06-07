@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package buildbucket is generated from Buildbucket .proto files.
+// Package buildbucketpb is generated from Buildbucket .proto files.
 //
 // It contains pRPC and mock implementations of Builds RPC service.
 //

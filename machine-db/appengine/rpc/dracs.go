@@ -68,7 +68,7 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 	}
 	defer tx.MaybeRollback(c)
 
-	hostnameId, err := model.AssignHostnameAndIP(c, tx, d.Name, ip)
+	hostnameID, err := model.AssignHostnameAndIP(c, tx, d.Name, ip)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 	_, err = tx.ExecContext(c, `
 		INSERT INTO dracs (hostname_id, machine_id, switch_id, switchport, mac_address)
 		VALUES (?, (SELECT id FROM machines WHERE name = ?), (SELECT id FROM switches WHERE name = ?), ?, ?)
-	`, hostnameId, d.Machine, d.Switch, d.Switchport, mac)
+	`, hostnameID, d.Machine, d.Switch, d.Switchport, mac)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:

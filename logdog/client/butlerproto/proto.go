@@ -266,9 +266,8 @@ func (w *Writer) WriteWith(fw recordio.Writer, b *logpb.ButlerLogBundle) error {
 		if len(entries) > 100 {
 			return fmt.Errorf("butlerproto: failed to marshal Bundle of len %d with first 100 entries %s: %s",
 				len(entries), entries[:100], err)
-		} else {
-			return fmt.Errorf("butlerproto: failed to marshal Bundle %s: %s", entries, err)
 		}
+		return fmt.Errorf("butlerproto: failed to marshal Bundle %s: %s", entries, err)
 	}
 
 	return w.writeData(fw, logpb.ButlerMetadata_ButlerLogBundle, data)
