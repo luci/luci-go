@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5905756e_923bb4f2",
+        "filename": "cipd/appengine/impl/cas/cas_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-08T01:18:52Z",
+      "side": 1,
+      "message": "I had left it there because it\u0027s used in two functions. But I moved it in the functions instead, since keeping it a global makes it harder to read.",
+      "parentUuid": "48f7138c_c05e209d",
+      "revId": "cbbaa7486ffd40fe6fefb1a60ab8eeac33f23ff8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "972d243c_711113fe",
         "filename": "lucictx/lucictx.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "cbbaa7486ffd40fe6fefb1a60ab8eeac33f23ff8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4041ba99_04fb089e",
+        "filename": "lucictx/lucictx.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-08T01:18:52Z",
+      "side": 1,
+      "message": "It\u0027s because of function clone at line 62. I would have preferred to keep the methods close but I didn\u0027t want to do more involved refactoring, and I felt \u0027ctx\u0027 to be a surprising receiver variable name.",
+      "parentUuid": "972d243c_711113fe",
+      "revId": "cbbaa7486ffd40fe6fefb1a60ab8eeac33f23ff8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -56,6 +92,30 @@
       "revId": "cbbaa7486ffd40fe6fefb1a60ab8eeac33f23ff8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2d52495_ce712c8d",
+        "filename": "milo/buildsource/buildbot/html_data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-08T01:18:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "670e3c22_197efabd",
+      "range": {
+        "startLine": 17,
+        "startChar": 20,
+        "endLine": 17,
+        "endChar": 24
+      },
+      "revId": "cbbaa7486ffd40fe6fefb1a60ab8eeac33f23ff8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
