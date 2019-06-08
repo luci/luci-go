@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "28961e4e_c53a0a5e",
+        "filename": "cipd/client/cipd/internal/retry/waiter.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-08T07:44:39Z",
+      "side": 1,
+      "message": "This will be reused in future CLs. Also it matches interface used by github.com/danjacques/gofslock/fslock which will be used to implement an overall lock over some CIPD guts.",
+      "revId": "1e627e25d3fb6796e9f0f22e2ab8247faae8fa2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
