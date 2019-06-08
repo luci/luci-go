@@ -28,7 +28,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"go.chromium.org/luci/common/data/sortby"
@@ -818,19 +817,17 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		seenNumbers.addNum(n)
 
 		pkgPath := filepath.Join(abs, strconv.Itoa(n))
+
 		// We use os.Rename instead of d.fs.Replace because we want it to fail if
 		// the target directory already exists.
-		switch err := os.Rename(tmpDir, pkgPath); le := err.(type) {
-		case nil:
+		switch err := os.Rename(tmpDir, pkgPath); {
+		case err == nil:
 			return pkgPath, nil
 
-		case *os.LinkError:
-			if le.Err != syscall.ENOTEMPTY {
-				logging.Errorf(ctx, "Error while creating pkg dir %s: %s", pkgPath, err)
-				return "", err
-			}
-
-		default:
+		// Note that IsAccessDenied is Windows-specific check. ERROR_ACCESS_DENIED
+		// happens on Windows instead of ENOTEMPTY, see the following explanation:
+		// https://github.com/golang/go/issues/14527#issuecomment-189755676
+		case !fs.IsNotEmpty(err) && !fs.IsAccessDenied(err):
 			logging.Errorf(ctx, "Unknown error while creating pkg dir %s: %s", pkgPath, err)
 			return "", err
 		}
