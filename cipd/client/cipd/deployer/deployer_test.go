@@ -25,6 +25,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -2052,6 +2053,52 @@ func TestResolveValidPackageDirs(t *testing.T) {
 
 	})
 
+}
+
+func TestPackagePathCollision(t *testing.T) {
+	t.Parallel()
+
+	const threads = 50
+	const packages = 4
+
+	ctx := context.Background()
+
+	Convey("Collide packagePath", t, func() {
+		tempDir := mkTempDir()
+		d := New(tempDir).(*deployerImpl)
+
+		results := make([]struct {
+			pkg  string
+			path string
+			err  error
+		}, threads)
+
+		wg := sync.WaitGroup{}
+		wg.Add(threads)
+		for th := 0; th < threads; th++ {
+			th := th
+			go func() {
+				defer wg.Done()
+				r := &results[th]
+				r.pkg = fmt.Sprintf("pkg/%d", th%packages)
+				r.path, r.err = d.packagePath(ctx, "", r.pkg, true)
+			}()
+		}
+		wg.Wait()
+
+		// No errors.
+		seen := stringset.New(0)
+		for _, r := range results {
+			if r.err != nil { // avoid gazillion of goconvey checkmarks
+				So(r.err, ShouldBeNil)
+			} else {
+				seen.Add(fmt.Sprintf("%s:%s", r.pkg, r.path))
+			}
+		}
+
+		// Each 'pkg' got exactly one 'path'.
+		So(seen.ToSlice(), ShouldHaveLength, packages)
+	})
 }
 
 func TestRemoveEmptyTrees(t *testing.T) {
