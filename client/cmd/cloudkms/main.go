@@ -36,7 +36,7 @@ import (
 // supported commands) is done.
 const version = "0.1"
 
-func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
+func getApplication(defaultAuthOpts auth.Options) *cli.Application {
 	defaultAuthOpts.Scopes = []string{auth.OAuthScopeEmail, cloudkms.CloudPlatformScope}
 	return &cli.Application{
 		Name:  "cloudkms",
@@ -59,6 +59,6 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 
 func main() {
 	mathrand.SeedRandomly()
-	app := GetApplication(chromeinfra.DefaultAuthOptions())
+	app := getApplication(chromeinfra.DefaultAuthOptions())
 	os.Exit(subcommands.Run(app, nil))
 }

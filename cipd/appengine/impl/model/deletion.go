@@ -106,7 +106,7 @@ func deleteEntityKinds(c context.Context, pkg string, kindsToDelete []string) er
 
 				count := 0
 				err := datastore.Run(c, q, func(k *datastore.Key, _ datastore.CursorCB) error {
-					count += 1
+					count++
 					keys <- k
 					return nil
 				})
@@ -148,7 +148,7 @@ func deleteEntityKinds(c context.Context, pkg string, kindsToDelete []string) er
 				}
 
 				// Got "we are done" signal from some query.
-				if stillRunning -= 1; stillRunning == 0 {
+				if stillRunning--; stillRunning == 0 {
 					break // all queries are done
 				}
 			}

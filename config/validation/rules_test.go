@@ -94,10 +94,10 @@ func TestRuleSet(t *testing.T) {
 
 		Convey("Error in the var callback", func() {
 			r := RuleSet{}
-			r.RegisterVar("a", func(context.Context) (string, error) { return "", fmt.Errorf("BOOM!") })
+			r.RegisterVar("a", func(context.Context) (string, error) { return "", fmt.Errorf("boom") })
 			r.Add("services/${a}", "paths/a", validator("rule_1"))
 			err := r.ValidateConfig(&Context{Context: ctx}, "services/zzz", "some path", []byte("body"))
-			So(err, ShouldErrLike, "BOOM!")
+			So(err, ShouldErrLike, "boom")
 		})
 
 		Convey("Missing variables", func() {

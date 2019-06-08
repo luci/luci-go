@@ -40,6 +40,7 @@ func makeDumpingMapper(c context.Context, j *mapper.Job, shardIdx int) (mapper.M
 	}, nil
 }
 
+// TestEntry would be an entity in the datastore.
 type TestEntity struct {
 	ID int64 `gae:"$id"`
 }

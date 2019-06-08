@@ -36,9 +36,11 @@ func assertGetText(le *logpb.LogEntry) *logpb.Text {
 	}
 }
 
-// GetWrappedCallback wraps a passed callback meant to be called at the ends of Text lines so that
-// it is actually called at the end of Text lines.
-// Does not wrap callback to guarantee being called at the end of *every* Text line.
+// GetWrappedTextCallback wraps a passed callback meant to be called at the
+// ends of Text lines so that it is actually called at the end of Text lines.
+//
+// Does not wrap callback to guarantee being called at the end of *every* Text
+// line.
 //
 // The wrapped callback panics if:
 // - the passed LogEntry is not a Text LogEntry

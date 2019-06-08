@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// Action is a kind of RPC that can be ACLed.
 type Action uint32
 
 const (

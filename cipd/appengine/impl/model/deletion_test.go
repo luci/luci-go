@@ -57,7 +57,7 @@ func TestDeletePackage(t *testing.T) {
 				case k.Kind() == "Event":
 					return
 				default:
-					count += 1
+					count++
 				}
 			}), ShouldBeNil)
 			return

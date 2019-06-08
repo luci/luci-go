@@ -50,7 +50,7 @@ func (l *Level) Set(v string) error {
 		*l = Error
 
 	default:
-		return errors.New("Unknown log level value.")
+		return errors.New("unknown log level value")
 	}
 	return nil
 }

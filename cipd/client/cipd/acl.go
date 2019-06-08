@@ -116,7 +116,7 @@ func mutateACLs(meta *api.PrefixMetadata, changes []PackageACLChange) (dirty boo
 }
 
 func grantRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
-	var roleAcl *api.PrefixMetadata_ACL
+	var roleACL *api.PrefixMetadata_ACL
 	for _, acl := range m.Acls {
 		if acl.Role != role {
 			continue
@@ -126,12 +126,12 @@ func grantRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
 				return false // already have it
 			}
 		}
-		roleAcl = acl
+		roleACL = acl
 	}
 
-	if roleAcl != nil {
+	if roleACL != nil {
 		// Append to the existing ACL.
-		roleAcl.Principals = append(roleAcl.Principals, principal)
+		roleACL.Principals = append(roleACL.Principals, principal)
 	} else {
 		// Add new ACL for this role, this is the first one.
 		m.Acls = append(m.Acls, &api.PrefixMetadata_ACL{

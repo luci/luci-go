@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package protocol defines types used in Buildbot build protocol,
+// Package buildbot defines types used in Buildbot build protocol,
 // e.g. build, step, log, etc.
 // The types can used together with encoding/json package.
 package buildbot
@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
@@ -175,12 +176,12 @@ func (b *Build) Status() model.Status {
 	return result
 }
 
-// PropertyNotFound is returned by (*Build).PropertyValue if a property is no
+// ErrPropertyNotFound is returned by (*Build).PropertyValue if a property is no
 // found.
-var PropertyNotFound = fmt.Errorf("property not found")
+var ErrPropertyNotFound = errors.New("property not found")
 
 // PropertyValue returns the named property value.
-// If such property does not exist, returns PropertyNotFound.
+// If such property does not exist, returns ErrPropertyNotFound.
 func (b *Build) PropertyValue(name string) interface{} {
 	for _, prop := range b.Properties {
 		if prop.Name == name {
@@ -191,7 +192,7 @@ func (b *Build) PropertyValue(name string) interface{} {
 	// Not returning (nil, false) here because it would complicate all
 	// practical usage of this function, which simply try to cast the
 	// returned value.
-	return PropertyNotFound
+	return ErrPropertyNotFound
 }
 
 // Experimental returns true if b is experimental.

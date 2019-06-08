@@ -40,7 +40,7 @@ func CheckURL(s string) (string, error) {
 		u.Scheme = "https"
 	}
 	if u.Scheme != "https" && u.Scheme != "http" {
-		return "", errors.New("Only http:// or https:// scheme is accepted.")
+		return "", errors.New("only http:// or https:// scheme is accepted")
 	}
 	if u.Scheme != "https" && hostRequiresSSL(u.Host) {
 		return "", errors.New("only https:// scheme is accepted for appspot hosts, it can be omitted")

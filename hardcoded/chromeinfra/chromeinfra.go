@@ -56,7 +56,7 @@ const (
 	// MachineDatabaseHost is the URL of the Machine Database.
 	MachineDatabaseHost = "machine-db.appspot.com"
 
-	// MachineDatabaseDevURL is the URL of the Machine Database dev instance.
+	// MachineDatabaseDevHost is the URL of the Machine Database dev instance.
 	MachineDatabaseDevHost = "machine-db-dev.appspot.com"
 
 	// ConfigServiceHost is the default host of LUCI config service.

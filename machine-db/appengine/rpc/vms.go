@@ -68,7 +68,7 @@ func createVM(c context.Context, v *crimson.VM) (*crimson.VM, error) {
 	}
 	defer tx.MaybeRollback(c)
 
-	hostnameId, err := model.AssignHostnameAndIP(c, tx, v.Name, ip)
+	hostnameID, err := model.AssignHostnameAndIP(c, tx, v.Name, ip)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func createVM(c context.Context, v *crimson.VM) (*crimson.VM, error) {
 			?,
 			?
 		)
-	`, hostnameId, v.Host, v.Os, v.Description, v.DeploymentTicket, v.State)
+	`, hostnameID, v.Host, v.Os, v.Description, v.DeploymentTicket, v.State)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:

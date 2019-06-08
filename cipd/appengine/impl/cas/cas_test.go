@@ -245,12 +245,12 @@ func TestBeginUpload(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
-		uploaderId := identity.Identity("user:uploader@example.com")
 		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
+		uploaderID := identity.Identity("user:uploader@example.com")
 
 		ctx := gaetesting.TestingContext()
 		ctx, _ = testclock.UseTime(ctx, testTime)
-		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderId})
+		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderID})
 
 		gsMock := &mockedGS{}
 
@@ -268,7 +268,7 @@ func TestBeginUpload(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// ID can be decoded back.
-			opID, err := upload.UnwrapOpID(ctx, resp.OperationId, uploaderId)
+			opID, err := upload.UnwrapOpID(ctx, resp.OperationId, uploaderID)
 			So(err, ShouldBeNil)
 			So(opID, ShouldEqual, 1)
 
@@ -294,7 +294,7 @@ func TestBeginUpload(t *testing.T) {
 				TempGSPath: "/bucket/tmp_path/1454472306_1",
 				UploadURL:  "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				HashAlgo:   api.HashAlgo_SHA256,
-				CreatedBy:  uploaderId,
+				CreatedBy:  uploaderID,
 			})
 		})
 
@@ -322,7 +322,7 @@ func TestBeginUpload(t *testing.T) {
 				UploadURL:  "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				HashAlgo:   api.HashAlgo_SHA256,
 				HexDigest:  strings.Repeat("a", 64),
-				CreatedBy:  uploaderId,
+				CreatedBy:  uploaderID,
 				CreatedTS:  op.CreatedTS,
 				UpdatedTS:  op.UpdatedTS,
 			})
@@ -371,15 +371,12 @@ func TestBeginUpload(t *testing.T) {
 	})
 }
 
-var (
-	testTime   = testclock.TestRecentTimeUTC.Round(time.Millisecond)
-	uploaderId = identity.Identity("user:uploader@example.com")
-)
-
 func storageMocks() (context.Context, *mockedGS, tqtesting.Testable, *storageImpl) {
+	testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
+	uploaderID := identity.Identity("user:uploader@example.com")
 	ctx := gaetesting.TestingContext()
 	ctx, _ = testclock.UseTime(ctx, testTime)
-	ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderId})
+	ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderID})
 
 	gsMock := &mockedGS{
 		files:       map[string]string{},

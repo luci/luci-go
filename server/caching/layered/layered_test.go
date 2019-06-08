@@ -115,7 +115,7 @@ func TestCache(t *testing.T) {
 			})
 
 			Convey("Broken global cache is ignored", func() {
-				global.Err = errors.New("broken!")
+				global.Err = errors.New("broken")
 
 				// Create an item.
 				item, err := c.GetOrCreate(ctx, "item", getter)

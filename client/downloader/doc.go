@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package archiver implements the pipeline to efficiently archive file sets
-// to an isolated server as fast as possible.
+// Package downloader implements the pipeline to download file sets
+// from an isolated server.
 package downloader

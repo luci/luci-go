@@ -477,11 +477,11 @@ func consoleHeaderGroupIDs(project string, config []*config.ConsoleSummaryGroup)
 	consoleIDSet := map[common.ConsoleID]struct{}{}
 	for _, group := range config {
 		for _, id := range group.ConsoleIds {
-			if cid, err := common.ParseConsoleID(id); err != nil {
+			cid, err := common.ParseConsoleID(id)
+			if err != nil {
 				return nil, err
-			} else {
-				consoleIDSet[cid] = struct{}{}
 			}
+			consoleIDSet[cid] = struct{}{}
 		}
 	}
 	consoleIDs := make([]common.ConsoleID, 0, len(consoleIDSet))

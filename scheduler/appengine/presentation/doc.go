@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package presentation implements common method to API and UI serving.
+// Package presentation implements common method to API and UI serving.
 package presentation

@@ -25,7 +25,7 @@ import (
 	"go.starlark.net/starlarkstruct"
 )
 
-// ProtoLib() returns a dict with single struct named "proto" that holds helper
+// ProtoLib returns a dict with single struct named "proto" that holds helper
 // functions to manipulate protobuf messages (in particular serialize them).
 //
 // Exported functions:

@@ -186,8 +186,8 @@ func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTr
 			return nil, status.Errorf(codes.InvalidArgument, "bad trigger #%d (%q) - %s", index, batch.Trigger.Id, err)
 		}
 		for _, jobRef := range batch.Jobs {
-			jobId := jobRef.GetProject() + "/" + jobRef.GetJob()
-			triggersPerJobID[jobId] = append(triggersPerJobID[jobId], tr)
+			jobID := jobRef.GetProject() + "/" + jobRef.GetJob()
+			triggersPerJobID[jobID] = append(triggersPerJobID[jobID], tr)
 		}
 	}
 

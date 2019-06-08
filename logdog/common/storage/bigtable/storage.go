@@ -66,7 +66,7 @@ var (
 	errStop = errors.New("bigtable: stop iteration")
 )
 
-// DefaultCallOptions returns a function set of ClientOptions to apply to a
+// DefaultClientOptions returns a function set of ClientOptions to apply to a
 // BigTable client.
 func DefaultClientOptions() []option.ClientOption {
 	return []option.ClientOption{

@@ -324,7 +324,7 @@ func (f *File) Serialize(w io.Writer) error {
 		}
 
 		if needsNLs != 0 {
-			needsNLs += 1 // new line separator if any of $Directives were used
+			needsNLs++ // new line separator if any of $Directives were used
 		}
 
 		if len(f.VerifyPlatforms) > 0 {

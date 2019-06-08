@@ -141,6 +141,7 @@ type LabelInfo struct {
 // RevisionKind represents the "kind" field for a patch set.
 type RevisionKind string
 
+// Known revision kinds.
 var (
 	RevisionRework                 RevisionKind = "REWORK"
 	RevisionTrivialRebase                       = "TRIVIAL_REBASE"
@@ -680,7 +681,7 @@ type RestoreInput struct {
 	Message string `json:"message,omitempty"`
 }
 
-// Restore restores an existing abandoned change in Gerrit.
+// RestoreChange restores an existing abandoned change in Gerrit.
 //
 // Returns a Change referenced by changeID, if restored.
 //

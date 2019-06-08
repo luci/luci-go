@@ -170,7 +170,7 @@ foo   Test option 'foo'.
 
 		Convey(`Should fail to print a help string when the writer fails.`, func() {
 			w := &failWriter{}
-			w.Error = errors.New("Fail.")
+			w.Error = errors.New("fail")
 			of.Output = w
 			So(of.PrintHelp(), ShouldNotBeNil)
 		})

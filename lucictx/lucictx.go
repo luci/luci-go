@@ -200,13 +200,13 @@ func ExportInto(ctx context.Context, dir string) (Exported, error) {
 	return getCurrent(ctx).export(dir)
 }
 
-func (ctx *lctx) export(dir string) (Exported, error) {
-	if len(ctx.sections) == 0 {
+func (l *lctx) export(dir string) (Exported, error) {
+	if len(l.sections) == 0 {
 		return &nullExport{}, nil
 	}
 
 	if dir != "" {
-		path, err := dropToDisk(ctx.sections, dir)
+		path, err := dropToDisk(l.sections, dir)
 		if err != nil {
 			return nil, err
 		}
@@ -216,33 +216,33 @@ func (ctx *lctx) export(dir string) (Exported, error) {
 		}, nil
 	}
 
-	ctx.lock.Lock()
-	defer ctx.lock.Unlock()
+	l.lock.Lock()
+	defer l.lock.Unlock()
 
-	if ctx.refs == 0 {
-		if ctx.path != "" {
+	if l.refs == 0 {
+		if l.path != "" {
 			panic("lctx.path is supposed to be empty here")
 		}
-		path, err := dropToDisk(ctx.sections, "")
+		path, err := dropToDisk(l.sections, "")
 		if err != nil {
 			return nil, err
 		}
-		ctx.path = path
+		l.path = path
 	}
 
-	ctx.refs++
+	l.refs++
 	return &liveExport{
-		path: ctx.path,
+		path: l.path,
 		closer: func() {
-			ctx.lock.Lock()
-			defer ctx.lock.Unlock()
-			if ctx.refs == 0 {
+			l.lock.Lock()
+			defer l.lock.Unlock()
+			if l.refs == 0 {
 				panic("lctx.refs can't be zero here")
 			}
-			ctx.refs--
-			if ctx.refs == 0 {
-				removeFromDisk(ctx.path)
-				ctx.path = ""
+			l.refs--
+			if l.refs == 0 {
+				removeFromDisk(l.path)
+				l.path = ""
 			}
 		},
 	}, nil

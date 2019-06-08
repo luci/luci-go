@@ -112,7 +112,7 @@ type prodSwarmingService struct {
 	client *swarming.Service
 }
 
-func NewProdService(c context.Context, host string) (*prodSwarmingService, error) {
+func newProdService(c context.Context, host string) (*prodSwarmingService, error) {
 	host, err := getSwarmingHost(c, host)
 	if err != nil {
 		return nil, err
@@ -412,6 +412,7 @@ func addBuildsetInfo(build *ui.MiloBuildLegacy, tags strpair.Map) {
 
 var regexRepoFromRecipeBundle = regexp.MustCompile(`/[^/]+\.googlesource\.com/.+$`)
 
+// AddRecipeLink adds links to the recipe to the build.
 func AddRecipeLink(build *ui.MiloBuildLegacy, tags strpair.Map) {
 	name := tags.Get("recipe_name")
 	repoURL := tags.Get("recipe_repository")
@@ -442,7 +443,7 @@ func AddRecipeLink(build *ui.MiloBuildLegacy, tags strpair.Map) {
 	build.Summary.Recipe = ui.NewLink(name, recipeURL, fmt.Sprintf("recipe %s", name))
 }
 
-// addProjectInfo adds the luci_project swarming tag to the build.
+// AddProjectInfo adds the luci_project swarming tag to the build.
 func AddProjectInfo(build *ui.MiloBuildLegacy, tags strpair.Map) {
 	if proj := tags.Get("luci_project"); proj != "" {
 		if build.Trigger == nil {
@@ -834,17 +835,17 @@ func getSwarmingHost(c context.Context, host string) (string, error) {
 }
 
 // GetBuild returns a milo build from a swarming task id.
-func GetBuild(c context.Context, host, taskId string) (*ui.MiloBuildLegacy, error) {
-	if taskId == "" {
+func GetBuild(c context.Context, host, taskID string) (*ui.MiloBuildLegacy, error) {
+	if taskID == "" {
 		return nil, errors.New("no swarming task id", grpcutil.InvalidArgumentTag)
 	}
 
-	sf, err := NewProdService(c, host)
+	sf, err := newProdService(c, host)
 	if err != nil {
 		return nil, err
 	}
 
-	return SwarmingBuildImpl(c, sf, taskId)
+	return SwarmingBuildImpl(c, sf, taskID)
 }
 
 // GetLog loads a step log.
@@ -858,7 +859,7 @@ func GetLog(c context.Context, host, taskID, logname string) (text string, close
 		return
 	}
 
-	sf, err := NewProdService(c, host)
+	sf, err := newProdService(c, host)
 	if err != nil {
 		return
 	}

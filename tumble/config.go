@@ -105,6 +105,7 @@ type Config struct {
 	DelayedMutations bool `json:"delayedMutations,omitempty"`
 }
 
+// TotalShardCount returns the number of shard counts that should be used.
 func (c *Config) TotalShardCount(namespace string) uint64 {
 	// HACK(hinoka): This namespace requires a lot more shards than your average
 	// namespace.  crbug.com/920852

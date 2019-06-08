@@ -47,7 +47,7 @@ func TestGetJobsApi(t *testing.T) {
 	Convey("Scheduler GetJobs API works", t, func() {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
-		fakeTaskBlob, err := registerUrlFetcher(catalog)
+		fakeTaskBlob, err := registerURLFetcher(catalog)
 		So(err, ShouldBeNil)
 		ss := SchedulerServer{fakeEng, catalog}
 
@@ -159,7 +159,7 @@ func TestGetInvocationsApi(t *testing.T) {
 	Convey("Scheduler GetInvocations API works", t, func() {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
-		_, err := registerUrlFetcher(catalog)
+		_, err := registerURLFetcher(catalog)
 		So(err, ShouldBeNil)
 		ss := SchedulerServer{fakeEng, catalog}
 
@@ -428,7 +428,7 @@ func TestAbortInvocationApi(t *testing.T) {
 
 ////
 
-func registerUrlFetcher(cat catalog.Catalog) ([]byte, error) {
+func registerURLFetcher(cat catalog.Catalog) ([]byte, error) {
 	if err := cat.RegisterTaskManager(&urlfetch.TaskManager{}); err != nil {
 		return nil, err
 	}

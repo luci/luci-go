@@ -151,9 +151,8 @@ func (g *Generator) linkifySymbols(text string) string {
 	return symRefRe.ReplaceAllStringFunc(text, func(match string) string {
 		if sym := g.links[strings.TrimSuffix(match, "(...)")]; sym != nil {
 			return fmt.Sprintf("[%s](#%s)", match, sym.Anchor())
-		} else {
-			return match
 		}
+		return match
 	})
 }
 

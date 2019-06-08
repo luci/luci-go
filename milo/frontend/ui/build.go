@@ -204,7 +204,7 @@ func (bp *BuildPage) Steps() []*Step {
 	return bp.steps
 }
 
-// Status returns a human friendly string for the status.
+// HumanStatus returns a human friendly string for the status.
 func (b *Build) HumanStatus() string {
 	switch b.Status {
 	case buildbucketpb.Status_SCHEDULED:
@@ -310,7 +310,7 @@ func (b *Build) Link() *Link {
 		fmt.Sprintf("Build %d", num))
 }
 
-// Banner returns names of icons to display next to the build number.
+// Banners returns names of icons to display next to the build number.
 // Currently displayed:
 // * OS, as determined by swarming dimensions.
 // TODO(hinoka): For device builders, display device type, and number of devices.

@@ -69,7 +69,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 	defer tx.MaybeRollback(c)
 
 	// TODO(smut): Support the case where the NIC already has a hostname and IP assigned.
-	hostnameId, err := model.AssignHostnameAndIP(c, tx, h.Name, ip)
+	hostnameID, err := model.AssignHostnameAndIP(c, tx, h.Name, ip)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 			?,
 			?
 		)
-	`, hostnameId, h.Machine, h.Machine, h.Nic, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket)
+	`, hostnameID, h.Machine, h.Machine, h.Nic, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -117,7 +117,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 		}
 		return nil, errors.Annotate(err, "failed to create physical host").Err()
 	}
-	hostId, err := res.LastInsertId()
+	hostID, err := res.LastInsertId()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch physical host").Err()
 	}
@@ -127,7 +127,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 		UPDATE nics
 		SET hostname_id = ?
 		WHERE id = (SELECT nic_id FROM physical_hosts WHERE id = ?)
-	`, hostnameId, hostId)
+	`, hostnameID, hostID)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to update NIC").Err()
 	}

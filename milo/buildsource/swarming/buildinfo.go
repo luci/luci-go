@@ -40,7 +40,7 @@ type BuildInfoProvider struct {
 
 func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (SwarmingService, error) {
 	if p.swarmingServiceFunc == nil {
-		return NewProdService(c, host)
+		return newProdService(c, host)
 	}
 	return p.swarmingServiceFunc(c, host)
 }

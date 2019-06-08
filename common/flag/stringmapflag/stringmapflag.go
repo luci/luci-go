@@ -28,6 +28,7 @@
 package stringmapflag
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"sort"
@@ -64,7 +65,7 @@ func (v *Value) String() string {
 func (v *Value) Set(key string) error {
 	key = strings.TrimSpace(key)
 	if len(key) == 0 {
-		return fmt.Errorf("Cannot specify an empty tag.")
+		return errors.New("cannot specify an empty tag")
 	}
 
 	value := ""
@@ -74,7 +75,7 @@ func (v *Value) Set(key string) error {
 		break
 
 	case idx == 0:
-		return fmt.Errorf("Cannot have tag with empty key.")
+		return errors.New("cannot have tag with empty key")
 
 	case idx > 0:
 		key, value = key[:idx], key[idx+1:]
@@ -83,7 +84,7 @@ func (v *Value) Set(key string) error {
 	// Add the entry to our tag map.
 	if len(*v) > 0 {
 		if _, ok := (*v)[key]; ok {
-			return fmt.Errorf("The tag '%s' has already been defined.", key)
+			return fmt.Errorf("tag '%s' has already been defined", key)
 		}
 	}
 

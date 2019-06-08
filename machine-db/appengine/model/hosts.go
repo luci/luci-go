@@ -52,7 +52,7 @@ func AssignHostnameAndIP(c context.Context, tx database.ExecerContext, hostname 
 		}
 		return 0, errors.Annotate(err, "failed to create hostname").Err()
 	}
-	hostnameId, err := res.LastInsertId()
+	hostnameID, err := res.LastInsertId()
 	if err != nil {
 		return 0, errors.Annotate(err, "failed to fetch hostname").Err()
 	}
@@ -62,7 +62,7 @@ func AssignHostnameAndIP(c context.Context, tx database.ExecerContext, hostname 
 		SET hostname_id = ?
 		WHERE ipv4 = ?
 			AND hostname_id IS NULL
-	`, hostnameId, ipv4)
+	`, hostnameID, ipv4)
 	if err != nil {
 		return 0, errors.Annotate(err, "failed to assign IP address").Err()
 	}
@@ -70,7 +70,7 @@ func AssignHostnameAndIP(c context.Context, tx database.ExecerContext, hostname 
 	case err != nil:
 		return 0, errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 1:
-		return hostnameId, nil
+		return hostnameID, nil
 	default:
 		// Shouldn't happen because IP address is unique per VLAN in the database.
 		return 0, errors.Reason("unexpected number of affected rows %d", rows).Err()

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 )
 
+// Params is the parameters for the bb application.
 type Params struct {
 	DefaultBuildbucketHost string
 	Auth                   auth.Options
@@ -72,6 +73,7 @@ func application(p Params) *cli.Application {
 	}
 }
 
+// Main is the main function of the bb application.
 func Main(p Params, args []string) int {
 	// if subcommand is ls, transform "-$N" into "-n $N".
 	if len(args) > 1 && args[0] == "ls" {

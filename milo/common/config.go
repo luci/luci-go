@@ -176,7 +176,7 @@ func (id *ConsoleID) String() string {
 	return fmt.Sprintf("%s/%s", id.Project, id.ID)
 }
 
-// NewEntity returns an empty Console datastore entity keyed with itself.
+// SetID returns an empty Console datastore entity keyed with itself.
 func (id *ConsoleID) SetID(c context.Context, console *Console) *Console {
 	if console == nil {
 		console = &Console{}

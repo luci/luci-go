@@ -43,7 +43,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		ctx = caching.WithEmptyProcessCache(ctx)
 
 		returnedToken := "token1"
-		generateTokenUrl := fmt.Sprintf("https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s:generateAccessToken?alt=json",
+		generateTokenURL := fmt.Sprintf("https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s:generateAccessToken?alt=json",
 			url.QueryEscape("abc@example.com"))
 		transport := &clientRPCTransportMock{
 			cb: func(r *http.Request, body string) string {
@@ -52,7 +52,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 					t.Fatalf("Unable to parse/format time: %v", err)
 				}
 
-				if r.URL.String() == generateTokenUrl {
+				if r.URL.String() == generateTokenURL {
 					return fmt.Sprintf(`{"accessToken":"%s","expireTime":"%s"}`, returnedToken, expireTime.Format(time.RFC3339))
 				}
 				t.Fatalf("Unexpected request to %s", r.URL.String())

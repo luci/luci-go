@@ -94,7 +94,7 @@ func Duration(start *timestamp.Timestamp, ends ...*timestamp.Timestamp) string {
 	return "N/A"
 }
 
-// humanDuration translates d into a human readable string of x units y units,
+// HumanDuration translates d into a human readable string of x units y units,
 // where x and y could be in days, hours, minutes, or seconds, whichever is the
 // largest.
 func HumanDuration(d time.Duration) string {

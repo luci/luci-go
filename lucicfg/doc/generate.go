@@ -13,4 +13,9 @@
 // limitations under the License.
 
 //go:generate go run ../cmd/docgen/main.go -templates templates -out . -starlark ../starlark
+
+// Package doc generates starlark documentation.
+//
+// See
+// https://chromium.googlesource.com/infra/luci/luci-go/+/master/lucicfg/doc/README.md
 package doc

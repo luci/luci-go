@@ -33,7 +33,7 @@ import (
 // supported commands) is done.
 const version = "0.1"
 
-func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
+func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	defaultAuthOpts.Scopes = []string{auth.OAuthScopeEmail, gitiles.OAuthScope}
 	return &subcommands.DefaultApplication{
 		Name:  "gerrit",
@@ -58,6 +58,6 @@ func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 func main() {
 	log.SetFlags(log.Lmicroseconds)
 	mathrand.SeedRandomly()
-	app := GetApplication(chromeinfra.DefaultAuthOptions())
+	app := getApplication(chromeinfra.DefaultAuthOptions())
 	os.Exit(subcommands.Run(app, nil))
 }

@@ -109,7 +109,7 @@ type DeployedPackage struct {
 	instancePath string
 }
 
-// RepairsParams is passed to RepairDeployed.
+// RepairParams is passed to RepairDeployed.
 type RepairParams struct {
 	// Instance holds the original package data.
 	//

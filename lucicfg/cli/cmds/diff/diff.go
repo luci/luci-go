@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package generate implements 'semantic-diff' subcommand.
+// Package diff implements 'semantic-diff' subcommand.
 package diff
 
 import (

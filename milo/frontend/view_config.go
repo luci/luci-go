@@ -46,7 +46,8 @@ func ConfigsHandler(c *router.Context) {
 	})
 }
 
-// UpdateHandler is an HTTP handler that handles configuration update requests.
+// UpdateConfigHandler is an HTTP handler that handles configuration update
+// requests.
 func UpdateConfigHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
 	// Needed to access the PubSub API

@@ -55,7 +55,7 @@ func (a *AttemptList_Nums) Normalize() error {
 	slc := revUint32Slice(a.Nums)
 	sort.Sort(slc)
 	if a.Nums[len(a.Nums)-1] == 0 {
-		return errors.New("AttemptList.Nums contains 0 as well as other values.")
+		return errors.New("AttemptList.Nums contains 0 as well as other values")
 	}
 	a.Nums = a.Nums[:set.Uniq(slc)]
 	return nil
