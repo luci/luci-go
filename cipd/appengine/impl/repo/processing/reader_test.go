@@ -71,7 +71,7 @@ func TestPackageReader(t *testing.T) {
 		r := &cbReaderAt{
 			readAt: func(p []byte, off int64) (int, error) {
 				// Fail the second read call, it makes more interesting test case.
-				calls += 1
+				calls++
 				if calls == 2 {
 					return 0, readErr
 				}

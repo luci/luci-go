@@ -23,23 +23,23 @@ import (
 
 var background = context.Background()
 
-// contextAwareUrlFetch implements http.RoundTripper by instantiating GAE's
+// contextAwareURLFetch implements http.RoundTripper by instantiating GAE's
 // urlfetch.Transport for each request.
 //
 // Requests done through GAE's urlfetch.Transport inherit the deadline of
 // a context used to create the transport, totally ignoring the deadline in the
 // request's context. This leads to surprising bugs.
 //
-// contextAwareUrlFetch works around this problem by instantiating a new
+// contextAwareURLFetch works around this problem by instantiating a new
 // urlfetch.Transport for each request, using request's context as a basis
 // (if available), and falling back to the context provided during the creation
 // otherwise.
-type contextAwareUrlFetch struct {
+type contextAwareURLFetch struct {
 	c context.Context
 }
 
 // RoundTrip is part of http.RoundTripper interface.
-func (c *contextAwareUrlFetch) RoundTrip(r *http.Request) (*http.Response, error) {
+func (c *contextAwareURLFetch) RoundTrip(r *http.Request) (*http.Response, error) {
 	ctx := r.Context()
 	// We assume context.Background() always returns exact same object.
 	if ctx == background {

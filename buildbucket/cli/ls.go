@@ -71,7 +71,7 @@ func cmdLS(p Params) *subcommands.Command {
 				Print experimental builds too
 			`))
 			r.Flags.Var(StatusFlag(&r.status), "status",
-				fmt.Sprintf("Build status. Valid values: %s.", strings.Join(StatusFlagValues, ", ")))
+				fmt.Sprintf("Build status. Valid values: %s.", strings.Join(statusFlagValuesName, ", ")))
 			r.Flags.IntVar(&r.limit, "n", 0, doc(`
 				Limit the number of builds to print. If 0, then unlimited.
 				Can be passed as "-<number>", e.g. "ls -10".

@@ -85,7 +85,7 @@ func (t *IPsTable) computeChanges(c context.Context, vlans []*config.VLAN) error
 				IPv4:   ipv4,
 				VLANId: vlan.Id,
 			}
-			ipv4 += 1
+			ipv4++
 		}
 	}
 
@@ -116,7 +116,7 @@ func (t *IPsTable) computeChanges(c context.Context, vlans []*config.VLAN) error
 			if ip, ok := cfgs[ipv4]; ok {
 				t.additions = append(t.additions, ip)
 			}
-			ipv4 += 1
+			ipv4++
 		}
 	}
 	return nil

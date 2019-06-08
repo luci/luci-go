@@ -274,13 +274,12 @@ func (b *Build) PutRequest() (*v1.LegacyApiPutRequestMessage, error) {
 		"properties":   b.Input.Properties,
 		// keep this synced with marshaling error annotation
 	}
-	if data, err := json.Marshal(parameters); err != nil {
+	data, err := json.Marshal(parameters)
+	if err != nil {
 		// realistically, only properties may cause this.
 		return nil, errors.Annotate(err, "marshaling properties").Err()
-	} else {
-		msg.ParametersJson = string(data)
 	}
-
+	msg.ParametersJson = string(data)
 	return msg, nil
 }
 

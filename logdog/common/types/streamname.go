@@ -208,7 +208,7 @@ func (s StreamName) Validate() error {
 		if !isAlnum(r) {
 			// The stream name must begin with an alphanumeric character.
 			if idx == segmentIdx {
-				return fmt.Errorf("Segment (at %d) must begin with alphanumeric character.", segmentIdx)
+				return fmt.Errorf("segment (at %d) must begin with alphanumeric character", segmentIdx)
 			}
 
 			// Test forward slash, and ensure no adjacent forward slashes.
@@ -216,7 +216,7 @@ func (s StreamName) Validate() error {
 				segmentIdx = idx + utf8.RuneLen(r)
 			} else if !(r == '.' || r == '_' || r == '-' || r == ':') {
 				// Test remaining allowed characters.
-				return fmt.Errorf("Illegal charater (%c) at index %d.", r, idx)
+				return fmt.Errorf("illegal charater (%c) at index %d", r, idx)
 			}
 		}
 		lastRune = r
@@ -224,7 +224,7 @@ func (s StreamName) Validate() error {
 
 	// The last rune may not be a separator.
 	if lastRune == StreamNameSep {
-		return errors.New("Name may not end with a separator.")
+		return errors.New("name may not end with a separator")
 	}
 	return nil
 }

@@ -68,7 +68,7 @@ func Run(templatePath string) {
 		withBuildbucketClient,
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
-	devHtmlMW := baseMW.Extend(
+	devHTMLMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
 		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
 		withGitMiddleware,
@@ -90,7 +90,7 @@ func Run(templatePath string) {
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
 
 	// Dev endpoints.
-	r.GET("/admin/debug/build/:name", devHtmlMW, handleError(handleDevBuild))
+	r.GET("/admin/debug/build/:name", devHTMLMW, handleError(handleDevBuild))
 
 	// Cron endpoints
 	r.GET("/internal/cron/stats", cronMW, cronHandler(buildbot.StatsHandler))

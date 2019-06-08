@@ -81,15 +81,15 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 	}
 	defer tx.MaybeRollback(c)
 
-	var hostnameId sql.NullInt64
+	var hostnameID sql.NullInt64
 	if n.Hostname != "" {
 		ip, _ := common.ParseIPv4(n.Ipv4)
 		id, err := model.AssignHostnameAndIP(c, tx, n.Hostname, ip)
 		if err != nil {
 			return err
 		}
-		hostnameId.Int64 = id
-		hostnameId.Valid = true
+		hostnameID.Int64 = id
+		hostnameID.Valid = true
 	}
 
 	// By setting nics.machine_id NOT NULL when setting up the database, we can avoid checking if the given machine is
@@ -97,7 +97,7 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 	_, err = tx.ExecContext(c, `
 		INSERT INTO nics (name, machine_id, mac_address, switch_id, switchport, hostname_id)
 		VALUES (?, (SELECT id FROM machines WHERE name = ?), ?, (SELECT id FROM switches WHERE name = ?), ?, ?)
-	`, n.Name, n.Machine, mac, n.Switch, n.Switchport, hostnameId)
+	`, n.Name, n.Machine, mac, n.Switch, n.Switchport, hostnameID)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -135,11 +135,11 @@ func getHostnameForNIC(c context.Context, q database.QueryerContext, name, machi
 	}
 	defer rows.Close()
 	if rows.Next() {
-		var hostnameId int64
-		if err = rows.Scan(&hostnameId); err != nil {
+		var hostnameID int64
+		if err = rows.Scan(&hostnameID); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch hostname").Err()
 		}
-		return &hostnameId, nil
+		return &hostnameID, nil
 	}
 	return nil, nil
 }
@@ -172,12 +172,12 @@ func deleteNIC(c context.Context, name, machine string) error {
 	}
 
 	// Delete the NIC's hostname, if it has one.
-	hostnameId, err := getHostnameForNIC(c, tx, name, machine)
+	hostnameID, err := getHostnameForNIC(c, tx, name, machine)
 	if err != nil {
 		return err
 	}
-	if hostnameId != nil {
-		_, err = tx.ExecContext(c, `DELETE FROM hostnames WHERE id = ?`, *hostnameId)
+	if hostnameID != nil {
+		_, err = tx.ExecContext(c, `DELETE FROM hostnames WHERE id = ?`, *hostnameID)
 		if err != nil {
 			return errors.Annotate(err, "failed to delete associated hostname").Err()
 		}

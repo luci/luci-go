@@ -91,16 +91,15 @@ func getAssigner(typ reflect.Type, sv starlark.Value) (func(reflect.Value) error
 				gv.SetInt(asInt64)
 				return nil
 			}, nil
-		} else {
-			asUint64, ok := val.Uint64()
-			if !ok || asUint64 > intRange.maxUnsigned || asUint64 < 0 {
-				return nil, fmt.Errorf("the integer %s doesn't fit into %s", val, typ.Kind())
-			}
-			return func(gv reflect.Value) error {
-				gv.SetUint(asUint64)
-				return nil
-			}, nil
 		}
+		asUint64, ok := val.Uint64()
+		if !ok || asUint64 > intRange.maxUnsigned || asUint64 < 0 {
+			return nil, fmt.Errorf("the integer %s doesn't fit into %s", val, typ.Kind())
+		}
+		return func(gv reflect.Value) error {
+			gv.SetUint(asUint64)
+			return nil
+		}, nil
 
 	case starlark.String:
 		if typ.Kind() != reflect.String {

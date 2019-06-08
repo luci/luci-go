@@ -34,16 +34,16 @@ var statusFlagValues = map[string]pb.Status{
 }
 
 var statusFlagNames map[pb.Status]string
-var StatusFlagValues []string
+var statusFlagValuesName []string
 
 func init() {
 	statusFlagNames = make(map[pb.Status]string, len(statusFlagValues))
-	StatusFlagValues = make([]string, 0, len(statusFlagValues))
+	statusFlagValuesName = make([]string, 0, len(statusFlagValues))
 	for name, status := range statusFlagValues {
-		StatusFlagValues = append(StatusFlagValues, name)
+		statusFlagValuesName = append(statusFlagValuesName, name)
 		statusFlagNames[status] = name
 	}
-	sort.Strings(StatusFlagValues)
+	sort.Strings(statusFlagValuesName)
 }
 
 type statusFlag struct {
@@ -77,7 +77,7 @@ func (f *statusFlag) Get() interface{} {
 func (f *statusFlag) Set(s string) error {
 	st, ok := statusFlagValues[strings.ToLower(s)]
 	if !ok {
-		return fmt.Errorf("invalid status %q; expected one of %s", s, strings.Join(StatusFlagValues, ", "))
+		return fmt.Errorf("invalid status %q; expected one of %s", s, strings.Join(statusFlagValuesName, ", "))
 	}
 
 	*f.status = pb.Status(st)

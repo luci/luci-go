@@ -66,6 +66,7 @@ func (g *GrantsByRole) CallerHasRole(c context.Context, role Role) (bool, error)
 	}
 }
 
+// Equal returns true if both security descriptors are equivalent.
 func (g *GrantsByRole) Equal(o *GrantsByRole) bool {
 	eqSlice := func(a, b []string) bool {
 		if len(a) != len(b) {
@@ -226,9 +227,9 @@ func hasGrant(c context.Context, grantsList ...[]string) (bool, error) {
 			}
 		}
 	}
-	if isMember, err := auth.IsMember(c, groups...); err != nil {
+	isMember, err := auth.IsMember(c, groups...)
+	if err != nil {
 		return false, transient.Tag.Apply(err)
-	} else {
-		return isMember, nil
 	}
+	return isMember, nil
 }

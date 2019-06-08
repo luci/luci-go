@@ -324,7 +324,7 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*p
 	return bbLogs, summary
 }
 
-func (p *stepConverter) convertLogdogLink(log *annotpb.LogdogStream, viewUrl bool) string {
+func (p *stepConverter) convertLogdogLink(log *annotpb.LogdogStream, viewURL bool) string {
 	host, prefix := p.defaultLogdogHost, p.defaultLogdogPrefix
 	if log.GetServer() != "" {
 		host = log.Server
@@ -333,7 +333,7 @@ func (p *stepConverter) convertLogdogLink(log *annotpb.LogdogStream, viewUrl boo
 		prefix = log.Prefix
 	}
 	path := fmt.Sprintf("%s/+/%s", prefix, log.Name)
-	if viewUrl {
+	if viewURL {
 		return fmt.Sprintf("https://%s/v/?s=%s", host, url.QueryEscape(path))
 	}
 	return fmt.Sprintf("logdog://%s/%s", host, path)
