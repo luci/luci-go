@@ -2100,6 +2100,54 @@ func TestPackagePathCollision(t *testing.T) {
 	})
 }
 
+func TestDeployInstanceCollision(t *testing.T) {
+	t.Parallel()
+
+	const rounds = 5
+	const threads = 50
+	const instances = 3
+
+	ctx := context.Background()
+
+	installMode := pkg.InstallModeSymlink
+	if runtime.GOOS == "windows" {
+		installMode = pkg.InstallModeCopy
+	}
+
+	Convey("Collide DeployInstance", t, func() {
+		testInstances := make([]*testPackageInstance, instances)
+		for i := range testInstances {
+			testInstances[i] = makeTestInstance(fmt.Sprintf("pkg/%d", i), []fs.File{
+				// TODO(vadimsh): Add files.
+			}, installMode)
+			testInstances[i].instanceID = fmt.Sprintf("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwF%02d", i)
+		}
+
+		for round := 0; round < rounds; round++ {
+			tempDir := mkTempDir()
+			d := New(tempDir).(*deployerImpl)
+
+			errs := make([]error, threads)
+			wg := sync.WaitGroup{}
+			wg.Add(threads)
+			for th := 0; th < threads; th++ {
+				th := th
+				go func() {
+					defer wg.Done()
+					_, errs[th] = d.DeployInstance(ctx, "", testInstances[th%instances])
+				}()
+			}
+			wg.Wait()
+
+			for _, err := range errs {
+				if err != nil { // avoid gazillion of goconvey checkmarks
+					So(err, ShouldBeNil)
+				}
+			}
+		}
+	})
+}
+
 func TestRemoveEmptyTrees(t *testing.T) {
 	t.Parallel()
 
@@ -2215,6 +2263,11 @@ func scanDir(root string) (out []string) {
 		if err != nil {
 			return err
 		}
+
+		if info.Name() == fsLockFileName {
+			return nil
+		}
+
 		rel, err := filepath.Rel(root, path)
 		switch {
 		case err != nil:

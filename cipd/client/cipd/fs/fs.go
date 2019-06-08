@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -463,40 +464,43 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 		return nil
 	}
 
-	// This code path is hit it two cases:
-	//
-	// 1. 'newpath' is non-empty directory.
-	// 2. 'newpath' is locked running executable on Windows.
-	//
-	// We try to move existing path away into the trash directory. This
-	// returns "" if the path is no longer there or the file can't be moved
-	// for some reason. In later case the rename below will most probably
-	// also fail, and the error will be properly propagated.
-	//
-	// Note that this fails for files open for exclusive write on Windows,
-	// they are unmovable.
-	trash := f.moveToTrash(ctx, newpath)
-
-	// 'newpath' now should be available.
-	if err := atomicRename(oldpath, newpath); err != nil {
-		logging.Warningf(ctx, "fs: failed to rename(%q, %q) - %s", oldpath, newpath, err)
-		// Try to return the path back... May be too late already.
-		if trash != "" {
-			if err := atomicRename(trash, newpath); err != nil {
-				logging.Warningf(ctx, "fs: failed to rename(%q, %q) after unsuccessful move - %s", trash, newpath, err)
-			}
+	// This loop exists in case there are multiple concurrent processes fighting
+	// for 'newpath'. We want to be the winner (i.e. the last), so we let them
+	// finish by waiting a bit.
+	for attempt := 0; ; attempt++ {
+		// This code path is hit it two cases:
+		//
+		// 1. 'newpath' is non-empty directory.
+		// 2. 'newpath' is locked running executable on Windows.
+		//
+		// We try to move existing path away into the trash directory. This
+		// returns "" if the path is no longer there or the file can't be moved
+		// for some reason. In later case the rename below will most probably
+		// also fail, and the error will be properly propagated.
+		//
+		// Note that this fails for files open for exclusive write on Windows,
+		// they are unmovable.
+		if trash := f.moveToTrash(ctx, newpath); trash != "" {
+			// Note: we purposefully want to run this when Replace exits, not when
+			// 'for' loop iteration ends.
+			defer f.cleanupTrashedFile(ctx, trash)
 		}
-		return err
-	}
 
-	// If 'newpath' was a directory, we can actually completely delete it now.
-	// This will fail for locked files though. They are opportunistically cleaned
-	// up in CleanupTrash.
-	if trash != "" {
-		f.cleanupTrashedFile(ctx, trash)
-	}
+		// 'newpath' now should be available.
+		switch err = atomicRename(oldpath, newpath); {
+		case err == nil:
+			return nil
+		case attempt > 10 || (!IsNotEmpty(err) && !IsAccessDenied(err)):
+			logging.Warningf(ctx, "fs: failed to rename(%q, %q) - %s", oldpath, newpath, err)
+			return err
+		}
 
-	return nil
+		// Someone managed to create 'newpath' before us. Let's try again a bit
+		// later by replacing what they have created, screw them.
+		ms := time.Duration(rand.Int31n(100)) * time.Millisecond
+		logging.Infof(ctx, "fs: retrying rename(%q, %q) after %s", oldpath, newpath, ms)
+		time.Sleep(ms)
+	}
 }
 
 func (f *fsImpl) CleanupTrash(ctx context.Context) {

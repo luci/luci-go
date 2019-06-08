@@ -30,6 +30,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/danjacques/gofslock/fslock"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
@@ -42,8 +45,6 @@ import (
 
 // TODO(vadimsh): How to handle path conflicts between two packages? Currently
 // the last one installed wins.
-
-// TODO(vadimsh): Use some sort of file lock to reduce a chance of corruption.
 
 // File system layout of a site directory <base> for "symlink" install method:
 // <base>/.cipd/pkgs/
@@ -232,8 +233,22 @@ func (d errDeployer) CleanupTrash(context.Context) {}
 // Real deployer implementation.
 
 const (
+	// packagesDir is a subdirectory of site root to extract packages to.
+	packagesDir = fs.SiteServiceDir + "/pkgs"
+
+	// fsLockFileName is name of a per-package lock file.
+	fsLockFileName = ".lock"
+
 	// descriptionName is a name of the description file inside the package.
 	descriptionName = "description.json"
+
+	// currentSymlink is a name of a symlink that points to latest deployed
+	// version. Used on Linux and Mac.
+	currentSymlink = "_current"
+
+	// currentTxt is a name of a text file with instance ID of latest deployed
+	// version. Used on Windows.
+	currentTxt = "_current.txt"
 )
 
 // description defines the structure of the description.json file located at
@@ -241,6 +256,16 @@ const (
 type description struct {
 	Subdir      string `json:"subdir,omitempty"`
 	PackageName string `json:"package_name,omitempty"`
+}
+
+// matches is true if subdir and pkg is what's in the description.
+//
+// nil description doesn't match anything.
+func (d *description) matches(subdir, pkg string) bool {
+	if d == nil {
+		return false
+	}
+	return d.Subdir == subdir && d.PackageName == pkg
 }
 
 // readDescription reads and decodes description JSON from io.Reader.
@@ -261,17 +286,6 @@ func writeDescription(d *description, w io.Writer) error {
 	_, err = w.Write(data)
 	return err
 }
-
-// packagesDir is a subdirectory of site root to extract packages to.
-const packagesDir = fs.SiteServiceDir + "/pkgs"
-
-// currentSymlink is a name of a symlink that points to latest deployed version.
-// Used on Linux and Mac.
-const currentSymlink = "_current"
-
-// currentTxt is a name of a text file with instance ID of latest deployed
-// version. Used on Windows.
-const currentTxt = "_current.txt"
 
 // deployerImpl implements Deployer interface.
 type deployerImpl struct {
@@ -297,12 +311,35 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	// Extract new version to the .cipd/pkgs/* guts. For "symlink" install mode it
 	// is the final destination. For "copy" install mode it's a temp destination
 	// and files will be moved to the site root later (in addToSiteRoot call).
-	// ExtractFilesTxn knows how to build full paths and how to atomically extract
-	// a package. No need to delete garbage if it fails.
+
+	// Allocate '.cipd/pkgs/<index>' directory for the (subdir, PackageName) pair
+	// of grab an existing one. This operation is atomic.
 	pkgPath, err := d.packagePath(ctx, subdir, pin.PackageName, true)
 	if err != nil {
 		return common.Pin{}, err
 	}
+
+	// Concurrently messing with single pkgPath directory doesn't work well, so
+	// make this part exclusive. In practice it means we aren't allowing
+	// installing instances of the *same* package concurrently. Installing
+	// different packages is still allowed.
+	fsLock := fslock.L{
+		Path:  filepath.Join(pkgPath, fsLockFileName),
+		Block: giveUpAfter(ctx, 10*time.Minute),
+	}
+	handle, err := fsLock.Lock()
+	if err != nil {
+		return common.Pin{}, fmt.Errorf("failed to acquire FS lock - %s", err)
+	}
+	defer func() {
+		// Just log and ignore the error, there isn't much we can do.
+		if uerr := handle.Unlock(); uerr != nil {
+			logging.Warningf(ctx, "Failed to release FS lock - %s", err)
+		}
+	}()
+
+	// TODO(vadimsh): Check the currently installed version and skip installation
+	// if it matches 'pin' and appears to be health.
 
 	// Skip extracting .cipd/* guts if they mistakenly ended up inside the
 	// package. Extracting them clobbers REAL guts.
@@ -316,6 +353,8 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	}
 
 	// Unzip the package into the final destination inside .cipd/* guts.
+	// ExtractFilesTxn knows how to build full paths and how to atomically extract
+	// a package. No need to delete garbage if it fails.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
 	if _, err := reader.ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), pkg.WithManifest); err != nil {
 		return common.Pin{}, err
@@ -778,13 +817,13 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		return "", nil
 	}
 
-	// we didn't find one, so we have to make one
+	// We didn't find one, so we have to make one.
 	if _, err := d.fs.EnsureDirectory(ctx, abs); err != nil {
 		logging.Errorf(ctx, "Cannot ensure packages directory: %s", err)
 		return "", err
 	}
 
-	// take the last 2 components from the pkg path.
+	// Take the last 2 components from the pkg path.
 	pkgParts := strings.Split(pkg, "/")
 	prefix := ""
 	if len(pkgParts) > 2 {
@@ -792,6 +831,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 	} else {
 		prefix = strings.Join(pkgParts, "_")
 	}
+
 	// 0777 allows umask to take effect
 	tmpDir, err := d.TempDir(ctx, prefix, 0777)
 	if err != nil {
@@ -807,19 +847,27 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		return "", err
 	}
 
-	// now we have to find a suitable index folder for it.
-	for attempts := 0; attempts < 3; attempts++ {
-		if attempts > 0 {
-			// random sleep up to 1s to help avoid collisions between clients.
-			time.Sleep(time.Duration(rand.Int31n(1000)) * time.Millisecond)
+	// Now we have to find a suitable index folder for it.
+	blocker := giveUpAfter(ctx, time.Minute)
+	for {
+		// Pick the next possible candidate by enumerating them until there's an
+		// empty "slot" or we discover the existing directory for our package.
+		var pkgPath string
+		for {
+			n := seenNumbers.smallestNewNum()
+			seenNumbers.addNum(n)
+			pkgPath = filepath.Join(abs, strconv.Itoa(n))
+			if _, err := os.Stat(pkgPath); err != nil {
+				break // either doesn't exist or broken, will find out below
+			}
+			// Someone else created a slot for us already?
+			if desc, _ := d.readDescription(ctx, pkgPath); desc.matches(subdir, pkg) {
+				return pkgPath, nil
+			}
 		}
-		n := seenNumbers.smallestNewNum()
-		seenNumbers.addNum(n)
 
-		pkgPath := filepath.Join(abs, strconv.Itoa(n))
-
-		// We use os.Rename instead of d.fs.Replace because we want it to fail if
-		// the target directory already exists.
+		// Try to occupy the slot. We use os.Rename instead of d.fs.Replace because
+		// we want it to fail if the target directory already exists.
 		switch err := os.Rename(tmpDir, pkgPath); {
 		case err == nil:
 			return pkgPath, nil
@@ -832,20 +880,22 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 			return "", err
 		}
 
-		// rename failed with ENOTEMPTY, that means that another client wrote this
-		// directory.
-		description, err := d.readDescription(ctx, pkgPath)
-		if err != nil {
-			logging.Warningf(ctx, "Skipping %q: %s", pkgPath, err)
-			continue
-		}
-		if description.PackageName == pkg && description.Subdir == subdir {
+		// Rename failed with ENOTEMPTY, that means that another client wrote this
+		// directory. Maybe it wanted same package as we do?
+		switch desc, err := d.readDescription(ctx, pkgPath); {
+		case desc.matches(subdir, pkg):
 			return pkgPath, nil
+		case err != nil:
+			logging.Warningf(ctx, "Skipping %q: %s", pkgPath, err)
+		}
+
+		// Either description.json is garbage or it's some other package. Pick
+		// another slot a bit later (until 1 min deadline).
+		if err := blocker(); err != nil {
+			logging.Errorf(ctx, "Unable to find valid index for package %q in %s!", pkg, abs)
+			return "", fmt.Errorf("unable to find valid index for package %q in %s", pkg, abs)
 		}
 	}
-
-	logging.Errorf(ctx, "Unable to find valid index for package %q in %s!", pkg, abs)
-	return "", err
 }
 
 type byLenThenAlpha []string
@@ -1559,4 +1609,22 @@ func removeEmptyTree(path string, shouldCheck func(string) bool) (deleted bool, 
 	// IsNotExit) are due to that.
 	err = os.Remove(path)
 	return err == nil || os.IsNotExist(err), nil
+}
+
+// giveUpAfter is fslock.Blocker implementation.
+//
+// Sleeps 1-5 sec between retries. Randomization helps to reduce lock
+// contention when there are multiple waiting contenders.
+func giveUpAfter(c context.Context, d time.Duration) fslock.Blocker {
+	c, _ = clock.WithTimeout(c, d)
+	attempt := int32(0)
+	return func() error {
+		if attempt++; attempt > 50 {
+			attempt = 50
+		}
+		delay := time.Duration(rand.Int31n(100*attempt)) * time.Millisecond
+		logging.Debugf(c, "FS lock is currently held. Sleeping %s and retrying...", delay)
+		tr := clock.Sleep(c, delay)
+		return tr.Err
+	}
 }
