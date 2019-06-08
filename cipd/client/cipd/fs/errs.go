@@ -12,35 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !windows
-
 package fs
 
-import (
-	"os"
-	"syscall"
-)
-
-func openFile(path string) (*os.File, error) {
-	return os.Open(path)
+// IsNotEmpty is true if err represents ENOTEMPTY or equivalent.
+func IsNotEmpty(err error) bool {
+	return isNotEmpty(err) // see either fs_posix.go or fs_windows.go
 }
 
-func atomicRename(source, target string) error {
-	return os.Rename(source, target)
-}
-
-func isNotEmpty(err error) bool {
-	var inner error
-	switch e := err.(type) {
-	case *os.PathError:
-		inner = e.Err
-	case *os.LinkError:
-		inner = e.Err
-	}
-	return inner == syscall.ENOTEMPTY || inner == syscall.EEXIST
-}
-
-func isNotDir(err error) bool {
-	pe, ok := err.(*os.PathError)
-	return ok && pe.Err == syscall.ENOTDIR
+// IsNotDir if true if err represents ENOTDIR or equivalent.
+func IsNotDir(err error) bool {
+	return isNotDir(err) // see either fs_posix.go or fs_windows.go
 }

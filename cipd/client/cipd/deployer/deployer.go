@@ -28,7 +28,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"go.chromium.org/luci/common/data/sortby"
@@ -820,17 +819,10 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		pkgPath := filepath.Join(abs, strconv.Itoa(n))
 		// We use os.Rename instead of d.fs.Replace because we want it to fail if
 		// the target directory already exists.
-		switch err := os.Rename(tmpDir, pkgPath); le := err.(type) {
-		case nil:
+		switch err := os.Rename(tmpDir, pkgPath); {
+		case err == nil:
 			return pkgPath, nil
-
-		case *os.LinkError:
-			if le.Err != syscall.ENOTEMPTY {
-				logging.Errorf(ctx, "Error while creating pkg dir %s: %s", pkgPath, err)
-				return "", err
-			}
-
-		default:
+		case !fs.IsNotEmpty(err):
 			logging.Errorf(ctx, "Unknown error while creating pkg dir %s: %s", pkgPath, err)
 			return "", err
 		}

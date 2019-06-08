@@ -103,8 +103,14 @@ const (
 )
 
 func isNotEmpty(err error) bool {
-	pe, ok := err.(*os.PathError)
-	return ok && pe.Err == ERROR_DIR_NOT_EMPTY
+	var inner error
+	switch e := err.(type) {
+	case *os.PathError:
+		inner = e.Err
+	case *os.LinkError:
+		inner = e.Err
+	}
+	return inner == ERROR_DIR_NOT_EMPTY
 }
 
 func isNotDir(err error) bool {
