@@ -37,9 +37,9 @@ const (
 func replaceParameters(ctx context.Context, arg, outDir, botFile string) (string, error) {
 
 	if runtime.GOOS == "windows" {
-		arg = strings.ReplaceAll(arg, executableSuffixParameter, ".exe")
+		arg = strings.Replace(arg, executableSuffixParameter, ".exe", -1)
 	} else {
-		arg = strings.ReplaceAll(arg, executableSuffixParameter, "")
+		arg = strings.Replace(arg, executableSuffixParameter, "", -1)
 	}
 	replaceSlash := false
 
@@ -47,13 +47,13 @@ func replaceParameters(ctx context.Context, arg, outDir, botFile string) (string
 		if outDir == "" {
 			return "", errors.New("output directory is requested in command or env var, but not provided; please specify one")
 		}
-		arg = strings.ReplaceAll(arg, isolatedOutdirParameter, outDir)
+		arg = strings.Replace(arg, isolatedOutdirParameter, outDir, -1)
 		replaceSlash = true
 	}
 
 	if strings.Contains(arg, swarmingBotFileParameter) {
 		if botFile != "" {
-			arg = strings.ReplaceAll(arg, swarmingBotFileParameter, botFile)
+			arg = strings.Replace(arg, swarmingBotFileParameter, botFile, -1)
 			replaceSlash = true
 		} else {
 			logging.Warningf(ctx, "swarmingBotFileParameter found in command or env var, but no bot_file specified. Leaving parameter unchanged.")
@@ -61,7 +61,7 @@ func replaceParameters(ctx context.Context, arg, outDir, botFile string) (string
 	}
 
 	if replaceSlash {
-		arg = strings.ReplaceAll(arg, "/", string(filepath.Separator))
+		arg = strings.Replace(arg, "/", string(filepath.Separator), -1)
 	}
 
 	return arg, nil
