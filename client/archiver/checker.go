@@ -198,14 +198,17 @@ func (c *BundlingChecker) doCheck(items []checkerItem) {
 	// We skip checking items on the server if we already know they exist.
 	existingItems, toCheck := c.partitionByExistence(items)
 
-	result, err := c.contains(toCheck)
-	if err != nil {
-		c.setErr(err)
-		return
-	}
+	// Only ask the service if there are actually items in the list.
+	if len(toCheck) > 0 {
+		result, err := c.contains(toCheck)
+		if err != nil {
+			c.setErr(err)
+			return
+		}
 
-	for i, pushState := range result {
-		c.handleCheckResult(toCheck[i], pushState)
+		for i, pushState := range result {
+			c.handleCheckResult(toCheck[i], pushState)
+		}
 	}
 
 	for _, item := range existingItems {
