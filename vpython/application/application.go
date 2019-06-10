@@ -68,7 +68,7 @@ const (
 	// ClearPythonPathENV if set instructs vpython to clear the PYTHONPATH
 	// environment variable prior to launching the VirtualEnv Python interpreter.
 	//
-	// After initial processing, this enviornment variable will be cleared.
+	// After initial processing, this environment variable will be cleared.
 	//
 	// TODO(iannucci): Delete this once we're satisfied that PYTHONPATH exports
 	// are under control.

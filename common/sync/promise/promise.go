@@ -29,7 +29,7 @@ var (
 type Generator func(context.Context) (interface{}, error)
 
 // Promise is a promise structure with goroutine-safe methods that is
-// responsible for owning a single piece of data. Promises have multple readers
+// responsible for owning a single piece of data. Promises have multiple readers
 // and a single writer.
 //
 // Readers will retrieve the Promise's data via Get(). If the data has not been

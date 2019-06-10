@@ -32,7 +32,7 @@ import (
 // IsUserError is tagged into errors caused by bad user inputs (e.g. modules or
 // scripts which don't exist).
 var IsUserError = errors.BoolTag{
-	Key: errors.NewTagKey("this error occured due to a user input."),
+	Key: errors.NewTagKey("this error occurred due to a user input."),
 }
 
 // Options is the set of options to use to construct and execute a VirtualEnv

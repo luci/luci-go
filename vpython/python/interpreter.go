@@ -69,7 +69,7 @@ func (i *Interpreter) IsolatedCommand(c context.Context, target Target, args ...
 }
 
 // GetVersion runs the specified Python interpreter to extract its version
-// from `platform.python_version` and maps it to a known specification verison.
+// from `platform.python_version` and maps it to a known specification version.
 func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 	i.cachedVersionMu.Lock()
 	defer i.cachedVersionMu.Unlock()

@@ -64,7 +64,7 @@ func (h commitHeap) Less(i, j int) bool {
 	iTime := google.TimeFromProto(h[i].commits[0].Committer.Time)
 	jTime := google.TimeFromProto(h[j].commits[0].Committer.Time)
 
-	// Ensure consistent ordering based on commmit hash when times are identical.
+	// Ensure consistent ordering based on commit hash when times are identical.
 	if iTime == jTime {
 		return h[i].commits[0].Id > h[j].commits[0].Id
 	}
@@ -87,8 +87,8 @@ func (h *commitHeap) Pop() interface{} {
 }
 
 // logCache stores a cached list of commits (log) for a given ref at a given
-// commit position return by Gerrit. The Key decribes the query that was used to
-// retrieve the log and follows the following format:
+// commit position return by Gerrit. The Key describes the query that was used
+// to retrieve the log and follows the following format:
 //
 //   host|project|ref|exclude_ref|limit
 //

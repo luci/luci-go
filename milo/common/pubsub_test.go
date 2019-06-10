@@ -97,7 +97,7 @@ func TestPubSub(t *testing.T) {
 
 		Convey("Buildbucket PubSub subscriber", func() {
 			proj := "buildbucket"
-			Convey("Non-existant topic", func() {
+			Convey("Non-existent topic", func() {
 				bbClient.topics["builds"] = errNotExist
 				err := ensureBuildbucketSubscribed(c, proj)
 				So(err.Error(), ShouldEndWith, "does not exist")

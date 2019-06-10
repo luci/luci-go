@@ -51,8 +51,8 @@ type LogRequest struct {
 
 // Source is the source of log stream and log information.
 //
-// The Source is resposible for handling retries, backoff, and transient errors.
-// An error from the Source will shut down the Fetcher.
+// The Source is responsible for handling retries, backoff, and transient
+// errors. An error from the Source will shut down the Fetcher.
 type Source interface {
 	// LogEntries populates the supplied LogRequest with available sequential
 	// log entries as available.

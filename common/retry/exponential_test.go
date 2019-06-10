@@ -30,7 +30,7 @@ func TestExponentialBackoff(t *testing.T) {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		l := ExponentialBackoff{}
 
-		Convey(`When empty, will Stop immediatley.`, func() {
+		Convey(`When empty, will Stop immediately.`, func() {
 			So(l.Next(ctx, nil), ShouldEqual, Stop)
 		})
 

@@ -152,5 +152,5 @@ type loggingFlags struct {
 }
 
 func (lf *loggingFlags) Init(f *flag.FlagSet) {
-	f.StringVar(&lf.EventlogEndpoint, "eventlog-endpoint", "", `The URL destination for eventlogs. The special values "prod" or "test" may be used to target the standard prod or test urls repspectively. An empty string disables eventlogging.`)
+	f.StringVar(&lf.EventlogEndpoint, "eventlog-endpoint", "", `The URL destination for eventlogs. The special values "prod" or "test" may be used to target the standard prod or test urls respectively. An empty string disables eventlogging.`)
 }

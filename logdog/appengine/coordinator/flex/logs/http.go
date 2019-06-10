@@ -777,7 +777,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 	if !ok {
 		logging.Errorf(c,
 			"Could not obtain the flusher from the http.ResponseWriter. "+
-				"The ResponseWriter was probably overriden by a middleware. "+
+				"The ResponseWriter was probably overridden by a middleware. "+
 				"Logs will not stream correctly until this is fixed.")
 		flusher = &nopFlusher{}
 	}

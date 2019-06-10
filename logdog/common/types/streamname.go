@@ -216,7 +216,7 @@ func (s StreamName) Validate() error {
 				segmentIdx = idx + utf8.RuneLen(r)
 			} else if !(r == '.' || r == '_' || r == '-' || r == ':') {
 				// Test remaining allowed characters.
-				return fmt.Errorf("illegal charater (%c) at index %d", r, idx)
+				return fmt.Errorf("illegal character (%c) at index %d", r, idx)
 			}
 		}
 		lastRune = r

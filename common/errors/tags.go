@@ -152,7 +152,7 @@ func NewTagKey(description string) TagKey {
 // A nil value means that the tag is present, but has a nil associated value.
 //
 // This is done in a depth-first traversal of the error stack, with the
-// most-recently-set value of the tag taking precendence.
+// most-recently-set value of the tag taking precedence.
 func GetTags(err error) map[TagKey]interface{} {
 	ret := map[TagKey]interface{}{}
 	Walk(err, func(err error) bool {

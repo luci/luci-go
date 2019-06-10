@@ -174,7 +174,7 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 			lme.Assign(i, ierr)
 		}
 
-		// Return an error only if we encouter an error other than datastore.ErrNoSuchEntity.
+		// Return an error only if we encounter an error other than datastore.ErrNoSuchEntity.
 		if err := lme.Get(); err != nil {
 			return nil, err
 		}

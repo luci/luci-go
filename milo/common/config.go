@@ -160,6 +160,7 @@ type ConsoleID struct {
 	ID      string
 }
 
+// ParseConsoleID reformats the string into a ConsoleID.
 func ParseConsoleID(id string) (cid ConsoleID, err error) {
 	components := strings.Split(id, "/")
 	if len(components) != 2 {
@@ -508,7 +509,7 @@ func UpdateConsoles(c context.Context) error {
 
 type consolesCacheKey string
 
-// GetAllConsoles returns all Consoles (across all projects) which contian the
+// GetAllConsoles returns all Consoles (across all projects) which contain the
 // builder ID. If builderID is empty, then this retrieves all Consoles.
 //
 // TODO-perf(iannucci): Maybe memcache this too.
@@ -530,6 +531,7 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 	return con, err
 }
 
+// GetProject loads the project from the datastore.
 func GetProject(c context.Context, project string) (*Project, error) {
 	switch allowed, err := IsAllowed(c, project); {
 	case err != nil:
