@@ -409,12 +409,12 @@ var rLinkBreak = regexp.MustCompile("<br */?>")
 func renderMarkdown(t string) (results template.HTML) {
 	// We don't want auto punctuation, which changes "foo" into “foo”
 	r := blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{
-		Flags: blackfriday.CommonHTMLFlags &^ blackfriday.Smartypants,
+		Flags: blackfriday.UseXHTML,
 	})
 	buf := bytes.NewBuffer(blackfriday.Run(
 		[]byte(t),
 		blackfriday.WithRenderer(r),
-		blackfriday.WithExtensions(blackfriday.CommonExtensions)))
+		blackfriday.WithExtensions(blackfriday.NoIntraEmphasis|blackfriday.FencedCode|blackfriday.Autolink)))
 	out := bytes.NewBuffer(nil)
 	if err := sanitizehtml.Sanitize(out, buf); err != nil {
 		return template.HTML(fmt.Sprintf("Failed to render markdown: %s", template.HTMLEscapeString(err.Error())))
