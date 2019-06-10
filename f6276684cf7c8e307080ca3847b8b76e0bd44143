@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "52d3a8eb_1626cf3c",
+        "filename": "common/system/exec2/testdata/env.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-10T12:13:39Z",
+      "side": 1,
+      "message": "Also check the value.",
+      "revId": "f6276684cf7c8e307080ca3847b8b76e0bd44143",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
