@@ -603,7 +603,7 @@ func TestHandleArchive(t *testing.T) {
 							return nil
 						}
 
-						// This will trigger whe NewWriter fails from the above
+						// This will trigger when NewWriter fails from the above
 						// instrumentation.
 						gsc.deleteErr = func(p gs.Path) error {
 							if strings.HasSuffix(string(p), failName) {

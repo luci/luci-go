@@ -56,7 +56,7 @@ func TestPairs(t *testing.T) {
 				"b:1",
 			})
 		})
-		Convey("Get non-existant", func() {
+		Convey("Get non-existent", func() {
 			So(m.Get("c"), ShouldEqual, "")
 		})
 		Convey("Get with empty", func() {

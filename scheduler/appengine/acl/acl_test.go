@@ -144,7 +144,7 @@ func TestACLsValidation(t *testing.T) {
 			{Name: "private", Acls: []*messages.Acl{
 				{Role: messages.Acl_READER, GrantedTo: "group:internal"},
 			}},
-			{Name: "triggeres", Acls: []*messages.Acl{
+			{Name: "triggerers", Acls: []*messages.Acl{
 				{Role: messages.Acl_TRIGGERER, GrantedTo: "group:triggerers"},
 			}},
 		}
@@ -183,7 +183,7 @@ func TestACLsValidation(t *testing.T) {
 			})
 			Convey("ok3", func() {
 				jobAcls := ValidateTaskACLs(valCtx,
-					aclSets, []string{"public", "triggeres"},
+					aclSets, []string{"public", "triggerers"},
 					[]*messages.Acl{
 						{Role: messages.Acl_TRIGGERER, GrantedTo: "triggerer@example.com"},
 					})

@@ -353,7 +353,7 @@ type Archiver struct {
 	stats   Stats
 }
 
-// Close waits for all pending files to be done. If an error occured during
+// Close waits for all pending files to be done. If an error occurred during
 // processing, it is returned.
 func (a *Archiver) Close() error {
 	// This is done so asynchronously calling push() won't crash.

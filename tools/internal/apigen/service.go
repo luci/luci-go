@@ -30,7 +30,7 @@ import (
 )
 
 // appYAML is a subset of the contents of an AppEngine application's "app.yaml"
-// descriptor neeeded by this service.
+// descriptor needed by this service.
 type appYAML struct {
 	Runtime string `yaml:"runtime"`
 	VM      bool   `yaml:"vm"`

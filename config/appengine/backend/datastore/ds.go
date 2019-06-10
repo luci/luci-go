@@ -71,7 +71,7 @@ type Config struct {
 	// through to the underlying cache.
 	FailOpen bool
 
-	// LockerFunc returns the Locker intance to use.
+	// LockerFunc returns the Locker instance to use.
 	LockerFunc func(context.Context) datastorecache.Locker
 
 	// userProjAccess is cache of the current user's project access lookups.

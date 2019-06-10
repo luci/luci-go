@@ -40,7 +40,7 @@ type limitedOS interface {
 	Readlink(string) (string, error)
 
 	// Open is like os.Open, but returns an io.ReadCloser since
-	// that's all we need and it's easier to implment with a fake.
+	// that's all we need and it's easier to implement with a fake.
 	Open(string) (io.ReadCloser, error)
 
 	openFiler
@@ -48,7 +48,7 @@ type limitedOS interface {
 
 type openFiler interface {
 	// OpenFile is like os.OpenFile, but returns an io.WriteCloser since
-	// that's all we need and it's easier to implment with a fake.
+	// that's all we need and it's easier to implement with a fake.
 	OpenFile(string, int, os.FileMode) (io.WriteCloser, error)
 }
 

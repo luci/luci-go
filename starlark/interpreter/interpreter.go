@@ -196,7 +196,7 @@ func GetThreadKind(th *starlark.Thread) ThreadKind {
 
 // Loader knows how to load modules of some concrete package.
 //
-// It takes a module path relative to the package and returns either modules's
+// It takes a module path relative to the package and returns either module's
 // dict (e.g. for go native modules) or module's source code, to be interpreted.
 //
 // Returns ErrNoModule if there's no such module in the package.

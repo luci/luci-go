@@ -53,7 +53,7 @@ var subcommandRun = &subcommands.Command{
 		cmd.Flags.Var(&cmd.streamServerURI, "streamserver-uri",
 			"The stream server URI to bind to (e.g., "+exampleStreamServerURIs()+").")
 		cmd.Flags.BoolVar(&cmd.attach, "attach", true,
-			"If true, attaches the bootstrapped process' STDOUT and STDERR streams.")
+			"If true, attaches the bootstrapped process's STDOUT and STDERR streams.")
 		cmd.Flags.BoolVar(&cmd.stdin, "forward-stdin", false,
 			"If true, forward STDIN to the bootstrapped process.")
 
@@ -90,7 +90,7 @@ type runCommandRun struct {
 	// refrain from instantiating
 	streamServerURI streamServerURI
 
-	// attach, if true, automatically attaches the subprocess' STDOUT and STDERR
+	// attach, if true, automatically attaches the subprocess's STDOUT and STDERR
 	// streams to the Butler.
 	attach bool
 	stdin  bool
@@ -209,7 +209,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 		bsEnv.StreamServerURI = streamServer.Address()
 	}
 
-	// Build our command enviornment.
+	// Build our command environment.
 	env := environ.System()
 	bsEnv.Augment(env)
 
@@ -330,7 +330,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 			return errors.Annotate(err, "failed to start bootstrapped process").Err()
 		}
 
-		// Wait for the process' streams to finish. We must do this before Wait()
+		// Wait for the process's streams to finish. We must do this before Wait()
 		// on the process itself.
 		streamWG.Wait()
 

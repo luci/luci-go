@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package environ is a simple environment variable manipulation library. It
-// couples the system's environment, representated as a []string of KEY[=VALUE]
+// couples the system's environment, represented as a []string of KEY[=VALUE]
 // strings, into a key/value map and back.
 package environ
 

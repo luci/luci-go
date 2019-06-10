@@ -197,7 +197,7 @@ func TestValidation(t *testing.T) {
 					So(vctx.Finalize(), ShouldErrLike, "At most 1 config_group with fallback=YES allowed")
 				})
 
-				Convey("no obviously overlaping config_groups", func() {
+				Convey("no obviously overlapping config_groups", func() {
 					cfg.ConfigGroups = nil
 					add("refs/heads/.+")
 					add("refs/heads/.+")
@@ -214,7 +214,7 @@ func TestValidation(t *testing.T) {
 					})
 				})
 
-				Convey("2nd heuristic against overlaping config_groups", func() {
+				Convey("2nd heuristic against overlapping config_groups", func() {
 					// Store original valid first and only ConfigGroup.
 					cfg.ConfigGroups = nil
 					Convey("infra/config", func() {

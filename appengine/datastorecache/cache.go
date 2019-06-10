@@ -71,7 +71,7 @@ type Value struct {
 }
 
 // Cache defines a generic basic datastore cache. Content that is added to
-// the cache is periodically refeshed and (if unused) pruned by a supportive
+// the cache is periodically refreshed and (if unused) pruned by a supportive
 // cron task.
 //
 // Using this cache requires a cache handler to be installed and a cron task to

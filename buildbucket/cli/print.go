@@ -379,8 +379,8 @@ func (p *printer) time(t time.Time) {
 
 func (p *printer) isJustNow(t time.Time) bool {
 	now := p.nowFn()
-	ellapsed := now.Sub(t.In(now.Location()))
-	return ellapsed > 0 && ellapsed < 10*time.Second
+	elapsed := now.Sub(t.In(now.Location()))
+	return elapsed > 0 && elapsed < 10*time.Second
 }
 
 func (p *printer) attr(s string) {

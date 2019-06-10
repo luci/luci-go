@@ -655,7 +655,7 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 		// The stream was not found.  This could be due to one of two things:
 		// 1. The step just started and we're just waiting for the logs
 		// to propogage to logdog.
-		// 2. The bootsrap on the client failed, and never sent data to logdog.
+		// 2. The bootstrap on the client failed, and never sent data to logdog.
 		// This would be evident because the swarming result would be a failure.
 		if swarmingResult.State == TaskCompleted {
 			err = failedToStart(c, &build, swarmingResult, svc.GetHost())
