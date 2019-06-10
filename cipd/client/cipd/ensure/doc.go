@@ -17,8 +17,8 @@
 //
 // The format is used by the CIPD client to describe the desired state of a CIPD
 // installation. This states can be asserted with the CIPD client 'ensure'
-// command. The state is essentialy a list of packages, their versions and their
-// installation subdirectories ("subdirs").
+// command. The state is essentially a list of packages, their versions and
+// their installation subdirectories ("subdirs").
 //
 // Format Description
 //
@@ -87,7 +87,7 @@
 // Since these two often appear together, the convenience placeholder
 // `${platform}` expands to the equivalent of `${os}-${arch}`.
 //
-// All of these paramters also support the syntax ${var=possible,values}.
+// All of these parameters also support the syntax ${var=possible,values}.
 // What this means is that the package line will be expanded if, and only if,
 // var equals one of the possible values. If that var does not match
 // a possible value, the line is ignored. This allows you to do, e.g.:

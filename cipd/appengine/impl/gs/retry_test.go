@@ -48,7 +48,7 @@ func TestRetryAndStatusCode(t *testing.T) {
 			So(StatusCode(err), ShouldEqual, 200)
 		})
 
-		Convey("Retying generic connection error", func() {
+		Convey("Retrying generic connection error", func() {
 			calls := 0
 			err := withRetry(ctx, func() error {
 				calls++
@@ -60,7 +60,7 @@ func TestRetryAndStatusCode(t *testing.T) {
 			So(StatusCode(err), ShouldEqual, 0)
 		})
 
-		Convey("Retying transient API error", func() {
+		Convey("Retrying transient API error", func() {
 			calls := 0
 			err := withRetry(ctx, func() error {
 				calls++

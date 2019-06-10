@@ -359,7 +359,7 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 	// Does the log stream's secret match the expected secret?
 	//
 	// Note that this check does NOT use the "subtle" package to do time-constant
-	// byte comparison, and may leak inforamtion about the secret. This is OK,
+	// byte comparison, and may leak information about the secret. This is OK,
 	// since users cannot interact with this service directly; however, if this
 	// code is ever used elsewhere, this should be a consideration.
 	if !bytes.Equal([]byte(secret), []byte(state.Secret)) {

@@ -104,7 +104,7 @@ type taskResult struct {
 	outputs []string
 
 	// err is set if an operational error occurred while doing RPCs to gather the
-	// task result, which includes errors recieved from the server.
+	// task result, which includes errors received from the server.
 	err error
 }
 
@@ -272,7 +272,7 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 	for {
 		result = c.fetchTaskResults(ctx, taskID, service)
 		if result.err != nil {
-			// If we recieved an error from fetchTaskResults, it either hit a fatal
+			// If we received an error from fetchTaskResults, it either hit a fatal
 			// failure, or it hit too many transient failures.
 			return result
 		}

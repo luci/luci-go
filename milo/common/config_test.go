@@ -59,7 +59,7 @@ func TestConfig(t *testing.T) {
 				So(ve.Errors[2].Error(), ShouldContainSubstring, "missing manifest name")
 				So(ve.Errors[3].Error(), ShouldContainSubstring, "missing repo url")
 				So(ve.Errors[4].Error(), ShouldContainSubstring, "missing ref")
-				So(ve.Errors[5].Error(), ShouldContainSubstring, "header non-existant not defined")
+				So(ve.Errors[5].Error(), ShouldContainSubstring, "header non-existent not defined")
 			})
 			Convey("Load a good config", func() {
 				content := []byte(fooCfg)
@@ -220,7 +220,7 @@ headers: {
 	tree_status_host: "blarg.example.com"
 }
 consoles {
-	header_id: "non-existant"
+	header_id: "non-existent"
 }
 consoles {
 	id: "foo"

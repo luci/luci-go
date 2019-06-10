@@ -48,7 +48,7 @@ func TestCertificatesHandler(t *testing.T) {
 		r := router.New()
 		InstallHandlers(r, withSigner(s))
 		ts := httptest.NewServer(r)
-		// Note: there are two contexts. One for outter /certificates call
+		// Note: there are two contexts. One for outer /certificates call
 		// (this one), and another for /certificates request handler (it is setup
 		// in the middleware chain above).
 		ctx := caching.WithEmptyProcessCache(context.Background())

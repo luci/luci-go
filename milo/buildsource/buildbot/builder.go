@@ -39,8 +39,8 @@ type builderRef struct {
 }
 
 // buildMap contains all of the current build within a master json.  We use this
-// because buildbot returns all current builds as within the slaves portion, whereas
-// it's eaiser to map thenm by builders instead.
+// because buildbot returns all current builds as within the slaves portion,
+// whereas it's easier to map then by builders instead.
 type buildMap map[builderRef]*buildbot.Build
 
 // mergeText merges buildbot summary texts, which sometimes separates

@@ -348,7 +348,7 @@ func TestGetOrCreate(t *testing.T) {
 			}
 		})
 
-		Convey(`Can retreive values while a Maker is in-progress.`, func() {
+		Convey(`Can retrieve values while a Maker is in-progress.`, func() {
 			cache.Put(ctx, "foo", "bar", 0)
 
 			// Value already exists, so retrieves current value.

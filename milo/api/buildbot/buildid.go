@@ -36,7 +36,7 @@ func (id BuildID) Validate() error {
 	case id.Builder == "":
 		return errors.New("builder is unspecified", grpcutil.InvalidArgumentTag)
 	case id.Number < 0:
-		return errors.New("nunber must be >= 0", grpcutil.InvalidArgumentTag)
+		return errors.New("number must be >= 0", grpcutil.InvalidArgumentTag)
 	default:
 		return nil
 	}

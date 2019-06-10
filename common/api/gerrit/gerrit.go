@@ -106,15 +106,15 @@ func (ts *Timestamp) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-// LabelInfo contains information about a label on a change, always corresponding
-// to the current patch set.
+// LabelInfo contains information about a label on a change, always
+// corresponding to the current patch set.
 //
-// Only one of Approved, Rejected, Recommended, and Disliked will be set, with priority
-// Rejected > Approved > Recommened > Disliked if multiple users have given the label
-// different values.
+// Only one of Approved, Rejected, Recommended, and Disliked will be set, with
+// priority Rejected > Approved > Recommended > Disliked if multiple users have
+// given the label different values.
 //
-// TODO(mknyszek): Support 'value' and 'default_value' fields, as well as the fields
-// given with the query parameter DETAILED_LABELS.
+// TODO(mknyszek): Support 'value' and 'default_value' fields, as well as the
+// fields given with the query parameter DETAILED_LABELS.
 type LabelInfo struct {
 	// Optional reflects whether the label is optional (neither necessary
 	// for nor blocking submission).
@@ -393,7 +393,8 @@ func (c *Client) ChangeDetails(ctx context.Context, changeID string, options Cha
 	return &resp, nil
 }
 
-// ChangeInput contains the parameters necesary for creating a change in Gerrit.
+// ChangeInput contains the parameters necessary for creating a change in
+// Gerrit.
 //
 // This struct is intended to be one-to-one with the ChangeInput structure
 // described in Gerrit's documentation:
@@ -517,7 +518,7 @@ func (c *Client) IsChangePureRevert(ctx context.Context, changeID string) (bool,
 	return resp.IsPureRevert, nil
 }
 
-// ReviewerInput contians information for adding a reviewer to a change.
+// ReviewerInput contains information for adding a reviewer to a change.
 //
 // TODO(mknyszek): Add support for notify_details.
 type ReviewerInput struct {

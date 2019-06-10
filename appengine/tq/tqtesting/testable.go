@@ -72,7 +72,7 @@ type Testable interface {
 	// the one with smallest ETA, and so on ...
 	//
 	// Panics if there's no test clock in the context. Assumes complete control
-	// of the task queue service (e.g if something is popping or reseting tasks
+	// of the task queue service (e.g if something is popping or resetting tasks
 	// in parallel, bad things will happen).
 	//
 	// If it encounters an unrecognized task, calls params.UnknownTaskHandler to

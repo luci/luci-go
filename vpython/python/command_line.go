@@ -89,7 +89,7 @@ type CommandTarget struct {
 func (t CommandTarget) buildArgsForTarget() []string { return []string{"-c", t.Command} }
 func (CommandTarget) followsFlagSeparator() bool     { return false }
 
-// ModuleTarget is a Target implementating indicating a Python module (-m ...).
+// ModuleTarget is a Target implementing indicating a Python module (-m ...).
 type ModuleTarget struct {
 	// Module is the name of the target module.
 	Module string

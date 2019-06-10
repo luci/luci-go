@@ -51,7 +51,7 @@ import (
 // ...
 // """
 //
-// Where <plaform> is one of ${platform} values (e.g. "linux-amd64"), and
+// Where <platform> is one of ${platform} values (e.g. "linux-amd64"), and
 // <hash algo> is one of stringified case-insensitive HashAlgo enum values from
 // api/cas.proto (e.g. "sha256").
 //
