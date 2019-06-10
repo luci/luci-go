@@ -320,7 +320,7 @@ func toTime(ts *timestamp.Timestamp) (result time.Time) {
 	return
 }
 
-// obfuscateEmail converts a string containing email adddress email@address.com
+// obfuscateEmail converts a string containing email address email@address.com
 // into email<junk>@address.com.
 func obfuscateEmail(email string) template.HTML {
 	email = template.HTMLEscapeString(email)

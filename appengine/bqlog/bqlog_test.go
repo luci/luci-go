@@ -92,7 +92,7 @@ func TestInsert(t *testing.T) {
 			So(decoded, ShouldResemble, []rawEntry{
 				{
 					InsertID: "abc",
-					// Note that outter bigquery.Value deserializes into bqapi.JsonValue,
+					// Note that outer bigquery.Value deserializes into bqapi.JsonValue,
 					// but the inner one don't. This is fine, since at the end bqapi just
 					// encodes the whole thing to JSON and it doesn't matter what alias
 					// of interface{} is used for that.

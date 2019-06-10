@@ -296,7 +296,7 @@ func TestState(t *testing.T) {
 					t.Logf("Error #%d: %s", i, ierr)
 				}
 			}
-			t.Fatalf("Superflous test data: %v", err)
+			t.Fatalf("Superfluous test data: %v", err)
 		}
 		for _, path := range paths {
 			t.Log("Removing superfluous test data:", path)

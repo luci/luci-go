@@ -75,7 +75,7 @@ func (p *implementation) clEmailAndProjectNoACLs(c context.Context, host string,
 	})
 	// We can't cache outcome of not found CL because
 	//  * Milo may not at first have access to a CL, say while CL was hidden or
-	//    becaues of bad ACLs.
+	//    because of bad ACLs.
 	//  * Gerrit is known to return 404 flakes.
 	if err != nil {
 		return nil, err

@@ -68,7 +68,7 @@ func (m *OAuth2Method) Authenticate(c context.Context, r *http.Request) (*auth.U
 
 	// GetOAuthUser RPC is notoriously flaky. Do a bunch of retries on errors.
 	var err error
-	for attemp := 0; attemp < 4; attemp++ {
+	for attempt := 0; attempt < 4; attempt++ {
 		var u *user.User
 		u, err = user.CurrentOAuth(c, m.Scopes...)
 		if err != nil {

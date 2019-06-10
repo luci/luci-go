@@ -200,7 +200,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 
 	// Create a bootstrap wheel-generating VirtualEnv!
 	cfg := Config{
-		MaxHashLen: 1, // Only going to be 1 enviroment.
+		MaxHashLen: 1, // Only going to be 1 environment.
 		BaseDir:    filepath.Join(outDir, ".env"),
 		SetupEnv:   environ.System(),
 		Python:     py.Python,

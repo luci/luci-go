@@ -360,8 +360,8 @@ type ClientOptions struct {
 
 // LoadFromEnv loads supplied default values from an environment into opts.
 //
-// The supplied getEnv function is used to access named enviornment variables,
-// and should return an empty string if the enviornment variable is not defined.
+// The supplied getEnv function is used to access named environment variables,
+// and should return an empty string if the environment variable is not defined.
 func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 	if opts.CacheDir == "" {
 		if v := getEnv(EnvCacheDir); v != "" {

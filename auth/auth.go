@@ -815,7 +815,7 @@ type tokenSource struct {
 	a *Authenticator
 }
 
-// Token is part of oauth2.TokenSource inteface.
+// Token is part of oauth2.TokenSource interface.
 func (s tokenSource) Token() (*oauth2.Token, error) {
 	return s.a.GetAccessToken(minAcceptedLifetime)
 }

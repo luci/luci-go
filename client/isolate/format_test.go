@@ -503,7 +503,7 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 			[]byte(sampleIsolateDataWithIncludes), nil)
 		So(err, ShouldNotBeNil)
 
-		// Test Successfull loading.
+		// Test Successful loading.
 		// Case mac32, matches only second condition from main isolate and one in included.
 		vars := map[string]string{"bit": "64", "OS": "linux"}
 		cmd, deps, ro, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)

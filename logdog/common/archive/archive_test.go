@@ -147,7 +147,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 		return err
 	}
 
-	// Catalogue the log entries in "expected".
+	// Catalog the log entries in "expected".
 	entries := map[uint64]*logpb.LogEntry{}
 	offsets := map[uint64]int64{}
 	csizes := map[uint64]uint64{}

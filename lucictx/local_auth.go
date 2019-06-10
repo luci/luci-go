@@ -22,7 +22,7 @@ import (
 )
 
 // ErrNoLocalAuthAccount is returned by SwitchLocalAccount if requested account
-// is not avilable in the LUCI_CONTEXT.
+// is not available in the LUCI_CONTEXT.
 var ErrNoLocalAuthAccount = errors.New("the requested logical account is not present in LUCI_CONTEXT")
 
 // LocalAuth is a struct that may be used with the "local_auth" section of

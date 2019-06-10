@@ -23,7 +23,7 @@ type Subscription string
 
 var _ flag.Value = (*Subscription)(nil)
 
-// NewSubscription generates a new Subscritpion for a given project and
+// NewSubscription generates a new Subscription for a given project and
 // subscription name.
 func NewSubscription(project, name string) Subscription {
 	return Subscription(newResource(project, "subscriptions", name))
