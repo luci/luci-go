@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "384f20ab_161b33e6",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-10T12:28:42Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s the right package to put this file in. The reason is that later on we\u0027ll want to add named caches and CIPD packages. So I think it\u0027s the right time to add a new package. It\u0027s similar to the fact that run_command() is in run_isolated.py, not in isolateserver.py.\n\nThat said, it can be done in a follow up.",
+      "revId": "4a0ef7d0ca9b1c9a725e25a9b05cd44f5aaf26d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b19ff7a9_dcab7d95",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-10T12:28:42Z",
+      "side": 1,
+      "message": "The for is kinda weird here. I understand why you do it but I don\u0027t think run_command() is a good example of my best designs. :D  The challenge there is because the function grew a lot over time. Frankly, I\u0027m fine with using \"goto end\" here. IMHO it\u0027s clearer than a \"for {}\" with break.\n\nAnd then you don\u0027t need to make failure be a function closure, you can make it a label; \"goto failure\".",
+      "revId": "4a0ef7d0ca9b1c9a725e25a9b05cd44f5aaf26d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
