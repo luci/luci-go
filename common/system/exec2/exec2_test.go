@@ -25,6 +25,8 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/common/system/environ"
 )
 
 func build(src, tmpdir string) (string, error) {
@@ -118,5 +120,31 @@ func TestExec(t *testing.T) {
 			So(cmd.ExitCode(), ShouldEqual, -1)
 		})
 
+	})
+}
+
+func TestSetEnv(t *testing.T) {
+	t.Parallel()
+
+	Convey("TestSetEnv", t, func() {
+		ctx := context.Background()
+
+		tmpdir, err := ioutil.TempDir("", "test")
+		So(err, ShouldBeNil)
+		defer func() {
+			So(os.RemoveAll(tmpdir), ShouldBeNil)
+		}()
+
+		testBinary, err := build(filepath.Join("testdata", "env.go"), tmpdir)
+		So(err, ShouldBeNil)
+
+		cmd := CommandContext(ctx, testBinary)
+		env := environ.System()
+		env.Set("envvar", "envvar")
+		cmd.SetEnv(env.Sorted())
+
+		So(cmd.Start(), ShouldBeNil)
+		So(cmd.Wait(time.Second), ShouldBeNil)
+		So(cmd.ExitCode(), ShouldEqual, 0)
 	})
 }
