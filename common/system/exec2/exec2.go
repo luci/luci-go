@@ -47,6 +47,11 @@ func CommandContext(ctx context.Context, name string, arg ...string) *Cmd {
 	return cmd
 }
 
+// SetEnv sets env.
+func (c *Cmd) SetEnv(env []string) {
+	c.cmd.Env = env
+}
+
 // Start starts command with appropriate setup.
 func (c *Cmd) Start() error {
 	return c.start()
