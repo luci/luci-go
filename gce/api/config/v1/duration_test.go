@@ -63,7 +63,7 @@ func TestDuration(t *testing.T) {
 				}
 				n, err := d.ToSeconds()
 				So(err, ShouldBeNil)
-				So(n, ShouldEqual, math.MaxInt64)
+				So(n, ShouldEqual, int64(math.MaxInt64))
 			})
 		})
 	})
