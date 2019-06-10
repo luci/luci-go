@@ -45,7 +45,7 @@ func (pc *P) getConfigLock(key interface{}) *mutexEntry {
 	if me := pc.mutexes[key]; me != nil {
 		me.count++
 		if me.count == 0 {
-			panic(fmt.Errorf("mutex refrerence counter overflow"))
+			panic(fmt.Errorf("mutex reference counter overflow"))
 		}
 		return me
 	}

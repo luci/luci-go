@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
-// StreamServer is an interface to a backgound service that allows external
+// StreamServer is an interface to a background service that allows external
 // processes to establish Butler streams.
 type StreamServer interface {
 	// Performs initial connection and setup, entering a listening state.

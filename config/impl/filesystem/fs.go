@@ -154,10 +154,10 @@ func deriveRevision(c *scannedConfigs) string {
 // New returns an implementation of the config service which reads configuration
 // from the local filesystem. `basePath` may be one of two things:
 //   * A folder containing the following:
-//     ./services/servicename/...               # service configuations
-//     ./projects/projectname.json              # project information configuation
-//     ./projects/projectname/...               # project configuations
-//     ./projects/projectname/refs/refname/...  # project ref configuations
+//     ./services/servicename/...               # service confinguations
+//     ./projects/projectname.json              # project information configuration
+//     ./projects/projectname/...               # project configurations
+//     ./projects/projectname/refs/refname/...  # project ref configurations
 //   * A symlink to a folder as organized above:
 //     -> /path/to/revision/folder
 //

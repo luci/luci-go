@@ -55,7 +55,7 @@ var (
 func NewUnaryServerInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		started := clock.Now(ctx)
-		panicing := true
+		panicking := true
 		defer func() {
 			// We don't want to recover anything, but we want to log Internal error
 			// in case of a panic. We pray here reportServerRPCMetrics is very
@@ -64,7 +64,7 @@ func NewUnaryServerInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServe
 			switch {
 			case err != nil:
 				code = grpc.Code(err)
-			case panicing:
+			case panicking:
 				code = codes.Internal
 			}
 			reportServerRPCMetrics(ctx, info.FullMethod, code, clock.Now(ctx).Sub(started))
@@ -74,7 +74,7 @@ func NewUnaryServerInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServe
 		} else {
 			resp, err = handler(ctx, req)
 		}
-		panicing = false // normal exit, no panic happened, disarms defer
+		panicking = false // normal exit, no panic happened, disarms defer
 		return
 	}
 }

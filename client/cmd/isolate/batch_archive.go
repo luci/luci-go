@@ -62,7 +62,7 @@ isolate. Format of files is:
 			c.Flags.Var(&c.blacklist, "blacklist", "List of globs to use as blacklist filter when uploading directories")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
 			c.Flags.BoolVar(&c.expArchive, "exparchive", true, "IGNORED (deprecated) Whether to use the new exparchive implementation, which tars small files before uploading them.")
-			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maxiumum number of in-flight check requests.")
+			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maximum number of in-flight check requests.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 8, "The maximum number of in-flight uploads.")
 			return &c
 		},

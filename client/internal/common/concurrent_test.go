@@ -185,8 +185,8 @@ func TestGoroutinePoolCancelFuncCalled(t *testing.T) {
 func testGoroutinePoolCancelFuncCalled(t *testing.T, newPool newPoolFunc) {
 	t.Parallel()
 	Convey(`A goroutine pool should handle an onCancel call.`, t, func() {
-		// Simulate deterministically when the semaphore returs immediately
-		// because of cancelation, as opposed to actually having a resource.
+		// Simulate deterministically when the semaphore returns immediately
+		// because of cancellation, as opposed to actually having a resource.
 		pipe := make(chan string, 2)
 		logs := make(chan string, 3)
 		slow := func() {

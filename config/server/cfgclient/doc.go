@@ -30,11 +30,11 @@
 // Configuration requests pass through the following layers:
 // 1) A Backend, which is the configured configuration authority.
 // 2) Cache resolution, which optionally transforms the data into an
-//    application-specific cachable format.
+//    application-specific cacheable format.
 // 3) A cache layer, which caches the data.
 // 4) Value resolution, which transforms the cached data format from (2) into
 //    a Go value.
-// 5) The Go value is retuned to the user.
+// 5) The Go value is returned to the user.
 //
 // Layers (2) and (4) are managed by the Resolver type, which is associated by
 // the application with the underlying configuration data.

@@ -162,7 +162,7 @@ func Run(templatePath string) {
 	})
 
 	// LogDog Milo Annotation Streams.
-	// This mimicks the `logdog://logdog_host/project/*path` url scheme seen on
+	// This mimics the `logdog://logdog_host/project/*path` url scheme seen on
 	// swarming tasks.
 	r.GET("/raw/build/:logdog_host/:project/*path", htmlMW, handleError(handleRawPresentationBuild))
 

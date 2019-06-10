@@ -110,7 +110,7 @@ func ReadInt(r io.ByteReader) (ret int64, n int, err error) {
 }
 
 // ReadUint decodes a cmpbin-encoded positive number from a ByteReader.  It
-// returns the decoded value and the number of bytes read. The erorr may be
+// returns the decoded value and the number of bytes read. The error may be
 // Err{Over,Under}flow if the number is out of bounds. It may also return an
 // error if the ByteReader returns an error.
 func ReadUint(r io.ByteReader) (mag uint64, n int, err error) {

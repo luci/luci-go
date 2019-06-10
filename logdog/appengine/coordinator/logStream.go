@@ -330,7 +330,7 @@ func (s *LogStream) SetDSValidate(v bool) {
 // generatePathComponents generates the "_C" property path components for path
 // glob querying.
 //
-// See the comment on LogStream for more infromation.
+// See the comment on LogStream for more information.
 func generatePathComponents(prefix, name string) ds.PropertySlice {
 	ps, ns := types.StreamName(prefix).Segments(), types.StreamName(name).Segments()
 

@@ -112,7 +112,7 @@ type Rand interface {
 	// callback, as WithGoRand holds the lock to the current Rand instance, so any
 	// additional function call will deadlock.
 	//
-	// The callback's r must not be retained or used outside of hte scope of the
+	// The callback's r must not be retained or used outside of the scope of the
 	// callback.
 	WithGoRand(fn func(r *rand.Rand) error) error
 }

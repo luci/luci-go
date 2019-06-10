@@ -221,7 +221,7 @@ func TestCollectionZeroValue(t *testing.T) {
 
 // TestStoreParallel performs several rounds of parallel accesses. Each round
 // takes a snapshot of the "head" Store, then simultaneusly dispatches a round
-// of parallel writes agains the "head" store, reads against the snapshot, and
+// of parallel writes against the "head" store, reads against the snapshot, and
 // reads against the "head" store.
 //
 // This is meant to be run with "-race" to trigger on race conditions.

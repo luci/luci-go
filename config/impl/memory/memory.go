@@ -39,7 +39,7 @@ type Files map[string]string
 // SetError artificially pins the error code returned by impl to err. If err is
 // nil, impl will behave normally.
 //
-// impl must be a memory config isntance created with New, else SetError will
+// impl must be a memory config instance created with New, else SetError will
 // panic.
 func SetError(impl config.Interface, err error) {
 	impl.(*memoryImpl).err = err

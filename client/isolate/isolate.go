@@ -57,7 +57,7 @@ type Tree struct {
 	Opts ArchiveOptions
 }
 
-// ArchiveOptions for achiving trees.
+// ArchiveOptions for archiving trees.
 type ArchiveOptions struct {
 	Isolate         string              `json:"isolate"`
 	Isolated        string              `json:"isolated"`
@@ -219,7 +219,7 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 		isol.Command = cmd
 		// Only set RelativeCwd if a command was also specified. This reduce the
 		// noise for Swarming tasks where the command is specified as part of the
-		// Swarming task request and not thru the isolated file.
+		// Swarming task request and not through the isolated file.
 		if rootDir != isolateDir {
 			relPath, err := filepath.Rel(rootDir, isolateDir)
 			if err != nil {

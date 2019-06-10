@@ -98,7 +98,7 @@ const (
 	// AutoSelectMethod can be used to allow the library to pick a method most
 	// appropriate for given set of options and the current execution environment.
 	//
-	// For example, passing ServiceAccountJSONPath or ServiceAcountJSON makes
+	// For example, passing ServiceAccountJSONPath or ServiceAccountJSON makes
 	// Authenticator to pick ServiceAccountMethod.
 	//
 	// See SelectBestMethod function for details.
@@ -815,7 +815,7 @@ type tokenSource struct {
 	a *Authenticator
 }
 
-// Token is part of oauth2.TokenSource inteface.
+// Token is part of oauth2.TokenSource interface.
 func (s tokenSource) Token() (*oauth2.Token, error) {
 	return s.a.GetAccessToken(minAcceptedLifetime)
 }

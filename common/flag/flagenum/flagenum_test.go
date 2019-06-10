@@ -147,7 +147,7 @@ func TestStringEnum(t *testing.T) {
 					Value testValue `json:"value"`
 				}
 
-				Convey(`Marshals to JSON as its enumation value.`, func() {
+				Convey(`Marshals to JSON as its enumeration value.`, func() {
 					s.Value = testFoo
 					data, err := json.Marshal(&s)
 					So(err, ShouldBeNil)
@@ -218,7 +218,7 @@ func TestStructEnum(t *testing.T) {
 				}
 
 				for _, tc := range testCases {
-					Convey(fmt.Sprintf(`Marshals %s to JSON as its enumation value, [%s].`,
+					Convey(fmt.Sprintf(`Marshals %s to JSON as its enumeration value, [%s].`,
 						tc.S.Name, tc.V), func() {
 						s.Value = tc.S
 						data, err := json.Marshal(&s)
