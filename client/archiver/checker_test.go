@@ -150,6 +150,39 @@ func TestCheckerDelay(t *testing.T) {
 	}
 }
 
+func TestCheckerAlreadyExists(t *testing.T) {
+	fake := &fakeIsolateService{}
+	checker := newChecker(context.Background(), fake, 8)
+
+	item := &Item{
+		Path:   fmt.Sprintf("/item/%d", 0),
+		Digest: isolated.HexDigest(fmt.Sprintf("digest%d", 0)),
+	}
+
+	// Mark the item as presume exists
+	checker.PresumeExists(item)
+
+	// Now add the same item to the checker
+	checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {})
+
+	if err := checker.Close(); err != nil {
+		t.Fatalf("checker.Close: got error %v; want %v", err, nil)
+	}
+
+	// Check that we have 0 batches, there should be no uploads.
+	if got, want := len(fake.itemBatches), 0; got != want {
+		t.Errorf("checker received %d batches, want %d", got, want)
+	}
+
+	if got, want := checker.Hit.Count(), 1; got != want {
+		t.Errorf("checker hit count: got %v ; want: %v", got, want)
+	}
+
+	if got, want := checker.Miss.Count(), 0; got != want {
+		t.Errorf("checker miss count: got %v ; want: %v", got, want)
+	}
+}
+
 func disabledTestCheckerErrors(t *testing.T) {
 	// Make an error channel which sends errBang on the second receive.
 	errc := make(chan error, 2)
