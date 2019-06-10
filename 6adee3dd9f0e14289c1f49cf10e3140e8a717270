@@ -1,0 +1,201 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "82923977_25f9f0a3",
+        "filename": "buildbucket/luciexe/listener.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-10T18:57:21Z",
+      "side": 1,
+      "message": "\u003e \"recieved\" is a possible misspelling of \"received\".\n\nPlease Fix",
+      "parentUuid": "fc6c9fd7_d1cf352d",
+      "range": {
+        "startLine": 46,
+        "startChar": 68,
+        "endLine": 46,
+        "endChar": 76
+      },
+      "revId": "6adee3dd9f0e14289c1f49cf10e3140e8a717270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f762c99b_fbd492bd",
+        "filename": "buildbucket/luciexe/listener.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-10T18:57:21Z",
+      "side": 1,
+      "message": "nit: buildC\nbelow too",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 7
+      },
+      "revId": "6adee3dd9f0e14289c1f49cf10e3140e8a717270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef6c20e6_7c7c5e4f",
+        "filename": "buildbucket/luciexe/listener.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-10T18:57:21Z",
+      "side": 1,
+      "message": "\u003e \"recieved\" is a possible misspelling of \"received\".\n\nPlease Fix",
+      "parentUuid": "0de5d9c6_e7466746",
+      "range": {
+        "startLine": 52,
+        "startChar": 7,
+        "endLine": 52,
+        "endChar": 15
+      },
+      "revId": "6adee3dd9f0e14289c1f49cf10e3140e8a717270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99bebfb7_13b77fae",
+        "filename": "buildbucket/luciexe/listener.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-10T18:57:21Z",
+      "side": 1,
+      "message": "please do it after Unlock",
+      "revId": "6adee3dd9f0e14289c1f49cf10e3140e8a717270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54f95641_38d163b7",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-10T18:57:21Z",
+      "side": 1,
+      "message": "nit: buildC",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 115,
+        "endChar": 7
+      },
+      "revId": "6adee3dd9f0e14289c1f49cf10e3140e8a717270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d5e46ae_cfbd7278",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-10T18:57:21Z",
+      "side": 1,
+      "message": "the final r.updateBuild call must happen after this goroutine exits. This is currently not guaranteed.\nin particular, the context passed to Run needs to be canceled somewhere between L156 and L167\n\nalso the potentially critical error returned by Run is ignored. We need to stop the whole thing if the listener encountered an error (e.g. the executable emitted an invalid Build message)",
+      "revId": "6adee3dd9f0e14289c1f49cf10e3140e8a717270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2aafb58b_1f2627be",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-10T18:57:21Z",
+      "side": 1,
+      "message": "nit: buildC",
+      "range": {
+        "startLine": 34,
+        "startChar": 48,
+        "endLine": 34,
+        "endChar": 54
+      },
+      "revId": "6adee3dd9f0e14289c1f49cf10e3140e8a717270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bd893b6_57f91d2e",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-10T18:57:21Z",
+      "side": 1,
+      "message": "can we inline this? why not bu(ctx, local.latest) ?",
+      "range": {
+        "startLine": 93,
+        "startChar": 3,
+        "endLine": 93,
+        "endChar": 11
+      },
+      "revId": "6adee3dd9f0e14289c1f49cf10e3140e8a717270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9073afac_51aba77a",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-10T18:57:21Z",
+      "side": 1,
+      "message": "nit: please use switch instead of 3 ifs",
+      "range": {
+        "startLine": 112,
+        "startChar": 3,
+        "endLine": 112,
+        "endChar": 11
+      },
+      "revId": "6adee3dd9f0e14289c1f49cf10e3140e8a717270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
