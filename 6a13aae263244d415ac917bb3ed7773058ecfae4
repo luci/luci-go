@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6dfa8ee6_b623f094",
+        "filename": "common/isolated/command.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-10T17:44:25Z",
+      "side": 1,
+      "message": "Remove the TODO, nobody will care. It\u0027s fine.",
+      "revId": "6a13aae263244d415ac917bb3ed7773058ecfae4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
