@@ -16,14 +16,17 @@ package isolated
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/system/exec2"
 )
 
 const (
@@ -45,7 +48,7 @@ func replaceParameters(ctx context.Context, arg, outDir, botFile string) (string
 
 	if strings.Contains(arg, isolatedOutdirParameter) {
 		if outDir == "" {
-			return "", errors.New("output directory is requested in command or env var, but not provided; please specify one")
+			return "", errors.Reason("output directory is requested in command or env var, but not provided; please specify one").Err()
 		}
 		arg = strings.ReplaceAll(arg, isolatedOutdirParameter, outDir)
 		replaceSlash = true
@@ -158,4 +161,76 @@ func getCommandEnv(ctx context.Context, tmpDir string, cipdInfo *cipdInfo, runDi
 	}
 
 	return out, nil
+}
+
+// runCommand runs the command.
+func runCommand(ctx context.Context, command []string, cwd string, env environ.Env, hardTimeout time.Duration, gracePeriod time.Duration, lowerPriority bool, containment bool) (int, bool, error) {
+	logging.Infof(ctx, "runCommand(%s, %s, %s, %s, %s, %s, %s)", command, cwd, env, hardTimeout, gracePeriod, lowerPriority, containment)
+	exitCode := 1
+	hadHardTimeout := false
+
+	failure := func(err error) {
+		fmt.Fprintf(os.Stderr, "failed to run command %s: %v\n", command, err)
+		fmt.Fprint(os.Stderr, `<The executable does not exist or a dependent library is missing>
+<Check for missing .so/.dll in the .isolate or GN file>
+`)
+		if _, ok := environ.System().Get("SWARMING_TASK_ID"); ok {
+			fmt.Fprint(os.Stderr, `<See the task's page for commands to help diagnose this issue by reproducing the task locally>
+`)
+		}
+		exitCode = 1
+	}
+
+	for {
+		cmd := exec2.CommandContext(ctx, command[0], command[1:]...)
+		// cmd.SetEnv(env.Sorted())
+		// cmd.SetDir(cwd)
+		// TODO(tikuta): handle STOP_SIGNALS
+
+		if err := cmd.Start(); err != nil {
+			return 0, false, errors.Annotate(err, "failed to start command").Err()
+		}
+
+		err := cmd.Wait(hardTimeout)
+		if err != nil && err != exec2.ErrTimeout {
+			break
+		}
+
+		if err == nil {
+			exitCode = cmd.ExitCode()
+			break
+		}
+
+		if err != exec2.ErrTimeout {
+			failure(err)
+			break
+		}
+
+		hadHardTimeout = true
+		if err := cmd.Terminate(); err != nil {
+			failure(err)
+			break
+		}
+
+		err = cmd.Wait(gracePeriod)
+		if err == nil {
+			exitCode = cmd.ExitCode()
+			break
+		}
+
+		if err != exec2.ErrTimeout {
+			failure(err)
+			break
+		}
+
+		if err := cmd.Kill(); err != nil {
+			failure(err)
+			break
+		}
+
+		exitCode = cmd.ExitCode()
+		break
+	}
+
+	return exitCode, hadHardTimeout, nil
 }
