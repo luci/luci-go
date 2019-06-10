@@ -47,7 +47,7 @@ type SnapshotDB struct {
 	clientIDs map[string]struct{} // set of allowed client IDs
 	groups    map[string]*group   // map of all known groups
 
-	assignments map[identity.Identity]string // IP whitelist assignements
+	assignments map[identity.Identity]string // IP whitelist assignments
 	whitelists  map[string][]net.IPNet       // IP whitelists
 
 	internalServices *regexp.Regexp // assembled from SecurityConfig, may be nil

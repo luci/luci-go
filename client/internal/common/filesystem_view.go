@@ -31,10 +31,13 @@ type FilesystemView struct {
 	sourcePrefix string
 }
 
-// NewFilesystemView returns a FilesystemView based on the supplied root and blacklist, or
-// an error if blacklist contains a bad pattern.
-// root is the the base path used by RelativePath to calulate relative paths.
-// blacklist is a list of globs of files to ignore.  See RelativePath for more information.
+// NewFilesystemView returns a FilesystemView based on the supplied root and
+// blacklist, or an error if blacklist contains a bad pattern.
+//
+// root is the the base path used by RelativePath to calculate relative paths.
+//
+// blacklist is a list of globs of files to ignore. See RelativePath for more
+// information.
 func NewFilesystemView(root string, blacklist []string) (FilesystemView, error) {
 	for _, b := range blacklist {
 		if _, err := filepath.Match(b, b); err != nil {
@@ -95,8 +98,8 @@ func match(pattern, name string) bool {
 	return matched
 }
 
-// WalkFuncSkipFile is a helper for implemenations of filepath.WalkFunc. The
-// value that it returns may in turn be returned by the WalkFunc implementaiton
+// WalkFuncSkipFile is a helper for implementations of filepath.WalkFunc. The
+// value that it returns may in turn be returned by the WalkFunc implementatiton
 // to indicate that file should be skipped.
 func WalkFuncSkipFile(file os.FileInfo) error {
 	if file.IsDir() {

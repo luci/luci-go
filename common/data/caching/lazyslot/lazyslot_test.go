@@ -139,7 +139,7 @@ func TestLazySlot(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(v.(int), ShouldEqual, 1)
 
-		// Make it expire. Start panicing fetch.
+		// Make it expire. Start panicking fetch.
 		clk.Add(5 * time.Second)
 		So(func() {
 			s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {

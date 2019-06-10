@@ -245,7 +245,7 @@ func (gs *impl) Publish(c context.Context, dst, src string, srcGen int64) error 
 	case dstErr != nil:
 		return errors.Annotate(dstErr, "failed to check the destination object presence").Err()
 	case !exists && code == http.StatusNotFound:
-		// Both 'src' and 'dst' are missing. It means we are not retying a failed
+		// Both 'src' and 'dst' are missing. It means we are not retrying a failed
 		// move (it would have left either 'src' or 'dst' or both present), and
 		// 'src' is genuinely missing.
 		return errors.Annotate(err, "the source object is missing").Err()

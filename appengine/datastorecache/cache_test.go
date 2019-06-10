@@ -43,7 +43,7 @@ func TestCache(t *testing.T) {
 		cache := makeTestCache("test")
 		cache.refreshFn = func(context.Context, []byte, Value) (Value, error) { return currentValue, nil }
 
-		// otherLocker is a memLocker intance (used by makeTestCache) that
+		// otherLocker is a memLocker instance (used by makeTestCache) that
 		// identifies itself as a different client than the one running the test.
 		//
 		// This is used to create lock conflicts.

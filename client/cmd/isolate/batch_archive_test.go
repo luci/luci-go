@@ -75,7 +75,7 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 }
 
 func TestInvalidArchiveCMD(t *testing.T) {
-	Convey(`Archive should handle errors in command line argments.`, t, func() {
+	Convey(`Archive should handle errors in command line arguments.`, t, func() {
 		_, err := parseArchiveCMD([]string(nil), absToOS("e:", "/tmp/bar"))
 		So(err.Error(), ShouldResemble, "-isolated must be specified")
 	})

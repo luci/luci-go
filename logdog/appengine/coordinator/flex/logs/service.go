@@ -19,7 +19,7 @@ import (
 
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
@@ -50,7 +50,7 @@ func newService(svr *server) logdog.LogsServer {
 			// Enter a datastore namespace based on the message type.
 			//
 			// We use a type switch here because this is a shared decorator. All user
-			// mesages must implement ProjectBoundMessage.
+			// messages must implement ProjectBoundMessage.
 			pbm, ok := req.(endpoints.ProjectBoundMessage)
 			if ok {
 				// Enter the requested project namespace. This validates that the

@@ -241,7 +241,7 @@ func WithConfigService(c context.Context, cInterface configInterface.Interface) 
 	return context.WithValue(c, &configInterfaceKey, cInterface)
 }
 
-// GetConfigService returns an Inteface based on the provided context values
+// GetConfigService returns an Interface based on the provided context values
 func GetConfigService(c context.Context) configInterface.Interface {
 	if iface, ok := c.Value(&configInterfaceKey).(configInterface.Interface); ok {
 		return iface

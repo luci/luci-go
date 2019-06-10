@@ -198,7 +198,7 @@ func AddLogDogToBuild(
 	c context.Context, ub URLBuilder, mainAnno *miloProto.Step, build *ui.MiloBuildLegacy) {
 
 	// Now fill in each of the step components.
-	// TODO(hinoka): This is totes cachable.
+	// TODO(hinoka): This is totes cacheable.
 	build.Summary = miloBuildStep(c, ub, mainAnno, false)
 	build.Components, build.PropertyGroup = SubStepsToUI(c, ub, mainAnno.Substep)
 

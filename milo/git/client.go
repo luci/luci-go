@@ -76,8 +76,8 @@ type Client interface {
 	// refs must be a list of ref specs as described in the proto config (see
 	// doc for refs field in the Console message in api/config/project.proto)
 	//
-	// exlcudeRef can be set to non-emtpy value to exclude commits from a specific
-	// ref, e.g. this is useful when requsting commits from branches that branch
+	// excludeRef can be set to non-emtpy value to exclude commits from a specific
+	// ref, e.g. this is useful when requesting commits from branches that branch
 	// off a single main branch, commits from which should not be returned even
 	// though they are present in the history of each requested branch
 	CombinedLogs(c context.Context, host, project, excludeRef string,

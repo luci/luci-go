@@ -29,7 +29,7 @@ func TestShards(t *testing.T) {
 			set.Insert([]byte(fmt.Sprintf("blob #%d", i)))
 		}
 
-		// Readd same strings. Should be noop, they are already in the set.
+		// Read same strings. Should be noop, they are already in the set.
 		for i := 0; i < 500; i++ {
 			set.Insert([]byte(fmt.Sprintf("blob #%d", i)))
 		}

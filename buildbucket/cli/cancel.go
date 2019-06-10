@@ -44,7 +44,7 @@ func cmdCancel(p Params) *subcommands.Command {
 			r.RegisterDefaultFlags(p)
 			r.RegisterFieldFlags()
 			r.Flags.StringVar(&r.reason, "reason", "", doc(`
-				reason of cancelation in Markdown format; required
+				reason of cancellation in Markdown format; required
 			`))
 			return r
 		},

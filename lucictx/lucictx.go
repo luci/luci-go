@@ -96,7 +96,7 @@ func extractFromEnv(out io.Writer) *lctx {
 	ret := alloc(len(tmp))
 	for k, v := range tmp {
 		if reflect.TypeOf(v).Kind() != reflect.Map {
-			fmt.Fprintf(out, "Could not reencode LUCI_CONTEXT file %q, section %q: Not a map.", path, k)
+			fmt.Fprintf(out, "Could not re-encode LUCI_CONTEXT file %q, section %q: Not a map.", path, k)
 			continue
 		}
 		item, _ := json.Marshal(v)

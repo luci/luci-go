@@ -156,7 +156,7 @@ type completeTailParam struct{}
 //
 // If the log stream is a DATAGRAM stream and the Tail record is parked partial,
 // additional log entries will be fetched via Get and the full log stream will
-// be assembled. If the partial datagram entry is the "last" in its sequeence,
+// be assembled. If the partial datagram entry is the "last" in its sequence,
 // the full datagram ending with it will be returned. If it's partial in the
 // middle of a sequence, the previous complete datagram will be returned.
 func Complete() TailParam { return completeTailParam{} }

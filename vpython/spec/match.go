@@ -25,7 +25,7 @@ import (
 //	- Every "match_tag" entry matches at least one tag.
 //
 // As a special case, if the package doesn't specify any match tags, it will
-// always match regardless of the supplied PEP425 tags. This handles the deafult
+// always match regardless of the supplied PEP425 tags. This handles the default
 // case where the user specifies no constraints.
 //
 // See PEP425Matches for information about how tags are matched.

@@ -817,7 +817,7 @@ func (e *Env) isolatedSetupEnvironment(bootstrapDir string) environ.Env {
 	// be generated. There probably won't be any, but if they are, they will be
 	// cleaned up now.
 	//
-	// This also eliminates the default VirutalEnv configuration file, which is
+	// This also eliminates the default VirtualEnv configuration file, which is
 	// located relative to $HOME.
 	env.Set("HOME", bootstrapDir)
 

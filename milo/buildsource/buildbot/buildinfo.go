@@ -103,7 +103,7 @@ func getLogDogAnnotationAddr(c context.Context, build *buildbot.Build) (*types.S
 	return nil, grpcutil.Errf(codes.NotFound, "annotation stream not found")
 }
 
-// mergeBuildInfoIntoAnnotation merges BuildBot-specific build informtion into
+// mergeBuildInfoIntoAnnotation merges BuildBot-specific build information into
 // a LogDog annotation protobuf.
 //
 // This consists of augmenting the Step's properties with BuildBot's properties,

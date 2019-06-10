@@ -115,7 +115,7 @@ func TestDispatcher(t *testing.T) {
 				"another-q": {},
 			})
 
-			// Readd a task with same dedup key. Should be silently ignored.
+			// Read a task with same dedup key. Should be silently ignored.
 			err = d.AddTask(ctx, &Task{
 				Payload:          &duration.Duration{Seconds: 123},
 				DeduplicationKey: "abc",

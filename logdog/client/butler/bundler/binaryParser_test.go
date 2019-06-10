@@ -38,7 +38,7 @@ func TestBinaryParser(t *testing.T) {
 
 		Convey(`Loaded with data below the threshold`, func() {
 			p.Append(data(s.now, 1))
-			Convey(`Returns nil when reading data smaller than the thresold.`, func() {
+			Convey(`Returns nil when reading data smaller than the threshold.`, func() {
 				le, err := p.nextEntry(c)
 				So(err, ShouldBeNil)
 				So(le, ShouldBeNil)

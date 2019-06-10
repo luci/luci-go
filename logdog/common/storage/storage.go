@@ -113,7 +113,7 @@ type Storage interface {
 	//
 	// The underlying Storage implementation may return fewer records than
 	// requested based on availability or implementation details; consequently,
-	// receiving fewer than requsted records does not necessarily mean that more
+	// receiving fewer than requested records does not necessarily mean that more
 	// records are not available.
 	//
 	// Returns nil if retrieval executed successfully, ErrDoesNotExist if

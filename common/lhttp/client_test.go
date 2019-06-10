@@ -387,7 +387,7 @@ func TestNewRequestClosesBody(t *testing.T) {
 	for i, resp := range rt.Responses {
 		rc := resp.Body.(*trackingReadCloser)
 		if !rc.Closed {
-			t.Errorf("Reponses[%d].Body was not closed", i)
+			t.Errorf("Responses[%d].Body was not closed", i)
 		}
 	}
 }

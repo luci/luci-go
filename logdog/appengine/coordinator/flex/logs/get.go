@@ -146,7 +146,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 		signingRequest.Index = sr.Index
 	}
 	if !tail && req.LogCount < 0 && !signingRequest.HasWork() {
-		// No log operations are acutally needed, so don't bother instanting our
+		// No log operations are actually needed, so don't bother instanting our
 		// Storage instance only to do nothing.
 		return nil
 	}

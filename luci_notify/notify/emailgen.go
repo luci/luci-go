@@ -55,7 +55,7 @@ func getBundle(c context.Context, projectID string) (*bundle, error) {
 		return nil, errors.Annotate(err, "failed to fetch project").Err()
 	}
 
-	// Lookup an exising bundle in the process cache.
+	// Lookup an existing bundle in the process cache.
 	// If not available, make one and cache it.
 	var transientErr error
 	value, ok := bundleCache.LRU(c).Mutate(c, projectID, func(it *lru.Item) *lru.Item {

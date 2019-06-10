@@ -146,7 +146,8 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 	return nil
 }
 
-// partitionDeps walks each of the deps, partioning the results into symlinks and files categorized by size.
+// partitionDeps walks each of the deps, partitioning the results into symlinks
+// and files categorized by size.
 func partitionDeps(deps []string, rootDir string, blacklist []string) (partitionedDeps, error) {
 	fsView, err := common.NewFilesystemView(rootDir, blacklist)
 	if err != nil {

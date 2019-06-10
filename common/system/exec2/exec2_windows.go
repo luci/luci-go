@@ -109,7 +109,7 @@ func (c *Cmd) start() error {
 	c.attr.jobMu.Unlock()
 
 	if err := windows.AssignProcessToJobObject(job, process); err != nil {
-		return errors.Annotate(err, "failed to assing process to job object").Err()
+		return errors.Annotate(err, "failed to assign process to job object").Err()
 	}
 
 	if _, err := windows.ResumeThread(thread); err != nil {

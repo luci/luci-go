@@ -70,7 +70,7 @@ func execImpl(c context.Context, argv []string, env environ.Env, dir string, set
 	}
 
 	// At this point, ANY ERROR will be fatal (panic). We assume that each
-	// operation may permanently alter our runtime enviornment.
+	// operation may permanently alter our runtime environment.
 	if setupFn != nil {
 		if err := setupFn(); err != nil {
 			panic(err)

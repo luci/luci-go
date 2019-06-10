@@ -37,7 +37,7 @@ func newSemaphore(size int) semaphore {
 // If nil is returned, the caller must call .signal() afterward.
 func (s semaphore) wait(ctx context.Context) error {
 	// Always check Err first. "select" randomly selects a channel when both
-	// channels are available, and we want to prioritize cancelation.
+	// channels are available, and we want to prioritize cancellation.
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (s semaphore) wait(ctx context.Context) error {
 		/*
 			// Do a last check, just in case. It makes things slightly slower but
 			// reduces the chance of race condition with having a spurious item running
-			// after cancelation.
+			// after cancellation.
 			if err := ctx.Err(); err != nil {
 				s.signal()
 				return err

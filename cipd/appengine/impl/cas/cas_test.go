@@ -522,8 +522,8 @@ func TestFinishUpload(t *testing.T) {
 			So(len(t), ShouldEqual, 1)
 			So(t[0].Payload, ShouldResemble, &tasks.VerifyUpload{UploadOperationId: 1})
 
-			Convey("Retying FinishUpload does nothing", func() {
-				// Retying the call does nothing.
+			Convey("Retrying FinishUpload does nothing", func() {
+				// Retrying the call does nothing.
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})

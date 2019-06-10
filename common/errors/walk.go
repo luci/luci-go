@@ -66,7 +66,7 @@ func walkVisit(err error, fn func(error) bool, leavesOnly bool) bool {
 
 // Any performs a Walk traversal of an error, returning true (and
 // short-circuiting) if the supplied filter function returns true for any
-// visited erorr.
+// visited error.
 //
 // If err is nil, Any will return false.
 func Any(err error, fn func(error) bool) (any bool) {

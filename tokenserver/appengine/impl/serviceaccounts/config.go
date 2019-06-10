@@ -70,7 +70,7 @@ type Rules struct {
 	groups        []string         // list of keys in 'rulesPerGroup'
 }
 
-// Rule is queriable in-memory representation of ServiceAccountRule.
+// Rule is queryable in-memory representation of ServiceAccountRule.
 //
 // It should be treated like read-only object. It is shared by many concurrent
 // requests.
@@ -405,7 +405,7 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 	return rule, nil
 }
 
-// makeRule converts ServiceAccountRule into queriable Rule.
+// makeRule converts ServiceAccountRule into queryable Rule.
 //
 // Mutates 'ruleProto' in-place filling in defaults.
 func makeRule(c context.Context, ruleProto *admin.ServiceAccountRule, defaults *admin.ServiceAccountRuleDefaults, rev string) (*Rule, error) {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package sortby provides a succinct way to generate correctly-behaved Less
-// funcions for use with the stdlib 'sort' package.
+// functions for use with the stdlib 'sort' package.
 package sortby
 
 // LessFn is the type of the function which compares element i with element j of

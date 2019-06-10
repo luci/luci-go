@@ -29,7 +29,7 @@ import "syscall"
 // https://golang.org/doc/go1.6#runtime for more information.
 //
 // An alternative is to use QueryPerformanceCounter() but that means using a
-// kernel function call insted of reading userland memory, like time.Now(),
+// kernel function call instead of reading userland memory, like time.Now(),
 // which calls runtime.unixnano() that reads memory at an hard coded location.
 // Calling into kernel land further increases implicit synchronization, this is
 // why this code prefers to increase the timer resolution than constantly

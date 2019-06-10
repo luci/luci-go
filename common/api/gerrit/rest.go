@@ -46,7 +46,7 @@ const (
 	// objects in the body.
 	contentTypeJSON = "application/json; charset=UTF-8"
 
-	// contentTypeText ist he http header content-type value for plain text body.
+	// contentTypeText is the http header content-type value for plain text body.
 	contentTypeText = "application/x-www-form-urlencoded; charset=UTF-8"
 )
 

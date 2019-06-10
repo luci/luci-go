@@ -93,7 +93,7 @@ type Storage struct {
 	Cache storage.Cache
 
 	// testBTInterface, if not nil, is the BigTable interface to use. This is
-	// useful for testing. If nil, this will default to the production isntance.
+	// useful for testing. If nil, this will default to the production instance.
 	testBTInterface btIface
 }
 

@@ -188,7 +188,7 @@ func TestImportCAConfigsRPC(t *testing.T) {
 					cert_path: "certs/another-fake.ca.crt"
 				}
 			`)
-			So(err, ShouldErrLike, "bad CN in the certificat")
+			So(err, ShouldErrLike, "bad CN in the certificate")
 		})
 
 		Convey("validation rules", func() {

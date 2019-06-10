@@ -122,8 +122,8 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 	// Get the last log entry in the stream. In reality, this will be index 0,
 	// since the "Tail" call should only return one log entry.
 	//
-	// Because we supplied the "Complete" flag to Tail and suceeded, this datagram
-	// will be complete even if its source datagram(s) are fragments.
+	// Because we supplied the "Complete" flag to Tail and succeeded, this
+	// datagram will be complete even if its source datagram(s) are fragments.
 	dg := le.GetDatagram()
 	if dg == nil {
 		return nil, errors.New("Datagram stream does not have datagram data")

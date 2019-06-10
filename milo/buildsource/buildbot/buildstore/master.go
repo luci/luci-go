@@ -437,7 +437,7 @@ type masterEntity struct {
 	// Name of the buildbot master, without "master." prefix.
 	Name string `gae:"$id"`
 	// Internal indicates whether the master is internal.
-	// This value must by synced with the existance of masterPublic entity.
+	// This value must by synced with the existence of masterPublic entity.
 	// FIXME: the masterPublic entity should have been in the same entity group.
 	Internal bool
 	// Data is the json serialized and gzipped buildbot.Master.

@@ -262,7 +262,7 @@ func TestEnvironmentConstruction(t *testing.T) {
 			})
 		})
 
-		Convey(`Load with an nil/empty enviornment returns a zero value.`, func() {
+		Convey(`Load with an nil/empty environment returns a zero value.`, func() {
 			env.Load(nil)
 			So(env.env, ShouldBeNil)
 

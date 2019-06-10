@@ -60,7 +60,7 @@ func TestMergeInvQueries(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	Convey("Singe source, with limit", t, func() {
+	Convey("Single source, with limit", t, func() {
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(1, 2, 3, 4, 5),
 		}, 3, nil)
@@ -69,7 +69,7 @@ func TestMergeInvQueries(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	Convey("Singe source, with limit, appends", t, func() {
+	Convey("Single source, with limit, appends", t, func() {
 		invs := []*Invocation{{ID: 1}, {ID: 2}}
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(3, 4, 5, 6),
@@ -79,7 +79,7 @@ func TestMergeInvQueries(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	Convey("Singe source, dups and out of order", t, func() {
+	Convey("Single source, dups and out of order", t, func() {
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(1, 2, 2, 3, 2, 4, 5),
 		}, 100, nil)

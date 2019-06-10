@@ -275,7 +275,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 		log.WithError(err).Errorf(c, "Archival failed with non-transient error.")
 		ar.Error = err.Error()
 		if ar.Error == "" {
-			// This needs to be non-nil, so if our acutal error has an empty string,
+			// This needs to be non-nil, so if our actual error has an empty string,
 			// fill in a generic message.
 			ar.Error = "archival error"
 		}

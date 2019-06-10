@@ -38,7 +38,7 @@ func Test(t *testing.T) {
 			}), ShouldBeNil)
 		})
 
-		Convey("set persistance", func() {
+		Convey("set persistence", func() {
 			c = Set(c, rand.New(rand.NewSource(12345)))
 			r := rand.New(rand.NewSource(12345))
 			So(Get(c).Int(), ShouldEqual, r.Int())

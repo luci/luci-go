@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package store contains code for storing and retreiving metrics.
+// Package store contains code for storing and retrieving metrics.
 package store
 
 import (

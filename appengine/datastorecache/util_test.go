@@ -71,7 +71,7 @@ func withTestEnv(fn func(te *testEnv)) func() {
 	}
 }
 
-// testCache is an impementation of Handler that returns an error.
+// testCache is an implementation of Handler that returns an error.
 type testCache struct {
 	Cache
 

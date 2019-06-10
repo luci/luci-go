@@ -209,7 +209,7 @@ func (s *streamImpl) name() string {
 //
 // This can happen if either:
 // - The stream is closed and has no more buffered data, or
-// - The strema has encountered a fatal error during processing.
+// - The stream has encountered a fatal error during processing.
 func (s *streamImpl) isDrained() bool {
 	return atomic.LoadInt32(&s.drained) != 0
 }

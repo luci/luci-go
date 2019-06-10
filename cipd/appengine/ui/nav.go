@@ -101,7 +101,7 @@ func prefixesListing(pfx string, prefixes []string) []listingItem {
 
 // packagesListing formats a list of packages under 'pfx'.
 //
-// One of them can be hilighted as Active.
+// One of them can be highlighted as Active.
 func packagesListing(pfx string, pkgs []string, active string) []listingItem {
 	out := make([]listingItem, 0, len(pkgs))
 	return pathListing(pfx, pkgs, out, func(p string) listingItem {

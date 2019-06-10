@@ -500,7 +500,7 @@ func renderStack(err error) *renderedError {
 }
 
 // Annotate captures the current stack frame and returns a new annotatable
-// error, attaching the publically readable `reason` format string to the error.
+// error, attaching the publicly readable `reason` format string to the error.
 // You can add additional metadata to this error with the 'InternalReason' and
 // 'Tag' methods, and then obtain a real `error` with the Err() function.
 //

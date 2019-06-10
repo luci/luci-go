@@ -57,12 +57,12 @@ func getSentMetric(c context.Context, m types.Metric, fieldVals ...interface{}) 
 	return tsmon.GetState(c).Store().Get(c, m, time.Time{}, fieldVals)
 }
 
-// getSentDistrValue returns the value that was added to distribuition after
+// getSentDistrValue returns the value that was added to distribution after
 // ensuring there was exactly 1 value sent.
 func getSentDistrValue(c context.Context, m types.Metric, fieldVals ...interface{}) float64 {
 	switch d, ok := getSentMetric(c, m, fieldVals...).(*distribution.Distribution); {
 	case !ok:
-		panic(errors.New("not a distribuition"))
+		panic(errors.New("not a distribution"))
 	case d.Count() != 1:
 		panic(fmt.Errorf("expected 1 value, but %d values were sent with sum of %f", d.Count(), d.Sum()))
 	default:

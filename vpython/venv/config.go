@@ -112,7 +112,7 @@ type Config struct {
 
 	// testPreserveInstallationCapability is a testing parameter. If true, the
 	// VirtualEnv's ability to install will be preserved after the setup. This is
-	// used by the test whell generation bootstrap code.
+	// used by the test wheel generation bootstrap code.
 	testPreserveInstallationCapability bool
 
 	// testLeaveReadWrite, if true, instructs the VirtualEnv setup to leave the
