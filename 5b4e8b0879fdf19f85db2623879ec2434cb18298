@@ -22,6 +22,30 @@
       "revId": "5b4e8b0879fdf19f85db2623879ec2434cb18298",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70967933_2e99f3ac",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-11T09:09:19Z",
+      "side": 1,
+      "message": "Because we always want to call signal handler?\nhttps://docs.microsoft.com/en-us/windows/console/generateconsolectrlevent#remarks",
+      "parentUuid": "43276619_fe8ef425",
+      "range": {
+        "startLine": 126,
+        "startChar": 49,
+        "endLine": 126,
+        "endChar": 65
+      },
+      "revId": "5b4e8b0879fdf19f85db2623879ec2434cb18298",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
