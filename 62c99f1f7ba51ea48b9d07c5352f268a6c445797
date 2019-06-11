@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a368118_2c3488b6",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-11T14:06:14Z",
+      "side": 1,
+      "message": "This is a fairly dramatic code path, as terminate failed. I wonder what could cause this code path to run; my hunch is that the process exits just after Wait() returns at line 181 but before Terminate() call here. I\u0027m not sure we should do anything about the error, and we should probably make sure that calling Terminate() on an already exited process doesn\u0027t error out, or if it errors, we ignore it. It\u0027s fine, because line 200 will return immediately without error.",
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "626fd3a8_42269583",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-11T14:06:14Z",
+      "side": 1,
+      "message": "I\u0027d like a comment above this:\n\n  // Process exited fast enough after a nudge. Happy path.",
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de72e5d0_efa7ffab",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-11T14:06:14Z",
+      "side": 1,
+      "message": "Add a comment about to note that this is the failure path, something like:\n\n  // Process didn\u0027t exit in time after a nudge, try to kill it.",
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c26d759a_5442d92d",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-11T14:06:14Z",
+      "side": 1,
+      "message": "This is not the nicest code I ever wrote. :D\n\nWe should add a state of category EXECUTION_DONE_MASK explicitly for when the command failed:\nhttps://cs.chromium.org/chromium/infra/luci/appengine/swarming/proto/api/swarming.proto?l\u003d1159\n\nTo be clear, I\u0027m not requesting any change here, but maybe we should file a bug about eventually surfacing this cleanly to the client understand they made a typo or something that the command cannot even starts.",
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
