@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "272c31bc_c45c7a79",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-11T08:44:14Z",
+      "side": 1,
+      "message": "Ah, I just felt this code sounds not like go...\nI suppose cancel of context would be used for timeout instead?\n\nDo we need 1:1 mapping to python?  If yes, please ignore my comment.  If not, cancelling context should be the go way.",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 29
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
