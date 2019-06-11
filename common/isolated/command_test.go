@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/common/system/environ"
 
@@ -150,5 +151,22 @@ func TestGetCommandEnv(t *testing.T) {
 
 			So(env.Map(), ShouldResemble, expected)
 		})
+	})
+}
+
+func TestRunCommand(t *testing.T) {
+	t.Parallel()
+	Convey("TestRunCommand", t, func() {
+		ctx := context.Background()
+
+		Convey("simple", func() {
+			exitcode, timeout, err := runCommand(ctx, []string{"go", "help"}, ".", environ.System(), time.Minute, time.Minute, false, false)
+
+			So(exitcode, ShouldEqual, 0)
+			So(timeout, ShouldBeFalse)
+			So(err, ShouldBeNil)
+		})
+
+		// TODO(tikuta): have test for error cases.
 	})
 }
