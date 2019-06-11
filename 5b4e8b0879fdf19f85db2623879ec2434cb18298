@@ -46,6 +46,30 @@
       "revId": "5b4e8b0879fdf19f85db2623879ec2434cb18298",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "356690b9_32c0f9cb",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-11T13:58:02Z",
+      "side": 1,
+      "message": "There\u0027s subtle things going on there. The CTRL_BREAK_EVENT event is sent to the process group, and the process group is associated to a console. The bot used CREATE_NEW_PROCESS_GROUP to separate the child process from run_isolated, but this was seen as not being enough, so eventually I switched to CREATE_NEW_CONSOLE.\nhttps://docs.microsoft.com/en-us/windows/desktop/ProcThread/process-creation-flags\n\nThe CTRL_C_EVENT is sent to a process. Historically in the Swarming bot, I\u0027ve sent CTRL_BREAK_EVENT because I wanted all the processes to die. :) I\u0027m fine with revisiting this decision.",
+      "parentUuid": "70967933_2e99f3ac",
+      "range": {
+        "startLine": 126,
+        "startChar": 49,
+        "endLine": 126,
+        "endChar": 65
+      },
+      "revId": "5b4e8b0879fdf19f85db2623879ec2434cb18298",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
