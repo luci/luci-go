@@ -355,7 +355,7 @@ message BuildPredicate {
   bool include_experimental = 8;
 
   // A build must be in this build range.
-  // A pair of SearchBuildsRequest.predicate.build.end_build_id and
+  // A pair of SearchBuildsRequest.predicate.build.start_build_id and
   // SearchBuildsRequest.page_size=1 can be used to find the previous build.
   BuildRange build = 9;
 

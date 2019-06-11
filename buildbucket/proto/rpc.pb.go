@@ -942,7 +942,7 @@ type BuildPredicate struct {
 	// Otherwise it may be experimental or non-experimental.
 	IncludeExperimental bool `protobuf:"varint,8,opt,name=include_experimental,json=includeExperimental,proto3" json:"include_experimental,omitempty"`
 	// A build must be in this build range.
-	// A pair of SearchBuildsRequest.predicate.build.end_build_id and
+	// A pair of SearchBuildsRequest.predicate.build.start_build_id and
 	// SearchBuildsRequest.page_size=1 can be used to find the previous build.
 	Build *BuildRange `protobuf:"bytes,9,opt,name=build,proto3" json:"build,omitempty"`
 	// A build must have a matching value of Build.infra.buildbucket.canary.
