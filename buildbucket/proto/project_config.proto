@@ -280,9 +280,9 @@ message Builder {
   // Builder category. Will be used for visual grouping, for example in Code Review.
   string category = 6;
 
-  // Will be become to swarming task tags.
-  // Each tag will end up in "swarming_tag" buildbucket tag, for example
-  // "swarming_tag:builder:release"
+  // DEPRECATED.
+  // Used only to enable "vpython:native-python-wrapper"
+  // Does NOT actually propagate to swarming.
   repeated string swarming_tags = 2;
 
   // A requirement for a bot to execute the build.
