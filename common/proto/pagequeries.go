@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpc
+package proto
 
 import (
 	"context"
 	"reflect"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 
@@ -26,76 +25,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/auth"
-
-	"go.chromium.org/luci/gce/vmtoken"
 )
-
-const (
-	admins  = "gce-provider-administrators"
-	readers = "gce-provider-readers"
-	writers = "gce-provider-writers"
-)
-
-// isReadOnly returns whether the given method name is for a read-only method.
-func isReadOnly(methodName string) bool {
-	return strings.HasPrefix(methodName, "Get") || strings.HasPrefix(methodName, "List")
-}
-
-// readOnlyAuthPrelude ensures the user is authorized to use read API methods.
-// Always returns permission denied for write API methods.
-func readOnlyAuthPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	if !isReadOnly(methodName) {
-		return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
-	}
-	switch is, err := auth.IsMember(c, admins, writers, readers); {
-	case err != nil:
-		return c, err
-	case is:
-		logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
-		return c, nil
-	}
-	return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
-}
-
-// isVMAccessible returns whether the given method name may be accessed by VMs.
-// Methods here must perform additional authorization checks if vmtoken.Has
-// returns true.
-func isVMAccessible(methodName string) bool {
-	return methodName == "Get"
-}
-
-// vmAccessPrelude ensures the user is authorized to use the API or has
-// presented a valid GCE VM token and is attempting to use VM-accessible API.
-// Users of this prelude must perform additional authorization checks in methods
-// accepted by isVMAccessible.
-func vmAccessPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	groups := []string{admins, writers}
-	if isReadOnly(methodName) {
-		groups = append(groups, readers)
-	}
-	switch is, err := auth.IsMember(c, groups...); {
-	case err != nil:
-		return c, err
-	case is:
-		logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
-		// Remove the VM token to avoid restricting the user's broad access.
-		return vmtoken.Clear(c), nil
-	case isVMAccessible(methodName) && vmtoken.Has(c):
-		logging.Debugf(c, "%s called %q:\n%s", vmtoken.CurrentIdentity(c), methodName, req)
-		return c, nil
-	}
-	return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
-}
-
-// gRPCifyAndLogErr ensures any error being returned is a gRPC error, logging Internal and Unknown errors.
-func gRPCifyAndLogErr(c context.Context, methodName string, rsp proto.Message, err error) error {
-	return grpcutil.GRPCifyAndLogErr(c, err)
-}
-
-// TODO(smut): Move paged request handling to a common package outside gce.
 
 // PagedRequest is an interface implemented by ListRequests which support
 // page tokens and page sizes.
@@ -125,7 +55,7 @@ var cursorCBType = reflect.TypeOf((datastore.CursorCB)(nil))
 // returnedNil is a []reflect.Value{} containing one nil error.
 var returnedNil = reflect.ValueOf(func() error { return nil }).Call([]reflect.Value{})
 
-// pageQuery executes a query to fetch the results page specified by the given
+// PageQuery executes a query to fetch the results page specified by the given
 // request, invoking a callback function for each key or entity returned by the
 // query. If the page isn't the last of the query, the given response will have
 // its next page token set appropriately.
@@ -135,8 +65,8 @@ var returnedNil = reflect.ValueOf(func() error { return nil }).Call([]reflect.Va
 // the returned entity into. The callback should return an error, which if not
 // nil halts the query, and if the error is not datastore.Stop, causes this
 // function to return an error as well. See datastore.Run for more information.
-// No maximum page size is imposed, use datastore.Stop to achieve one.
-func pageQuery(c context.Context, req PagedRequest, rsp PagedResponse, q *datastore.Query, cb interface{}) error {
+// No maximum page size is imposed, use datastore.Stop to enforce one.
+func PageQuery(c context.Context, req PagedRequest, rsp PagedResponse, q *datastore.Query, cb interface{}) error {
 	// Validate as much about the callback as this function relies on.
 	// The rest is validated by datastore.Run.
 	v := reflect.ValueOf(cb)
@@ -182,22 +112,18 @@ func pageQuery(c context.Context, req PagedRequest, rsp PagedResponse, q *datast
 		}
 		// Invoke the callback. Per t, it returns one argument (the error).
 		ret := v.Call([]reflect.Value{args[0]})
-		// If the callback returned datastore.Stop, act as if this is the last result
-		// requested by the page size. If it returned a different error, halt with
-		// that error immediately (and don't fetch the cursor).
-		if ret[0].Interface() == datastore.Stop {
-			i = lim
-		} else if !ret[0].IsNil() {
-			return ret
-		}
-		// If this is the last result requested by the page size or datastore.Stop was
-		// returned, save the cursor but only set it if there are more results.
-		if i == lim {
+		// Fetch the cursor if this is the last requested record.
+		if (i == lim && ret[0].IsNil()) || ret[0].Interface() == datastore.Stop {
 			var err error
 			cur, err = args[1].Interface().(datastore.CursorCB)()
 			if err != nil {
 				return []reflect.Value{reflect.ValueOf(errors.Annotate(err, "failed to fetch cursor").Err())}
 			}
+			// Fetch the next result, if there is one, without invoking the callback
+			// by overriding the return value to not halt the query and setting i to
+			// the last requested result.
+			i = lim
+			ret = returnedNil
 		}
 		return ret
 	}).Interface()
@@ -209,7 +135,7 @@ func pageQuery(c context.Context, req PagedRequest, rsp PagedResponse, q *datast
 	// rsp.NextPageToken should be set if q had more results than the requested
 	// page size or after datastore.Stop was returned by the callback. In any other
 	// case, there are no more results so the cursor should be omitted.
-	if i > req.GetPageSize() && cur != nil {
+	if i > lim && cur != nil {
 		v := reflect.ValueOf(rsp).Elem()
 		f := v.FieldByName("NextPageToken")
 		f.SetString(cur.String())

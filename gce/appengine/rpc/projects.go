@@ -82,25 +82,12 @@ func (*Projects) Get(c context.Context, req *projects.GetRequest) (*projects.Con
 
 // List handles a request to list all projects.
 func (*Projects) List(c context.Context, req *projects.ListRequest) (*projects.ListResponse, error) {
-	q, err := pageQuery(c, req, datastore.NewQuery(model.ProjectKind))
-	if err != nil {
-		return nil, err
-	}
 	rsp := &projects.ListResponse{}
-	var getCur datastore.CursorCB
-	if err := datastore.Run(c, q, func(p *model.Project, f datastore.CursorCB) error {
+	if err := pageQuery(c, req, rsp, datastore.NewQuery(model.ProjectKind), func(p *model.Project) error {
 		rsp.Projects = append(rsp.Projects, &p.Config)
-		getCur = f
 		return nil
 	}); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch projects").Err()
-	}
-	if getCur != nil {
-		cur, err := getCur()
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to fetch cursor").Err()
-		}
-		rsp.NextPageToken = cur.String()
+		return nil, err
 	}
 	return rsp, nil
 }
