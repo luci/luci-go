@@ -1,0 +1,33 @@
+// Copyright 2019 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package examples;
+
+// An example request to list existing records. Demonstrates usage of standard
+// fields.
+//
+// https://cloud.google.com/apis/design/standard_fields
+message ListRequest {
+  // The value of next_page_token received in a ListResponse. Used to get the
+  // next page of records. If empty, gets the first page.
+  string page_token = 1;
+
+  // The maximum number of results to include in the response.
+  int32 page_size = 2;
+}
+
+// An example response to a request to list records. Demonstrates usage of
+// standard fields.
+//
+// https://cloud.google.com/apis/design/standard_fields
+message ListResponse {
+  // The record.
+  repeated string records = 1;
+
+  // The value to use as the page_token in a ListRequest to get the next page of
+  // records. If empty, there are no more records.
+  string next_page_token = 2;
+}

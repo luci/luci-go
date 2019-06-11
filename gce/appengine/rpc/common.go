@@ -23,7 +23,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -91,30 +90,4 @@ func vmAccessPrelude(c context.Context, methodName string, req proto.Message) (c
 // gRPCifyAndLogErr ensures any error being returned is a gRPC error, logging Internal and Unknown errors.
 func gRPCifyAndLogErr(c context.Context, methodName string, rsp proto.Message, err error) error {
 	return grpcutil.GRPCifyAndLogErr(c, err)
-}
-
-// PagedRequest is an interface implemented by ListRequests which support
-// page tokens and page sizes.
-type PagedRequest interface {
-	// GetPageSize returns the maximum number of results to fetch.
-	GetPageSize() int32
-	// GetPageToken returns a token for fetching a specific page of results.
-	GetPageToken() string
-}
-
-// pageQuery returns a query to fetch the page specified by the given request.
-func pageQuery(c context.Context, req PagedRequest, q *datastore.Query) (*datastore.Query, error) {
-	if tok := req.GetPageToken(); tok != "" {
-		cur, err := datastore.DecodeCursor(c, tok)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid page token %q", tok)
-		}
-		q = q.Start(cur)
-	}
-	lim := req.GetPageSize()
-	if lim < 1 || lim > 200 {
-		lim = 200
-	}
-	q = q.Limit(lim)
-	return q, nil
 }
