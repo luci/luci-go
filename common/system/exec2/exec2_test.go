@@ -80,6 +80,10 @@ func TestExec(t *testing.T) {
 
 			cmd := CommandContext(ctx, testBinary)
 
+			// This is for debug of crbug.com/972695 .
+			cmd.cmd.Stdout = os.Stdout
+			cmd.cmd.Stderr = os.Stderr
+
 			So(cmd.Start(), ShouldBeNil)
 
 			So(cmd.Wait(time.Millisecond), ShouldEqual, ErrTimeout)
