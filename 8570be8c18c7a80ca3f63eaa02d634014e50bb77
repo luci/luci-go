@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "3c29e698_55159f86",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-11T08:45:42Z",
+      "side": 1,
+      "message": "Are you going to add user of this function in coming CL?\nSince this is cmdrunner package, I thought runCommand might become publicly accessible.",
+      "range": {
+        "startLine": 167,
+        "startChar": 4,
+        "endLine": 167,
+        "endChar": 15
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "272c31bc_c45c7a79",
         "filename": "cmdrunner/command.go",
         "patchSetId": 6
