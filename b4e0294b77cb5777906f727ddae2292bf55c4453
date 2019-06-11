@@ -46,6 +46,30 @@
       "revId": "b4e0294b77cb5777906f727ddae2292bf55c4453",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0c1a2a9_57408dd7",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-11T20:01:50Z",
+      "side": 1,
+      "message": "i\u0027m asking for a case where recipe creates a child buildbucket build (also left for you a comment in go/luci-cancel-tryjobs )",
+      "parentUuid": "7f24c3e9_e04c0bda",
+      "range": {
+        "startLine": 285,
+        "startChar": 1,
+        "endLine": 285,
+        "endChar": 45
+      },
+      "revId": "b4e0294b77cb5777906f727ddae2292bf55c4453",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
