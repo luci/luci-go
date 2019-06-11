@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e8bfad32_8d215ab7",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-11T13:25:13Z",
+      "side": 1,
+      "message": "You can inline into next line",
+      "revId": "6fc9bf175b57badaaa0f9798970d218400189c7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bcb4331_22e35e5f",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-11T13:25:13Z",
+      "side": 1,
+      "message": "You can inline into next line",
+      "revId": "6fc9bf175b57badaaa0f9798970d218400189c7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
