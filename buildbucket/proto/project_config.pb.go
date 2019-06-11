@@ -318,9 +318,9 @@ type Builder struct {
 	Mixins []string `protobuf:"bytes,10,rep,name=mixins,proto3" json:"mixins,omitempty"`
 	// Builder category. Will be used for visual grouping, for example in Code Review.
 	Category string `protobuf:"bytes,6,opt,name=category,proto3" json:"category,omitempty"`
-	// Will be become to swarming task tags.
-	// Each tag will end up in "swarming_tag" buildbucket tag, for example
-	// "swarming_tag:builder:release"
+	// DEPRECATED.
+	// Used only to enable "vpython:native-python-wrapper"
+	// Does NOT actually propagate to swarming.
 	SwarmingTags []string `protobuf:"bytes,2,rep,name=swarming_tags,json=swarmingTags,proto3" json:"swarming_tags,omitempty"`
 	// A requirement for a bot to execute the build.
 	//
