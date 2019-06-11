@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b4e4fa99_4b848a13",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-11T08:46:39Z",
+      "side": 1,
+      "message": "runCommand sounds a bit redundant if we use this package name.  maybe Run if the function become public?",
+      "parentUuid": "3c29e698_55159f86",
+      "range": {
+        "startLine": 167,
+        "startChar": 4,
+        "endLine": 167,
+        "endChar": 15
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "272c31bc_c45c7a79",
         "filename": "cmdrunner/command.go",
         "patchSetId": 6
