@@ -18,9 +18,6 @@ package cq.recipe;
 
 option go_package = "go.chromium.org/luci/cq/api/recipe/v1;recipe";
 
-import "go.chromium.org/luci/buildbucket/proto/common.proto";
-
-
 // Input provides CQ metadata for CQ-triggered tryjob.
 message Input {
   // If active is false, CQ isn't active for the current build.
@@ -40,33 +37,4 @@ message Input {
   // One possible use is to distinguish which builds must be cancelled manually,
   // and which (top_level=True) CQ would cancel itself.
   bool top_level = 4;
-
-  // List of CLs constituting CQ attempt for which this build was triggered.
-  //
-  // The CLs are ordered s.t. applying them in this order approximately
-  // minimizes the number of CLs that will be applied before their dependencies
-  // *for the same repository*.
-  //
-  // For example, with 5 CLs spanning 2 projects like this:
-  //         A2 -> A1
-  //         ^     |       ("X -> Y" denotes X depends on Y)
-  //         |     v
-  //   B3 -> B2 -> B1
-  //
-  // [A1, A2, B1, B2, B3] and [B1, A1, A2, B2, B3] are among many possible
-  // orders.
-  //
-  // In case of loops within the same repo, (e.g., A1 <-> A2), the loop is broken
-  // off arbitrarily but deterministically, meaning both [A1, A2] and [A2, A1]
-  // orders are valid though CQ would choose the same one for each build within
-  // the same attempt.
-  repeated CL cls = 5;
-}
-
-message CL {
-  // Source of this CL. Currently, only Gerrit is supported.
-  oneof source {
-    // Gerrit CL, aka change.
-    buildbucket.v2.GerritChange gerrit = 1;
-  }
 }
