@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ceb3a61e_0be0d807",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-11T17:41:06Z",
+      "side": 1,
+      "message": "is this actually true today already or merely the intent?\n\nAlso, how do you think we should tell child buildbucket task that its lifetime ought to be limited to parent swarming task? \n(ie swarming tree cancelation desing doc)",
+      "range": {
+        "startLine": 285,
+        "startChar": 1,
+        "endLine": 285,
+        "endChar": 45
+      },
+      "revId": "b4e0294b77cb5777906f727ddae2292bf55c4453",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
