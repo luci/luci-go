@@ -18,6 +18,7 @@ import (
 	"os"
 	"sync"
 	"syscall"
+	"unsafe"
 
 	"golang.org/x/sys/windows"
 
@@ -27,6 +28,39 @@ import (
 
 var devnull *os.File
 var devnullonce sync.Once
+
+func iterateChildThreads(pid uint32, f func(uint32) error) error {
+	handle, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPTHREAD, pid)
+	if err != nil {
+		return errors.Annotate(err, "failed to get snapshot").Err()
+	}
+	defer windows.CloseHandle(handle)
+
+	var threadEntry windows.ThreadEntry32
+	threadEntry.Size = uint32(unsafe.Sizeof(threadEntry))
+
+	if err := windows.Thread32First(handle, &threadEntry); err != nil {
+		if serr, ok := err.(syscall.Errno); !ok || serr != windows.ERROR_NO_MORE_FILES {
+			return errors.Annotate(err, "failed to call Thread32First").Err()
+		}
+		return nil
+	}
+
+	for {
+		if pid == threadEntry.OwnerProcessID {
+			if err := f(threadEntry.ThreadID); err != nil {
+				return err
+			}
+		}
+
+		if err := windows.Thread32Next(handle, &threadEntry); err != nil {
+			if serr, ok := err.(syscall.Errno); !ok || serr != windows.ERROR_NO_MORE_FILES {
+				return errors.Annotate(err, "failed to call Thread32First").Err()
+			}
+			return nil
+		}
+	}
+}
 
 type attr struct {
 	jobMu sync.Mutex
