@@ -94,6 +94,30 @@
       "revId": "5b4e8b0879fdf19f85db2623879ec2434cb18298",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "144fbf7a_84162fe3",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-11T14:21:15Z",
+      "side": 1,
+      "message": "A small comment to highlight the subtlety about the two, and the fact that a console is created, would be useful since this is not clear at all from reading the code (including the python one, my fault)",
+      "parentUuid": "3d677c29_0869d5df",
+      "range": {
+        "startLine": 126,
+        "startChar": 49,
+        "endLine": 126,
+        "endChar": 65
+      },
+      "revId": "5b4e8b0879fdf19f85db2623879ec2434cb18298",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
