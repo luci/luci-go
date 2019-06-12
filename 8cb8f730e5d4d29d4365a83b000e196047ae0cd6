@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e0b3709_33f8291c",
+        "filename": "common/system/exec2/testdata/timeout.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-12T13:11:21Z",
+      "side": 0,
+      "message": "Oh right the deadlock detector, sorry I hadn\u0027t thought about that.",
+      "revId": "8cb8f730e5d4d29d4365a83b000e196047ae0cd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
