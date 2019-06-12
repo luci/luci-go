@@ -91,13 +91,13 @@ func TestExec(t *testing.T) {
 			So(cmd.Terminate(), ShouldBeNil)
 
 			if runtime.GOOS == "windows" {
-				So(cmd.Wait(time.Minute), ShouldBeError, "exit status 1")
+				So(cmd.Wait(time.Minute), ShouldBeError, "exit status 2")
 			} else {
 				So(cmd.Wait(time.Minute).Error(), ShouldEqual, "signal: terminated")
 			}
 
 			if runtime.GOOS == "windows" {
-				So(cmd.ExitCode(), ShouldEqual, 1)
+				So(cmd.ExitCode(), ShouldEqual, 2)
 			} else {
 				So(cmd.ExitCode(), ShouldEqual, -1)
 			}
