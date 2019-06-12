@@ -606,7 +606,8 @@ func (m *Builder) GetTaskTemplateCanaryPercentage() *wrappers.UInt32Value {
 // bot and left some files in the builder cache and then a "b" build runs on
 // the same bot, the same files will be available in the builder cache.
 type Builder_CacheEntry struct {
-	// Identifier of the cache. Required. Length is limited to 128.
+	// Identifier of the cache. Length is limited to 128.
+	// Defaults to path.
 	// See also BuildInfra.Swarming.CacheEntry.name in build.proto.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Relative path where the cache in mapped into. Required.

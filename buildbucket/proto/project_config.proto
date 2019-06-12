@@ -101,7 +101,8 @@ message Builder {
   // bot and left some files in the builder cache and then a "b" build runs on
   // the same bot, the same files will be available in the builder cache.
   message CacheEntry {
-    // Identifier of the cache. Required. Length is limited to 128.
+    // Identifier of the cache. Length is limited to 128.
+    // Defaults to path.
     // See also BuildInfra.Swarming.CacheEntry.name in build.proto.
     string name = 1;
 
