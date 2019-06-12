@@ -69,6 +69,30 @@
       "revId": "691aa3753679a1f3862d3baf5c6ba0f218623a22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4819523a_9ea46719",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-12T18:54:08Z",
+      "side": 1,
+      "message": "done\n\nhowever authctx.Context.KnownGerritHosts does not have \"public\" work in it :/ would you rename that too?",
+      "parentUuid": "fdc7712d_9774d728",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 73
+      },
+      "revId": "691aa3753679a1f3862d3baf5c6ba0f218623a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
