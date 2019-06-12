@@ -93,6 +93,30 @@
       "revId": "691aa3753679a1f3862d3baf5c6ba0f218623a22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04cff573_b68eb28d",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-12T22:22:58Z",
+      "side": 1,
+      "message": "imo, longer flag is better than a confusing one. I first read it as \"must predeclare all GoB hosts we need access to\", but really is \"predeclare public hosts if you want higher quota\"",
+      "parentUuid": "4819523a_9ea46719",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 73
+      },
+      "revId": "691aa3753679a1f3862d3baf5c6ba0f218623a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
