@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "fd6fcbaf_50f2fab7",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-12T07:13:59Z",
+      "side": 1,
+      "message": "why do we always need to go to end?\nin other words, why cannot we return here?",
+      "range": {
+        "startLine": 188,
+        "startChar": 2,
+        "endLine": 188,
+        "endChar": 10
+      },
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a368118_2c3488b6",
         "filename": "cmdrunner/command.go",
         "patchSetId": 7
@@ -47,6 +70,29 @@
       "writtenOn": "2019-06-11T14:06:14Z",
       "side": 1,
       "message": "Add a comment about to note that this is the failure path, something like:\n\n  // Process didn\u0027t exit in time after a nudge, try to kill it.",
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1ddb0d5_59704531",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-12T07:13:59Z",
+      "side": 1,
+      "message": "I started to think we can write code with:\ndefer func() {\nif err !\u003d nil {\n  // do something for failure case.\n}\n}()\n\nI am not confident this is the best, though.",
+      "range": {
+        "startLine": 217,
+        "startChar": 0,
+        "endLine": 217,
+        "endChar": 8
+      },
       "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
