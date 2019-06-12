@@ -18,12 +18,22 @@ syntax = "proto3";
 
 package buildbucket;
 
+import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
+
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
 // Schema of settings.cfg file, a service config.
 message SettingsCfg {
   // Swarmbucket settings.
   SwarmingSettings swarming = 1;
+  LogDogSettings logdog = 2;
+
+  // List of Gerrit hosts to force git authentication for.
+  //
+  // By default public hosts are accessed anonymously, and the anonymous access
+  // has very low quota. Context needs to know all such hostnames in advance to
+  // be able to force authenticated access to them.
+  repeated string known_public_gerrit_hosts = 3;
 }
 
 // Swarmbucket settings.
@@ -34,4 +44,13 @@ message SwarmingSettings {
   // Default value of swarming.task_template_canary_percentage field in
   // cr-buildbucket.cfg files.
   int32 default_task_template_canary_percentage = 3;
+
+  // These caches are available to all builders implicitly.
+  // A builder may override a cache specified here.
+  repeated Builder.CacheEntry global_caches = 4;
+}
+
+message LogDogSettings {
+  // Hostname of the LogDog instance to use, e.g. "logs.chromium.org".
+  string hostname = 1;
 }
