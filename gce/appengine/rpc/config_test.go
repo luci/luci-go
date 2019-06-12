@@ -251,6 +251,7 @@ func TestConfig(t *testing.T) {
 						rsp, err := srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Configs, ShouldHaveLength, 1)
+						So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
@@ -261,6 +262,7 @@ func TestConfig(t *testing.T) {
 						rsp, err = srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Configs, ShouldHaveLength, 1)
+						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
 
 					Convey("two", func() {
@@ -270,11 +272,13 @@ func TestConfig(t *testing.T) {
 						rsp, err := srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Configs, ShouldHaveLength, 2)
+						So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Configs, ShouldHaveLength, 1)
+						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
 
 					Convey("many", func() {
@@ -284,11 +288,7 @@ func TestConfig(t *testing.T) {
 						rsp, err := srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Configs, ShouldHaveLength, 3)
-
-						req.PageToken = rsp.NextPageToken
-						rsp, err = srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldBeEmpty)
+						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
 				})
 			})

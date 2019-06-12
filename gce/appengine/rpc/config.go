@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -84,25 +85,12 @@ func (*Config) Get(c context.Context, req *config.GetRequest) (*config.Config, e
 
 // List handles a request to list all configs.
 func (*Config) List(c context.Context, req *config.ListRequest) (*config.ListResponse, error) {
-	q, err := pageQuery(c, req, datastore.NewQuery(model.ConfigKind))
-	if err != nil {
-		return nil, err
-	}
 	rsp := &config.ListResponse{}
-	var getCur datastore.CursorCB
-	if err := datastore.Run(c, q, func(cfg *model.Config, f datastore.CursorCB) error {
+	if err := proto.PageQuery(c, req, rsp, datastore.NewQuery(model.ConfigKind), func(cfg *model.Config) error {
 		rsp.Configs = append(rsp.Configs, &cfg.Config)
-		getCur = f
 		return nil
 	}); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch configs").Err()
-	}
-	if getCur != nil {
-		cur, err := getCur()
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to fetch cursor").Err()
-		}
-		rsp.NextPageToken = cur.String()
+		return nil, err
 	}
 	return rsp, nil
 }

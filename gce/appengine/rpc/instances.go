@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto"
 
 	"go.chromium.org/luci/gce/api/instances/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -180,10 +181,7 @@ func (*Instances) Get(c context.Context, req *instances.GetRequest) (*instances.
 
 // List handles a request to list instances.
 func (*Instances) List(c context.Context, req *instances.ListRequest) (*instances.ListResponse, error) {
-	q, err := pageQuery(c, req, datastore.NewQuery(model.VMKind))
-	if err != nil {
-		return nil, err
-	}
+	q := datastore.NewQuery(model.VMKind)
 	if req.GetPrefix() != "" {
 		q = q.Eq("prefix", req.Prefix)
 	}
@@ -199,20 +197,11 @@ func (*Instances) List(c context.Context, req *instances.ListRequest) (*instance
 	}
 
 	rsp := &instances.ListResponse{}
-	var getCur datastore.CursorCB
-	if err = datastore.Run(c, q, func(vm *model.VM, f datastore.CursorCB) error {
+	if err := proto.PageQuery(c, req, rsp, q, func(vm *model.VM) error {
 		rsp.Instances = append(rsp.Instances, toInstance(vm))
-		getCur = f
 		return nil
 	}); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch instances").Err()
-	}
-	if getCur != nil {
-		cur, err := getCur()
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to fetch cursor").Err()
-		}
-		rsp.NextPageToken = cur.String()
+		return nil, err
 	}
 	return rsp, nil
 }

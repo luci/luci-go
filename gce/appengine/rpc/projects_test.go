@@ -107,16 +107,19 @@ func TestProjects(t *testing.T) {
 						}
 						rsp, err := srv.List(c, req)
 						So(err, ShouldBeNil)
+						So(rsp.NextPageToken, ShouldNotBeEmpty)
 						So(rsp.Projects, ShouldHaveLength, 1)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
 						So(err, ShouldBeNil)
+						So(rsp.NextPageToken, ShouldNotBeEmpty)
 						So(rsp.Projects, ShouldHaveLength, 1)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
 						So(err, ShouldBeNil)
+						So(rsp.NextPageToken, ShouldBeEmpty)
 						So(rsp.Projects, ShouldHaveLength, 1)
 					})
 
@@ -126,11 +129,13 @@ func TestProjects(t *testing.T) {
 						}
 						rsp, err := srv.List(c, req)
 						So(err, ShouldBeNil)
+						So(rsp.NextPageToken, ShouldNotBeEmpty)
 						So(rsp.Projects, ShouldHaveLength, 2)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
 						So(err, ShouldBeNil)
+						So(rsp.NextPageToken, ShouldBeEmpty)
 						So(rsp.Projects, ShouldHaveLength, 1)
 					})
 
@@ -140,12 +145,8 @@ func TestProjects(t *testing.T) {
 						}
 						rsp, err := srv.List(c, req)
 						So(err, ShouldBeNil)
+						So(rsp.NextPageToken, ShouldBeEmpty)
 						So(rsp.Projects, ShouldHaveLength, 3)
-
-						req.PageToken = rsp.NextPageToken
-						rsp, err = srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Projects, ShouldBeEmpty)
 					})
 				})
 			})

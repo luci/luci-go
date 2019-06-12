@@ -119,18 +119,21 @@ func TestInstances(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(rsp.Instances, ShouldHaveLength, 1)
 						So(rsp.Instances[0].Id, ShouldEqual, "id1")
+						So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Instances, ShouldHaveLength, 1)
 						So(rsp.Instances[0].Id, ShouldEqual, "id2")
+						So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Instances, ShouldHaveLength, 1)
 						So(rsp.Instances[0].Id, ShouldEqual, "id3")
+						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
 
 					Convey("two", func() {
@@ -140,11 +143,13 @@ func TestInstances(t *testing.T) {
 						rsp, err := srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Instances, ShouldHaveLength, 2)
+						So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Instances, ShouldHaveLength, 1)
+						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
 
 					Convey("many", func() {
@@ -154,11 +159,7 @@ func TestInstances(t *testing.T) {
 						rsp, err := srv.List(c, req)
 						So(err, ShouldBeNil)
 						So(rsp.Instances, ShouldHaveLength, 3)
-
-						req.PageToken = rsp.NextPageToken
-						rsp, err = srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Instances, ShouldBeEmpty)
+						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
 				})
 
