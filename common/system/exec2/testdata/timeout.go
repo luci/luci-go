@@ -14,6 +14,10 @@
 
 package main
 
+import "time"
+
 func main() {
-	select {}
+	for {
+		time.Sleep(time.Second)
+	}
 }
