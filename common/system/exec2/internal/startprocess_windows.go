@@ -148,9 +148,9 @@ func LookExtensions(path, dir string) (string, error) {
 }
 
 // StartProcess is almost copy of syscall.StarProcess, but returns thread handle without closing it.
-func StartProcess(argv0 string, argv []string, attr *syscall.ProcAttr) (process windows.Handle, thread windows.Handle, err error) {
+func StartProcess(argv0 string, argv []string, attr *syscall.ProcAttr) (pid uint32, process windows.Handle, thread windows.Handle, err error) {
 	if len(argv0) == 0 {
-		return 0, 0, syscall.EWINDOWS
+		return 0, 0, 0, syscall.EWINDOWS
 	}
 	if attr == nil {
 		attr = &zeroProcAttr
@@ -161,11 +161,11 @@ func StartProcess(argv0 string, argv []string, attr *syscall.ProcAttr) (process 
 	}
 
 	if len(attr.Files) > 3 {
-		return 0, 0, syscall.EWINDOWS
+		return 0, 0, 0, syscall.EWINDOWS
 	}
 
 	if len(attr.Files) < 3 {
-		return 0, 0, syscall.EINVAL
+		return 0, 0, 0, syscall.EINVAL
 	}
 
 	if len(attr.Dir) != 0 {
@@ -178,12 +178,12 @@ func StartProcess(argv0 string, argv []string, attr *syscall.ProcAttr) (process 
 		var err error
 		argv0, err = joinExeDirAndFName(attr.Dir, argv0)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, 0, err
 		}
 	}
 	argv0p, err := syscall.UTF16PtrFromString(argv0)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 
 	var cmdline string
@@ -200,7 +200,7 @@ func StartProcess(argv0 string, argv []string, attr *syscall.ProcAttr) (process 
 	if len(cmdline) != 0 {
 		argvp, err = syscall.UTF16PtrFromString(cmdline)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, 0, err
 		}
 	}
 
@@ -208,7 +208,7 @@ func StartProcess(argv0 string, argv []string, attr *syscall.ProcAttr) (process 
 	if len(attr.Dir) != 0 {
 		dirp, err = syscall.UTF16PtrFromString(attr.Dir)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, 0, err
 		}
 	}
 
@@ -224,7 +224,7 @@ func StartProcess(argv0 string, argv []string, attr *syscall.ProcAttr) (process 
 		if attr.Files[i] > 0 {
 			err := syscall.DuplicateHandle(p, syscall.Handle(attr.Files[i]), p, &fd[i], 0, true, syscall.DUPLICATE_SAME_ACCESS)
 			if err != nil {
-				return 0, 0, err
+				return 0, 0, 0, err
 			}
 			defer syscall.CloseHandle(syscall.Handle(fd[i]))
 		}
@@ -249,8 +249,8 @@ func StartProcess(argv0 string, argv []string, attr *syscall.ProcAttr) (process 
 		err = syscall.CreateProcess(argv0p, argvp, nil, nil, true, flags, createEnvBlock(attr.Env), dirp, si, pi)
 	}
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 
-	return windows.Handle(pi.Process), windows.Handle(pi.Thread), nil
+	return pi.ProcessId, windows.Handle(pi.Process), windows.Handle(pi.Thread), nil
 }

@@ -66,6 +66,7 @@ type attr struct {
 	jobMu sync.Mutex
 	job   windows.Handle
 
+	pid      uint32
 	process  windows.Handle
 	exitCode int
 }
@@ -111,11 +112,12 @@ func (c *Cmd) start() error {
 		return errors.Annotate(err, "failed to call lookExtensions").Err()
 	}
 	c.cmd.Path = lp
-	process, thread, err := internal.StartProcess(c.cmd.Path, c.cmd.Args, sysattr)
+	pid, process, thread, err := internal.StartProcess(c.cmd.Path, c.cmd.Args, sysattr)
 	if err != nil {
 		return errors.Annotate(err, "failed to call startProcess").Err()
 	}
 	defer windows.CloseHandle(thread)
+	c.attr.pid = pid
 	c.attr.process = process
 
 	success := false
@@ -155,8 +157,9 @@ func (c *Cmd) start() error {
 }
 
 func (c *Cmd) terminate() error {
-	// TODO(tikuta): use GenerateConsoleCtrlEvent
-	return c.kill()
+	// Child process is created with CREATE_NEW_CONSOLE flag.
+	// And we use CTRL_C_EVENT here to send signal only to the child process instead of whole process group.
+	return windows.GenerateConsoleCtrlEvent(windows.CTRL_C_EVENT, c.attr.pid)
 }
 
 func (c *Cmd) wait() error {
