@@ -37,7 +37,7 @@ import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 // a build at completion time and does not change after that.
 // All fields are included.
 //
-// Next id: 26.
+// Next id: 28.
 message Build {
   // Defines what to build/test.
   //
@@ -224,6 +224,17 @@ message Build {
 
   // If true, use the canary build infrastructure.
   bool canary = 25;
+
+  // Maximum build pending time.
+  // If the timeout is reached, the build is marked as INFRA_FAILURE status
+  // and both status_details.{timeout, resource_exhaustion} are set.
+  google.protobuf.Duration scheduling_timeout = 26;
+
+  // Maximum build execution time.
+  // Not to be confused with scheduling_timeout.
+  // If the timeout is reached, the build is marked as INFRA_FAILURE status
+  // and status_details.timeout is set.
+  google.protobuf.Duration execution_timeout = 27;
 }
 
 // Build infrastructure that was used for a particular build.
