@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5e17183f_80927397",
+        "filename": "common/system/exec2/exec2_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-12T14:28:47Z",
+      "side": 1,
+      "message": "Used for debugging. reverted.",
+      "parentUuid": "241703f6_5cbcc1aa",
+      "revId": "db3f03555f99beadf2ee7f33c431457555675623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "285bbcdb_f8c12655",
         "filename": "common/system/exec2/exec2_windows.go",
         "patchSetId": 5
@@ -30,6 +48,24 @@
       "writtenOn": "2019-06-12T13:11:21Z",
       "side": 1,
       "message": "Did you forget to rebase?",
+      "revId": "db3f03555f99beadf2ee7f33c431457555675623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10c4ffee_b3bf4737",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-12T14:28:47Z",
+      "side": 1,
+      "message": "This is intentional, I cannot terminate the process with GenerateConsoleCtrlEvent if I use CREATE_NEW_CONSOLE here.",
+      "parentUuid": "285bbcdb_f8c12655",
       "revId": "db3f03555f99beadf2ee7f33c431457555675623",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
