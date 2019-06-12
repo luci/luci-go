@@ -73,7 +73,7 @@ type attr struct {
 
 func (c *Cmd) setupCmd() {
 	c.cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: windows.CREATE_SUSPENDED | windows.CREATE_NEW_CONSOLE,
+		CreationFlags: windows.CREATE_SUSPENDED | windows.CREATE_NEW_PROCESS_GROUP,
 	}
 	c.attr.exitCode = -1
 }
@@ -157,9 +157,9 @@ func (c *Cmd) start() error {
 }
 
 func (c *Cmd) terminate() error {
-	// Child process is created with CREATE_NEW_CONSOLE flag.
-	// And we use CTRL_C_EVENT here to send signal only to the child process instead of whole process group.
-	return windows.GenerateConsoleCtrlEvent(windows.CTRL_C_EVENT, c.attr.pid)
+	// Child process is created with CREATE_NEW_PROCESS_GROUP flag.
+	// And we use CTRL_BREAK_EVENT here to send signal to all child process group instead of a child process.
+	return windows.GenerateConsoleCtrlEvent(windows.CTRL_BREAK_EVENT, c.attr.pid)
 }
 
 func (c *Cmd) wait() error {
