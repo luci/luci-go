@@ -59,12 +59,11 @@ message BotsCfg {
 
 // A group of bots that share authentication method, dimensions and owners.
 //
-// Union of bot_id, bot_id_prefix, and machine_type define a set of bots that
-// belong to this group. The rest of the fields define properties of this group.
+// Union of bot_id and bot_id_prefix define a set of bots that belong to this
+// group. The rest of the fields define properties of this group.
 //
-// If bot_id, bot_id_prefix, and machine_type are all missing, the group defines
-// all bots that didn't fit into other groups. There can be only one such
-// "default" group.
+// If bot_id and bot_id_prefix are both missing, the group defines all bots that
+// didn't fit into other groups. There can be only one such "default" group.
 //
 // TODO(vadimsh): Introduce explicit field "use_as_default" instead.
 message BotGroup {

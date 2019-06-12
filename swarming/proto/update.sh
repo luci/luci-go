@@ -22,11 +22,12 @@ LUCI_ROOT=../../../../../../luci
 echo "- Copy the proto files from luci-py"
 cp ${LUCI_ROOT}/appengine/swarming/proto/api/*.proto api
 cp ${LUCI_ROOT}/appengine/swarming/proto/config/*.proto config
+cp ${LUCI_ROOT}/appengine/swarming/proto/jsonrpc/*.proto jsonrpc
 
 echo "- Fix import path in api/plugin.proto"
 # Fix the import path due to difference between the way Go and python process
 # imports; Go doesn't allow relative import.
-sed -e 's#"swarming\.proto"#"go.chromium.org/luci/swarming/proto/api/swarming.proto"#' -i .bak api/plugin.proto
+sed -e 's#"swarming\.proto"#"go.chromium.org/luci/swarming/proto/api/swarming.proto"#' -i.bak api/plugin.proto
 rm api/plugin.proto.bak
 
 echo "- Regenerate the .pb.go files"
