@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "da3d97e2_4e7ac4e7",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-12T13:12:54Z",
+      "side": 1,
+      "message": "Then it would be a subfunction. I think it\u0027s fine to use a subfunction, but it means passing more arguments. I\u0027m also fine with this. But goto is fine too, there\u0027s no variable aliasing and the code path is linear; versus reentrant for local function closure.",
+      "parentUuid": "fd6fcbaf_50f2fab7",
+      "range": {
+        "startLine": 188,
+        "startChar": 2,
+        "endLine": 188,
+        "endChar": 10
+      },
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a368118_2c3488b6",
         "filename": "cmdrunner/command.go",
         "patchSetId": 7
