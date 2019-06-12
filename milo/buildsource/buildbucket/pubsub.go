@@ -97,6 +97,7 @@ var summaryBuildMask = &field_mask.FieldMask{
 		"tags",
 		"infra.swarming",
 		"input.experimental",
+		"critical",
 	},
 }
 
