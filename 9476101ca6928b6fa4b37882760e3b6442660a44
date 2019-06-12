@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f37841e_67931a79",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-12T09:00:46Z",
+      "side": 1,
+      "message": "please say what happens if this is hit, specifically what state (INFRA_FAILURE, right?)",
+      "revId": "9476101ca6928b6fa4b37882760e3b6442660a44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61d6d2ad_c1db5e82",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-12T09:00:46Z",
+      "side": 1,
+      "message": "same, and in this case i don\u0027t even know what status it\u0027d be by reading https://godoc.org/go.chromium.org/luci/buildbucket/proto#Status",
+      "revId": "9476101ca6928b6fa4b37882760e3b6442660a44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
