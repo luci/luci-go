@@ -86,7 +86,7 @@ func TestExec(t *testing.T) {
 
 			So(cmd.Start(), ShouldBeNil)
 
-			So(cmd.Wait(time.Millisecond), ShouldEqual, ErrTimeout)
+			So(cmd.Wait(100*time.Millisecond), ShouldEqual, ErrTimeout)
 
 			So(cmd.Terminate(), ShouldBeNil)
 
