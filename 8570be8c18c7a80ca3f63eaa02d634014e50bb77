@@ -117,6 +117,30 @@
       "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffdd7444_5b917b93",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-12T07:07:32Z",
+      "side": 1,
+      "message": "In such a case, people would pass channel and select channel and timeout?\n\ndata would be sent via channel and channel closed when command finishes.",
+      "parentUuid": "f214be25_9c6094cc",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 29
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
