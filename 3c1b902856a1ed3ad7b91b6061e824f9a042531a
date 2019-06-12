@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0592e7d5_429bee11",
+        "filename": "swarming/proto/jsonrpc/taskstate.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-12T22:27:04Z",
+      "side": 1,
+      "message": "I just realized you used +4 in the proto. I think we use +2 everywhere else. No need to fix it, it\u0027s not a big deal.",
+      "revId": "3c1b902856a1ed3ad7b91b6061e824f9a042531a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2f81e884_70affbf7",
+        "filename": "swarming/proto/update.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-12T22:27:04Z",
+      "side": 1,
+      "message": "The best code I ever wrote. :)",
+      "revId": "3c1b902856a1ed3ad7b91b6061e824f9a042531a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
