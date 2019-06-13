@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "96ad5ace_28437dc8",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 478,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-13T18:42:46Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 478,
+        "startChar": 19,
+        "endLine": 478,
+        "endChar": 20
+      },
+      "revId": "dbe56a3601121aa4699864d4bbd0d8949c2468a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bd35251_b5c22952",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 504,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-13T18:42:46Z",
+      "side": 1,
+      "message": "why \"\" ?",
+      "range": {
+        "startLine": 504,
+        "startChar": 12,
+        "endLine": 504,
+        "endChar": 13
+      },
+      "revId": "dbe56a3601121aa4699864d4bbd0d8949c2468a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6228cf8e_83ba7860",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-13T18:42:46Z",
+      "side": 1,
+      "message": "unlinked",
+      "range": {
+        "startLine": 564,
+        "startChar": 7,
+        "endLine": 564,
+        "endChar": 14
+      },
+      "revId": "dbe56a3601121aa4699864d4bbd0d8949c2468a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
