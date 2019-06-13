@@ -16,6 +16,7 @@ package fs
 
 import (
 	"os"
+	"syscall"
 )
 
 // See either fs_posix.go or fs_windows.go for implementation of errno*(...)
@@ -40,6 +41,8 @@ func IsAccessDenied(err error) bool {
 
 func innerOSErr(err error) error {
 	switch e := err.(type) {
+	case syscall.Errno:
+		return e
 	case *os.PathError:
 		return e.Err
 	case *os.LinkError:
