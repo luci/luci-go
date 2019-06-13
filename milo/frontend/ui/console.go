@@ -367,6 +367,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 
 	status := "None"
 	link := "#"
+	nonCritical := false
 
 	// Below is a state machine for rendering a single builder's column.
 	// In essence, the state machine takes 3 inputs: the current state, and
@@ -418,11 +419,11 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		}
 
 		console := ""
-		nonCritical := false
 		var nextState int
 		switch state {
 		case empty:
 			console = "empty-cell"
+			nonCritical = false
 			switch {
 			case nextBuild && nextNextBuild:
 				nextState = cell
@@ -435,6 +436,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			console = "cell-top"
 			status = build.Summary.Status.String()
 			link = build.SelfLink()
+			nonCritical = build.Critical == buildbucketpb.Trinary_NO
 			switch {
 			case nextNextBuild:
 				nextState = bottom
