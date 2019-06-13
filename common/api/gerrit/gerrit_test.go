@@ -149,6 +149,33 @@ func TestChangeDetails(t *testing.T) {
 
 }
 
+func TestChangeLabels(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Labels", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n%s\n", fakeCL5Str)
+		})
+		defer srv.Close()
+
+		Convey("All", func() {
+			options := ChangeDetailsParams{Options: []string{"DETAILED_LABELS"}}
+			cl, err := c.ChangeDetails(ctx, "629279", options)
+			So(err, ShouldBeNil)
+			So(len(cl.Labels["Code-Review"].All), ShouldEqual, 2)
+			So(cl.Labels["Code-Review"].All[0].Value, ShouldEqual, -1)
+			So(cl.Labels["Code-Review"].All[0].Username, ShouldEqual, "jdoe")
+			So(cl.Labels["Code-Review"].All[1].Value, ShouldEqual, 1)
+			So(cl.Labels["Code-Review"].All[1].Username, ShouldEqual, "jroe")
+		})
+
+	})
+
+}
+
 func TestCreateChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -592,6 +619,66 @@ var (
 		"_account_id": 1178184
 	    },
 	    "_has_more_changes": true
+	}`
+	fakeCL5Str = `{
+	    "id": "infra%2Finfra~master~Ia292f77ae6bd94afbd746da0b08500f738904d15",
+	    "project": "infra/infra",
+	    "branch": "master",
+	    "hashtags": [],
+	    "change_id": "Ia292f77ae6bd94afbd746da0b08500f738904d15",
+	    "subject": "[Findit] Add flake analyzer forced rerun instructions to makefile.",
+	    "status": "ABANDONED",
+	    "created": "2017-08-23 17:25:40.000000000",
+	    "updated": "2017-08-23 22:51:03.000000000",
+	    "submitted": "2017-08-23 22:51:03.000000000",
+	    "insertions": 4,
+	    "deletions": 1,
+	    "unresolved_comment_count": 0,
+	    "has_review_started": true,
+	    "_number": 629279,
+	    "owner": {
+		"_account_id": 1178184
+	    },
+	    "labels": {
+		 "Verified": {
+			 "all": [{
+				 "value": 0,
+				 "_account_id": 1000096,
+				 "name": "John Doe",
+				 "email": "john.doe@example.com",
+				 "username": "jdoe"
+			 },
+			 {
+				 "value": 0,
+				 "_account_id": 1000097,
+				 "name": "Jane Roe",
+				 "email": "jane.roe@example.com",
+				 "username": "jroe"
+			 }]
+		 },
+		 "Code-Review": {
+			 "disliked": {
+				 "_account_id": 1000096,
+				"name": "John Doe",
+				"email": "john.doe@example.com",
+				"username": "jdoe"
+			},
+			 "all": [{
+				"value": -1,
+				"_account_id": 1000096,
+				"name": "John Doe",
+				"email": "john.doe@example.com",
+				"username": "jdoe"
+			 },
+			 {
+				"value": 1,
+				"_account_id": 1000097,
+				"name": "Jane Roe",
+				"email": "jane.roe@example.com",
+				"username": "jroe"
+			}]
+		}
+	    }
 	}`
 )
 
