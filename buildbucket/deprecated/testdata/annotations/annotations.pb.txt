@@ -102,8 +102,8 @@ substep: <
       url: "https://example.com/1(foo)"
     >
     other_links: <
-      label: "2"
-      url: "https://example.com/2"
+      label: "with-ampersand"
+      url: "https://example.com?a=1&timestamp=2"
     >
   >
 >
