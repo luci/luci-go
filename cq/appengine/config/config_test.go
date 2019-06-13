@@ -316,6 +316,25 @@ func TestValidation(t *testing.T) {
 				g.Projects = append(g.Projects, g.Projects[0])
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "duplicate project in the same gerrit")
+
+				Convey("but dup project blocks allowed during CrOS migration", func() {
+					// first condition: different refs.
+					g.Projects[0].RefRegexp = []string{"refs/one/ref"}
+					g.Projects[1].RefRegexp = []string{"refs/other/ref"}
+					vctx = &validation.Context{Context: c}
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "duplicate project in the same gerrit")
+					// second condition: luci_percentage specified in both places.
+					g.Projects[0].CrosMigration = &v2.ConfigGroup_Gerrit_Project_CrOSMigration{
+						LuciPercentage: 10,
+					}
+					g.Projects[1].CrosMigration = &v2.ConfigGroup_Gerrit_Project_CrOSMigration{
+						LuciPercentage: 20,
+					}
+					vctx = &validation.Context{Context: c}
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldBeNil)
+				})
 			})
 		})
 
