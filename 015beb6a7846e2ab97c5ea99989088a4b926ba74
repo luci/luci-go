@@ -16,6 +16,24 @@
       "revId": "015beb6a7846e2ab97c5ea99989088a4b926ba74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6ec740e_4699a3d7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-13T13:06:13Z",
+      "side": 1,
+      "message": "I will revive exec.Cmd embedding after this, then we can touch its public field and call its public member functions.\nhttps://golang.org/pkg/os/exec/#Cmd\n\nI don\u0027t want to add an wrapper function for that every time we need to use that.",
+      "parentUuid": "1a2cfecf_30aca7bb",
+      "revId": "015beb6a7846e2ab97c5ea99989088a4b926ba74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
