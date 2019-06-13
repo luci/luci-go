@@ -23,7 +23,6 @@ import (
 	"golang.org/x/sys/windows"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/system/exec2/internal"
 )
 
 var devnull *os.File
@@ -65,17 +64,12 @@ func iterateChildThreads(pid uint32, f func(uint32) error) error {
 type attr struct {
 	jobMu sync.Mutex
 	job   windows.Handle
-
-	pid      uint32
-	process  windows.Handle
-	exitCode int
 }
 
 func (c *Cmd) setupCmd() {
 	c.cmd.SysProcAttr = &syscall.SysProcAttr{
 		CreationFlags: windows.CREATE_SUSPENDED | windows.CREATE_NEW_CONSOLE,
 	}
-	c.attr.exitCode = -1
 }
 
 func createJobObject() (windows.Handle, error) {
@@ -91,40 +85,16 @@ func createJobObject() (windows.Handle, error) {
 
 func (c *Cmd) start() error {
 	// TODO(tikuta): use os/exec package if https://github.com/golang/go/issues/32404 is fixed.
-	sysattr := &syscall.ProcAttr{
-		Dir: c.cmd.Dir,
-		Env: c.cmd.Env,
-		Sys: c.cmd.SysProcAttr,
+	if err := c.cmd.Start(); err != nil {
+		return errors.Annotate(err, "failed to start process").Err()
 	}
 
-	if sysattr.Env == nil {
-		sysattr.Env = os.Environ()
-	}
-
-	devnullonce.Do(func() {
-		devnull, _ = os.Open(os.DevNull)
-	})
-
-	sysattr.Files = append(sysattr.Files, devnull.Fd(), os.Stdout.Fd(), os.Stderr.Fd())
-
-	lp, err := internal.LookExtensions(c.cmd.Path, c.cmd.Dir)
-	if err != nil {
-		return errors.Annotate(err, "failed to call lookExtensions").Err()
-	}
-	c.cmd.Path = lp
-	pid, process, thread, err := internal.StartProcess(c.cmd.Path, c.cmd.Args, sysattr)
-	if err != nil {
-		return errors.Annotate(err, "failed to call startProcess").Err()
-	}
-	defer windows.CloseHandle(thread)
-	c.attr.pid = pid
-	c.attr.process = process
+	pid := uint32(c.cmd.Process.Pid)
 
 	success := false
-
 	defer func() {
 		if !success {
-			c.kill()
+			c.cmd.Process.Kill()
 			c.wait()
 		}
 	}()
@@ -144,12 +114,30 @@ func (c *Cmd) start() error {
 	c.attr.job = job
 	c.attr.jobMu.Unlock()
 
+	process, err := windows.OpenProcess(windows.PROCESS_SET_QUOTA|windows.PROCESS_TERMINATE, false, pid)
+	if err != nil {
+		return errors.Annotate(err, "failed to open process handle").Err()
+	}
+	defer windows.CloseHandle(process)
+
 	if err := windows.AssignProcessToJobObject(job, process); err != nil {
 		return errors.Annotate(err, "failed to assign process to job object").Err()
 	}
 
-	if _, err := windows.ResumeThread(thread); err != nil {
-		return errors.Annotate(err, "failed to resume thread").Err()
+	err = iterateChildThreads(pid, func(tid uint32) error {
+		thread, err := windows.OpenThread(windows.THREAD_SUSPEND_RESUME, false, tid)
+		if err != nil {
+			return errors.Annotate(err, "failed to call OpenThread").Err()
+		}
+		defer windows.CloseHandle(thread)
+
+		if _, err := windows.ResumeThread(thread); err != nil {
+			return errors.Annotate(err, "failed to call ResumeThread").Err()
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	success = true
@@ -159,29 +147,13 @@ func (c *Cmd) start() error {
 func (c *Cmd) terminate() error {
 	// Child process is created with CREATE_NEW_CONSOLE flag.
 	// And we use CTRL_C_EVENT here to send signal only to the child process instead of whole process group.
-	return windows.GenerateConsoleCtrlEvent(windows.CTRL_C_EVENT, c.attr.pid)
+	return windows.GenerateConsoleCtrlEvent(windows.CTRL_C_EVENT, uint32(c.cmd.Process.Pid))
 }
 
 func (c *Cmd) wait() error {
-	e, err := windows.WaitForSingleObject(c.attr.process, windows.INFINITE)
-	if err != nil {
-		return errors.Annotate(err, "failed to call WaitForSingleObject").Err()
+	if err := c.cmd.Wait(); err != nil {
+		return errors.Annotate(err, "failed to call Wait").Err()
 	}
-
-	if e != windows.WAIT_OBJECT_0 {
-		return errors.Reason("unknown return value from WaitForSingleObject: %d", e).Err()
-	}
-
-	var ec uint32
-	if err := windows.GetExitCodeProcess(c.attr.process, &ec); err != nil {
-		return errors.Annotate(err, "failed to call GetExitCodeProcess").Err()
-	}
-	c.attr.exitCode = int(ec)
-
-	if err := windows.CloseHandle(c.attr.process); err != nil {
-		return errors.Annotate(err, "failed to close process handle").Err()
-	}
-	c.attr.process = windows.InvalidHandle
 
 	c.attr.jobMu.Lock()
 	if c.attr.job != windows.InvalidHandle {
@@ -191,10 +163,6 @@ func (c *Cmd) wait() error {
 		c.attr.job = windows.InvalidHandle
 	}
 	c.attr.jobMu.Unlock()
-
-	if ec != 0 {
-		return errors.Reason("exit status %d", ec).Err()
-	}
 
 	return nil
 }
@@ -216,5 +184,5 @@ func (c *Cmd) kill() error {
 }
 
 func (c *Cmd) exitCode() int {
-	return c.attr.exitCode
+	return c.cmd.ProcessState.ExitCode()
 }
