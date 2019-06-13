@@ -16,6 +16,24 @@
       "revId": "b43d372d07582b1d643f113e02d07086f3179ca2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09317f30_962fde57",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-13T06:52:43Z",
+      "side": 1,
+      "message": "yep, looks like it didn\u0027t help.\nmilo tests need improvement in general",
+      "parentUuid": "24e95502_c3fa0de4",
+      "revId": "b43d372d07582b1d643f113e02d07086f3179ca2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
