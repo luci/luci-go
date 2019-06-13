@@ -136,6 +136,8 @@ type LabelInfo struct {
 
 	// Blocking reflects whether this label block the submit operation.
 	Blocking bool `json:"blocking,omitempty"`
+
+	All []VoteInfo `json:"all,omitempty"`
 }
 
 // RevisionKind represents the "kind" field for a patch set.
@@ -233,6 +235,12 @@ type AccountInfo struct {
 	// MoreAccounts represents whether the query would deliver more results if not limited.
 	// Only set on the last account that is returned.
 	MoreAccounts bool `json:"_more_accounts,omitempty"`
+}
+
+// VoteInfo is AccountInfo plus a value field, used to represent votes on a label.
+type VoteInfo struct {
+	AccountInfo       // Embedded type
+	Value       int64 `json:"value"`
 }
 
 // ValidateGerritURL validates Gerrit URL for use in this package.
