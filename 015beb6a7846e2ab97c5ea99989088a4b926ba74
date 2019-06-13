@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a2cfecf_30aca7bb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-13T12:04:45Z",
+      "side": 1,
+      "message": "What do we gain from it beside removing 300 lines of code? I mean if it works then we don\u0027t have to touch it it\u0027s fine with me. I want to understand the trade off you are making here.",
+      "revId": "015beb6a7846e2ab97c5ea99989088a4b926ba74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
