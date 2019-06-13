@@ -432,6 +432,8 @@ type ConfigGroup_Gerrit_Project_CrOSMigration struct {
 	// % of new CQ attempts which LUCI CQ will process itself.
 	// The rest will be delegated to legacy CrOS CQ.
 	// If not set, implies 0%, ie all CLs are delegated.
+	// To set these per ref_regexp of a single repo, duplicate project{}
+	// block for this repo but with diff regexp.
 	LuciPercentage       float32  `protobuf:"fixed32,1,opt,name=luci_percentage,json=luciPercentage,proto3" json:"luci_percentage,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
