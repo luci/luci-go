@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -28,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"go.chromium.org/luci/common/data/sortby"
@@ -36,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/internal/retry"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
@@ -242,6 +241,16 @@ const (
 type description struct {
 	Subdir      string `json:"subdir,omitempty"`
 	PackageName string `json:"package_name,omitempty"`
+}
+
+// matches is true if subdir and pkg is what's in the description.
+//
+// nil description doesn't match anything.
+func (d *description) matches(subdir, pkg string) bool {
+	if d == nil {
+		return false
+	}
+	return d.Subdir == subdir && d.PackageName == pkg
 }
 
 // readDescription reads and decodes description JSON from io.Reader.
@@ -779,13 +788,13 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		return "", nil
 	}
 
-	// we didn't find one, so we have to make one
+	// We didn't find one, so we have to make one.
 	if _, err := d.fs.EnsureDirectory(ctx, abs); err != nil {
 		logging.Errorf(ctx, "Cannot ensure packages directory: %s", err)
 		return "", err
 	}
 
-	// take the last 2 components from the pkg path.
+	// Take the last 2 components from the pkg path.
 	pkgParts := strings.Split(pkg, "/")
 	prefix := ""
 	if len(pkgParts) > 2 {
@@ -793,6 +802,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 	} else {
 		prefix = strings.Join(pkgParts, "_")
 	}
+
 	// 0777 allows umask to take effect
 	tmpDir, err := d.TempDir(ctx, prefix, 0777)
 	if err != nil {
@@ -808,47 +818,56 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		return "", err
 	}
 
-	// now we have to find a suitable index folder for it.
-	for attempts := 0; attempts < 3; attempts++ {
-		if attempts > 0 {
-			// random sleep up to 1s to help avoid collisions between clients.
-			time.Sleep(time.Duration(rand.Int31n(1000)) * time.Millisecond)
+	// Now we have to find a suitable index folder for it.
+	waiter := retry.Waiter(ctx, "Collision when picking an index", time.Minute)
+	for {
+		// Pick the next possible candidate by enumerating them until there's an
+		// empty "slot" or we discover an existing directory with our package.
+		var pkgPath string
+		for {
+			n := seenNumbers.smallestNewNum()
+			seenNumbers.addNum(n)
+			pkgPath = filepath.Join(abs, strconv.Itoa(n))
+			if _, err := os.Stat(pkgPath); err != nil {
+				break // either doesn't exist or broken, will find out below
+			}
+			// Maybe someone else created a slot for us already.
+			if desc, _ := d.readDescription(ctx, pkgPath); desc.matches(subdir, pkg) {
+				return pkgPath, nil
+			}
 		}
-		n := seenNumbers.smallestNewNum()
-		seenNumbers.addNum(n)
 
-		pkgPath := filepath.Join(abs, strconv.Itoa(n))
-		// We use os.Rename instead of d.fs.Replace because we want it to fail if
-		// the target directory already exists.
-		switch err := os.Rename(tmpDir, pkgPath); le := err.(type) {
-		case nil:
+		// Try to occupy the slot. We use os.Rename instead of d.fs.Replace because
+		// we want it to fail if the target directory already exists.
+		switch err := os.Rename(tmpDir, pkgPath); {
+		case err == nil:
 			return pkgPath, nil
 
-		case *os.LinkError:
-			if le.Err != syscall.ENOTEMPTY {
-				logging.Errorf(ctx, "Error while creating pkg dir %s: %s", pkgPath, err)
-				return "", err
-			}
-
-		default:
+		// Note that IsAccessDenied is Windows-specific check. ERROR_ACCESS_DENIED
+		// happens on Windows instead of ENOTEMPTY, see the following explanation:
+		// https://github.com/golang/go/issues/14527#issuecomment-189755676
+		case !fs.IsNotEmpty(err) && !fs.IsAccessDenied(err):
 			logging.Errorf(ctx, "Unknown error while creating pkg dir %s: %s", pkgPath, err)
 			return "", err
 		}
 
-		// rename failed with ENOTEMPTY, that means that another client wrote this
-		// directory.
-		description, err := d.readDescription(ctx, pkgPath)
-		if err != nil {
-			logging.Warningf(ctx, "Skipping %q: %s", pkgPath, err)
-			continue
-		}
-		if description.PackageName == pkg && description.Subdir == subdir {
+		// os.Rename failed with ENOTEMPTY, that means that another client wrote
+		// this directory. Maybe it is what we really want.
+		switch desc, err := d.readDescription(ctx, pkgPath); {
+		case desc.matches(subdir, pkg):
 			return pkgPath, nil
+		case err != nil:
+			logging.Warningf(ctx, "Skipping %q: %s", pkgPath, err)
+		}
+
+		// Either description.json is garbage or it's some other package. Pick
+		// another slot a bit later, to give a chance for the concurrent writers to
+		// proceed too.
+		if err := waiter(); err != nil {
+			logging.Errorf(ctx, "Unable to find valid index for package %q in %s!", pkg, abs)
+			return "", fmt.Errorf("unable to find valid index for package %q in %s", pkg, abs)
 		}
 	}
-
-	logging.Errorf(ctx, "Unable to find valid index for package %q in %s!", pkg, abs)
-	return "", err
 }
 
 type byLenThenAlpha []string

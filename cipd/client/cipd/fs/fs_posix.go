@@ -29,12 +29,14 @@ func atomicRename(source, target string) error {
 	return os.Rename(source, target)
 }
 
-func isNotEmpty(err error) bool {
-	pe, ok := err.(*os.PathError)
-	return ok && pe.Err == syscall.ENOTEMPTY
+func errnoNotEmpty(err error) bool {
+	return err == syscall.ENOTEMPTY || err == syscall.EEXIST || err == syscall.EISDIR
 }
 
-func isNotDir(err error) bool {
-	pe, ok := err.(*os.PathError)
-	return ok && pe.Err == syscall.ENOTDIR
+func errnoNotDir(err error) bool {
+	return err == syscall.ENOTDIR
+}
+
+func errnoAccessDenied(err error) bool {
+	return false
 }

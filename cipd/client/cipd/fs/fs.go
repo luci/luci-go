@@ -279,16 +279,14 @@ func (f *fsImpl) EnsureDirectory(ctx context.Context, path string) (string, erro
 	//
 	// In this scenario IsNotExist is specifically for Windows, which for whatever
 	// reason returns it sometimes instead of ERROR_DIRECTORY.
-	//
-	// See fs_(posix|windows).go for implementation of isNotDir.
-	if os.IsNotExist(err) || isNotDir(err) {
+	if os.IsNotExist(err) || IsNotDir(err) {
 		cur := path
 		for {
 			fi, err := os.Lstat(cur)
 
 			// If 'cur' doesn't exist yet or some of its parent is not a directory, go
 			// up until we find this non-directory.
-			if os.IsNotExist(err) || isNotDir(err) {
+			if os.IsNotExist(err) || IsNotDir(err) {
 				dir := filepath.Dir(cur)
 				if dir == cur {
 					break // reached the root, MkdirAll must succeed then
@@ -402,9 +400,9 @@ func (f *fsImpl) EnsureFileGone(ctx context.Context, path string) error {
 		return nil // removed
 	case os.IsNotExist(err):
 		return nil // didn't exist
-	case isNotDir(err):
+	case IsNotDir(err):
 		return nil // "path" is e.g. "a/b/c" where "a/b" is a file, not a directory
-	case isNotEmpty(err):
+	case IsNotEmpty(err):
 		return err // refuse to delete non-empty directories
 	default:
 		// Otherwise assume it's a locked file and just move it to trash.

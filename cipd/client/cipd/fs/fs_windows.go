@@ -96,18 +96,14 @@ func atomicRename(source, target string) error {
 // https://docs.microsoft.com/en-us/windows/desktop/debug/system-error-codes--0-499-
 
 const (
+	// "Access is denied."
+	ERROR_ACCESS_DENIED syscall.Errno = 5
 	// "The directory is not empty."
 	ERROR_DIR_NOT_EMPTY syscall.Errno = 145
 	// "The directory name is invalid".
 	ERROR_DIRECTORY syscall.Errno = 267
 )
 
-func isNotEmpty(err error) bool {
-	pe, ok := err.(*os.PathError)
-	return ok && pe.Err == ERROR_DIR_NOT_EMPTY
-}
-
-func isNotDir(err error) bool {
-	pe, ok := err.(*os.PathError)
-	return ok && pe.Err == ERROR_DIRECTORY
-}
+func errnoNotEmpty(err error) bool     { return err == ERROR_DIR_NOT_EMPTY }
+func errnoNotDir(err error) bool       { return err == ERROR_DIRECTORY }
+func errnoAccessDenied(err error) bool { return err == ERROR_ACCESS_DENIED }
