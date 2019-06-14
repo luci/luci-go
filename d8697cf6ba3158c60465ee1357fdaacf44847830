@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "adec1797_397debcc",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-14T18:29:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6a7abb3_a902d9c6",
+      "range": {
+        "startLine": 316,
+        "startChar": 4,
+        "endLine": 316,
+        "endChar": 6
+      },
+      "revId": "d8697cf6ba3158c60465ee1357fdaacf44847830",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "89f813e8_5d94d519",
         "filename": "cipd/client/cipd/deployer/gofslock.go",
         "patchSetId": 4
