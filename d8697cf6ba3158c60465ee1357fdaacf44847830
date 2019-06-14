@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "f6a7abb3_a902d9c6",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-14T05:44:29Z",
+      "side": 1,
+      "message": "or",
+      "range": {
+        "startLine": 316,
+        "startChar": 4,
+        "endLine": 316,
+        "endChar": 6
+      },
+      "revId": "d8697cf6ba3158c60465ee1357fdaacf44847830",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "89f813e8_5d94d519",
         "filename": "cipd/client/cipd/deployer/gofslock.go",
         "patchSetId": 4
@@ -13,6 +36,24 @@
       "writtenOn": "2019-06-13T20:31:26Z",
       "side": 1,
       "message": "cipd/deployer/* package is vendored into g3 but the actual deployment code path is not used there. If cipd/deployer/* grows a strong dependency on github.com/danjacques/gofslock, we\u0027ll need to add github.com/danjacques/gofslock to third_party in g3 too and it is GIANT ongoing PITA, from my limited experience.\n\nSo I decided to structure the code in a way that makes github.com/danjacques/gofslock dependency optional (we\u0027ll just not copy gofslock.go into g3 and everything will still compile).",
+      "revId": "d8697cf6ba3158c60465ee1357fdaacf44847830",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ae5c58b6_f074958f",
+        "filename": "cipd/client/cipd/deployer/gofslock.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-14T05:44:29Z",
+      "side": 1,
+      "message": "yeah, i guess so by reading description. SG",
+      "parentUuid": "89f813e8_5d94d519",
       "revId": "d8697cf6ba3158c60465ee1357fdaacf44847830",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
