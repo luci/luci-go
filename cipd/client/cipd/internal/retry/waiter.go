@@ -34,7 +34,11 @@ func Waiter(c context.Context, why string, d time.Duration) func() error {
 			attempt = 50 // cap sleeping time at max 5 sec
 		}
 		delay := time.Duration(rand.Int31n(100*attempt)) * time.Millisecond
-		logging.Debugf(c, "%s: retrying after %s...", why, delay)
+		if attempt > 10 {
+			logging.Warningf(c, "%s: retrying after %s...", why, delay)
+		} else {
+			logging.Debugf(c, "%s: retrying after %s...", why, delay)
+		}
 		tr := clock.Sleep(c, delay)
 		return tr.Err
 	}

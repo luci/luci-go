@@ -43,8 +43,6 @@ import (
 // TODO(vadimsh): How to handle path conflicts between two packages? Currently
 // the last one installed wins.
 
-// TODO(vadimsh): Use some sort of file lock to reduce a chance of corruption.
-
 // File system layout of a site directory <base> for "symlink" install method:
 // <base>/.cipd/pkgs/
 //   <arbitrary index>/
@@ -234,6 +232,23 @@ func (d errDeployer) CleanupTrash(context.Context) {}
 const (
 	// descriptionName is a name of the description file inside the package.
 	descriptionName = "description.json"
+
+	// packagesDir is a subdirectory of site root to extract packages to.
+	packagesDir = fs.SiteServiceDir + "/pkgs"
+
+	// currentSymlink is a name of a symlink that points to latest deployed version.
+	// Used on Linux and Mac.
+	currentSymlink = "_current"
+
+	// currentTxt is a name of a text file with instance ID of latest deployed
+	// version. Used on Windows.
+	currentTxt = "_current.txt"
+
+	// fsLockName is name of a per-package lock file in .cipd/pkgs/<index>/.
+	fsLockName = ".lock"
+
+	// fsLockGiveUpDuration is how long to wait for a FS lock before giving up.
+	fsLockGiveUpDuration = 20 * time.Minute
 )
 
 // description defines the structure of the description.json file located at
@@ -272,17 +287,6 @@ func writeDescription(d *description, w io.Writer) error {
 	return err
 }
 
-// packagesDir is a subdirectory of site root to extract packages to.
-const packagesDir = fs.SiteServiceDir + "/pkgs"
-
-// currentSymlink is a name of a symlink that points to latest deployed version.
-// Used on Linux and Mac.
-const currentSymlink = "_current"
-
-// currentTxt is a name of a text file with instance ID of latest deployed
-// version. Used on Windows.
-const currentTxt = "_current.txt"
-
 // deployerImpl implements Deployer interface.
 type deployerImpl struct {
 	fs fs.FileSystem
@@ -307,12 +311,23 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	// Extract new version to the .cipd/pkgs/* guts. For "symlink" install mode it
 	// is the final destination. For "copy" install mode it's a temp destination
 	// and files will be moved to the site root later (in addToSiteRoot call).
-	// ExtractFilesTxn knows how to build full paths and how to atomically extract
-	// a package. No need to delete garbage if it fails.
+
+	// Allocate '.cipd/pkgs/<index>' directory for the (subdir, PackageName) pair
+	// or grab an existing one, if any. This operation is atomic.
 	pkgPath, err := d.packagePath(ctx, subdir, pin.PackageName, true)
 	if err != nil {
 		return common.Pin{}, err
 	}
+
+	// Concurrently messing with a single pkgPath directory doesn't work well,
+	// use exclusive file system lock. In practice it means we aren't allowing
+	// installing instances of the *same* package concurrently. Installing
+	// different packages at the same time is still allowed.
+	unlock, err := d.lockPkg(ctx, pkgPath)
+	if err != nil {
+		return common.Pin{}, fmt.Errorf("failed to acquire FS lock - %s", err)
+	}
+	defer unlock()
 
 	// Skip extracting .cipd/* guts if they mistakenly ended up inside the
 	// package. Extracting them clobbers REAL guts.
@@ -592,6 +607,13 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 		panic("impossible, instancePath cannot be empty for deployed pkg")
 	}
 
+	// See the comment about locking in DeployInstance.
+	unlock, err := d.lockPkg(ctx, p.packagePath)
+	if err != nil {
+		return fmt.Errorf("failed to acquire FS lock - %s", err)
+	}
+	defer unlock()
+
 	// manifest contains all files that should be present in a healthy deployment.
 	manifest := make(map[string]pkg.FileInfo, len(p.Manifest.Files))
 	for _, f := range p.Manifest.Files {
@@ -868,6 +890,39 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 			return "", fmt.Errorf("unable to find valid index for package %q in %s", pkg, abs)
 		}
 	}
+}
+
+// lockFS grabs an exclusive file system lock and returns a callback that
+// releases it.
+//
+// If the lock is already taken, calls waiter(), assuming it will sleep a bit.
+//
+// Retries either until the lock is successfully acquired or waiter() returns
+// an error.
+//
+// Initialized in init() of a *.go file that actually implements the locking,
+// if any.
+var lockFS func(path string, waiter func() error) (unlock func() error, err error)
+
+// lockPkg takes an exclusive file system lock around a single package.
+//
+// Noop if 'lockFS' is nil (i.e. there's no locking implementation available).
+func (d *deployerImpl) lockPkg(ctx context.Context, pkgPath string) (unlock func(), err error) {
+	if lockFS == nil {
+		return func() {}, nil
+	}
+	unlocker, err := lockFS(
+		filepath.Join(pkgPath, fsLockName),
+		retry.Waiter(ctx, "Could not acquire FS lock", fsLockGiveUpDuration),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return func() {
+		if uerr := unlocker(); uerr != nil {
+			logging.Warningf(ctx, "Failed to release FS lock - %s", err)
+		}
+	}, nil
 }
 
 type byLenThenAlpha []string
