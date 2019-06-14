@@ -60,8 +60,7 @@ func TestExec(t *testing.T) {
 
 				So(cmd.Wait(time.Minute), ShouldBeNil)
 
-				So(cmd.ExitCode(), ShouldEqual, 0)
-
+				So(cmd.ProcessState.ExitCode(), ShouldEqual, 0)
 			})
 
 			Convey("exit 42", func() {
@@ -70,7 +69,7 @@ func TestExec(t *testing.T) {
 
 				So(cmd.Wait(time.Minute), ShouldBeError, "exit status 42")
 
-				So(cmd.ExitCode(), ShouldEqual, 42)
+				So(cmd.ProcessState.ExitCode(), ShouldEqual, 42)
 			})
 		})
 
@@ -81,8 +80,8 @@ func TestExec(t *testing.T) {
 			cmd := CommandContext(ctx, testBinary)
 
 			// This is for debug of crbug.com/972695 .
-			cmd.cmd.Stdout = os.Stdout
-			cmd.cmd.Stderr = os.Stderr
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
 
 			So(cmd.Start(), ShouldBeNil)
 
@@ -97,9 +96,9 @@ func TestExec(t *testing.T) {
 			}
 
 			if runtime.GOOS == "windows" {
-				So(cmd.ExitCode(), ShouldEqual, 2)
+				So(cmd.ProcessState.ExitCode(), ShouldEqual, 2)
 			} else {
-				So(cmd.ExitCode(), ShouldEqual, -1)
+				So(cmd.ProcessState.ExitCode(), ShouldEqual, -1)
 			}
 		})
 
@@ -121,7 +120,7 @@ func TestExec(t *testing.T) {
 
 			So(cmd.Wait(time.Minute).Error(), ShouldEqual, "signal: killed")
 
-			So(cmd.ExitCode(), ShouldEqual, -1)
+			So(cmd.ProcessState.ExitCode(), ShouldEqual, -1)
 		})
 
 	})
@@ -145,10 +144,10 @@ func TestSetEnv(t *testing.T) {
 		cmd := CommandContext(ctx, testBinary)
 		env := environ.System()
 		env.Set("envvar", "envvar")
-		cmd.SetEnv(env.Sorted())
+		cmd.Env = env.Sorted()
 
 		So(cmd.Start(), ShouldBeNil)
 		So(cmd.Wait(time.Second), ShouldBeNil)
-		So(cmd.ExitCode(), ShouldEqual, 0)
+		So(cmd.ProcessState.ExitCode(), ShouldEqual, 0)
 	})
 }
