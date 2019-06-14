@@ -52,11 +52,6 @@ func init() {
 			}
 			return nil
 		})
-
-	validation.Rules.Add(
-		"regex:projects/.*",
-		`regex:${appid}/email-templates/[^/]+\.template`,
-		validateEmailTemplateFile)
 }
 
 const (
