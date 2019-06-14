@@ -34,6 +34,11 @@ message SettingsCfg {
   // has very low quota. Context needs to know all such hostnames in advance to
   // be able to force authenticated access to them.
   repeated string known_public_gerrit_hosts = 3;
+
+  // vpython-native is disabled on these builders.
+  BuilderPredicate vpython_native_blacklist = 4;
+  // LUCI Runner is enabled on these builders.
+  BuilderPredicate luci_runner_whitelist = 5;
 }
 
 // Swarmbucket settings.
@@ -53,4 +58,18 @@ message SwarmingSettings {
 message LogDogSettings {
   // Hostname of the LogDog instance to use, e.g. "logs.chromium.org".
   string hostname = 1;
+}
+
+// A predicate for a builder.
+message BuilderPredicate {
+  // OR-connected list of regular expressions for a string
+  // "{project}/{bucket}/{builder}".
+  // Each regex is wrapped in ^ and $ automatically.
+  // Examples:
+  //
+  //   # All builders in "chromium" project
+  //   regex: "chromium/.+"
+  //   # A specific builder.
+  //   regex: "infra/ci/infra-continuous-trusty-64"
+  repeated string regexes = 1;
 }
