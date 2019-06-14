@@ -14,6 +14,15 @@
 
 package main
 
+import (
+	"fmt"
+	"os"
+	"time"
+)
+
 func main() {
-	select {}
+	fmt.Fprintln(os.Stdout, "I'm alive!")
+	for {
+		time.Sleep(time.Second)
+	}
 }
