@@ -1,0 +1,120 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "89a169c8_3a548e2d",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-14T22:56:48Z",
+      "side": 1,
+      "message": "sets of ?",
+      "range": {
+        "startLine": 136,
+        "startChar": 46,
+        "endLine": 136,
+        "endChar": 60
+      },
+      "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60a0481f_976f4c86",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-14T22:56:48Z",
+      "side": 1,
+      "message": "\u003e \"cyle\" is a possible misspelling of \"cycle\".\n\nPlease Fix",
+      "parentUuid": "f3512335_501c8d6a",
+      "range": {
+        "startLine": 175,
+        "startChar": 47,
+        "endLine": 175,
+        "endChar": 51
+      },
+      "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "469c5544_8f364bfd",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-14T22:56:48Z",
+      "side": 1,
+      "message": "controls",
+      "range": {
+        "startLine": 179,
+        "startChar": 40,
+        "endLine": 179,
+        "endChar": 47
+      },
+      "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30df5536_428162a8",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-14T22:56:48Z",
+      "side": 1,
+      "message": "long",
+      "range": {
+        "startLine": 179,
+        "startChar": 52,
+        "endLine": 179,
+        "endChar": 56
+      },
+      "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0fa94b2_d8c0e865",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-14T22:56:48Z",
+      "side": 1,
+      "message": "I don\u0027t understand why this is needed... Why can\u0027t we launch the tryjobs as soon as all CLs in a set have the vote? What is the use case of tweaking this value?",
+      "range": {
+        "startLine": 214,
+        "startChar": 27,
+        "endLine": 214,
+        "endChar": 46
+      },
+      "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
