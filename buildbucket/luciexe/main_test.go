@@ -37,7 +37,10 @@ import (
 )
 
 func TestMain(t *testing.T) {
-	t.Parallel()
+	// TODO(crbug.com/904533): Running tests that use git in parallel may be
+	// causing issues on Windows.
+	//
+	// t.Parallel()
 
 	Convey("Main", t, func(c C) {
 		ctx := context.Background()
