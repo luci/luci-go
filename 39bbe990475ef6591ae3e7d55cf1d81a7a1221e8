@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97122d81_fc473c3b",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-14T13:32:23Z",
+      "side": 1,
+      "message": "FTR (not to be done in this CL), I\u0027m really fan of the following layout in a source file:\n\n----\n\u003ccopyright header\u003e\n\npackage foo\n\n\u003cimports\u003e\n\n\u003cpublic globals\u003e\n\n\u003cpublic structs\u003e\n\n\u003cpublic functions\u003e\n\n// Private stuff.\n\n\u003cprivate globals\u003e\n\n\u003cprivate structs\u003e\n\n\u003cprivate functions\u003e\n----\n\nAnd for a struct use:\n\n----\n\u003ctype struct\u003e\n\n\u003cNew method, if any\u003e\n\n\u003cpublic methods\u003e\n\n\u003cprivate methods\u003e\n----\n\n\nI\u0027ll send an internal email to confirm with others.",
+      "revId": "39bbe990475ef6591ae3e7d55cf1d81a7a1221e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b04d4363_40269073",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-14T13:32:23Z",
+      "side": 1,
+      "message": "Please add:\n\n  // TODO: potential performance improvement https://crbug.com/974202",
+      "revId": "39bbe990475ef6591ae3e7d55cf1d81a7a1221e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68e10b52_67ff379c",
+        "filename": "common/system/exec2/exec2_windows.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-14T13:32:23Z",
+      "side": 1,
+      "message": "Please add:\n\n  // TODO: potential performance improvement https://crbug.com/974202",
+      "revId": "39bbe990475ef6591ae3e7d55cf1d81a7a1221e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
