@@ -31,25 +31,6 @@ message BuildSecrets {
 // Arguments for luci_runner command.
 // All paths are relateive to the runner process' working directory.
 message RunnerArgs {
-  message GitAuth {
-    bool disable = 1;
-    repeated string known_gerrit_hosts = 2;
-  }
-  message Disablable {
-    bool disable = 1;
-  }
-
-  message Auth {
-    GitAuth git = 1;
-    Disablable dev_shell = 2;
-    Disablable docker = 3;
-    Disablable firebase = 4;
-
-
-    // Use this LUCI context logical account for system-level operations.
-    string luci_system_account = 5;
-  }
-
   // Buildbucket service hostname, e.g. "cr-buildbucket.appspot.com".
   string buildbucket_host = 1;
 
@@ -60,19 +41,27 @@ message RunnerArgs {
   // properties.
   Build build = 3;
 
-  Auth auth = 4;
-
   // Where to put temp files and create CWD for the user executable.
   // MUST not exist.
   // Required.
-  string work_dir = 5;
+  string work_dir = 4;
 
   // Path to the user executable.
   // Required.
-  string executable_path = 6;
+  string executable_path = 5;
 
   // Path to a directory where each subdirectory is a cache dir.
   // Managed by Swarming.
   // Required.
-  string cache_dir = 7;
+  string cache_dir = 6;
+
+	// List of Gerrit hosts to force git authentication for.
+	//
+	// By default public hosts are accessed anonymously, and the anonymous access
+	// has very low quota. Context needs to know all such hostnames in advance to
+	// be able to force authenticated access to them.
+  repeated string known_public_gerrit_hosts = 7;
+
+  // Use this LUCI context logical account for system-level operations.
+  string luci_system_account = 8;
 }
