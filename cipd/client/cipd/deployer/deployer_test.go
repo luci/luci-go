@@ -2101,6 +2101,48 @@ func TestPackagePathCollision(t *testing.T) {
 	})
 }
 
+func TestDeployInstanceCollision(t *testing.T) {
+	t.Parallel()
+
+	const threads = 50
+	const instances = 5
+
+	ctx := context.Background()
+
+	installMode := pkg.InstallModeSymlink
+	if runtime.GOOS == "windows" {
+		installMode = pkg.InstallModeCopy
+	}
+
+	Convey("Collide DeployInstance", t, func() {
+		testInstances := make([]*testPackageInstance, instances)
+		for i := range testInstances {
+			testInstances[i] = makeTestInstance(fmt.Sprintf("pkg/%d", i), []fs.File{
+				fs.NewTestFile(fmt.Sprintf("private_%d", i), "data", fs.TestFileOpts{}),
+				fs.NewTestFile("path/shared", "data", fs.TestFileOpts{}),
+			}, installMode)
+			testInstances[i].instanceID = fmt.Sprintf("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwF%02d", i)
+		}
+
+		tempDir := mkTempDir()
+		d := New(tempDir).(*deployerImpl)
+
+		wg := sync.WaitGroup{}
+		wg.Add(threads)
+		for th := 0; th < threads; th++ {
+			th := th
+			go func() {
+				defer wg.Done()
+				_, err := d.DeployInstance(ctx, "", testInstances[th%instances])
+				if err != nil {
+					panic(err)
+				}
+			}()
+		}
+		wg.Wait()
+	})
+}
+
 func TestRemoveEmptyTrees(t *testing.T) {
 	t.Parallel()
 
@@ -2216,6 +2258,10 @@ func scanDir(root string) (out []string) {
 		if err != nil {
 			return err
 		}
+		if info.Name() == fsLockName {
+			return nil // .lock files are not interesting
+		}
+
 		rel, err := filepath.Rel(root, path)
 		switch {
 		case err != nil:
