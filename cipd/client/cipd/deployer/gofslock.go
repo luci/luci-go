@@ -21,7 +21,7 @@ import (
 	"github.com/danjacques/gofslock/fslock"
 )
 
-func init() {
+func init2() {
 	if lockFS != nil {
 		panic("lockFS is already initialized")
 	}
