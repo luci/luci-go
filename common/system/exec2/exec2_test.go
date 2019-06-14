@@ -79,12 +79,19 @@ func TestExec(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			cmd := CommandContext(ctx, testBinary)
-
-			// This is for debug of crbug.com/972695 .
-			cmd.cmd.Stdout = os.Stdout
-			cmd.cmd.Stderr = os.Stderr
+			rc, err := cmd.cmd.StdoutPipe()
+			So(err, ShouldBeNil)
 
 			So(cmd.Start(), ShouldBeNil)
+
+			const imalive = "I'm alive!"
+			buf := make([]byte, len(imalive))
+			n, err := rc.Read(buf)
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, len(imalive))
+			So(string(buf), ShouldEqual, imalive)
+
+			So(rc.Close(), ShouldBeNil)
 
 			So(cmd.Wait(time.Millisecond), ShouldEqual, ErrTimeout)
 
