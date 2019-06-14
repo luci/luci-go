@@ -341,8 +341,6 @@ func (r *runner) hookStdoutStderr(ctx context.Context, logdogServ *logdogServer,
 // context associated with service account specified in the Swarming task
 // definition.
 func setupAuth(ctx context.Context, args *pb.RunnerArgs) (system, user *authctx.Context, err error) {
-	authArgs := args.GetAuth()
-
 	// Construct authentication option with the set of scopes to be used through
 	// out the runner. This is superset of all scopes we might need. It is more
 	// efficient to create a single token with all the scopes than make a bunch
@@ -360,40 +358,44 @@ func setupAuth(ctx context.Context, args *pb.RunnerArgs) (system, user *authctx.
 		"https://www.googleapis.com/auth/cloud-platform",
 		"https://www.googleapis.com/auth/userinfo.email",
 	}
-	if authArgs.GetFirebase() != nil {
-		authOpts.Scopes = append(authOpts.Scopes, "https://www.googleapis.com/auth/firebase")
-	}
 
 	// If we are given a system logical account name, use it.
 	// Otherwise, we use whatever is default account now (don't switch to a system
 	// one). Happens when launching runner manually locally.
 	// It picks up the developer account.
 	systemCtx := ctx
-	if authArgs.GetLuciSystemAccount() != "" {
+	if args.LuciSystemAccount != "" {
 		var err error
-		systemCtx, err = lucictx.SwitchLocalAccount(ctx, authArgs.GetLuciSystemAccount())
+		systemCtx, err = lucictx.SwitchLocalAccount(ctx, args.LuciSystemAccount)
 		if err != nil {
 			return nil, nil, errors.Annotate(err, "failed to prepare system auth context").Err()
 		}
 	}
 
 	system = &authctx.Context{
-		ID:                 "system",
-		Options:            authOpts,
-		EnableGitAuth:      !authArgs.GetGit().GetDisable(),
-		EnableDevShell:     !authArgs.GetDevShell().GetDisable(),
-		EnableDockerAuth:   !authArgs.GetDocker().GetDisable(),
-		EnableFirebaseAuth: !authArgs.GetFirebase().GetDisable(),
-		KnownGerritHosts:   authArgs.GetGit().GetKnownGerritHosts(),
+		ID:      "system",
+		Options: authOpts,
+	}
+
+	flags := args.GetBuild().GetInput().GetProperties().GetFields()["$kitchen"].GetStructValue().GetFields()
+	isEnabled := func(key string, defaultValue bool) bool {
+		v := flags[key]
+		if v == nil {
+			return defaultValue
+		}
+		return v.GetBoolValue()
 	}
 	user = &authctx.Context{
 		ID:                 "task",
 		Options:            authOpts,
-		EnableGitAuth:      !authArgs.GetGit().GetDisable(),
-		EnableDevShell:     !authArgs.GetDevShell().GetDisable(),
-		EnableDockerAuth:   !authArgs.GetDocker().GetDisable(),
-		EnableFirebaseAuth: !authArgs.GetFirebase().GetDisable(),
-		KnownGerritHosts:   authArgs.GetGit().GetKnownGerritHosts(),
+		EnableGitAuth:      isEnabled("git_auth", true),
+		EnableDevShell:     isEnabled("devshell", true),
+		EnableDockerAuth:   isEnabled("docker_auth", true),
+		EnableFirebaseAuth: isEnabled("firebase_auth", false),
+		KnownGerritHosts:   args.KnownPublicGerritHosts,
+	}
+	if user.EnableFirebaseAuth {
+		user.Options.Scopes = append(authOpts.Scopes, "https://www.googleapis.com/auth/firebase")
 	}
 
 	if _, err := system.Launch(systemCtx, args.WorkDir); err != nil {
