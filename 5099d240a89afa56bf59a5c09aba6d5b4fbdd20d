@@ -163,6 +163,30 @@
       "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b610d2d_2b9d2b14",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-15T02:33:11Z",
+      "side": 1,
+      "message": "Yesish. CQ does effectively ignore CLs for at most `stabilization_delay` seconds (counted from the most recently voted CL in connected component). And then, if any CLs don\u0027t have votes but should, CQ posts a message about missing votes \u0026\u0026 removes existing votes. \nAdmittedly, the latter isn\u0027t perfect, it\u0027s just simplest to implement[1]\n\nAnd the above is what happens if you aren\u0027t fast enough. Effectively, they need to start from scratch.\n\n[1] and also I don\u0027t want to add more complexity into this with the current CQ codebase because:\n  * more complex interplay between legacy CQ and LUCI CQ during migration\n  * voting on CQ+1/2 labels isn\u0027t the optimal model even for 1 CL, let alone N CLs.",
+      "parentUuid": "63430a3c_44996a83",
+      "range": {
+        "startLine": 214,
+        "startChar": 27,
+        "endLine": 214,
+        "endChar": 46
+      },
+      "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
