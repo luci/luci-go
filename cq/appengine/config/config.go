@@ -52,8 +52,10 @@ func validateRef(ctx *validation.Context, configSet, path string, content []byte
 	// cq.cfg has been disallowed since Feb 1, 2019.
 	// keep this error in place till Apr 1, 2019, to encourage clients remove this
 	// config file from their repo.
-	ctx.Errorf("cq.cfg is no longer used and has no effect. Please, delete cq.cfg in your repo.")
-	ctx.Errorf("cq.cfg is replaced by commit-queue.cfg")
+	ctx.Errorf(
+		"cq.cfg is no longer used and has no effect. Please, delete cq.cfg in your repo.\n" +
+			"cq.cfg is replaced by commit-queue.cfg.\n" +
+			"Doc: https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/cq/api/config/v2/cq.proto\n")
 	return nil
 }
 
