@@ -115,6 +115,30 @@
       "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fbe6b50_fa769c5c",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-15T02:05:07Z",
+      "side": 1,
+      "message": "because reasons:\n1. suppose we adopt what you propose, and user forgets to vote on some CL. When would CQ stop waiting?\n2. maximal CL set depends on which CLs get votes. Even with trivial stack of 2 Cls {A1 \u003c- A2}: if user votes CQ+2 on A1 first, which can be tried on its own, CQ should still wait a bit to observe possible CQ+2 on A2.\nIt\u0027s gets more fun with complex cases like this:\n\n    A1 \u003c- A2 \u003c- A3\n           ^\n           |\n           v\n    B1  \u003c- B2 \u003c- B3\n\nhere if B3 gets CQ+2, clearly A1,A2,B1,B2 needs CQ+2, too (and in fact I wish future CQ with API would just infer that for the user and tell this in Gerrit UI) .\nbut ultimately this reduces to the first example: user may also wish A3 to be CQ-ed, too.",
+      "parentUuid": "a0fa94b2_d8c0e865",
+      "range": {
+        "startLine": 214,
+        "startChar": 27,
+        "endLine": 214,
+        "endChar": 46
+      },
+      "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
