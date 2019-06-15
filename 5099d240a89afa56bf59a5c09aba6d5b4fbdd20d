@@ -139,6 +139,30 @@
       "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63430a3c_44996a83",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-15T02:17:22Z",
+      "side": 1,
+      "message": "\u003e When would CQ stop waiting?\n\nI assumed it doesn\u0027t actually actively wait. When scanning Gerrit it assembles a graph of CLs. If all CLs in a component of this graph are approved, it launches an attempt. If not, it just ignores this component. \n\nSo if user forgets to vote on a CL, nothing at all will happen... I guess we can look at an yongest CQ+2/1 vote in a component and post a message \"You actually need to approve all other CLs too\" if it is older than X sec. Maybe stabilization_delay is doing exactly this?\n\nWith stabilization_delay\u003d30, does it mean the user have 30 sec to click all relevant buttons in Gerrit? What will happen if they don\u0027t do it fast enough?",
+      "parentUuid": "7fbe6b50_fa769c5c",
+      "range": {
+        "startLine": 214,
+        "startChar": 27,
+        "endLine": 214,
+        "endChar": 46
+      },
+      "revId": "5099d240a89afa56bf59a5c09aba6d5b4fbdd20d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
