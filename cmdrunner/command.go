@@ -12,18 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package isolated
+package cmdrunner
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/system/exec2"
 )
 
 const (
@@ -45,7 +48,7 @@ func replaceParameters(ctx context.Context, arg, outDir, botFile string) (string
 
 	if strings.Contains(arg, isolatedOutdirParameter) {
 		if outDir == "" {
-			return "", errors.New("output directory is requested in command or env var, but not provided; please specify one")
+			return "", errors.Reason("output directory is requested in command or env var, but not provided; please specify one").Err()
 		}
 		arg = strings.Replace(arg, isolatedOutdirParameter, outDir, -1)
 		replaceSlash = true
@@ -158,4 +161,70 @@ func getCommandEnv(ctx context.Context, tmpDir string, cipdInfo *cipdInfo, runDi
 	}
 
 	return out, nil
+}
+
+// Run runs the command.
+func Run(ctx context.Context, command []string, cwd string, env environ.Env, hardTimeout time.Duration, gracePeriod time.Duration, lowerPriority bool, containment bool) (int, bool, error) {
+	logging.Infof(ctx, "runCommand(%s, %s, %s, %s, %s, %s, %s)", command, cwd, env, hardTimeout, gracePeriod, lowerPriority, containment)
+	exitCode := 1
+	hadHardTimeout := false
+
+	cmd := exec2.CommandContext(ctx, command[0], command[1:]...)
+	cmd.Env = env.Sorted()
+	// cmd.SetDir(cwd)
+	// TODO(tikuta): handle STOP_SIGNALS
+
+	if err := cmd.Start(); err != nil {
+		return 0, false, errors.Annotate(err, "failed to start command").Err()
+	}
+
+	err := cmd.Wait(hardTimeout)
+	if err != nil && err != exec2.ErrTimeout {
+		goto failure
+	}
+
+	if err == nil {
+		exitCode = cmd.ProcessState.ExitCode()
+		goto end
+	}
+
+	if err != exec2.ErrTimeout {
+		goto failure
+	}
+
+	hadHardTimeout = true
+	if err = cmd.Terminate(); err != nil {
+		goto failure
+	}
+
+	err = cmd.Wait(gracePeriod)
+	if err == nil {
+		exitCode = cmd.ProcessState.ExitCode()
+		goto end
+	}
+
+	if err != exec2.ErrTimeout {
+		goto failure
+	}
+
+	if err = cmd.Kill(); err != nil {
+		goto failure
+	}
+
+	exitCode = cmd.ProcessState.ExitCode()
+	goto end
+
+failure:
+	fmt.Fprintf(os.Stderr, "failed to run command %s: %v\n", command, err)
+	fmt.Fprint(os.Stderr, `<The executable does not exist or a dependent library is missing>
+<Check for missing .so/.dll in the .isolate or GN file>
+`)
+	if _, ok := environ.System().Get("SWARMING_TASK_ID"); ok {
+		fmt.Fprint(os.Stderr, `<See the task's page for commands to help diagnose this issue by reproducing the task locally>
+`)
+	}
+	exitCode = 1
+
+end:
+	return exitCode, hadHardTimeout, nil
 }
