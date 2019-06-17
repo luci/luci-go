@@ -15,16 +15,3 @@
 // Data Structures used for defining test data for use with testing each theme.
 
 package common
-
-import (
-	"go.chromium.org/luci/server/templates"
-)
-
-// TestBundle is a template arg associated with a description used for testing.
-// TODO(nodir): remove this from prod code.
-type TestBundle struct {
-	// Description is a short one line description of what the data contains.
-	Description string
-	// Data is the data fed directly into the template.
-	Data templates.Args
-}
