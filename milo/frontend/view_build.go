@@ -46,17 +46,22 @@ func handleDevBuild(c *router.Context) error {
 
 // handleLUCIBuild renders a LUCI build.
 func handleLUCIBuild(c *router.Context) error {
-	bucket := c.Params.ByName("bucket")
-	buildername := c.Params.ByName("builder")
+	bid := &buildbucketpb.BuilderID{
+		Project: c.Params.ByName("project"),
+		Bucket:  c.Params.ByName("bucket"),
+		Builder: c.Params.ByName("builder"),
+	}
 	numberOrID := c.Params.ByName("numberOrId")
 	forceBlamelist := c.Request.FormValue("blamelist") != ""
 
-	if _, v2Bucket := deprecated.BucketNameToV2(bucket); v2Bucket != "" {
-		// Params bucket is a v1 bucket, so call the legacy endpoint.
-		return handleLUCIBuildLegacy(c, bucket, buildername, numberOrID)
+	// Redirect to short bucket names.
+	if _, v2Bucket := deprecated.BucketNameToV2(bid.Bucket); v2Bucket != "" {
+		// Parameter "bucket" is v1, e.g. "luci.chromium.try".
+		u := *c.Request.URL
+		u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%s", bid.Project, v2Bucket, bid.Builder, numberOrID)
+		http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
 	}
 
-	// TODO(hinoka): Once v2 is default, redirect v1 bucketnames to v2 bucketname URLs.
 	br := buildbucketpb.GetBuildRequest{}
 	if strings.HasPrefix(numberOrID, "b") {
 		id, err := strconv.ParseInt(numberOrID[1:], 10, 64)
@@ -69,12 +74,8 @@ func handleLUCIBuild(c *router.Context) error {
 		if err != nil {
 			return errors.Annotate(err, "bad build number").Tag(grpcutil.InvalidArgumentTag).Err()
 		}
+		br.Builder = bid
 		br.BuildNumber = int32(number)
-		br.Builder = &buildbucketpb.BuilderID{
-			Project: c.Params.ByName("project"),
-			Bucket:  bucket,
-			Builder: buildername,
-		}
 	}
 
 	bp, err := buildbucket.GetBuildPage(c, br, forceBlamelist)
