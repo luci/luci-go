@@ -63,7 +63,7 @@ func iterateChildThreads(pid uint32, f func(uint32) error) error {
 }
 
 func (c *Cmd) setupCmd() {
-	c.cmd.SysProcAttr = &syscall.SysProcAttr{
+	c.SysProcAttr = &syscall.SysProcAttr{
 		CreationFlags: windows.CREATE_SUSPENDED | windows.CREATE_NEW_PROCESS_GROUP,
 	}
 }
@@ -80,16 +80,16 @@ func createJobObject() (windows.Handle, error) {
 }
 
 func (c *Cmd) start() error {
-	if err := c.cmd.Start(); err != nil {
+	if err := c.Cmd.Start(); err != nil {
 		return errors.Annotate(err, "failed to start process").Err()
 	}
 
-	pid := uint32(c.cmd.Process.Pid)
+	pid := uint32(c.Process.Pid)
 
 	success := false
 	defer func() {
 		if !success {
-			c.cmd.Process.Kill()
+			c.Process.Kill()
 			c.wait()
 		}
 	}()
@@ -144,11 +144,11 @@ func (c *Cmd) start() error {
 func (c *Cmd) terminate() error {
 	// Child process is created with CREATE_NEW_PROCESS_GROUP flag.
 	// And we use CTRL_BREAK_EVENT here to send signal to all child process group instead of a child process.
-	return windows.GenerateConsoleCtrlEvent(windows.CTRL_BREAK_EVENT, uint32(c.cmd.Process.Pid))
+	return windows.GenerateConsoleCtrlEvent(windows.CTRL_BREAK_EVENT, uint32(c.Process.Pid))
 }
 
 func (c *Cmd) wait() error {
-	if err := c.cmd.Wait(); err != nil {
+	if err := c.Cmd.Wait(); err != nil {
 		return err
 	}
 
@@ -178,8 +178,4 @@ func (c *Cmd) kill() error {
 	c.attr.job = windows.InvalidHandle
 
 	return nil
-}
-
-func (c *Cmd) exitCode() int {
-	return c.cmd.ProcessState.ExitCode()
 }
