@@ -165,6 +165,30 @@
       "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01c9c044_617b85e7",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-17T09:22:30Z",
+      "side": 1,
+      "message": "I was thinking the code like this:\n\nfunc runCommand(ctx context.Context, command []string, cwd string, env environ.Env, hardTimeout time.Duration, gracePeriod time.Duration, lowerPriority bool, containment bool) (int, error) {\n        cmd :\u003d exec2.CommandContext(ctx, command[0], command[1:]...)\n        cmd.Cwd \u003d cwd\n        cmd.Env \u003d env\n        // TODO: support lowerPriority\n        // TODO: support containment\n        defer func() { \n                close(ctx)\n        }()\n        \n        if err :\u003d cmd.Start(); err !\u003d nil {\n                fmt.Fprintf(os.Stderr, \"\u003cThe executabable...\")\n                return 1, err\n        }\n        errCh :\u003d make(chan error)\n        go func() {\n                errCh \u003c- cmd.Wait()\n        }()\n        select { \n        case err :\u003d \u003c-errCh:\n                return cmd.ExitCode(), err\n        case \u003c-time.After(hardTimeout):\n        }\n        if err :\u003d cmd.Terminate(); err !\u003d nil {\n                return 1, err\n        }\n        select { \n        case err :\u003d \u003c-errCh:\n                return cmd.ExitCode(), err\n        case \u003c-time.After(gracePeriod):\n        }\n        return 1, HardtimeoutError\n}",
+      "parentUuid": "0fc67102_a82150e4",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 29
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
