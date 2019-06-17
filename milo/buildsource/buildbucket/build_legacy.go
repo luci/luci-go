@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -31,12 +30,8 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/grpc/grpcutil"
-	logDogTypes "go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -139,11 +134,11 @@ func extractDetails(msg *bbv1.LegacyApiCommonBuildMessage) (info string, botID s
 	return
 }
 
-// toMiloBuildInMemory converts a buildbucket build to a milo build in memory.
+// ToMiloBuild converts a v1 buildbucket build to a milo build.
 // Does not make RPCs.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuildInMemory(c context.Context, msg *bbv1.LegacyApiCommonBuildMessage) (*ui.MiloBuildLegacy, error) {
+func ToMiloBuild(c context.Context, msg *bbv1.LegacyApiCommonBuildMessage) (*ui.MiloBuildLegacy, error) {
 	// Parse the build message into a deprecated.Build struct, filling in the
 	// input and output properties that we expect to receive.
 	var b deprecated.Build
@@ -257,119 +252,4 @@ func toMiloBuildInMemory(c context.Context, msg *bbv1.LegacyApiCommonBuildMessag
 			fmt.Sprintf("build #%s", idStr))
 	}
 	return result, nil
-}
-
-// GetRawBuild fetches a buildbucket build given its address.
-func GetRawBuild(c context.Context, address string) (*bbv1.LegacyApiCommonBuildMessage, error) {
-	host, err := getHost(c)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := newBuildbucketClient(c, host)
-	if err != nil {
-		return nil, err
-	}
-	// This runs a search RPC against BuildBucket, but it is optimized for speed.
-	build, err := bbv1.GetByAddress(c, client, address)
-	switch {
-	case err != nil:
-		return nil, errors.Annotate(err, "could not get build at %q", address).Err()
-	case build == nil && auth.CurrentUser(c).Identity == identity.AnonymousIdentity:
-		return nil, errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
-	case build == nil:
-		return nil, errors.Reason("build at %q not found", address).Tag(grpcutil.NotFoundTag).Err()
-	default:
-		return build, nil
-	}
-}
-
-// getStep fetches returns the Step annoations from LogDog.
-func getStep(c context.Context, bbBuildMessage *bbv1.LegacyApiCommonBuildMessage) (*logDogTypes.StreamAddr, *miloProto.Step, error) {
-	swarmingTags := strpair.ParseMap(bbBuildMessage.Tags)["swarming_tag"]
-	logLocation := strpair.ParseMap(swarmingTags).Get("log_location")
-	if logLocation == "" {
-		return nil, nil, errors.New("Build is missing log_location")
-	}
-	addr, err := logDogTypes.ParseURL(logLocation)
-	if err != nil {
-		return nil, nil, errors.Annotate(err, "%s is invalid", addr).Err()
-	}
-
-	step, err := rawpresentation.ReadAnnotations(c, addr)
-	return addr, step, err
-}
-
-// GetBuildLegacy is a shortcut for GetRawBuild and ToMiloBuild.
-func GetBuildLegacy(c context.Context, address string, fetchFull bool) (*ui.MiloBuildLegacy, error) {
-	bbBuildMessage, err := GetRawBuild(c, address)
-	if err != nil {
-		return nil, err
-	}
-	return ToMiloBuild(c, bbBuildMessage, fetchFull)
-}
-
-// ToMiloBuild converts a raw buildbucket build to a milo build.
-//
-// Returns an error only on failure to reach buildbucket.
-// Other errors are surfaced in the returned build.
-//
-// TODO(hinoka): Some of this can be done concurrently. Investigate if this call
-// takes >500ms on average.
-// TODO(crbug.com/850113): stop loading steps from logdog.
-func ToMiloBuild(c context.Context, b *bbv1.LegacyApiCommonBuildMessage, fetchFull bool) (*ui.MiloBuildLegacy, error) {
-	mb, err := toMiloBuildInMemory(c, b)
-	if err != nil {
-		return nil, err
-	}
-
-	if !fetchFull {
-		return mb, nil
-	}
-
-	// Add step information from LogDog.  If this fails, we still have perfectly
-	// valid information from Buildbucket, so just annotate the build with the
-	// error and continue.
-	if b.StartedTs != 0 {
-		if addr, step, err := getStep(c, b); err == nil {
-			ub := rawpresentation.NewURLBuilder(addr)
-			mb.Components, mb.PropertyGroup = rawpresentation.SubStepsToUI(c, ub, step.Substep)
-		} else if b.Status == bbv1.StatusCompleted {
-			// TODO(hinoka): This might be better placed in a error butterbar.
-			mb.Components = append(mb.Components, &ui.BuildComponent{
-				Label:  ui.NewEmptyLink("Failed to fetch step information from LogDog"),
-				Text:   strings.Split(err.Error(), "\n"),
-				Status: model.InfraFailure,
-			})
-		}
-	}
-
-	// Add blame information.  If this fails, this add in a placeholder with an error.
-	mb.Blame = getBlameLegacy(c, b)
-
-	return mb, nil
-}
-
-// getBlameLegacy fetches blame information from Gitiles.  This requires the
-// BuildSummary to be indexed in Milo.
-func getBlameLegacy(c context.Context, msg *bbv1.LegacyApiCommonBuildMessage) []*ui.Commit {
-	host, err := getHost(c)
-	if err != nil {
-		return []*ui.Commit{{
-			Description: fmt.Sprintf("Failed to fetch blame information\n%s", err.Error()),
-		}}
-	}
-	tags := strpair.ParseMap(msg.Tags)
-	bSet, _ := tags["buildset"]
-	bid := NewBuilderID(msg.Bucket, tags.Get("builder"))
-	bs := &model.BuildSummary{
-		BuildKey:  MakeBuildKey(c, host, tags.Get("build_address")),
-		BuildSet:  bSet,
-		BuilderID: bid.String(),
-	}
-	blame, err := simplisticBlamelist(c, bs)
-	if err != nil {
-		logging.WithError(err).Warningf(c, "getting blamelist")
-	}
-	return blame
 }
