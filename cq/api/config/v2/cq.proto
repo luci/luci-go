@@ -41,6 +41,12 @@ message Config {
 
   // At least 1 ConfigGroup is required.
   repeated ConfigGroup config_groups = 4;
+
+  // Toggles the use of project scoped account for Gerrit access.
+  // UNSET = Disabled, subject to change in the future.
+  // NO = Disabled.
+  // YES = Enabled.
+  Toggle project_scoped_account = 5;
 }
 
 // SubmitOptions control how CQ submits CLs.
