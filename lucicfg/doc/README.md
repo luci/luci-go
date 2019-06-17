@@ -1650,6 +1650,7 @@ luci.cq(
     submit_burst_delay = None,
     draining_start_time = None,
     status_host = None,
+    project_scoped_account = None,
 )
 ```
 
@@ -1670,6 +1671,7 @@ This optional rule can be used to set global CQ parameters that apply to all
 * **submit_burst_delay**: how long to wait between bursts of submissions of CQ attempts. Required if `submit_max_burst` is used.
 * **draining_start_time**: if present, the CQ will refrain from processing any CLs, on which CQ was triggered after the specified time. This is an UTC RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z is mandatory.
 * **status_host**: hostname of the CQ status app to push updates to. Optional and deprecated.
+* **project_scoped_account**: Toggle to enable the use of project scoped accounts to authorize against external systems like Gerrit.
 
 
 

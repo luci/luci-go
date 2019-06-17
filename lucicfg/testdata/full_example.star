@@ -335,6 +335,7 @@ luci.cq(
     submit_burst_delay = 10 * time.minute,
     draining_start_time = '2017-12-23T15:47:58Z',
     status_host = 'chromium-cq-status.appspot.com',
+    project_scoped_account = True,
 )
 
 luci.cq_group(
@@ -409,6 +410,7 @@ lucicfg.emit(
 # === commit-queue.cfg
 # draining_start_time: "2017-12-23T15:47:58Z"
 # cq_status_host: "chromium-cq-status.appspot.com"
+# project_scoped_account: YES,
 # submit_options: <
 #   max_burst: 10
 #   burst_delay: <
