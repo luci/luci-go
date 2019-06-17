@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f8377c92_382b84e4",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-17T19:11:28Z",
+      "side": 1,
+      "message": "let\u0027s give a strong encouragement to readers to choose YES:\n\n// If not specified (UNSET), defaults to disabled, subject to change\n// in Q3\u00272019. New projects must opt in by explicitly setting YES.\n// NO \u003d Disabled.\n// YES \u003d Enabled.",
+      "revId": "959e4ad1ee1ec3de2e818f9617a11f955f35035c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ea7e88e_5709b2ed",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-17T19:11:28Z",
+      "side": 1,
+      "message": "this appears outdated.",
+      "revId": "959e4ad1ee1ec3de2e818f9617a11f955f35035c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33be49ce_a914a544",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 11
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-17T19:11:28Z",
+      "side": 1,
+      "message": "should use",
+      "range": {
+        "startLine": 55,
+        "startChar": 39,
+        "endLine": 55,
+        "endChar": 43
+      },
+      "revId": "959e4ad1ee1ec3de2e818f9617a11f955f35035c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e10f7faf_05dd908c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 11
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-17T19:11:28Z",
+      "side": 1,
+      "message": "nit: this is fairly important aspect to keep it in ()\nsubstantial: if I were the person configuring some LUCI project, I will need to know\nwhether the account actually available.",
+      "range": {
+        "startLine": 55,
+        "startChar": 69,
+        "endLine": 55,
+        "endChar": 83
+      },
+      "revId": "959e4ad1ee1ec3de2e818f9617a11f955f35035c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "985e5699_88340401",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 11
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-17T19:11:28Z",
+      "side": 1,
+      "message": "(as a person configuring CQ) I probably don\u0027t care much about separation between LUCI projects because it\u0027s hard to appreciate among gazillion of options, accounts and permissions messing up with my sanity.\n\n    Vadim didn\u0027t mention \"security\" even once in lucicfg docs:  https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/doc/README.md\n\n\nWDYT:\n  Controls if CQ should use a project scoped account to access external systems, notably Gerrit.\n  If True, CQ will use project scoped account. Strongly recommended. Must be used for new projects.\n    The account should be configured in project registration with LUCI, as is the case for new projects already.\n  If False, CQ. Should only be used by existing projects while migrating.\n  If not specified, defaults to False, but in Q3\u002719 this will be changed.",
+      "range": {
+        "startLine": 56,
+        "startChar": 48,
+        "endLine": 57,
+        "endChar": 45
+      },
+      "revId": "959e4ad1ee1ec3de2e818f9617a11f955f35035c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9516805_02d11e23",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 11
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-17T19:11:28Z",
+      "side": 1,
+      "message": "tabs, also below",
+      "range": {
+        "startLine": 57,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 1
+      },
+      "revId": "959e4ad1ee1ec3de2e818f9617a11f955f35035c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aaf7ea9a_b41e64cb",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq.star",
+        "patchSetId": 11
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-17T19:11:28Z",
+      "side": 1,
+      "message": "nit: our starlark code follows looooong lines of Go, please keep on 1 line.",
+      "range": {
+        "startLine": 74,
+        "startChar": 9,
+        "endLine": 76,
+        "endChar": 18
+      },
+      "revId": "959e4ad1ee1ec3de2e818f9617a11f955f35035c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
