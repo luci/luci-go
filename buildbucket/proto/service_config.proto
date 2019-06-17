@@ -52,7 +52,7 @@ message SwarmingSettings {
   // A builder may override a cache specified here.
   repeated Builder.CacheEntry global_caches = 4;
 
-  // CIPD package. Installatin path depends on the context.
+  // CIPD package. Does not specify installation path.
   message Package {
     // CIPD package name, e.g. "infra/python/cpython/${platform}"
     string package_name = 1;
@@ -61,16 +61,25 @@ message SwarmingSettings {
     string version = 2;
     // CIPD instance version for canary builds.
     // Defaults to version.
-    string version_canary = 3;;
+    string version_canary = 3;
 
     // Include in builders matching the predicate.
     BuilderPredicate builders = 4;
   }
+
   // Packages available to the user executable in $PATH.
   // Installed in "{TASK_RUN_DIR}/cipd_bin_packages".
   // "{TASK_RUN_DIR}/cipd_bin_packages" and
   // "{TASK_RUN_DIR}/cipd_bin_packages/bin" are prepended to $PATH.
   repeated Package user_packages = 5;
+
+  // Package of LUCI runner,
+  // https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/cmd/luci_runner
+  // used to run LUCI executables.
+  Package luci_runner_package = 6;
+
+  // CIPD package of kitchen binary. DEPRECATED. TODO(nodir): remove.
+  Package kitchen_package = 7;
 }
 
 message LogDogSettings {
