@@ -21,6 +21,7 @@ import (
 )
 
 // TestBundle is a template arg associated with a description used for testing.
+// TODO(nodir): remove this from prod code.
 type TestBundle struct {
 	// Description is a short one line description of what the data contains.
 	Description string
