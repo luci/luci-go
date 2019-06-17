@@ -131,20 +131,23 @@ func Run(templatePath string) {
 	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
 	// and common/model/builder_summary.go:SelfLink.
 	r.GET("/p/:project/builders/:bucket/:builder", projectMW, handleError(func(c *router.Context) error {
-		// Handle either v1 or v2 bucket name.
-		_, bucket := deprecated.BucketNameToV2(c.Params.ByName("bucket"))
-		if bucket == "" {
-			bucket = c.Params.ByName("bucket")
+		bid := buildbucketpb.BuilderID{
+			Project: c.Params.ByName("project"),
+			Bucket:  c.Params.ByName("bucket"),
+			Builder: c.Params.ByName("builder"),
 		}
-		bid := buildbucket.BuilderID{
-			buildbucketpb.BuilderID{
-				Project: c.Params.ByName("project"),
-				Bucket:  bucket,
-				Builder: c.Params.ByName("builder"),
-			},
+
+		// Redirect to short bucket names.
+		if _, v2Bucket := deprecated.BucketNameToV2(bid.Bucket); v2Bucket != "" {
+			// Parameter "bucket" is v1, e.g. "luci.chromium.try".
+			u := *c.Request.URL
+			u.Path = fmt.Sprintf("/p/%s/builders/%s/%s", bid.Project, v2Bucket, bid.Builder)
+			http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
 		}
+
 		return BuilderHandler(c, buildsource.BuilderID(bid.String()))
 	}))
+
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
 
 	// Buildbot
