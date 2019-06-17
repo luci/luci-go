@@ -35,10 +35,8 @@ message SettingsCfg {
   // be able to force authenticated access to them.
   repeated string known_public_gerrit_hosts = 3;
 
-  // vpython-native is disabled on these builders.
-  BuilderPredicate vpython_native_blacklist = 4;
   // LUCI Runner is enabled on these builders.
-  BuilderPredicate luci_runner_whitelist = 5;
+  BuilderPredicate enable_luci_runner = 5;
 }
 
 // Swarmbucket settings.
@@ -53,6 +51,26 @@ message SwarmingSettings {
   // These caches are available to all builders implicitly.
   // A builder may override a cache specified here.
   repeated Builder.CacheEntry global_caches = 4;
+
+  // CIPD package. Installatin path depends on the context.
+  message Package {
+    // CIPD package name, e.g. "infra/python/cpython/${platform}"
+    string package_name = 1;
+    // CIPD instance version, e.g. "version:2.7.15.chromium14".
+    // Used for non-canary builds.
+    string version = 2;
+    // CIPD instance version for canary builds.
+    // Defaults to version.
+    string version_canary = 3;;
+
+    // Include in builders matching the predicate.
+    BuilderPredicate builders = 4;
+  }
+  // Packages available to the user executable in $PATH.
+  // Installed in "{TASK_RUN_DIR}/cipd_bin_packages".
+  // "{TASK_RUN_DIR}/cipd_bin_packages" and
+  // "{TASK_RUN_DIR}/cipd_bin_packages/bin" are prepended to $PATH.
+  repeated Package user_packages = 5;
 }
 
 message LogDogSettings {
@@ -71,5 +89,10 @@ message BuilderPredicate {
   //   regex: "chromium/.+"
   //   # A specific builder.
   //   regex: "infra/ci/infra-continuous-trusty-64"
-  repeated string regexes = 1;
+  //
+  // Defaults to [".*"].
+  repeated string regex = 1;
+
+  // Like regex field, but negation. Negation always wins.
+  repeated string regex_exclude = 2;
 }
