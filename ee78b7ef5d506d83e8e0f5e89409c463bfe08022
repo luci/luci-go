@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1d3846c6_cd8bf46f",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-17T08:48:56Z",
+      "side": 1,
+      "message": "I guess hadHardTimeout can also be errors.New(\"hard timeout\") or so?\nIf caller need to check hard timeout or not, why not make the value public and allow caller to compare?",
+      "range": {
+        "startLine": 230,
+        "startChar": 17,
+        "endLine": 230,
+        "endChar": 37
+      },
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
