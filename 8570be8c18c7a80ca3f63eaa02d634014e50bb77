@@ -141,6 +141,30 @@
       "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fc67102_a82150e4",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-17T08:12:15Z",
+      "side": 1,
+      "message": "I\u0027m not sure I understand your comment.\nDo you say that cmd.Wait needs to take channel instead of duration and return if the channel closed?\nIn that case, how this line will be?",
+      "parentUuid": "ffdd7444_5b917b93",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 29
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

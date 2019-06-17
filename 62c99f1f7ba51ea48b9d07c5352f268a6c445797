@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "660bda38_3dca19c6",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-17T08:12:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da3d97e2_4e7ac4e7",
+      "range": {
+        "startLine": 188,
+        "startChar": 2,
+        "endLine": 188,
+        "endChar": 10
+      },
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a368118_2c3488b6",
         "filename": "cmdrunner/command.go",
         "patchSetId": 7
@@ -63,6 +87,24 @@
       "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80c5d447_90bc8196",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-17T08:12:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a368118_2c3488b6",
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -83,6 +125,24 @@
     },
     {
       "key": {
+        "uuid": "e611dec4_ae77735c",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-17T08:12:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "626fd3a8_42269583",
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de72e5d0_efa7ffab",
         "filename": "cmdrunner/command.go",
         "patchSetId": 7
@@ -97,6 +157,24 @@
       "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "312a005c_6bf976d8",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-17T08:12:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de72e5d0_efa7ffab",
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -123,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "f1901a4a_14ee854f",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-17T08:12:15Z",
+      "side": 1,
+      "message": "Changed to use function in failure case.",
+      "parentUuid": "f1ddb0d5_59704531",
+      "range": {
+        "startLine": 217,
+        "startChar": 0,
+        "endLine": 217,
+        "endChar": 8
+      },
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c26d759a_5442d92d",
         "filename": "cmdrunner/command.go",
         "patchSetId": 7
@@ -137,6 +239,24 @@
       "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e36d247_4090040b",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-17T08:12:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c26d759a_5442d92d",
+      "revId": "62c99f1f7ba51ea48b9d07c5352f268a6c445797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
