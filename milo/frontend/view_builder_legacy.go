@@ -11,11 +11,11 @@ import (
 	"go.chromium.org/luci/milo/buildsource"
 )
 
-// BuilderHandler is responsible for taking a universal builder ID and rendering
-// the builder page (defined in ./appengine/templates/pages/builder.html).
+// BuilderHandlerLegacy is responsible for taking a universal builder ID and
+// rendering the builder page (defined in ./appengine/templates/pages/builder_legacy.html).
 // We don't need to do an ACL check because this endpoint delegates all ACL checks
 // authentication to Buildbucket with the RPC calls.
-func BuilderHandler(c *router.Context, builderID buildsource.BuilderID) error {
+func BuilderHandlerLegacy(c *router.Context, builderID buildsource.BuilderID) error {
 	limit := 25
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
 		limit = tLimit
@@ -24,7 +24,7 @@ func BuilderHandler(c *router.Context, builderID buildsource.BuilderID) error {
 	if err != nil {
 		return err
 	}
-	templates.MustRender(c.Context, c.Writer, "pages/builder.html", templates.Args{
+	templates.MustRender(c.Context, c.Writer, "pages/builder_legacy.html", templates.Args{
 		"Builder": builder,
 	})
 	return nil
