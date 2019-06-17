@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c2733a7a_c516a177",
+        "filename": "buildbucket/proto/service_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-17T18:01:13Z",
+      "side": 1,
+      "message": "what does this mean?\nAlso \"installation\"",
+      "range": {
+        "startLine": 55,
+        "startChar": 19,
+        "endLine": 55,
+        "endChar": 59
+      },
+      "revId": "dd49d8d4764dc099a7c0519f1fabcd484cad1fda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7e5287d_bcd27ad9",
+        "filename": "buildbucket/proto/service_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-17T18:01:13Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 64,
+        "startChar": 30,
+        "endLine": 64,
+        "endChar": 31
+      },
+      "revId": "dd49d8d4764dc099a7c0519f1fabcd484cad1fda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
