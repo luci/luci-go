@@ -189,6 +189,30 @@
       "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e974bf9_d6deafb0",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-17T09:30:02Z",
+      "side": 1,
+      "message": "\u003e I was thinking the code like this:\n\u003e \n\u003e func runCommand(ctx context.Context, command []string, cwd string, env environ.Env, hardTimeout time.Duration, gracePeriod time.Duration, lowerPriority bool, containment bool) (int, error) {\n\u003e         cmd :\u003d exec2.CommandContext(ctx, command[0], command[1:]...)\n\u003e         cmd.Cwd \u003d cwd\n\u003e         cmd.Env \u003d env\n\u003e         // TODO: support lowerPriority\n\u003e         // TODO: support containment\n\u003e         defer func() { \n\u003e                 close(ctx)\n\u003e         }()\n\u003e         \n\nI almost understand now, but what is `close(ctx)`?\n\n\u003e         if err :\u003d cmd.Start(); err !\u003d nil {\n\u003e                 fmt.Fprintf(os.Stderr, \"\u003cThe executabable...\")\n\u003e                 return 1, err\n\u003e         }\n\u003e         errCh :\u003d make(chan error)\n\u003e         go func() {\n\u003e                 errCh \u003c- cmd.Wait()\n\u003e         }()\n\u003e         select { \n\u003e         case err :\u003d \u003c-errCh:\n\u003e                 return cmd.ExitCode(), err\n\u003e         case \u003c-time.After(hardTimeout):\n\u003e         }\n\u003e         if err :\u003d cmd.Terminate(); err !\u003d nil {\n\u003e                 return 1, err\n\u003e         }\n\u003e         select { \n\u003e         case err :\u003d \u003c-errCh:\n\u003e                 return cmd.ExitCode(), err\n\u003e         case \u003c-time.After(gracePeriod):\n\u003e         }\n\u003e         return 1, HardtimeoutError\n\u003e }",
+      "parentUuid": "01c9c044_617b85e7",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 29
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
