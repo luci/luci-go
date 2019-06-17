@@ -145,7 +145,7 @@ func Run(templatePath string) {
 			http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
 		}
 
-		return BuilderHandler(c, buildsource.BuilderID(bid.String()))
+		return BuilderHandler(c, buildsource.BuilderID(buildbucket.BuilderID{bid}.String()))
 	}))
 
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
