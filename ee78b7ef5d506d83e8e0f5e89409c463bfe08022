@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "d560c78b_3f9f2822",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-17T08:54:57Z",
+      "side": 1,
+      "message": "Please fix me if I understand wrong but I think failure might be executed only for cmd.Start() failure?\nError messages here also sounds like execve failure, not wait or other syscall failure.",
+      "range": {
+        "startLine": 177,
+        "startChar": 1,
+        "endLine": 177,
+        "endChar": 8
+      },
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1d3846c6_cd8bf46f",
         "filename": "cmdrunner/command.go",
         "patchSetId": 9
