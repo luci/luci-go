@@ -83,12 +83,12 @@ func TestExec(t *testing.T) {
 
 			So(cmd.Start(), ShouldBeNil)
 
-			const imalive = "I'm alive!"
-			buf := make([]byte, len(imalive))
+			expected := []byte("I'm alive!")
+			buf := make([]byte, len(expected))
 			n, err := rc.Read(buf)
 			So(err, ShouldBeNil)
-			So(n, ShouldEqual, len(imalive))
-			So(string(buf), ShouldEqual, imalive)
+			So(n, ShouldEqual, len(expected))
+			So(buf, ShouldResemble, expected)
 
 			So(rc.Close(), ShouldBeNil)
 
