@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "42323889_7e2238bc",
+        "filename": "auth/integration/gcemeta/gcemeta.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-17T22:04:58Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 21,
+        "startChar": 63,
+        "endLine": 21,
+        "endChar": 64
+      },
+      "revId": "a7ee4a585ccd5bb9abeee76d30c9f5161d91b3bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96649ed8_d2c057a3",
+        "filename": "auth/integration/gcemeta/gcemeta_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-17T22:04:58Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 92,
+        "startChar": 3,
+        "endLine": 96,
+        "endChar": 4
+      },
+      "revId": "a7ee4a585ccd5bb9abeee76d30c9f5161d91b3bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
