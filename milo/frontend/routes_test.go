@@ -30,12 +30,8 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/buildsource/swarming"
-	swarmingTestdata "go.chromium.org/luci/milo/buildsource/swarming/testdata"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/testdata"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
@@ -54,21 +50,8 @@ type testPackage struct {
 
 var (
 	allPackages = []testPackage{
-		{buildbotBuildTestData, "buildbot.build", "build_legacy.html"},
-		{buildbotBuilderTestData, "buildbot.builder", "builder.html"},
 		{buildbucketBuildTestData, "buildbucket.build", "build.html"},
 		{consoleTestData, "console", "console.html"},
-		{func() []common.TestBundle {
-			return swarmingTestdata.BuildTestData(
-				"../buildsource/swarming",
-				func(c context.Context, svc swarmingTestdata.SwarmingService, taskID string) (*ui.MiloBuildLegacy, error) {
-					build, err := swarming.SwarmingBuildImpl(c, svc, taskID)
-					build.StepDisplayPref = ui.StepDisplayExpanded
-					build.Fix(c)
-					return build, err
-				})
-		}, "swarming.build", "build_legacy.html"},
-		{swarmingTestdata.LogTestData, "swarming.log", "log.html"},
 		{testdata.Frontpage, "frontpage", "frontpage.html"},
 		{testdata.Search, "search", "search.html"},
 	}
@@ -164,68 +147,4 @@ func buildbucketBuildTestData() []common.TestBundle {
 		})
 	}
 	return bundles
-}
-
-// buildbotBuildTestData returns sample test data for build pages.
-func buildbotBuildTestData() []common.TestBundle {
-	c := memory.Use(context.Background())
-	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-	bundles := []common.TestBundle{}
-	for _, tc := range buildbot.TestCases {
-		build, err := buildbot.DebugBuild(c, "../buildsource/buildbot", tc.Builder, tc.Build)
-		if err != nil {
-			panic(fmt.Errorf(
-				"Encountered error while building debug/%s/%d.\n%s",
-				tc.Builder, tc.Build, err))
-		}
-		build.Fix(c)
-		bundles = append(bundles, common.TestBundle{
-			Description: fmt.Sprintf("Debug page: %s/%d", tc.Builder, tc.Build),
-			Data: templates.Args{
-				"Build": build,
-			},
-		})
-	}
-	return bundles
-}
-
-// buildbotBuilderTestData returns sample test data for builder pages.
-func buildbotBuilderTestData() []common.TestBundle {
-	l := ui.NewLink("Some current build", "https://some.url/path", "")
-	sum := &ui.BuildSummary{
-		Link:     l,
-		Revision: &ui.Commit{Revision: ui.NewEmptyLink("deadbeef")},
-	}
-	return []common.TestBundle{
-		{
-			Description: "Basic Test no builds",
-			Data: templates.Args{
-				"Builder": &ui.Builder{
-					Name:         "Sample Builder",
-					HasBlamelist: true,
-				},
-			},
-		},
-		{
-			Description: "Basic Test with builds",
-			Data: templates.Args{
-				"Builder": &ui.Builder{
-					Name:         "Sample Builder",
-					HasBlamelist: true,
-					MachinePool: &ui.MachinePool{
-						Total:   15,
-						Offline: 13,
-						Idle:    5,
-						Busy:    8,
-						Bots: []ui.Bot{
-							{Bot: model.Bot{Name: "botname", URL: "http://example.com/botname"}},
-						},
-					},
-					CurrentBuilds:  []*ui.BuildSummary{sum},
-					PendingBuilds:  []*ui.BuildSummary{sum},
-					FinishedBuilds: []*ui.BuildSummary{sum},
-				},
-			},
-		},
-	}
 }
