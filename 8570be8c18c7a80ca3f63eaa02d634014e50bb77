@@ -213,6 +213,30 @@
       "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd727592_69ae1c7e",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-17T14:06:23Z",
+      "side": 1,
+      "message": "I don\u0027t have strong opinion. I\u0027d say: make it work for now, and let\u0027s provision time to refactor later, as it\u0027ll be needed eventually, would it be just for https://crbug.com/916556. It\u0027s not a big deal that it\u0027s not perfect on the first try.",
+      "parentUuid": "5e974bf9_d6deafb0",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 29
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

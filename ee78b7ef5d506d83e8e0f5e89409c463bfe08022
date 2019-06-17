@@ -25,6 +25,47 @@
     },
     {
       "key": {
+        "uuid": "23e93251_11e161ab",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-17T14:06:23Z",
+      "side": 1,
+      "message": "Yes it\u0027s when the path to the executable doesn\u0027t exist.",
+      "parentUuid": "d560c78b_3f9f2822",
+      "range": {
+        "startLine": 177,
+        "startChar": 1,
+        "endLine": 177,
+        "endChar": 8
+      },
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18e9ccd8_9e2da0f4",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-17T14:06:23Z",
+      "side": 1,
+      "message": "Technically speaking, that\u0027s the only moment when the \u0027\u003cThe executable does not exist ...\u0027 message should be printed.",
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1d3846c6_cd8bf46f",
         "filename": "cmdrunner/command.go",
         "patchSetId": 9
@@ -68,6 +109,54 @@
       "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4353cd37_bc2ede5f",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-17T14:06:23Z",
+      "side": 1,
+      "message": "When a timeout happens, a SIGTERM is first sent. Then the process may handle this and exit right away, normally. In this case, the task state should be:\n- state: TIMED_OUT\n- exit_code: \u003cactual exit code\u003e\n\nBut if the task doesn\u0027t exit in time before grace_period, then exit_code will be SIGKILL (15) or something like that. There\u0027s no difference in the task state if the process exited before the grace period or not. That could be something to fix later.",
+      "parentUuid": "8f2dcd3e_a45f8473",
+      "range": {
+        "startLine": 230,
+        "startChar": 8,
+        "endLine": 230,
+        "endChar": 16
+      },
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ab8b7a8_3d87f9ab",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-17T14:06:23Z",
+      "side": 1,
+      "message": "That\u0027s a good question. Eventually we need to surface this information to task_runner, which will set the right state in the task. This will have to evolve over time. I\u0027m fine with starting with this at the moment and change it as needed later.",
+      "parentUuid": "1d3846c6_cd8bf46f",
+      "range": {
+        "startLine": 230,
+        "startChar": 17,
+        "endLine": 230,
+        "endChar": 37
+      },
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
