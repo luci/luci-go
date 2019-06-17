@@ -21,29 +21,42 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/frontend/testdata"
-	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/templates"
 
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+// TODO(nodir): refactor this file.
+
+// TestBundle is a template arg associated with a description used for testing.
+type TestBundle struct {
+	// Description is a short one line description of what the data contains.
+	Description string
+	// Data is the data fed directly into the template.
+	Data templates.Args
+}
+
 type testPackage struct {
-	Data         func() []common.TestBundle
+	Data         func() []TestBundle
 	DisplayName  string
 	TemplateName string
 }
@@ -52,8 +65,8 @@ var (
 	allPackages = []testPackage{
 		{buildbucketBuildTestData, "buildbucket.build", "build.html"},
 		{consoleTestData, "console", "console.html"},
-		{testdata.Frontpage, "frontpage", "frontpage.html"},
-		{testdata.Search, "search", "search.html"},
+		{Frontpage, "frontpage", "frontpage.html"},
+		{Search, "search", "search.html"},
 	}
 )
 
@@ -129,16 +142,14 @@ func TestPages(t *testing.T) {
 }
 
 // buildbucketBuildTestData returns sample test data for build pages.
-func buildbucketBuildTestData() []common.TestBundle {
-	c := memory.Use(context.Background())
-	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-	bundles := []common.TestBundle{}
-	for _, tc := range buildbucket.TestCases {
-		build, err := buildbucket.GetTestBuild(c, "../buildsource/buildbucket", tc)
+func buildbucketBuildTestData() []TestBundle {
+	bundles := []TestBundle{}
+	for _, tc := range []string{"linux-rel", "MacTests", "scheduled"} {
+		build, err := GetTestBuild("../buildsource/buildbucket", tc)
 		if err != nil {
 			panic(fmt.Errorf("Encountered error while fetching %s.\n%s", tc, err))
 		}
-		bundles = append(bundles, common.TestBundle{
+		bundles = append(bundles, TestBundle{
 			Description: fmt.Sprintf("Test page: %s", tc),
 			Data: templates.Args{"BuildPage": &ui.BuildPage{
 				Build:           ui.Build{build},
@@ -147,4 +158,166 @@ func buildbucketBuildTestData() []common.TestBundle {
 		})
 	}
 	return bundles
+}
+
+func consoleTestData() []TestBundle {
+	builder := &ui.BuilderRef{
+		ID:        "buildbucket/luci.project-foo.try/builder-bar",
+		ShortName: "tst",
+		Build: []*model.BuildSummary{
+			{
+				Summary: model.Summary{
+					Status: model.Success,
+				},
+			},
+			nil,
+		},
+		Builder: &model.BuilderSummary{
+			BuilderID:          "buildbucket/luci.project-foo.try/builder-bar",
+			ProjectID:          "project-foo",
+			LastFinishedStatus: model.InfraFailure,
+		},
+	}
+	root := ui.NewCategory("Root")
+	root.AddBuilder([]string{"cat1", "cat2"}, builder)
+	return []TestBundle{
+		{
+			Description: "Full console with Header",
+			Data: templates.Args{
+				"Expand": false,
+				"Console": consoleRenderer{&ui.Console{
+					Name:    "Test",
+					Project: "Testing",
+					Header: &ui.ConsoleHeader{
+						Oncalls: []ui.Oncall{
+							{
+								Name: "Sheriff",
+								Emails: []string{
+									"test@example.com",
+									"watcher@example.com",
+								},
+							},
+						},
+						Links: []ui.LinkGroup{
+							{
+								Name: ui.NewLink("Some group", "", ""),
+								Links: []*ui.Link{
+									ui.NewLink("LiNk", "something", ""),
+									ui.NewLink("LiNk2", "something2", ""),
+								},
+							},
+						},
+						ConsoleGroups: []ui.ConsoleGroup{
+							{
+								Title: ui.NewLink("bah", "something2", ""),
+								Consoles: []*ui.BuilderSummaryGroup{
+									{
+										Name: ui.NewLink("hurrah", "something2", ""),
+										Builders: []*model.BuilderSummary{
+											{
+												LastFinishedStatus: model.Success,
+											},
+											{
+												LastFinishedStatus: model.Success,
+											},
+											{
+												LastFinishedStatus: model.Failure,
+											},
+										},
+									},
+								},
+							},
+							{
+								Consoles: []*ui.BuilderSummaryGroup{
+									{
+										Name: ui.NewLink("hurrah", "something2", ""),
+										Builders: []*model.BuilderSummary{
+											{
+												LastFinishedStatus: model.Success,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Commit: []ui.Commit{
+						{
+							AuthorEmail: "x@example.com",
+							CommitTime:  time.Date(12, 12, 12, 12, 12, 12, 0, time.UTC),
+							Revision:    ui.NewLink("12031802913871659324", "blah blah blah", ""),
+							Description: "Me too.",
+						},
+						{
+							AuthorEmail: "y@example.com",
+							CommitTime:  time.Date(12, 12, 12, 12, 12, 11, 0, time.UTC),
+							Revision:    ui.NewLink("120931820931802913", "blah blah blah 1", ""),
+							Description: "I did something.",
+						},
+					},
+					Table:    *root,
+					MaxDepth: 3,
+				}},
+			},
+		},
+	}
+}
+
+func Frontpage() []TestBundle {
+	return []TestBundle{
+		{
+			Description: "Basic frontpage",
+			Data: templates.Args{
+				"frontpage": ui.Frontpage{
+					Projects: []common.Project{
+						{
+							ID:      "fakeproject",
+							LogoURL: "https://example.com/logo.png",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func Search() []TestBundle {
+	data := &templates.Args{
+		"search": ui.Search{
+			CIServices: []ui.CIService{
+				{
+					Name: "Module 1",
+					BuilderGroups: []ui.BuilderGroup{
+						{
+							Name: "Example master A",
+							Builders: []ui.Link{
+								*ui.NewLink("Example builder", "/master1/buildera", "Example label"),
+								*ui.NewLink("Example builder 2", "/master1/builderb", "Example label 2"),
+							},
+						},
+					},
+				},
+			},
+		},
+		"error": "couldn't find ice cream",
+	}
+	return []TestBundle{
+		{
+			Description: "Basic search page",
+			Data:        *data,
+		},
+	}
+}
+
+// GetTestBuild returns a debug build from testdata.
+func GetTestBuild(relDir, name string) (*buildbucketpb.Build, error) {
+	fname := fmt.Sprintf("%s.build.jsonpb", name)
+	path := filepath.Join(relDir, "testdata", fname)
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	result := &buildbucketpb.Build{}
+	return result, jsonpb.Unmarshal(f, result)
 }

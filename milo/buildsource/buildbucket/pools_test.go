@@ -23,6 +23,7 @@ import (
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	sv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -131,4 +132,17 @@ func TestPools(t *testing.T) {
 			})
 		})
 	})
+}
+
+var bktConfig = `
+buildbucket: {
+	host: "debug"
+	project: "debug"
+}
+`
+
+var bktConfigFull = map[config.Set]memcfg.Files{
+	"services/luci-milo-dev": {
+		"settings.cfg": bktConfig,
+	},
 }

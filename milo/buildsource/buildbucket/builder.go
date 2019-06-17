@@ -18,10 +18,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	"google.golang.org/api/googleapi"
@@ -125,47 +122,6 @@ func ensureDefined(c context.Context, host string, bid BuilderID) error {
 	return errors.Reason("builder %q not found", bid.Builder).Tag(grpcutil.NotFoundTag).Err()
 }
 
-func getDebugBuilds(c context.Context, bid BuilderID, maxCompletedBuilds int, target *ui.Builder) error {
-	// ../buildbucket below assumes that
-	// - this code is not executed by tests outside of this dir
-	// - this dir is a sibling of frontend dir
-	resFile, err := os.Open(filepath.Join(
-		"..", "buildbucket", "testdata", bid.V1Bucket(), bid.Builder+".json"))
-	if err != nil {
-		return err
-	}
-	defer resFile.Close()
-
-	res := &bbv1.LegacyApiSearchResponseMessage{}
-	if err := json.NewDecoder(resFile).Decode(res); err != nil {
-		return err
-	}
-
-	for _, bb := range res.Builds {
-		mb, err := ToMiloBuild(c, bb)
-		if err != nil {
-			return err
-		}
-		bs := mb.BuildSummary()
-		switch mb.Summary.Status {
-		case model.NotRun:
-			target.PendingBuilds = append(target.PendingBuilds, bs)
-
-		case model.Running:
-			target.CurrentBuilds = append(target.CurrentBuilds, bs)
-
-		case model.Success, model.Failure, model.InfraFailure, model.Warning:
-			if len(target.FinishedBuilds) < maxCompletedBuilds {
-				target.FinishedBuilds = append(target.FinishedBuilds, bs)
-			}
-
-		default:
-			panic("impossible")
-		}
-	}
-	return nil
-}
-
 func getHost(c context.Context) (string, error) {
 	settings := common.GetSettings(c)
 	if settings.Buildbucket == nil || settings.Buildbucket.Host == "" {
@@ -255,9 +211,7 @@ func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui
 	result := &ui.Builder{
 		Name: bid.Builder,
 	}
-	if host == "debug" {
-		return result, getDebugBuilds(c, bid, limit, result)
-	}
+
 	client, err := newBuildbucketClient(c, host)
 	if err != nil {
 		return nil, err
