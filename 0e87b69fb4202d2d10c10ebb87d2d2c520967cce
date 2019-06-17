@@ -22,6 +22,30 @@
       "revId": "0e87b69fb4202d2d10c10ebb87d2d2c520967cce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "986f1b9d_232c1d68",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2019-06-17T18:28:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f011c199_4656d179",
+      "range": {
+        "startLine": 49,
+        "startChar": 31,
+        "endLine": 49,
+        "endChar": 32
+      },
+      "revId": "0e87b69fb4202d2d10c10ebb87d2d2c520967cce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
