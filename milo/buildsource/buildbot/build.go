@@ -18,10 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net/url"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"time"
@@ -410,24 +408,6 @@ func renderBuild(c context.Context, b *buildbot.Build, includeStepsAndProps bool
 		result.Components = components(c, b)
 	}
 	return result
-}
-
-// DebugBuild fetches a debugging build for testing.
-func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildNum int) (*ui.MiloBuildLegacy, error) {
-	fname := fmt.Sprintf("%s.%d.json", builder, buildNum)
-	// ../buildbot below assumes that
-	// - this code is not executed by tests outside of this dir
-	// - this dir is a sibling of frontend dir
-	path := filepath.Join(relBuildbotDir, "testdata", fname)
-	raw, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	b := &buildbot.Build{}
-	if err := json.Unmarshal(raw, b); err != nil {
-		return nil, err
-	}
-	return renderBuild(c, b, true), nil
 }
 
 // GetBuild fetches a buildbot build and translates it into a MiloBuildLegacy.

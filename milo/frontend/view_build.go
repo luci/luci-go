@@ -31,19 +31,6 @@ import (
 	"go.chromium.org/luci/server/templates"
 )
 
-// handleDevBuild renders a canned build for development.
-// TODO(hinoka): Use a mock buildbucket rpc client instead.
-func handleDevBuild(c *router.Context) error {
-	name := c.Params.ByName("name")
-	b, err := buildbucket.GetTestBuild(c.Context, "../../buildsource/buildbucket", name)
-	if err != nil {
-		return err
-	}
-	bp := ui.NewBuildPage(c.Context, b)
-	bp.BuildbucketHost = "example.com"
-	return renderBuild(c, bp, nil)
-}
-
 // handleLUCIBuild renders a LUCI build.
 func handleLUCIBuild(c *router.Context) error {
 	bid := &buildbucketpb.BuilderID{

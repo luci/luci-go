@@ -68,13 +68,6 @@ func Run(templatePath string) {
 		withBuildbucketClient,
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
-	devHTMLMW := baseMW.Extend(
-		middleware.WithContextTimeout(time.Minute),
-		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
-		withGitMiddleware,
-		// TODO(hinoka): Use a mock buildbucket rpc client here.
-		templates.WithTemplates(getTemplateBundle(templatePath)),
-	)
 	projectMW := htmlMW.Extend(projectACLMiddleware)
 	backendMW := baseMW.Extend(
 		middleware.WithContextTimeout(10*time.Minute),
@@ -88,9 +81,6 @@ func Run(templatePath string) {
 
 	// Admin and cron endpoints.
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
-
-	// Dev endpoints.
-	r.GET("/admin/debug/build/:name", devHTMLMW, handleError(handleDevBuild))
 
 	// Cron endpoints
 	r.GET("/internal/cron/stats", cronMW, cronHandler(buildbot.StatsHandler))
