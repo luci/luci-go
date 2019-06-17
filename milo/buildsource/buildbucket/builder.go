@@ -142,7 +142,7 @@ func getDebugBuilds(c context.Context, bid BuilderID, maxCompletedBuilds int, ta
 	}
 
 	for _, bb := range res.Builds {
-		mb, err := ToMiloBuild(c, bb, false)
+		mb, err := ToMiloBuild(c, bb)
 		if err != nil {
 			return err
 		}
@@ -222,7 +222,7 @@ func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.LegacyApiCommonBuildM
 				// HACK(hinoka): For malformed builds (eg builder name and builder name tag don't match)
 				// We can drop them silently or display an error.  We choose the latter.
 				// Once we switch to the V2 we should be more resilient to these classes of issues.
-				mb, err := ToMiloBuild(c, m, false)
+				mb, err := ToMiloBuild(c, m)
 				if err == nil {
 					result[i] = mb.BuildSummary()
 					return nil
