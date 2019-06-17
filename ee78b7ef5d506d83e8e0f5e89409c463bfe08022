@@ -45,6 +45,29 @@
       "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f2dcd3e_a45f8473",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-06-17T09:05:54Z",
+      "side": 1,
+      "message": "question to maruel: what situation does caller need to use exitCode after hard timeout happened?",
+      "range": {
+        "startLine": 230,
+        "startChar": 8,
+        "endLine": 230,
+        "endChar": 16
+      },
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
