@@ -18,9 +18,9 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 )
 
-// BuildSummary is a summary of a build, with just enough information for display
+// BuildSummaryLegacy is a summary of a build, with just enough information for display
 // on a builder page.
-type BuildSummary struct {
+type BuildSummaryLegacy struct {
 	// Link to the build.
 	Link *Link
 
@@ -44,8 +44,8 @@ type BuildSummary struct {
 	Blame []*Commit
 }
 
-// Builder denotes an ordered list of MiloBuilds
-type Builder struct {
+// BuilderLegacy denotes an ordered list of MiloBuilds
+type BuilderLegacy struct {
 	// Name of the builder
 	Name string
 
@@ -56,12 +56,12 @@ type Builder struct {
 	// Warning text, if any.
 	Warning string
 
-	CurrentBuilds []*BuildSummary
-	PendingBuilds []*BuildSummary
+	CurrentBuilds []*BuildSummaryLegacy
+	PendingBuilds []*BuildSummaryLegacy
 	// PendingBuildNum is the number of pending builds, since the slice above
 	// may be a snapshot instead of the full set.
 	PendingBuildNum int
-	FinishedBuilds  []*BuildSummary
+	FinishedBuilds  []*BuildSummaryLegacy
 
 	// MachinePool is primarily used by buildbot builders to list the set of
 	// machines that can run in a builder.  It has no meaning in buildbucket or dm
