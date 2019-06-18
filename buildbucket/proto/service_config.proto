@@ -34,9 +34,6 @@ message SettingsCfg {
   // has very low quota. Context needs to know all such hostnames in advance to
   // be able to force authenticated access to them.
   repeated string known_public_gerrit_hosts = 3;
-
-  // LUCI Runner is enabled on these builders.
-  BuilderPredicate enable_luci_runner = 5;
 }
 
 // Swarmbucket settings.
