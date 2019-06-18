@@ -135,7 +135,7 @@ func Run(templatePath string) {
 			http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
 		}
 
-		return BuilderHandler(c, buildsource.BuilderID(buildbucket.BuilderID{bid}.String()))
+		return BuilderHandlerLegacy(c, buildsource.BuilderID(buildbucket.BuilderID{bid}.String()))
 	}))
 
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
@@ -144,7 +144,7 @@ func Run(templatePath string) {
 	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
 	r.GET("/buildbot/:master/:builder/:number", htmlMW.Extend(emulationMiddleware), handleError(handleBuildbotBuild))
 	r.GET("/buildbot/:master/:builder/", htmlMW.Extend(emulationMiddleware), handleError(func(c *router.Context) error {
-		return BuilderHandler(c, buildsource.BuilderID(
+		return BuilderHandlerLegacy(c, buildsource.BuilderID(
 			fmt.Sprintf("buildbot/%s/%s", c.Params.ByName("master"), c.Params.ByName("builder"))))
 	}))
 	r.GET("/buildbot/:master/", baseMW, func(c *router.Context) {
