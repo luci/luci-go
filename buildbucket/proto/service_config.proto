@@ -44,9 +44,6 @@ message SwarmingSettings {
   reserved 1; // default_hostname
   // Swarmbucket build URLs will point to this Milo instance.
   string milo_hostname = 2;
-  // Default value of swarming.task_template_canary_percentage field in
-  // cr-buildbucket.cfg files.
-  int32 default_task_template_canary_percentage = 3;
 
   // These caches are available to all builders implicitly.
   // A builder may override a cache specified here.
