@@ -34,6 +34,8 @@ import (
 	_ "google.golang.org/genproto/googleapis/type/dayofweek"
 
 	_ "go.chromium.org/chromiumos/infra/proto/go/chromiumos"
+	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform"
+	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform/migration/scheduler"
 	_ "go.chromium.org/chromiumos/infra/proto/go/testplans"
 
 	_ "go.chromium.org/luci/buildbucket/proto"
@@ -139,6 +141,25 @@ var publicProtos = map[string]struct {
 	"external/crostesting/test_level_tweak.proto": {
 		"testplans",
 		"testplans/test_level_tweak.proto",
+		"",
+	},
+
+	// CrOS test platform configuration.
+	//
+	// load(
+	//     "@proto//external/cros/test_platform/request.proto",
+	//     request_pb="test_platform")
+	// load(
+	//     "@proto//external/cros/test_platform/migration/scheduler/traffic_split.proto",
+	//     migration_pb="test_platform.migration.scheduler")
+	"external/cros/test_platform/request.proto": {
+		"test_platform",
+		"test_platform/request.proto",
+		"",
+	},
+	"external/cros/test_platform/migration/scheduler/traffic_split.proto": {
+		"test_platform.migration.scheduler",
+		"test_platform/migration/scheduler/traffic_split.proto",
 		"",
 	},
 
