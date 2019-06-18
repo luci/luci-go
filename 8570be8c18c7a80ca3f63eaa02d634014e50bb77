@@ -237,6 +237,30 @@
       "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcd0ce4b_fead805b",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-18T09:30:31Z",
+      "side": 1,
+      "message": "\u003e I almost understand now, but what is `close(ctx)`?\n\nclose(ctx) is used to kill the process:\nhttps://golang.org/pkg/os/exec/#CommandContext\n\nin exec2, maybe cmd.kill() instead?\n\n\u003e It\u0027s not a big deal that it\u0027s not perfect on the first try.\n\nIs exec2 a library usable by outside of this repo?  Or, all callers are in this repo?\nIn this CL, I am actually suggesting to change exec2 interface.  If all exec2 callers are in this repo, we can postpone the change of the interface.  If not, I suggest to change it soon before we have external users.",
+      "parentUuid": "bd727592_69ae1c7e",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 29
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

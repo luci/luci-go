@@ -199,6 +199,30 @@
       "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9cfa73a4_bd85e430",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-18T09:30:31Z",
+      "side": 1,
+      "message": "I understand the behavior but I do not understand why caller need to use exit_code if state\u003dTIMED_OUT.\nIf this code is only used by the code in this repository, I also think it is not a big deal.  If the code can be used by the other repository, fix causes interface change.  The cost to postpone should be larger than fixing now.",
+      "parentUuid": "4353cd37_bc2ede5f",
+      "range": {
+        "startLine": 230,
+        "startChar": 8,
+        "endLine": 230,
+        "endChar": 16
+      },
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
