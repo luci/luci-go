@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "366cde26_8c71bbd8",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-18T07:28:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "23e93251_11e161ab",
+      "range": {
+        "startLine": 177,
+        "startChar": 1,
+        "endLine": 177,
+        "endChar": 8
+      },
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18e9ccd8_9e2da0f4",
         "filename": "cmdrunner/command.go",
         "patchSetId": 9
@@ -63,6 +87,24 @@
       "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a1187b2_22c49060",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-18T07:28:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18e9ccd8_9e2da0f4",
+      "revId": "ee78b7ef5d506d83e8e0f5e89409c463bfe08022",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
