@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8f618353_30635cd9",
+        "filename": "common/proto/pagequeries.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-19T22:04:30Z",
+      "side": 1,
+      "message": "redundant, see L106 and L108",
+      "range": {
+        "startLine": 121,
+        "startChar": 46,
+        "endLine": 121,
+        "endChar": 51
+      },
+      "revId": "3ae3c204743863eb7ddb1fa696e03f1e6a6e443c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
