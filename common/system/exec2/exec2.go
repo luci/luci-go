@@ -17,22 +17,13 @@ package exec2
 import (
 	"context"
 	"os/exec"
-	"sync"
-	"time"
-
-	"go.chromium.org/luci/common/errors"
 )
 
-// ErrTimeout is error for timeout.
-var ErrTimeout = errors.Reason("timeout").Err()
-
-// Cmd is like exec.Cmd, but has fields for timeout support.
+// Cmd is like exec.Cmd, but supports terminate and process containment.
 type Cmd struct {
 	*exec.Cmd
 
-	attr   attr
-	waitCh chan error
-	once   sync.Once
+	attr attr
 }
 
 // CommandContext is like exec.CommandContext, but it uses process group by
@@ -52,22 +43,9 @@ func (c *Cmd) Start() error {
 	return c.start()
 }
 
-// Wait waits for timeout.
-func (c *Cmd) Wait(timeout time.Duration) error {
-	c.once.Do(func() {
-		c.waitCh = make(chan error)
-		go func() {
-			c.waitCh <- c.wait()
-			close(c.waitCh)
-		}()
-	})
-
-	select {
-	case <-time.After(timeout):
-		return ErrTimeout
-	case err := <-c.waitCh:
-		return err
-	}
+// Wait waits to process to finish.
+func (c *Cmd) Wait() error {
+	return c.wait()
 }
 
 // Terminate sends SIGTERM on unix or CTRL+BREAK on windows.
