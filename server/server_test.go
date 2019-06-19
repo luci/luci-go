@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gkelogger"
 
@@ -56,6 +57,14 @@ func TestServer(t *testing.T) {
 		srv, err := newTestServer(ctx)
 		So(err, ShouldBeNil)
 		defer srv.cleanup()
+
+		// Run one activity before starting the serving loop to verify this code
+		// path works. See also "RunInBackground" convey below.
+		activities := make(chan string, 2)
+		srv.RunInBackground("background 1", func(context.Context) {
+			activities <- "background 1"
+		})
+
 		srv.ServeInBackground()
 		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
 
@@ -102,7 +111,7 @@ func TestServer(t *testing.T) {
 					Time:     "1454472306.7",
 					TraceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					Operation: &gkelogger.Operation{
-						ID: "9566c74d10037c4d7bbb0407d1e2c649",
+						ID: "6694d2c422acd208a0072939487f6999",
 					},
 				},
 				{
@@ -111,7 +120,7 @@ func TestServer(t *testing.T) {
 					Time:     "1454472307.7",
 					TraceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					Operation: &gkelogger.Operation{
-						ID: "9566c74d10037c4d7bbb0407d1e2c649",
+						ID: "6694d2c422acd208a0072939487f6999",
 					},
 				},
 			})
@@ -143,6 +152,28 @@ func TestServer(t *testing.T) {
 			resp, err := srv.Get("/settings", nil)
 			So(err, ShouldBeNil)
 			So(resp, ShouldEqual, "settings-value")
+		})
+
+		Convey("RunInBackground", func() {
+			// Run one more activity after starting the serving loop.
+			srv.RunInBackground("background 2", func(context.Context) {
+				activities <- "background 2"
+			})
+
+			s := stringset.New(2)
+			wait := func() {
+				select {
+				case name := <-activities:
+					s.Add(name)
+				case <-time.After(10 * time.Second):
+					panic("timeout")
+				}
+			}
+
+			// Verify both activities have started (this hangs otherwise).
+			wait()
+			wait()
+			So(s.Len(), ShouldEqual, 2)
 		})
 
 		Convey("Client auth", func() {
@@ -218,9 +249,6 @@ func BenchmarkServer(b *testing.B) {
 	// are initialized.
 	srv.ServeInBackground()
 	defer srv.StopBackgroundServing()
-	if _, err = srv.Get("/health", nil); err != nil {
-		b.Fatal(err)
-	}
 
 	// Actual benchmark loop. Note that we bypass network layer here completely
 	// (by not using http.DefaultClient).
@@ -337,6 +365,9 @@ func newTestServer(ctx context.Context) (srv *testServer, err error) {
 
 func (s *testServer) ServeInBackground() {
 	go func() { s.serveErr.Set(s.ListenAndServe()) }()
+	if _, err := s.Get("/health", nil); err != nil {
+		panic(err)
+	}
 }
 
 func (s *testServer) StopBackgroundServing() error {
