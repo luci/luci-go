@@ -22,6 +22,30 @@
       "revId": "cb2e04b4bcafd13a399fbd2bd694ff98ab556267",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5179224d_5b940c0f",
+        "filename": "server/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-19T18:08:47Z",
+      "side": 1,
+      "message": "Go test have a time out built-in. Good enough, considering this test should never fail ;)\n\nAdded shorter 10 sec timeout.",
+      "parentUuid": "cff8ac3e_f187af33",
+      "range": {
+        "startLine": 162,
+        "startChar": 42,
+        "endLine": 162,
+        "endChar": 64
+      },
+      "revId": "cb2e04b4bcafd13a399fbd2bd694ff98ab556267",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
