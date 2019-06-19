@@ -320,6 +320,10 @@ message BuildInfra {
       //
       // The value must be multiples of 60 seconds.
       google.protobuf.Duration wait_for_warm_cache = 3;
+
+      // Environment variable with this name will be set to the path to the cache
+      // directory.
+      string env_var = 4;
     }
 
     // Swarming hostname, e.g. "chromium-swarm.appspot.com".
