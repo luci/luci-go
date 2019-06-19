@@ -523,6 +523,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 func (s *Server) initLogging() {
 	if !s.opts.Prod {
 		s.ctx = gologger.StdConfig.Use(s.ctx)
+		s.ctx = logging.SetLevel(s.ctx, logging.Debug)
 		return
 	}
 
