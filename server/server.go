@@ -120,6 +120,7 @@ type Server struct {
 	httpSrv []*http.Server // all registered HTTP servers
 	started bool           // true inside and after ListenAndServe
 	stopped bool           // true inside and after Shutdown
+	ready   chan struct{}  // closed right before starting the serving loop
 	done    chan struct{}  // closed after Shutdown returns
 
 	rndM sync.Mutex // protects rnd
@@ -159,6 +160,7 @@ func New(opts Options) *Server {
 	srv := &Server{
 		ctx:          context.Background(),
 		opts:         opts,
+		ready:        make(chan struct{}),
 		done:         make(chan struct{}),
 		rnd:          rand.New(rand.NewSource(seed)),
 		secrets:      secrets.NewDerivedStore(secrets.Secret{}),
@@ -240,6 +242,40 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 	return r
 }
 
+// RunInBackground launches the given callback in a separate goroutine right
+// before starting the serving loop.
+//
+// If the server is already running, launches it right away. If the server
+// fails to start, the goroutines will never be launched.
+//
+// Should be used for background asynchronous activities like reloading configs.
+//
+// All logs lines emitted by the callback are annotated with "activity" field
+// which can be arbitrary, but by convention has format "<namespace>.<name>",
+// where "luci" namespace is reserved for internal activities.
+//
+// The callback receives a context with following services available:
+//   * go.chromium.org/luci/common/logging: Logging.
+//   * go.chromium.org/luci/server/caching: Process cache.
+//   * go.chromium.org/luci/server/secrets: Secrets.
+//   * go.chromium.org/luci/server/settings: Access to app settings.
+//   * go.chromium.org/luci/server/auth: Making authenticated calls.
+//
+// The context passed to the callback is canceled when the server is shutting
+// down. It is expected the goroutine will exit soon after the context is
+// canceled.
+func (s *Server) RunInBackground(activity string, f func(context.Context)) {
+	s.runInBackground(activity, func(c context.Context) {
+		// Block until the server is ready or shutdown.
+		select {
+		case <-s.ready:
+			f(c)
+		case <-s.bgrCtx.Done():
+			// the server is closed, no need to run f() anymore
+		}
+	})
+}
+
 // ListenAndServe launches the serving loop.
 //
 // Blocks forever or until the server is stopped via Shutdown (from another
@@ -274,6 +310,9 @@ func (s *Server) ListenAndServe() error {
 	// Catch SIGTERM while inside this function.
 	stop := signals.HandleInterrupt(s.Shutdown)
 	defer stop()
+
+	// Unblock all pending RunInBackground goroutines, so they can start.
+	close(s.ready)
 
 	// Run serving loops in parallel.
 	errs := make(errors.MultiError, len(httpSrv))
@@ -520,7 +559,7 @@ func (s *Server) initSecrets() error {
 		return err
 	}
 	s.secrets.SetRoot(secret)
-	s.runInBackground("secrets", func(c context.Context) {
+	s.runInBackground("luci.secrets", func(c context.Context) {
 		for {
 			if r := <-clock.After(c, time.Minute); r.Err != nil {
 				return // the context is canceled
@@ -577,7 +616,7 @@ func (s *Server) initSettings() error {
 	if err := s.loadSettings(s.ctx); err != nil {
 		return err
 	}
-	s.runInBackground("settings", func(c context.Context) {
+	s.runInBackground("luci.settings", func(c context.Context) {
 		for {
 			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
 				return // the context is canceled
