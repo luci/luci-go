@@ -34,7 +34,7 @@ func TestGetAuthDB(t *testing.T) {
 		c := gaetesting.TestingContext()
 		authDB, err := GetAuthDB(c, nil)
 		So(err, ShouldBeNil)
-		So(authDB, ShouldHaveSameTypeAs, devServerDB{})
+		So(authDB, ShouldHaveSameTypeAs, authdb.DevServerDB{})
 	})
 
 	Convey("Reuses instance if no changes", t, func() {
