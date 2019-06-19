@@ -162,8 +162,8 @@ func backCursor(c context.Context, bid BuilderID, limit int, thisCursor, nextCur
 }
 
 // toMiloBuildsSummaries computes summary for each build in parallel.
-func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.LegacyApiCommonBuildMessage) []*ui.BuildSummary {
-	result := make([]*ui.BuildSummary, len(msgs))
+func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.LegacyApiCommonBuildMessage) []*ui.BuildSummaryLegacy {
+	result := make([]*ui.BuildSummaryLegacy, len(msgs))
 	// For each build, toMiloBuild may query Gerrit to fetch associated CL's
 	// author email. Unfortunately, as of June 2018 Gerrit is often taking >5s to
 	// report back. From UX PoV, author's email isn't the most important of
@@ -185,7 +185,7 @@ func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.LegacyApiCommonBuildM
 				}
 				msg := fmt.Sprintf("failed to convert build %d to milo build: %s", m.Id, err)
 				logging.Errorf(c, msg)
-				result[i] = &ui.BuildSummary{
+				result[i] = &ui.BuildSummaryLegacy{
 					Link:   ui.NewEmptyLink("N/A - Error"),
 					Status: model.InfraFailure,
 					Text:   []string{msg},
@@ -198,7 +198,7 @@ func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.LegacyApiCommonBuildM
 }
 
 // GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
-func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui.Builder, error) {
+func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui.BuilderLegacy, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
@@ -208,7 +208,7 @@ func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui
 		limit = 20
 	}
 
-	result := &ui.Builder{
+	result := &ui.BuilderLegacy{
 		Name: bid.Builder,
 	}
 
@@ -217,7 +217,7 @@ func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui
 		return nil, err
 	}
 
-	fetch := func(statusFilter string, limit int, cursor string) (result []*ui.BuildSummary, nextCursor string, err error) {
+	fetch := func(statusFilter string, limit int, cursor string) (result []*ui.BuildSummaryLegacy, nextCursor string, err error) {
 		msgs, nextCursor, err := fetchBuilds(c, client, bid, statusFilter, limit, cursor)
 		if err != nil {
 			logging.WithError(err).Errorf(c, "Could not fetch %s builds", statusFilter)

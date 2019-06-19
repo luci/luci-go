@@ -61,14 +61,14 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 
 // Get allows you to obtain the resp.Builder that corresponds with this
 // BuilderID.
-func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder, error) {
+func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.BuilderLegacy, error) {
 	// TODO(iannucci): replace these implementations with a BuildSummary query.
 	source, group, builderName, err := b.Split()
 	if err != nil {
 		return nil, err
 	}
 
-	var builder *ui.Builder
+	var builder *ui.BuilderLegacy
 	var consoles []*common.Console
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (err error) {

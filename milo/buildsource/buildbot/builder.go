@@ -107,11 +107,11 @@ func summarizeSlavePool(
 
 // GetBuilder is the implementation for getting a milo builder page from
 // buildbot.
-func GetBuilder(c context.Context, masterName, builderName string, limit int, cursor string) (*ui.Builder, error) {
+func GetBuilder(c context.Context, masterName, builderName string, limit int, cursor string) (*ui.BuilderLegacy, error) {
 	if err := buildstore.CanAccessMaster(c, masterName); err != nil {
 		return nil, err
 	}
-	result := &ui.Builder{
+	result := &ui.BuilderLegacy{
 		Name: builderName,
 	}
 	master, err := buildstore.GetMaster(c, masterName, false)
@@ -144,12 +144,12 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	}
 
 	// Extract pending builds out of the master.
-	result.PendingBuilds = make([]*ui.BuildSummary, len(builder.PendingBuildStates))
+	result.PendingBuilds = make([]*ui.BuildSummaryLegacy, len(builder.PendingBuildStates))
 	result.PendingBuildNum = builder.PendingBuilds
 	logging.Debugf(c, "Number of pending builds: %d", len(builder.PendingBuildStates))
 	for i, pb := range builder.PendingBuildStates {
 		start := time.Unix(int64(pb.SubmittedAt), 0).UTC()
-		result.PendingBuilds[i] = &ui.BuildSummary{
+		result.PendingBuilds[i] = &ui.BuildSummaryLegacy{
 			PendingTime: ui.NewInterval(c, start, time.Time{}),
 			Blame:       make([]*ui.Commit, len(pb.Source.Changes)),
 		}
@@ -185,7 +185,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			}
 			result.NextCursor = res.NextCursor
 			result.PrevCursor = res.PrevCursor
-			result.FinishedBuilds = make([]*ui.BuildSummary, len(res.Builds))
+			result.FinishedBuilds = make([]*ui.BuildSummaryLegacy, len(res.Builds))
 			for i, b := range res.Builds {
 				result.FinishedBuilds[i] = renderBuild(c, b, false).BuildSummary()
 			}
@@ -198,7 +198,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			if err != nil {
 				return err
 			}
-			result.CurrentBuilds = make([]*ui.BuildSummary, len(res.Builds))
+			result.CurrentBuilds = make([]*ui.BuildSummaryLegacy, len(res.Builds))
 			for i, b := range res.Builds {
 				// currentBuilds is presented in reversed order, so flip it
 				result.CurrentBuilds[len(res.Builds)-i-1] = renderBuild(c, b, false).BuildSummary()

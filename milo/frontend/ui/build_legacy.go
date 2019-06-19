@@ -176,11 +176,11 @@ func (b *MiloBuildLegacy) Fix(c context.Context) {
 
 // BuildSummary returns the BuildSummary representation of the MiloBuildLegacy.  This
 // is the subset of fields that is interesting to the builder view.
-func (b *MiloBuildLegacy) BuildSummary() *BuildSummary {
+func (b *MiloBuildLegacy) BuildSummary() *BuildSummaryLegacy {
 	if b == nil {
 		return nil
 	}
-	result := &BuildSummary{
+	result := &BuildSummaryLegacy{
 		Link:          b.Summary.Label,
 		Status:        b.Summary.Status,
 		PendingTime:   b.Summary.PendingTime,
