@@ -22,6 +22,30 @@
       "revId": "3ae3c204743863eb7ddb1fa696e03f1e6a6e443c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "074ff6e0_08231974",
+        "filename": "common/proto/pagequeries.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-06-19T22:30:15Z",
+      "side": 1,
+      "message": "Oh, I meant \"lim \u003e 0\", but that\u0027s redundant for the same reason because i \u003e 0 \u0026\u0026 i \u003d\u003d lim implies lim \u003e 0.",
+      "parentUuid": "8f618353_30635cd9",
+      "range": {
+        "startLine": 121,
+        "startChar": 46,
+        "endLine": 121,
+        "endChar": 51
+      },
+      "revId": "3ae3c204743863eb7ddb1fa696e03f1e6a6e443c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
