@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4506fdca_bc38aaa6",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-19T16:47:35Z",
+      "side": 1,
+      "message": "Question: I forget in what case Wait() may return an error.",
+      "revId": "a15793e804e19bda4f451b3495fb9e46c6309baf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3962a970_bad8dc9c",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-19T16:47:35Z",
+      "side": 1,
+      "message": "you still need to do \n\n  \u003c-errCh\n\nbecause Kill is asynchronous.",
+      "revId": "a15793e804e19bda4f451b3495fb9e46c6309baf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48954f89_e02f4973",
+        "filename": "cmdrunner/command_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-19T16:47:35Z",
+      "side": 1,
+      "message": "Yeah, I\u0027d like to have these, since it\u0027s subtle and easy to mess up in OS-specific ways.",
+      "revId": "a15793e804e19bda4f451b3495fb9e46c6309baf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
