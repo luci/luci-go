@@ -261,6 +261,30 @@
       "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a8f9310_b2cc7c63",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-19T07:36:37Z",
+      "side": 1,
+      "message": "OK. I made interface change here.\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1666978",
+      "parentUuid": "dcd0ce4b_fead805b",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 29
+      },
+      "revId": "8570be8c18c7a80ca3f63eaa02d634014e50bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
