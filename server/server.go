@@ -222,7 +222,7 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 	s.m.Lock()
 	defer s.m.Unlock()
 	if s.started {
-		panic("the server has already been started")
+		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
 
 	// Setup middleware chain used by ALL requests.
@@ -255,7 +255,7 @@ func (s *Server) ListenAndServe() error {
 	s.started = true
 	s.m.Unlock()
 	if wasRunning {
-		panic("the server has already been started")
+		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
 
 	if err := s.initSecrets(); err != nil {
@@ -341,6 +341,14 @@ func (s *Server) Shutdown() {
 	// Notify ListenAndServe that it can exit now.
 	s.stopped = true
 	close(s.done)
+}
+
+// Fatal logs the error and immediately shuts down the process with exit code 3.
+//
+// No cleanup is performed. Deferred statements are not run. Not recoverable.
+func (s *Server) Fatal(err error) {
+	errors.Log(s.ctx, err)
+	os.Exit(3)
 }
 
 // serveLoop binds the socket and launches the serving loop.
