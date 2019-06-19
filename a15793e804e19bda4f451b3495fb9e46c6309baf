@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b59fda7e_fcea2525",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-19T22:32:24Z",
+      "side": 1,
+      "message": "This is almost the same with Wait of os/exec.Cmd.\nhttps://golang.org/pkg/os/exec/#Cmd.Wait\n\nChanged to ignore exited case here.",
+      "parentUuid": "4506fdca_bc38aaa6",
+      "revId": "a15793e804e19bda4f451b3495fb9e46c6309baf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3962a970_bad8dc9c",
         "filename": "cmdrunner/command.go",
         "patchSetId": 13
@@ -33,6 +51,24 @@
       "revId": "a15793e804e19bda4f451b3495fb9e46c6309baf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e2b0c5a_3a0e07fb",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-06-19T22:32:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3962a970_bad8dc9c",
+      "revId": "a15793e804e19bda4f451b3495fb9e46c6309baf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
