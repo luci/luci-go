@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cff8ac3e_f187af33",
+        "filename": "server/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-19T16:57:10Z",
+      "side": 1,
+      "message": "this is unfortunate. Can you do a for{select{/* with timeout*/}} s.t. hanging is for at most say 10s and then this test explicitly fails with an error?",
+      "range": {
+        "startLine": 162,
+        "startChar": 42,
+        "endLine": 162,
+        "endChar": 64
+      },
+      "revId": "cb2e04b4bcafd13a399fbd2bd694ff98ab556267",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
