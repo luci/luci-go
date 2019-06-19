@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4b22917_bf14b117",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 670,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-19T16:41:00Z",
+      "side": 1,
+      "message": "It\u0027d be nice if we could still get caches. When there\u0027s a failure, often there\u0027s still a lot of things that happened. So I\u0027d recommend to still do the calculation even in case of failure. wdyt?",
+      "revId": "59b77c52bfb0a313d93f0251dc6220e1c362a401",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "446bafbc_f5e60baf",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-06-19T16:41:00Z",
+      "side": 1,
+      "message": "You shouldn\u0027t have to do this, the size is already in the cache. I\u0027d prefer to save the system call (which is slow on Windows).",
+      "revId": "59b77c52bfb0a313d93f0251dc6220e1c362a401",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
