@@ -161,9 +161,13 @@ func (l *jsonLogger) Errorf(format string, args ...interface{}) {
 	l.LogCall(logging.Error, 1, format, args)
 }
 
-func (l *jsonLogger) LogCall(lv logging.Level, calldepth int, format string, args []interface{}) {
+func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
+	if !logging.IsLogging(l.ctx, lvl) {
+		return
+	}
+
 	e := l.prototype
-	e.Severity = lv.String()
+	e.Severity = lvl.String()
 	e.Message = fmt.Sprintf(format, args...)
 	e.Time = FormatTime(clock.Now(l.ctx))
 	e.Fields = logging.GetFields(l.ctx)
