@@ -159,20 +159,10 @@ func TestServer(t *testing.T) {
 			srv.RunInBackground("background 2", func(context.Context) {
 				activities <- "background 2"
 			})
-
-			s := stringset.New(2)
-			wait := func() {
-				select {
-				case name := <-activities:
-					s.Add(name)
-				case <-time.After(10 * time.Second):
-					panic("timeout")
-				}
-			}
-
 			// Verify both activities have started (this hangs otherwise).
-			wait()
-			wait()
+			s := stringset.New(2)
+			s.Add(<-activities)
+			s.Add(<-activities)
 			So(s.Len(), ShouldEqual, 2)
 		})
 

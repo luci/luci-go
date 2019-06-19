@@ -50,8 +50,6 @@ func TestExec(t *testing.T) {
 			So(os.RemoveAll(tmpdir), ShouldBeNil)
 		}()
 
-		errCh := make(chan error, 1)
-
 		Convey("exit", func() {
 			testBinary, err := build(filepath.Join("testdata", "exit.go"), tmpdir)
 			So(err, ShouldBeNil)
@@ -60,7 +58,7 @@ func TestExec(t *testing.T) {
 				cmd := CommandContext(ctx, testBinary)
 				So(cmd.Start(), ShouldBeNil)
 
-				So(cmd.Wait(), ShouldBeNil)
+				So(cmd.Wait(time.Minute), ShouldBeNil)
 
 				So(cmd.ProcessState.ExitCode(), ShouldEqual, 0)
 			})
@@ -69,7 +67,7 @@ func TestExec(t *testing.T) {
 				cmd := CommandContext(ctx, testBinary, "42")
 				So(cmd.Start(), ShouldBeNil)
 
-				So(cmd.Wait(), ShouldBeError, "exit status 42")
+				So(cmd.Wait(time.Minute), ShouldBeError, "exit status 42")
 
 				So(cmd.ProcessState.ExitCode(), ShouldEqual, 42)
 			})
@@ -94,29 +92,14 @@ func TestExec(t *testing.T) {
 
 			So(rc.Close(), ShouldBeNil)
 
-			go func() {
-				errCh <- cmd.Wait()
-			}()
-
-			select {
-			case err := <-errCh:
-				Print(err)
-				So("should not reach here", ShouldBeNil)
-			case <-time.After(time.Millisecond):
-			}
+			So(cmd.Wait(time.Millisecond), ShouldEqual, ErrTimeout)
 
 			So(cmd.Terminate(), ShouldBeNil)
 
-			select {
-			case err := <-errCh:
-				if runtime.GOOS == "windows" {
-					So(err, ShouldBeError, "exit status 2")
-				} else {
-					So(err, ShouldBeError, "signal: terminated")
-				}
-			case <-time.After(time.Minute):
-				Print(err)
-				So("should not reach here", ShouldBeNil)
+			if runtime.GOOS == "windows" {
+				So(cmd.Wait(time.Minute), ShouldBeError, "exit status 2")
+			} else {
+				So(cmd.Wait(time.Minute).Error(), ShouldEqual, "signal: terminated")
 			}
 
 			if runtime.GOOS == "windows" {
@@ -142,7 +125,7 @@ func TestExec(t *testing.T) {
 
 			So(cmd.Start(), ShouldBeNil)
 
-			So(cmd.Wait(), ShouldBeError, "signal: killed")
+			So(cmd.Wait(time.Minute).Error(), ShouldEqual, "signal: killed")
 
 			So(cmd.ProcessState.ExitCode(), ShouldEqual, -1)
 		})
@@ -171,9 +154,7 @@ func TestSetEnv(t *testing.T) {
 		cmd.Env = env.Sorted()
 
 		So(cmd.Start(), ShouldBeNil)
-
-		So(cmd.Wait(), ShouldBeNil)
-
+		So(cmd.Wait(time.Second), ShouldBeNil)
 		So(cmd.ProcessState.ExitCode(), ShouldEqual, 0)
 	})
 }
