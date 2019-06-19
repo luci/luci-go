@@ -40,52 +40,48 @@ func TestPageQueries(t *testing.T) {
 		c := memory.Use(context.Background())
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
-		req := &examples.ListRequest{}
 		rsp := &examples.ListResponse{}
 		q := datastore.NewQuery("kind")
 
 		Convey("invalid", func() {
 			Convey("function", func() {
 				Convey("nil", func() {
-					So(PageQuery(c, req, rsp, q, nil), ShouldErrLike, "callback must be a function")
+					So(PageQuery(c, 0, "", rsp, q, nil), ShouldErrLike, "callback must be a function")
 				})
 
 				Convey("no inputs", func() {
 					f := func() error {
 						return nil
 					}
-					So(PageQuery(c, req, rsp, q, f), ShouldErrLike, "callback function must accept one argument")
+					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must accept one argument")
 				})
 
 				Convey("many inputs", func() {
 					f := func(interface{}, datastore.CursorCB) error {
 						return nil
 					}
-					So(PageQuery(c, req, rsp, q, f), ShouldErrLike, "callback function must accept one argument")
+					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must accept one argument")
 				})
 
 				Convey("no outputs", func() {
 					f := func(interface{}) {
 					}
-					So(PageQuery(c, req, rsp, q, f), ShouldErrLike, "callback function must return one value")
+					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
 				})
 
 				Convey("many outputs", func() {
 					f := func(interface{}) (interface{}, error) {
 						return nil, nil
 					}
-					So(PageQuery(c, req, rsp, q, f), ShouldErrLike, "callback function must return one value")
+					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
 				})
 			})
 
 			Convey("token", func() {
-				req := &examples.ListRequest{
-					PageToken: "tok",
-				}
 				f := func(interface{}) error {
 					return nil
 				}
-				So(PageQuery(c, req, rsp, q, f), ShouldErrLike, "invalid page token")
+				So(PageQuery(c, 0, "tok", rsp, q, f), ShouldErrLike, "invalid page token")
 			})
 		})
 
@@ -97,7 +93,7 @@ func TestPageQueries(t *testing.T) {
 					}
 					So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
 
-					So(PageQuery(c, req, rsp, q, f), ShouldErrLike, "error")
+					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "error")
 				})
 
 				Convey("stop", func() {
@@ -109,13 +105,37 @@ func TestPageQueries(t *testing.T) {
 						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
 						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
 
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
-						So(rsp.NextPageToken, ShouldNotBeEmpty)
+						Convey("limit", func() {
+							Convey("greater", func() {
+								So(PageQuery(c, 10, "", rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldNotBeEmpty)
 
-						req.PageToken = rsp.NextPageToken
-						rsp.NextPageToken = ""
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
-						So(rsp.NextPageToken, ShouldBeEmpty)
+								tok := rsp.NextPageToken
+								rsp.NextPageToken = ""
+								So(PageQuery(c, 10, tok, rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldBeEmpty)
+							})
+
+							Convey("equal", func() {
+								So(PageQuery(c, 1, "", rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldNotBeEmpty)
+
+								tok := rsp.NextPageToken
+								rsp.NextPageToken = ""
+								So(PageQuery(c, 1, tok, rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldBeEmpty)
+							})
+						})
+
+						Convey("no limit", func() {
+							So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+							So(rsp.NextPageToken, ShouldNotBeEmpty)
+
+							tok := rsp.NextPageToken
+							rsp.NextPageToken = ""
+							So(PageQuery(c, 0, tok, rsp, q, f), ShouldBeNil)
+							So(rsp.NextPageToken, ShouldBeEmpty)
+						})
 					})
 
 					Convey("intermediate", func() {
@@ -131,21 +151,58 @@ func TestPageQueries(t *testing.T) {
 						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
 						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
 
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
-						So(rsp.NextPageToken, ShouldNotBeEmpty)
+						Convey("limit", func() {
+							Convey("greater", func() {
+								So(PageQuery(c, 10, "", rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldNotBeEmpty)
 
-						req.PageToken = rsp.NextPageToken
-						rsp.NextPageToken = ""
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
-						So(rsp.NextPageToken, ShouldBeEmpty)
+								tok := rsp.NextPageToken
+								rsp.NextPageToken = ""
+								So(PageQuery(c, 10, tok, rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldBeEmpty)
+							})
+
+							Convey("equal", func() {
+								So(PageQuery(c, 2, "", rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldNotBeEmpty)
+
+								tok := rsp.NextPageToken
+								rsp.NextPageToken = ""
+								So(PageQuery(c, 2, tok, rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldBeEmpty)
+							})
+						})
+
+						Convey("no limit", func() {
+							So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+							So(rsp.NextPageToken, ShouldNotBeEmpty)
+
+							tok := rsp.NextPageToken
+							rsp.NextPageToken = ""
+							So(PageQuery(c, 0, tok, rsp, q, f), ShouldBeNil)
+							So(rsp.NextPageToken, ShouldBeEmpty)
+						})
 					})
 
 					Convey("last", func() {
-						req.PageSize = 31
 						So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
 
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
-						So(rsp.NextPageToken, ShouldBeEmpty)
+						Convey("limit", func() {
+							Convey("greater", func() {
+								So(PageQuery(c, 10, "", rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldBeEmpty)
+							})
+
+							Convey("equal", func() {
+								So(PageQuery(c, 1, "", rsp, q, f), ShouldBeNil)
+								So(rsp.NextPageToken, ShouldBeEmpty)
+							})
+						})
+
+						Convey("no limit", func() {
+							So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+							So(rsp.NextPageToken, ShouldBeEmpty)
+						})
 					})
 				})
 
@@ -155,69 +212,33 @@ func TestPageQueries(t *testing.T) {
 					}
 					So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
 
-					So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
+					Convey("limit", func() {
+						So(PageQuery(c, 10, "", rsp, q, f), ShouldBeNil)
+					})
+
+					Convey("no limit", func() {
+						So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+					})
 				})
 			})
 
-			Convey("request", func() {
+			Convey("query", func() {
 				rsp.Records = make([]string, 0)
 				f := func(r *Record) error {
 					rsp.Records = append(rsp.Records, r.ID)
 					return nil
 				}
 
-				Convey("empty", func() {
+				Convey("limit", func() {
 					Convey("none", func() {
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
+						So(PageQuery(c, 2, "", rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldBeEmpty)
 					})
 
 					Convey("one", func() {
 						So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
 
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldResemble, []string{"id"})
-					})
-
-					Convey("many", func() {
-						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
-
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldResemble, []string{"id1", "id2", "id3"})
-					})
-
-					Convey("stopped", func() {
-						rsp.Records = make([]string, 0)
-						f := func(r *Record) error {
-							rsp.Records = append(rsp.Records, r.ID)
-							return datastore.Stop
-						}
-						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
-
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldResemble, []string{"id1"})
-						So(rsp.NextPageToken, ShouldNotBeEmpty)
-					})
-				})
-
-				Convey("page size", func() {
-					req := &examples.ListRequest{
-						PageSize: 2,
-					}
-
-					Convey("none", func() {
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldBeEmpty)
-					})
-
-					Convey("one", func() {
-						So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
-
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
+						So(PageQuery(c, 2, "", rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldResemble, []string{"id"})
 						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
@@ -227,16 +248,52 @@ func TestPageQueries(t *testing.T) {
 						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
 						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
 
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
+						So(PageQuery(c, 2, "", rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldResemble, []string{"id1", "id2"})
 						So(rsp.NextPageToken, ShouldNotBeEmpty)
 
-						req.PageToken = rsp.NextPageToken
-						So(rsp.Records, ShouldResemble, []string{"id1", "id2"})
+						tok := rsp.NextPageToken
 						rsp.NextPageToken = ""
 						rsp.Records = make([]string, 0)
-						So(PageQuery(c, req, rsp, q, f), ShouldBeNil)
+						So(PageQuery(c, 2, tok, rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldResemble, []string{"id3"})
+						So(rsp.NextPageToken, ShouldBeEmpty)
+					})
+				})
+
+				Convey("no limit", func() {
+					Convey("none", func() {
+						So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+						So(rsp.Records, ShouldBeEmpty)
+					})
+
+					Convey("one", func() {
+						So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
+
+						So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+						So(rsp.Records, ShouldResemble, []string{"id"})
+					})
+
+					Convey("many", func() {
+						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
+						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
+						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
+
+						So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+						So(rsp.Records, ShouldResemble, []string{"id1", "id2", "id3"})
+					})
+
+					Convey("error", func() {
+						rsp.Records = make([]string, 0)
+						f := func(r *Record) error {
+							return errors.Reason("error").Err()
+						}
+						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
+						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
+						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
+
+						So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "error")
+						So(rsp.Records, ShouldBeEmpty)
 						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
 				})

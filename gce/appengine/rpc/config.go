@@ -86,7 +86,7 @@ func (*Config) Get(c context.Context, req *config.GetRequest) (*config.Config, e
 // List handles a request to list all configs.
 func (*Config) List(c context.Context, req *config.ListRequest) (*config.ListResponse, error) {
 	rsp := &config.ListResponse{}
-	if err := proto.PageQuery(c, req, rsp, datastore.NewQuery(model.ConfigKind), func(cfg *model.Config) error {
+	if err := proto.PageQuery(c, req.GetPageSize(), req.GetPageToken(), rsp, datastore.NewQuery(model.ConfigKind), func(cfg *model.Config) error {
 		rsp.Configs = append(rsp.Configs, &cfg.Config)
 		return nil
 	}); err != nil {
