@@ -195,9 +195,13 @@ func (*Instances) List(c context.Context, req *instances.ListRequest) (*instance
 		img := strings.TrimPrefix(req.Filter, "disks.image=")
 		q = q.Eq("attributes_indexed", fmt.Sprintf("disk.image:%s", img))
 	}
+	lim := req.GetPageSize()
+	if lim < 1 || lim > 5000 {
+		lim = 5000
+	}
 
 	rsp := &instances.ListResponse{}
-	if err := proto.PageQuery(c, req, rsp, q, func(vm *model.VM) error {
+	if err := proto.PageQuery(c, lim, req.GetPageToken(), rsp, q, func(vm *model.VM) error {
 		rsp.Instances = append(rsp.Instances, toInstance(vm))
 		return nil
 	}); err != nil {
