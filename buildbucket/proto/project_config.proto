@@ -115,6 +115,10 @@ message Builder {
     // See also BuildInfra.Swarming.CacheEntry.wait_for_warm_cache in build.proto.
     // The value must be multiples of 60 seconds.
     int32 wait_for_warm_cache_secs = 3;
+
+    // Environment variable with this name will be set to the path to the cache
+    // directory.
+    string env_var = 4;
   }
 
   // DEPRECATED. See Builder.executable and Builder.properties
