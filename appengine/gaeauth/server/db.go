@@ -17,15 +17,12 @@ package server
 import (
 	"context"
 	"errors"
-	"net"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/authdb"
-	"go.chromium.org/luci/server/auth/signing"
 )
 
 // errNotConfigured is returned on real GAE if auth service URL is not set.
@@ -52,13 +49,13 @@ func GetAuthDB(c context.Context, prev authdb.DB) (authdb.DB, error) {
 	// If auth_service URL is not configured, use default db implementation.
 	if latest == nil {
 		if info.IsDevAppServer(c) {
-			return devServerDB{}, nil
+			return authdb.DevServerDB{}, nil
 		}
 		return authdb.ErroringDB{Error: errNotConfigured}, nil
 	}
 
 	// No newer version in the datastore? Reuse what we have in memory. `prev` may
-	// be an instance of ErroringDB or devServerDB, so use non-panicking type
+	// be an instance of ErroringDB or DevServerDB, so use non-panicking type
 	// assertion.
 	if prevDB, _ := prev.(*authdb.SnapshotDB); prevDB != nil {
 		if prevDB.AuthServiceURL == latest.AuthServiceURL && prevDB.Rev == latest.Rev {
@@ -81,61 +78,4 @@ func GetAuthDB(c context.Context, prev authdb.DB) (authdb.DB, error) {
 	}
 
 	return db, nil
-}
-
-// devServerDB implements authdb.DB by allowing everything.
-//
-// It is used on dev server when auth_service URL is not configured. Must not be
-// used for real production GAE applications.
-type devServerDB struct{}
-
-func (devServerDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
-	if !info.IsDevAppServer(c) {
-		return false, errNotConfigured
-	}
-	return true, nil
-}
-
-func (devServerDB) IsInternalService(c context.Context, hostname string) (bool, error) {
-	return false, nil
-}
-
-func (devServerDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
-	if !info.IsDevAppServer(c) {
-		return false, errNotConfigured
-	}
-	if len(groups) == 0 {
-		return false, nil
-	}
-	return id.Kind() != identity.Anonymous, nil
-}
-
-func (devServerDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
-	if !info.IsDevAppServer(c) {
-		return nil, errNotConfigured
-	}
-	if id.Kind() == identity.Anonymous {
-		return nil, nil
-	}
-	return groups, nil
-}
-
-func (devServerDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
-	return nil, errNotConfigured
-}
-
-func (devServerDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
-	return "", nil
-}
-
-func (devServerDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
-	return false, nil
-}
-
-func (devServerDB) GetAuthServiceURL(c context.Context) (string, error) {
-	return "", errNotConfigured
-}
-
-func (devServerDB) GetTokenServiceURL(c context.Context) (string, error) {
-	return "", errNotConfigured
 }

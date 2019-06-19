@@ -376,6 +376,9 @@ func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist stri
 //
 // This is needed to implement authdb.DB interface.
 func (db *SnapshotDB) GetAuthServiceURL(c context.Context) (string, error) {
+	if db.AuthServiceURL == "" {
+		return "", fmt.Errorf("not using Auth Service")
+	}
 	return db.AuthServiceURL, nil
 }
 
