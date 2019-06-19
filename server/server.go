@@ -29,6 +29,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -45,6 +46,7 @@ import (
 	clientauth "go.chromium.org/luci/auth"
 
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/portal"
@@ -68,6 +70,7 @@ type Options struct {
 	testStdout    gkelogger.LogEntryWriter // mocks stdout in tests
 	testStderr    gkelogger.LogEntryWriter // mocks stderr in tests
 	testListeners map[string]net.Listener  // addr => net.Listener, for tests
+	testAuthDB    authdb.DB                // AuthDB to use in tests
 }
 
 // Register registers the command line flags.
@@ -135,6 +138,7 @@ type Server struct {
 
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
+	authDB       atomic.Value          // last known good authdb.DB instance
 }
 
 // scopedAuth holds TokenSource and Authenticator that produced it.
@@ -184,7 +188,7 @@ func New(opts Options) *Server {
 	// Configure auth subsystem. The rest of the initialization happens in
 	// initAuth() later, when launching the server.
 	srv.ctx = auth.Initialize(srv.ctx, &auth.Config{
-		DBProvider:          nil, // TODO(vadimsh): Implement.
+		DBProvider:          srv.authDBProvider,
 		Signer:              nil, // TODO(vadimsh): Implement.
 		AccessTokenProvider: srv.getAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
@@ -646,9 +650,6 @@ func (s *Server) loadSettings(c context.Context) error {
 // valid).
 //
 // If this fails, the server refuses to start.
-//
-// TODO(vadimsh): Do the initial fetch of AuthDB and start a goroutine that
-// refreshes it.
 func (s *Server) initAuth() error {
 	// The default value for ClientAuth.SecretsDir is usually hardcoded to point
 	// to where the token cache is located on developer machines (~/.config/...).
@@ -688,8 +689,25 @@ func (s *Server) initAuth() error {
 	case err == clientauth.ErrNoEmail:
 		logging.Warningf(s.ctx, "Running as <unknown>, cautiously proceeding...")
 	case err != nil:
-		return errors.Annotate(err, "failed to check service account email").Err()
+		return errors.Annotate(err, "failed to check the service account email").Err()
 	}
+
+	// Now initialize the AuthDB (a database with groups and auth config) and
+	// start a goroutine to periodically refresh it.
+	if err := s.refreshAuthDB(s.ctx); err != nil {
+		return errors.Annotate(err, "failed to load the initial AuthDB version").Err()
+	}
+	s.runInBackground("luci.authdb", func(c context.Context) {
+		for {
+			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
+				return // the context is canceled
+			}
+			if err := s.refreshAuthDB(c); err != nil {
+				logging.WithError(err).Errorf(c, "Failed to reload AuthDB, using the cached one")
+			}
+		}
+	})
+
 	return nil
 }
 
@@ -760,6 +778,41 @@ func (s *Server) initTokenSource(scopes []string) (au scopedAuth, err error) {
 
 	s.authPerScope[key] = au
 	return au, nil
+}
+
+// authDBProvider is a callback used by the auth subsystem to grab a database
+// with groups.
+//
+// That database is periodically reloaded in background via refreshAuthDB.
+func (s *Server) authDBProvider(c context.Context) (authdb.DB, error) {
+	db, _ := s.authDB.Load().(authdb.DB)
+	return db, nil
+}
+
+// refreshAuthDB reloads AuthDB from the source and stores it in memory.
+func (s *Server) refreshAuthDB(c context.Context) error {
+	db, err := s.fetchAuthDB(c)
+	if err != nil {
+		return err
+	}
+	s.authDB.Store(db)
+	return nil
+}
+
+// fetchAuthDB fetches the most recent copy of AuthDB from the external source.
+func (s *Server) fetchAuthDB(c context.Context) (authdb.DB, error) {
+	if s.opts.testAuthDB != nil {
+		return s.opts.testAuthDB, nil
+	}
+
+	// In dev mode default to "allow everything".
+	if !s.opts.Prod {
+		return authdb.DevServerDB{}, nil
+	}
+
+	// TODO(vadimsh): Actually load AuthDB from somewhere (depending on flags).
+
+	return nil, errors.Reason("a source of AuthDB is not configured").Err()
 }
 
 // getCloudTraceID extract Trace ID from X-Cloud-Trace-Context header.

@@ -16,6 +16,7 @@ package authtest
 
 import (
 	"context"
+	"fmt"
 	"net"
 
 	"go.chromium.org/luci/auth/identity"
@@ -28,9 +29,9 @@ import (
 // FakeDB implements user group checking part of db.DB (IsMember).
 //
 // It is a mapping "identity -> list of its groups". Intended to be used mostly
-// for testing request handlers, thus all other DB methods (that used by auth
-// system when authenticating the request) is not implement and panic when
-// called: the wast majority of request handlers are not calling them.
+// for testing request handlers, thus all other DB methods are hardcoded to
+// implement some default behavior sufficient for fake requests to pass
+// authentication.
 type FakeDB map[identity.Identity][]string
 
 var _ authdb.DB = (FakeDB)(nil)
@@ -69,39 +70,39 @@ func (db FakeDB) CheckMembership(c context.Context, id identity.Identity, groups
 	return
 }
 
-// IsAllowedOAuthClientID is part of authdb.DB interface. Panics.
+// IsAllowedOAuthClientID is part of authdb.DB interface.
 func (db FakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
-	panic("FakeDB.IsAllowedOAuthClientID must not be called")
+	return true, nil
 }
 
-// IsInternalService is part of authdb.DB interface. Panics.
+// IsInternalService is part of authdb.DB interface.
 func (db FakeDB) IsInternalService(c context.Context, hostname string) (bool, error) {
-	panic("FakeDB.IsInternalService must not be called")
+	return false, nil
 }
 
-// GetCertificates is part of authdb.DB interface. Panics.
+// GetCertificates is part of authdb.DB interface.
 func (db FakeDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
-	panic("FakeDB.GetCertificates must not be called")
+	return nil, fmt.Errorf("GetCertificates is not implemented by FakeDB")
 }
 
-// GetWhitelistForIdentity is part of authdb.DB interface. Panics.
+// GetWhitelistForIdentity is part of authdb.DB interface.
 func (db FakeDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
-	panic("FakeDB.GetWhitelistForIdentity must not be called")
+	return "", nil
 }
 
-// IsInWhitelist is part of authdb.DB interface. Panics.
+// IsInWhitelist is part of authdb.DB interface.
 func (db FakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
-	panic("FakeDB.IsInWhitelist must not be called")
+	return false, nil
 }
 
-// GetAuthServiceURL is part of authdb.DB interface. Panics.
+// GetAuthServiceURL is part of authdb.DB interface.
 func (db FakeDB) GetAuthServiceURL(c context.Context) (string, error) {
-	panic("FakeDB.GetAuthServiceURL must not be called")
+	return "", fmt.Errorf("GetAuthServiceURL is not implemented by FakeDB")
 }
 
-// GetTokenServiceURL is part of authdb.DB interface. Panics.
+// GetTokenServiceURL is part of authdb.DB interface.
 func (db FakeDB) GetTokenServiceURL(c context.Context) (string, error) {
-	panic("FakeDB.GetTokenServiceURL must not be called")
+	return "", fmt.Errorf("GetTokenServiceURL is not implemented by FakeDB")
 }
 
 // FakeErroringDB is authdb.DB with IsMember returning an error.
