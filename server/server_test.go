@@ -37,16 +37,26 @@ import (
 	"go.chromium.org/luci/lucictx"
 
 	clientauth "go.chromium.org/luci/auth"
-	"go.chromium.org/luci/auth/integration/authtest"
+	clientauthtest "go.chromium.org/luci/auth/integration/authtest"
 	"go.chromium.org/luci/auth/integration/localauth"
 
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/settings"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var fakeUser = &auth.User{
+	Identity: "user:a@example.com",
+	Email:    "a@example.com",
+}
+
+var fakeAuthDB = authtest.FakeDB{
+	"user:a@example.com": {"group 1", "group 2"},
+}
 
 func TestServer(t *testing.T) {
 	t.Parallel()
@@ -215,6 +225,30 @@ func TestServer(t *testing.T) {
 			So(srv.tokens.TokenScopes("fake_token_1"), ShouldResemble, []string{"A", "B"})
 			So(srv.tokens.TokenScopes("fake_token_2"), ShouldResemble, []string{"B", "C"})
 		})
+
+		Convey("Auth state", func(c C) {
+			authn := auth.Authenticator{
+				Methods: []auth.Method{
+					authtest.FakeAuth{User: fakeUser},
+				},
+			}
+			mw := router.NewMiddlewareChain(authn.GetMiddleware())
+			srv.Routes.GET("/auth-state", mw, func(rc *router.Context) {
+				state := auth.GetState(rc.Context)
+				c.So(state.DB(), ShouldEqual, fakeAuthDB)
+				c.So(state.PeerIdentity(), ShouldEqual, fakeUser.Identity)
+				c.So(state.PeerIP().String(), ShouldEqual, "2.2.2.2")
+				c.So(auth.CurrentUser(rc.Context), ShouldEqual, fakeUser)
+				c.So(auth.CurrentIdentity(rc.Context), ShouldEqual, fakeUser.Identity)
+				yes, err := auth.IsMember(rc.Context, "group 1")
+				c.So(err, ShouldBeNil)
+				c.So(yes, ShouldBeTrue)
+			})
+			_, err := srv.Get("/auth-state", map[string]string{
+				"X-Forwarded-For": "1.1.1.1,2.2.2.2,3.3.3.3",
+			})
+			So(err, ShouldBeNil)
+		})
 	})
 }
 
@@ -276,7 +310,7 @@ type testServer struct {
 	stdout logsRecorder
 	stderr logsRecorder
 
-	tokens authtest.FakeTokenGenerator
+	tokens clientauthtest.FakeTokenGenerator
 
 	mainAddr string
 	cleanup  func()
@@ -286,7 +320,7 @@ type testServer struct {
 func newTestServer(ctx context.Context) (srv *testServer, err error) {
 	srv = &testServer{
 		serveErr: errorEvent{signal: make(chan struct{})},
-		tokens: authtest.FakeTokenGenerator{
+		tokens: clientauthtest.FakeTokenGenerator{
 			KeepRecord: true,
 		},
 	}
@@ -355,6 +389,8 @@ func newTestServer(ctx context.Context) (srv *testServer, err error) {
 			"main_addr":  setupListener(),
 			"admin_addr": setupListener(),
 		},
+
+		testAuthDB: fakeAuthDB,
 	})
 
 	mainPort := srv.opts.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
