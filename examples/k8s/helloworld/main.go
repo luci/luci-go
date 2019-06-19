@@ -36,6 +36,7 @@ func main() {
 	srv := server.New(opts)
 
 	srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+		logging.Debugf(c.Context, "Hello debug world")
 		logging.Infof(c.Context, "Hello info world")
 		logging.Warningf(c.Context, "Hello warning world")
 		c.Writer.Write([]byte("Hello, world"))
