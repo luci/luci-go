@@ -84,7 +84,7 @@ func (*Projects) Get(c context.Context, req *projects.GetRequest) (*projects.Con
 // List handles a request to list all projects.
 func (*Projects) List(c context.Context, req *projects.ListRequest) (*projects.ListResponse, error) {
 	rsp := &projects.ListResponse{}
-	if err := proto.PageQuery(c, req, rsp, datastore.NewQuery(model.ProjectKind), func(p *model.Project) error {
+	if err := proto.PageQuery(c, req.GetPageSize(), req.GetPageToken(), rsp, datastore.NewQuery(model.ProjectKind), func(p *model.Project) error {
 		rsp.Projects = append(rsp.Projects, &p.Config)
 		return nil
 	}); err != nil {
