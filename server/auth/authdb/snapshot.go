@@ -17,6 +17,8 @@ package authdb
 import (
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net"
 	"regexp"
 	"strings"
@@ -26,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
@@ -81,11 +84,38 @@ func Revision(db DB) int64 {
 	return 0
 }
 
+// SnapshotDBFromTextProto constructs SnapshotDB by loading it from a text proto
+// with AuthDB message.
+func SnapshotDBFromTextProto(r io.Reader) (*SnapshotDB, error) {
+	blob, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read the file").Err()
+	}
+	msg := &protocol.AuthDB{}
+	if err := proto.UnmarshalText(string(blob), msg); err != nil {
+		return nil, errors.Annotate(err, "not a valid AuthDB text proto file").Err()
+	}
+	db, err := NewSnapshotDB(msg, "", 0, true)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to validate AuthDB").Err()
+	}
+	return db, nil
+}
+
 // NewSnapshotDB creates new instance of SnapshotDB.
 //
-// It does some preprocessing to speed up subsequent checks. Return errors if
+// It does some preprocessing to speed up subsequent checks. Returns errors if
 // it encounters inconsistencies.
-func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*SnapshotDB, error) {
+//
+// If 'validate' is false, skips some expensive validation steps, assuming they
+// were performed before, when AuthDB was initially received.
+func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, validate bool) (*SnapshotDB, error) {
+	if validate {
+		if err := validateAuthDB(authDB); err != nil {
+			return nil, err
+		}
+	}
+
 	db := &SnapshotDB{
 		AuthServiceURL: authServiceURL,
 		Rev:            rev,

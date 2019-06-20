@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package service
+package authdb
 
 import (
 	"testing"
@@ -23,10 +23,17 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateAuthDB(t *testing.T) {
-	Convey("validateAuthDB works", t, func() {
-		So(validateAuthDB(&protocol.AuthDB{}), ShouldBeNil)
-		So(validateAuthDB(&protocol.AuthDB{
+func TestValidation(t *testing.T) {
+	t.Parallel()
+
+	validate := func(db *protocol.AuthDB) error {
+		_, err := NewSnapshotDB(db, "", 0, true)
+		return err
+	}
+
+	Convey("Works", t, func() {
+		So(validate(&protocol.AuthDB{}), ShouldBeNil)
+		So(validate(&protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
 				{Name: "group"},
 			},
@@ -36,8 +43,8 @@ func TestValidateAuthDB(t *testing.T) {
 		}), ShouldBeNil)
 	})
 
-	Convey("validateAuthDB bad group", t, func() {
-		So(validateAuthDB(&protocol.AuthDB{
+	Convey("Bad group", t, func() {
+		So(validate(&protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
 				{
 					Name:    "group",
@@ -47,8 +54,8 @@ func TestValidateAuthDB(t *testing.T) {
 		}), ShouldErrLike, "invalid identity")
 	})
 
-	Convey("validateAuthDB bad IP whitelist", t, func() {
-		So(validateAuthDB(&protocol.AuthDB{
+	Convey("Bad IP whitelist", t, func() {
+		So(validate(&protocol.AuthDB{
 			IpWhitelists: []*protocol.AuthIPWhitelist{
 				{
 					Name:    "IP whitelist",
@@ -58,14 +65,16 @@ func TestValidateAuthDB(t *testing.T) {
 		}), ShouldErrLike, "bad IP whitlist")
 	})
 
-	Convey("validateAuthDB bad SecurityConfig", t, func() {
-		So(validateAuthDB(&protocol.AuthDB{
+	Convey("Bad SecurityConfig", t, func() {
+		So(validate(&protocol.AuthDB{
 			SecurityConfig: []byte("not a serialized proto"),
 		}), ShouldErrLike, "failed to deserialize SecurityConfig")
 	})
 }
 
 func TestValidateAuthGroup(t *testing.T) {
+	t.Parallel()
+
 	Convey("validateAuthGroup works", t, func() {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
@@ -125,6 +134,8 @@ func TestValidateAuthGroup(t *testing.T) {
 type groupGraph map[string][]string
 
 func TestFindGroupCycle(t *testing.T) {
+	t.Parallel()
+
 	call := func(groups groupGraph) []string {
 		asProto := make(map[string]*protocol.AuthGroup)
 		for k, v := range groups {

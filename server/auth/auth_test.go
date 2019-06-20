@@ -139,7 +139,7 @@ func TestAuthenticate(t *testing.T) {
 					},
 				},
 			},
-		}, "http://auth-service", 1234)
+		}, "http://auth-service", 1234, false)
 		So(err, ShouldBeNil)
 
 		c := injectTestDB(context.Background(), db)

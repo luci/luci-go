@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSnapshotDB(t *testing.T) {
@@ -91,7 +93,7 @@ func TestSnapshotDB(t *testing.T) {
 			},
 		},
 		SecurityConfig: securityConfig,
-	}, "http://auth-service", 1234)
+	}, "http://auth-service", 1234, false)
 	if err != nil {
 		panic(err)
 	}
@@ -244,6 +246,40 @@ func TestSnapshotDB(t *testing.T) {
 		So(Revision(ErroringDB{}), ShouldEqual, 0)
 		So(Revision(nil), ShouldEqual, 0)
 	})
+
+	Convey("SnapshotDBFromTextProto works", t, func() {
+		db, err := SnapshotDBFromTextProto(strings.NewReader(`
+			groups {
+				name: "group"
+				members: "user:a@example.com"
+			}
+		`))
+		So(err, ShouldBeNil)
+		yes, err := db.IsMember(c, "user:a@example.com", []string{"group"})
+		So(err, ShouldBeNil)
+		So(yes, ShouldBeTrue)
+	})
+
+	Convey("SnapshotDBFromTextProto bad proto", t, func() {
+		_, err := SnapshotDBFromTextProto(strings.NewReader(`
+			groupz {}
+		`))
+		So(err, ShouldErrLike, "not a valid AuthDB text proto file")
+	})
+
+	Convey("SnapshotDBFromTextProto bad structure", t, func() {
+		_, err := SnapshotDBFromTextProto(strings.NewReader(`
+			groups {
+				name: "group 1"
+				nested: "group 2"
+			}
+			groups {
+				name: "group 2"
+				nested: "group 1"
+			}
+		`))
+		So(err, ShouldErrLike, "dependency cycle found")
+	})
 }
 
 func BenchmarkIsMember(b *testing.B) {
@@ -283,7 +319,7 @@ func BenchmarkIsMember(b *testing.B) {
 				Name: "B_B",
 			},
 		},
-	}, "http://auth-service", 1234)
+	}, "http://auth-service", 1234, false)
 
 	b.ResetTimer()
 
