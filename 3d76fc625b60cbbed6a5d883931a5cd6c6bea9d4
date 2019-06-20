@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98fb12f0_55c9be62",
+        "filename": "server/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-20T04:26:51Z",
+      "side": 0,
+      "message": "why did you remove this one? is the idea that users of newTestServer specify it when they actually need it?",
+      "revId": "3d76fc625b60cbbed6a5d883931a5cd6c6bea9d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

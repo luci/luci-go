@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34253d30_0c4e066d",
+        "filename": "server/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-20T04:26:51Z",
+      "side": 1,
+      "message": "TIL, nice!",
+      "range": {
+        "startLine": 262,
+        "startChar": 2,
+        "endLine": 262,
+        "endChar": 7
+      },
+      "revId": "67532a9a6ef414212fb1a78aa81eb8728d8e9bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
