@@ -64,6 +64,7 @@ type Options struct {
 	SettingsPath   string             // path to a JSON file with app settings
 	ClientAuth     clientauth.Options // base settings for client auth options
 	TokenCacheDir  string             // where to cache auth tokens (optional)
+	AuthDBPath     string             // if set, load AuthDB from a file
 
 	testCtx       context.Context          // base context for tests
 	testSeed      int64                    // used to seed rng in tests
@@ -103,6 +104,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"token-cache-dir",
 		o.TokenCacheDir,
 		"Where to cache auth tokens (optional)",
+	)
+	f.StringVar(
+		&o.AuthDBPath,
+		"auth-db-path",
+		o.AuthDBPath,
+		"If set, load AuthDB text proto from this file",
 	)
 }
 
@@ -805,12 +812,23 @@ func (s *Server) fetchAuthDB(c context.Context) (authdb.DB, error) {
 		return s.opts.testAuthDB, nil
 	}
 
+	if s.opts.AuthDBPath != "" {
+		r, err := os.Open(s.opts.AuthDBPath)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to open AuthDB file").Err()
+		}
+		defer r.Close()
+		db, err := authdb.SnapshotDBFromTextProto(r)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to load AuthDB file").Err()
+		}
+		return db, nil
+	}
+
 	// In dev mode default to "allow everything".
 	if !s.opts.Prod {
 		return authdb.DevServerDB{}, nil
 	}
-
-	// TODO(vadimsh): Actually load AuthDB from somewhere (depending on flags).
 
 	return nil, errors.Reason("a source of AuthDB is not configured").Err()
 }
