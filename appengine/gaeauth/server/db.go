@@ -63,14 +63,15 @@ func GetAuthDB(c context.Context, prev authdb.DB) (authdb.DB, error) {
 		}
 	}
 
-	// Fetch new snapshot from the datastore. Log how long it takes to keep an
+	// Fetch new snapshot from the datastore. It was validated already when it was
+	// stored, so skip expensive validation step. Log how long it takes to keep an
 	// eye on performance here, since it has potential to become slow.
 	start := clock.Now(c)
 	proto, err := authdbimpl.GetAuthDBSnapshot(c, latest.GetSnapshotID())
 	if err != nil {
 		return nil, err
 	}
-	db, err := authdb.NewSnapshotDB(proto, latest.AuthServiceURL, latest.Rev)
+	db, err := authdb.NewSnapshotDB(proto, latest.AuthServiceURL, latest.Rev, false)
 	logging.Infof(c, "auth: AuthDB at rev %d fetched in %s", latest.Rev, clock.Now(c).Sub(start))
 	if err != nil {
 		logging.Errorf(c, "auth: AuthDB is invalid - %s", err)

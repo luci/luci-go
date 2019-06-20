@@ -91,7 +91,7 @@ func TestSnapshotDB(t *testing.T) {
 			},
 		},
 		SecurityConfig: securityConfig,
-	}, "http://auth-service", 1234)
+	}, "http://auth-service", 1234, false)
 	if err != nil {
 		panic(err)
 	}
@@ -283,7 +283,7 @@ func BenchmarkIsMember(b *testing.B) {
 				Name: "B_B",
 			},
 		},
-	}, "http://auth-service", 1234)
+	}, "http://auth-service", 1234, false)
 
 	b.ResetTimer()
 
