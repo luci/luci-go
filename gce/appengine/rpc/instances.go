@@ -189,10 +189,10 @@ func (*Instances) List(c context.Context, req *instances.ListRequest) (*instance
 		// TODO(crbug/964591): Support other filters.
 		// No compound indices exist, so only simple filters are supported:
 		// https://cloud.google.com/datastore/docs/concepts/indexes#index_configuration.
-		if !strings.HasPrefix(req.Filter, "disks.image=") {
+		if !strings.HasPrefix(req.Filter, "instances.disks.image=") {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid filter expression %q", req.Filter)
 		}
-		img := strings.TrimPrefix(req.Filter, "disks.image=")
+		img := strings.TrimPrefix(req.Filter, "instances.disks.image=")
 		q = q.Eq("attributes_indexed", fmt.Sprintf("disk.image:%s", img))
 	}
 	lim := req.GetPageSize()
