@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -64,7 +65,7 @@ func TestServer(t *testing.T) {
 	Convey("Works", t, func() {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
-		srv, err := newTestServer(ctx)
+		srv, err := newTestServer(ctx, nil)
 		So(err, ShouldBeNil)
 		defer srv.cleanup()
 
@@ -252,8 +253,35 @@ func TestServer(t *testing.T) {
 	})
 }
 
+func TestOptions(t *testing.T) {
+	t.Parallel()
+
+	Convey("With temp dir", t, func() {
+		tmpDir, err := ioutil.TempDir("", "luci-server-test")
+		So(err, ShouldBeNil)
+		Reset(func() { os.RemoveAll(tmpDir) })
+
+		Convey("AuthDBPath works", func(c C) {
+			body := `groups {
+				name: "group"
+				members: "user:a@example.com"
+			}`
+
+			opts := Options{AuthDBPath: filepath.Join(tmpDir, "authdb.textpb")}
+			So(ioutil.WriteFile(opts.AuthDBPath, []byte(body), 0600), ShouldBeNil)
+
+			testRequestHandler(&opts, func(rc *router.Context) {
+				db := auth.GetState(rc.Context).DB()
+				yes, err := db.IsMember(rc.Context, "user:a@example.com", []string{"group"})
+				c.So(err, ShouldBeNil)
+				c.So(yes, ShouldBeTrue)
+			})
+		})
+	})
+}
+
 func BenchmarkServer(b *testing.B) {
-	srv, err := newTestServer(context.Background())
+	srv, err := newTestServer(context.Background(), nil)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -317,7 +345,7 @@ type testServer struct {
 	serveErr errorEvent
 }
 
-func newTestServer(ctx context.Context) (srv *testServer, err error) {
+func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error) {
 	srv = &testServer{
 		serveErr: errorEvent{signal: make(chan struct{})},
 		tokens: clientauthtest.FakeTokenGenerator{
@@ -371,27 +399,34 @@ func newTestServer(ctx context.Context) (srv *testServer, err error) {
 	}
 	cleanup = append(cleanup, tmpSettings)
 
-	srv.Server = New(Options{
-		Prod:           true,
-		HTTPAddr:       "main_addr",
-		AdminAddr:      "admin_addr",
-		RootSecretPath: tmpSecret.Name(),
-		SettingsPath:   tmpSettings.Name(),
-		ClientAuth:     clientauth.Options{Method: clientauth.LUCIContextMethod},
+	var opts Options
+	if o != nil {
+		opts = *o
+	}
 
-		testCtx:    ctx,
-		testSeed:   1,
-		testStdout: &srv.stdout,
-		testStderr: &srv.stderr,
+	opts.Prod = true
+	opts.HTTPAddr = "main_addr"
+	opts.AdminAddr = "admin_addr"
+	opts.RootSecretPath = tmpSecret.Name()
+	opts.SettingsPath = tmpSettings.Name()
+	opts.ClientAuth = clientauth.Options{Method: clientauth.LUCIContextMethod}
 
-		// Bind to auto-assigned ports.
-		testListeners: map[string]net.Listener{
-			"main_addr":  setupListener(),
-			"admin_addr": setupListener(),
-		},
+	opts.testCtx = ctx
+	opts.testSeed = 1
+	opts.testStdout = &srv.stdout
+	opts.testStderr = &srv.stderr
 
-		testAuthDB: fakeAuthDB,
-	})
+	if opts.AuthDBPath == "" {
+		opts.testAuthDB = fakeAuthDB
+	}
+
+	// Bind to auto-assigned ports.
+	opts.testListeners = map[string]net.Listener{
+		"main_addr":  setupListener(),
+		"admin_addr": setupListener(),
+	}
+
+	srv.Server = New(opts)
 
 	mainPort := srv.opts.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
 	srv.mainAddr = fmt.Sprintf("http://127.0.0.1:%d", mainPort)
@@ -444,6 +479,27 @@ func (s *testServer) Get(uri string, headers map[string]string) (resp string, er
 	case <-done:
 	}
 	return
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// testRequestHandler launches a new server, calls the given callback as a
+// request handler, kills the server.
+//
+// Useful for testing how server options influence request handler environment.
+func testRequestHandler(o *Options, handler func(rc *router.Context)) {
+	ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+
+	srv, err := newTestServer(ctx, o)
+	So(err, ShouldBeNil)
+	defer srv.cleanup()
+
+	srv.ServeInBackground()
+	defer srv.StopBackgroundServing()
+
+	srv.Routes.GET("/test", router.MiddlewareChain{}, handler)
+	_, err = srv.Get("/test", nil)
+	So(err, ShouldBeNil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
