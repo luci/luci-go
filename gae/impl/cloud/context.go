@@ -232,11 +232,16 @@ func (cfg *Config) Use(c context.Context, req *Request) context.Context {
 	}
 
 	// Setup and install the "info" service.
-	gi := serviceInstanceGlobalInfo{
-		Config:  cfg,
-		Request: req,
-	}
-	c = useInfo(c, &gi)
+	c = useInfo(c, &serviceInstanceGlobalInfo{
+		IsDev:              cfg.IsDev,
+		ProjectID:          cfg.ProjectID,
+		ServiceName:        cfg.ServiceName,
+		VersionName:        cfg.VersionName,
+		InstanceID:         cfg.InstanceID,
+		RequestID:          req.TraceID,
+		ServiceAccountName: cfg.ServiceAccountName,
+		ServiceProvider:    cfg.ServiceProvider,
+	})
 
 	// datastore service
 	if cfg.DS != nil {

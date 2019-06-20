@@ -27,8 +27,14 @@ import (
 // serviceInstanceGlobalInfo is the set of base, immutable info service values.
 // These are initialized when the service instance is instantiated.
 type serviceInstanceGlobalInfo struct {
-	*Config
-	*Request
+	IsDev              bool
+	ProjectID          string
+	ServiceName        string
+	VersionName        string
+	InstanceID         string
+	RequestID          string
+	ServiceAccountName string
+	ServiceProvider    ServiceProvider
 }
 
 // infoState is the state of the "service/info" service in the current Context.
@@ -90,14 +96,14 @@ func (i *infoService) IsDevAppServer() bool        { return i.IsDev }
 
 func (*infoService) Datacenter() string             { panic(ErrNotImplemented) }
 func (*infoService) DefaultVersionHostname() string { panic(ErrNotImplemented) }
-func (i *infoService) InstanceID() string           { return maybe(i.Config.InstanceID) }
+func (i *infoService) InstanceID() string           { return maybe(i.infoState.InstanceID) }
 func (*infoService) IsOverQuota(err error) bool     { return false }
 func (*infoService) IsTimeoutError(err error) bool  { return false }
 func (*infoService) ModuleHostname(module, version, instance string) (string, error) {
 	return "", ErrNotImplemented
 }
 func (i *infoService) ModuleName() string   { return maybe(i.ServiceName) }
-func (i *infoService) RequestID() string    { return maybe(i.TraceID) }
+func (i *infoService) RequestID() string    { return maybe(i.infoState.RequestID) }
 func (*infoService) ServerSoftware() string { panic(ErrNotImplemented) }
 func (i *infoService) VersionID() string    { return maybe(i.VersionName) }
 

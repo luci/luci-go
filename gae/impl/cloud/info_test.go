@@ -34,18 +34,14 @@ func TestInfo(t *testing.T) {
 		const maxNamespaceLen = 100
 
 		gi := serviceInstanceGlobalInfo{
-			Config: &Config{
-				IsDev:              false,
-				ProjectID:          "project-id",
-				ServiceName:        "service-name",
-				VersionName:        "version-name",
-				InstanceID:         "instance-id",
-				ServiceAccountName: "service-account@example.com",
-				ServiceProvider:    nil,
-			},
-			Request: &Request{
-				TraceID: "trace",
-			},
+			IsDev:              false,
+			ProjectID:          "project-id",
+			ServiceName:        "service-name",
+			VersionName:        "version-name",
+			InstanceID:         "instance-id",
+			ServiceAccountName: "service-account@example.com",
+			ServiceProvider:    nil,
+			RequestID:          "trace",
 		}
 		c := useInfo(context.Background(), &gi)
 
