@@ -12,18 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package isolated
+package cmdrunner
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/system/exec2"
 )
 
 const (
@@ -31,6 +35,9 @@ const (
 	isolatedOutdirParameter   = "${ISOLATED_OUTDIR}"
 	swarmingBotFileParameter  = "${SWARMING_BOT_FILE}"
 )
+
+// ErrHardTimeout is error for timeout from Run command.
+var ErrHardTimeout = errors.Reason("timeout happens").Err()
 
 // replaceParameters replaces parameter tokens with appropriate values in a
 // string.
@@ -45,7 +52,7 @@ func replaceParameters(ctx context.Context, arg, outDir, botFile string) (string
 
 	if strings.Contains(arg, isolatedOutdirParameter) {
 		if outDir == "" {
-			return "", errors.New("output directory is requested in command or env var, but not provided; please specify one")
+			return "", errors.Reason("output directory is requested in command or env var, but not provided; please specify one").Err()
 		}
 		arg = strings.Replace(arg, isolatedOutdirParameter, outDir, -1)
 		replaceSlash = true
@@ -158,4 +165,65 @@ func getCommandEnv(ctx context.Context, tmpDir string, cipdInfo *cipdInfo, runDi
 	}
 
 	return out, nil
+}
+
+// Run runs the command.
+func Run(ctx context.Context, command []string, cwd string, env environ.Env, hardTimeout time.Duration, gracePeriod time.Duration, lowerPriority bool, containment bool) (int, error) {
+	logging.Infof(ctx, "runCommand(%s, %s, %s, %s, %s, %s, %s)", command, cwd, env, hardTimeout, gracePeriod, lowerPriority, containment)
+
+	cmd := exec2.CommandContext(ctx, command[0], command[1:]...)
+	cmd.Env = env.Sorted()
+	cmd.Dir = cwd
+	// TODO(tikuta): handle STOP_SIGNALS
+
+	if err := cmd.Start(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to run command %s: %v\n", command, err)
+		fmt.Fprint(os.Stderr, `<The executable does not exist or a dependent library is missing>
+<Check for missing .so/.dll in the .isolate or GN file>
+`)
+		if _, ok := environ.System().Get("SWARMING_TASK_ID"); ok {
+			fmt.Fprint(os.Stderr, `<See the task's page for commands to help diagnose this issue by reproducing the task locally>
+`)
+		}
+		return 1, errors.Annotate(err, "failed to start command").Err()
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		err := cmd.Wait()
+		if e, ok := err.(*exec.ExitError); ok && e.Exited() {
+			// Ignore exited error.
+			err = nil
+		} else {
+			cmd.Kill()
+		}
+		errCh <- err
+	}()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return 1, err
+		}
+		return cmd.ProcessState.ExitCode(), nil
+	case <-time.After(hardTimeout):
+	}
+
+	if err := cmd.Terminate(); err != nil {
+		logging.Warningf(ctx, "failed to call Terminate: %v", err)
+	}
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return 1, err
+		}
+		// Process exited fast enough after a nudge. Happy path.
+		return cmd.ProcessState.ExitCode(), ErrHardTimeout
+	case <-time.After(gracePeriod):
+	}
+
+	// Process didn't exit in time after a nudge, try to kill it.
+	cmd.Kill()
+	return 1, ErrHardTimeout
 }

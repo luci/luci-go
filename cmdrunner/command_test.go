@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package isolated
+package cmdrunner
 
 import (
 	"context"
@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/common/system/environ"
 
@@ -150,5 +151,21 @@ func TestGetCommandEnv(t *testing.T) {
 
 			So(env.Map(), ShouldResemble, expected)
 		})
+	})
+}
+
+func TestRun(t *testing.T) {
+	t.Parallel()
+	Convey("TestRunCommand", t, func() {
+		ctx := context.Background()
+
+		Convey("simple", func() {
+			exitcode, err := Run(ctx, []string{"go", "help"}, ".", environ.System(), time.Minute, time.Minute, false, false)
+
+			So(exitcode, ShouldEqual, 0)
+			So(err, ShouldBeNil)
+		})
+
+		// TODO(tikuta): have test for error cases.
 	})
 }
