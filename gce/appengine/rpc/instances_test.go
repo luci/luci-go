@@ -173,13 +173,13 @@ func TestInstances(t *testing.T) {
 					So(datastore.Put(c, vm), ShouldBeNil)
 
 					req := &instances.ListRequest{
-						Filter: "disks.image=image1",
+						Filter: "instances.disks.image=image1",
 					}
 					rsp, err := srv.List(c, req)
 					So(err, ShouldBeNil)
 					So(rsp.Instances, ShouldBeEmpty)
 
-					req.Filter = "disks.image=image2"
+					req.Filter = "instances.disks.image=image2"
 					rsp, err = srv.List(c, req)
 					So(err, ShouldBeNil)
 					So(rsp.Instances, ShouldHaveLength, 1)
