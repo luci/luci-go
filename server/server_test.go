@@ -221,7 +221,7 @@ func TestServer(t *testing.T) {
 			So(call("A B"), ShouldEqual, "fake_token_1") // reused the cached token
 
 			// 0-th token is generated during startup in initAuth() to test creds.
-			So(srv.tokens.TokenScopes("fake_token_0"), ShouldResemble, []string{clientauth.OAuthScopeEmail})
+			So(srv.tokens.TokenScopes("fake_token_0"), ShouldResemble, DefaultOAuthScopes)
 			// Tokens generated via calls above.
 			So(srv.tokens.TokenScopes("fake_token_1"), ShouldResemble, []string{"A", "B"})
 			So(srv.tokens.TokenScopes("fake_token_2"), ShouldResemble, []string{"B", "C"})

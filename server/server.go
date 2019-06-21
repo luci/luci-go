@@ -32,7 +32,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"cloud.google.com/go/datastore"
 	"golang.org/x/oauth2"
+	"google.golang.org/api/option"
+
+	"go.chromium.org/gae/impl/cloud"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
@@ -55,6 +59,13 @@ import (
 	"go.chromium.org/luci/server/settings"
 )
 
+// DefaultOAuthScopes is a list of OAuth scopes we want a local user to grant us
+// when running the server locally.
+var DefaultOAuthScopes = []string{
+	"https://www.googleapis.com/auth/cloud-platform", // for accessing GCP services
+	"https://www.googleapis.com/auth/userinfo.email", // for accessing LUCI services
+}
+
 // Options are exposed as command line flags.
 type Options struct {
 	Prod           bool               // must be set when running in production
@@ -65,6 +76,7 @@ type Options struct {
 	ClientAuth     clientauth.Options // base settings for client auth options
 	TokenCacheDir  string             // where to cache auth tokens (optional)
 	AuthDBPath     string             // if set, load AuthDB from a file
+	CloudProject   string             // name of Google Cloud Project with datastore
 
 	testCtx       context.Context          // base context for tests
 	testSeed      int64                    // used to seed rng in tests
@@ -111,6 +123,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.AuthDBPath,
 		"If set, load AuthDB text proto from this file",
 	)
+	f.StringVar(
+		&o.CloudProject,
+		"cloud-project",
+		o.CloudProject,
+		"Name of Google Cloud Project to use by default (optional)",
+	)
 }
 
 // Server is responsible for initializing and launching the serving environment.
@@ -140,12 +158,17 @@ type Server struct {
 	bgrCancel context.CancelFunc // cancels bgrCtx
 	bgrWg     sync.WaitGroup     // waits for runInBackground goroutines to stop
 
+	cleanupM sync.Mutex // protects 'cleanup' and actual cleanup critical section
+	cleanup  []func()
+
 	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such
 	settings *settings.ExternalStorage // backing store for settings.Get(...) API
 
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
 	authDB       atomic.Value          // last known good authdb.DB instance
+
+	dsClient *datastore.Client // nil if datastore is not used
 }
 
 // scopedAuth holds TokenSource and Authenticator that produced it.
@@ -305,6 +328,8 @@ func (s *Server) ListenAndServe() error {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
 
+	defer s.runCleanup()
+
 	if err := s.initSecrets(); err != nil {
 		logging.WithError(err).Errorf(s.ctx, "Failed to initialize secrets store")
 		return errors.Annotate(err, "failed to initialize secrets store").Err()
@@ -316,6 +341,10 @@ func (s *Server) ListenAndServe() error {
 	if err := s.initAuth(); err != nil {
 		logging.WithError(err).Errorf(s.ctx, "Failed to initialize auth")
 		return errors.Annotate(err, "failed to initialize auth").Err()
+	}
+	if err := s.initDatastore(); err != nil {
+		logging.WithError(err).Errorf(s.ctx, "Failed to initialize Datastore client")
+		return errors.Annotate(err, "failed to initialize Datastore client").Err()
 	}
 
 	// Catch SIGTERM while inside this function.
@@ -428,6 +457,27 @@ func (s *Server) runInBackground(activity string, f func(context.Context)) {
 	}()
 }
 
+// registerCleanup registers a callback that is run in ListenAndServe after the
+// server has exited the serving loop.
+//
+// Registering a new cleanup callback from within a cleanup causes a deadlock,
+// don't do that.
+func (s *Server) registerCleanup(cb func()) {
+	s.cleanupM.Lock()
+	defer s.cleanupM.Unlock()
+	s.cleanup = append(s.cleanup, cb)
+}
+
+// runCleanup runs all registered cleanup functions (sequentially in reverse
+// order).
+func (s *Server) runCleanup() {
+	s.cleanupM.Lock()
+	defer s.cleanupM.Unlock()
+	for i := len(s.cleanup) - 1; i >= 0; i-- {
+		s.cleanup[i]()
+	}
+}
+
 // genUniqueID returns pseudo-random hex string of given even length.
 func (s *Server) genUniqueID(l int) string {
 	b := make([]byte, l/2)
@@ -504,6 +554,14 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	}
 
 	ctx = caching.WithRequestCache(ctx)
+
+	// Initialize supported portions of 'go.chromium.org/gae' library.
+	ctx = (&cloud.ConfigLite{
+		IsDev:     !s.opts.Prod,
+		ProjectID: s.opts.CloudProject,
+		RequestID: traceID,
+		DS:        s.dsClient,
+	}).Use(ctx)
 
 	c.Context = cacheContext.Wrap(ctx)
 	next(c)
@@ -681,7 +739,7 @@ func (s *Server) initAuth() error {
 	// we can generate tokens with *any* scope, since there's no restrictions on
 	// what scopes are accessible to a service account, as long as the private key
 	// is valid (which we just verified by generating some token).
-	au, err := s.initTokenSource([]string{clientauth.OAuthScopeEmail})
+	au, err := s.initTokenSource(DefaultOAuthScopes)
 	if err != nil {
 		return errors.Annotate(err, "failed to initialize the token source").Err()
 	}
@@ -763,7 +821,7 @@ func (s *Server) initTokenSource(scopes []string) (au scopedAuth, err error) {
 	// Note: we are using the root context here (not request-scoped context passed
 	// to getAccessToken) because the authenticator *outlives* the request (by
 	// being cached), thus it needs a long-living context.
-	ctx := logging.SetField(s.ctx, "activity", "auth")
+	ctx := logging.SetField(s.ctx, "activity", "luci.auth")
 	au.authen = clientauth.NewAuthenticator(ctx, clientauth.SilentLogin, opts)
 	au.source, err = au.authen.TokenSource()
 
@@ -831,6 +889,39 @@ func (s *Server) fetchAuthDB(c context.Context) (authdb.DB, error) {
 	}
 
 	return nil, errors.Reason("a source of AuthDB is not configured").Err()
+}
+
+// initDatastore initializes Cloud Datastore client, if enabled.
+func (s *Server) initDatastore() error {
+	if s.opts.CloudProject == "" {
+		return nil
+	}
+
+	logging.Infof(s.ctx, "Setting up datastore client for project %q", s.opts.CloudProject)
+
+	// Enable auth only when using the real datastore.
+	var opts []option.ClientOption
+	if addr := os.Getenv("DATASTORE_EMULATOR_HOST"); addr == "" {
+		auth, err := s.initTokenSource(DefaultOAuthScopes)
+		if err != nil {
+			return errors.Annotate(err, "failed to initialize token source").Err()
+		}
+		opts = []option.ClientOption{option.WithTokenSource(auth.source)}
+	}
+
+	client, err := datastore.NewClient(s.ctx, s.opts.CloudProject, opts...)
+	if err != nil {
+		return errors.Annotate(err, "failed to instantiate the client").Err()
+	}
+
+	s.registerCleanup(func() {
+		if err := client.Close(); err != nil {
+			logging.Warningf(s.ctx, "Failed to close datastore client - %s", err)
+		}
+	})
+
+	s.dsClient = client
+	return nil
 }
 
 // getCloudTraceID extract Trace ID from X-Cloud-Trace-Context header.
