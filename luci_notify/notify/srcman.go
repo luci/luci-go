@@ -44,6 +44,9 @@ type CheckoutFunc func(context.Context, *Build) (Checkout, error)
 // to a build by querying LogDog for a source manifest stream associated with
 // that build. It assumes that the build has exactly one source manifest.
 func srcmanCheckout(c context.Context, build *Build) (Checkout, error) {
+	if build.Infra == nil || build.Infra.Logdog == nil || build.Infra.Logdog.Hostname == "" {
+		return nil, errors.Reason("logdog hostname is not set in the build proto").Err()
+	}
 	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
