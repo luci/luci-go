@@ -59,6 +59,10 @@ message SwarmingSettings {
 
     // Include in builders matching the predicate.
     BuilderPredicate builders = 4;
+
+    // Subdirectory to install the package into, relative to the installation
+    // root. Useful if installing two packages at the same root would conflict.
+    string subdir = 5;
   }
 
   // Packages available to the user executable in $PATH.
