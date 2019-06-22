@@ -63,18 +63,38 @@ type State struct {
 	// this particular process.
 	//
 	// It will be used to assign a free task number via TaskNumAllocator.
+	//
+	// If nil, InstanceID will be set to "". Useful when TaskNumAllocator is nil
+	// too.
 	InstanceID func(c context.Context) string
 
-	// TaskNumAllocator knows how to dynamically map task ID to a task number.
+	// TaskNumAllocator knows how to dynamically map instance ID to a task number.
+	//
+	// If nil, 0 is used a task number for all instance IDs.
 	TaskNumAllocator TaskNumAllocator
 
 	// IsDevMode should be set to true when running locally.
 	IsDevMode bool
 
+	// FlushInMiddleware is true to make Middleware(...) periodically
+	// synchronously send metrics to the backend after handling a request.
+	//
+	// This is useful on Standard GAE that doesn't support asynchronous flushes
+	// outside of context of any request.
+	//
+	// If false, the user of the library *must* launch FlushPeriodically() in
+	// a background goroutine otherwise metrics won't be sent.
+	FlushInMiddleware bool
+
+	// Settings, if non nil, are static pre-set settings to use.
+	//
+	// If nil, settings will be loaded dynamically through 'settings' module.
+	Settings *Settings
+
 	lock sync.RWMutex
 
 	state        *tsmon.State
-	lastSettings tsmonSettings
+	lastSettings Settings
 
 	instanceID  string        // cached result of InstanceID() call
 	flushingNow bool          // true if some goroutine is flushing right now
@@ -82,8 +102,7 @@ type State struct {
 	lastFlush   time.Time     // last successful flush
 	flushRetry  time.Duration // flush retry delay
 
-	testingMonitor  monitor.Monitor // mocked in unit tests
-	testingSettings *tsmonSettings  // mocked in unit tests
+	testingMonitor monitor.Monitor // mocked in unit tests
 }
 
 const (
@@ -123,9 +142,28 @@ func (s *State) Middleware(c *router.Context, next router.Handler) {
 				contentLength, nrw.ResponseSize(), userAgent[0])
 		}()
 		next(c)
-		s.flushIfNeeded(ctx, req, state, settings)
+		if s.FlushInMiddleware {
+			s.flushIfNeededImpl(ctx, state, settings)
+		}
 	} else {
 		next(c)
+	}
+}
+
+// FlushPeriodically runs a loop that periodically flushes metrics.
+//
+// Blocks until the context is canceled. Handles (and logs) errors internally.
+func (s *State) FlushPeriodically(c context.Context) {
+	for {
+		// Spin relatively often, flushIfNeededImpl quickly exits if it is too early
+		// for the flush.
+		if r := <-clock.After(c, time.Second); r.Err != nil {
+			return // the context is canceled
+		}
+		state, settings := s.checkSettings(c)
+		if settings.Enabled {
+			s.flushIfNeededImpl(c, state, settings)
+		}
 	}
 }
 
@@ -134,12 +172,12 @@ func (s *State) Middleware(c *router.Context, next router.Handler) {
 //
 // Returns current tsmon state and settings. Panics if the context is using
 // unexpected tsmon state.
-func (s *State) checkSettings(c context.Context) (*tsmon.State, *tsmonSettings) {
+func (s *State) checkSettings(c context.Context) (*tsmon.State, *Settings) {
 	state := tsmon.GetState(c)
 
-	var settings tsmonSettings
-	if s.testingSettings != nil {
-		settings = *s.testingSettings
+	var settings Settings
+	if s.Settings != nil {
+		settings = *s.Settings
 	} else {
 		settings = fetchCachedSettings(c)
 	}
@@ -204,10 +242,10 @@ func (s *State) disableTsMon(c context.Context) {
 	s.state.SetStore(store.NewNilStore())
 }
 
-// flushIfNeeded periodically flushes the accumulated metrics.
+// flushIfNeededImpl periodically flushes the accumulated metrics.
 //
 // It skips the flush if some other goroutine is already flushing. Logs errors.
-func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon.State, settings *tsmonSettings) {
+func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, settings *Settings) {
 	now := clock.Now(c)
 
 	// Most of the time the flush is not needed and we can get away with
@@ -222,7 +260,7 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 	// Need to flush. Update flushingNow. Redo the check under write lock, as well
 	// as do a bunch of other calls while we hold the lock. Will be useful later.
 	s.lock.Lock()
-	if s.instanceID == "" {
+	if s.instanceID == "" && s.InstanceID != nil {
 		s.instanceID = s.InstanceID(c)
 	}
 	instanceID := s.instanceID
@@ -278,7 +316,10 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 			logging.WithError(err).Errorf(c, "Failed to flush tsmon metrics")
 		}
 		if sinceLastFlush := now.Sub(lastFlush); sinceLastFlush > noFlushErrorThreshold {
-			logging.Errorf(c, "No successful tsmon flush for %s. Is /internal/cron/ts_mon/housekeeping running?", sinceLastFlush)
+			logging.Errorf(c, "No successful tsmon flush for %s", sinceLastFlush)
+			if s.TaskNumAllocator != nil {
+				logging.Errorf(c, "Is /internal/cron/ts_mon/housekeeping running?")
+			}
 		}
 	}
 }
@@ -287,7 +328,7 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 // the metrics.
 //
 // Returns ErrNoTaskNumber if the task wasn't assigned a task number yet.
-func (s *State) ensureTaskNumAndFlush(c context.Context, instanceID string, state *tsmon.State, settings *tsmonSettings) error {
+func (s *State) ensureTaskNumAndFlush(c context.Context, instanceID string, state *tsmon.State, settings *Settings) error {
 	var task target.Task
 	defTarget := state.Store().DefaultTarget()
 	if t, ok := defTarget.(*target.Task); ok {
@@ -297,10 +338,14 @@ func (s *State) ensureTaskNumAndFlush(c context.Context, instanceID string, stat
 	}
 
 	// Notify the task number allocator that we are still alive and grab the
-	// TaskNum assigned to us.
-	assignedTaskNum, err := s.TaskNumAllocator.NotifyTaskIsAlive(c, &task, instanceID)
-	if err != nil && err != ErrNoTaskNumber {
-		return fmt.Errorf("failed to get task number assigned for %q - %s", instanceID, err)
+	// TaskNum assigned to us. Use 0 if TaskNumAllocator is nil.
+	var assignedTaskNum int
+	var err error
+	if s.TaskNumAllocator != nil {
+		assignedTaskNum, err = s.TaskNumAllocator.NotifyTaskIsAlive(c, &task, instanceID)
+		if err != nil && err != ErrNoTaskNumber {
+			return fmt.Errorf("failed to get task number assigned for %q - %s", instanceID, err)
+		}
 	}
 
 	// Don't do the flush if we still haven't got a task number.
@@ -320,7 +365,7 @@ func (s *State) ensureTaskNumAndFlush(c context.Context, instanceID string, stat
 }
 
 // doFlush actually sends the metrics to the monitor.
-func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSettings) error {
+func (s *State) doFlush(c context.Context, state *tsmon.State, settings *Settings) error {
 	var mon monitor.Monitor
 	var err error
 
