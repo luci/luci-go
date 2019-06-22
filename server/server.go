@@ -66,6 +66,13 @@ var DefaultOAuthScopes = []string{
 	"https://www.googleapis.com/auth/userinfo.email", // for accessing LUCI services
 }
 
+const (
+	// Path of the health check endpoint.
+	healthEndpoint = "/health"
+	// Log a warning if health check is slower than this.
+	healthTimeLogThreshold = 50 * time.Millisecond
+)
+
 // Options are exposed as command line flags.
 type Options struct {
 	Prod           bool               // must be set when running in production
@@ -229,7 +236,7 @@ func New(opts Options) *Server {
 	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
 
 	// Health check/readiness probe endpoint.
-	srv.Routes.GET("/health", router.MiddlewareChain{}, func(c *router.Context) {
+	srv.Routes.GET(healthEndpoint, router.MiddlewareChain{}, func(c *router.Context) {
 		c.Writer.Write([]byte("OK"))
 	})
 
@@ -515,6 +522,16 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	started := clock.Now(s.ctx)
 	defer func() {
 		now := clock.Now(s.ctx)
+		latency := now.Sub(started)
+		if isHealthCheckRequest(c.Request) {
+			// Do not log fast health check calls AT ALL, they just spam logs.
+			if latency < healthTimeLogThreshold {
+				return
+			}
+			// Emit a warning if the health check is slow, this likely indicates
+			// high CPU load.
+			logging.Warningf(c.Context, "Health check is slow: %s > %s", latency, healthTimeLogThreshold)
+		}
 		entry := gkelogger.LogEntry{
 			Severity: severityTracker.MaxSeverity(),
 			Time:     gkelogger.FormatTime(now),
@@ -527,7 +544,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 				ResponseSize: fmt.Sprintf("%d", rw.ResponseSize()),
 				UserAgent:    c.Request.UserAgent(),
 				RemoteIP:     getRemoteIP(c.Request),
-				Latency:      fmt.Sprintf("%fs", now.Sub(started).Seconds()),
+				Latency:      fmt.Sprintf("%fs", latency.Seconds()),
 			},
 		}
 		if s.opts.Prod {
@@ -981,4 +998,18 @@ func getRequestURL(r *http.Request) string {
 		host = "127.0.0.1"
 	}
 	return fmt.Sprintf("%s://%s%s", proto, host, r.RequestURI)
+}
+
+// isHealthCheckRequest is true if the request appears to be coming from
+// a known health check probe.
+func isHealthCheckRequest(r *http.Request) bool {
+	if r.URL.Path == healthEndpoint {
+		switch ua := r.UserAgent(); {
+		case strings.HasPrefix(ua, "kube-probe/"): // Kubernetes
+			return true
+		case strings.HasPrefix(ua, "GoogleHC/"): // Cloud Load Balancer
+			return true
+		}
+	}
+	return false
 }
