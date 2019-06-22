@@ -33,14 +33,14 @@ import (
 // Hardcoded for now...
 const prodXEndpoint = "https://prodxmon-pa.googleapis.com/v1:insert"
 
-// settingsKey is key for tsmon settings (described by tsmonSettings struct)
+// settingsKey is key for tsmon settings (described by Settings struct)
 // in the settings store. See go.chromium.org/luci/server/settings.
 const settingsKey = "tsmon"
 
-// tsmonSettings contain global tsmon settings for the application.
+// Settings contain global tsmon settings for the application.
 //
-// They are stored in settings store under settingsKey key.
-type tsmonSettings struct {
+// They are usually stored in settings store.
+type Settings struct {
 	// Enabled is false to completely shutoff the monitoring.
 	//
 	// Default is false.
@@ -63,11 +63,11 @@ type tsmonSettings struct {
 }
 
 // Prefilled portion of settings.
-var defaultSettings = tsmonSettings{
+var defaultSettings = Settings{
 	FlushIntervalSec: 60,
 }
 
-// fetchCachedSettings fetches tsmonSettings from the settings store or panics.
+// fetchCachedSettings fetches Settings from the settings store or panics.
 //
 // Uses in-process global cache to avoid hitting datastore often. The cache
 // expiration time is 1 min (see gaesettings.expirationTime), meaning
@@ -77,8 +77,8 @@ var defaultSettings = tsmonSettings{
 // Panics only if there's no cached value (i.e. it is the first call to this
 // function in this process ever) and datastore operation fails. It is usually
 // very unlikely.
-func fetchCachedSettings(c context.Context) tsmonSettings {
-	s := tsmonSettings{}
+func fetchCachedSettings(c context.Context) Settings {
+	s := Settings{}
 	switch err := settings.Get(c, settingsKey, &s); {
 	case err == nil:
 		return s
@@ -157,7 +157,7 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 }
 
 func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
-	s := tsmonSettings{}
+	s := Settings{}
 	switch err := settings.GetUncached(c, settingsKey, &s); {
 	case err == settings.ErrNoSettings:
 		s = defaultSettings
@@ -173,7 +173,7 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 }
 
 func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
-	modified := tsmonSettings{}
+	modified := Settings{}
 	modified.ProdXAccount = values["ProdXAccount"]
 	if err := modified.Enabled.Set(values["Enabled"]); err != nil {
 		return err
