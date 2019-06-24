@@ -436,7 +436,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 
 func (s *testServer) ServeInBackground() {
 	go func() { s.serveErr.Set(s.ListenAndServe()) }()
-	if _, err := s.Get("/health", nil); err != nil {
+	if _, err := s.Get(healthEndpoint, nil); err != nil {
 		panic(err)
 	}
 }

@@ -70,7 +70,7 @@ var DefaultOAuthScopes = []string{
 
 const (
 	// Path of the health check endpoint.
-	healthEndpoint = "/health"
+	healthEndpoint = "/healthz"
 	// Log a warning if health check is slower than this.
 	healthTimeLogThreshold = 50 * time.Millisecond
 )
