@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f30ee9c4_b3e98505",
+        "filename": "server/tsmon/middleware.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-24T19:31:31Z",
+      "side": 1,
+      "message": "Added TODO.",
+      "parentUuid": "053ad315_29cdc090",
+      "revId": "4c9a4618a758a5ac70b0805dead30b313e97b5ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea62f393_dd349ba5",
         "filename": "server/tsmon/middleware.go",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "4c9a4618a758a5ac70b0805dead30b313e97b5ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49683968_49696b92",
+        "filename": "server/tsmon/middleware.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-06-24T19:31:31Z",
+      "side": 1,
+      "message": "it would be misleading, since nextFlush is constructed in the defer. Added comment. Change \u0027return nextFlush\u0027 to just  \u0027return\u0027 above for consistency.",
+      "parentUuid": "ea62f393_dd349ba5",
+      "range": {
+        "startLine": 341,
+        "startChar": 1,
+        "endLine": 341,
+        "endChar": 7
+      },
+      "revId": "4c9a4618a758a5ac70b0805dead30b313e97b5ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
