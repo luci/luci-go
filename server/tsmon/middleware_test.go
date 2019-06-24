@@ -119,7 +119,7 @@ func TestMiddleware(t *testing.T) {
 			})
 
 			// Disabled. Store is nil.
-			state.testingSettings.Enabled = false
+			state.Settings.Enabled = false
 			runMiddlware(c, state, func(c *router.Context) {
 				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeTrue)
 			})
@@ -168,11 +168,12 @@ func buildTestState() (*State, *monitor.Fake, *fakeNumAllocator) {
 				HostName:    "12345-version",
 			}
 		},
-		InstanceID:       func(c context.Context) string { return "some.id" },
-		TaskNumAllocator: allocator,
-		IsDevMode:        false, // hit same paths as prod
-		testingMonitor:   mon,
-		testingSettings: &tsmonSettings{
+		InstanceID:        func(c context.Context) string { return "some.id" },
+		TaskNumAllocator:  allocator,
+		IsDevMode:         false, // hit same paths as prod
+		FlushInMiddleware: true,
+		testingMonitor:    mon,
+		Settings: &Settings{
 			Enabled:          true,
 			FlushIntervalSec: 60,
 		},

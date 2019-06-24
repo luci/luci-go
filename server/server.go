@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/common/logging/gkelogger"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/common/tsmon/target"
 
 	clientauth "go.chromium.org/luci/auth"
 
@@ -57,6 +58,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/settings"
+	"go.chromium.org/luci/server/tsmon"
 )
 
 // DefaultOAuthScopes is a list of OAuth scopes we want a local user to grant us
@@ -75,15 +77,18 @@ const (
 
 // Options are exposed as command line flags.
 type Options struct {
-	Prod           bool               // must be set when running in production
-	HTTPAddr       string             // address to bind the main listening socket to
-	AdminAddr      string             // address to bind the admin socket to
-	RootSecretPath string             // path to a JSON file with the root secret key
-	SettingsPath   string             // path to a JSON file with app settings
-	ClientAuth     clientauth.Options // base settings for client auth options
-	TokenCacheDir  string             // where to cache auth tokens (optional)
-	AuthDBPath     string             // if set, load AuthDB from a file
-	CloudProject   string             // name of Google Cloud Project with datastore
+	Prod             bool               // must be set when running in production
+	HTTPAddr         string             // address to bind the main listening socket to
+	AdminAddr        string             // address to bind the admin socket to
+	RootSecretPath   string             // path to a JSON file with the root secret key
+	SettingsPath     string             // path to a JSON file with app settings
+	ClientAuth       clientauth.Options // base settings for client auth options
+	TokenCacheDir    string             // where to cache auth tokens (optional)
+	AuthDBPath       string             // if set, load AuthDB from a file
+	CloudProject     string             // name of hosting Google Cloud Project
+	TsMonAccount     string             // service account to flush metrics as
+	TsMonServiceName string             // service name of tsmon target
+	TsMonJobName     string             // job name of tsmon target
 
 	testCtx       context.Context          // base context for tests
 	testSeed      int64                    // used to seed rng in tests
@@ -134,7 +139,25 @@ func (o *Options) Register(f *flag.FlagSet) {
 		&o.CloudProject,
 		"cloud-project",
 		o.CloudProject,
-		"Name of Google Cloud Project to use by default (optional)",
+		"Name of hosting Google Cloud Project (optional)",
+	)
+	f.StringVar(
+		&o.TsMonAccount,
+		"ts-mon-account",
+		o.TsMonAccount,
+		"Collect and flush tsmon metrics using this account for auth (disables tsmon if not set)",
+	)
+	f.StringVar(
+		&o.TsMonServiceName,
+		"ts-mon-service-name",
+		o.TsMonServiceName,
+		"Service name of tsmon target (disables tsmon if not set)",
+	)
+	f.StringVar(
+		&o.TsMonJobName,
+		"ts-mon-job-name",
+		o.TsMonJobName,
+		"Job name of tsmon target (disables tsmon if not set)",
 	)
 }
 
@@ -170,6 +193,7 @@ type Server struct {
 
 	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such
 	settings *settings.ExternalStorage // backing store for settings.Get(...) API
+	tsmon    *tsmon.State              // manages flushing of tsmon metrics
 
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
@@ -233,6 +257,9 @@ func New(opts Options) *Server {
 		IsDevMode:           !srv.opts.Prod,
 	})
 
+	// Configure tsmon, we need it early to instrument routes.
+	srv.initTSMon()
+
 	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
 
 	// Health check/readiness probe endpoint.
@@ -268,12 +295,17 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
 
-	// Setup middleware chain used by ALL requests.
-	r := router.New()
-	r.Use(router.NewMiddlewareChain(
+	mw := router.NewMiddlewareChain(
 		s.rootMiddleware,            // prepares the per-request context
 		middleware.WithPanicCatcher, // transforms panics into HTTP 500
-	))
+	)
+	if s.tsmon != nil {
+		mw = mw.Extend(s.tsmon.Middleware) // collect HTTP requests metrics
+	}
+
+	// Setup middleware chain used by ALL requests.
+	r := router.New()
+	r.Use(mw)
 
 	s.httpSrv = append(s.httpSrv, &http.Server{
 		Addr:     addr,
@@ -352,6 +384,11 @@ func (s *Server) ListenAndServe() error {
 	if err := s.initDatastore(); err != nil {
 		logging.WithError(err).Errorf(s.ctx, "Failed to initialize Datastore client")
 		return errors.Annotate(err, "failed to initialize Datastore client").Err()
+	}
+
+	// Periodically flush metrics.
+	if s.tsmon != nil {
+		s.runInBackground("luci.tsmon", s.tsmon.FlushPeriodically)
 	}
 
 	// Catch SIGTERM while inside this function.
@@ -906,6 +943,52 @@ func (s *Server) fetchAuthDB(c context.Context) (authdb.DB, error) {
 	}
 
 	return nil, errors.Reason("a source of AuthDB is not configured").Err()
+}
+
+// initTSMon initializes time series monitoring state it tsmon is enabled.
+//
+// Panics if we can't get our own hostname for some reason. This should not
+// be happening.
+func (s *Server) initTSMon() {
+	hostname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+
+	switch {
+	case s.opts.TsMonAccount == "":
+		logging.Infof(s.ctx, "Disabling tsmon, -ts-mon-account is not set")
+		return
+	case s.opts.TsMonServiceName == "":
+		logging.Infof(s.ctx, "Disabling tsmon, -ts-mon-service-name is not set")
+		return
+	case s.opts.TsMonJobName == "":
+		logging.Infof(s.ctx, "Disabling tsmon, -ts-mon-job-name is not set")
+		return
+	}
+
+	s.tsmon = &tsmon.State{
+		IsDevMode: !s.opts.Prod,
+		Settings: &tsmon.Settings{
+			Enabled:            true,
+			ProdXAccount:       s.opts.TsMonAccount,
+			FlushIntervalSec:   60,
+			ReportRuntimeStats: true,
+		},
+		Target: func(c context.Context) target.Task {
+			// TODO(vadimsh): We pretend to be a GAE app for now to be able to
+			// reuse existing dashboards. Each pod pretends to be a separate GAE
+			// version. That way we can stop worrying about TaskNumAllocator and just
+			// use 0 (since there'll be only one task per "version"). This looks
+			// chaotic for deployments with large number of pods.
+			return target.Task{
+				DataCenter:  "appengine",
+				ServiceName: s.opts.TsMonServiceName,
+				JobName:     s.opts.TsMonJobName,
+				HostName:    hostname,
+			}
+		},
+	}
 }
 
 // initDatastore initializes Cloud Datastore client, if enabled.
