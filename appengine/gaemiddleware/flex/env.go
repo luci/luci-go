@@ -90,8 +90,9 @@ var (
 				HostName:    strings.SplitN(info.VersionID(c), ".", 2)[0],
 			}
 		},
-		InstanceID:       info.InstanceID,
-		TaskNumAllocator: gaetsmon.DatastoreTaskNumAllocator{},
+		InstanceID:        info.InstanceID,
+		TaskNumAllocator:  gaetsmon.DatastoreTaskNumAllocator{},
+		FlushInMiddleware: true,
 	}
 )
 
