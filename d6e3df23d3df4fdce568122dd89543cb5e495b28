@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8af158f_11439f05",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-24T17:36:56Z",
+      "side": 1,
+      "message": "speaking of bad cases, i can think of job flapping :)",
+      "range": {
+        "startLine": 15,
+        "startChar": 24,
+        "endLine": 15,
+        "endChar": 32
+      },
+      "revId": "d6e3df23d3df4fdce568122dd89543cb5e495b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2da30e23_4f238b8c",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-24T17:36:56Z",
+      "side": 1,
+      "message": "disableS (also below)",
+      "range": {
+        "startLine": 148,
+        "startChar": 70,
+        "endLine": 148,
+        "endChar": 71
+      },
+      "revId": "d6e3df23d3df4fdce568122dd89543cb5e495b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c6c8691_00d76bce",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 981,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-24T17:36:56Z",
+      "side": 1,
+      "message": "I\u0027m confused. Is target.hostname \u003c- 1:1 -\u003e pod  and also version on GAE?",
+      "range": {
+        "startLine": 981,
+        "startChar": 6,
+        "endLine": 981,
+        "endChar": 13
+      },
+      "revId": "d6e3df23d3df4fdce568122dd89543cb5e495b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce8fe30a_a3fab36c",
+        "filename": "server/tsmon/middleware.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-24T17:36:56Z",
+      "side": 1,
+      "message": "as",
+      "range": {
+        "startLine": 73,
+        "startChar": 27,
+        "endLine": 73,
+        "endChar": 28
+      },
+      "revId": "d6e3df23d3df4fdce568122dd89543cb5e495b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68e22477_ce6b3996",
+        "filename": "server/tsmon/middleware.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-24T17:36:56Z",
+      "side": 1,
+      "message": "why can\u0027t min(s.nextFlush - now(), 60) be used to sleep more efficiently?",
+      "range": {
+        "startLine": 160,
+        "startChar": 27,
+        "endLine": 160,
+        "endChar": 38
+      },
+      "revId": "d6e3df23d3df4fdce568122dd89543cb5e495b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
