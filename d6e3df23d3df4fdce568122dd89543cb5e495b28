@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "28936d2f_a91dae9d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-24T19:17:31Z",
+      "side": 1,
+      "message": "yes, fair enough. This was tongue in cheek, not designed to block your CL.",
+      "parentUuid": "c12bb4a6_90635c02",
+      "range": {
+        "startLine": 15,
+        "startChar": 24,
+        "endLine": 15,
+        "endChar": 32
+      },
+      "revId": "d6e3df23d3df4fdce568122dd89543cb5e495b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2da30e23_4f238b8c",
         "filename": "server/server.go",
         "patchSetId": 2
@@ -143,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "48c53b72_a760ecc2",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 981,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-24T19:17:31Z",
+      "side": 1,
+      "message": "thanks. I\u0027ve also just now read your PS#1 comment, now it all makes sense.",
+      "parentUuid": "a7e0608a_0e5065ca",
+      "range": {
+        "startLine": 981,
+        "startChar": 6,
+        "endLine": 981,
+        "endChar": 13
+      },
+      "revId": "d6e3df23d3df4fdce568122dd89543cb5e495b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ce8fe30a_a3fab36c",
         "filename": "server/tsmon/middleware.go",
         "patchSetId": 2
@@ -225,6 +273,30 @@
       "side": 1,
       "message": "We can, I was treating \"flushIfNeededImpl\" as a black box. Changed it to return stuff.",
       "parentUuid": "68e22477_ce6b3996",
+      "range": {
+        "startLine": 160,
+        "startChar": 27,
+        "endLine": 160,
+        "endChar": 38
+      },
+      "revId": "d6e3df23d3df4fdce568122dd89543cb5e495b28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "68184b02_d2984e60",
+        "filename": "server/tsmon/middleware.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-24T19:17:31Z",
+      "side": 1,
+      "message": "i like this better. Maybe I was hit by a premature optimization -- I have irrational hatred of lock/unlock every second when every 60 can do.",
+      "parentUuid": "05d30e59_8ed9dc4f",
       "range": {
         "startLine": 160,
         "startChar": 27,
