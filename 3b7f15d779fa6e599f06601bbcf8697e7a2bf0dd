@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45db9ef5_ee802493",
+        "filename": "auth/integration/gsutil/boto.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-25T00:12:06Z",
+      "side": 1,
+      "message": "opt (just one here)",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 5
+      },
+      "revId": "3b7f15d779fa6e599f06601bbcf8697e7a2bf0dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
