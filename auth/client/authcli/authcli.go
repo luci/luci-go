@@ -500,12 +500,12 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	// Now that there exists a cached token for requested options, we can launch
 	// an auth context with all bells and whistles.
 	authCtx := authctx.Context{
-		ID:                 "luci-auth",
-		Options:            opts,
-		EnableGitAuth:      true,
-		EnableDockerAuth:   true,
-		EnableDevShell:     true,
-		EnableFirebaseAuth: true,
+		ID:                   "luci-auth",
+		Options:              opts,
+		EnableGitAuth:        true,
+		EnableDockerAuth:     true,
+		EnableCloudEmulation: true,
+		EnableFirebaseAuth:   true,
 	}
 	if _, err = authCtx.Launch(ctx, ""); err != nil {
 		fmt.Fprintln(os.Stderr, err)
