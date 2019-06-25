@@ -137,7 +137,8 @@ type LabelInfo struct {
 	// Blocking reflects whether this label block the submit operation.
 	Blocking bool `json:"blocking,omitempty"`
 
-	All []VoteInfo `json:"all,omitempty"`
+	All    []VoteInfo        `json:"all,omitempty"`
+	Values map[string]string `json:"values,omitempty"`
 }
 
 // RevisionKind represents the "kind" field for a patch set.
