@@ -504,7 +504,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		Options:            opts,
 		EnableGitAuth:      true,
 		EnableDockerAuth:   true,
-		EnableDevShell:     true,
+		EnableGCEEmulation: true,
 		EnableFirebaseAuth: true,
 	}
 	if _, err = authCtx.Launch(ctx, ""); err != nil {

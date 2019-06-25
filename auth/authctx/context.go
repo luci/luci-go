@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/integration/devshell"
 	"go.chromium.org/luci/auth/integration/firebase"
+	"go.chromium.org/luci/auth/integration/gcemeta"
 	"go.chromium.org/luci/auth/integration/gsutil"
 	"go.chromium.org/luci/auth/integration/localauth"
 )
@@ -101,7 +102,33 @@ type Context struct {
 	// triggers bugs in gsutil. See https://crbug.com/788058#c14.
 	//
 	// Requires Google Storage OAuth scopes. See GS docs for more info.
+	//
+	// TODO(vadimsh): Delete this method if EnableGCEEmulation works everywhere.
 	EnableDevShell bool
+
+	// EnableGCEEmulation enables emulation of GCE instance environment.
+	//
+	// Overrides EnableDevShell if used. Will likely completely replace
+	// EnableDevShell in the near future.
+	//
+	// It does multiple things by setting environment variables and writing config
+	// files:
+	//   * Creates new empty CLOUDSDK_CONFIG directory, to make sure we don't
+	//     reuse existing gcloud cache.
+	//   * Creates new BOTO_CONFIG, telling gsutil to use new empty state dir.
+	//   * Launches a local server that imitates GCE metadata server.
+	//   * Tells gcloud, gsutil and various Go and Python libraries to use this
+	//     server by setting env vars like GCE_METADATA_HOST (and a bunch more).
+	//
+	// This tricks gcloud, gsutil and various Go and Python libraries that use
+	// Application Default Credentials into believing they run on GCE so that
+	// they request OAuth2 tokens via GCE metadata server (which is implemented by
+	// us).
+	//
+	// This is not a foolproof way: nothing prevents clients from ignoring env
+	// vars and hitting metadata.google.internal directly. But most clients
+	// respect env vars we set.
+	EnableGCEEmulation bool
 
 	// EnableFirebaseAuth enables Firebase auth shim.
 	//
@@ -130,12 +157,19 @@ type Context struct {
 	dockerConfig string // location for Docker configuration files
 	dockerTmpDir string // location for Docker temporary files
 
-	gsutilSrv   *gsutil.Server // gsutil auth shim server
-	gsutilState string         // path to a context-managed state directory
-	gsutilBoto  string         // path to a generated .boto file
+	gsutilSrv *gsutil.Server // gsutil auth shim server
+
+	// Note: these fields are used in both EnableGCEEmulation and EnableDevShell
+	// modes.
+	gsutilState string // path to a context-managed state directory
+	gsutilBoto  string // path to a generated .boto file
 
 	devShellSrv  *devshell.Server // DevShell server instance
 	devShellAddr *net.TCPAddr     // address local DevShell instance is listening on
+
+	gcemetaSrv    *gcemeta.Server // fake GCE metadata server
+	gcemetaAddr   string          // "host:port" address of the fake metadata server
+	gcloudConfDir string          // directory with gcloud configs
 
 	firebaseSrv      *firebase.Server // firebase auth shim server
 	firebaseTokenURL string           // URL to get firebase auth token from
@@ -151,6 +185,12 @@ type Context struct {
 // To run a subprocess within this new context use 'ExportIntoEnv' to modify an
 // environ for a new process.
 func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Context, err error) {
+	// EnableGCEEmulation provides a superset of EnableDevShell features. No need
+	// to have both enabled at the same time (they also conflict with each other).
+	if ac.EnableGCEEmulation {
+		ac.EnableDevShell = false
+	}
+
 	defer func() {
 		if err != nil {
 			ac.Close()
@@ -236,6 +276,11 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Conte
 			return nil, err
 		}
 	}
+	if ac.EnableGCEEmulation {
+		if err := ac.setupGCEEmulationAuth(tempDir); err != nil {
+			return nil, err
+		}
+	}
 	if ac.EnableFirebaseAuth && !ac.anonymous {
 		if err := ac.setupFirebaseAuth(); err != nil {
 			return nil, err
@@ -272,6 +317,9 @@ func (ac *Context) Close() {
 	if ac.devShellSrv != nil {
 		stop("devshell", ac.devShellSrv)
 	}
+	if ac.gcemetaSrv != nil {
+		stop("fake GCE metadata server", ac.gcemetaSrv)
+	}
 	if ac.firebaseSrv != nil {
 		stop("firebase shim", ac.firebaseSrv)
 	}
@@ -294,6 +342,7 @@ func (ac *Context) Close() {
 	}
 	cleanup("git HOME", ac.gitHome)
 	cleanup("gsutil state", ac.gsutilState)
+	cleanup("gcloud config dir", ac.gcloudConfDir)
 	cleanup("docker configs", ac.dockerConfig)
 	cleanup("docker temp dir", ac.dockerTmpDir)
 	cleanup("created temp dir", ac.tmpDir)
@@ -314,6 +363,9 @@ func (ac *Context) Close() {
 	ac.gsutilBoto = ""
 	ac.devShellSrv = nil
 	ac.devShellAddr = nil
+	ac.gcemetaSrv = nil
+	ac.gcemetaAddr = ""
+	ac.gcloudConfDir = ""
 	ac.firebaseSrv = nil
 	ac.firebaseTokenURL = ""
 }
@@ -344,23 +396,36 @@ func (ac *Context) ExportIntoEnv(env environ.Env) environ.Env {
 		env.Set("DOCKER_TMPDIR", ac.dockerTmpDir)
 	}
 
-	if ac.EnableDevShell {
-		env.Remove("BOTO_PATH") // avoid picking up bot-local configs, if any
-		if ac.anonymous {
-			// Make sure gsutil is not picking up any stale .boto configs randomly
-			// laying around on the bot. Setting BOTO_CONFIG to empty dir disables
-			// default ~/.boto.
-			env.Set("BOTO_CONFIG", "")
+	if ac.EnableDevShell && !ac.anonymous {
+		if ac.devShellAddr != nil {
+			env.Set(devshell.EnvKey, fmt.Sprintf("%d", ac.devShellAddr.Port))
 		} else {
-			// Point gsutil to use our auth shim server and export devshell port.
-			env.Set("BOTO_CONFIG", ac.gsutilBoto)
-			if ac.devShellAddr != nil {
-				env.Set(devshell.EnvKey, fmt.Sprintf("%d", ac.devShellAddr.Port))
-			} else {
-				// See https://crbug.com/788058#c14.
-				logging.Warningf(ac.ctx, "Disabling devshell auth for account %q", ac.ID)
-			}
+			// See https://crbug.com/788058#c14.
+			logging.Warningf(ac.ctx, "Disabling devshell auth for account %q", ac.ID)
 		}
+	}
+
+	if ac.EnableGCEEmulation {
+		env.Set("CLOUDSDK_CONFIG", ac.gcloudConfDir)
+		if !ac.anonymous {
+			// Used by google.auth.compute_engine Python library to grab tokens.
+			env.Set("GCE_METADATA_ROOT", ac.gcemetaAddr)
+			// Used by google.auth.compute_engine Python library to "ping" metadata srv.
+			env.Set("GCE_METADATA_IP", ac.gcemetaAddr)
+			// Used by cloud.google.com/go/compute/metadata Go library.
+			env.Set("GCE_METADATA_HOST", ac.gcemetaAddr)
+		}
+	}
+
+	// Prepare .boto configs if faking Cloud in some way. Do it even if running
+	// anonymously, since in this case we want to switch gsutil to run in
+	// anonymous mode as well (by forbidding it to use default ~/.boto that may
+	// have some credential in it).
+	if ac.EnableDevShell || ac.EnableGCEEmulation {
+		// Note: gsutilBoto may be empty here if running anonymously in DevShell
+		// mode. This is fine, it tells gsutil not to use default ~/.boto.
+		env.Set("BOTO_CONFIG", ac.gsutilBoto)
+		env.Remove("BOTO_PATH")
 	}
 
 	if ac.EnableFirebaseAuth && !ac.anonymous {
@@ -386,8 +451,9 @@ func (ac *Context) Report() {
 		account = "anonymous"
 	}
 	logging.Infof(ac.ctx,
-		"%q account is %s (git_auth: %v, devshell: %v, docker:%v, firebase: %v)",
-		ac.ID, account, ac.EnableGitAuth, ac.EnableDevShell, ac.EnableDockerAuth, ac.EnableFirebaseAuth)
+		"%q account is %s (git_auth: %v, devshell: %v, emulate_gce:%v, docker:%v, firebase: %v)",
+		ac.ID, account, ac.EnableGitAuth, ac.EnableDevShell, ac.EnableGCEEmulation,
+		ac.EnableDockerAuth, ac.EnableFirebaseAuth)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -534,6 +600,47 @@ func (ac *Context) setupDevShellAuth(tempDir string) error {
 	}
 
 	return nil
+}
+
+func (ac *Context) setupGCEEmulationAuth(tempDir string) error {
+	// Launch the fake GCE metadata server.
+	botoGCEAccount := ""
+	if !ac.anonymous {
+		source, err := ac.authenticator.TokenSource()
+		if err != nil {
+			return errors.Annotate(err, "failed to get token source for %q account", ac.ID).Err()
+		}
+		ac.gcemetaSrv = &gcemeta.Server{
+			Source: source,
+			Email:  ac.email,
+			Scopes: ac.Options.Scopes,
+		}
+		if ac.gcemetaAddr, err = ac.gcemetaSrv.Start(ac.ctx); err != nil {
+			return errors.Annotate(err, "failed to start fake GCE metadata server for %q account", ac.ID).Err()
+		}
+		botoGCEAccount = "default" // switch .boto to use GCE auth
+	}
+
+	// Prepare clean gcloud config, otherwise gcloud will reuse cached "is on GCE"
+	// value from ~/.config/gcloud/gce and will not bother contacting the fake GCE
+	// metadata server on non-GCE machines. Additionally in anonymous mode we
+	// want to avoid using any cached credentials (also stored in the default
+	// ~/.config/gcloud/...).
+	ac.gcloudConfDir = filepath.Join(tempDir, "gcloud-"+ac.ID)
+	if err := os.Mkdir(ac.gcloudConfDir, 0700); err != nil {
+		return errors.Annotate(err, "failed to create gcloud config dir for %q account at %s", ac.ID, ac.gcloudConfDir).Err()
+	}
+
+	// The directory for .boto and gsutil credentials cache. We need to replace it
+	// to tell gsutil NOT to use whatever tokens it had cached in the default
+	// ~/.gsutil/... state dir.
+	var err error
+	ac.gsutilState = filepath.Join(tempDir, "gsutil-"+ac.ID)
+	ac.gsutilBoto, err = gsutil.PrepareStateDir(&gsutil.Boto{
+		StateDir:          ac.gsutilState,
+		GCEServiceAccount: botoGCEAccount, // may be "" in anonymous mode
+	})
+	return errors.Annotate(err, "failed to setup .boto for %q account", ac.ID).Err()
 }
 
 func (ac *Context) setupFirebaseAuth() error {
