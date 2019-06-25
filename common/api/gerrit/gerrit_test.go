@@ -170,6 +170,8 @@ func TestChangeLabels(t *testing.T) {
 			So(cl.Labels["Code-Review"].All[0].Username, ShouldEqual, "jdoe")
 			So(cl.Labels["Code-Review"].All[1].Value, ShouldEqual, 1)
 			So(cl.Labels["Code-Review"].All[1].Username, ShouldEqual, "jroe")
+			So(len(cl.Labels["Code-Review"].Values), ShouldEqual, 5)
+			So(len(cl.Labels["Verified"].Values), ShouldEqual, 3)
 		})
 
 	})
@@ -654,7 +656,13 @@ var (
 				 "name": "Jane Roe",
 				 "email": "jane.roe@example.com",
 				 "username": "jroe"
-			 }]
+			 }],
+			  "values": {
+				  "-1": "Fails",
+				  " 0": "No score",
+				  "+1": "Verified"
+			  }
+
 		 },
 		 "Code-Review": {
 			 "disliked": {
@@ -662,7 +670,7 @@ var (
 				"name": "John Doe",
 				"email": "john.doe@example.com",
 				"username": "jdoe"
-			},
+			 },
 			 "all": [{
 				"value": -1,
 				"_account_id": 1000096,
@@ -676,7 +684,14 @@ var (
 				"name": "Jane Roe",
 				"email": "jane.roe@example.com",
 				"username": "jroe"
-			}]
+			}],
+			"values": {
+				"-2": "This shall not be merged",
+				"-1": "I would prefer this is not merged as is",
+				" 0": "No score",
+				"+1": "Looks good to me, but someone else must approve",
+				"+2": "Looks good to me, approved"
+			}
 		}
 	    }
 	}`
