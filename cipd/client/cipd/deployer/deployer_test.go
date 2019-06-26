@@ -47,6 +47,11 @@ func mkTempDir() string {
 	return tempDir
 }
 
+func mkSymlink(target string, link string) {
+	err := os.Symlink(target, link)
+	So(err, ShouldBeNil)
+}
+
 func withMemLogger() context.Context {
 	return memlogger.Use(context.Background())
 }
@@ -1220,10 +1225,6 @@ func TestDeployInstanceUpgradeFileToDir(t *testing.T) {
 }
 
 func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipping on windows")
-	}
-
 	t.Parallel()
 
 	Convey("With packages", t, func() {
@@ -1283,6 +1284,29 @@ func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
 
 			So(readFile(tempDir, "sub/dir/some/path/file1"), ShouldEqual, "old data 1")
 			So(readFile(tempDir, "sub/dir/some/path/a/file2"), ShouldEqual, "old data 2")
+
+			So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+		})
+
+		Convey("sub/Dir_lk is a symlink and it shouldn't be deleted", func() {
+			symlink := filepath.Join(tempDir, "sub", "Dir_lk")
+
+			_, err := New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithSym)
+			So(err, ShouldBeNil)
+			mkSymlink(filepath.Join(tempDir, "sub", "dir"), symlink)
+			_, err = New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithDir)
+			So(err, ShouldBeNil)
+
+			So(scanDir(filepath.Join(tempDir, "sub", "dir")), ShouldResemble, []string{
+				"some/path/a/b/file3",
+				"some/path/a/file2",
+				"some/path/file1",
+			})
+
+			So(readFile(tempDir, "sub/dir/some/path/file1"), ShouldEqual, "old data 1")
+			So(readFile(tempDir, "sub/dir/some/path/a/file2"), ShouldEqual, "old data 2")
+			So(readFile(symlink, "some/path/file1"), ShouldEqual, "old data 1")
+			So(readFile(symlink, "some/path/a/file2"), ShouldEqual, "old data 2")
 
 			So(loggerWarnings(ctx), ShouldResemble, []string(nil))
 		})
