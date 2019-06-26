@@ -132,6 +132,7 @@ func mainErr(rawArgs []string) error {
 func newBuildsClient(args *pb.RunnerArgs) pb.BuildsClient {
 	opts := prpc.DefaultOptions()
 	opts.Insecure = lhttp.IsLocalHost(args.BuildbucketHost)
+	opts.Retry = nil // luciexe handles retries itself.
 
 	return pb.NewBuildsPRPCClient(&prpc.Client{
 		Host:    args.BuildbucketHost,
