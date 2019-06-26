@@ -76,3 +76,9 @@ func Any(err error, fn func(error) bool) (any bool) {
 	})
 	return
 }
+
+// Contains performs a Walk traversal of |outer|, returning true if any visited
+// error is equal to |inner|.
+func Contains(outer error, inner error) bool {
+	return Any(outer, func(item error) bool { return item == inner })
+}
