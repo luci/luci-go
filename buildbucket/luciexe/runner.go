@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -494,7 +495,7 @@ func globalLogTags(args *pb.RunnerArgs) map[string]string {
 	return ret
 }
 
-// processFinalBuildState adjusts the final state of the build if needed.
+// processFinalBuild adjusts the final state of the build if needed.
 func processFinalBuild(ctx context.Context, build *pb.Build) {
 	if err := validateFinalBuildState(build); err != nil {
 		build.SummaryMarkdown = fmt.Sprintf("Invalid final build state: `%s`. Marking as `INFRA_FAILURE`.", err)
@@ -530,7 +531,12 @@ func validateFinalBuildState(build *pb.Build) error {
 
 // updateBuild calls r.UpdateBuild.
 // If final is true, may update the build status, making it immutable.
-// May return a transient error.
+//
+// Final calls will retry with exponential backoff for up to 5 minutes.
+// Non-final calls will do NO retries.
+//
+// May return a transient error (in the event that the final RPC was actually
+// a retryable error).
 func (r *runner) updateBuild(ctx context.Context, build *pb.Build, final bool) error {
 	req := &pb.UpdateBuildRequest{
 		Build: build,
@@ -557,16 +563,39 @@ func (r *runner) updateBuild(ctx context.Context, build *pb.Build, final bool) e
 	}
 
 	// Make the RPC.
-	err := r.UpdateBuild(ctx, req)
-	switch status.Code(errors.Unwrap(err)) {
-	case codes.OK:
-		return nil
-
-	case codes.InvalidArgument:
-		// This is fatal.
-		return err
-
-	default:
-		return transient.Tag.Apply(err)
+	//
+	// If this is the final update then we use a retry iterator to do our best to
+	// ensure the final build message goes through.
+	retryFactory := retry.None
+	if final {
+		retryFactory = func() retry.Iterator {
+			return &retry.ExponentialBackoff{
+				Limited: retry.Limited{
+					Retries:  -1, // no limit
+					MaxTotal: 5 * time.Minute,
+				},
+				Multiplier: 1.2,
+				MaxDelay:   30 * time.Second,
+			}
+		}
 	}
+
+	return retry.Retry(
+		ctx, retryFactory,
+		func() error {
+			err := r.UpdateBuild(ctx, req)
+			switch status.Code(errors.Unwrap(err)) {
+			case codes.OK:
+				return nil
+
+			case codes.InvalidArgument:
+				// This is fatal.
+				return err
+
+			default:
+				return transient.Tag.Apply(err)
+			}
+		},
+		retry.LogCallback(ctx, "luciexe.runner.updateBuild"),
+	)
 }
