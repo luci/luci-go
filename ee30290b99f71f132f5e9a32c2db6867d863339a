@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d3f4d5d2_1c486873",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 535,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-26T23:23:25Z",
+      "side": 1,
+      "message": "this and \"dose not do any retries internally\" aren\u0027t same thing. It says that it returns a transient error on potentially non-transient failure",
+      "range": {
+        "startLine": 535,
+        "startChar": 38,
+        "endLine": 535,
+        "endChar": 75
+      },
+      "revId": "ee30290b99f71f132f5e9a32c2db6867d863339a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "826212b4_13ea2bcb",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 567,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-26T23:23:25Z",
+      "side": 1,
+      "message": "why not https://godoc.org/github.com/luci/luci-go/common/retry#None",
+      "range": {
+        "startLine": 567,
+        "startChar": 17,
+        "endLine": 567,
+        "endChar": 66
+      },
+      "revId": "ee30290b99f71f132f5e9a32c2db6867d863339a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e1f22f4_02dcc95d",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 573,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-06-26T23:23:25Z",
+      "side": 1,
+      "message": "nit: i find `5 * time.Minute` more readable because humans says \"5 minutes\" rather than \"minutes 5\"\n\nsame below",
+      "range": {
+        "startLine": 573,
+        "startChar": 15,
+        "endLine": 573,
+        "endChar": 30
+      },
+      "revId": "ee30290b99f71f132f5e9a32c2db6867d863339a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
