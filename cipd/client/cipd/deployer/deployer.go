@@ -1162,10 +1162,23 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files [
 	// the disk, it means we are upgrading this symlink to be a directory. Remove
 	// such symlinks right away. If we don't do this, fs.Replace below will follow
 	// these symlinks and create files in wrong places.
+	subdirCp := subdir
+	if !caseSens {
+		subdirCp = strings.ToLower(subdirCp)
+	}
+	absSubdir, err := d.fs.RootRelToAbs(subdirCp)
+	if err != nil {
+		logging.Warningf(ctx, "Invalid subdir path %q: %s", subdirCp, err)
+		return nil, err
+	}
 	touched.visitIntermediatesBF(func(rootRel string) bool {
 		abs, err := d.fs.RootRelToAbs(rootRel)
 		if err != nil {
 			logging.Warningf(ctx, "Invalid relative path %q: %s", rootRel, err)
+			return true
+		}
+		if strings.Contains(absSubdir, abs) {
+			// Don't delete symlink if it is a part subdir.
 			return true
 		}
 		if fi, err := os.Lstat(abs); err == nil && fi.Mode()&os.ModeSymlink != 0 {
