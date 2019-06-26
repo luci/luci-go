@@ -114,3 +114,31 @@ func TestAny(t *testing.T) {
 		}
 	})
 }
+
+func TestContains(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Testing the Contains function`, t, func() {
+		testErr := errors.New("test error")
+
+		for _, err := range []error{
+			nil,
+			Reason("error test: foo").Err(),
+			errors.New("other error"),
+		} {
+			Convey(fmt.Sprintf(`Registers false for %T %v`, err, err), func() {
+				So(Contains(err, testErr), ShouldBeFalse)
+			})
+		}
+
+		for _, err := range []error{
+			testErr,
+			MultiError{errors.New("other error"), MultiError{testErr, nil}},
+			Annotate(testErr, "error test").Err(),
+		} {
+			Convey(fmt.Sprintf(`Registers true for %T %v`, err, err), func() {
+				So(Contains(err, testErr), ShouldBeTrue)
+			})
+		}
+	})
+}
