@@ -1,0 +1,234 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf3f8f25_317a5fb4",
+        "filename": "buildbucket/luciexe/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "inlined `onBuildChunk` as it didn\u0027t need to be a separate 3 line method and we need to include `streamName` via closure when calling processBuildInStream anyway",
+      "range": {
+        "startLine": 90,
+        "startChar": 55,
+        "endLine": 90,
+        "endChar": 59
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "120e4149_d32b15f6",
+        "filename": "buildbucket/luciexe/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "this moves the proto.Clone operation outside the lock; we know that these Build protos are immutable (I intend to document this everywhere). I suspect we don\u0027t really have to do the Clone either.",
+      "range": {
+        "startLine": 138,
+        "startChar": 11,
+        "endLine": 138,
+        "endChar": 17
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3012896_7409f64a",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "changed to defer in case `f` panics (which it can\u0027t in the code below, but just given this function signature it made me nervous)",
+      "range": {
+        "startLine": 42,
+        "startChar": 2,
+        "endLine": 42,
+        "endChar": 7
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7a35c76_a38e7bc2",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "note; no more latestVer",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 8
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "382538f8_79cfe625",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "handle closed channel here",
+      "range": {
+        "startLine": 60,
+        "startChar": 8,
+        "endLine": 60,
+        "endChar": 10
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91c93e13_ecb7fc2d",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "return here and on ctx.Done prevent leaking this goroutine",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 11
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fee804d7_319ddc61",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "we do direct pointer comparison here; we know that these Build objects are immutable (doc\u0027d above on buildUpdater.Run)",
+      "range": {
+        "startLine": 74,
+        "startChar": 5,
+        "endLine": 74,
+        "endChar": 13
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6afd27c1_e1071261",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "no more need for sentVer; we cond.Wait if the current *Build and the previous *Build are the same (and we\u0027re not currently done)",
+      "range": {
+        "startLine": 93,
+        "startChar": 5,
+        "endLine": 93,
+        "endChar": 44
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6fbd9b5_857a4f72",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "this simplifies the errSleep calculation below",
+      "range": {
+        "startLine": 105,
+        "startChar": 4,
+        "endLine": 105,
+        "endChar": 27
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b06d07c6_693c3658",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-06-26T23:38:38Z",
+      "side": 1,
+      "message": "this used to have a more conditionals and it wasn\u0027t clear that 16s was the hard max.",
+      "range": {
+        "startLine": 112,
+        "startChar": 7,
+        "endLine": 112,
+        "endChar": 15
+      },
+      "revId": "5ddc88108771f0a7ba6f7ad572e4c2d4e77c3e41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
