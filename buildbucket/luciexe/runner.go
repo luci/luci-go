@@ -113,7 +113,10 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 	// Prepare a build listener.
 	var listenerErr error
 	var listenerErrMU sync.Mutex
-	listener := newBuildListener(streamNamePrefix, func(err error) {
+	builds := make(chan *pb.Build)
+	defer close(builds)
+
+	listener := newBuildListener(streamNamePrefix, builds, func(err error) {
 		logging.Errorf(ctx, "%s", err)
 
 		listenerErrMU.Lock()
@@ -124,6 +127,11 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 			cancel()
 		}
 	})
+
+	updater := buildUpdater(func(ctx context.Context, build *pb.Build) error {
+		return r.updateBuild(ctx, build, false)
+	})
+	go updater.Run(ctx, builds)
 
 	// Start a local LogDog server.
 	logdogServ, err := r.startLogDog(ctx, args, systemAuth, listener)
@@ -142,6 +150,21 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 		return err
 	}
 
+	// TODO(iannucci): Change this to do something like:
+	//
+	//   listener.Finalize(ctx, func(build *pb.Build) {
+	//     processFinalBuild(build)
+	//   })
+	//   logdogServ.Stop()
+	//
+	// Move updateBuild(final=true) logic into listener. This will allow listener
+	// to write the merged build.proto's (including the final one) back to logdog
+	// and will make listener the exclusive owner of the updater (right now
+	// listener and runner have split ownership of updater and updater lives past
+	// the termination of logdogServ.
+	//
+	// This should allow the removal of CurrentMergedBuild as well.
+
 	// Wait for logdog server to stop before returning the build.
 	if err := logdogServ.Stop(); err != nil {
 		return errors.Annotate(err, "failed to stop logdog server").Err()
@@ -157,7 +180,7 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 	}
 
 	// Read the final build state.
-	build := listener.Build()
+	build := listener.CurrentMergedBuild()
 	if build == nil {
 		return errors.Reason("user executable did not send a build").Err()
 	}
