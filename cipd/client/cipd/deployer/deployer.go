@@ -1162,7 +1162,7 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files [
 	// the disk, it means we are upgrading this symlink to be a directory. Remove
 	// such symlinks right away. If we don't do this, fs.Replace below will follow
 	// these symlinks and create files in wrong places.
-	touched.visitIntermediatesBF(func(rootRel string) bool {
+	touched.visitIntermediatesBF(subdir, func(rootRel string) bool {
 		abs, err := d.fs.RootRelToAbs(rootRel)
 		if err != nil {
 			logging.Warningf(ctx, "Invalid relative path %q: %s", rootRel, err)
@@ -1440,21 +1440,29 @@ func (p *pathTree) has(rel string) bool {
 	return found
 }
 
-// visitIntermediatesBF calls cb() for all non-leaf nodes in the tree in
-// breadth-first order (i.e. smallest paths come first).
+// visitIntermediatesBF calls cb() for non-leaf nodes in the tree that are not
+// a part of subdir in breadth-first order (i.e. smallest paths come first).
 //
 // On case-insensitive file systems, all visited nodes are in lowercase,
 // regardless in what case they were added to the tree.
 //
 // nil pathTree is considered empty.
-func (p *pathTree) visitIntermediatesBF(cb func(string) bool) {
+func (p *pathTree) visitIntermediatesBF(subdir string, cb func(string) bool) {
 	if p == nil {
 		return
+	}
+	// Normalize the subdir to be used for strings.HasPrefix(...) check.
+	subdir = filepath.Clean(subdir)
+	if !p.caseSensitive {
+		subdir = strings.ToLower(subdir)
+	}
+	if subdir != "" {
+		subdir += string(filepath.Separator)
 	}
 	nodes := p.nodes.ToSlice()
 	sort.Strings(nodes)
 	for _, path := range nodes {
-		if !cb(path) {
+		if strings.HasPrefix(path, subdir) && !cb(path) {
 			return
 		}
 	}
