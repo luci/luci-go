@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "805fef42_671479fc",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2019-06-27T23:34:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "acf9a518_8edb1ce9",
+      "range": {
+        "startLine": 30,
+        "startChar": 20,
+        "endLine": 30,
+        "endChar": 28
+      },
+      "revId": "3a6691741d39ca3c05154985c55496b841faae37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
