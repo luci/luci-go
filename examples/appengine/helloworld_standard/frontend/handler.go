@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package frontend implements HTTP server that handles requests to default
-// module.
-package frontend
+// Package main implements HTTP server that handles requests to default module.
+package main
 
 import (
 	"context"
@@ -26,7 +25,7 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
-	"go.chromium.org/luci/examples/appengine/helloworld_standard/proto"
+	helloworld "go.chromium.org/luci/examples/appengine/helloworld_standard/proto"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
