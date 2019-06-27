@@ -47,6 +47,11 @@ func mkTempDir() string {
 	return tempDir
 }
 
+func mkSymlink(target string, link string) {
+	err := os.Symlink(target, link)
+	So(err, ShouldBeNil)
+}
+
 func withMemLogger() context.Context {
 	return memlogger.Use(context.Background())
 }
@@ -1220,10 +1225,6 @@ func TestDeployInstanceUpgradeFileToDir(t *testing.T) {
 }
 
 func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipping on windows")
-	}
-
 	t.Parallel()
 
 	Convey("With packages", t, func() {
@@ -1283,6 +1284,37 @@ func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
 
 			So(readFile(tempDir, "sub/dir/some/path/file1"), ShouldEqual, "old data 1")
 			So(readFile(tempDir, "sub/dir/some/path/a/file2"), ShouldEqual, "old data 2")
+
+			So(loggerWarnings(ctx), ShouldResemble, []string(nil))
+		})
+
+		Convey("Sub_lk is a symlink and it shouldn't be deleted", func() {
+			caseSensitiveFS, err := New(tempDir).(*deployerImpl).fs.CaseSensitive()
+			So(err, ShouldBeNil)
+			err = os.Mkdir(filepath.Join(tempDir, "sub"), 0777)
+			So(err, ShouldBeNil)
+
+			linkName := "Sub_lk"
+			if !caseSensitiveFS {
+				linkName = "sub_lk"
+			}
+			mkSymlink(filepath.Join(tempDir, "sub"), filepath.Join(tempDir, linkName))
+
+			_, err = New(tempDir).DeployInstance(ctx, "Sub_lk/dir", pkgWithSym)
+			So(err, ShouldBeNil)
+			_, err = New(tempDir).DeployInstance(ctx, "Sub_lk/dir", pkgWithDir)
+			So(err, ShouldBeNil)
+
+			So(scanDir(filepath.Join(tempDir, "sub", "dir")), ShouldResemble, []string{
+				"some/path/a/b/file3",
+				"some/path/a/file2",
+				"some/path/file1",
+			})
+
+			So(readFile(tempDir, "sub/dir/some/path/file1"), ShouldEqual, "old data 1")
+			So(readFile(tempDir, "sub/dir/some/path/a/file2"), ShouldEqual, "old data 2")
+			So(readFile(tempDir, "Sub_lk/dir/some/path/file1"), ShouldEqual, "old data 1")
+			So(readFile(tempDir, "Sub_lk/dir/some/path/a/file2"), ShouldEqual, "old data 2")
 
 			So(loggerWarnings(ctx), ShouldResemble, []string(nil))
 		})
