@@ -22,6 +22,29 @@
       "revId": "cce0190ee744305a8ba0d8a7fae9fb02f582f815",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97101951_520eb757",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 704,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-27T09:41:45Z",
+      "side": 1,
+      "message": "I understand this is for keeping the data structure the same as python version, but why should we calculate the number of hot/cold items here instead counting them in caller side?\n\nSince cache.Cache instance is created in the caller side, it might be natural for the function who created cache.Cache instance to count cache used/added.",
+      "range": {
+        "startLine": 703,
+        "startChar": 0,
+        "endLine": 704,
+        "endChar": 22
+      },
+      "revId": "cce0190ee744305a8ba0d8a7fae9fb02f582f815",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
