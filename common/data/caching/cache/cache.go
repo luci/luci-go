@@ -60,6 +60,12 @@ type Cache interface {
 	// on all POSIX and may or may not fail on Windows depending on the
 	// implementation used. Do not rely on this behavior.
 	Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error
+
+	// GetAdded returns a list of file size added to cache.
+	GetAdded() []int64
+
+	// GetAdded returns a list of file size used from cache.
+	GetUsed() []int64
 }
 
 // Policies is the policies to use on a cache to limit it's footprint.
@@ -127,6 +133,9 @@ type memory struct {
 	mu   sync.Mutex
 	data map[isolated.HexDigest][]byte // Contains the actual content.
 	lru  lruDict                       // Implements LRU based eviction.
+
+	added []int64
+	used  []int64
 }
 
 func (m *memory) Close() error {
@@ -174,6 +183,7 @@ func (m *memory) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 	if !ok {
 		return nil, os.ErrNotExist
 	}
+	m.used = append(m.used, int64(len(content)))
 	return ioutil.NopCloser(bytes.NewBuffer(content)), nil
 }
 
@@ -194,6 +204,7 @@ func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.added = append(m.added, int64(len(content)))
 	m.data[digest] = content
 	m.lru.pushFront(digest, units.Size(len(content)))
 	m.respectPolicies()
@@ -220,6 +231,18 @@ func (m *memory) respectPolicies() {
 	}
 }
 
+func (m *memory) GetAdded() []int64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]int64{}, m.added...)
+}
+
+func (m *memory) GetUsed() []int64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]int64{}, m.used...)
+}
+
 type disk struct {
 	// Immutable.
 	policies Policies
@@ -229,8 +252,10 @@ type disk struct {
 	// Lock protected.
 	mu  sync.Mutex
 	lru lruDict // Implements LRU based eviction.
-	// TODO(maruel): Add stats about: # added, # removed.
+	// TODO(maruel): Add stats about: # removed.
 	// TODO(maruel): stateFile
+	added []int64
+	used  []int64
 }
 
 func (d *disk) Close() error {
@@ -285,6 +310,11 @@ func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	e := d.lru.items.entries[digest].Value.(*entry)
+	d.used = append(d.used, int64(e.value))
 	return f, nil
 }
 
@@ -320,6 +350,7 @@ func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 	defer d.mu.Unlock()
 	d.lru.pushFront(digest, units.Size(size))
 	d.respectPolicies()
+	d.added = append(d.added, size)
 	return nil
 }
 
@@ -344,6 +375,18 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
 	return os.Link(src, dest)
+}
+
+func (d *disk) GetAdded() []int64 {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return append([]int64{}, d.added...)
+}
+
+func (d *disk) GetUsed() []int64 {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return append([]int64{}, d.used...)
 }
 
 func (d *disk) itemPath(digest isolated.HexDigest) string {

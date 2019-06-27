@@ -279,3 +279,55 @@ func TestDownloaderWithCache(t *testing.T) {
 		So(memcache.Touch(misshash), ShouldBeTrue)
 	})
 }
+
+func TestFetchAndMap(t *testing.T) {
+	t.Parallel()
+	Convey(`TestFetchAndMap`, t, func() {
+		ctx := context.Background()
+		tmpDir, err := ioutil.TempDir("", "isolated")
+		So(err, ShouldBeNil)
+		defer func() {
+			So(os.RemoveAll(tmpDir), ShouldBeNil)
+		}()
+
+		data1 := []byte("hello world!")
+
+		namespace := isolatedclient.DefaultNamespace
+		h := isolated.GetHash(namespace)
+		server := isolatedfake.New()
+		data1hash := server.Inject(namespace, data1)
+
+		onePath := filepath.Join("foo", "one.txt")
+		onePathFile := isolated.BasicFile(data1hash, 0664, int64(len(data1)))
+		isolated1 := isolated.New(h)
+		isolated1.Files = map[string]isolated.File{
+			onePath: onePathFile,
+		}
+		isolated1bytes, _ := json.Marshal(&isolated1)
+		isolated1hash := server.Inject(namespace, isolated1bytes)
+
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+		client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
+
+		policy := cache.Policies{
+			MaxSize:  1024,
+			MaxItems: 1024,
+		}
+		memcache := cache.NewMemory(policy, namespace)
+
+		isomap, stats, err := FetchAndMap(ctx, isolated1hash, client, memcache, tmpDir)
+		So(err, ShouldBeNil)
+		So(isomap, ShouldResemble, map[string]*isolated.File{
+			onePath: &onePathFile,
+		})
+
+		So(stats.Duration, ShouldBeGreaterThan, 0)
+		So(stats.ItemsCold, ShouldEqual, "eJziAQQAAP//AA0ADQ==")
+		So(stats.ItemsHot, ShouldEqual, "")
+
+		buf, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
+		So(err, ShouldBeNil)
+		So(buf, ShouldResemble, data1)
+	})
+}
