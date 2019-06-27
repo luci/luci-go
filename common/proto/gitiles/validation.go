@@ -62,3 +62,17 @@ func (r *ArchiveRequest) Validate() error {
 		return nil
 	}
 }
+
+// Validate returns an error if r is invalid.
+func (r *DownloadFileRequest) Validate() error {
+	switch {
+	case r.Format != DownloadFileRequest_TEXT:
+		return errors.Reason("format must be %s", DownloadFileRequest_TEXT.String()).Err()
+	case r.Project == "":
+		return errors.New("project is required")
+	case r.Ref == "":
+		return errors.New("ref is required")
+	default:
+		return nil
+	}
+}

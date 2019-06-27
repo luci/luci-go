@@ -27,6 +27,8 @@ service Gitiles {
     //
     // An archive is a shallow bundle of the contents of a repository.
     rpc Archive(ArchiveRequest) returns (ArchiveResponse) {};
+    // DownloadFile retrieves a file from the project.
+    rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {};
 }
 
 // LogRequest is request message for Gitiles.Log rpc.
@@ -150,4 +152,34 @@ message ArchiveResponse {
     // The underlying server RPC streams back the contents. This API simplifies
     // the RPC to a non-streaming response.
     bytes contents = 2;
+}
+
+message DownloadFileRequest {
+    // Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/master
+    // Required.
+    string project = 1;
+
+    // The git-ref at which to download file from.
+    //
+    // viz refs/for/branch or just branch
+    string ref = 2;
+
+    // Path relative to the project root to the file to download.
+    string path = 3;
+
+    enum Format {
+        FormatInvalid = 0;
+        TEXT = 1;
+    }
+    // Format to download file in.
+    Format format = 4;
+}
+
+message DownloadFileResponse {
+    // Decoded contents of the downloaded file.
+    //
+    // The underlying server RPC streams back the contents. This API simplifies
+    // the RPC to a non-streaming response.
+    string contents = 1;
 }
