@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2266193_2f752adb",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 670,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-27T09:38:43Z",
+      "side": 1,
+      "message": "when the function returns error, I guess caller should not use the returned value.\nWhy should we do calculation even if waitErr !\u003d nil?",
+      "range": {
+        "startLine": 670,
+        "startChar": 1,
+        "endLine": 670,
+        "endChar": 20
+      },
+      "revId": "cce0190ee744305a8ba0d8a7fae9fb02f582f815",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
