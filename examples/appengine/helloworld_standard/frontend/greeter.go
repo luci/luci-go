@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package main
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/examples/appengine/helloworld_standard/proto"
+	helloworld "go.chromium.org/luci/examples/appengine/helloworld_standard/proto"
 )
 
 type greeterService struct{}
