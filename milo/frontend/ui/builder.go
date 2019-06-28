@@ -23,6 +23,29 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 )
 
+type BuilderPage struct {
+	BuilderName string
+
+	ScheduledBuilds         []*Build
+	ScheduledBuildsComplete bool
+	StartedBuilds           []*Build
+	StartedBuildsComplete   bool
+	EndedBuilds             []*Build
+
+	// MachinePool is primarily used by buildbot builders to list the set of
+	// machines that can run in a builder.  It has no meaning in buildbucket or dm
+	// and is expected to be nil.
+	MachinePool *MachinePool
+
+	// Views is a list of links to milo views that reference this builder.
+	Views []*Link
+
+	// PrevPageToken is a token to the previous page.
+	PrevPageToken string `json:",omitempty"`
+	// NextPageToken is a token to the next page.
+	NextPageToken string `json:",omitempty"`
+}
+
 // Bot wraps a model.Bot to provide a UI specific statuses.
 type Bot struct {
 	model.Bot
