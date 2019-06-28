@@ -18,11 +18,13 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -635,4 +637,75 @@ func (d downloadType) String() string {
 	default:
 		panic("invalid downloadType")
 	}
+}
+
+// Stats is stats for FetchAndMap
+type Stats struct {
+	Duration time.Duration `json:"duration"`
+
+	ItemsCold string `json:"items_cold"`
+	ItemsHot  string `json:"items_hot"`
+}
+
+func pack(array []int64) (string, error) {
+	sort.Slice(array, func(i, j int) bool {
+		return array[i] < array[j]
+	})
+
+	packed, err := isolated.Pack(array)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(packed), nil
+}
+
+// FetchAndMap fetches an isolated tree, create the tree and returns isolated tree.
+func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolatedclient.Client, cache cache.Cache, outDir string) (map[string]*isolated.File, Stats, error) {
+	start := time.Now()
+	// TODO(tiktua): return IsolatedBundle
+	isoMap := make(map[string]*isolated.File)
+	d := New(ctx, c, isolatedHash, outDir, &Options{
+		Cache: cache,
+		FileCallback: func(name string, file *isolated.File) {
+			isoMap[name] = file
+		},
+	})
+
+	waitErr := d.Wait()
+	// TODO(yyanagisawa): refactor this.
+	added := cache.GetAdded()
+	used := cache.GetUsed()
+
+	itemsCold, err := pack(added)
+	if err != nil {
+		return nil, Stats{}, errors.Annotate(err, "failed to call Pack for cold items").Err()
+	}
+
+	hotCounter := make(map[int64]int)
+	for _, v := range used {
+		hotCounter[v]++
+	}
+
+	for _, v := range added {
+		hotCounter[v]--
+	}
+
+	var hot []int64
+	for k, v := range hotCounter {
+		for i := 0; i < v; i++ {
+			hot = append(hot, k)
+		}
+	}
+
+	itemsHot, err := pack(hot)
+	if err != nil {
+		return nil, Stats{}, errors.Annotate(err, "failed to call Pack for hot items").Err()
+	}
+
+	return isoMap, Stats{
+		Duration:  time.Now().Sub(start),
+		ItemsCold: itemsCold,
+		ItemsHot:  itemsHot,
+	}, waitErr
 }
