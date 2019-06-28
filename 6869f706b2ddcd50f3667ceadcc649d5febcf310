@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd80fc05_63cd5670",
+        "filename": "common/proto/gitiles/validation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-28T20:42:45Z",
+      "side": 1,
+      "message": "must not start (let\u0027s make it actionable to users)\n\n\nalso, since you are so thorough, how about checking that path doesn\u0027t start with / either (since it\u0027s relative?)",
+      "range": {
+        "startLine": 76,
+        "startChar": 32,
+        "endLine": 76,
+        "endChar": 43
+      },
+      "revId": "6869f706b2ddcd50f3667ceadcc649d5febcf310",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
