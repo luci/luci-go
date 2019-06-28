@@ -661,15 +661,11 @@ func pack(array []int64) (string, error) {
 }
 
 // FetchAndMap fetches an isolated tree, create the tree and returns isolated tree.
-func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolatedclient.Client, cache cache.Cache, outDir string) (map[string]*isolated.File, Stats, error) {
+func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolatedclient.Client, cache cache.Cache, outDir string) (*isolated.Isolated, Stats, error) {
 	start := time.Now()
-	// TODO(tiktua): return IsolatedBundle
-	isoMap := make(map[string]*isolated.File)
+
 	d := New(ctx, c, isolatedHash, outDir, &Options{
 		Cache: cache,
-		FileCallback: func(name string, file *isolated.File) {
-			isoMap[name] = file
-		},
 	})
 
 	waitErr := d.Wait()
@@ -703,7 +699,7 @@ func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolat
 		return nil, Stats{}, errors.Annotate(err, "failed to call Pack for hot items").Err()
 	}
 
-	return isoMap, Stats{
+	return d.isoMap[isolatedHash], Stats{
 		Duration:  time.Now().Sub(start),
 		ItemsCold: itemsCold,
 		ItemsHot:  itemsHot,
