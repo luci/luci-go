@@ -22,6 +22,30 @@
       "revId": "6869f706b2ddcd50f3667ceadcc649d5febcf310",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "091632f0_0b693223",
+        "filename": "common/proto/gitiles/validation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2019-06-28T21:12:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd80fc05_63cd5670",
+      "range": {
+        "startLine": 76,
+        "startChar": 32,
+        "endLine": 76,
+        "endChar": 43
+      },
+      "revId": "6869f706b2ddcd50f3667ceadcc649d5febcf310",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
