@@ -93,6 +93,30 @@
       "revId": "cce0190ee744305a8ba0d8a7fae9fb02f582f815",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc749bd9_9b220a78",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 704,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-06-28T01:35:08Z",
+      "side": 1,
+      "message": "It is totally fine to assign TODO to me but will you leave TODO for this?\nI feel there is layer violation in this implementation.  To use FetchAndMap correctly, the caller need to know details behavior of FetchAndMap or they cannot understand Stats meaning especially when waitErr is not nil.\nTo tell the truth, I believe we do not need this function.  This function might be utility for calculating ItemsCold and ItemsHot, but I believe the calculation should be done in caller side.  Or, cache package may have a service function to do L672 to L699, though.",
+      "parentUuid": "a12a866b_949cd674",
+      "range": {
+        "startLine": 703,
+        "startChar": 0,
+        "endLine": 704,
+        "endChar": 22
+      },
+      "revId": "cce0190ee744305a8ba0d8a7fae9fb02f582f815",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
