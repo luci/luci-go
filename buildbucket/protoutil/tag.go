@@ -89,8 +89,14 @@ func GitilesRepoURL(c *pb.GitilesCommit) string {
 
 // GitilesCommitURL returns the URL for the gitiles commit.
 // e.g. "https://chromium.googlesource.com/chromium/src/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
+// or "https://chromium.googlesource.com/chromium/src/+/refs/heads/master"
+// if id is not available.
 func GitilesCommitURL(c *pb.GitilesCommit) string {
-	return fmt.Sprintf("%s/+/%s", GitilesRepoURL(c), c.Id)
+	suffix := c.Id
+	if suffix == "" {
+		suffix = c.Ref
+	}
+	return fmt.Sprintf("%s/+/%s", GitilesRepoURL(c), suffix)
 }
 
 // ParseBuildSet tries to parse buildset as one of the known formats.

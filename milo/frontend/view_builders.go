@@ -80,14 +80,12 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 					continue
 				}
 				for _, builder := range bBucket.Builders {
-					bid := buildbucket.BuilderID{
-						buildbucketpb.BuilderID{
-							Project: project,
-							Bucket:  bucket,
-							Builder: builder.Name,
-						},
+					bid := &buildbucketpb.BuilderID{
+						Project: project,
+						Bucket:  bucket,
+						Builder: builder.Name,
 					}
-					buildersFromSwarmbucket = append(buildersFromSwarmbucket, bid.String())
+					buildersFromSwarmbucket = append(buildersFromSwarmbucket, buildbucket.LegacyBuilderIDString(bid))
 				}
 			}
 			return nil
