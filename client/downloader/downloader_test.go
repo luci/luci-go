@@ -318,8 +318,9 @@ func TestFetchAndMap(t *testing.T) {
 
 		isomap, stats, err := FetchAndMap(ctx, isolated1hash, client, memcache, tmpDir)
 		So(err, ShouldBeNil)
-		So(isomap, ShouldResemble, map[string]*isolated.File{
-			onePath: &onePathFile,
+		So(isomap, ShouldResemble, &isolated.Isolated{
+			Algo:    "sha-1",
+			Version: "1.4",
 		})
 
 		So(stats.Duration, ShouldBeGreaterThan, 0)
