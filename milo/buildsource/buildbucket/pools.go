@@ -20,7 +20,10 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/buildbucket/deprecated"
+
 	"go.chromium.org/gae/service/datastore"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	swarmbucketAPI "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
@@ -35,7 +38,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-func getPool(c context.Context, bid BuilderID) (*ui.MachinePool, error) {
+func getPool(c context.Context, bid *buildbucketpb.BuilderID) (*ui.MachinePool, error) {
 	// Get PoolKey
 	builderPool := model.BuilderPool{
 		BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, bid.String()),
@@ -82,15 +85,20 @@ func processBuilders(c context.Context, r *swarmbucketAPI.LegacySwarmbucketApiGe
 	var descriptors []model.PoolDescriptor
 	seen := stringset.New(0)
 	for _, bucket := range r.Buckets {
+		project, bucketName := deprecated.BucketNameToV2(bucket.Name)
+		if project == "" {
+			// This may happen if the bucket or builder does not fulfill the LUCI
+			// naming convention.
+			logging.Warningf(c, "invalid bucket/builder %q/, skipping", bucket.Name)
+			continue
+		}
+
 		for _, builder := range bucket.Builders {
-			bid := NewBuilderID(bucket.Name, builder.Name)
-			if bid.Project == "" {
-				// This may happen if the bucket or builder does not fulfill the LUCI
-				// naming convention.
-				logging.Warningf(c, "invalid bucket/builder %q/%q, skipping", bucket.Name, builder.Name)
-				continue
-			}
-			id := bid.String()
+			id := LegacyBuilderIDString(&buildbucketpb.BuilderID{
+				Project: project,
+				Bucket:  bucketName,
+				Builder: builder.Name,
+			})
 			dimensions := stripEmptyDimensions(builder.SwarmingDimensions)
 			descriptor := model.NewPoolDescriptor(builder.SwarmingHostname, dimensions)
 			dID := descriptor.PoolID()

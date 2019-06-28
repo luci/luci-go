@@ -60,8 +60,40 @@ func (s *Step) ShortName() string {
 }
 
 // Build wraps a buildbucketpb.Build to provide useful templating functions.
+// It is used both in BuildPage (in this file) and BuilderPage (builder.go).
 type Build struct {
 	*buildbucketpb.Build
+
+	// Now is the current time, used to generate durations that may depend
+	// on the current time.
+	Now *timestamp.Timestamp
+}
+
+// CommitLinkHTML returns an HTML link pointing to the output commit, or input commit
+// if the output commit is not available.
+func (b *Build) CommitLinkHTML() template.HTML {
+	c := b.GetOutput().GetGitilesCommit()
+	if c == nil {
+		c = b.GetInput().GetGitilesCommit()
+	}
+	if c == nil {
+		return ""
+	}
+
+	// Choose a link label.
+	var label string
+	switch {
+	case c.Position != 0:
+		label = fmt.Sprintf("# %d", c.Position)
+	case c.Id != "":
+		label = c.Id
+	case c.Ref != "":
+		label = c.Ref
+	default:
+		return ""
+	}
+
+	return NewLink(label, protoutil.GitilesCommitURL(c), "commit "+label).HTML()
 }
 
 // BuildPage represents a build page on Milo.
@@ -106,11 +138,8 @@ type BuildPage struct {
 	// steps caches the result of Steps().
 	steps []*Step
 
-	// Now is the current time, used for generating step intervals.
-	Now *timestamp.Timestamp
-
 	// BlamelistError holds errors related to the blamelist.
-	// This determines the behavior of clicking the "blamelist" tab.
+	// This determines the behavior of clicking the "blamelist" tab.f
 	BlamelistError error
 
 	// ForcedBlamelist indicates that the user forced a blamelist load.
@@ -120,8 +149,7 @@ type BuildPage struct {
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
 	now, _ := ptypes.TimestampProto(clock.Now(c))
 	return &BuildPage{
-		Build: Build{b},
-		Now:   now,
+		Build: Build{Build: b, Now: now},
 	}
 }
 

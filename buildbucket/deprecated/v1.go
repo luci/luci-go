@@ -16,6 +16,7 @@ package deprecated
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -257,6 +258,11 @@ func BucketNameToV2(v1Bucket string) (project string, bucket string) {
 		return "", ""
 	}
 	return p[1], p[2]
+}
+
+// BucketNameToV1 returns legacy (long) bucket name for a LUCI bucket.
+func BucketNameToV1(project, bucket string) string {
+	return fmt.Sprintf("luci.%s.%s", project, bucket)
 }
 
 // builderToV2 attempts to parse as many fields into bucket and project as possible,
