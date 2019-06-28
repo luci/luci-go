@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "285b31d2_dc35b0ec",
+        "filename": "client/cmd/gitiles/download_file.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-28T17:11:43Z",
+      "side": 1,
+      "message": "this should be in a different channel, say stderr, perhaps fprintf(stderr, \"warning: %q file is empty\", path)\n\n$ tool repo://... HEAD empty.file \u003e out\n\nshould produce empty `out` file.",
+      "range": {
+        "startLine": 91,
+        "startChar": 27,
+        "endLine": 91,
+        "endChar": 41
+      },
+      "revId": "6f60c6b8e44d5ffc759451aa3402b693f73fa4c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd3bb9c1_a83ca50f",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-28T17:11:43Z",
+      "side": 1,
+      "message": "i\u0027d re-use this.\n\nAlso, while at it, can you please remove `or just \"branch\"` to encourage users to spell out the ref fully instead of relying target repo having exactly one suffix-matched ref.",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 26
+      },
+      "revId": "6f60c6b8e44d5ffc759451aa3402b693f73fa4c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "567e4af7_89b4cf15",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-28T17:11:43Z",
+      "side": 1,
+      "message": "please rename to committish -- see above for prior art",
+      "range": {
+        "startLine": 163,
+        "startChar": 4,
+        "endLine": 163,
+        "endChar": 50
+      },
+      "revId": "6f60c6b8e44d5ffc759451aa3402b693f73fa4c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09dba6eb_89117c88",
+        "filename": "common/proto/gitiles/validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-28T17:11:43Z",
+      "side": 1,
+      "message": "oh, i see, i overlooked the same thing in Archive. Mind adding // TODO delete archive support?",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 38
+      },
+      "revId": "6f60c6b8e44d5ffc759451aa3402b693f73fa4c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41ffa8db_b4269dc7",
+        "filename": "common/proto/gitiles/validation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-28T17:11:43Z",
+      "side": 1,
+      "message": "please add that path doesn\u0027t start with /",
+      "revId": "6f60c6b8e44d5ffc759451aa3402b693f73fa4c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
