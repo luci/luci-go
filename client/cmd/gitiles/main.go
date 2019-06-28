@@ -40,6 +40,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
 			cmdArchive(defaultAuthOpts),
+			cmdDownloadFile(defaultAuthOpts),
 			cmdLog(defaultAuthOpts),
 			cmdRefs(defaultAuthOpts),
 			subcommands.CmdHelp,

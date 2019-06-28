@@ -17,6 +17,7 @@ package gitiles
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -156,6 +157,30 @@ func (c *client) Refs(ctx context.Context, req *gitiles.RefsRequest, opts ...grp
 		}
 	}
 	return ret, nil
+}
+
+func (c *client) DownloadFile(ctx context.Context, req *gitiles.DownloadFileRequest, opts ...grpc.CallOption) (*gitiles.DownloadFileResponse, error) {
+	if err := checkArgs(opts, req); err != nil {
+		return nil, err
+	}
+	// Only TEXT format is supported so far.
+	query := make(url.Values, 1)
+	query.Set("format", "TEXT")
+	ref := strings.TrimRight(req.Committish, "/")
+	path := fmt.Sprintf("/%s/+/%s/%s", url.PathEscape(req.Project), url.PathEscape(ref), req.Path)
+	_, b, err := c.getRaw(ctx, path, query)
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := base64.StdEncoding.DecodeString(string(b))
+	if err != nil {
+		return nil, errors.Annotate(err, "gitiles download file").Err()
+	}
+
+	return &gitiles.DownloadFileResponse{
+		Contents: string(d),
+	}, nil
 }
 
 var archiveExtensions = map[gitiles.ArchiveRequest_Format]string{

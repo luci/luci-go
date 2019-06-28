@@ -26,7 +26,12 @@ service Gitiles {
     // Archive retrieves archived contents of the project.
     //
     // An archive is a shallow bundle of the contents of a repository.
+    //
+    // DEPRECATED: Use DownloadFile to obtain plain text files.
+    // TODO(pprabhu): Migrate known users to DownloadFile and delete this RPC.
     rpc Archive(ArchiveRequest) returns (ArchiveResponse) {};
+    // DownloadFile retrieves a file from the project.
+    rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {};
 }
 
 // LogRequest is request message for Gitiles.Log rpc.
@@ -38,7 +43,7 @@ message LogRequest {
     // The commit where to start the listing from.
     // The value can be:
     //   - a git revision as 40-char string or its prefix so long as its unique in repo.
-    //   - a ref such as "refs/heads/branch" or just "branch"
+    //   - a ref such as "refs/heads/branch"
     //   - a ref defined as n-th parent of R in the form "R~n".
     //     For example, "master~2" or "deadbeef~1".
     // Required.
@@ -150,4 +155,38 @@ message ArchiveResponse {
     // The underlying server RPC streams back the contents. This API simplifies
     // the RPC to a non-streaming response.
     bytes contents = 2;
+}
+
+message DownloadFileRequest {
+    // Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/master
+    // Required.
+    string project = 1;
+
+    // The commit where to start the listing from.
+    // The value can be:
+    //   - a git revision as 40-char string or its prefix so long as its unique in repo.
+    //   - a ref such as "refs/heads/branch"
+    //   - a ref defined as n-th parent of R in the form "R~n".
+    //     For example, "master~2" or "deadbeef~1".
+    // Required.
+    string committish = 2;
+
+    // Path relative to the project root to the file to download.
+    string path = 3;
+
+    enum Format {
+        FormatInvalid = 0;
+        TEXT = 1;
+    }
+    // Format to download file in.
+    Format format = 4;
+}
+
+message DownloadFileResponse {
+    // Decoded contents of the downloaded file.
+    //
+    // The underlying server RPC streams back the contents. This API simplifies
+    // the RPC to a non-streaming response.
+    string contents = 1;
 }
