@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
@@ -171,7 +173,7 @@ func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Com
 	return simplisticBlamelist(c, &model.BuildSummary{
 		BuildKey:  MakeBuildKey(c, host, BuildAddress(b)),
 		BuildSet:  []string{protoutil.GitilesBuildSet(commit)},
-		BuilderID: BuilderID{BuilderID: *b.Builder}.String(),
+		BuilderID: LegacyBuilderIDString(b.Builder),
 	})
 }
 
@@ -226,7 +228,7 @@ var summaryBuildsMask = &field_mask.FieldMask{
 }
 
 // getRelatedBuilds fetches build summaries of builds with the same buildset as b.
-func getRelatedBuilds(c context.Context, client buildbucketpb.BuildsClient, b *buildbucketpb.Build) ([]*ui.Build, error) {
+func getRelatedBuilds(c context.Context, now *timestamp.Timestamp, client buildbucketpb.BuildsClient, b *buildbucketpb.Build) ([]*ui.Build, error) {
 	var bs []string
 	for _, buildset := range protoutil.BuildSets(b) {
 		// HACK(hinoka): Remove the commit/git/ buildsets because we know they're redundant
@@ -271,7 +273,10 @@ func getRelatedBuilds(c context.Context, client buildbucketpb.BuildsClient, b *b
 				continue
 			}
 			seen[rb.Id] = true
-			result = append(result, &ui.Build{rb})
+			result = append(result, &ui.Build{
+				Build: rb,
+				Now:   now,
+			})
 		}
 	}
 
@@ -352,6 +357,8 @@ var (
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
 func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBlamelist bool) (*ui.BuildPage, error) {
+	now, _ := ptypes.TimestampProto(clock.Now(ctx.Context))
+
 	c := ctx.Context
 	host, err := getHost(c)
 	if err != nil {
@@ -384,7 +391,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 			return
 		}
 		ch <- func() (err error) {
-			relatedBuilds, err = getRelatedBuilds(c, client, sb)
+			relatedBuilds, err = getRelatedBuilds(c, now, client, sb)
 			return
 		}
 		ch <- func() error {
@@ -402,14 +409,15 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 	}
 	link, err := getBugLink(ctx, b)
 	logging.Infof(c, "Got all the things")
-	now, _ := ptypes.TimestampProto(clock.Now(c))
 	return &ui.BuildPage{
-		Build:           ui.Build{b},
+		Build: ui.Build{
+			Build: b,
+			Now:   now,
+		},
 		Blame:           blame,
 		RelatedBuilds:   relatedBuilds,
 		BuildBugLink:    link,
 		BuildbucketHost: host,
-		Now:             now,
 		BlamelistError:  blameErr,
 		ForcedBlamelist: forceBlamelist,
 	}, err

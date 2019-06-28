@@ -27,6 +27,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"go.chromium.org/luci/buildbucket/protoutil"
+
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	blackfriday "gopkg.in/russross/blackfriday.v2"
@@ -67,6 +69,7 @@ var funcMap = template.FuncMap{
 	"formatTime":       formatTime,
 	"humanDuration":    common.HumanDuration,
 	"localTime":        localTime,
+	"localTimestamp":   localTimestamp,
 	"localTimeTooltip": localTimeTooltip,
 	"obfuscateEmail":   obfuscateEmail,
 	"pagedURL":         pagedURL,
@@ -81,6 +84,7 @@ var funcMap = template.FuncMap{
 	"toTime":           toTime,
 	"join":             strings.Join,
 	"trimLong":         trimLongString,
+	"gitilesCommitURL": protoutil.GitilesCommitURL,
 }
 
 // trimLongString returns a potentially shortened string with "…" suffix.
@@ -110,6 +114,15 @@ func trimLongString(maxRuneCount int, s string) string {
 // Recommended usage: {{ .Date | localTime "N/A" }}
 func localTime(ifZero string, t time.Time) template.HTML {
 	return localTimeCommon(ifZero, t, "", t.Format(time.RFC850))
+}
+
+// localTimestamp is like localTime, but accepts a Timestamp protobuf.
+func localTimestamp(ifZero string, ts *timestamp.Timestamp) template.HTML {
+	if ts == nil {
+		return template.HTML(template.HTMLEscapeString(ifZero))
+	}
+	t, _ := ptypes.Timestamp(ts)
+	return localTime(ifZero, t)
 }
 
 // localTimeTooltip is similar to localTime, but shows time in a tooltip and

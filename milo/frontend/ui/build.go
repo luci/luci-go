@@ -60,8 +60,104 @@ func (s *Step) ShortName() string {
 }
 
 // Build wraps a buildbucketpb.Build to provide useful templating functions.
+// It is both in BuildPage (in this file) and BuilderPage (builder.go).
 type Build struct {
 	*buildbucketpb.Build
+
+	// Now is the current time, used to generate durations that may depend
+	// on the current time.
+	Now *timestamp.Timestamp
+}
+
+// Summary returns a summary of failures in the build.
+// TODO(hinoka): Remove after recipe engine emits SummaryMarkdown natively.
+func (b *Build) Summary() (result []string) {
+	for _, step := range b.Steps {
+		parts := strings.Split(step.Name, "|")
+		name := parts[len(parts)-1]
+		if name == "Failure reason" {
+			continue
+		}
+		switch step.Status {
+		case buildbucketpb.Status_INFRA_FAILURE:
+			result = append(result, "Infra Failure "+name)
+		case buildbucketpb.Status_FAILURE:
+			result = append(result, "Failure "+name)
+		}
+	}
+	return
+}
+
+// BuilderLink returns a link to the builder in b.
+func (b *Build) BuilderLink() *Link {
+	if b.Builder == nil {
+		panic("Invalid build")
+	}
+	builder := b.Builder
+	return NewLink(
+		builder.Builder,
+		fmt.Sprintf("/p/%s/builders/%s/%s", builder.Project, builder.Bucket, builder.Builder),
+		fmt.Sprintf("Builder %s in bucket %s", builder.Builder, builder.Bucket))
+}
+
+// Link is a self link to the build.
+func (b *Build) Link() *Link {
+	if b.Builder == nil {
+		panic("invalid build")
+	}
+	num := b.Id
+	// Prefer build number below, but if using buildbucket ID
+	// a b prefix is needed on the buildbucket ID for it to work.
+	numStr := fmt.Sprintf("b%d", num)
+	if b.Number != 0 {
+		num = int64(b.Number)
+		numStr = strconv.FormatInt(num, 10)
+	}
+	builder := b.Builder
+	return NewLink(
+		fmt.Sprintf("%d", num),
+		fmt.Sprintf("/p/%s/builders/%s/%s/%s", builder.Project, builder.Bucket, builder.Builder, numStr),
+		fmt.Sprintf("Build %d", num))
+}
+
+// Banners returns names of icons to display next to the build number.
+// Currently displayed:
+// * OS, as determined by swarming dimensions.
+// TODO(hinoka): For device builders, display device type, and number of devices.
+func (b *Build) Banners() (result []Logo) {
+	var os, ver string
+	// A swarming dimension may have multiple values.  Eg.
+	// Linux, Ubuntu, Ubuntu-14.04.  We want the most specific one.
+	// The most specific one always comes last.
+	for _, dim := range b.GetInfra().GetSwarming().GetBotDimensions() {
+		if dim.Key != "os" {
+			continue
+		}
+		os = dim.Value
+		parts := strings.SplitN(os, "-", 2)
+		if len(parts) == 2 {
+			os = parts[0]
+			ver = parts[1]
+		}
+	}
+	var base LogoBase
+	switch os {
+	case "Ubuntu":
+		base = Ubuntu
+	case "Windows":
+		base = Windows
+	case "Mac":
+		base = OSX
+	case "Android":
+		base = Android
+	default:
+		return
+	}
+	return []Logo{{
+		LogoBase: base,
+		Subtitle: ver,
+		Count:    1,
+	}}
 }
 
 // BuildPage represents a build page on Milo.
@@ -106,9 +202,6 @@ type BuildPage struct {
 	// steps caches the result of Steps().
 	steps []*Step
 
-	// Now is the current time, used for generating step intervals.
-	Now *timestamp.Timestamp
-
 	// BlamelistError holds errors related to the blamelist.
 	// This determines the behavior of clicking the "blamelist" tab.
 	BlamelistError error
@@ -120,28 +213,8 @@ type BuildPage struct {
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
 	now, _ := ptypes.TimestampProto(clock.Now(c))
 	return &BuildPage{
-		Build: Build{b},
-		Now:   now,
+		Build: Build{Build: b, Now: now},
 	}
-}
-
-// Summary returns a summary of failures in the build.
-// TODO(hinoka): Remove after recipe engine emits SummaryMarkdown natively.
-func (b *Build) Summary() (result []string) {
-	for _, step := range b.Steps {
-		parts := strings.Split(step.Name, "|")
-		name := parts[len(parts)-1]
-		if name == "Failure reason" {
-			continue
-		}
-		switch step.Status {
-		case buildbucketpb.Status_INFRA_FAILURE:
-			result = append(result, "Infra Failure "+name)
-		case buildbucketpb.Status_FAILURE:
-			result = append(result, "Failure "+name)
-		}
-	}
-	return
 }
 
 // BuildbucketLink returns a link to the buildbucket version of the page.
@@ -224,6 +297,37 @@ func (b *Build) HumanStatus() string {
 	}
 }
 
+// CommitLinkHTML returns an HTML link pointing to the output commit, or input commit
+// if the output commit is not available.
+func (b *Build) CommitLinkHTML() template.HTML {
+	c := b.GetOutput().GetGitilesCommit()
+	if c == nil {
+		c = b.GetInput().GetGitilesCommit()
+	}
+	if c == nil {
+		return ""
+	}
+
+	// Choose a link label.
+	var label string
+	switch {
+	case c.Position != 0:
+		label = fmt.Sprintf("# %d", c.Position)
+	case c.Id != "":
+		label = c.Id
+	case c.Ref != "":
+		label = c.Ref
+	default:
+		return ""
+	}
+
+	url := protoutil.GitilesCommitURL(c)
+	if url == "" {
+		return ""
+	}
+	return NewLink(label, url, "commit "+label).HTML()
+}
+
 type property struct {
 	// Name is the name of the property relative to a build.
 	// Note: We call this a "Name" not a "Key", since this was the term used in BuildBot.
@@ -276,78 +380,6 @@ func (bp *BuildPage) InputProperties() []property {
 
 func (bp *BuildPage) OutputProperties() []property {
 	return properties(bp.GetOutput().GetProperties())
-}
-
-// BuilderLink returns a link to the builder in b.
-func (b *Build) BuilderLink() *Link {
-	if b.Builder == nil {
-		panic("Invalid build")
-	}
-	builder := b.Builder
-	return NewLink(
-		builder.Builder,
-		fmt.Sprintf("/p/%s/builders/%s/%s", builder.Project, builder.Bucket, builder.Builder),
-		fmt.Sprintf("Builder %s in bucket %s", builder.Builder, builder.Bucket))
-}
-
-// Link is a self link to the build.
-func (b *Build) Link() *Link {
-	if b.Builder == nil {
-		panic("invalid build")
-	}
-	num := b.Id
-	// Prefer build number below, but if using buildbucket ID
-	// a b prefix is needed on the buildbucket ID for it to work.
-	numStr := fmt.Sprintf("b%d", num)
-	if b.Number != 0 {
-		num = int64(b.Number)
-		numStr = strconv.FormatInt(num, 10)
-	}
-	builder := b.Builder
-	return NewLink(
-		fmt.Sprintf("%d", num),
-		fmt.Sprintf("/p/%s/builders/%s/%s/%s", builder.Project, builder.Bucket, builder.Builder, numStr),
-		fmt.Sprintf("Build %d", num))
-}
-
-// Banners returns names of icons to display next to the build number.
-// Currently displayed:
-// * OS, as determined by swarming dimensions.
-// TODO(hinoka): For device builders, display device type, and number of devices.
-func (b *Build) Banners() (result []Logo) {
-	var os, ver string
-	// A swarming dimension may have multiple values.  Eg.
-	// Linux, Ubuntu, Ubuntu-14.04.  We want the most specific one.
-	// The most specific one always comes last.
-	for _, dim := range b.GetInfra().GetSwarming().GetBotDimensions() {
-		if dim.Key != "os" {
-			continue
-		}
-		os = dim.Value
-		parts := strings.SplitN(os, "-", 2)
-		if len(parts) == 2 {
-			os = parts[0]
-			ver = parts[1]
-		}
-	}
-	var base LogoBase
-	switch os {
-	case "Ubuntu":
-		base = Ubuntu
-	case "Windows":
-		base = Windows
-	case "Mac":
-		base = OSX
-	case "Android":
-		base = Android
-	default:
-		return
-	}
-	return []Logo{{
-		LogoBase: base,
-		Subtitle: ver,
-		Count:    1,
-	}}
 }
 
 // StepDisplayPref is the display preference for the steps.
