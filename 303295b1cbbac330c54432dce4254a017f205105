@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2a39c6b0_9250809d",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-29T03:56:32Z",
+      "side": 1,
+      "message": "this seems really complicated, but I think I get the idea of what you want:\n 1. send latest build from the channel till it is closed\n 2. ensure at least minSleep between calls\n 3. do exponential back-off on errors\n 4. make all this obey context expiration\n\nRight? If so, wdyt about https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1683083/1/buildbucket/luciexe/updater.go#53 ?\n\nI think it\u0027s easier to read and reason absence of deadlocks by relying on abstraction clock.After, which isn\u0027t free.\nEven if one re-uses Timer, Timer.Reset still does heavy lifting.\n\nBy pure coincidence, I\u0027m actually writing something similar for accumulating batches in background and after experimenting with conditions, I ended up with what I shared above. I wonder if we can:\n * somehow generalize this\n * improve efficiency by really keeping just 1 goroutine + channel for timer purposes [not sure it\u0027s worth the time, but sounds like fun]",
+      "revId": "303295b1cbbac330c54432dce4254a017f205105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2bce049_149c4a46",
+        "filename": "buildbucket/luciexe/updater.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-29T03:56:32Z",
+      "side": 1,
+      "message": "Comment removed by: Andrii Shyshkalov; Reason: duplicate",
+      "revId": "303295b1cbbac330c54432dce4254a017f205105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bb9c290_34da2d8f",
+        "filename": "buildbucket/luciexe/updater_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-06-29T03:56:32Z",
+      "side": 1,
+      "message": "fine for debug, but I think should be Convey() to avoid accidental surprises with un-run tests.",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 77,
+        "endChar": 13
+      },
+      "revId": "303295b1cbbac330c54432dce4254a017f205105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
