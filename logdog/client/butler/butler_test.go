@@ -412,6 +412,30 @@ func TestButler(t *testing.T) {
 				So(to.isTerminal("stderr"), ShouldBeTrue)
 			})
 
+			Convey(`Can open in-memory datagram streams.`, func() {
+				b := mkb(c, conf)
+				mds, err := b.NewDatagramStream(&streamproto.Properties{
+					LogStreamDescriptor: &logpb.LogStreamDescriptor{
+						Name:        "datagrams",
+						ContentType: "test/datagram",
+					},
+				})
+				So(err, ShouldBeNil)
+
+				b.Activate()
+
+				So(mds.SendString("hello"), ShouldBeNil)
+				So(mds.SendString("world"), ShouldBeNil)
+				So(mds.Close(), ShouldBeNil)
+
+				So(b.Wait(), ShouldBeNil)
+				logs := to.logs("datagrams")
+				So(len(logs), ShouldEqual, 2)
+
+				So(logs[0].GetDatagram().Data, ShouldResemble, []byte("hello"))
+				So(logs[1].GetDatagram().Data, ShouldResemble, []byte("world"))
+			})
+
 			Convey(`Can apply global tags.`, func() {
 				conf.GlobalTags = streamproto.TagMap{
 					"foo": "bar",
