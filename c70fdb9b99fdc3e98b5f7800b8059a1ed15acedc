@@ -70,6 +70,24 @@
       "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bc667e2_b3e3b143",
+        "filename": "common/data/text/sanitizehtml/sanitize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-01T22:09:07Z",
+      "side": 1,
+      "message": "It looks like `class` is generated e.g. for https://spec.commonmark.org/dingus/?text\u003d%60%60%60python%0Adef%20foo()%3A%0A%20%20print%20%22nerps%22%0A%60%60%60%0A\n\nIMO the sanitizer\u0027s job is to ensure that the HTML is safe, not that it\u0027s pretty; we should allow all tags which aren\u0027t unsafe, even if they may look derpy. It\u0027s up to the user if they want the build to look derpy or not.\n\nIf we want to further restrict tags in certain contexts, then the tag sets should be specified as input to sanitizehtml in each of those contexts. Right now it looks like the sanitize patterns are hard coded into this select statement, so there\u0027s no easy way to configure it.",
+      "parentUuid": "a2777132_8a182a6d",
+      "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
