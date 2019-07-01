@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "27e66267_ac0761e9",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-01T17:11:07Z",
+      "side": 1,
+      "message": "nice! I didn\u0027t know about flags.\n\nthis magical string is used elsewhere, so just doing this won\u0027t be sufficient. Let\u0027s do this in a dedicated CL.",
+      "parentUuid": "7d776569_90cc1146",
+      "range": {
+        "startLine": 113,
+        "startChar": 8,
+        "endLine": 113,
+        "endChar": 16
+      },
+      "revId": "7d4b139154e05fe3488ce261c948dbb2e8d4edce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5afd86be_0efd416f",
         "filename": "milo/buildsource/buildbucket/builder.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "7d4b139154e05fe3488ce261c948dbb2e8d4edce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b4b1490_ab761f34",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-01T17:11:07Z",
+      "side": 1,
+      "message": "great point. I\u0027ve replaced this TODO with a TODO in the template.",
+      "parentUuid": "5afd86be_0efd416f",
+      "range": {
+        "startLine": 172,
+        "startChar": 4,
+        "endLine": 172,
+        "endChar": 23
+      },
+      "revId": "7d4b139154e05fe3488ce261c948dbb2e8d4edce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
