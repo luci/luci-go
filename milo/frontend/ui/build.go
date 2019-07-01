@@ -84,7 +84,7 @@ func (b *Build) CommitLinkHTML() template.HTML {
 	var label string
 	switch {
 	case c.Position != 0:
-		label = fmt.Sprintf("# %d", c.Position)
+		label = fmt.Sprintf("%s@{#%d}", c.Ref, c.Position)
 	case c.Id != "":
 		label = c.Id
 	case c.Ref != "":
