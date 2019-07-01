@@ -29,6 +29,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -44,6 +47,9 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var now = time.Date(2019, time.February, 3, 4, 5, 6, 7, time.UTC)
+var nowTS, _ = ptypes.TimestampProto(now)
 
 // TODO(nodir): refactor this file.
 
@@ -67,6 +73,7 @@ var (
 		{consoleTestData, "console", "console.html"},
 		{Frontpage, "frontpage", "frontpage.html"},
 		{Search, "search", "search.html"},
+		{builderPageData, "builder", "builder.html"},
 	}
 )
 
@@ -110,7 +117,7 @@ func TestPages(t *testing.T) {
 		r := &http.Request{URL: &url.URL{Path: "/foobar"}}
 		c := context.Background()
 		c = memory.Use(c)
-		c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
+		c, _ = testclock.UseTime(c, now)
 		c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{Expiration: time.Second}))
 		err := settings.Set(c, "analytics", &analyticsSettings{"UA-12345-01"}, "", "")
@@ -152,7 +159,10 @@ func buildbucketBuildTestData() []TestBundle {
 		bundles = append(bundles, TestBundle{
 			Description: fmt.Sprintf("Test page: %s", tc),
 			Data: templates.Args{"BuildPage": &ui.BuildPage{
-				Build:           ui.Build{build},
+				Build: ui.Build{
+					Build: build,
+					Now:   nowTS,
+				},
 				BuildbucketHost: "example.com",
 			}},
 		})
@@ -282,7 +292,7 @@ func Frontpage() []TestBundle {
 }
 
 func Search() []TestBundle {
-	data := &templates.Args{
+	data := templates.Args{
 		"search": ui.Search{
 			CIServices: []ui.CIService{
 				{
@@ -304,7 +314,92 @@ func Search() []TestBundle {
 	return []TestBundle{
 		{
 			Description: "Basic search page",
-			Data:        *data,
+			Data:        data,
+		},
+	}
+}
+
+func builderPageData() []TestBundle {
+
+	build := func(b *buildbucketpb.Build) *ui.Build {
+		b.Builder = &buildbucketpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "try",
+			Builder: "linux-rel",
+		}
+		return &ui.Build{
+			Build: b,
+			Now:   nowTS,
+		}
+	}
+
+	return []TestBundle{
+		{
+			Description: "Builder page",
+			Data: templates.Args{
+				"Request": &http.Request{
+					URL: &url.URL{Path: "/p/chromium/builders/try/linux-rel"},
+				},
+				"BuilderPage": &ui.BuilderPage{
+					BuilderName: "linux-rel",
+					ScheduledBuilds: []*ui.Build{
+						build(&buildbucketpb.Build{
+							Id:         1,
+							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
+						}),
+						build(&buildbucketpb.Build{
+							Id:         2,
+							Number:     1,
+							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
+						}),
+					},
+					StartedBuilds: []*ui.Build{
+						build(&buildbucketpb.Build{
+							Id:         3,
+							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
+							StartTime:  &timestamp.Timestamp{Seconds: 1544748010},
+						}),
+						build(&buildbucketpb.Build{
+							Id:         4,
+							Number:     1,
+							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
+							StartTime:  &timestamp.Timestamp{Seconds: 1544748010},
+						}),
+					},
+					EndedBuilds: []*ui.Build{
+						build(&buildbucketpb.Build{
+							Id:         5,
+							Status:     buildbucketpb.Status_SUCCESS,
+							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
+							EndTime:    &timestamp.Timestamp{Seconds: 1544748020},
+							Input: &buildbucketpb.Build_Input{
+								GitilesCommit: &buildbucketpb.GitilesCommit{
+									Host:    "chromium.googlesource.com",
+									Project: "chromium/src",
+									Id:      "e57f4e87022d765b45e741e478a8351d9789bc37",
+								},
+							},
+						}),
+						build(&buildbucketpb.Build{
+							Id:         6,
+							Status:     buildbucketpb.Status_FAILURE,
+							Number:     1,
+							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
+							StartTime:  &timestamp.Timestamp{Seconds: 1544748010},
+							EndTime:    &timestamp.Timestamp{Seconds: 1544748020},
+							Output: &buildbucketpb.Build_Output{
+								GitilesCommit: &buildbucketpb.GitilesCommit{
+									Host:     "chromium.googlesource.com",
+									Project:  "chromium/src",
+									Ref:      "refs/heads/master",
+									Id:       "e57f4e87022d765b45e741e478a8351d9789bc37",
+									Position: 32,
+								},
+							},
+						}),
+					},
+				},
+			},
 		},
 	}
 }

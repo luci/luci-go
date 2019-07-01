@@ -127,7 +127,7 @@ func getSummary(c context.Context, host string, project string, id int64) (*mode
 	bs := &model.BuildSummary{
 		ProjectID:  b.Builder.Project,
 		BuildKey:   buildKey,
-		BuilderID:  BuilderID{*b.Builder}.String(),
+		BuilderID:  LegacyBuilderIDString(b.Builder),
 		BuildID:    "buildbucket/" + buildAddress,
 		BuildSet:   protoutil.BuildSets(b),
 		ContextURI: []string{fmt.Sprintf("buildbucket://%s/build/%d", host, id)},
