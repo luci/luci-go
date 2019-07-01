@@ -82,7 +82,9 @@ func (s *sanitizer) visit(n *html.Node) {
 		case atom.Br:
 			// br is allowed and it should not be closed
 			s.p("<br>")
-
+		case atom.Hr:
+			// hr is allowed and it should not be closed
+			s.p("<hr>")
 		case atom.Script, atom.Style:
 			// ignore entirely
 			// do not visit children so we don't print inner text
@@ -106,8 +108,11 @@ func (s *sanitizer) visit(n *html.Node) {
 			s.p(">")
 			s.visitChildren(n)
 			s.p("</a>")
-
-		case atom.P, atom.Ol, atom.Ul, atom.Li, atom.Strong, atom.Em:
+		// TODO: markdown can populate the class attribute
+		// if a language is specified in a triple-backtick
+		case atom.P, atom.Ol, atom.Ul, atom.Li, atom.Strong,
+			atom.Em, atom.Code, atom.Pre, atom.H1, atom.H2,
+			atom.H3, atom.H4, atom.H5, atom.H6:
 			// print without attributes
 			tag := n.DataAtom.String()
 			s.p("<")
