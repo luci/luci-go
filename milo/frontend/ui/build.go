@@ -172,6 +172,16 @@ func (b *Build) Summary() (result []string) {
 	return
 }
 
+// ChangeLinks returns a slice of links to build input gerrit changes.
+func (b *Build) ChangeLinks() []*Link {
+	changes := b.GetInput().GetGerritChanges()
+	ret := make([]*Link, len(changes))
+	for i, c := range changes {
+		ret[i] = NewPatchLink(c)
+	}
+	return ret
+}
+
 // BuildbucketLink returns a link to the buildbucket version of the page.
 func (bp *BuildPage) BuildbucketLink() *Link {
 	if bp.BuildbucketHost == "" {
@@ -623,7 +633,7 @@ func NewLink(label, url, ariaLabel string) *Link {
 // NewPatchLink generates a URL to a Gerrit CL.
 func NewPatchLink(cl *buildbucketpb.GerritChange) *Link {
 	return NewLink(
-		fmt.Sprintf("Gerrit CL %d (ps#%d)", cl.Change, cl.Patchset),
+		fmt.Sprintf("CL %d (ps#%d)", cl.Change, cl.Patchset),
 		protoutil.GerritChangeURL(cl),
 		fmt.Sprintf("gerrit changelist number %d patchset %d", cl.Change, cl.Patchset))
 }
