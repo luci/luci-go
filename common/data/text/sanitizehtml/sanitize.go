@@ -107,7 +107,8 @@ func (s *sanitizer) visit(n *html.Node) {
 			s.visitChildren(n)
 			s.p("</a>")
 
-		case atom.P, atom.Ol, atom.Ul, atom.Li, atom.Strong, atom.Em:
+		case atom.P, atom.Ol, atom.Ul, atom.Li, atom.Strong,
+			atom.Em, atom.Code:
 			// print without attributes
 			tag := n.DataAtom.String()
 			s.p("<")
