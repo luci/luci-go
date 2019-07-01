@@ -52,6 +52,24 @@
       "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2777132_8a182a6d",
+        "filename": "common/data/text/sanitizehtml/sanitize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1349675
+      },
+      "writtenOn": "2019-07-01T22:03:26Z",
+      "side": 1,
+      "message": "What attributes would code need? I wasn\u0027t sure if we decided to allow header tags, should I only allow h3 and down to make sure there aren\u0027t very large fonts?",
+      "parentUuid": "fd8d7f76_46dd090d",
+      "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
