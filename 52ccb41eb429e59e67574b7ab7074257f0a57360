@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7cc5095a_15c7c112",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-01T18:17:03Z",
+      "side": 0,
+      "message": "ha, i wonder why Golint doesn\u0027t bark at this.",
+      "range": {
+        "startLine": 246,
+        "startChar": 15,
+        "endLine": 246,
+        "endChar": 17
+      },
+      "revId": "52ccb41eb429e59e67574b7ab7074257f0a57360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
