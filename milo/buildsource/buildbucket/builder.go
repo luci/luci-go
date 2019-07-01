@@ -54,6 +54,7 @@ var builderPageBuildFields = &field_mask.FieldMask{
 		"builds.*.input.gitiles_commit",
 		"builds.*.output.gitiles_commit",
 		"builds.*.summary_markdown",
+		"next_page_token",
 	},
 }
 
@@ -219,6 +220,7 @@ func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize in
 		}
 		work <- func() (err error) {
 			result.EndedBuilds, result.NextPageToken, _, err = fetch(buildbucketpb.Status_ENDED_MASK, pageSize, pageToken)
+			result.PrevPageToken = backPageToken(c, bid, pageSize, pageToken, result.NextPageToken) // Safe to do even with error.
 			return
 		}
 	})
