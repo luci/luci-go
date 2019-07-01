@@ -16,6 +16,24 @@
       "revId": "79320d8cd070613f4384b96a43d005043b957296",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cad8a762_c29a0318",
+        "filename": "common/data/text/sanitizehtml/sanitize.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1349675
+      },
+      "writtenOn": "2019-07-01T22:58:42Z",
+      "side": 1,
+      "message": "Thank you, didn\u0027t see that.",
+      "parentUuid": "69281f6f_08408837",
+      "revId": "79320d8cd070613f4384b96a43d005043b957296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
