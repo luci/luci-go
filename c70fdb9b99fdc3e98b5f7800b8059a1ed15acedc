@@ -34,6 +34,24 @@
       "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd8d7f76_46dd090d",
+        "filename": "common/data/text/sanitizehtml/sanitize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-01T21:57:57Z",
+      "side": 1,
+      "message": "Actually, I think \u0027code\u0027 needs to keep some of its attributes.\n\nShouldn\u0027t we also have header tags in here?",
+      "parentUuid": "0e923b9b_c06c87d7",
+      "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
