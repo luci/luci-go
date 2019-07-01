@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "36bf101f_dfb0c469",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-01T23:38:38Z",
+      "side": 1,
+      "message": "I think you can remove the whitespace with `{{-` and `-}}`?",
+      "range": {
+        "startLine": 128,
+        "startChar": 10,
+        "endLine": 128,
+        "endChar": 12
+      },
+      "revId": "18c8e36da01756db89abba2187d6bcec06521c3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "27b9fca8_237c8bcf",
         "filename": "milo/frontend/expectations/builder-Builder_page.html",
         "patchSetId": 1
