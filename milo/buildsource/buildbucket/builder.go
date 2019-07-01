@@ -243,7 +243,7 @@ func addBuildIDs(m map[int64]struct{}, builds []*ui.Build) {
 }
 
 func excludeBuilds(builds []*ui.Build, exclude map[int64]struct{}) []*ui.Build {
-	ret := builds[0:]
+	ret := builds[:0]
 	for _, b := range builds {
 		if _, excluded := exclude[b.Id]; !excluded {
 			ret = append(ret, b)
