@@ -129,6 +129,24 @@
       "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1c24a26_9fd7ec27",
+        "filename": "common/data/text/sanitizehtml/sanitize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-01T22:19:59Z",
+      "side": 1,
+      "message": "That\u0027s fine re: class for now, but maybe add a `TODO: markdown can populate the class attribute if a language is specified in a triple-backtick`.\n\nI\u0027m saying we should err on the side of adding all elements we know are safe; for now just add all the header tags.",
+      "parentUuid": "d8b723fb_e0849653",
+      "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
