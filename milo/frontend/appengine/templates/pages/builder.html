@@ -125,9 +125,9 @@
         <th>End time</th>
         <th>Run duration</th>
         <th>Commit</th>
-        {{- if $hasChanges }}
+        {{if $hasChanges }}
         <th>Changes</th>
-        {{ end -}}
+        {{end}}
         <th>Status</th>
         <th>Build #</th>
         <th>Summary</th>
@@ -139,14 +139,14 @@
           <td>{{ .EndTime | localTimestamp "" }}</td>
           <td>{{ duration .StartTime .EndTime .Now }}</td>
           <td class="revision">{{.CommitLinkHTML}}</td>
-          {{- if $hasChanges }}
+          {{if $hasChanges }}
           <td>
             {{ range $i, $link := .ChangeLinks }}
               {{- if gt $i 0 }}, {{ end -}}
               {{- $link.HTML -}}
             {{end}}
           </td>
-          {{- end }}
+          {{end}}
           <td class="status {{.Status}}">{{.Status}}</td>
           <td>{{ .Link.HTML }}</td>
           <td class="left summary-markdown">{{ .SummaryMarkdown | renderMarkdown }}</td>
