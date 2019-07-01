@@ -43,6 +43,16 @@ type BuilderPage struct {
 	NextPageToken string
 }
 
+// HasChanges returns true if at least one ended build has at least one CL.
+func (bp *BuilderPage) HasChanges() bool {
+	for _, b := range bp.EndedBuilds {
+		if len(b.GetInput().GetGerritChanges()) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // Bot wraps a model.Bot to provide a UI specific statuses.
 type Bot struct {
 	model.Bot
