@@ -4,7 +4,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="google" value="notranslate">
-<title>LUCI</title>
+<title>Builder </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/vis.min.css" type="text/css">
@@ -33,19 +33,99 @@
   </header>
   <hr>
   
-<h1>All Projects</h1>
-<div class="project-list">
+
+
+
+
+<h1>Builder <a href="/p/chromium/builders/try/linux-rel">linux-rel</a></h1>
+
+<div class="prelude">
+  <div class="column">
   
-  <a href="/p/fakeproject" aria-label="Project fakeproject">
-    <div class="project">
+  </div>
+
+  
+  <div class="column">
+    <h2>Started builds (2 most recent)
+    </h2>
+
+    <ul>
+    
+      <li><a href="/p/chromium/builders/try/linux-rel/b3" aria-label="Build 3">3</a>
+        [Running for: 51 days 3 hrs]
+      </li>
+    
+      <li><a href="/p/chromium/builders/try/linux-rel/1" aria-label="Build 1">1</a>
+        [Running for: 51 days 3 hrs]
+      </li>
+    
+    </ul>
+  </div>
+
+  <div class="column">
+    <h2>Scheduled builds (2 most recent)
+    </h2>
+    <ul><li><a href="/p/chromium/builders/try/linux-rel/b1" aria-label="Build 1">1</a>
+        <small>(<span class="local-time " data-timestamp="1544748000000">Friday, 14-Dec-18 00:40:00 UTC</span>, waiting 51 days 3 hrs)</small>
+      </li><li><a href="/p/chromium/builders/try/linux-rel/1" aria-label="Build 1">1</a>
+        <small>(<span class="local-time " data-timestamp="1544748000000">Friday, 14-Dec-18 00:40:00 UTC</span>, waiting 51 days 3 hrs)</small>
+      </li></ul>
+  </div>
+</div>
+
+<div class="clear"></div>
+
+<div class="main">
+  <h2>Ended builds</h2>
+  
+    <table class="info">
+      <tr>
+        <th>Create time</th>
+        <th>End time</th>
+        <th>Run duration</th>
+        <th>Commit</th>
+        <th>Status</th>
+        <th>Build #</th>
+        <th>Summary</th>
+      </tr>
+
       
-        <img src="https://example.com/logo.png" />
+        <tr>
+          <td><span class="local-time " data-timestamp="1544748000000">Friday, 14-Dec-18 00:40:00 UTC</span></td>
+          <td><span class="local-time " data-timestamp="1544748020000">Friday, 14-Dec-18 00:40:20 UTC</span></td>
+          <td>N/A</td>
+          <td class="revision"><a href="https://chromium.googlesource.com/chromium/src/&#43;/e57f4e87022d765b45e741e478a8351d9789bc37" aria-label="commit e57f4e87022d765b45e741e478a8351d9789bc37">e57f4e87022d765b45e741e478a8351d9789bc37</a></td>
+          <td class="status SUCCESS">SUCCESS</td>
+          <td><a href="/p/chromium/builders/try/linux-rel/b5" aria-label="Build 5">5</a></td>
+          <td class="left summary-markdown"></td>
+        </tr>
       
-      <div class="project-label">fakeproject</div>
-    </div>
-  </a>
+        <tr>
+          <td><span class="local-time " data-timestamp="1544748000000">Friday, 14-Dec-18 00:40:00 UTC</span></td>
+          <td><span class="local-time " data-timestamp="1544748020000">Friday, 14-Dec-18 00:40:20 UTC</span></td>
+          <td>10 secs</td>
+          <td class="revision"><a href="https://chromium.googlesource.com/chromium/src/&#43;/e57f4e87022d765b45e741e478a8351d9789bc37" aria-label="commit # 32"># 32</a></td>
+          <td class="status FAILURE">FAILURE</td>
+          <td><a href="/p/chromium/builders/try/linux-rel/1" aria-label="Build 1">1</a></td>
+          <td class="left summary-markdown"></td>
+        </tr>
+      
+    </table>
   
 </div>
+
+<div class="epiloge">
+  
+  (Show:
+  <a href="/p/chromium/builders/try/linux-rel">default</a>
+  <a href="/p/chromium/builders/try/linux-rel?limit=25">25</a>
+  <a href="/p/chromium/builders/try/linux-rel?limit=50">50</a>
+  <a href="/p/chromium/builders/try/linux-rel?limit=100">100</a>
+  <a href="/p/chromium/builders/try/linux-rel?limit=200">200</a>
+  )
+  
+</div>
+
 
 
   <footer>

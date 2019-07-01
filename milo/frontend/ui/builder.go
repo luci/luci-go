@@ -23,6 +23,26 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 )
 
+type BuilderPage struct {
+	BuilderName string
+
+	ScheduledBuilds         []*Build
+	ScheduledBuildsComplete bool
+	StartedBuilds           []*Build
+	StartedBuildsComplete   bool
+	EndedBuilds             []*Build
+
+	MachinePool *MachinePool
+
+	// Views is a list of links to milo views that reference this builder.
+	Views []*Link
+
+	// PrevPageToken is a token to the previous page.
+	PrevPageToken string
+	// NextPageToken is a token to the next page.
+	NextPageToken string
+}
+
 // Bot wraps a model.Bot to provide a UI specific statuses.
 type Bot struct {
 	model.Bot

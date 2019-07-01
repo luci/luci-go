@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/buildbucket/deprecated"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -120,23 +119,7 @@ func Run(templatePath string) {
 	// Buildbucket
 	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
 	// and common/model/builder_summary.go:SelfLink.
-	r.GET("/p/:project/builders/:bucket/:builder", projectMW, handleError(func(c *router.Context) error {
-		bid := buildbucketpb.BuilderID{
-			Project: c.Params.ByName("project"),
-			Bucket:  c.Params.ByName("bucket"),
-			Builder: c.Params.ByName("builder"),
-		}
-
-		// Redirect to short bucket names.
-		if _, v2Bucket := deprecated.BucketNameToV2(bid.Bucket); v2Bucket != "" {
-			// Parameter "bucket" is v1, e.g. "luci.chromium.try".
-			u := *c.Request.URL
-			u.Path = fmt.Sprintf("/p/%s/builders/%s/%s", bid.Project, v2Bucket, bid.Builder)
-			http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
-		}
-
-		return BuilderHandlerLegacy(c, buildsource.BuilderID(buildbucket.BuilderID{bid}.String()))
-	}))
+	r.GET("/p/:project/builders/:bucket/:builder", projectMW, handleError(BuilderHandler))
 
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
 
