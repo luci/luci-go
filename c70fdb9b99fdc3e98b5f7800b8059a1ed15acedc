@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8d6f3f89_9d36c484",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1349675
+      },
+      "writtenOn": "2019-07-01T22:29:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f366dde_57d9de4f",
+      "range": {
+        "startLine": 7,
+        "startChar": 16,
+        "endLine": 9,
+        "endChar": 14
+      },
+      "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fbbf8454_0805699f",
         "filename": "common/data/text/sanitizehtml/sanitize.go",
         "patchSetId": 1
@@ -147,6 +171,24 @@
       "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70e73fd4_cc9f12ad",
+        "filename": "common/data/text/sanitizehtml/sanitize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1349675
+      },
+      "writtenOn": "2019-07-01T22:29:54Z",
+      "side": 1,
+      "message": "I agree with you, it would be good addition.",
+      "parentUuid": "a1c24a26_9fd7ec27",
+      "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
