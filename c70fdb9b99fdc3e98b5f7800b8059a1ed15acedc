@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fbbf8454_0805699f",
+        "filename": "common/data/text/sanitizehtml/sanitize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-01T21:56:53Z",
+      "side": 1,
+      "message": "also \u003cpre\u003e",
+      "revId": "c70fdb9b99fdc3e98b5f7800b8059a1ed15acedc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
