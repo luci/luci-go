@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d776569_90cc1146",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-01T16:56:30Z",
+      "side": 1,
+      "message": "use SetFlags with a uint32 flag instead. e.g.\n\n   EMPTY \u003d 0x1\n   item.SetFlags(EMPTY)\n\n   if (item.Flags() \u0026 EMPTY) !\u003d 0 {\n     // item positively caches that the item is empty\n   }",
+      "range": {
+        "startLine": 113,
+        "startChar": 8,
+        "endLine": 113,
+        "endChar": 16
+      },
+      "revId": "7d4b139154e05fe3488ce261c948dbb2e8d4edce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5afd86be_0efd416f",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-01T16:56:30Z",
+      "side": 1,
+      "message": "I think we probably still want to show them on the builder page, but behind a checkbox (like \u0027Show experimental builds\u0027) which defaults to false? If experimental builds do actually have side effects, I think it would be pretty bad to hide them entirely; debugging that would be very annoying.",
+      "range": {
+        "startLine": 172,
+        "startChar": 4,
+        "endLine": 172,
+        "endChar": 23
+      },
+      "revId": "7d4b139154e05fe3488ce261c948dbb2e8d4edce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
