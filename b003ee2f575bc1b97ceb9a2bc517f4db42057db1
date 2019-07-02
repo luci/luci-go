@@ -16,6 +16,24 @@
       "revId": "b003ee2f575bc1b97ceb9a2bc517f4db42057db1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85211abf_2225f7e7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1238766
+      },
+      "writtenOn": "2019-07-02T00:05:20Z",
+      "side": 1,
+      "message": "This seems to be a different git repository from all the users; I\u0027m not sure why.\n\nBut yes, SGTM.",
+      "parentUuid": "3106f306_f3b1ca0b",
+      "revId": "b003ee2f575bc1b97ceb9a2bc517f4db42057db1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
