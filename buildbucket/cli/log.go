@@ -108,15 +108,15 @@ func (r *logRun) Run(a subcommands.Application, args []string, env subcommands.E
 	}
 
 	// Find the logs.
-	logByName := map[string]*pb.Step_Log{}
+	logByName := map[string]*pb.Log{}
 	for _, l := range step.Logs {
 		logByName[l.Name] = l
 	}
-	var logs []*pb.Step_Log
+	var logs []*pb.Log
 	if len(r.logs) == 0 {
 		logs = r.defaultLogs(logByName)
 	} else {
-		logs = make([]*pb.Step_Log, 0, len(r.logs))
+		logs = make([]*pb.Log, 0, len(r.logs))
 		for name := range r.logs {
 			l, ok := logByName[name]
 			if !ok {
@@ -146,8 +146,8 @@ func (r *logRun) parseArgs(args []string) error {
 	return err
 }
 
-func (r *logRun) defaultLogs(available map[string]*pb.Step_Log) []*pb.Step_Log {
-	logs := make([]*pb.Step_Log, 0, 2)
+func (r *logRun) defaultLogs(available map[string]*pb.Log) []*pb.Log {
+	logs := make([]*pb.Log, 0, 2)
 	if log, ok := available["stdout"]; ok {
 		logs = append(logs, log)
 	}
@@ -173,7 +173,7 @@ func (r *logRun) getSteps(ctx context.Context) ([]*pb.Step, error) {
 
 // printLogs fetches and prints the logs to io.Stdout/io.Stderr.
 // Entries from different logs are multiplexed by timestamps.
-func (r *logRun) printLogs(ctx context.Context, logs []*pb.Step_Log) error {
+func (r *logRun) printLogs(ctx context.Context, logs []*pb.Log) error {
 	if len(logs) == 0 {
 		return nil
 	}
