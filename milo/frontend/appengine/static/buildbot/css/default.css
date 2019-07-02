@@ -870,6 +870,30 @@ form.command_forcebuild .force-any .force-text {
   display: inline;
 }
 
+.summary-markdown h1 {
+  font-size: 1rem;
+}
+
+.summary-markdown h2 {
+  font-size: 0.9rem;
+}
+
+.summary-markdown h3 {
+  font-size: 0.8rem;
+}
+
+.summary-markdown h4 {
+  font-size: 0.7rem;
+}
+
+.summary-markdown h5 {
+  font-size: 0.6rem;
+}
+
+.summary-markdown h6 {
+  font-size: 0.5rem;
+}
+
 div.step-text:first-child {
     display: inline;
 }

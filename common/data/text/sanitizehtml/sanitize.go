@@ -79,10 +79,12 @@ func (s *sanitizer) visit(n *html.Node) {
 	case html.ElementNode:
 		// This switch statement defines what HTML elements we allow.
 		switch n.DataAtom {
-		case atom.Br:
-			// br is allowed and it should not be closed
-			s.p("<br>")
-
+		case atom.Br, atom.Hr:
+			// br, hr are allowed and it should not be closed
+			tag := n.DataAtom.String()
+			s.p("<")
+			s.p(tag)
+			s.p(">")
 		case atom.Script, atom.Style:
 			// ignore entirely
 			// do not visit children so we don't print inner text
@@ -106,8 +108,11 @@ func (s *sanitizer) visit(n *html.Node) {
 			s.p(">")
 			s.visitChildren(n)
 			s.p("</a>")
-
-		case atom.P, atom.Ol, atom.Ul, atom.Li, atom.Strong, atom.Em:
+		// TODO: markdown can populate the class attribute
+		// if a language is specified in a triple-backtick
+		case atom.P, atom.Ol, atom.Ul, atom.Li, atom.Strong,
+			atom.Em, atom.Code, atom.Pre, atom.H1, atom.H2,
+			atom.H3, atom.H4, atom.H5, atom.H6:
 			// print without attributes
 			tag := n.DataAtom.String()
 			s.p("<")
@@ -141,13 +146,15 @@ func (s *sanitizer) visitChildren(n *html.Node) {
 //
 // Unless explicitly specified, attributes are stripped.
 // Allowed elements:
-//  - p, br
+//  - p, br, hr
+//  - h1, h2, h3, h4, h5, h6
 //  - strong, em
 //  - a
 //    - if href attribute is not a valid absolute HTTP(s) link, it is replaced
 //      with an innocuous one.
 //    - alt attribute is allowed
 //  - ul, ol, li
+//  - code, pre
 //
 // Elements <script> and <style> are ignored entirely.
 // For all other HTML nodes, Sanitize ignores the node, but visits its children.
