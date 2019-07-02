@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package backend implements HTTP server that handles requests to 'backend'
+// Binary backend implements HTTP server that handles requests to 'backend'
 // module.
 //
 // Handlers here are called only via GAE cron or task queues.
-package backend
+package main
 
 import (
 	"net/http"
 	"sync"
 
+	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -46,7 +47,7 @@ var (
 	adminServer = adminsrv.NewServer()
 )
 
-func init() {
+func main() {
 	r := router.New()
 	basemw := standard.Base()
 
@@ -61,6 +62,7 @@ func init() {
 	r.GET("/internal/cron/bqlog/project-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushProjectTokensLogCron)
 
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }
 
 // readConfigCron is handler for /internal/cron/read-config GAE cron task.

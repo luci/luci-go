@@ -1,0 +1,10 @@
+service: backend
+runtime: go111
+
+instance_class: F4
+
+handlers:
+- url: /internal.*
+  script: auto
+  secure: always
+  login: admin

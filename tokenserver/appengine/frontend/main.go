@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package frontend implements HTTP server that handles requests to 'default'
+// Binary frontend implements HTTP server that handles requests to 'default'
 // module.
-package frontend
+package main
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"google.golang.org/appengine"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -57,7 +58,7 @@ func adminPrelude(serviceName string) func(context.Context, string, proto.Messag
 	}
 }
 
-func init() {
+func main() {
 	r := router.New()
 	base := standard.Base()
 
@@ -96,4 +97,5 @@ func init() {
 
 	// Expose all this stuff.
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }
