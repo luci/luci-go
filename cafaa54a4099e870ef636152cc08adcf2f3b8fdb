@@ -1,0 +1,189 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a8c47dca_dbdb999c",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-02T02:37:53Z",
+      "side": 1,
+      "message": "incomplete",
+      "range": {
+        "startLine": 43,
+        "startChar": 55,
+        "endLine": 43,
+        "endChar": 57
+      },
+      "revId": "cafaa54a4099e870ef636152cc08adcf2f3b8fdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a2eca21_68955942",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-02T02:37:53Z",
+      "side": 1,
+      "message": "Required: Must be \u003e\u003d 0\n\nAlso, do we actually want to support 0, whereby MaxBatchDuration kicks in?",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 63,
+        "endChar": 15
+      },
+      "revId": "cafaa54a4099e870ef636152cc08adcf2f3b8fdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2926d0a3_2f53d8a8",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-02T02:37:53Z",
+      "side": 1,
+      "message": "I think we should guarantee partialBatch.Len() \u003c MaxBatchSize",
+      "range": {
+        "startLine": 100,
+        "startChar": 35,
+        "endLine": 100,
+        "endChar": 68
+      },
+      "revId": "cafaa54a4099e870ef636152cc08adcf2f3b8fdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a66bde98_b6b48c38",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-02T02:37:53Z",
+      "side": 1,
+      "message": "nit: item\n\npros (clarity) outweighs the cost (1 char)",
+      "range": {
+        "startLine": 102,
+        "startChar": 54,
+        "endLine": 102,
+        "endChar": 57
+      },
+      "revId": "cafaa54a4099e870ef636152cc08adcf2f3b8fdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6590649_da07eae6",
+        "filename": "common/sync/dispatcher/send_buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-02T02:37:53Z",
+      "side": 1,
+      "message": "i think Get(index int) is missing",
+      "range": {
+        "startLine": 18,
+        "startChar": 5,
+        "endLine": 18,
+        "endChar": 15
+      },
+      "revId": "cafaa54a4099e870ef636152cc08adcf2f3b8fdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b32561b3_bacceee7",
+        "filename": "common/sync/dispatcher/send_buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-02T02:37:53Z",
+      "side": 1,
+      "message": "i don\u0027t yet follow how this is used.\\",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 29
+      },
+      "revId": "cafaa54a4099e870ef636152cc08adcf2f3b8fdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f2a7e31_004c9989",
+        "filename": "common/sync/dispatcher/send_buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-02T02:37:53Z",
+      "side": 1,
+      "message": "\u003e \"metdata\" is a possible misspelling of \"metadata\".\n\nPlease Fix",
+      "parentUuid": "975a7d5b_b6146dc6",
+      "range": {
+        "startLine": 35,
+        "startChar": 3,
+        "endLine": 35,
+        "endChar": 10
+      },
+      "revId": "cafaa54a4099e870ef636152cc08adcf2f3b8fdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e84af69_203984b5",
+        "filename": "common/sync/dispatcher/send_buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-02T02:37:53Z",
+      "side": 1,
+      "message": "\"cut\" is more appropriate, imo. Actual Batch{} objects are created before NewItemFn is called.",
+      "range": {
+        "startLine": 37,
+        "startChar": 34,
+        "endLine": 37,
+        "endChar": 64
+      },
+      "revId": "cafaa54a4099e870ef636152cc08adcf2f3b8fdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
