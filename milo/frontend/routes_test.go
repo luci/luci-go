@@ -373,10 +373,51 @@ func builderPageData() []TestBundle {
 							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
 							EndTime:    &timestamp.Timestamp{Seconds: 1544748020},
 							Input: &buildbucketpb.Build_Input{
+								GerritChanges: []*buildbucketpb.GerritChange{
+									{
+										Host:     "chromium.googlesource.com",
+										Project:  "chromium/src",
+										Change:   123,
+										Patchset: 1,
+									},
+									{
+										Host:     "chromium.googlesource.com",
+										Project:  "chromium/src-2",
+										Change:   200,
+										Patchset: 1,
+									},
+								},
 								GitilesCommit: &buildbucketpb.GitilesCommit{
 									Host:    "chromium.googlesource.com",
 									Project: "chromium/src",
 									Id:      "e57f4e87022d765b45e741e478a8351d9789bc37",
+								},
+							},
+						}),
+						build(&buildbucketpb.Build{
+							Id:         6,
+							Status:     buildbucketpb.Status_FAILURE,
+							Number:     1,
+							CreateTime: &timestamp.Timestamp{Seconds: 1544748000},
+							StartTime:  &timestamp.Timestamp{Seconds: 1544748010},
+							EndTime:    &timestamp.Timestamp{Seconds: 1544748020},
+							Input: &buildbucketpb.Build_Input{
+								GerritChanges: []*buildbucketpb.GerritChange{
+									{
+										Host:     "chromium.googlesource.com",
+										Project:  "chromium/src",
+										Change:   123,
+										Patchset: 1,
+									},
+								},
+							},
+							Output: &buildbucketpb.Build_Output{
+								GitilesCommit: &buildbucketpb.GitilesCommit{
+									Host:     "chromium.googlesource.com",
+									Project:  "chromium/src",
+									Ref:      "refs/heads/master",
+									Id:       "e57f4e87022d765b45e741e478a8351d9789bc37",
+									Position: 32,
 								},
 							},
 						}),
