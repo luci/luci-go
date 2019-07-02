@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -846,6 +847,43 @@ func GetBuild(c context.Context, host, taskID string) (*ui.MiloBuildLegacy, erro
 	}
 
 	return SwarmingBuildImpl(c, sf, taskID)
+}
+
+// BuildbucketBuildIDFromTask returns the ID of the buildbucket build
+// that the task represents.
+// If the task does not represent a buildbucket build, returns (0, nil).
+func BuildbucketBuildIDFromTask(c context.Context, host, taskID string) (int64, error) {
+	sf, err := newProdService(c, host)
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := sf.client.Task.Request(taskID).Context(c).Do()
+	switch err := err.(type) {
+	case *googleapi.Error:
+		switch err.Code {
+		case http.StatusNotFound:
+			return 0, errors.Annotate(err, "task %s/%s not found", host, taskID).Tag(grpcutil.NotFoundTag).Err()
+		case http.StatusBadRequest:
+			return 0, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		}
+	case error:
+		return 0, err
+	}
+
+	for _, t := range res.Tags {
+		const prefix = "buildbucket_build_id:"
+		if strings.HasPrefix(t, prefix) {
+			value := t[len(prefix):]
+			id, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				logging.Errorf(c, "failed to parse buildbucket_build_id tag %q as int64: %s", value, err)
+				return 0, nil
+			}
+			return id, nil
+		}
+	}
+	return 0, nil
 }
 
 // GetLog loads a step log.

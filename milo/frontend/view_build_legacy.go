@@ -77,10 +77,21 @@ func handleBuildbotBuild(c *router.Context) error {
 }
 
 func handleSwarmingBuild(c *router.Context) error {
-	build, err := swarming.GetBuild(
-		c.Context,
-		c.Request.FormValue("server"),
-		c.Params.ByName("id"))
+	host := c.Request.FormValue("server")
+	taskID := c.Params.ByName("id")
+
+	// Redirect to build page if possible.
+	switch buildID, err := swarming.BuildbucketBuildIDFromTask(c.Context, host, taskID); {
+	case err != nil:
+		return err
+	case buildID != 0:
+		u := *c.Request.URL
+		u.Path = fmt.Sprintf("/b/%d", buildID)
+		http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
+		return nil
+	}
+
+	build, err := swarming.GetBuild(c.Context, host, taskID)
 	return renderBuildLegacy(c, build, false, err)
 }
 
