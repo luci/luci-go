@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8563259f_b618b829",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 874,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-02T00:19:54Z",
+      "side": 1,
+      "message": "i assume you copied it from p above.\nthis seems to be incorrect https://jsfiddle.net/w56fzgL8/2/\nit removes the line break\n\ni am not sure why p above has inline either\n\nlet\u0027s only change font size",
+      "revId": "80a7167cf06bf2d170a647a05aba547ad081482a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
