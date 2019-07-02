@@ -127,7 +127,7 @@ func metadataRequestHandler(rules *RuleSet) router.Handler {
 		meta := config.ServiceDynamicMetadata{
 			Version: metaDataFormatVersion,
 			Validation: &config.Validator{
-				Url: fmt.Sprintf("https://%s%s", ctx.Request.URL.Host, validationPath),
+				Url: fmt.Sprintf("https://%s%s", ctx.Request.Host, validationPath),
 			},
 		}
 		for _, p := range patterns {

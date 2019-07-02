@@ -74,5 +74,5 @@ func searchHandler(c *router.Context) {
 func searchXMLHandler(c *router.Context) {
 	c.Writer.Header().Set("Content-Type", "application/opensearchdescription+xml")
 	c.Writer.WriteHeader(http.StatusOK)
-	fmt.Fprintf(c.Writer, openSearchXML, c.Request.URL.Host)
+	fmt.Fprintf(c.Writer, openSearchXML, c.Request.Host)
 }

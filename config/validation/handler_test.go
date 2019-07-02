@@ -40,9 +40,8 @@ func TestInstallHandlers(t *testing.T) {
 		host := "example.com"
 
 		metaCall := func() *config.ServiceDynamicMetadata {
-			req, err := http.NewRequest("GET", metadataPath, nil)
+			req, err := http.NewRequest("GET", "https://"+host+metadataPath, nil)
 			So(err, ShouldBeNil)
-			req.URL.Host = host
 			r.ServeHTTP(rr, req)
 
 			var resp config.ServiceDynamicMetadata
