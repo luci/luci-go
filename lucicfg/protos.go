@@ -34,6 +34,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/type/dayofweek"
 
 	_ "go.chromium.org/chromiumos/infra/proto/go/chromiumos"
+	_ "go.chromium.org/chromiumos/infra/proto/go/device"
 	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform"
 	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform/migration/scheduler"
 	_ "go.chromium.org/chromiumos/infra/proto/go/testplans"
@@ -98,6 +99,58 @@ var publicProtos = map[string]struct {
 	"external/cros/common.proto": {
 		"chromiumos",
 		"chromiumos/common.proto",
+		"",
+	},
+
+	// CrOS device config.
+	//
+	// load(
+	//     "@proto//external/crosdevice/brand_id.proto",
+	//     brand_id_pb="device")
+	// load(
+	//     "@proto//external/crosdevice/config_id.proto",
+	//     config_id_pb="device")
+	// load(
+	//     "@proto//external/crosdevice/config.proto",
+	//     config_pb="device")
+	// load(
+	//     "@proto//external/crosdevice/model_id.proto",
+	//     model_id_pb="device")
+	// load(
+	//     "@proto//external/crosdevice/platform_id.proto",
+	//     platform_id_pb="device")
+	// load(
+	//     "@proto//external/crosdevice/variant_id.proto",
+	//     variant_id_pb="device")
+
+	"external/crosdevice/brand_id.proto": {
+		"device",
+		"device/brand_id.proto",
+		"",
+	},
+	"external/crosdevice/config_id.proto": {
+		"device",
+		"device/config_id.proto",
+		"",
+	},
+	"external/crosdevice/config.proto": {
+		"device",
+		"device/config.proto",
+		"",
+	},
+	"external/crosdevice/model_id.proto": {
+		"device",
+		"device/model_id.proto",
+		"",
+	},
+	"external/crosdevice/platform_id.proto": {
+		"device",
+		"device/platform_id.proto",
+		"",
+	},
+	"external/crosdevice/variant_id.proto": {
+		"device",
+		"device/variant_id.proto",
 		"",
 	},
 
