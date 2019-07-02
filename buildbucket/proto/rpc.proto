@@ -116,6 +116,8 @@ message SearchBuildsRequest {
 
   // Value of SearchBuildsResponse.next_page_token from the previous response.
   // Use it to continue searching.
+  // The predicate and page_size in this request MUST be exactly same as in the
+  // previous request.
   string page_token = 102;
 }
 
