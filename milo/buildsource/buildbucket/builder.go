@@ -26,14 +26,11 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/gae/service/memcache"
-	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/milo/common"
@@ -63,30 +60,6 @@ var builderPageBuildFields = &field_mask.FieldMask{
 // It is used in the Milo datastore.
 func LegacyBuilderIDString(bid *buildbucketpb.BuilderID) string {
 	return fmt.Sprintf("buildbucket/luci.%s.%s/%s", bid.Project, bid.Bucket, bid.Builder)
-}
-
-// ensureDefined returns a grpcutil.NotFoundTag tagged error if the builder is
-// not defined.
-func ensureDefined(c context.Context, host string, bid *buildbucketpb.BuilderID) error {
-	definedBuilders, err := getBuilders(c, host)
-	if err != nil {
-		return err
-	}
-
-	v1Bucket := deprecated.BucketNameToV1(bid.Project, bid.Bucket)
-	for _, bucket := range definedBuilders.Buckets {
-		if bucket.Name != v1Bucket {
-			continue
-		}
-		for _, builder := range bucket.Builders {
-			if builder.Name == bid.Builder {
-				return nil
-			}
-		}
-		break
-	}
-
-	return errors.Reason("builder %q not found", protoutil.FormatBuilderID(bid)).Tag(grpcutil.NotFoundTag).Err()
 }
 
 // backPageToken implements bidirectional page tokens with forward-only
@@ -198,9 +171,6 @@ func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize in
 	}
 
 	err = parallel.FanOutIn(func(work chan<- func() error) {
-		work <- func() error {
-			return ensureDefined(c, host, bid)
-		}
 		work <- func() (err error) {
 			result.MachinePool, err = getPool(c, bid)
 			return
