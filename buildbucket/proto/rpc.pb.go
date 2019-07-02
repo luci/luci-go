@@ -121,6 +121,8 @@ type SearchBuildsRequest struct {
 	PageSize int32 `protobuf:"varint,101,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// Value of SearchBuildsResponse.next_page_token from the previous response.
 	// Use it to continue searching.
+	// The predicate and page_size in this request MUST be exactly same as in the
+	// previous request.
 	PageToken            string   `protobuf:"bytes,102,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
