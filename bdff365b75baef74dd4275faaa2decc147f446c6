@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2dc99737_116ce25f",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-02T22:20:36Z",
+      "side": 1,
+      "message": "This will not work in a real script, since different brand_id_pb will all clash with each other. You probably want brand_id_pb, config_id_pb, config_pb, model_id_pb, ...",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 124,
+        "endChar": 29
+      },
+      "revId": "bdff365b75baef74dd4275faaa2decc147f446c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
