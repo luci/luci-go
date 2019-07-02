@@ -1,13 +1,10 @@
-application: luci-token-server-dev
-version: 1
-module: backend
-runtime: go
-api_version: go1
+service: backend
+runtime: go111
 
 instance_class: F4
 
 handlers:
 - url: /internal.*
-  script: _go_app
+  script: auto
   secure: always
   login: admin
