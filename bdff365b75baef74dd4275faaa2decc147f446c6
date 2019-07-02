@@ -22,6 +22,30 @@
       "revId": "bdff365b75baef74dd4275faaa2decc147f446c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1a4a1a7_a92b0e89",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1128435
+      },
+      "writtenOn": "2019-07-02T22:35:16Z",
+      "side": 1,
+      "message": "Ooops, sorry. Bad copy \u0026 paste :-P",
+      "parentUuid": "2dc99737_116ce25f",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 124,
+        "endChar": 29
+      },
+      "revId": "bdff365b75baef74dd4275faaa2decc147f446c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
