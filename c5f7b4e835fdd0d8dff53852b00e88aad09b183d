@@ -22,6 +22,30 @@
       "revId": "c5f7b4e835fdd0d8dff53852b00e88aad09b183d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3254bc9_5931f934",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 875,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-02T22:46:32Z",
+      "side": 1,
+      "message": "i ran led get-build 8909005634742135872\n\ni see buildbucket_build_id only among kitchen args, but not in a tag",
+      "parentUuid": "fc547a5c_86ca54af",
+      "range": {
+        "startLine": 875,
+        "startChar": 18,
+        "endLine": 875,
+        "endChar": 38
+      },
+      "revId": "c5f7b4e835fdd0d8dff53852b00e88aad09b183d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
