@@ -439,6 +439,7 @@ func builderPageData() []TestBundle {
 							},
 						}),
 					},
+					NextPageToken: "next-page-token",
 				},
 			},
 		},
