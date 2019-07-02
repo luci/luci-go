@@ -26,7 +26,9 @@ func BuilderHandler(c *router.Context) error {
 		Builder: c.Params.ByName("builder"),
 	}
 	pageSize := GetLimit(c.Request, -1)
-	pageToken := c.Request.FormValue("pageToken")
+
+	// TODO(iannucci): standardize to "page token" term instead of cursor.
+	pageToken := c.Request.FormValue("cursor")
 
 	// Redirect to short bucket names.
 	if _, v2Bucket := deprecated.BucketNameToV2(bid.Bucket); v2Bucket != "" {
