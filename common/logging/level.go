@@ -72,7 +72,7 @@ func (l Level) String() string {
 	}
 }
 
-// SetLevel sets the Level for this context.
+// SetLevel returns a new context with the given logging level.
 //
 // It can be retrieved with GetLevel(context).
 func SetLevel(c context.Context, l Level) context.Context {
