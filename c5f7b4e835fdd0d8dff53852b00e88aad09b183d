@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc547a5c_86ca54af",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 875,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-02T22:37:02Z",
+      "side": 1,
+      "message": "I think this will probably goof up led builds when you do `led get-build \u003ctaskID\u003e | ...`. You\u0027ll have to have led delete this tag when you do `get-build`.",
+      "range": {
+        "startLine": 875,
+        "startChar": 18,
+        "endLine": 875,
+        "endChar": 38
+      },
+      "revId": "c5f7b4e835fdd0d8dff53852b00e88aad09b183d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
