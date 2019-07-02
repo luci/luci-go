@@ -51,6 +51,7 @@ var builderPageBuildFields = &field_mask.FieldMask{
 		"builds.*.create_time",
 		"builds.*.end_time",
 		"builds.*.start_time",
+		"builds.*.input.gerrit_changes",
 		"builds.*.input.gitiles_commit",
 		"builds.*.output.gitiles_commit",
 		"builds.*.summary_markdown",
