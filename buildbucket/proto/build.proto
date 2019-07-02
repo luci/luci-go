@@ -108,6 +108,9 @@ message Build {
     //
     // V1 equivalent: this supersedes all got_revision output property.
     GitilesCommit gitiles_commit = 3;
+
+    // Logs produced by the build script, typically "stdout" and "stderr".
+    repeated Log logs = 5;
   }
 
   reserved 5; // view_url
