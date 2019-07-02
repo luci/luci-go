@@ -124,15 +124,15 @@ func TestFuncs(t *testing.T) {
 
 		Convey("Convert LogDog URLs", func() {
 			So(
-				logdogLink(buildbucketpb.Step_Log{Name: "foo", Url: "logdog://www.example.com:1234/foo/bar/+/baz"}, true),
+				logdogLink(buildbucketpb.Log{Name: "foo", Url: "logdog://www.example.com:1234/foo/bar/+/baz"}, true),
 				ShouldEqual,
 				`<a href="https://www.example.com:1234/logs/foo/bar/&#43;/baz?format=raw" aria-label="raw log foo">raw</a>`)
 			So(
-				logdogLink(buildbucketpb.Step_Log{Name: "foo", Url: "%zzzzz"}, true),
+				logdogLink(buildbucketpb.Log{Name: "foo", Url: "%zzzzz"}, true),
 				ShouldEqual,
 				`<a href="#invalid-logdog-link" aria-label="raw log foo">raw</a>`)
 			So(
-				logdogLink(buildbucketpb.Step_Log{Name: "foo", Url: "logdog://logs.chromium.org/foo/bar/+/baz"}, false),
+				logdogLink(buildbucketpb.Log{Name: "foo", Url: "logdog://logs.chromium.org/foo/bar/+/baz"}, false),
 				ShouldEqual,
 				`<a href="https://logs.chromium.org/logs/foo/bar/&#43;/baz" aria-label="raw log foo">foo</a>`)
 

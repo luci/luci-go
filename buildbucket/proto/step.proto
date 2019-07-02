@@ -25,25 +25,6 @@ import "go.chromium.org/luci/buildbucket/proto/common.proto";
 //
 // A step may have children, see name field.
 message Step {
-
-  // A named log of a step.
-  message Log {
-    // Log name, standard ("stdout", "stderr") or custom ("json.output").
-    // Unique within the step.
-    string name = 1;
-
-    // URL of a Human-readable page that displays log contents.
-    string view_url = 2;
-
-    // URL of the log content.
-    // As of 2018-09-06, the only supported scheme is "logdog".
-    // Typically it has form
-    // "logdog://<host>/<project>/<prefix>/+/<stream_name>".
-    // See also
-    // https://godoc.org/go.chromium.org/luci/logdog/common/types#ParseURL
-    string url = 3;
-  }
-
   // Name of the step, unique within the build.
   // Identifies the step.
   //
