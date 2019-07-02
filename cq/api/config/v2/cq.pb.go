@@ -232,8 +232,12 @@ func (m *SubmitOptions) GetBurstDelay() *duration.Duration {
 type ConfigGroup struct {
 	// At least 1 Gerrit instance with repositories to work with is required.
 	Gerrit []*ConfigGroup_Gerrit `protobuf:"bytes,1,rep,name=gerrit,proto3" json:"gerrit,omitempty"`
-	// EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
-	// Enables support for attempt spanning >1 CL.
+	// Optional. If specified, CQ will consider sets of dependent CLs to test and
+	// submit at the same time.
+	//
+	// Typical use-case is testing & submitting changes to multiple repos at the
+	// same time, in which case all such repos must be declared up-front in
+	// `Gerrit` part of this config_group.
 	CombineCls *CombineCLs `protobuf:"bytes,4,opt,name=combine_cls,json=combineCls,proto3" json:"combine_cls,omitempty"`
 	// Defines how to verify a CL before submitting it. Required.
 	Verifiers *Verifiers `protobuf:"bytes,2,opt,name=verifiers,proto3" json:"verifiers,omitempty"`
@@ -486,11 +490,49 @@ func (m *ConfigGroup_Gerrit_Project_CrOSMigration) GetLuciPercentage() float32 {
 	return 0
 }
 
-// EXPERIMENTAL! TODO(tandrii, crbug/912294): add better doc.
+// CombineCLs defines how CQ works with >1 CL per attempt.
+//
+// Dependencies between CLs are either implicit via Git child->parent
+// relationship (e.g. stacked CLs in Gerrit) or explicit via "CQ-Depend:"
+// footer in CL description (next to Change-Id:). "CQ-Depend" may span
+// across repositories and even Gerrit hosts. For example, a CL on
+// https://pdfium-review.googlesource.com may declare dependency on
+// https://chromium-review.googlesource.com/1111111 by adding this footer:
+//
+//    CQ-Depend: chromium:1111111
+//
+// The "chromium" part means that 1111111 is on the
+// chromium-review.googlesource.com host. It can be omitted if dependency
+// is on the same host as the CL depending on it.
+//
+// CQ-Depend alone or with Git dependencies may form cycles, which is useful
+// to require CQ to test & submit all CLs in a cycle at the same time, never
+// alone.
+//
+// A user must vote on CQ label on **each CL** individually. Since it can't be
+// instanteneous, `stabilization_delay` controls how long CQ waits for all CQ+1/2
+// votes before computing maximal expanded set of CLs and starting the attempt.
+//
+// For any CL with CQ+1/2 vote, each of its dependency must have the same CQ
+// vote and be configured for CQ **in the same config group**, else CQ would
+// abort the attempt with appropriate error message.
+//
+// Each tryjob CQ triggers via Buildbucket will be associated with each CL of
+// the attempt via `gerrit_changes` parameter of Buildbucket. These changes are
+// then available to a build as it is being executed. If ran via recipes,
+// the `ordered_gerrit_changes` property of
+// https://chromium.googlesource.com/infra/luci/recipes-py/+/HEAD/README.recipes.md#class-cqapi_recipeapi
+// can be used to CLs in the right order.
+//
+// WARNING: When submitting CLs, CQ can not do so atomically (all submitted or
+// none submitted) because Gerrit doesn't support this even for the same repo &
+// target_ref.
 type CombineCLs struct {
 	// Roughly, how long CQ waits for CQ to be triggered on each of the related
 	// CLs.
-	// Must be >0 to enable combining CLs.
+	//
+	// Must be greater than 10s.
+	// 30s is recommended.
 	//
 	// Technically precise definition is time to wait since the latest CL among
 	// related ones receives CQ+1/2 vote before starting actual attempt.
