@@ -41,7 +41,7 @@ import (
 func getPool(c context.Context, bid *buildbucketpb.BuilderID) (*ui.MachinePool, error) {
 	// Get PoolKey
 	builderPool := model.BuilderPool{
-		BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, bid.String()),
+		BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, LegacyBuilderIDString(bid)),
 	}
 	// These are eventually consistent, so just log an error and pass if not found.
 	switch err := datastore.Get(c, &builderPool); {
