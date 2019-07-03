@@ -12,15 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package frontend implements GAE web server for luci-scheduler service.
-//
-// Due to the way classic GAE imports work, this package can not have
-// subpackages (or at least subpackages referenced via absolute import path).
-// We can't use relative imports because luci-go will then become unbuildable
-// by regular (non GAE) toolset.
-//
-// See https://groups.google.com/forum/#!topic/google-appengine-go/dNhqV6PBqVc.
-package frontend
+// Binary frontend implements GAE web server for luci-scheduler service.
+package main
 
 import (
 	"context"
@@ -31,7 +24,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/appengine"
 
 	"go.chromium.org/gae/service/info"
@@ -142,7 +134,7 @@ func initializeGlobalState(c context.Context) {
 
 //// Routes.
 
-func init() {
+func main() {
 	// Dev server likes to restart a lot, and upon a restart math/rand seed is
 	// always set to 1, resulting in lots of presumably "random" IDs not being
 	// very random. Seed it with real randomness.
@@ -208,6 +200,7 @@ func init() {
 	api.InstallHandlers(r, base)
 
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }
 
 // pubsubPushHandler handles incoming PubSub messages.
