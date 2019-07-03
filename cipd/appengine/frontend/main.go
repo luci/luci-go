@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package frontend implements HTTP server that handles requests to 'default'
+// Binary frontend implements HTTP server that handles requests to 'default'
 // module.
-package frontend
+package main
 
 import (
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -34,7 +36,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/ui"
 )
 
-func init() {
+func main() {
 	r := router.New()
 
 	// Install auth, config and tsmon handlers.
@@ -65,4 +67,5 @@ func init() {
 
 	srv.InstallHandlers(r, standard.Base())
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }
