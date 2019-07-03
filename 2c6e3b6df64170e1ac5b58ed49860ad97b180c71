@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e216f8d_c95b72f1",
+        "filename": "common/sync/dispatcher/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-03T23:38:20Z",
+      "side": 1,
+      "message": ".",
+      "range": {
+        "startLine": 31,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 12
+      },
+      "revId": "2c6e3b6df64170e1ac5b58ed49860ad97b180c71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0367044_8a444f1e",
+        "filename": "common/sync/dispatcher/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-03T23:38:20Z",
+      "side": 1,
+      "message": "tabs",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 25,
+        "endChar": 3
+      },
+      "revId": "2c6e3b6df64170e1ac5b58ed49860ad97b180c71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b710380_e8529d4c",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-03T23:38:20Z",
+      "side": 1,
+      "message": "max",
+      "range": {
+        "startLine": 105,
+        "startChar": 6,
+        "endLine": 105,
+        "endChar": 9
+      },
+      "revId": "2c6e3b6df64170e1ac5b58ed49860ad97b180c71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
