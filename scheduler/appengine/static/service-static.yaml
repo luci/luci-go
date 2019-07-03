@@ -1,0 +1,27 @@
+service: static
+runtime: go111
+
+handlers:
+- url: /static/bootstrap
+  static_dir: bootstrap
+  secure: always
+
+- url: /static/jquery
+  static_dir: jquery
+  secure: always
+
+- url: /rpcexplorer/?
+  static_files: rpcexplorer/index.html
+  upload: rpcexplorer/index.html
+  secure: always
+
+# The entire subpath is globbed because RPC Explorer uses native URL redirecting
+# for sub-pages, and we want all of them to map to the same HTML file.
+- url: /rpcexplorer/services/.*
+  static_files: rpcexplorer/index.html
+  upload: rpcexplorer/index.html
+  secure: always
+
+- url: /rpcexplorer
+  static_dir: rpcexplorer
+  secure: always

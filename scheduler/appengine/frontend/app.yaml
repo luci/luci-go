@@ -1,8 +1,5 @@
-application: luci-scheduler-dev
-version: 1
-module: default
-runtime: go
-api_version: go1
+service: default
+runtime: go111
 
 instance_class: F4_1G
 automatic_scaling:
@@ -10,12 +7,12 @@ automatic_scaling:
 
 handlers:
 - url: /internal.*
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 - url: /.*
-  script: _go_app
+  script: auto
   secure: always
 
 inbound_services:
