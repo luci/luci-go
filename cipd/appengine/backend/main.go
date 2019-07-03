@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package backend implements HTTP server that handles task queues and crons.
-package backend
+// Binary backend implements HTTP server that handles task queues and crons.
+package main
 
 import (
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -26,7 +28,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 )
 
-func init() {
+func main() {
 	r := router.New()
 	base := standard.Base()
 
@@ -43,4 +45,5 @@ func init() {
 	)
 
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }

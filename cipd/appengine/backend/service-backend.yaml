@@ -1,6 +1,5 @@
-module: backend
-runtime: go
-api_version: go1
+service: backend
+runtime: go111
 
 instance_class: B4
 basic_scaling:
@@ -9,22 +8,22 @@ basic_scaling:
 
 handlers:
 - url: /_ah/start
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 - url: /_ah/warmup
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 - url: /internal.*
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 - url: /admin.*
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
