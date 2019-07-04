@@ -391,12 +391,17 @@ func setupAuth(ctx context.Context, args *pb.RunnerArgs) (system, user *authctx.
 		Options:            authOpts,
 		EnableGitAuth:      isEnabled("git_auth", true),
 		EnableDevShell:     isEnabled("devshell", true),
+		EnableGCEEmulation: isEnabled("emulate_gce", false), // TODO(vadimsh): Make it 'true' if it works reliably.
 		EnableDockerAuth:   isEnabled("docker_auth", true),
 		EnableFirebaseAuth: isEnabled("firebase_auth", false),
 		KnownGerritHosts:   args.KnownPublicGerritHosts,
 	}
 	if user.EnableFirebaseAuth {
 		user.Options.Scopes = append(authOpts.Scopes, "https://www.googleapis.com/auth/firebase")
+	}
+	// 'emulate_gce' supersedes 'devshell'.
+	if user.EnableGCEEmulation {
+		user.EnableDevShell = false
 	}
 
 	if _, err := system.Launch(systemCtx, args.WorkDir); err != nil {
