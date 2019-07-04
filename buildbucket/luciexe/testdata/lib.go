@@ -36,3 +36,9 @@ func writeBuild(build *pb.Build) {
 		panic(err)
 	}
 }
+
+func closeClient() {
+	if err := client.Close(); err != nil {
+		panic(err)
+	}
+}

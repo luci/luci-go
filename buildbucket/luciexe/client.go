@@ -73,7 +73,7 @@ type Client struct {
 	buildStream streamclient.Stream
 }
 
-// Init initializes the client. Populates c.InitBuild and c.ButlerClient.
+// Init initializes the client. Populates c.InitBuild and c.Logdog.
 func (c *Client) Init() error {
 	stdin, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
@@ -112,6 +112,11 @@ func (c *Client) WriteBuild(build *pb.Build) error {
 		return err
 	}
 	return c.buildStream.WriteDatagram(buf)
+}
+
+// Close flushes all builds and closes down the client connection.
+func (c *Client) Close() error {
+	return c.buildStream.Close()
 }
 
 // assertInitialized panics if c is not initialized.

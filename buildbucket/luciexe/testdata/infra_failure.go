@@ -27,4 +27,5 @@ func main() {
 	// Final build must have a terminal status.
 	build.Status = pb.Status_INFRA_FAILURE
 	writeBuild(build)
+	closeClient()
 }
