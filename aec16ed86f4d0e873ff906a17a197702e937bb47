@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "86675440_1bd13555",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-04T00:03:49Z",
+      "side": 1,
+      "message": "https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/18/1688518/1/buildbucket/luciexe/main_test.go#121",
+      "range": {
+        "startLine": 10,
+        "startChar": 40,
+        "endLine": 10,
+        "endChar": 47
+      },
+      "revId": "aec16ed86f4d0e873ff906a17a197702e937bb47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
