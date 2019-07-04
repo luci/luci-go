@@ -30,4 +30,5 @@ func main() {
 		Name: "pending step",
 	})
 	writeBuild(build)
+	closeClient()
 }
