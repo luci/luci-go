@@ -67,6 +67,9 @@ type runner struct {
 	UpdateBuild func(context.Context, *pb.UpdateBuildRequest) error
 
 	localLogFile string
+
+	testExtraArgs []string // extra args to pass to the executable, for tests
+	testExtraEnv  []string // extra environ to pass to the executable, for tests
 }
 
 // Run runs a user executable and periodically calls r.UpdateBuild with the
@@ -202,14 +205,14 @@ func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, use
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, args.ExecutablePath)
+	cmd := exec.CommandContext(ctx, args.ExecutablePath, r.testExtraArgs...)
 
 	// Prepare user env.
 	env, err := r.setupUserEnv(ctx, args, userAuth, logdogServ, logdogNamespace)
 	if err != nil {
 		return err
 	}
-	cmd.Env = env.Sorted()
+	cmd.Env = append(env.Sorted(), r.testExtraEnv...)
 
 	// Setup user working directory. This is the CWD for the user executable itself.
 	// Keep it short. This is important to allow tasks on Windows to have as many
