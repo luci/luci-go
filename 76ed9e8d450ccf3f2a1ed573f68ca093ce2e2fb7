@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a669a3b8_cea7b2a4",
+        "filename": "buildbucket/luciexe/main_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-04T01:49:07Z",
+      "side": 1,
+      "message": "technically this could go in its own file, as long as its *_test.go",
+      "range": {
+        "startLine": 170,
+        "startChar": 5,
+        "endLine": 170,
+        "endChar": 29
+      },
+      "revId": "76ed9e8d450ccf3f2a1ed573f68ca093ce2e2fb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e9187e2_f1b04e82",
+        "filename": "buildbucket/luciexe/main_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-04T01:49:07Z",
+      "side": 1,
+      "message": "fail here; this should always be specified, no?",
+      "range": {
+        "startLine": 173,
+        "startChar": 2,
+        "endLine": 173,
+        "endChar": 8
+      },
+      "revId": "76ed9e8d450ccf3f2a1ed573f68ca093ce2e2fb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "618800d0_d264a5d7",
+        "filename": "buildbucket/luciexe/main_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-04T01:49:07Z",
+      "side": 1,
+      "message": "inline to TestSubprocessDispatcher (and closeClient too)",
+      "range": {
+        "startLine": 193,
+        "startChar": 5,
+        "endLine": 193,
+        "endChar": 19
+      },
+      "revId": "76ed9e8d450ccf3f2a1ed573f68ca093ce2e2fb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
