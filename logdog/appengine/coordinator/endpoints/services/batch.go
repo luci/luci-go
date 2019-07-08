@@ -18,7 +18,7 @@ import (
 	"context"
 	"sync"
 
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
 	"go.chromium.org/luci/common/gcloud/gae"
 	"go.chromium.org/luci/common/logging"
@@ -53,18 +53,18 @@ func (s *server) Batch(c context.Context, req *logdog.BatchRequest) (*logdog.Bat
 		for i, e := range req.Req {
 			i, e := i, e
 			workC <- func() error {
-				c := logging.SetField(c, "batchIndex", i)
+				c2 := logging.SetField(c, "batchIndex", i)
 
 				r := logdog.BatchResponse_Entry{
 					Index: int32(i),
 				}
 
-				s.processBatchEntry(c, e, &r)
+				s.processBatchEntry(c2, e, &r)
 				if err := r.GetErr(); err != nil {
 					logging.Fields{
 						"code":      err.GrpcCode,
 						"transient": err.Transient,
-					}.Errorf(c, "Failed batch entry.")
+					}.Errorf(c2, "Failed batch entry.")
 				}
 
 				// See if this fits into our response.
@@ -74,7 +74,7 @@ func (s *server) Batch(c context.Context, req *logdog.BatchRequest) (*logdog.Bat
 				defer respMu.Unlock()
 
 				if respSize+size > maxResponseSize {
-					logging.Warningf(c, "Response would exceed request size (%d > %d); discarding.", respSize+size, maxResponseSize)
+					logging.Warningf(c2, "Response would exceed request size (%d > %d); discarding.", respSize+size, maxResponseSize)
 					return nil
 				}
 

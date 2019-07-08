@@ -545,7 +545,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 	})
 
 	Convey("GetAll", t, func() {
-		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ctx2, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		s := opts.Factory()
 		foo := &FakeMetric{
@@ -572,11 +572,11 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			{baz, makeInterfaceSlice("three"), 1.23},
 			{baz, makeInterfaceSlice("four"), 4.56},
 		} {
-			s.Set(ctx, m.metric, time.Time{}, m.fieldvals, m.value)
+			s.Set(ctx2, m.metric, time.Time{}, m.fieldvals, m.value)
 			tc.Add(time.Second)
 		}
 
-		got := s.GetAll(ctx)
+		got := s.GetAll(ctx2)
 		sort.Sort(sortableCellSlice(got))
 		want := []types.Cell{
 			{

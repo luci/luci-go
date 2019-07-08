@@ -586,10 +586,10 @@ func (f *asyncFlusher) upload(ctx context.Context, chunk chunk) (int, error) {
 	var entries []rawEntry
 
 	for _, task := range chunk.Tasks {
-		ctx := logging.SetField(ctx, "name", task.Name)
+		ctx2 := logging.SetField(ctx, "name", task.Name)
 
 		if err := gob.NewDecoder(bytes.NewReader(task.Payload)).Decode(&entries); err != nil {
-			logging.WithError(err).Errorf(ctx, "Failed to gob-decode pending batch, it will be skipped")
+			logging.WithError(err).Errorf(ctx2, "Failed to gob-decode pending batch, it will be skipped")
 			continue
 		}
 

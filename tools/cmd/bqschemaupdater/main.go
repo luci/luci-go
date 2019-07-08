@@ -80,7 +80,7 @@ func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td table
 			return errCanceledByUser
 		}
 
-		md := &bigquery.TableMetadata{
+		md = &bigquery.TableMetadata{
 			Name:        td.FriendlyName,
 			Description: td.Description,
 			Schema:      td.Schema,
@@ -91,8 +91,7 @@ func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td table
 				Field:      td.PartitioningField,
 			}
 		}
-		err := ts.createTable(ctx, td.DataSetID, td.TableID, md)
-		if err != nil {
+		if err = ts.createTable(ctx, td.DataSetID, td.TableID, md); err != nil {
 			return err
 		}
 		fmt.Println("Table is created.")

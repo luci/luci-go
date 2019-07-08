@@ -55,22 +55,22 @@ func SetStore(c context.Context, s store.Store) {
 // Monitor (where to send the metrics to).
 func InitializeFromFlags(c context.Context, fl *Flags) error {
 	// Load the config file, and override its values with flags.
-	config, err := loadConfig(fl.ConfigFile)
+	cfg, err := loadConfig(fl.ConfigFile)
 	if err != nil {
 		return errors.Annotate(err, "failed to load config file at [%s]", fl.ConfigFile).Err()
 	}
 
 	if fl.Endpoint != "" {
-		config.Endpoint = fl.Endpoint
+		cfg.Endpoint = fl.Endpoint
 	}
 	if fl.Credentials != "" {
-		config.Credentials = fl.Credentials
+		cfg.Credentials = fl.Credentials
 	}
 	if fl.ActAs != "" {
-		config.ActAs = fl.ActAs
+		cfg.ActAs = fl.ActAs
 	}
 
-	mon, err := initMonitor(c, config)
+	mon, err := initMonitor(c, cfg)
 	switch {
 	case err != nil:
 		return errors.Annotate(err, "failed to initialize monitor").Err()
@@ -80,23 +80,23 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 
 	// Monitoring is enabled, so get the expensive default values for hostname,
 	// etc.
-	if config.AutoGenHostname {
+	if cfg.AutoGenHostname {
 		fl.Target.AutoGenHostname = true
 	}
-	if config.Hostname != "" {
+	if cfg.Hostname != "" {
 		if fl.Target.DeviceHostname == "" {
-			fl.Target.DeviceHostname = config.Hostname
+			fl.Target.DeviceHostname = cfg.Hostname
 		}
 		if fl.Target.TaskHostname == "" {
-			fl.Target.TaskHostname = config.Hostname
+			fl.Target.TaskHostname = cfg.Hostname
 		}
 	}
-	if config.Region != "" {
+	if cfg.Region != "" {
 		if fl.Target.DeviceRegion == "" {
-			fl.Target.DeviceRegion = config.Region
+			fl.Target.DeviceRegion = cfg.Region
 		}
 		if fl.Target.TaskRegion == "" {
-			fl.Target.TaskRegion = config.Region
+			fl.Target.TaskRegion = cfg.Region
 		}
 	}
 	fl.Target.SetDefaultsFromHostname()
@@ -162,17 +162,17 @@ func ResetCumulativeMetrics(c context.Context) {
 // initMonitor examines flags and config and initializes a monitor.
 //
 // It returns (nil, nil) if tsmon should be disabled.
-func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
-	if config.Endpoint == "" {
+func initMonitor(c context.Context, cfg config) (monitor.Monitor, error) {
+	if cfg.Endpoint == "" {
 		logging.Infof(c, "tsmon is disabled because no endpoint is configured")
 		return nil, nil
 	}
-	if strings.ToLower(config.Endpoint) == "none" {
+	if strings.ToLower(cfg.Endpoint) == "none" {
 		logging.Infof(c, "tsmon is explicitly disabled")
 		return nil, nil
 	}
 
-	endpointURL, err := url.Parse(config.Endpoint)
+	endpointURL, err := url.Parse(cfg.Endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -181,14 +181,14 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 	case "file":
 		return monitor.NewDebugMonitor(endpointURL.Path), nil
 	case "http", "https":
-		client, err := newAuthenticator(c, config.Credentials, config.ActAs, monitor.ProdxmonScopes).Client()
+		client, err := newAuthenticator(c, cfg.Credentials, cfg.ActAs, monitor.ProdxmonScopes).Client()
 		if err != nil {
 			return nil, err
 		}
 
 		return monitor.NewHTTPMonitor(c, client, endpointURL)
 	default:
-		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
+		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", cfg.Endpoint)
 	}
 }
 
