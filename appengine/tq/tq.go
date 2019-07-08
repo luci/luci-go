@@ -407,7 +407,7 @@ type handler struct {
 
 // tqTask constructs task queue task struct.
 func (d *Dispatcher) tqTask(task *Task) (*taskqueue.Task, string, error) {
-	handler, err := d.handler(task.Payload)
+	h, err := d.handler(task.Payload)
 	if err != nil {
 		return nil, "", err
 	}
@@ -417,25 +417,25 @@ func (d *Dispatcher) tqTask(task *Task) (*taskqueue.Task, string, error) {
 		return nil, "", err
 	}
 
-	title := handler.typeName
+	title := h.typeName
 	if task.Title != "" {
 		title = task.Title
 	}
 
-	retryOpts := handler.retryOpts
+	retryOpts := h.retryOpts
 	if task.RetryOptions != nil {
 		retryOpts = task.RetryOptions
 	}
 
 	return &taskqueue.Task{
-		Path:         fmt.Sprintf("%s%s/%s", d.baseURL(), handler.queue, title),
+		Path:         fmt.Sprintf("%s%s/%s", d.baseURL(), h.queue, title),
 		Name:         task.Name(),
 		Method:       "POST",
 		Payload:      blob,
 		ETA:          task.ETA,
 		Delay:        task.Delay,
 		RetryOptions: retryOpts,
-	}, handler.queue, nil
+	}, h.queue, nil
 }
 
 // baseURL returns a URL prefix for all HTTP routes used by Dispatcher.
