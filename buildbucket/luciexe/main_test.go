@@ -18,10 +18,8 @@ package luciexe
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -71,25 +69,21 @@ func TestMain(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
-		run := func(executableName string, argsText string) []*pb.UpdateBuildRequest {
+		runSubtest := func(subtestName, argsText string) []*pb.UpdateBuildRequest {
 			args := &pb.RunnerArgs{}
 			err := proto.UnmarshalText(argsText, args)
 			So(err, ShouldBeNil)
 
+			// We spawn ourselves, see https://npf.io/2015/06/testing-exec-command/
+			args.ExecutablePath = os.Args[0]
 			args.WorkDir = filepath.Join(tempDir, "w")
-			args.ExecutablePath = filepath.Join(tempDir, "user_executable.exe")
 			args.CacheDir = filepath.Join(tempDir, "cache")
-
-			goBuild := exec.Command(
-				"go", "build",
-				"-o", args.ExecutablePath,
-				fmt.Sprintf("testdata/%s.go", executableName),
-				"testdata/lib.go")
-			So(goBuild.Run(), ShouldBeNil)
 
 			var ret []*pb.UpdateBuildRequest
 			r := runner{
-				localLogFile: filepath.Join(tempDir, "logs"),
+				localLogFile:  filepath.Join(tempDir, "logs"),
+				testExtraArgs: []string{"-test.run=TestSubprocessDispatcher"},
+				testExtraEnv:  []string{"LUCI_EXE_SUBTEST_NAME=" + subtestName},
 				UpdateBuild: func(ctx context.Context, req *pb.UpdateBuildRequest) error {
 					ret = append(ret, req)
 					reqJSON, err := indentedJSONPB(req)
@@ -119,7 +113,7 @@ func TestMain(t *testing.T) {
 		`
 
 		Convey("echo", func() {
-			updates := run("success", `
+			updates := runSubtest("testSuccess", `
 				buildbucket_host: "buildbucket.example.com"
 				logdog_host: "logdog.example.com"
 				build {
@@ -152,23 +146,96 @@ func TestMain(t *testing.T) {
 		})
 
 		Convey("final UpdateBuild does not set status to SUCCESS", func() {
-			updates := run("success", dummyInputBuild)
+			updates := runSubtest("testSuccess", dummyInputBuild)
 			final := updates[len(updates)-1]
 			So(final.UpdateMask.Paths, ShouldNotContain, "build.status")
 		})
 
 		Convey("final UpdateBuild set status to INFRA_FAILURE", func() {
-			updates := run("infra_failure", dummyInputBuild)
+			updates := runSubtest("testInfraFailure", dummyInputBuild)
 			final := updates[len(updates)-1]
 			So(final.UpdateMask.Paths, ShouldContain, "build.status")
 			So(final.Build.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 		})
 
 		Convey("Cancels pending steps", func() {
-			updates := run("pending_step", dummyInputBuild)
+			updates := runSubtest("testPendingStep", dummyInputBuild)
 			final := updates[len(updates)-1]
 			So(final.Build.Steps[0].Status, ShouldEqual, pb.Status_CANCELED)
 			So(final.Build.Steps[0].EndTime, ShouldResembleProto, nowTS)
 		})
 	})
+}
+
+func TestSubprocessDispatcher(t *testing.T) {
+	subtest := os.Getenv("LUCI_EXE_SUBTEST_NAME")
+	if subtest == "" {
+		// Note: this code path is executed when running "go test ." normally. We
+		// silently do nothing.
+		return
+	}
+
+	st := subtests[subtest]
+	if st == nil {
+		t.Fatalf("no such subtest %q", subtest)
+	}
+
+	if err := client.Init(); err != nil {
+		panic(err)
+	}
+	st(t)
+	if err := client.Close(); err != nil {
+		panic(err)
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// These test* routines are individual subtests launched in a separate process.
+//
+// See TestSubprocessDispatcher for the environment and global vars they get.
+
+var subtests = map[string]func(t *testing.T){
+	"testInfraFailure": testInfraFailure,
+	"testPendingStep":  testPendingStep,
+	"testSuccess":      testSuccess,
+}
+
+var client = Client{
+	BuildTimestamp: testclock.TestRecentTimeUTC,
+}
+
+func writeBuild(build *pb.Build) {
+	if err := client.WriteBuild(build); err != nil {
+		panic(err)
+	}
+}
+
+// This LUCI executable marks the build as INFRA_FAILURE and exits.
+func testInfraFailure(t *testing.T) {
+	build := client.InitBuild
+
+	// Final build must have a terminal status.
+	build.Status = pb.Status_INFRA_FAILURE
+	writeBuild(build)
+}
+
+// This LUCI executable emits a successful build with an incomplete step.
+func testPendingStep(t *testing.T) {
+	build := client.InitBuild
+
+	// Final build must have a terminal status.
+	build.Status = pb.Status_INFRA_FAILURE
+	build.Steps = append(build.Steps, &pb.Step{
+		Name: "pending step",
+	})
+	writeBuild(build)
+}
+
+// This LUCI executable marks the build as SUCCESS and exits.
+func testSuccess(t *testing.T) {
+	build := client.InitBuild
+
+	// Final build must have a terminal status.
+	build.Status = pb.Status_SUCCESS
+	writeBuild(build)
 }
