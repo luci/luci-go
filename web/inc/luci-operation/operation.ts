@@ -12,7 +12,7 @@ namespace luci {
    * A cancelled Operation will completely halt, and will never call its
    * resolve or reject methods.
    *
-   * Cancelling an operation also canceles all Operations chained to it,
+   * Cancelling an operation also cancels all Operations chained to it,
    * allowing full-chain cancellation. Furthermore, Promises can register
    * cancellation callbacks with an Operation, allowing them to actively cancel
    * operations.

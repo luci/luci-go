@@ -19,9 +19,9 @@ preference.  Themes must follow these layouts:
 ** Base templates go under appengine/frontend/templates/[[Theme Name]]/includes
 ** Actual templates go under appengine/frontend/templates/[[Theme Name]]/pages
 * Static resources (css, javascript, images, etc) go under
-  /frontend/static/[[Theme Name]].  This boundry isn't enforced, this is just by
-  convention, so one theme is allowed to use resources in other themes (but it
-  is not recommended)
+  /frontend/static/[[Theme Name]].  This boundary isn't enforced, this is just
+  by convention, so one theme is allowed to use resources in other themes (but
+  it is not recommended)
 * Add the Theme Name into the map in appengine/settings/theme.go:THEMES
 
 # Seeding data for local development

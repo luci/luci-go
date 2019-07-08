@@ -33,7 +33,7 @@ const (
 )
 
 // coordinatorSource is a fetcher.Source implementation that uses the
-// Coordiantor API.
+// Coordinator API.
 type coordinatorSource struct {
 	sync.Mutex
 

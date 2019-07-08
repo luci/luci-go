@@ -127,7 +127,7 @@ message ArchiveStreamRequest {
   int64 terminal_index = 4;
   // If not empty, there was an archival error.
   //
-  // This field serves to indicate that an error occured (being non-empty) and
+  // This field serves to indicate that an error occurred (being non-empty) and
   // to supply an value that will show up in the Coordinator ArchiveStream
   // endpoint logs.
   string error = 5;

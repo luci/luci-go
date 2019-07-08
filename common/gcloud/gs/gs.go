@@ -42,7 +42,7 @@ var (
 	ReadOnlyScopes = []string{gs.ScopeReadOnly}
 )
 
-// Client abstracts funcitonality to connect with and use Google Storage from
+// Client abstracts functionality to connect with and use Google Storage from
 // the actual Google Storage client.
 //
 // Non-production implementations are used primarily for testing.

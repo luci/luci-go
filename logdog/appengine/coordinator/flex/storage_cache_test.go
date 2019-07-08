@@ -29,7 +29,7 @@ import (
 func testStorageCache(t *testing.T, compress bool) {
 	t.Parallel()
 
-	Convey(`Testing storage cache in a testing envrionment`, t, func() {
+	Convey(`Testing storage cache in a testing environment`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = caching.WithEmptyProcessCache(c)
 		cache := StorageCache{}

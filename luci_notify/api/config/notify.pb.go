@@ -157,7 +157,7 @@ type Notification struct {
 	//
 	// If set, this notification will be sent to the blamelist of a build. Note
 	// that if this is set in multiple notifications pertaining to the same
-	// builder, the blamelist may recieve multiple emails.
+	// builder, the blamelist may receive multiple emails.
 	//
 	// Optional.
 	NotifyBlamelist      *Notification_Blamelist `protobuf:"bytes,6,opt,name=notify_blamelist,json=notifyBlamelist,proto3" json:"notify_blamelist,omitempty"`

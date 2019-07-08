@@ -272,7 +272,7 @@ namespace luci {
    */
   export class RetryIterator {
     // Default scaling if no delay is specified.
-    static readonly DEAFULT_DELAY_SCALING = 2;
+    static readonly DEFAULT_DELAY_SCALING = 2;
 
     private delay: number;
     private retries: number|undefined;
@@ -286,7 +286,7 @@ namespace luci {
 
       this.delayScaling = (config.delayScaling || 0);
       if (this.delayScaling < 1) {
-        this.delayScaling = RetryIterator.DEAFULT_DELAY_SCALING;
+        this.delayScaling = RetryIterator.DEFAULT_DELAY_SCALING;
       }
     }
 

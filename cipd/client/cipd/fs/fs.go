@@ -65,7 +65,7 @@ type FileSystem interface {
 	// FileSystem functions.
 	//
 	// This differs from os.Open notably on Windows, where OpenFile ensures that
-	// files are open with FILE_SHARE_DELETE permisson to enable them to be
+	// files are open with FILE_SHARE_DELETE permission to enable them to be
 	// atomically renamed without contention.
 	OpenFile(path string) (*os.File, error)
 

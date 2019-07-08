@@ -55,7 +55,7 @@ func (r *URLSigningRequest) HasWork() bool {
 // URLSigningResponse is the resulting signed URLs from a
 // SigningStorage.GetSignedURLs call.
 type URLSigningResponse struct {
-	// Expriation is the signed URL expiration time.
+	// Expiration is the signed URL expiration time.
 	Expiration time.Time
 
 	// Stream is the signed URL for the log stream, if requested.

@@ -14,7 +14,7 @@ package logdog;
 // will be stored in a "luci-config" service Config protobuf.
 message SetConfigRequest {
   // ConfigServiceURL is the API URL of the base "luci-config" service. If
-  // empty, the defualt service URL will be used.
+  // empty, the default service URL will be used.
   string config_service_url = 1;
 
   // ConfigSet is the name of the configuration set to load from.

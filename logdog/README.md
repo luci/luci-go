@@ -161,7 +161,7 @@ this LogDog service (defined in
 
 ### Coordinator
 
-After deploying the Coordiantor to a suitable cloud project, several
+After deploying the Coordinator to a suitable cloud project, several
 configuration parameters must be defined visit its settings page at:
 `https://<your-app>/admin/portal`, and configure:
 
@@ -174,7 +174,7 @@ configuration parameters must be defined visit its settings page at:
 If you are using a BigTable instance outside of your cloud project (e.g.,
 staging, dev), you will need to add your BigTable service account JSON to the
 service's settings. Currently this cannot be done without a command-line tool.
-Hopefully a proper settings page will be added to enable this, or alternatiely
+Hopefully a proper settings page will be added to enable this, or alternatively
 Cloud BigTable will be updated to support IAM.
 
 ### Microservices
@@ -201,7 +201,7 @@ configuration:
 
 The Collector instance is fully command-line compatible. Its [entry point
 script](server/cmd/logdog_collector/run.sh) uses Google Compute Engine metadata
-to populate the command line in a production enviornment:
+to populate the command line in a production environment:
 
 * `logdog_collector_log_level`, an optional `-log-level` flag value.
 
@@ -209,6 +209,6 @@ to populate the command line in a production enviornment:
 
 The Archivist instance is fully command-line compatible. Its [entry point
 script](server/cmd/logdog_archivist/run.sh) uses Google Compute Engine metadata
-to populate the command line in a production enviornment:
+to populate the command line in a production environment:
 
 * `logdog_archivist_log_level`, an optional `-log-level` flag value.

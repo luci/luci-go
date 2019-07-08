@@ -129,7 +129,7 @@ func (old *Manifest_GitCheckout) Diff(new *Manifest_GitCheckout) *ManifestDiff_G
 
 	ret.Overall = zeroCmpTwo(old, new, func() ManifestDiff_Stat {
 		if old.RepoUrl == new.RepoUrl {
-			// For now, the canoncial 'diff' URL is always the new URL. If we add
+			// For now, the canonical 'diff' URL is always the new URL. If we add
 			// support for source-of-truth migrations, this could change.
 			ret.RepoUrl = new.RepoUrl
 

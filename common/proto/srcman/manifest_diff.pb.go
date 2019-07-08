@@ -153,7 +153,7 @@ type ManifestDiff_GitCheckout struct {
 	// or new if the service computing this ManifestDiff knows of e.g. a repo
 	// URL migration.
 	RepoUrl string `protobuf:"bytes,4,opt,name=repo_url,json=repoUrl,proto3" json:"repo_url,omitempty"`
-	// If revision==DIFF, this may be populated with git history occuring
+	// If revision==DIFF, this may be populated with git history occurring
 	// between the two base revisions.
 	History              []*git.Commit `protobuf:"bytes,5,rep,name=history,proto3" json:"history,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
