@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "0c7db280_377ced57",
+        "filename": "buildbucket/luciexe/main_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-08T16:46:47Z",
+      "side": 1,
+      "message": "ah... maybe just add a comment here then for dummies like me :)",
+      "parentUuid": "865b3169_9e09f589",
+      "range": {
+        "startLine": 173,
+        "startChar": 2,
+        "endLine": 173,
+        "endChar": 8
+      },
+      "revId": "76ed9e8d450ccf3f2a1ed573f68ca093ce2e2fb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "618800d0_d264a5d7",
         "filename": "buildbucket/luciexe/main_test.go",
         "patchSetId": 2
