@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a9db949c_79ee4c4a",
+        "filename": "common/data/cmpbin/string_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-07-08T15:12:44Z",
+      "side": 0,
+      "message": "This one was lol",
+      "revId": "ac5cea9a78bbc049480c90170a516ac579663136",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

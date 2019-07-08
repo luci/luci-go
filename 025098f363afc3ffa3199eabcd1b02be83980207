@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "87a1feed_2ab0a689",
+        "filename": "appengine/bqlog/bqlog_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-07-08T15:12:44Z",
+      "side": 1,
+      "message": "These ones are quite busy work. I\u0027m not sure it\u0027s worth fixing these, beside just reducing the eventual tricium analyzer noise.",
+      "revId": "025098f363afc3ffa3199eabcd1b02be83980207",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1d45a54_3ff19de6",
+        "filename": "common/data/strpair/pair_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-07-08T15:12:44Z",
+      "side": 1,
+      "message": "This one was confusing! What is testing what?",
+      "revId": "025098f363afc3ffa3199eabcd1b02be83980207",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "212f4428_fe5619b6",
+        "filename": "common/sync/promise/promise_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-07-08T15:12:44Z",
+      "side": 1,
+      "message": "Small leak. Not important in unit test but not a pattern we want to encourage.",
+      "revId": "025098f363afc3ffa3199eabcd1b02be83980207",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e0de2fe_ea9bcbae",
+        "filename": "tokenserver/appengine/impl/machinetoken/rpc_mint_machine_token_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-07-08T15:12:44Z",
+      "side": 1,
+      "message": "This one was confusing because testingCA is a global variable defined in another file.",
+      "revId": "025098f363afc3ffa3199eabcd1b02be83980207",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
