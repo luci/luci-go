@@ -112,7 +112,7 @@ func TestSearch(t *testing.T) {
 		})
 
 		Convey("Interrupt", func() {
-			ctx, cancel := context.WithCancel(ctx)
+			ctx2, cancel := context.WithCancel(ctx)
 			defer cancel()
 
 			client.EXPECT().
@@ -124,7 +124,7 @@ func TestSearch(t *testing.T) {
 			builds := make(chan *pb.Build)
 			errC := make(chan error)
 			go func() {
-				errC <- Search(ctx, builds, client, &pb.SearchBuildsRequest{})
+				errC <- Search(ctx2, builds, client, &pb.SearchBuildsRequest{})
 			}()
 
 			So(<-builds, ShouldResembleProto, &pb.Build{Id: 1})

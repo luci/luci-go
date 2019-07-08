@@ -339,7 +339,7 @@ func TestFlush(t *testing.T) {
 				panic("must not be called")
 			}
 
-			ctx, fb := featureBreaker.FilterTQ(ctx, nil)
+			ctx2, fb := featureBreaker.FilterTQ(ctx, nil)
 			fb.BreakFeatures(fmt.Errorf("lease error"), "Lease")
 			tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 				if testclock.HasTags(t, "lease-retry") {
@@ -347,7 +347,7 @@ func TestFlush(t *testing.T) {
 				}
 			})
 
-			count, err := testingLog.Flush(ctx)
+			count, err := testingLog.Flush(ctx2)
 			So(err.Error(), ShouldEqual, "lease error")
 			So(count, ShouldEqual, 0)
 

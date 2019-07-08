@@ -132,7 +132,8 @@ func TestDecoding(t *testing.T) {
 				now := time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)
 				c, _ = testclock.UseTime(c, now)
 
-				c, err := parseHeader(c, header(HeaderTimeout, "1M"))
+				var err error
+				c, err = parseHeader(c, header(HeaderTimeout, "1M"))
 				So(err, ShouldBeNil)
 
 				deadline, ok := c.Deadline()
@@ -163,9 +164,9 @@ func TestDecoding(t *testing.T) {
 
 		Convey("Unrecognized headers", func() {
 			test := func(c context.Context, header http.Header, expectedMetadata metadata.MD) {
-				c, err := parseHeader(c, header)
+				c2, err := parseHeader(c, header)
 				So(err, ShouldBeNil)
-				md, ok := metadata.FromIncomingContext(c)
+				md, ok := metadata.FromIncomingContext(c2)
 				So(ok, ShouldBeTrue)
 				So(md, ShouldResemble, expectedMetadata)
 			}

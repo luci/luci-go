@@ -108,13 +108,13 @@ func TestVerify(t *testing.T) {
 		})
 
 		Convey("Token used too soon", func() {
-			ctx, _ := testclock.UseTime(context.Background(), time.Unix(testIat-60, 0))
+			ctx, _ = testclock.UseTime(context.Background(), time.Unix(testIat-60, 0))
 			_, err := verifyImpl(ctx, realToken, &certs)
 			So(err, ShouldErrLike, "bad JWT: too early (now 1553564372 < iat 1553564432)")
 		})
 
 		Convey("Token used too late", func() {
-			ctx, _ := testclock.UseTime(context.Background(), time.Unix(testExp+60, 0))
+			ctx, _ = testclock.UseTime(context.Background(), time.Unix(testExp+60, 0))
 			_, err := verifyImpl(ctx, realToken, &certs)
 			So(err, ShouldErrLike, "bad JWT: expired (now 1553568092 > exp 1553568032)")
 		})

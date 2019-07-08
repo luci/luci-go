@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/gae/filter/featureBreaker"
 	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
@@ -172,18 +172,18 @@ func TestArchiveStream(t *testing.T) {
 			})
 
 			Convey(`When datastore Get fails, returns internal error.`, func() {
-				c, fb := featureBreaker.FilterRDS(c, nil)
+				c2, fb := featureBreaker.FilterRDS(c, nil)
 				fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
-				_, err := svr.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c2, req)
 				So(err, ShouldBeRPCInternal)
 			})
 
 			Convey(`When datastore Put fails, returns internal error.`, func() {
-				c, fb := featureBreaker.FilterRDS(c, nil)
+				c2, fb := featureBreaker.FilterRDS(c, nil)
 				fb.BreakFeatures(errors.New("test error"), "PutMulti")
 
-				_, err := svr.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c2, req)
 				So(err, ShouldBeRPCInternal)
 			})
 		})

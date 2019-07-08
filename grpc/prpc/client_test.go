@@ -200,10 +200,10 @@ func TestClient(t *testing.T) {
 				client, server := setUp(doPanicHandler)
 				defer server.Close()
 
-				ctx, cancelFunc := clock.WithDeadline(ctx, clock.Now(ctx))
+				ctx2, cancelFunc := clock.WithDeadline(ctx, clock.Now(ctx))
 				defer cancelFunc()
 
-				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				err := client.Call(ctx2, "prpc.Greeter", "SayHello", req, res)
 				So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
 			})
 
@@ -211,10 +211,10 @@ func TestClient(t *testing.T) {
 				client, server := setUp(sayHello(c))
 				defer server.Close()
 
-				ctx, cancelFunc := clock.WithDeadline(ctx, clock.Now(ctx).Add(10*time.Second))
+				ctx2, cancelFunc := clock.WithDeadline(ctx, clock.Now(ctx).Add(10*time.Second))
 				defer cancelFunc()
 
-				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				err := client.Call(ctx2, "prpc.Greeter", "SayHello", req, res)
 				So(err, ShouldBeNil)
 				So(res.Message, ShouldEqual, "Hello John")
 
@@ -224,7 +224,7 @@ func TestClient(t *testing.T) {
 			Convey("With a deadline in the future and a per-RPC deadline, applies the per-RPC deadline", func(c C) {
 				// Set an overall deadline.
 				overallDeadline := 2 * time.Second
-				ctx, cancelFunc := clock.WithTimeout(ctx, overallDeadline)
+				ctx2, cancelFunc := clock.WithTimeout(ctx, overallDeadline)
 				defer cancelFunc()
 
 				client, server := setUp(advanceClockAndErr(tc, time.Second))
@@ -242,7 +242,7 @@ func TestClient(t *testing.T) {
 
 				client.Options.PerRPCTimeout = time.Second
 
-				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				err := client.Call(ctx2, "prpc.Greeter", "SayHello", req, res)
 				So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
 				So(calls, ShouldEqual, 2)
 			})

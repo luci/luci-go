@@ -135,10 +135,10 @@ func TestExec(t *testing.T) {
 				return
 			}
 
-			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
+			ctx2, cancel := context.WithTimeout(ctx, time.Millisecond)
 			defer cancel()
 
-			cmd := CommandContext(ctx, testBinary)
+			cmd := CommandContext(ctx2, testBinary)
 
 			So(cmd.Start(), ShouldBeNil)
 

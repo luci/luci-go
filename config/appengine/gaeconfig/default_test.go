@@ -165,9 +165,9 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				putSettings()
 
 				c = installConfig(c)
-				c, cnt := count.FilterRDS(c)
+				c2, cnt := count.FilterRDS(c)
 
-				projs, _, err := loadProjectConfigs(c, cfgclient.AsService)
+				projs, _, err := loadProjectConfigs(c2, cfgclient.AsService)
 				So(err, ShouldBeNil)
 				So(projs, ShouldResemble, allProjs)
 
@@ -181,8 +181,8 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				putSettings()
 
 				c = installConfig(c)
-				c, cnt := count.FilterRDS(c)
-				projs, _, err := loadProjectConfigs(c, cfgclient.AsService)
+				c2, cnt := count.FilterRDS(c)
+				projs, _, err := loadProjectConfigs(c2, cfgclient.AsService)
 				So(err, ShouldBeNil)
 				So(projs, ShouldResemble, allProjs)
 
@@ -191,7 +191,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 
 				// Reload from cache. Should not touch datastore b/c local caches are
 				// retaining the results.
-				projs, _, err = loadProjectConfigs(c, cfgclient.AsService)
+				projs, _, err = loadProjectConfigs(c2, cfgclient.AsService)
 				So(err, ShouldBeNil)
 				So(projs, ShouldResemble, allProjs)
 
@@ -202,7 +202,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				// continue to load the configuration from the datastore.
 				clk.Add(time.Hour)
 
-				projs, _, err = loadProjectConfigs(c, cfgclient.AsService)
+				projs, _, err = loadProjectConfigs(c2, cfgclient.AsService)
 				So(err, ShouldBeNil)
 
 				So(cnt.GetMulti.Total(), ShouldEqual, 2)
