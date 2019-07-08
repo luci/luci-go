@@ -50,9 +50,9 @@ func TestPackageReader(t *testing.T) {
 		pkg, err := NewPackageReader(reader, size)
 		So(err, ShouldBeNil)
 
-		fr, size, err := pkg.Open("file2")
+		fr, actualSize, err := pkg.Open("file2")
 		So(err, ShouldBeNil)
-		So(size, ShouldEqual, 4)
+		So(actualSize, ShouldEqual, 4)
 		blob, err := ioutil.ReadAll(fr)
 		So(err, ShouldBeNil)
 		So(string(blob), ShouldEqual, "blah")

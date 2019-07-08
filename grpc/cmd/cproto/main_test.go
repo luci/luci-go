@@ -76,7 +76,7 @@ func TestMain(t *testing.T) {
 		}
 
 		for _, testDir := range testCaseDirs {
-			testDir := filepath.Join(testDataDir, testDir)
+			testDir = filepath.Join(testDataDir, testDir)
 			info, err := os.Stat(testDir)
 			So(err, ShouldBeNil)
 			if !info.IsDir() {

@@ -105,8 +105,8 @@ func TestLazySlot(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			v, err := s.Get(c, fetcher)
-			conv.So(err, ShouldBeNil)
+			v, err2 := s.Get(c, fetcher)
+			conv.So(err2, ShouldBeNil)
 			conv.So(v.(int), ShouldEqual, 2)
 		}()
 

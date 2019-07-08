@@ -773,7 +773,7 @@ func TestCancelUpload(t *testing.T) {
 		})
 
 		Convey("Cancel right away", func() {
-			op, err := impl.CancelUpload(ctx, &api.CancelUploadRequest{
+			op, err = impl.CancelUpload(ctx, &api.CancelUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
 			So(err, ShouldBeNil)

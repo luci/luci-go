@@ -132,7 +132,8 @@ func TestDecoding(t *testing.T) {
 				now := time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)
 				c, _ = testclock.UseTime(c, now)
 
-				c, err := parseHeader(c, header(HeaderTimeout, "1M"))
+				var err error
+				c, err = parseHeader(c, header(HeaderTimeout, "1M"))
 				So(err, ShouldBeNil)
 
 				deadline, ok := c.Deadline()
@@ -141,8 +142,8 @@ func TestDecoding(t *testing.T) {
 			})
 
 			Convey("Fails", func() {
-				c2, err := parseHeader(c, header(HeaderTimeout, "blah"))
-				So(c2, ShouldEqual, c)
+				c, err := parseHeader(c, header(HeaderTimeout, "blah"))
+				So(c, ShouldEqual, c)
 				So(err, ShouldErrLike, HeaderTimeout+` header: unit is not recognized: "blah"`)
 			})
 		})
@@ -200,8 +201,8 @@ func TestDecoding(t *testing.T) {
 					})
 				})
 				Convey("Fails", func() {
-					c2, err := parseHeader(c, header("Name-Bin", "zzz"))
-					So(c2, ShouldEqual, c)
+					c, err := parseHeader(c, header("Name-Bin", "zzz"))
+					So(c, ShouldEqual, c)
 					So(err, ShouldErrLike, "Name-Bin header: illegal base64 data at input byte 0")
 				})
 			})
