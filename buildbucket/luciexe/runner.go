@@ -268,14 +268,16 @@ func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, use
 
 // setupUserEnv prepares user subprocess environment.
 func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, userAuth *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (environ.Env, error) {
-	ret := environ.System()
-	userAuth.ExportIntoEnv(ret)
-	if err := logdogServ.ExportIntoEnv(ret); err != nil {
+	env := userAuth.ExportIntoEnv(environ.System())
+	if err := logdogServ.SetInEnviron(env); err != nil {
 		return environ.Env{}, err
 	}
-	ret.Set("LOGDOG_NAMESPACE", logdogNamespace)
+	env.Set("LOGDOG_NAMESPACE", logdogNamespace)
 
 	// Prepare user LUCI context.
+	//
+	// TODO(vadimsh): This clobbers LUCI_CONTEXT file exported by
+	// userAuth.ExportIntoEnv.
 	ctx, err := lucictx.Set(ctx, "luci_executable", map[string]string{
 		"cache_dir": args.CacheDir,
 	})
@@ -286,7 +288,7 @@ func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, userAuth
 	if err != nil {
 		return environ.Env{}, err
 	}
-	lctx.SetInEnviron(ret)
+	lctx.SetInEnviron(env)
 
 	// Prepare a user temp dir.
 	// Note that we can't use workdir directly because some overzealous scripts
@@ -298,10 +300,10 @@ func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, userAuth
 		return environ.Env{}, errors.Annotate(err, "failed to create temp dir").Err()
 	}
 	for _, v := range []string{"TEMPDIR", "TMPDIR", "TEMP", "TMP", "MAC_CHROMIUM_TMPDIR"} {
-		ret.Set(v, userTempDir)
+		env.Set(v, userTempDir)
 	}
 
-	return ret, nil
+	return env, nil
 }
 
 // hookStdoutStderr sends stdout/stderr to logdogServ and also tees to the
