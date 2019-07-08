@@ -189,8 +189,7 @@ func New(basePath string) (config.Interface, error) {
 	}
 
 	if ret.islink {
-		inf, err := os.Stat(basePath)
-		if err != nil {
+		if inf, err = os.Stat(basePath); err != nil {
 			return nil, err
 		}
 		if !inf.IsDir() {
@@ -218,29 +217,29 @@ func (fs *filesystemImpl) resolveBasePath() (realPath nativePath, revision strin
 	return fs.basePath, "", nil
 }
 
-func parsePath(rel nativePath) (configSet configSet, path luciPath, ok bool) {
+func parsePath(rel nativePath) (cs configSet, path luciPath, ok bool) {
 	toks := rel.explode()
 
 	const jsonExt = ".json"
 
 	if toks[0] == "services" {
-		configSet = newConfigSet(toks[:2]...)
+		cs = newConfigSet(toks[:2]...)
 		path = newLUCIPath(toks[2:]...)
 		ok = true
 	} else if toks[0] == "projects" {
 		ok = true
 		if len(toks) > 2 && toks[2] == "refs" { // projects/p/refs/r/...
 			if len(toks) > 4 {
-				configSet = newConfigSet(toks[:4]...)
+				cs = newConfigSet(toks[:4]...)
 				path = newLUCIPath(toks[4:]...)
 			} else {
 				// otherwise it's invalid /projects/p/refs or /projects/p/refs/somefile
 				ok = false
 			}
 		} else if len(toks) == 2 && strings.HasSuffix(toks[1], jsonExt) {
-			configSet = newConfigSet(toks[0], toks[1][:len(toks[1])-len(jsonExt)])
+			cs = newConfigSet(toks[0], toks[1][:len(toks[1])-len(jsonExt)])
 		} else {
-			configSet = newConfigSet(toks[:2]...)
+			cs = newConfigSet(toks[:2]...)
 			path = newLUCIPath(toks[2:]...)
 		}
 	}
@@ -263,11 +262,11 @@ func scanDirectory(realPath nativePath) (*scannedConfigs, error) {
 				return err
 			}
 
-			configSet, cfgPath, ok := parsePath(rel)
+			cs, cfgPath, ok := parsePath(rel)
 			if !ok {
 				return nil
 			}
-			lk := lookupKey{"", configSet, cfgPath}
+			lk := lookupKey{"", cs, cfgPath}
 
 			data, err := path.read()
 			if err != nil {
@@ -279,7 +278,7 @@ func scanDirectory(realPath nativePath) (*scannedConfigs, error) {
 				if err := json.Unmarshal(data, proj); err != nil {
 					return err
 				}
-				toks := configSet.explode()
+				toks := cs.explode()
 				parsedURL, err := url.ParseRequestURI(proj.URL)
 				if err != nil {
 					return err
@@ -302,7 +301,7 @@ func scanDirectory(realPath nativePath) (*scannedConfigs, error) {
 
 			ret.contentRevPathMap[lk] = &config.Config{
 				Meta: config.Meta{
-					ConfigSet:   config.Set(configSet.s()),
+					ConfigSet:   config.Set(cs.s()),
 					Path:        cfgPath.s(),
 					ContentHash: hexHsh,
 					ViewURL:     "file://./" + filepath.ToSlash(cfgPath.s()),
@@ -409,10 +408,10 @@ func (fs *filesystemImpl) slurpScannedConfigs(revision string, scanned *scannedC
 }
 
 func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet config.Set, cfgPath string, metaOnly bool) (*config.Config, error) {
-	configSet := configSet{luciPath(cfgSet)}
+	cs := configSet{luciPath(cfgSet)}
 	path := luciPath(cfgPath)
 
-	if err := configSet.validate(); err != nil {
+	if err := cs.validate(); err != nil {
 		return nil, err
 	}
 
@@ -421,7 +420,7 @@ func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet config.Set, cfgP
 		return nil, err
 	}
 
-	lk := lookupKey{revision, configSet, path}
+	lk := lookupKey{revision, cs, path}
 
 	fs.RLock()
 	ret, ok := fs.contentRevPathMap[lk]
@@ -437,14 +436,14 @@ func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet config.Set, cfgP
 }
 
 func (fs *filesystemImpl) ListFiles(ctx context.Context, cfgSet config.Set) ([]string, error) {
-	configSet := configSet{luciPath(cfgSet)}
-	if err := configSet.validate(); err != nil {
+	cs := configSet{luciPath(cfgSet)}
+	if err := cs.validate(); err != nil {
 		return nil, err
 	}
 
 	var files []string
 	err := fs.iterContentRevPath(func(lk lookupKey, cfg *config.Config) {
-		if lk.configSet == configSet {
+		if lk.configSet == cs {
 			files = append(files, cfg.Path)
 		}
 	})
@@ -466,9 +465,9 @@ func (fs *filesystemImpl) GetConfigByHash(ctx context.Context, contentHash strin
 }
 
 func (fs *filesystemImpl) GetConfigSetLocation(ctx context.Context, cfgSet config.Set) (*url.URL, error) {
-	configSet := configSet{luciPath(cfgSet)}
+	cs := configSet{luciPath(cfgSet)}
 
-	if err := configSet.validate(); err != nil {
+	if err := cs.validate(); err != nil {
 		return nil, err
 	}
 	realPath, _, err := fs.resolveBasePath()
@@ -477,7 +476,7 @@ func (fs *filesystemImpl) GetConfigSetLocation(ctx context.Context, cfgSet confi
 	}
 	return &url.URL{
 		Scheme: "file",
-		Path:   realPath.toLUCI().s() + "/" + configSet.s(),
+		Path:   realPath.toLUCI().s() + "/" + cs.s(),
 	}, nil
 }
 

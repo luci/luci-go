@@ -857,13 +857,14 @@ func (s *Server) getAccessToken(c context.Context, scopes []string) (*oauth2.Tok
 //
 // If such token source was already initialized, just returns it and its
 // parent authenticator.
-func (s *Server) initTokenSource(scopes []string) (au scopedAuth, err error) {
+func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
 	key := strings.Join(scopes, " ")
 
 	s.authM.Lock()
 	defer s.authM.Unlock()
 
-	if au, ok := s.authPerScope[key]; ok {
+	au, ok := s.authPerScope[key]
+	if ok {
 		return au, nil
 	}
 
@@ -877,6 +878,7 @@ func (s *Server) initTokenSource(scopes []string) (au scopedAuth, err error) {
 	// being cached), thus it needs a long-living context.
 	ctx := logging.SetField(s.ctx, "activity", "luci.auth")
 	au.authen = clientauth.NewAuthenticator(ctx, clientauth.SilentLogin, opts)
+	var err error
 	au.source, err = au.authen.TokenSource()
 
 	if err != nil {

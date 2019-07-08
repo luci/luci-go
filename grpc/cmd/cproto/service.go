@@ -103,12 +103,12 @@ func getServices(file *ast.File) ([]*service, error) {
 					// Get the "ServiceName" struct field and parse it.
 					var serviceNameExpr *ast.KeyValueExpr
 					for _, e := range compLit.Elts {
-						kv, ok := e.(*ast.KeyValueExpr)
-						if !ok {
+						kv, ok2 := e.(*ast.KeyValueExpr)
+						if !ok2 {
 							continue
 						}
-						kident, ok := kv.Key.(*ast.Ident)
-						if !ok {
+						kident, ok3 := kv.Key.(*ast.Ident)
+						if !ok3 {
 							continue
 						}
 						if kident.Name == "ServiceName" {
