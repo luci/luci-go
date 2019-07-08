@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "58049344_d4ec1d2c",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-08T23:23:38Z",
+      "side": 1,
+      "message": "doesn\u0027t seem to belong to the defaults validation CL",
+      "revId": "44c511fc67e03f8be8578aab236433d88d9a7b33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89b7e02d_a9509099",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-08T23:23:38Z",
+      "side": 1,
+      "message": "why not nil.(*bufferImpl)? It\u0027s not like you need actual heap allocation.\n\nAlso, why not inside a test file?",
+      "range": {
+        "startLine": 41,
+        "startChar": 15,
+        "endLine": 41,
+        "endChar": 28
+      },
+      "revId": "44c511fc67e03f8be8578aab236433d88d9a7b33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3291fc6_c8389054",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-08T23:23:38Z",
+      "side": 1,
+      "message": "Rejects sounds like Add() operation will error out. Why not \"BlockNewItems\"?",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 15
+      },
+      "revId": "44c511fc67e03f8be8578aab236433d88d9a7b33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bfd1b00_6baaa975",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-08T23:23:38Z",
+      "side": 1,
+      "message": "this isn\u0027t very helpful to an outsider using this package. Maybe \"when a Batch is ReQueue\u0027d, a delay in actually re-sending the batch will be derived from the Iterator produced from this factory\"?",
+      "range": {
+        "startLine": 76,
+        "startChar": 21,
+        "endLine": 77,
+        "endChar": 55
+      },
+      "revId": "44c511fc67e03f8be8578aab236433d88d9a7b33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
