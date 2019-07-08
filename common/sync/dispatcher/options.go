@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate stringer -type BufferFullBehavior
+
 package dispatcher
 
 import (
@@ -27,11 +29,11 @@ type BufferFullBehavior int
 const (
 	// BlockNewData will instruct the dispatcher to block all writes to the
 	// Channel until the buffer drains at least one datum.
-	BlockNewData BufferFullBehavior = 0
+	BlockNewData BufferFullBehavior = iota + 1
 
 	// DropOldestBatch will instruct the dispatcher to drop whichever buffered
 	// batch is oldest.
-	DropOldestBatch BufferFullBehavior = 1
+	DropOldestBatch
 )
 
 // Options is the configuration options for NewChannel.
@@ -94,6 +96,7 @@ type Options struct {
 type ConcurrencyOptions struct {
 	// [OPTIONAL] The maximum number of concurrent invocations of SendFn.
 	//
+	// Required: Must be > 0
 	// Default: 1
 	MaxSenders int
 
@@ -128,6 +131,7 @@ type RetryOptions struct {
 	// SendFn for a given Batch. The Channel will backoff on a per-batch basis
 	// using BackoffFactor until it hits MaxSleep.
 	//
+	// Required: Must be >= InitialSleep.
 	// Default: 60 * time.Second
 	MaxSleep time.Duration
 
@@ -143,6 +147,7 @@ type RetryOptions struct {
 	// Setting this to 1 means that any particular Batch can only have one send
 	// attempt.
 	//
+	// Required: If supplied, must be > 1.0
 	// Default: 0 (infinite)
 	Limit int
 }
@@ -152,7 +157,7 @@ type BatchOptions struct {
 	// [OPTIONAL] The maximum number of items to allow in a Batch before queuing
 	// it for transmission.
 	//
-	// Required: Must be >= 0 (If 0, then this relies entirely on MaxDuration)
+	// Required: Must be > 0 or -1 (If -1, then this relies entirely on MaxDuration)
 	// Default: 20
 	MaxSize int
 
@@ -175,12 +180,14 @@ type BufferOptions struct {
 	// runs it may also modify the number of items in Batch.Data; Reducing this
 	// count will reduce the dispatcher's current buffer size.
 	//
+	// Required: Must be > 0
 	// Default: 1000
 	MaxSize int
 
 	// [OPTIONAL] The behavior of the Channel when it currently holds
 	// MaxBufferedItems.
 	//
+	// Required: Must be a valid BufferFullBehavior.
 	// Default: BlockNewData
-	BufferFullBehavior BufferFullBehavior
+	FullBehavior BufferFullBehavior
 }
