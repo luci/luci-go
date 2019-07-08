@@ -7,5 +7,5 @@ Layer**, register them with the **Coordinator** instance, and load them into
 **Intermediate Storage** for streaming and, ultimately, archival.
 
 **Collector** microservices are designed to operate cooperatively as part of
-a scaleable cluster. Deploying additional **Collector** instances will linearly
+a scalable cluster. Deploying additional **Collector** instances will linearly
 increase the collection throughput.

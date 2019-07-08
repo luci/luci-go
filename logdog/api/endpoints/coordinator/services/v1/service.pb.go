@@ -12,6 +12,8 @@ import (
 	duration "github.com/golang/protobuf/ptypes/duration"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -510,7 +512,7 @@ type ArchiveStreamRequest struct {
 	TerminalIndex int64 `protobuf:"varint,4,opt,name=terminal_index,json=terminalIndex,proto3" json:"terminal_index,omitempty"`
 	// If not empty, there was an archival error.
 	//
-	// This field serves to indicate that an error occured (being non-empty) and
+	// This field serves to indicate that an error occurred (being non-empty) and
 	// to supply an value that will show up in the Coordinator ArchiveStream
 	// endpoint logs.
 	Error string `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
@@ -1382,6 +1384,35 @@ type ServicesServer interface {
 	// TaskQueueDeleteMulti is a passthrough to appengine's taskqueue.DeleteMulti
 	// TODO(hinoka): Remove this when https://cloud.google.com/tasks/ is out of Beta.
 	DeleteArchiveTasks(context.Context, *DeleteRequest) (*empty.Empty, error)
+}
+
+// UnimplementedServicesServer can be embedded to have forward compatible implementations.
+type UnimplementedServicesServer struct {
+}
+
+func (*UnimplementedServicesServer) GetConfig(ctx context.Context, req *empty.Empty) (*GetConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
+}
+func (*UnimplementedServicesServer) RegisterStream(ctx context.Context, req *RegisterStreamRequest) (*RegisterStreamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterStream not implemented")
+}
+func (*UnimplementedServicesServer) LoadStream(ctx context.Context, req *LoadStreamRequest) (*LoadStreamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoadStream not implemented")
+}
+func (*UnimplementedServicesServer) TerminateStream(ctx context.Context, req *TerminateStreamRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TerminateStream not implemented")
+}
+func (*UnimplementedServicesServer) ArchiveStream(ctx context.Context, req *ArchiveStreamRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ArchiveStream not implemented")
+}
+func (*UnimplementedServicesServer) Batch(ctx context.Context, req *BatchRequest) (*BatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Batch not implemented")
+}
+func (*UnimplementedServicesServer) LeaseArchiveTasks(ctx context.Context, req *LeaseRequest) (*LeaseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LeaseArchiveTasks not implemented")
+}
+func (*UnimplementedServicesServer) DeleteArchiveTasks(ctx context.Context, req *DeleteRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteArchiveTasks not implemented")
 }
 
 func RegisterServicesServer(s prpc.Registrar, srv ServicesServer) {

@@ -633,7 +633,7 @@ namespace LogDog {
 
     /**
      * Sets whether the next fetch will pull from the tail (end) or the top
-     * (begining) region.
+     * (beginning) region.
      *
      * This is only relevant when there is a log split.
      */

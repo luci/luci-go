@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
@@ -27,7 +27,7 @@ import (
 // a simplified version of the Coordinator's Service API tailored specifically
 // to the Collector's usage.
 //
-// All Coordiantor methods will return transient-wrapped errors if appropriate.
+// All Coordinator methods will return transient-wrapped errors if appropriate.
 type Coordinator interface {
 	// RegisterStream registers a log stream state.
 	RegisterStream(c context.Context, s *LogStreamState, desc []byte) (*LogStreamState, error)
@@ -44,7 +44,7 @@ type LogStreamState struct {
 	// Path is the log stream path.
 	Path types.StreamPath
 
-	// ID is the stream's Coordinator ID. This is returned by the Coordiantor.
+	// ID is the stream's Coordinator ID. This is returned by the Coordinator.
 	ID string
 	// ProtoVersion is the stream protocol version string.
 	ProtoVersion string

@@ -510,8 +510,9 @@ func (m *ConfigGroup_Gerrit_Project_CrOSMigration) GetLuciPercentage() float32 {
 // alone.
 //
 // A user must vote on CQ label on **each CL** individually. Since it can't be
-// instanteneous, `stabilization_delay` controls how long CQ waits for all CQ+1/2
-// votes before computing maximal expanded set of CLs and starting the attempt.
+// instantaneous, `stabilization_delay` controls how long CQ waits for all
+// CQ+1/2 votes before computing maximal expanded set of CLs and starting the
+// attempt.
 //
 // For any CL with CQ+1/2 vote, each of its dependency must have the same CQ
 // vote and be configured for CQ **in the same config group**, else CQ would

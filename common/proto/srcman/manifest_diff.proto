@@ -67,7 +67,7 @@ message ManifestDiff {
     // URL migration.
     string repo_url = 4;
 
-    // If revision==DIFF, this may be populated with git history occuring
+    // If revision==DIFF, this may be populated with git history occurring
     // between the two base revisions.
     repeated git.Commit history = 5;
   }

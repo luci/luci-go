@@ -64,7 +64,7 @@ type FailureDetails_Type int32
 const (
 	// The failure is a general failure.
 	FailureDetails_GENERAL FailureDetails_Type = 0
-	// An unhandled exception occured during execution.
+	// An unhandled exception occurred during execution.
 	FailureDetails_EXCEPTION FailureDetails_Type = 1
 	// The failure is related to a failed infrastructure component, not an error
 	// with the Step itself.
@@ -481,7 +481,7 @@ func (*Step_Substep) XXX_OneofWrappers() []interface{} {
 }
 
 // Progress expresses a Component's overall progress. It does this using
-// arbitrary "progress units", wich are discrete units of work measured by
+// arbitrary "progress units", which are discrete units of work measured by
 // the Component that are either completed or not completed.
 //
 // A simple construction for "percentage complete" is to set `total` to 100

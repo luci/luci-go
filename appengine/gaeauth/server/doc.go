@@ -19,7 +19,7 @@
 // It also provides GAE-specific implementation of some other interface used
 // by server/auth package, such as SessionStore.
 //
-// By defualt, gaeauth must have its handlers installed into the "default"
+// By default, gaeauth must have its handlers installed into the "default"
 // AppEngine module, and must be running on an instance with read/write
 // datastore access.
 package server

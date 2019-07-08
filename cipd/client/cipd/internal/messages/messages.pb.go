@@ -75,7 +75,7 @@ func (m *BlobWithSHA256) GetSha256() []byte {
 //
 // It also contains a '(service, instance_id, file_name) -> encoded ObjectRef'
 // mapping which is used for client self-update purposes. file_name is
-// case-senstive and must always use POSIX-style slashes.
+// case-sensitive and must always use POSIX-style slashes.
 //
 // A service is specified by its hostname. We make it part of the key since
 // same tags may point to different instances on different services.

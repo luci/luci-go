@@ -6,7 +6,7 @@ instance_class: F4_1G
 
 handlers:
 # Pubsub Handler.  This is strictly necessary because the default module
-# contains a /.* routing rule, so if it was targetted directly, we still want
+# contains a /.* routing rule, so if it was targeted directly, we still want
 # login:admin to apply.
 - url: /_ah/push-handlers/.*
   script: _go_app

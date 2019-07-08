@@ -11,6 +11,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -31,7 +33,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 // will be stored in a "luci-config" service Config protobuf.
 type SetConfigRequest struct {
 	// ConfigServiceURL is the API URL of the base "luci-config" service. If
-	// empty, the defualt service URL will be used.
+	// empty, the default service URL will be used.
 	ConfigServiceUrl string `protobuf:"bytes,1,opt,name=config_service_url,json=configServiceUrl,proto3" json:"config_service_url,omitempty"`
 	// ConfigSet is the name of the configuration set to load from.
 	ConfigSet string `protobuf:"bytes,2,opt,name=config_set,json=configSet,proto3" json:"config_set,omitempty"`
@@ -185,6 +187,14 @@ type AdminServer interface {
 	// SetConfig loads the supplied configuration into a config.GlobalConfig
 	// instance.
 	SetConfig(context.Context, *SetConfigRequest) (*empty.Empty, error)
+}
+
+// UnimplementedAdminServer can be embedded to have forward compatible implementations.
+type UnimplementedAdminServer struct {
+}
+
+func (*UnimplementedAdminServer) SetConfig(ctx context.Context, req *SetConfigRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetConfig not implemented")
 }
 
 func RegisterAdminServer(s prpc.Registrar, srv AdminServer) {

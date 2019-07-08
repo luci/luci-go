@@ -11,7 +11,7 @@ scenarios via its subcommands:
 
 * `stream`, which uploads the contents of a single log stream.
 * `serve`, which runs a Butler stream server instance.
-* `run`, which runs another command, instrumenting its enviornment and standard
+* `run`, which runs another command, instrumenting its environment and standard
   file descriptors for log streaming.
 
 ## Stream Servers

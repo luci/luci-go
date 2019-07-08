@@ -86,7 +86,7 @@ type Value struct {
 //	  "access update interval" so we don't pointlessly incur the update cost
 //	  every time.
 //
-// The support cron task will execute periodically and maintian the cache:
+// The support cron task will execute periodically and maintain the cache:
 //	- If a cached entry's "Accessed" timestamp falls too far behind, it will be
 //	  deleted as part of a periodic cron task.
 //	- If the cached entry is near expiration, the cron task will refresh the

@@ -71,7 +71,7 @@ VirtualEnv offers several benefits over system Python. Primarily, it is the
 *de facto* encapsulated environment method used by the Python community and is
 generally used as the standard for a functional deployable package.
 
-By using the same environemnt everywhere, Python invocations become
+By using the same environment everywhere, Python invocations become
 reproducible. A tool run on a developer's system will load the same versions
 of the same libraries as it will on a production system. A production system
 will no longer fail because it is missing a package, because it has the
@@ -105,10 +105,10 @@ sensitive packages.
 ### Why wheels?
 
 A Python [wheel](https://www.python.org/dev/peps/pep-0427/) is a simple binary
-distrubition of Python code. A wheel can be generic (pure Python) or system-
+distribution of Python code. A wheel can be generic (pure Python) or system-
 and architecture-bound (e.g., 64-bit Mac OSX).
 
-Wheels are prefered over Python eggs because they come packaged with compiled
+Wheels are preferred over Python eggs because they come packaged with compiled
 binaries. This makes their deployment fast and simple: unpack via `pip`. It also
 reduces system requirements and variation, since local compilation, headers,
 and build tools are not enlisted during installation.

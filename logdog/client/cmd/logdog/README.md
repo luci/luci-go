@@ -11,7 +11,7 @@ without any additional flags.
 ### Authentication (auth-login)
 
 The `auth-login` subcommand can be used to obtain authentication credentials.
-After running `auth-login` successfuly, subsequent accesses with the tool will
+After running `auth-login` successfully, subsequent accesses with the tool will
 use the cached authentication credentials.
 
 You can log out using the `auth-logout` subcommand, or check your authentication
