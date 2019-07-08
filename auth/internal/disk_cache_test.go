@@ -58,9 +58,9 @@ func TestDiskTokenCache(t *testing.T) {
 		//
 		// Use real clock here to test real-world interaction when retrying disk
 		// writes.
-		ctx := context.Background()
-		testCacheInParallel(ctx, &DiskTokenCache{
-			Context:    ctx,
+		ctx2 := context.Background()
+		testCacheInParallel(ctx2, &DiskTokenCache{
+			Context:    ctx2,
 			SecretsDir: tmp,
 		})
 	})

@@ -70,13 +70,13 @@ func TestTestClock(t *testing.T) {
 		})
 
 		Convey(`When sleeping, awakens if canceled.`, func() {
-			ctx, cancelFunc := context.WithCancel(ctx)
+			ctx2, cancelFunc := context.WithCancel(ctx)
 
 			clk.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
 				cancelFunc()
 			})
 
-			So(clk.Sleep(ctx, time.Second).Incomplete(), ShouldBeTrue)
+			So(clk.Sleep(ctx2, time.Second).Incomplete(), ShouldBeTrue)
 		})
 	})
 }

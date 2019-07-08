@@ -60,9 +60,9 @@ func TestPairs(t *testing.T) {
 			So(m.Get("c"), ShouldEqual, "")
 		})
 		Convey("Get with empty", func() {
-			m := m.Copy()
-			m["c"] = nil
-			So(m.Get("c"), ShouldEqual, "")
+			m2 := m.Copy()
+			m2["c"] = nil
+			So(m2.Get("c"), ShouldEqual, "")
 		})
 		Convey("Contains", func() {
 			So(m.Contains("a", "2"), ShouldBeTrue)
@@ -71,9 +71,9 @@ func TestPairs(t *testing.T) {
 			So(m.Contains("c", "1"), ShouldBeFalse)
 		})
 		Convey("Set", func() {
-			m := m.Copy()
-			m.Set("c", "3")
-			So(m, ShouldResemble, Map{
+			m2 := m.Copy()
+			m2.Set("c", "3")
+			So(m2, ShouldResemble, Map{
 				"b": []string{"1"},
 				"a": []string{"2"},
 				"c": []string{"3"},

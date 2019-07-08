@@ -89,12 +89,11 @@ func TestRetry(t *testing.T) {
 			})
 
 			Convey(`Executes a function that fails once, then succeeds once.`, func() {
-				failure := errors.New("retry: test error")
 				var count, callbacks int
 				err := Retry(ctx, g, func() error {
 					defer func() { count++ }()
 					if count == 0 {
-						return failure
+						return errors.New("retry: test error")
 					}
 					return nil
 				}, func(error, time.Duration) {
@@ -107,9 +106,9 @@ func TestRetry(t *testing.T) {
 			})
 
 			Convey(`Does not retry if context is done.`, func() {
-				ctx, cancel := context.WithCancel(ctx)
+				ctx2, cancel := context.WithCancel(ctx)
 				var count, callbacks int
-				err := Retry(ctx, g, func() error {
+				err := Retry(ctx2, g, func() error {
 					cancel()
 					count++
 					return failure

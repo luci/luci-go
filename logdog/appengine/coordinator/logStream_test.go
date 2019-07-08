@@ -208,11 +208,12 @@ func TestLogStream(t *testing.T) {
 			}
 
 			Convey(`When querying LogStream by -Created`, func() {
+				var err error
 				q := ds.NewQuery("LogStream").Order("-Created")
 
 				Convey(`LogStream path queries`, func() {
 					Convey(`A query for "foo/bar" should return "foo/bar".`, func() {
-						q, err := AddLogStreamPathFilter(q, "**/+/foo/bar")
+						q, err = AddLogStreamPathFilter(q, "**/+/foo/bar")
 						So(err, ShouldBeNil)
 
 						var streams []*LogStream
@@ -221,7 +222,7 @@ func TestLogStream(t *testing.T) {
 					})
 
 					Convey(`A query for "foo/bar/*" should return "foo/bar/baz".`, func() {
-						q, err := AddLogStreamPathFilter(q, "**/+/foo/bar/*")
+						q, err = AddLogStreamPathFilter(q, "**/+/foo/bar/*")
 						So(err, ShouldBeNil)
 
 						var streams []*LogStream
@@ -230,7 +231,7 @@ func TestLogStream(t *testing.T) {
 					})
 
 					Convey(`A query for "foo/**" should return "foo/bar/baz" and "foo/bar".`, func() {
-						q, err := AddLogStreamPathFilter(q, "**/+/foo/**")
+						q, err = AddLogStreamPathFilter(q, "**/+/foo/**")
 						So(err, ShouldBeNil)
 
 						var streams []*LogStream
@@ -239,7 +240,7 @@ func TestLogStream(t *testing.T) {
 					})
 
 					Convey(`A query for "cat/**/dog" should return "cat/dog" and "cat/bird/dog".`, func() {
-						q, err := AddLogStreamPathFilter(q, "**/+/cat/**/dog")
+						q, err = AddLogStreamPathFilter(q, "**/+/cat/**/dog")
 						So(err, ShouldBeNil)
 
 						var streams []*LogStream
@@ -261,7 +262,7 @@ func TestLogStream(t *testing.T) {
 				})
 
 				Convey(`A query for "cat/**/dog" should return "cat/bird/dog" and "cat/dog".`, func() {
-					q, err := AddLogStreamPathFilter(q, "**/+/cat/**/dog")
+					q, err = AddLogStreamPathFilter(q, "**/+/cat/**/dog")
 					So(err, ShouldBeNil)
 
 					var streams []*LogStream
@@ -288,7 +289,7 @@ func TestLogStream(t *testing.T) {
 				Convey(`A query for "cat/**/dog" newer than "cat/dog" returns {"cat/bird/dog"}.`, func() {
 					q = AddNewerFilter(q, times["cat/dog"])
 
-					q, err := AddLogStreamPathFilter(q, "**/+/cat/**/dog")
+					q, err = AddLogStreamPathFilter(q, "**/+/cat/**/dog")
 					So(err, ShouldBeNil)
 
 					var streams []*LogStream
@@ -304,10 +305,11 @@ func TestLogStreamPathFilter(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A testing query`, t, func() {
+		var err error
 		q := ds.NewQuery("LogStream")
 
 		Convey(`Will construct a non-globbing query as Prefix/Name equality.`, func() {
-			q, err := AddLogStreamPathFilter(q, "foo/bar/+/baz/qux")
+			q, err = AddLogStreamPathFilter(q, "foo/bar/+/baz/qux")
 			So(err, ShouldBeNil)
 
 			fq, err := q.Finalize()
@@ -327,7 +329,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 		})
 
 		Convey(`Will not impose any filters on an empty Prefix.`, func() {
-			q, err := AddLogStreamPathFilter(q, "/+/baz/qux")
+			q, err = AddLogStreamPathFilter(q, "/+/baz/qux")
 			So(err, ShouldBeNil)
 
 			fq, err := q.Finalize()
@@ -338,7 +340,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 		})
 
 		Convey(`Will not impose any filters on an empty Name.`, func() {
-			q, err := AddLogStreamPathFilter(q, "baz/qux")
+			q, err = AddLogStreamPathFilter(q, "baz/qux")
 			So(err, ShouldBeNil)
 
 			fq, err := q.Finalize()
@@ -349,7 +351,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 		})
 
 		Convey(`Will glob out single Prefix components.`, func() {
-			q, err := AddLogStreamPathFilter(q, "foo/*/*/bar/*/baz/qux/*")
+			q, err = AddLogStreamPathFilter(q, "foo/*/*/bar/*/baz/qux/*")
 			So(err, ShouldBeNil)
 
 			fq, err := q.Finalize()
@@ -360,7 +362,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 		})
 
 		Convey(`Will handle end-of-query globbing.`, func() {
-			q, err := AddLogStreamPathFilter(q, "foo/*/bar/**")
+			q, err = AddLogStreamPathFilter(q, "foo/*/bar/**")
 			So(err, ShouldBeNil)
 
 			fq, err := q.Finalize()
@@ -371,7 +373,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 		})
 
 		Convey(`Will handle beginning-of-query globbing.`, func() {
-			q, err := AddLogStreamPathFilter(q, "**/foo/*/bar")
+			q, err = AddLogStreamPathFilter(q, "**/foo/*/bar")
 			So(err, ShouldBeNil)
 
 			fq, err := q.Finalize()
@@ -382,7 +384,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 		})
 
 		Convey(`Can handle middle-of-query globbing.`, func() {
-			q, err := AddLogStreamPathFilter(q, "*/foo/*/**/bar/*/baz/*")
+			q, err = AddLogStreamPathFilter(q, "*/foo/*/**/bar/*/baz/*")
 			So(err, ShouldBeNil)
 
 			fq, err := q.Finalize()

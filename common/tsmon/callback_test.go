@@ -38,9 +38,9 @@ func TestCallbacks(t *testing.T) {
 		})
 
 		Convey("Callback is run on Flush", func() {
-			c, s, m := WithFakes(c)
+			c2, s, m := WithFakes(c)
 
-			RegisterCallbackIn(c, func(c context.Context) {
+			RegisterCallbackIn(c2, func(c3 context.Context) {
 				s.Cells = append(s.Cells, types.Cell{
 					types.MetricInfo{
 						Name:      "foo",
@@ -56,7 +56,7 @@ func TestCallbacks(t *testing.T) {
 				})
 			})
 
-			So(Flush(c), ShouldBeNil)
+			So(Flush(c2), ShouldBeNil)
 
 			So(len(m.Cells), ShouldEqual, 1)
 			So(len(m.Cells[0]), ShouldEqual, 1)

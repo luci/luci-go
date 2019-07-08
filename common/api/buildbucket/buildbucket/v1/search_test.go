@@ -93,7 +93,7 @@ func TestSearch(t *testing.T) {
 			So(cursor, ShouldEqual, "")
 		})
 		Convey("Run until ctx is cancelled", func() {
-			ctx, cancel := context.WithCancel(ctx)
+			ctx2, cancel := context.WithCancel(ctx)
 			builds := make(chan *LegacyApiCommonBuildMessage)
 			go func() {
 				<-builds
@@ -101,7 +101,7 @@ func TestSearch(t *testing.T) {
 				<-builds
 				cancel()
 			}()
-			_, err := client.Search().Context(ctx).Run(builds, 0, nil)
+			_, err := client.Search().Context(ctx2).Run(builds, 0, nil)
 			So(err, ShouldEqual, context.Canceled)
 		})
 		Convey("Run with a partial response", func() {

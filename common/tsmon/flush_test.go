@@ -37,7 +37,7 @@ func TestFlush(t *testing.T) {
 		c := WithState(context.Background(), NewState())
 
 		Convey("Sends a metric", func() {
-			c, s, m := WithFakes(c)
+			c2, s, m := WithFakes(c)
 			s.Cells = []types.Cell{
 				{
 					types.MetricInfo{
@@ -56,7 +56,7 @@ func TestFlush(t *testing.T) {
 			s.DT = defaultTarget
 			m.CS = 42
 
-			So(Flush(c), ShouldBeNil)
+			So(Flush(c2), ShouldBeNil)
 
 			So(len(m.Cells), ShouldEqual, 1)
 			So(len(m.Cells[0]), ShouldEqual, 1)
@@ -76,7 +76,7 @@ func TestFlush(t *testing.T) {
 		})
 
 		Convey("Splits up ChunkSize metrics", func() {
-			c, s, m := WithFakes(c)
+			c2, s, m := WithFakes(c)
 			s.Cells = make([]types.Cell, 43)
 			s.DT = defaultTarget
 			m.CS = 42
@@ -97,7 +97,7 @@ func TestFlush(t *testing.T) {
 				}
 			}
 
-			So(Flush(c), ShouldBeNil)
+			So(Flush(c2), ShouldBeNil)
 
 			So(len(m.Cells), ShouldEqual, 2)
 			So(len(m.Cells[0]), ShouldEqual, 42)
@@ -105,7 +105,7 @@ func TestFlush(t *testing.T) {
 		})
 
 		Convey("Doesn't split metrics when ChunkSize is 0", func() {
-			c, s, m := WithFakes(c)
+			c2, s, m := WithFakes(c)
 			s.Cells = make([]types.Cell, 43)
 			s.DT = defaultTarget
 			m.CS = 0
@@ -126,39 +126,39 @@ func TestFlush(t *testing.T) {
 				}
 			}
 
-			So(Flush(c), ShouldBeNil)
+			So(Flush(c2), ShouldBeNil)
 
 			So(len(m.Cells), ShouldEqual, 1)
 			So(len(m.Cells[0]), ShouldEqual, 43)
 		})
 
 		Convey("No Monitor configured", func() {
-			c, _, _ := WithFakes(c)
-			state := GetState(c)
+			c2, _, _ := WithFakes(c)
+			state := GetState(c2)
 			state.SetMonitor(nil)
 
-			So(Flush(c), ShouldNotBeNil)
+			So(Flush(c2), ShouldNotBeNil)
 		})
 
 		Convey("Auto flush works", func() {
 			start := time.Unix(1454561232, 0)
-			c, tc := testclock.UseTime(c, start)
+			c2, tc := testclock.UseTime(c, start)
 			tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 				tc.Add(d)
 			})
 
 			moments := make(chan int)
 			flusher := autoFlusher{
-				flush: func(c context.Context) error {
+				flush: func(ctx context.Context) error {
 					select {
-					case <-c.Done():
-					case moments <- int(clock.Now(c).Sub(start).Seconds()):
+					case <-ctx.Done():
+					case moments <- int(clock.Now(ctx).Sub(start).Seconds()):
 					}
 					return nil
 				},
 			}
 
-			flusher.start(c, time.Second)
+			flusher.start(c2, time.Second)
 
 			// Each 'flush' gets blocked on sending into 'moments'. Once unblocked, it
 			// advances timer by 'interval' sec (1 sec in the test).
