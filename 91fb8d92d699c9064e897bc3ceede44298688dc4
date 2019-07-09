@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "7c305a5d_616cca7c",
+        "filename": "auth/authctx/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-09T21:27:28Z",
+      "side": 0,
+      "message": "where does this happen now?\n\nedit: nvm found it",
+      "revId": "91fb8d92d699c9064e897bc3ceede44298688dc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3031fc2_f159a1c1",
         "filename": "buildbucket/luciexe/runner.go",
         "patchSetId": 2
@@ -25,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "8cdf4ca3_228de809",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-09T21:27:28Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "b3031fc2_f159a1c1",
+      "range": {
+        "startLine": 272,
+        "startChar": 1,
+        "endLine": 272,
+        "endChar": 28
+      },
+      "revId": "91fb8d92d699c9064e897bc3ceede44298688dc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e035947_b6e275ff",
         "filename": "buildbucket/luciexe/runner.go",
         "patchSetId": 2
@@ -36,6 +77,30 @@
       "writtenOn": "2019-07-09T02:02:57Z",
       "side": 0,
       "message": "This clobbered LUCI_CONTEXT[\"local_auth\"] changes made by userAuth.Launch(...), since \u0027ctx\u0027 here doesn\u0027t have modifications done by Launch(...).",
+      "range": {
+        "startLine": 279,
+        "startChar": 1,
+        "endLine": 289,
+        "endChar": 23
+      },
+      "revId": "91fb8d92d699c9064e897bc3ceede44298688dc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "601c3fdc_b3ff3018",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-09T21:27:28Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "9e035947_b6e275ff",
       "range": {
         "startLine": 279,
         "startChar": 1,
