@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "4b64051a_6c67585b",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-09T21:31:51Z",
+      "side": 1,
+      "message": "yep, sure, it was more of a side question.",
+      "parentUuid": "f0e11dab_bebde944",
+      "range": {
+        "startLine": 116,
+        "startChar": 70,
+        "endLine": 117,
+        "endChar": 30
+      },
+      "revId": "5466409c026750554dfc85947cb7362a6f6ba5c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e7fa7a5a_99d4f563",
         "filename": "buildbucket/luciexe/runner.go",
         "patchSetId": 3
