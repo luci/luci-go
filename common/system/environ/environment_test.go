@@ -21,8 +21,13 @@ import (
 )
 
 func newImpl(caseInsensitive bool, entries []string) Env {
-	e := Env{CaseInsensitive: caseInsensitive}
-	e.LoadSlice(entries)
+	e := Env{
+		caseInsensitive: caseInsensitive,
+		env:             make(map[string]string, len(entries)),
+	}
+	for _, entry := range entries {
+		e.SetEntry(entry)
+	}
 	return e
 }
 
@@ -39,7 +44,7 @@ func TestEnvironmentConversion(t *testing.T) {
 				"qux=quux=quuuuuuux",
 			})
 			So(env, ShouldResemble, Env{
-				CaseInsensitive: true,
+				caseInsensitive: true,
 				env: map[string]string{
 					"FOO": "FOO=",
 					"BAR": "bar=baz",
@@ -112,6 +117,30 @@ func TestEnvironmentManipulation(t *testing.T) {
 			So(v, ShouldEqual, "")
 		})
 
+		Convey(`Can be cloned, and propagates case insensitivity.`, func() {
+			env.caseInsensitive = true
+			So(env.Clone(), ShouldResemble, env)
+		})
+
+		Convey(`Set panics`, func() {
+			So(func() { env.Set("foo", "bar") }, ShouldPanic)
+		})
+	})
+
+	Convey(`An empty Env`, t, func() {
+		env := New(nil)
+		So(env.Len(), ShouldEqual, 0)
+
+		Convey(`Can be sorted.`, func() {
+			So(env.Sorted(), ShouldEqual, nil)
+		})
+
+		Convey(`Can call Get`, func() {
+			v, ok := env.Get("foo")
+			So(ok, ShouldBeFalse)
+			So(v, ShouldEqual, "")
+		})
+
 		Convey(`Can call Set`, func() {
 			env.Set("foo", "bar")
 			So(env.Len(), ShouldEqual, 1)
@@ -119,7 +148,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 		})
 
 		Convey(`Can be cloned, and propagates case insensitivity.`, func() {
-			env.CaseInsensitive = true
+			env.caseInsensitive = true
 			So(env.Clone(), ShouldResemble, env)
 		})
 	})
@@ -200,7 +229,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 
 			// Use a different-case key, and confirm that it still updated correctly.
 			Convey(`When case insensitive, will update common keys.`, func() {
-				env.CaseInsensitive = true
+				env.caseInsensitive = true
 
 				env.Set("pYtHoNpAtH", "/override:"+v)
 				So(env.Sorted(), ShouldResemble, []string{
@@ -224,13 +253,11 @@ func TestEnvironmentManipulation(t *testing.T) {
 					"novalue=",
 				})
 
-				var mergeMe Env
-				mergeMe.LoadSlice([]string{
+				orig.Update(newImpl(false, []string{
 					"http_PROXY=foo",
 					"HTTP_PROXY=FOO",
 					"newkey=value",
-				})
-				orig.Update(mergeMe)
+				}))
 				So(orig.Sorted(), ShouldResemble, []string{
 					"PYTHONPATH=/foo:/bar:/baz",
 					"http_PROXY=foo",
@@ -245,34 +272,24 @@ func TestEnvironmentManipulation(t *testing.T) {
 func TestEnvironmentConstruction(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing Load* with an empty environment`, t, func() {
-		var env Env
+	Convey(`Can load an initial set of values from a map`, t, func() {
+		env := newImpl(false, nil)
 
-		Convey(`Can load an initial set of values from a map`, func() {
-			env.Load(map[string]string{
-				"FOO": "BAR",
-				"foo": "bar",
-			})
-
-			So(env, ShouldResemble, Env{
-				env: map[string]string{
-					"FOO": "FOO=BAR",
-					"foo": "foo=bar",
-				},
-			})
+		env.Load(map[string]string{
+			"FOO": "BAR",
+			"foo": "bar",
 		})
 
-		Convey(`Load with an nil/empty environment returns a zero value.`, func() {
-			env.Load(nil)
-			So(env.env, ShouldBeNil)
-
-			env.Load(map[string]string{})
-			So(env.env, ShouldBeNil)
+		So(env, ShouldResemble, Env{
+			env: map[string]string{
+				"FOO": "FOO=BAR",
+				"foo": "foo=bar",
+			},
 		})
 	})
 
-	Convey(`New with a nil/empty slice returns a zero value.`, t, func() {
-		So(New(nil).env, ShouldBeNil)
-		So(New([]string{}).env, ShouldBeNil)
+	Convey(`New with a nil/empty slice returns empty env.`, t, func() {
+		So(New(nil).env, ShouldResemble, map[string]string{})
+		So(New([]string{}).env, ShouldResemble, map[string]string{})
 	})
 }

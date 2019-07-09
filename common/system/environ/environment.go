@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package environ is a simple environment variable manipulation library. It
-// couples the system's environment, represented as a []string of KEY[=VALUE]
+// Package environ is an environment variable manipulation library.
+//
+// It couples the system's environment, represented as a []string of KEY[=VALUE]
 // strings, into a key/value map and back.
 package environ
 
@@ -33,27 +34,22 @@ func SystemIsCaseInsensitive() bool {
 
 // Env contains system environment variables. It preserves each environment
 // variable verbatim (even if invalid).
+//
+// It is OK to pass Env by value, even with intent to modify it. Env carries a
+// pointer inside, so treat it as if it is a map[...] alias.
+//
+// Zero value is read-only and represents completely empty environ. Attempting
+// to modify it will panic. To construct an empty modifiable Env use New(nil).
 type Env struct {
-	// CaseInsensitive is true if environment keys are case-insensitive.
-	CaseInsensitive bool
+	// caseInsensitive is true if environment keys are case-insensitive.
+	caseInsensitive bool
 
-	// env is a map of envoironment key to its "KEY=VALUE" value.
+	// env is a map of environment key to its "KEY=VALUE" value.
 	//
 	// Note that the value here is the full "KEY=VALUE", not just the VALUE part.
 	// This allows us to reconstitute the original environment string slice
 	// without reallocating all of its composite strings.
 	env map[string]string
-}
-
-func (e Env) String() string { return fmt.Sprintf("%v", e.Sorted()) }
-
-// normalizeKey normalizes the map key, ensuring that it is handled
-// case-insensitive.
-func (e *Env) normalizeKey(k string) string {
-	if e.CaseInsensitive {
-		return strings.ToUpper(k)
-	}
-	return k
 }
 
 // System returns an Env instance instantiated with the current os.Environ
@@ -72,50 +68,45 @@ func System() Env {
 // insensitivity.
 func New(s []string) Env {
 	e := Env{
-		CaseInsensitive: SystemIsCaseInsensitive(),
+		caseInsensitive: SystemIsCaseInsensitive(),
+		env:             make(map[string]string, len(s)),
 	}
-	e.LoadSlice(s)
+	for _, entry := range s {
+		e.SetEntry(entry)
+	}
 	return e
+}
+
+// IsZero is true if Env is read-only empty environ.
+func (e Env) IsZero() bool { return e.env == nil }
+
+// String returns debug representation of Env.
+func (e Env) String() string { return fmt.Sprintf("%v", e.Sorted()) }
+
+// normalizeKey normalizes the map key, ensuring that it is handled
+// case-insensitive.
+func (e Env) normalizeKey(k string) string {
+	if e.caseInsensitive {
+		return strings.ToUpper(k)
+	}
+	return k
 }
 
 // Load adds environment variables defined in a key/value map to an existing
 // environment.
-func (e *Env) Load(m map[string]string) {
-	if len(m) == 0 {
-		return
-	}
-	if e.env == nil {
-		e.env = make(map[string]string, len(m))
-	}
+func (e Env) Load(m map[string]string) {
 	for k, v := range m {
 		e.Set(k, v)
 	}
 }
 
-// LoadSlice adds environment variable entries, specified as "KEY[=VALUE]"
-// strings, into an existing environment.
-//
-// Entries are added in order. If there are duplicates, later entries will
-// override earlier ones.
-func (e *Env) LoadSlice(s []string) {
-	if len(s) == 0 {
-		return
-	}
-	if e.env == nil {
-		e.env = make(map[string]string, len(s))
-	}
-	for _, entry := range s {
-		e.SetEntry(entry)
-	}
-}
-
 // Set sets the supplied environment key and value.
-func (e *Env) Set(k, v string) { e.SetEntry(Join(k, v)) }
+func (e Env) Set(k, v string) { e.SetEntry(Join(k, v)) }
 
 // SetEntry sets the supplied environment to a "KEY[=VALUE]" entry.
-func (e *Env) SetEntry(entry string) {
+func (e Env) SetEntry(entry string) {
 	if e.env == nil {
-		e.env = make(map[string]string)
+		panic("cannot modify zero read-only Env{}")
 	}
 
 	// "entry" must be a well-formed "key=value" entry. If it doesn't have an "=",
@@ -134,7 +125,7 @@ func (e *Env) SetEntry(entry string) {
 //
 // Remove is different from Set(k, "") in that Set persists the key with an
 // empty value, while Remove removes it entirely.
-func (e *Env) Remove(k string) bool {
+func (e Env) Remove(k string) bool {
 	k = e.normalizeKey(k)
 	if _, ok := e.env[k]; ok {
 		delete(e.env, k)
@@ -146,7 +137,7 @@ func (e *Env) Remove(k string) bool {
 // RemoveMatch iterates over all keys and values in the environment, invoking
 // the callback function, fn, for each key/value pair. If fn returns true, the
 // key is removed from the environment.
-func (e *Env) RemoveMatch(fn func(k, v string) bool) {
+func (e Env) RemoveMatch(fn func(k, v string) bool) {
 	e.iterate(func(realKey, k, v string) error {
 		if fn(k, v) {
 			delete(e.env, realKey)
@@ -162,18 +153,11 @@ func (e *Env) RemoveMatch(fn func(k, v string) bool) {
 // that if e is case insensitive and there are multiple keys in other that
 // converge on the same case insensitive key, the one that is alphabetically
 // highest will be added.
-func (e *Env) Update(other Env) {
+func (e Env) Update(other Env) {
 	for _, entry := range other.Sorted() {
 		e.SetEntry(entry)
 	}
 }
-
-//
-// NOTE to implementers: all mutation methods MUST accept a pointer Env, as they
-// may mutate the underlying "env" map value.
-//
-// Read-only accessors should accept Env as a value.
-//
 
 // Get returns the environment value for the supplied key.
 //
@@ -234,13 +218,17 @@ func (e Env) Len() int { return len(e.env) }
 // e.
 func (e Env) Clone() Env {
 	clone := e
-	clone.env = nil
 
-	if len(e.env) > 0 {
-		clone.env = make(map[string]string, len(e.env))
-		for k, v := range e.env {
-			clone.env[k] = v
-		}
+	// A clone of zero struct is a zero struct.
+	if e.env == nil {
+		return clone
+	}
+
+	// Note: len(e.env) maybe 0 zero, this is fine, we still need to make a new
+	// empty map to "fork" Env.
+	clone.env = make(map[string]string, len(e.env))
+	for k, v := range e.env {
+		clone.env[k] = v
 	}
 	return clone
 }
@@ -252,7 +240,7 @@ func (e Env) Clone() Env {
 //
 // realKey is the real, normalized map key. envKey and envValue are the split
 // map value.
-func (e *Env) iterate(cb func(realKey, envKey, envValue string) error) error {
+func (e Env) iterate(cb func(realKey, envKey, envValue string) error) error {
 	for k, v := range e.env {
 		envKey, envValue := Split(v)
 		if err := cb(k, envKey, envValue); err != nil {
