@@ -14,6 +14,13 @@
 
 package stringset
 
+// Iterable describes an interface for string-iterables.
+//
+// It is implemented by Set, among other possible implementors.
+type Iterable interface {
+	Iter(cb func(string) bool)
+}
+
 // Set is the base type. make(Set) can be used too.
 type Set map[string]struct{}
 
@@ -171,11 +178,14 @@ func (s Set) Union(other Set) Set {
 }
 
 // Contains returns true iff the given set contains all elements from the other set.
-func (s Set) Contains(other Set) bool {
-	for k := range other {
+func (s Set) Contains(other Iterable) bool {
+	contains := true
+	other.Iter(func(k string) bool {
 		if !s.Has(k) {
+			contains = false
 			return false
 		}
-	}
-	return true
+		return true
+	})
+	return contains
 }
