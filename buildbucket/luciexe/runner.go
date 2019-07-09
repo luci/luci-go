@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -36,6 +37,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
@@ -105,13 +107,20 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 		return err
 	}
 
-	// Prepare auth contexts.
-	systemAuth, userAuth, err := setupAuth(ctx, args)
+	// Prepare authenticator used by luciexe internals (Logdog, Buildbucket).
+	// It is not exported outside the process in any way.
+	systemAuth, err := setupSystemAuth(ctx, args)
 	if err != nil {
 		return err
 	}
-	defer systemAuth.Close(ctx)
-	defer userAuth.Close(ctx)
+
+	// Prepare auth context used by the user executable. This launches a ton of
+	// various local token server for various third party tools.
+	authCtx, err := setupAuthContext(ctx, args)
+	if err != nil {
+		return err
+	}
+	defer authCtx.Close(ctx)
 
 	// Prepare a build listener.
 	var listenerErr error
@@ -140,7 +149,7 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 	}()
 
 	// Run the user executable.
-	err = r.runUserExecutable(ctx, args, userAuth, logdogServ, streamNamePrefix)
+	err = r.runUserExecutable(ctx, args, authCtx, logdogServ, streamNamePrefix)
 	if err != nil {
 		return err
 	}
@@ -201,14 +210,14 @@ func (r *runner) setupWorkDir(workDir string) error {
 // runUserExecutable runs the user executable.
 // Requires LogDog server to be running.
 // Sends user executable stdout/stderr into logdogServ, with teeing enabled.
-func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, userAuth *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (err error) {
+func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, args.ExecutablePath, r.testExtraArgs...)
 
 	// Prepare user env.
-	env, err := r.setupUserEnv(ctx, args, userAuth, logdogServ, logdogNamespace)
+	env, err := r.setupUserEnv(ctx, args, authCtx, logdogServ, logdogNamespace)
 	if err != nil {
 		return err
 	}
@@ -267,9 +276,9 @@ func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, use
 }
 
 // setupUserEnv prepares user subprocess environment.
-func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, userAuth *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (environ.Env, error) {
+func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (environ.Env, error) {
 	env := environ.System()
-	ctx = userAuth.Export(ctx, env)
+	ctx = authCtx.Export(ctx, env)
 	if err := logdogServ.SetInEnviron(env); err != nil {
 		return environ.Env{}, err
 	}
@@ -332,53 +341,71 @@ func (r *runner) hookStdoutStderr(ctx context.Context, logdogServ *logdogServer,
 	return nil
 }
 
-// setupAuth prepares systemAuth and userAuth contexts based on incoming
-// environment and command line flags.
+// setupSystemAuth prepares auth.Authenticator used internally by luciexe.
+func setupSystemAuth(ctx context.Context, args *pb.RunnerArgs) (*auth.Authenticator, error) {
+	// If we are given a system logical account name, use it. Otherwise, we use
+	// whatever is the default account now (don't switch to a system one). Happens
+	// when launching the runner locally on a workstation. It picks up the
+	// developer account.
+	if args.LuciSystemAccount != "" {
+		var err error
+		ctx, err = lucictx.SwitchLocalAccount(ctx, args.LuciSystemAccount)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to prepare system auth context").Err()
+		}
+	}
+
+	// The list of scopes we need here is static, it depends only on RPCs luciexe
+	// itself is making.
+	authOpts := infraenv.DefaultAuthOptions()
+	authOpts.Scopes = []string{
+		"https://www.googleapis.com/auth/cloud-platform", // for Logdog
+		"https://www.googleapis.com/auth/userinfo.email", // for Logdog/Buildbucket
+	}
+
+	a := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts)
+
+	// This verifies we actually have the cached refresh token or fails with
+	// auth.ErrLoginRequired if we don't (may also fail with other errors).
+	switch email, err := a.GetEmail(); {
+	case err == auth.ErrLoginRequired:
+		logging.Errorf(ctx,
+			"If you're running this locally, please make sure you're logged in with:\n"+
+				"  luci-auth login -scopes %q", strings.Join(authOpts.Scopes, " "))
+		fallthrough
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to get system account email").Err()
+	default:
+		logging.Infof(ctx, "Account used for luciexe RPCs: %s", email)
+		return a, nil
+	}
+}
+
+// setupAuthContext launches various local servers that serve tokens to the user
+// executable.
 //
-// The system auth context is used for running logdog and updating Buildbucket
-// build state. On Swarming all these actions will use bot-associated account
-// (specified in Swarming bot config), whose logical name (usually "system") is
-// provided via RunnerArgs.luci_system_account.
-//
-// The user context is used for actually running the user executable. It is the
-// context the runner starts with by default. On Swarming this will be the
-// context associated with service account specified in the Swarming task
-// definition.
-func setupAuth(ctx context.Context, args *pb.RunnerArgs) (system, user *authctx.Context, err error) {
+// These servers are discoverable via env vars exported in setupUserEnv.
+func setupAuthContext(ctx context.Context, args *pb.RunnerArgs) (*authctx.Context, error) {
 	// Construct authentication option with the set of scopes to be used through
 	// out the runner. This is superset of all scopes we might need. It is more
 	// efficient to create a single token with all the scopes than make a bunch
-	// of smaller-scoped tokens. We trust Google APIs enough to send
-	// widely-scoped tokens to them.
+	// of smaller-scoped tokens. We trust Google APIs enough to send widely-scoped
+	// tokens to them.
 	//
 	// Note that the user subprocess are still free to request whatever scopes
-	// they need (though LUCI_CONTEXT protocol). The scopes here are only for
-	// parts of the runner (LogDog client, Devshell proxy, etc).
+	// they need (though LUCI_CONTEXT protocol). The scopes here are actually used
+	// only internally by the runner (e.g. in the local token server for Firebase)
+	// or when running luciexe on a workstation under some end-user account (in
+	// this case we can only generate tokens for which there exist a cached
+	// refresh token setup via `luci-auth login -scopes ...`, scopes requested
+	// through LUCI_CONTEXT protocol are ignored in this case).
 	//
-	// See https://developers.google.com/identity/protocols/googlescopes for list of
-	// available scopes.
+	// See https://developers.google.com/identity/protocols/googlescopes for the
+	// list of available scopes.
 	authOpts := infraenv.DefaultAuthOptions()
 	authOpts.Scopes = []string{
 		"https://www.googleapis.com/auth/cloud-platform",
 		"https://www.googleapis.com/auth/userinfo.email",
-	}
-
-	// If we are given a system logical account name, use it.
-	// Otherwise, we use whatever is default account now (don't switch to a system
-	// one). Happens when launching runner manually locally.
-	// It picks up the developer account.
-	systemCtx := ctx
-	if args.LuciSystemAccount != "" {
-		var err error
-		systemCtx, err = lucictx.SwitchLocalAccount(ctx, args.LuciSystemAccount)
-		if err != nil {
-			return nil, nil, errors.Annotate(err, "failed to prepare system auth context").Err()
-		}
-	}
-
-	system = &authctx.Context{
-		ID:      "system",
-		Options: authOpts,
 	}
 
 	flags := args.GetBuild().GetInput().GetProperties().GetFields()["$kitchen"].GetStructValue().GetFields()
@@ -389,7 +416,8 @@ func setupAuth(ctx context.Context, args *pb.RunnerArgs) (system, user *authctx.
 		}
 		return v.GetBoolValue()
 	}
-	user = &authctx.Context{
+
+	user := &authctx.Context{
 		ID:                 "task",
 		Options:            authOpts,
 		EnableGitAuth:      isEnabled("git_auth", true),
@@ -398,23 +426,22 @@ func setupAuth(ctx context.Context, args *pb.RunnerArgs) (system, user *authctx.
 		EnableFirebaseAuth: isEnabled("firebase_auth", false),
 		KnownGerritHosts:   args.KnownPublicGerritHosts,
 	}
+
+	// Additional scopes for APIs not covered by 'cloud-platform' scope.
+	if user.EnableGitAuth {
+		user.Options.Scopes = append(authOpts.Scopes, "https://www.googleapis.com/auth/gerritcodereview")
+	}
 	if user.EnableFirebaseAuth {
 		user.Options.Scopes = append(authOpts.Scopes, "https://www.googleapis.com/auth/firebase")
 	}
 
-	if err := system.Launch(systemCtx, args.WorkDir); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to start system auth context").Err()
-	}
-
 	if err := user.Launch(ctx, args.WorkDir); err != nil {
-		system.Close(ctx) // best effort cleanup
-		return nil, nil, errors.Annotate(err, "failed to start user auth context").Err()
+		return nil, errors.Annotate(err, "failed to start user auth context").Err()
 	}
 
-	// Log the actual service account emails corresponding to each context.
-	system.Report(ctx)
+	// Log the actual service account email and enabled options.
 	user.Report(ctx)
-	return
+	return user, nil
 }
 
 // indentedJSONPB returns m marshaled to indented JSON.
@@ -462,10 +489,10 @@ func normalizeArgs(a *pb.RunnerArgs) error {
 	return nil
 }
 
-func (r *runner) startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAuth *authctx.Context, listener *buildListener) (*logdogServer, error) {
+func (r *runner) startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Authenticator, listener *buildListener) (*logdogServer, error) {
 	logdogServ := &logdogServer{
 		WorkDir:                    args.WorkDir,
-		Authenticator:              systemAuth.Authenticator(),
+		Authenticator:              systemAuth,
 		CoordinatorHost:            args.LogdogHost,
 		Project:                    types.ProjectName(args.Build.Builder.Project),
 		Prefix:                     types.StreamName(fmt.Sprintf("buildbucket/%s/%d", args.BuildbucketHost, args.Build.Id)),
