@@ -127,7 +127,7 @@ func (p *RemoteProvider) GetServiceURL() url.URL {
 }
 
 // GetConfigClient implements Provider.
-func (p *RemoteProvider) GetConfigClient(c context.Context, a backend.Authority) config.Interface {
+func (p *RemoteProvider) GetConfigClient(ctx context.Context, a backend.Authority) config.Interface {
 	p.cacheLock.RLock()
 	impl, ok := p.cache[a]
 	p.cacheLock.RUnlock()
@@ -138,17 +138,17 @@ func (p *RemoteProvider) GetConfigClient(c context.Context, a backend.Authority)
 	p.cacheLock.Lock()
 	defer p.cacheLock.Unlock()
 
-	if impl, ok := p.cache[a]; ok {
+	if impl, ok = p.cache[a]; ok {
 		return impl
 	}
 
 	// Create our remote implementation.
-	impl = remote.New(p.Host, p.Insecure, func(c context.Context) (*http.Client, error) {
+	impl = remote.New(p.Host, p.Insecure, func(ctx context.Context) (*http.Client, error) {
 		var opts []auth.RPCOption
 		if a == backend.AsUser && p.testUserDelegationToken != "" {
 			opts = append(opts, auth.WithDelegationToken(p.testUserDelegationToken))
 		}
-		t, err := auth.GetRPCTransport(c, rpcAuthorityKind(a), opts...)
+		t, err := auth.GetRPCTransport(ctx, rpcAuthorityKind(a), opts...)
 		if err != nil {
 			return nil, err
 		}

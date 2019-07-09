@@ -429,9 +429,9 @@ func NewClient(opts ClientOptions) (Client, error) {
 	if repo == nil {
 		repo = api.NewRepositoryPRPCClient(prpcC)
 	}
-	storage := opts.storageMock
-	if storage == nil {
-		storage = &storageImpl{
+	s := opts.storageMock
+	if s == nil {
+		s = &storageImpl{
 			chunkSize: uploadChunkSize,
 			userAgent: opts.UserAgent,
 			client:    opts.AnonymousClient,
@@ -442,7 +442,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 		ClientOptions: opts,
 		cas:           cas,
 		repo:          repo,
-		storage:       storage,
+		storage:       s,
 		deployer:      deployer.New(opts.Root),
 	}, nil
 }

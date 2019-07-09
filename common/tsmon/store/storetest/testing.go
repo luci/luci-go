@@ -545,7 +545,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 	})
 
 	Convey("GetAll", t, func() {
-		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		s := opts.Factory()
 		foo := &FakeMetric{
