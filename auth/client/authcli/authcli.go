@@ -105,6 +105,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/lucictx"
 )
 
 // CommandParams specifies various parameters for a subcommand.
@@ -507,17 +508,25 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		EnableGCEEmulation: true,
 		EnableFirebaseAuth: true,
 	}
-	if _, err = authCtx.Launch(ctx, ""); err != nil {
+	if err = authCtx.Launch(ctx, ""); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return ExitCodeInternalError
 	}
-	defer authCtx.Close() // logs errors inside
+	defer authCtx.Close(ctx) // logs errors inside
 
 	// Adjust 'cmd' to run in the new modified environ.
-	cmd.Env = authCtx.ExportIntoEnv(environ.System()).Sorted()
+	cmdEnv := environ.System()
+	exported, err := lucictx.Export(authCtx.Export(ctx, cmdEnv))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return ExitCodeInternalError
+	}
+	defer exported.Close()
+	exported.SetInEnviron(cmdEnv)
 
 	// Launch the process and wait for it to finish. Return its exit code.
 	logging.Debugf(ctx, "Running %q", cmd.Args)
+	cmd.Env = cmdEnv.Sorted()
 	switch code, hasCode := exitcode.Get(cmd.Run()); {
 	case err == nil:
 		return 0
