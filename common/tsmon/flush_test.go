@@ -149,10 +149,10 @@ func TestFlush(t *testing.T) {
 
 			moments := make(chan int)
 			flusher := autoFlusher{
-				flush: func(c context.Context) error {
+				flush: func(ctx context.Context) error {
 					select {
-					case <-c.Done():
-					case moments <- int(clock.Now(c).Sub(start).Seconds()):
+					case <-ctx.Done():
+					case moments <- int(clock.Now(ctx).Sub(start).Seconds()):
 					}
 					return nil
 				},
