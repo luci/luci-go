@@ -36,13 +36,16 @@ const (
 //
 // Useful for integration tests that involve local auth server.
 //
-// Each GenerateToken call returns a token "fake_token_<N>", where N starts
-// from 0 and incremented for each call. If KeepRecord is true, each generated
-// token is recorded along with a list of scopes that were used to generate it.
-// Use TokenScopes() to see what scopes have been used to generate a particular
-// token.
+// Each GenerateToken call returns a token "<prefix><N>", where "<prefix>" is by
+// default "fake_token_" (it can be changed via Prefix) and N starts from 0 and
+// incremented for each call.
+//
+// If KeepRecord is true, each generated token is recorded along with a list of
+// scopes that were used to generate it. Use TokenScopes() to see what scopes
+// have been used to generate a particular token.
 type FakeTokenGenerator struct {
 	Email      string        // email of the default account (default "fake_test@example.com")
+	Prefix     string        // prefix of fake generated tokens (default "fake_token_")
 	Lifetime   time.Duration // lifetime of the returned token (default 5 min)
 	KeepRecord bool          // if true, record all generated tokens
 
@@ -56,7 +59,12 @@ func (f *FakeTokenGenerator) GenerateToken(ctx context.Context, scopes []string,
 	f.m.Lock()
 	defer f.m.Unlock()
 
-	token := fmt.Sprintf("fake_token_%d", f.n)
+	pfx := "fake_token_"
+	if f.Prefix != "" {
+		pfx = f.Prefix
+	}
+
+	token := fmt.Sprintf("%s%d", pfx, f.n)
 	f.n++
 	if f.KeepRecord {
 		if f.toks == nil {

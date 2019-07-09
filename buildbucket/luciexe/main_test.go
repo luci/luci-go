@@ -22,10 +22,14 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/integration/authtest"
+	"go.chromium.org/luci/auth/integration/localauth"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
@@ -45,25 +49,29 @@ func TestMain(t *testing.T) {
 		ctx = gologger.StdConfig.Use(ctx)
 		ctx = logging.SetLevel(ctx, logging.Debug)
 
-		nowTS, err := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
-		So(err, ShouldBeNil)
-		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-
-		// Setup a fake local auth.
-		ctx = lucictx.SetLocalAuth(ctx, &lucictx.LocalAuth{
-			RPCPort: 1234,
-			Accounts: []lucictx.LocalAuthAccount{
-				{
-					ID:    "task",
-					Email: "task@example.com",
+		// Setup a fake local auth. It is a real localhost server, it needs real
+		// clock, so set it up before mocking time.
+		fakeAuth := localauth.Server{
+			TokenGenerators: map[string]localauth.TokenGenerator{
+				"task": &authtest.FakeTokenGenerator{
+					Email:  "task@example.com",
+					Prefix: "task_token_",
 				},
-				{
-					ID:    "system",
-					Email: "system@example.com",
+				"system": &authtest.FakeTokenGenerator{
+					Email:  "system@example.com",
+					Prefix: "system_token_",
 				},
 			},
 			DefaultAccountID: "task",
-		})
+		}
+		la, err := fakeAuth.Start(ctx)
+		So(err, ShouldBeNil)
+		defer fakeAuth.Stop(ctx)
+		ctx = lucictx.SetLocalAuth(ctx, la)
+
+		nowTS, err := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
+		So(err, ShouldBeNil)
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		tempDir, err := ioutil.TempDir("", "")
 		So(err, ShouldBeNil)
@@ -110,9 +118,10 @@ func TestMain(t *testing.T) {
 					builder: "linux-rel"
 				}
 			}
+			luci_system_account: "system"
 		`
 
-		Convey("echo", func() {
+		Convey("Echo", func() {
 			updates := runSubtest("testSuccess", `
 				buildbucket_host: "buildbucket.example.com"
 				logdog_host: "logdog.example.com"
@@ -145,13 +154,13 @@ func TestMain(t *testing.T) {
 			`)
 		})
 
-		Convey("final UpdateBuild does not set status to SUCCESS", func() {
+		Convey("Final UpdateBuild does not set status to SUCCESS", func() {
 			updates := runSubtest("testSuccess", dummyInputBuild)
 			final := updates[len(updates)-1]
 			So(final.UpdateMask.Paths, ShouldNotContain, "build.status")
 		})
 
-		Convey("final UpdateBuild set status to INFRA_FAILURE", func() {
+		Convey("Final UpdateBuild set status to INFRA_FAILURE", func() {
 			updates := runSubtest("testInfraFailure", dummyInputBuild)
 			final := updates[len(updates)-1]
 			So(final.UpdateMask.Paths, ShouldContain, "build.status")
@@ -163,6 +172,12 @@ func TestMain(t *testing.T) {
 			final := updates[len(updates)-1]
 			So(final.Build.Steps[0].Status, ShouldEqual, pb.Status_CANCELED)
 			So(final.Build.Steps[0].EndTime, ShouldResembleProto, nowTS)
+		})
+
+		Convey("Auth context works", func() {
+			updates := runSubtest("testAuthContext", dummyInputBuild)
+			final := updates[len(updates)-1]
+			So(final.Build.Status, ShouldEqual, pb.Status_SUCCESS)
 		})
 	})
 }
@@ -195,6 +210,7 @@ func TestSubprocessDispatcher(t *testing.T) {
 // See TestSubprocessDispatcher for the environment and global vars they get.
 
 var subtests = map[string]func(t *testing.T){
+	"testAuthContext":  testAuthContext,
 	"testInfraFailure": testInfraFailure,
 	"testPendingStep":  testPendingStep,
 	"testSuccess":      testSuccess,
@@ -210,7 +226,61 @@ func writeBuild(build *pb.Build) {
 	}
 }
 
-// This LUCI executable marks the build as INFRA_FAILURE and exits.
+// Verifies auth context is setup correctly.
+func testAuthContext(t *testing.T) {
+	checkContextAuth := func(ctx context.Context, expectedEmail, expectedToken string) {
+		a := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
+			Method: auth.LUCIContextMethod,
+		})
+
+		email, err := a.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, expectedEmail)
+
+		// Note: we do not log AccessToken in case we somehow mistakenly pick up
+		// the real auth context with real tokens on the bots.
+		tok, err := a.GetAccessToken(time.Minute)
+		So(err, ShouldBeNil)
+		So(tok.AccessToken == expectedToken, ShouldBeTrue)
+	}
+
+	Convey("Task account is available", t, func() {
+		ctx := context.Background()
+		checkContextAuth(ctx, "task@example.com", "task_token_0")
+	})
+
+	Convey("System account is available", t, func() {
+		ctx, err := lucictx.SwitchLocalAccount(context.Background(), "system")
+		So(err, ShouldBeNil)
+		checkContextAuth(ctx, "system@example.com", "system_token_0")
+	})
+
+	Convey("Git config is set", t, func() {
+		gitHome := os.Getenv("INFRA_GIT_WRAPPER_HOME")
+		So(gitHome, ShouldNotEqual, "")
+
+		cfg, err := ioutil.ReadFile(filepath.Join(gitHome, ".gitconfig"))
+		So(err, ShouldBeNil)
+
+		So(string(cfg), ShouldContainSubstring, "email = task@example.com")
+		So(string(cfg), ShouldContainSubstring, "helper = luci")
+	})
+
+	Convey("GCE metadata server is faked", t, func() {
+		// TODO(vadimsh): Implement.
+	})
+
+	// Report the test result through Build proto.
+	build := client.InitBuild
+	if t.Failed() {
+		build.Status = pb.Status_FAILURE
+	} else {
+		build.Status = pb.Status_SUCCESS
+	}
+	writeBuild(build)
+}
+
+// Marks the build as INFRA_FAILURE and exits.
 func testInfraFailure(t *testing.T) {
 	build := client.InitBuild
 
@@ -219,7 +289,7 @@ func testInfraFailure(t *testing.T) {
 	writeBuild(build)
 }
 
-// This LUCI executable emits a successful build with an incomplete step.
+// Emits a successful build with an incomplete step.
 func testPendingStep(t *testing.T) {
 	build := client.InitBuild
 
@@ -231,7 +301,7 @@ func testPendingStep(t *testing.T) {
 	writeBuild(build)
 }
 
-// This LUCI executable marks the build as SUCCESS and exits.
+// Marks the build as SUCCESS and exits.
 func testSuccess(t *testing.T) {
 	build := client.InitBuild
 
