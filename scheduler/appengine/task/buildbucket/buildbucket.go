@@ -192,9 +192,13 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	for k, v := range req.Properties.GetFields() {
 		props.Fields[k] = v
 	}
-	var err error
-	if props.Fields["$recipe_engine/scheduler"], err = schedulerProperty(c, ctl); err != nil {
-		return fmt.Errorf("failed to generate scheduled property - %s", err)
+
+	// TODO(crbug.com/981945, crbug.com/939368): re-enable in chromium
+	if !strings.HasPrefix(cfg.Bucket, "luci.chromium.") && !strings.HasPrefix(cfg.Bucket, "luci.chrome.") {
+		var err error
+		if props.Fields["$recipe_engine/scheduler"], err = schedulerProperty(c, ctl); err != nil {
+			return fmt.Errorf("failed to generate scheduled property - %s", err)
+		}
 	}
 
 	// Prepare JSON blob for Buildbucket. encoding/json and jsonpb doesn't
