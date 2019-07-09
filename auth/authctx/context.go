@@ -52,7 +52,7 @@ import (
 // various tools: LUCI, gsutil, Docker, Git, Firebase.
 //
 // 'Launch' launches a bunch of local HTTP servers and writes a bunch of
-// configuration files that point to these servers. 'ExportIntoEnv' then exposes
+// configuration files that point to these servers. 'Export' then exposes
 // location of these configuration files to subprocesses, so they can discover
 // local HTTP servers and use them to mint tokens.
 type Context struct {
@@ -73,7 +73,7 @@ type Context struct {
 	// existing LUCI_CONTEXT is reused. Otherwise launches a new local_auth server
 	// (that uses given auth options to mint tokens) and puts its location into
 	// the new LUCI_CONTEXT. Either way, subprocesses launched with an environment
-	// modified by 'ExportIntoEnv' will see a functional LUCI_CONTEXT.
+	// modified by 'Export' will see a functional LUCI_CONTEXT.
 	//
 	// When reusing an existing LUCI_CONTEXT, subprocesses inherit all OAuth
 	// scopes permissible there.
@@ -144,8 +144,7 @@ type Context struct {
 	// be able to force authenticated access to them.
 	KnownGerritHosts []string
 
-	ctx           context.Context     // stores new LUCI_CONTEXT
-	exported      lucictx.Exported    // exported LUCI_CONTEXT on the disk
+	localAuth     *lucictx.LocalAuth  // non-nil when running localauth.Server
 	tmpDir        string              // non empty if we created a new temp dir
 	authenticator *auth.Authenticator // used by in-process helpers
 	anonymous     bool                // true if not associated with any account
@@ -180,11 +179,12 @@ type Context struct {
 // It launches various local server and prepares various configs, by putting
 // them into tempDir which may be "" to use some new ioutil.TempDir.
 //
-// On success returns a new context.Context with updated LUCI_CONTEXT value.
+// The given context.Context is used for logging and to pick up the initial
+// ambient authentication (per auth.NewAuthenticator contract, see its docs).
 //
-// To run a subprocess within this new context use 'ExportIntoEnv' to modify an
-// environ for a new process.
-func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Context, err error) {
+// To run a subprocess within this new auth context use 'Export' to modify
+// an environ for a new process.
+func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 	// EnableGCEEmulation provides a superset of EnableDevShell features. No need
 	// to have both enabled at the same time (they also conflict with each other).
 	if ac.EnableGCEEmulation {
@@ -193,17 +193,14 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Conte
 
 	defer func() {
 		if err != nil {
-			ac.Close()
+			ac.Close(ctx)
 		}
-		nc = ac.ctx // nil if err != nil
 	}()
-
-	ac.ctx = ctx
 
 	if tempDir == "" {
 		ac.tmpDir, err = ioutil.TempDir("", "luci")
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to create a temp directory").Err()
+			return errors.Annotate(err, "failed to create a temp directory").Err()
 		}
 		tempDir = ac.tmpDir
 	}
@@ -212,14 +209,14 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Conte
 	// We do this expansion now to consistently use new 'opts' through out.
 	opts := ac.Options
 	if opts.Method == auth.AutoSelectMethod {
-		opts.Method = auth.SelectBestMethod(ac.ctx, opts)
+		opts.Method = auth.SelectBestMethod(ctx, opts)
 	}
 
 	// Construct the authenticator to be used directly by the helpers hosted in
 	// the current process (devshell, gsutil, firebase) and by the new
 	// localauth.Server (if we are going to launch it). Out-of-process helpers
 	// (git, docker) will use LUCI_CONTEXT protocol.
-	ac.authenticator = auth.NewAuthenticator(ac.ctx, auth.SilentLogin, opts)
+	ac.authenticator = auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 
 	// Figure out what email is associated with this account (if any).
 	ac.email, err = ac.authenticator.GetEmail()
@@ -230,7 +227,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Conte
 		// locally without doing 'luci-auth login' first.
 		ac.anonymous = true
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get email of %q account", ac.ID).Err()
+		return errors.Annotate(err, "failed to get email of %q account", ac.ID).Err()
 	}
 
 	// Check whether we are allowed to inherit the existing LUCI_CONTEXT. We do it
@@ -246,44 +243,36 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Conte
 	// ambient credentials on their own and fail (or proceed) appropriately.
 	canInherit := opts.Method == auth.LUCIContextMethod && opts.ActAsServiceAccount == ""
 	if !canInherit && !ac.anonymous {
-		var la *lucictx.LocalAuth
-		if ac.luciSrv, la, err = launchSrv(ac.ctx, opts, ac.authenticator, ac.ID); err != nil {
-			return nil, errors.Annotate(err, "failed to launch local auth server for %q account", ac.ID).Err()
+		if ac.luciSrv, ac.localAuth, err = launchSrv(ctx, opts, ac.authenticator, ac.ID); err != nil {
+			return errors.Annotate(err, "failed to launch local auth server for %q account", ac.ID).Err()
 		}
-		ac.ctx = lucictx.SetLocalAuth(ac.ctx, la) // switch to new LUCI_CONTEXT
-	}
-
-	// Drop the new LUCI_CONTEXT file to the disk. This is noop when reusing
-	// an existing one.
-	if ac.exported, err = lucictx.ExportInto(ac.ctx, tempDir); err != nil {
-		return nil, errors.Annotate(err, "failed to export LUCI_CONTEXT for %q account", ac.ID).Err()
 	}
 
 	// Now setup various credential helpers (they all mutate 'ac' and return
 	// annotated errors).
 	if ac.EnableGitAuth {
 		if err := ac.setupGitAuth(tempDir); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	if ac.EnableDockerAuth {
 		if err := ac.setupDockerAuth(tempDir); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	if ac.EnableDevShell && !ac.anonymous {
-		if err := ac.setupDevShellAuth(tempDir); err != nil {
-			return nil, err
+		if err := ac.setupDevShellAuth(ctx, tempDir); err != nil {
+			return err
 		}
 	}
 	if ac.EnableGCEEmulation {
-		if err := ac.setupGCEEmulationAuth(tempDir); err != nil {
-			return nil, err
+		if err := ac.setupGCEEmulationAuth(ctx, tempDir); err != nil {
+			return err
 		}
 	}
 	if ac.EnableFirebaseAuth && !ac.anonymous {
-		if err := ac.setupFirebaseAuth(); err != nil {
-			return nil, err
+		if err := ac.setupFirebaseAuth(ctx); err != nil {
+			return err
 		}
 	}
 
@@ -292,17 +281,19 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (nc context.Conte
 
 // Close stops this context, cleaning up after it.
 //
-// The context is not usable after this. Logs errors inside (there's nothing
-// caller can do about them anyway).
-func (ac *Context) Close() {
+// The given context.Context is used for deadlines and for logging.
+//
+// The auth context is not usable after this call. Logs errors inside (there's
+// nothing caller can do about them anyway).
+func (ac *Context) Close(ctx context.Context) {
 	// Stop all the servers in parallel.
 	wg := sync.WaitGroup{}
 	stop := func(what string, srv interface{ Stop(context.Context) error }) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := srv.Stop(ac.ctx); err != nil {
-				logging.Errorf(ac.ctx, "Failed to stop %s server for %q account: %s", what, ac.ID, err)
+			if err := srv.Stop(ctx); err != nil {
+				logging.Errorf(ctx, "Failed to stop %s server for %q account: %s", what, ac.ID, err)
 			}
 		}()
 	}
@@ -325,18 +316,11 @@ func (ac *Context) Close() {
 	}
 	wg.Wait()
 
-	// Cleanup exported LUCI_CONTEXT.
-	if ac.exported != nil {
-		if err := ac.exported.Close(); err != nil {
-			logging.Errorf(ac.ctx, "Failed to delete exported LUCI_CONTEXT for %q account - %s", ac.ID, err)
-		}
-	}
-
 	// Cleanup the rest of the garbage.
 	cleanup := func(what, where string) {
 		if where != "" {
 			if err := os.RemoveAll(where); err != nil {
-				logging.Errorf(ac.ctx, "Failed to clean up %s for %q account at [%s]: %s", what, ac.ID, where, err)
+				logging.Errorf(ctx, "Failed to clean up %s for %q account at [%s]: %s", what, ac.ID, where, err)
 			}
 		}
 	}
@@ -348,8 +332,7 @@ func (ac *Context) Close() {
 	cleanup("created temp dir", ac.tmpDir)
 
 	// And finally reset the state as if nothing happened.
-	ac.ctx = nil
-	ac.exported = nil
+	ac.localAuth = nil
 	ac.tmpDir = ""
 	ac.authenticator = nil
 	ac.anonymous = false
@@ -377,13 +360,23 @@ func (ac *Context) Authenticator() *auth.Authenticator {
 	return ac.authenticator
 }
 
-// ExportIntoEnv exports details of this context into the environment, so it can
-// be inherited by subprocesses that supports it.
+// Export exports details of this context into the environment, so it can
+// be inherited by subprocesses that support it.
 //
-// Returns a modified copy of 'env'.
-func (ac *Context) ExportIntoEnv(env environ.Env) environ.Env {
-	env = env.Clone()
-	ac.exported.SetInEnviron(env)
+// It does two inter-dependent things:
+//   1. Updates LUCI_CONTEXT in 'ctx' so that LUCI tools can use the local
+//      token server.
+//   2. Mutates 'env' so that various third party tools can also use local
+//      tokens.
+//
+// To successfully launch a subprocess, LUCI_CONTEXT in returned context.Context
+// *must* be exported into 'env' (e.g. via lucictx.Export(...) followed by
+// SetInEnviron).
+func (ac *Context) Export(ctx context.Context, env environ.Env) context.Context {
+	// Mutate LUCI_CONTEXT to use localauth.Server{...} launched by us (if any).
+	if ac.localAuth != nil {
+		ctx = lucictx.SetLocalAuth(ctx, ac.localAuth)
+	}
 
 	if ac.EnableGitAuth {
 		env.Set("GIT_TERMINAL_PROMPT", "0")           // no interactive prompts
@@ -401,7 +394,7 @@ func (ac *Context) ExportIntoEnv(env environ.Env) environ.Env {
 			env.Set(devshell.EnvKey, fmt.Sprintf("%d", ac.devShellAddr.Port))
 		} else {
 			// See https://crbug.com/788058#c14.
-			logging.Warningf(ac.ctx, "Disabling devshell auth for account %q", ac.ID)
+			logging.Warningf(ctx, "Disabling devshell auth for account %q", ac.ID)
 		}
 	}
 
@@ -441,16 +434,16 @@ func (ac *Context) ExportIntoEnv(env environ.Env) environ.Env {
 		env.Set("FIREBASE_TOKEN_URL", ac.firebaseTokenURL)
 	}
 
-	return env
+	return ctx
 }
 
 // Report logs the service account email used by this auth context.
-func (ac *Context) Report() {
+func (ac *Context) Report(ctx context.Context) {
 	account := ac.email
 	if ac.anonymous {
 		account = "anonymous"
 	}
-	logging.Infof(ac.ctx,
+	logging.Infof(ctx,
 		"%q account is %s (git_auth: %v, devshell: %v, emulate_gce:%v, docker:%v, firebase: %v)",
 		ac.ID, account, ac.EnableGitAuth, ac.EnableDevShell, ac.EnableGCEEmulation,
 		ac.EnableDockerAuth, ac.EnableFirebaseAuth)
@@ -563,7 +556,7 @@ func (ac *Context) writeDockerConfig() error {
 	return f.Close()
 }
 
-func (ac *Context) setupDevShellAuth(tempDir string) error {
+func (ac *Context) setupDevShellAuth(ctx context.Context, tempDir string) error {
 	source, err := ac.authenticator.TokenSource()
 	if err != nil {
 		return errors.Annotate(err, "failed to get token source for %q account", ac.ID).Err()
@@ -582,7 +575,7 @@ func (ac *Context) setupDevShellAuth(tempDir string) error {
 		Source:   source,
 		StateDir: ac.gsutilState,
 	}
-	if ac.gsutilBoto, err = ac.gsutilSrv.Start(ac.ctx); err != nil {
+	if ac.gsutilBoto, err = ac.gsutilSrv.Start(ctx); err != nil {
 		return errors.Annotate(err, "failed to start gsutil auth shim server for %q account", ac.ID).Err()
 	}
 
@@ -594,7 +587,7 @@ func (ac *Context) setupDevShellAuth(tempDir string) error {
 			Source: source,
 			Email:  ac.email,
 		}
-		if ac.devShellAddr, err = ac.devShellSrv.Start(ac.ctx); err != nil {
+		if ac.devShellAddr, err = ac.devShellSrv.Start(ctx); err != nil {
 			return errors.Annotate(err, "failed to start the DevShell server").Err()
 		}
 	}
@@ -602,7 +595,7 @@ func (ac *Context) setupDevShellAuth(tempDir string) error {
 	return nil
 }
 
-func (ac *Context) setupGCEEmulationAuth(tempDir string) error {
+func (ac *Context) setupGCEEmulationAuth(ctx context.Context, tempDir string) error {
 	// Launch the fake GCE metadata server.
 	botoGCEAccount := ""
 	if !ac.anonymous {
@@ -615,7 +608,7 @@ func (ac *Context) setupGCEEmulationAuth(tempDir string) error {
 			Email:  ac.email,
 			Scopes: ac.Options.Scopes,
 		}
-		if ac.gcemetaAddr, err = ac.gcemetaSrv.Start(ac.ctx); err != nil {
+		if ac.gcemetaAddr, err = ac.gcemetaSrv.Start(ctx); err != nil {
 			return errors.Annotate(err, "failed to start fake GCE metadata server for %q account", ac.ID).Err()
 		}
 		botoGCEAccount = "default" // switch .boto to use GCE auth
@@ -643,7 +636,7 @@ func (ac *Context) setupGCEEmulationAuth(tempDir string) error {
 	return errors.Annotate(err, "failed to setup .boto for %q account", ac.ID).Err()
 }
 
-func (ac *Context) setupFirebaseAuth() error {
+func (ac *Context) setupFirebaseAuth(ctx context.Context) error {
 	source, err := ac.authenticator.TokenSource()
 	if err != nil {
 		return errors.Annotate(err, "failed to get token source for %q account", ac.ID).Err()
@@ -653,7 +646,7 @@ func (ac *Context) setupFirebaseAuth() error {
 	ac.firebaseSrv = &firebase.Server{
 		Source: source,
 	}
-	if ac.firebaseTokenURL, err = ac.firebaseSrv.Start(ac.ctx); err != nil {
+	if ac.firebaseTokenURL, err = ac.firebaseSrv.Start(ctx); err != nil {
 		return errors.Annotate(err, "failed to start firebase auth shim server for %q account", ac.ID).Err()
 	}
 	return nil

@@ -144,9 +144,9 @@ func (l *logdogServer) Start(ctx context.Context) error {
 	return nil
 }
 
-// ExportIntoEnv modifies env to export location of this local LogDog server
+// SetInEnviron modifies env to export location of this local LogDog server
 // into the environment, so a subprocesses can stream logs.
-func (l *logdogServer) ExportIntoEnv(env environ.Env) error {
+func (l *logdogServer) SetInEnviron(env environ.Env) error {
 	if l.serv == nil {
 		return fmt.Errorf("not started")
 	}
