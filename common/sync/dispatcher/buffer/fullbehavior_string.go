@@ -8,13 +8,13 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[RejectNewItems-1]
+	_ = x[BlockNewItems-1]
 	_ = x[DropOldestBatch-2]
 }
 
-const _FullBehavior_name = "RejectNewItemsDropOldestBatch"
+const _FullBehavior_name = "BlockNewItemsDropOldestBatch"
 
-var _FullBehavior_index = [...]uint8{0, 14, 29}
+var _FullBehavior_index = [...]uint8{0, 13, 28}
 
 func (i FullBehavior) String() string {
 	i -= 1

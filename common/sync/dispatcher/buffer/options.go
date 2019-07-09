@@ -29,9 +29,9 @@ import (
 type FullBehavior int
 
 const (
-	// RejectNewItems will instruct the buffer to block all Add operations until
-	// the buffer drains at least one datum.
-	RejectNewItems FullBehavior = iota + 1
+	// BlockNewItems will prevent new items from being added to the Buffer until
+	// it's non-full.
+	BlockNewItems FullBehavior = iota + 1
 
 	// DropOldestBatch will instruct the dispatcher to drop whichever buffered
 	// batch is oldest.
@@ -86,12 +86,12 @@ var Defaults = Options{
 	BatchSize:     20,
 	BatchDuration: 10 * time.Second,
 	MaxItems:      1000,
-	FullBehavior:  RejectNewItems,
+	FullBehavior:  BlockNewItems,
 	Retry: func() retry.Iterator {
 		return &retry.ExponentialBackoff{
 			Limited: retry.Limited{
-				Delay:   200 * time.Millisecond,
-				Retries: -1,
+				Delay:   200 * time.Millisecond, // initial delay
+				Retries: -1,                     // no retry cap
 			},
 			Multiplier: 1.2,
 			MaxDelay:   60 * time.Second,
@@ -125,7 +125,7 @@ func (o *Options) Normalize() error {
 	switch o.FullBehavior {
 	case 0:
 		o.FullBehavior = Defaults.FullBehavior
-	case RejectNewItems, DropOldestBatch:
+	case BlockNewItems, DropOldestBatch:
 		// OK
 	default:
 		return errors.Reason("FullBehavior is unknown: %s", o.FullBehavior).Err()
@@ -136,4 +136,14 @@ func (o *Options) Normalize() error {
 	}
 
 	return nil
+}
+
+// BatchSizeGuess returns BatchSize if it's > 0, otherwise returns 10.
+//
+// Used to try to allocate Batches semi-intelligently.
+func (o *Options) BatchSizeGuess() int {
+	if o.BatchSize > 0 {
+		return o.BatchSize
+	}
+	return 10
 }
