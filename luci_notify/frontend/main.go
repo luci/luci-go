@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package main
 
 import (
 	"context"
@@ -47,7 +47,7 @@ var bulidbucketPubSub = metric.NewCounter(
 	field.String("status"),
 )
 
-func init() {
+func main() {
 	r := router.New()
 	standard.InstallHandlers(r)
 
@@ -85,6 +85,7 @@ func init() {
 	})
 
 	http.Handle("/", r)
+	appengine.Main()
 }
 
 func withRemoteConfigService(c *router.Context, next router.Handler) {
