@@ -26,6 +26,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"golang.org/x/oauth2/google"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/integration/authtest"
@@ -267,7 +268,12 @@ func testAuthContext(t *testing.T) {
 	})
 
 	Convey("GCE metadata server is faked", t, func() {
-		// TODO(vadimsh): Implement.
+		ts := google.ComputeTokenSource("default")
+		tok, err := ts.Token()
+		So(err, ShouldBeNil)
+		// Note: we do not log AccessToken in case we somehow mistakenly pick up
+		// real GCE server.
+		So(tok.AccessToken == "task_token_1", ShouldBeTrue)
 	})
 
 	// Report the test result through Build proto.

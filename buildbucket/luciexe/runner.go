@@ -418,10 +418,13 @@ func setupAuthContext(ctx context.Context, args *pb.RunnerArgs) (*authctx.Contex
 	}
 
 	user := &authctx.Context{
-		ID:                 "task",
-		Options:            authOpts,
-		EnableGitAuth:      isEnabled("git_auth", true),
-		EnableDevShell:     isEnabled("devshell", true),
+		ID:            "task",
+		Options:       authOpts,
+		EnableGitAuth: isEnabled("git_auth", true),
+		// GCE emulation is a superset of deprecated devshell method. If devshell
+		// was explicitly disabled on a builder before, we need to disable GCE
+		// emulation as well.
+		EnableGCEEmulation: isEnabled("emulate_gce", true) && isEnabled("devshell", true),
 		EnableDockerAuth:   isEnabled("docker_auth", true),
 		EnableFirebaseAuth: isEnabled("firebase_auth", false),
 		KnownGerritHosts:   args.KnownPublicGerritHosts,
