@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "3a990d69_2106ab56",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-09T18:31:19Z",
+      "side": 1,
+      "message": "I don\u0027t suppose it\u0027s possible to combine these into a single server, is it?",
+      "range": {
+        "startLine": 116,
+        "startChar": 70,
+        "endLine": 117,
+        "endChar": 30
+      },
+      "revId": "5466409c026750554dfc85947cb7362a6f6ba5c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7fa7a5a_99d4f563",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-09T18:31:19Z",
+      "side": 1,
+      "message": "can you print a bit of info here like:\n\n  If you\u0027re running this locally, please make sure you\u0027re logged in with `luci-auth login`.\n\nOtherwise people will see a stacktrace and throw their hands in the air",
+      "range": {
+        "startLine": 371,
+        "startChar": 65,
+        "endLine": 371,
+        "endChar": 70
+      },
+      "revId": "5466409c026750554dfc85947cb7362a6f6ba5c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4dfa4a2b_6d1ecd82",
         "filename": "buildbucket/luciexe/runner.go",
         "patchSetId": 3
@@ -22,6 +68,30 @@
       "revId": "5466409c026750554dfc85947cb7362a6f6ba5c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25f4947d_f5a00ad2",
+        "filename": "buildbucket/luciexe/runner.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-09T18:31:19Z",
+      "side": 1,
+      "message": "Can we put some hint about this as a comment?\n\nedit: I see this mentioned in the comment at 390",
+      "parentUuid": "4dfa4a2b_6d1ecd82",
+      "range": {
+        "startLine": 424,
+        "startChar": 1,
+        "endLine": 426,
+        "endChar": 2
+      },
+      "revId": "5466409c026750554dfc85947cb7362a6f6ba5c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
