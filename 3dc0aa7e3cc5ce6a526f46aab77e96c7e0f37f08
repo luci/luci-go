@@ -69,6 +69,30 @@
       "revId": "3dc0aa7e3cc5ce6a526f46aab77e96c7e0f37f08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5310c4a6_e8d598f5",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-09T23:31:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eed122c1_ade39557",
+      "range": {
+        "startLine": 196,
+        "startChar": 19,
+        "endLine": 196,
+        "endChar": 25
+      },
+      "revId": "3dc0aa7e3cc5ce6a526f46aab77e96c7e0f37f08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
