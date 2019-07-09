@@ -110,8 +110,8 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 	if err != nil {
 		return err
 	}
-	defer systemAuth.Close()
-	defer userAuth.Close()
+	defer systemAuth.Close(ctx)
+	defer userAuth.Close(ctx)
 
 	// Prepare a build listener.
 	var listenerErr error
@@ -268,12 +268,12 @@ func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, use
 
 // setupUserEnv prepares user subprocess environment.
 func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, userAuth *authctx.Context, logdogServ *logdogServer, logdogNamespace string) (environ.Env, error) {
-	ret := environ.System()
-	userAuth.ExportIntoEnv(ret)
-	if err := logdogServ.ExportIntoEnv(ret); err != nil {
+	env := environ.System()
+	ctx = userAuth.Export(ctx, env)
+	if err := logdogServ.SetInEnviron(env); err != nil {
 		return environ.Env{}, err
 	}
-	ret.Set("LOGDOG_NAMESPACE", logdogNamespace)
+	env.Set("LOGDOG_NAMESPACE", logdogNamespace)
 
 	// Prepare user LUCI context.
 	ctx, err := lucictx.Set(ctx, "luci_executable", map[string]string{
@@ -286,7 +286,7 @@ func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, userAuth
 	if err != nil {
 		return environ.Env{}, err
 	}
-	lctx.SetInEnviron(ret)
+	lctx.SetInEnviron(env)
 
 	// Prepare a user temp dir.
 	// Note that we can't use workdir directly because some overzealous scripts
@@ -298,10 +298,10 @@ func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, userAuth
 		return environ.Env{}, errors.Annotate(err, "failed to create temp dir").Err()
 	}
 	for _, v := range []string{"TEMPDIR", "TMPDIR", "TEMP", "TMP", "MAC_CHROMIUM_TMPDIR"} {
-		ret.Set(v, userTempDir)
+		env.Set(v, userTempDir)
 	}
 
-	return ret, nil
+	return env, nil
 }
 
 // hookStdoutStderr sends stdout/stderr to logdogServ and also tees to the
@@ -402,18 +402,18 @@ func setupAuth(ctx context.Context, args *pb.RunnerArgs) (system, user *authctx.
 		user.Options.Scopes = append(authOpts.Scopes, "https://www.googleapis.com/auth/firebase")
 	}
 
-	if _, err := system.Launch(systemCtx, args.WorkDir); err != nil {
+	if err := system.Launch(systemCtx, args.WorkDir); err != nil {
 		return nil, nil, errors.Annotate(err, "failed to start system auth context").Err()
 	}
 
-	if _, err := user.Launch(ctx, args.WorkDir); err != nil {
-		system.Close() // best effort cleanup
+	if err := user.Launch(ctx, args.WorkDir); err != nil {
+		system.Close(ctx) // best effort cleanup
 		return nil, nil, errors.Annotate(err, "failed to start user auth context").Err()
 	}
 
 	// Log the actual service account emails corresponding to each context.
-	system.Report()
-	user.Report()
+	system.Report(ctx)
+	user.Report(ctx)
 	return
 }
 
