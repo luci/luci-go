@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package module is a simple AppEngine LUCI service. It supplies basic LUCI
+// Binary default is a simple AppEngine LUCI service. It supplies basic LUCI
 // service frontend and backend functionality.
 //
 // No RPC requests should target this service; instead, they are redirected to
 // the appropriate service via "dispatch.yaml".
-package module
+package main
 
 import (
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	adminPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1"
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -37,7 +39,7 @@ import (
 )
 
 // Run installs and executes this site.
-func init() {
+func main() {
 	ps := endpoints.ProdService{}
 
 	r := router.New()
@@ -77,4 +79,5 @@ func init() {
 	})
 
 	http.Handle("/", r)
+	appengine.Main()
 }
