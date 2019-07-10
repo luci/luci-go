@@ -22,6 +22,30 @@
       "revId": "a8144c73e4cab79caa92fc5ea0ea6e42a41ef361",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a20c4e5d_ab46a5bf",
+        "filename": "milo/git/gitacls/acls.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-07-10T00:17:13Z",
+      "side": 1,
+      "message": "You need to do:\n\n  (\u0026ACLs{}).load(ctx, cfg)\n\nand it\u0027s ugly as hell. :(",
+      "parentUuid": "aecf29ef_50ea525e",
+      "range": {
+        "startLine": 47,
+        "startChar": 2,
+        "endLine": 47,
+        "endChar": 3
+      },
+      "revId": "a8144c73e4cab79caa92fc5ea0ea6e42a41ef361",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
