@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92d35297_9601101a",
+        "filename": "common/data/stringset/stringset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-10T21:42:19Z",
+      "side": 1,
+      "message": "nit:\n\nif asSet, ok :\u003d other.(Set); ok {\n  ...\n}",
+      "range": {
+        "startLine": 183,
+        "startChar": 1,
+        "endLine": 184,
+        "endChar": 8
+      },
+      "revId": "844b64c892344f6225d7321f8ae96db574b22188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
