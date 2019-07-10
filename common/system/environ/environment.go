@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package environ is a simple environment variable manipulation library. It
-// couples the system's environment, represented as a []string of KEY[=VALUE]
+// Package environ is an environment variable manipulation library.
+//
+// It couples the system's environment, represented as a []string of KEY[=VALUE]
 // strings, into a key/value map and back.
 package environ
 
@@ -25,36 +26,14 @@ import (
 	"strings"
 )
 
-// SystemIsCaseInsensitive returns true if the local operating system treats
-// environment variable keys in a case-insensitive manner.
-func SystemIsCaseInsensitive() bool {
-	return runtime.GOOS == "windows"
-}
-
 // Env contains system environment variables. It preserves each environment
 // variable verbatim (even if invalid).
-type Env struct {
-	// CaseInsensitive is true if environment keys are case-insensitive.
-	CaseInsensitive bool
-
-	// env is a map of envoironment key to its "KEY=VALUE" value.
-	//
-	// Note that the value here is the full "KEY=VALUE", not just the VALUE part.
-	// This allows us to reconstitute the original environment string slice
-	// without reallocating all of its composite strings.
-	env map[string]string
-}
-
-func (e Env) String() string { return fmt.Sprintf("%v", e.Sorted()) }
-
-// normalizeKey normalizes the map key, ensuring that it is handled
-// case-insensitive.
-func (e *Env) normalizeKey(k string) string {
-	if e.CaseInsensitive {
-		return strings.ToUpper(k)
-	}
-	return k
-}
+//
+// Internally env is represented by a map of environment key to its "KEY=VALUE"
+// value. Note that the value here is the full "KEY=VALUE", not just the VALUE
+// part. This allows us to reconstitute the original environment string slice
+// without reallocating all of its composite strings.
+type Env map[string]string
 
 // System returns an Env instance instantiated with the current os.Environ
 // values.
@@ -71,51 +50,31 @@ func System() Env {
 // The environment is automatically configured with the local system's case
 // insensitivity.
 func New(s []string) Env {
-	e := Env{
-		CaseInsensitive: SystemIsCaseInsensitive(),
+	e := make(Env, len(s))
+	for _, entry := range s {
+		e.SetEntry(entry)
 	}
-	e.LoadSlice(s)
 	return e
 }
 
+// String returns debug representation of Env.
+func (e Env) String() string { return fmt.Sprintf("%v", e.Sorted()) }
+
 // Load adds environment variables defined in a key/value map to an existing
 // environment.
-func (e *Env) Load(m map[string]string) {
-	if len(m) == 0 {
-		return
-	}
-	if e.env == nil {
-		e.env = make(map[string]string, len(m))
-	}
+func (e Env) Load(m map[string]string) {
 	for k, v := range m {
 		e.Set(k, v)
 	}
 }
 
-// LoadSlice adds environment variable entries, specified as "KEY[=VALUE]"
-// strings, into an existing environment.
-//
-// Entries are added in order. If there are duplicates, later entries will
-// override earlier ones.
-func (e *Env) LoadSlice(s []string) {
-	if len(s) == 0 {
-		return
-	}
-	if e.env == nil {
-		e.env = make(map[string]string, len(s))
-	}
-	for _, entry := range s {
-		e.SetEntry(entry)
-	}
-}
-
 // Set sets the supplied environment key and value.
-func (e *Env) Set(k, v string) { e.SetEntry(Join(k, v)) }
+func (e Env) Set(k, v string) { e.SetEntry(Join(k, v)) }
 
 // SetEntry sets the supplied environment to a "KEY[=VALUE]" entry.
-func (e *Env) SetEntry(entry string) {
-	if e.env == nil {
-		e.env = make(map[string]string)
+func (e Env) SetEntry(entry string) {
+	if e == nil {
+		panic("cannot modify nil Env")
 	}
 
 	// "entry" must be a well-formed "key=value" entry. If it doesn't have an "=",
@@ -125,7 +84,7 @@ func (e *Env) SetEntry(entry string) {
 	}
 	k, _ := Split(entry)
 	if len(k) > 0 {
-		e.env[e.normalizeKey(k)] = entry
+		e[normalizeKeyCase(k)] = entry
 	}
 }
 
@@ -134,10 +93,10 @@ func (e *Env) SetEntry(entry string) {
 //
 // Remove is different from Set(k, "") in that Set persists the key with an
 // empty value, while Remove removes it entirely.
-func (e *Env) Remove(k string) bool {
-	k = e.normalizeKey(k)
-	if _, ok := e.env[k]; ok {
-		delete(e.env, k)
+func (e Env) Remove(k string) bool {
+	k = normalizeKeyCase(k)
+	if _, ok := e[k]; ok {
+		delete(e, k)
 		return true
 	}
 	return false
@@ -146,10 +105,10 @@ func (e *Env) Remove(k string) bool {
 // RemoveMatch iterates over all keys and values in the environment, invoking
 // the callback function, fn, for each key/value pair. If fn returns true, the
 // key is removed from the environment.
-func (e *Env) RemoveMatch(fn func(k, v string) bool) {
+func (e Env) RemoveMatch(fn func(k, v string) bool) {
 	e.iterate(func(realKey, k, v string) error {
 		if fn(k, v) {
-			delete(e.env, realKey)
+			delete(e, realKey)
 		}
 		return nil
 	})
@@ -162,18 +121,11 @@ func (e *Env) RemoveMatch(fn func(k, v string) bool) {
 // that if e is case insensitive and there are multiple keys in other that
 // converge on the same case insensitive key, the one that is alphabetically
 // highest will be added.
-func (e *Env) Update(other Env) {
+func (e Env) Update(other Env) {
 	for _, entry := range other.Sorted() {
 		e.SetEntry(entry)
 	}
 }
-
-//
-// NOTE to implementers: all mutation methods MUST accept a pointer Env, as they
-// may mutate the underlying "env" map value.
-//
-// Read-only accessors should accept Env as a value.
-//
 
 // Get returns the environment value for the supplied key.
 //
@@ -183,7 +135,7 @@ func (e *Env) Update(other Env) {
 func (e Env) Get(k string) (v string, ok bool) {
 	// NOTE: "v" is initially the combined "key=value" entry, and will need to be
 	// split.
-	if v, ok = e.env[e.normalizeKey(k)]; ok {
+	if v, ok = e[normalizeKeyCase(k)]; ok {
 		_, v = splitEntryGivenKey(k, v)
 	}
 	return
@@ -200,9 +152,9 @@ func (e Env) GetEmpty(k string) string {
 // Sorted returns the contents of the environment, sorted by key.
 func (e Env) Sorted() []string {
 	var r []string
-	if len(e.env) > 0 {
-		r = make([]string, 0, len(e.env))
-		for _, v := range e.env {
+	if len(e) > 0 {
+		r = make([]string, 0, len(e))
+		for _, v := range e {
 			r = append(r, v)
 		}
 		sort.Strings(r)
@@ -214,13 +166,14 @@ func (e Env) Sorted() []string {
 //
 // This is a clone of the contents of e; manipulating this map will not change
 // the values in e.
+//
+// If env is either nil or empty, returns nil.
 func (e Env) Map() map[string]string {
-	if len(e.env) == 0 {
+	if len(e) == 0 {
 		return nil
 	}
-
-	m := make(map[string]string, len(e.env))
-	for k, entry := range e.env {
+	m := make(map[string]string, len(e))
+	for k, entry := range e {
 		ek, ev := splitEntryGivenKey(k, entry)
 		m[ek] = ev
 	}
@@ -228,19 +181,19 @@ func (e Env) Map() map[string]string {
 }
 
 // Len returns the number of environment variables defined in e.
-func (e Env) Len() int { return len(e.env) }
+func (e Env) Len() int { return len(e) }
 
 // Clone creates a new Env instance that is identical to, but independent from,
 // e.
+//
+// If e is nil, returns nil. Otherwise returns a new (perhaps empty) Env.
 func (e Env) Clone() Env {
-	clone := e
-	clone.env = nil
-
-	if len(e.env) > 0 {
-		clone.env = make(map[string]string, len(e.env))
-		for k, v := range e.env {
-			clone.env[k] = v
-		}
+	if e == nil {
+		return nil
+	}
+	clone := make(Env, len(e))
+	for k, v := range e {
+		clone[k] = v
 	}
 	return clone
 }
@@ -252,8 +205,8 @@ func (e Env) Clone() Env {
 //
 // realKey is the real, normalized map key. envKey and envValue are the split
 // map value.
-func (e *Env) iterate(cb func(realKey, envKey, envValue string) error) error {
-	for k, v := range e.env {
+func (e Env) iterate(cb func(realKey, envKey, envValue string) error) error {
+	for k, v := range e {
 		envKey, envValue := Split(v)
 		if err := cb(k, envKey, envValue); err != nil {
 			return err
@@ -273,9 +226,9 @@ func (e Env) Iter(cb func(k, v string) error) error {
 // Split splits the supplied environment variable value into a key/value pair.
 //
 // If v is of the form:
-//	- KEY, returns (KEY, "")
-//	- KEY=, returns (KEY, "")
-//	- KEY=VALUE, returns (KEY, VALUE)
+//  - KEY, returns (KEY, "")
+//  - KEY=, returns (KEY, "")
+//  - KEY=VALUE, returns (KEY, VALUE)
 func Split(v string) (key, value string) {
 	parts := strings.SplitN(v, "=", 2)
 	switch len(parts) {
@@ -321,5 +274,20 @@ func splitEntryGivenKey(key, entry string) (k, v string) {
 		return entry[:len(key)], ""
 	default:
 		return entry[:len(key)], entry[prefixSize:]
+	}
+}
+
+// normalizeKeyCase normalizes the map key by upper-casing it on Windows.
+//
+// Returns the key unchanged on other platforms. Mocked in tests.
+var normalizeKeyCase func(string) string
+
+func init() {
+	// Note: we don't use +build flags to be able to unit test both variants on
+	// a single platform just by mocking 'normalizeKeyCase' value.
+	if runtime.GOOS == "windows" {
+		normalizeKeyCase = strings.ToUpper
+	} else {
+		normalizeKeyCase = func(k string) string { return k }
 	}
 }
