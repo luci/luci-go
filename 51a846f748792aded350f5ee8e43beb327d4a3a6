@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "866711e5_78dec3b3",
+        "filename": "gce/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-10T23:21:30Z",
+      "side": 1,
+      "message": "\"Package main\" is kind of pointless, they all are \"main\", but changed to be consistent inside gce/*.",
+      "parentUuid": "7bce066a_996ae931",
+      "revId": "51a846f748792aded350f5ee8e43beb327d4a3a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e6a0df06_ba6f4b66",
         "filename": "gce/appengine/frontend/rpcexplorer",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "51a846f748792aded350f5ee8e43beb327d4a3a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b7cc01d_2c32ade6",
+        "filename": "gce/appengine/frontend/rpcexplorer",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-10T23:21:30Z",
+      "side": 1,
+      "message": "../../../appengine/static/common has *.go file with \"package static\" which causes issues when deploying to go1.11. Also I want to get rid of \"common\", I think symlinks inside symlinks are bad state to be.",
+      "parentUuid": "e6a0df06_ba6f4b66",
+      "revId": "51a846f748792aded350f5ee8e43beb327d4a3a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
