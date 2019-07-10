@@ -280,7 +280,7 @@ func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx 
 	env := environ.System()
 	ctx = authCtx.Export(ctx, env)
 	if err := logdogServ.SetInEnviron(env); err != nil {
-		return environ.Env{}, err
+		return nil, err
 	}
 	env.Set("LOGDOG_NAMESPACE", logdogNamespace)
 
@@ -289,11 +289,11 @@ func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx 
 		"cache_dir": args.CacheDir,
 	})
 	if err != nil {
-		return environ.Env{}, err
+		return nil, err
 	}
 	lctx, err := lucictx.ExportInto(ctx, args.WorkDir)
 	if err != nil {
-		return environ.Env{}, err
+		return nil, err
 	}
 	lctx.SetInEnviron(env)
 
@@ -304,7 +304,7 @@ func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx 
 	// gsutil configs setup by AuthContext).
 	userTempDir := filepath.Join(args.WorkDir, "ut")
 	if err := os.MkdirAll(userTempDir, 0700); err != nil {
-		return environ.Env{}, errors.Annotate(err, "failed to create temp dir").Err()
+		return nil, errors.Annotate(err, "failed to create temp dir").Err()
 	}
 	for _, v := range []string{"TEMPDIR", "TMPDIR", "TEMP", "TMP", "MAC_CHROMIUM_TMPDIR"} {
 		env.Set(v, userTempDir)
