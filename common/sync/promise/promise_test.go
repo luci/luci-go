@@ -75,7 +75,7 @@ func TestPromise(t *testing.T) {
 			So(err, ShouldEqual, e)
 
 			Convey(`Will return data immediately.`, func() {
-				data, err := p.Peek()
+				data, err = p.Peek()
 				So(data, ShouldEqual, "DATA")
 				So(err, ShouldEqual, e)
 			})
@@ -133,7 +133,8 @@ func TestPromiseSmoke(t *testing.T) {
 				finishedC <- data.(string)
 			}()
 			go func() {
-				ctx, _ := clock.WithTimeout(ctx, 1*time.Hour)
+				ctx, cancel := clock.WithTimeout(ctx, 1*time.Hour)
+				defer cancel()
 				data, _ := p.Get(ctx)
 				finishedC <- data.(string)
 			}()

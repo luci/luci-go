@@ -212,10 +212,10 @@ func TestController(t *testing.T) {
 			})
 
 			visitShards := func(cb func(s shard)) {
-				shards, err := job.fetchShards(ctx)
+				visitedShards, err := job.fetchShards(ctx)
 				So(err, ShouldBeNil)
-				So(shards, ShouldHaveLength, cfg.ShardCount)
-				for _, s := range shards {
+				So(visitedShards, ShouldHaveLength, cfg.ShardCount)
+				for _, s := range visitedShards {
 					cb(s)
 				}
 			}
@@ -258,7 +258,7 @@ func TestController(t *testing.T) {
 
 				assertAllSeen()
 
-				job, err := ctl.GetJob(ctx, jobID)
+				job, err = ctl.GetJob(ctx, jobID)
 				So(err, ShouldBeNil)
 				So(job.State, ShouldEqual, State_SUCCESS)
 
@@ -326,7 +326,7 @@ func TestController(t *testing.T) {
 				// There are 5 pages per shard. We aborted on second. So 3 are skipped.
 				So(processed, ShouldEqual, len(entities)-3*cfg.PageSize)
 
-				job, err := ctl.GetJob(ctx, jobID)
+				job, err = ctl.GetJob(ctx, jobID)
 				So(err, ShouldBeNil)
 				So(job.State, ShouldEqual, State_FAIL)
 			})
@@ -337,7 +337,7 @@ func TestController(t *testing.T) {
 				mapperFunc = func(_ []byte, shardIdx int, keys []*datastore.Key) error {
 					processed += len(keys)
 
-					job, err := ctl.AbortJob(ctx, jobID)
+					job, err = ctl.AbortJob(ctx, jobID)
 					So(err, ShouldBeNil)
 					So(job.State, ShouldEqual, State_ABORTING)
 
@@ -358,7 +358,7 @@ func TestController(t *testing.T) {
 				})
 
 				// And the job itself eventually switched into ABORTED state.
-				job, err := ctl.GetJob(ctx, jobID)
+				job, err = ctl.GetJob(ctx, jobID)
 				So(err, ShouldBeNil)
 				So(job.State, ShouldEqual, State_ABORTED)
 

@@ -138,7 +138,7 @@ func TestQueues(t *testing.T) {
 				})
 
 				Convey("non-empty", func() {
-					c := mathrand.Set(c, rand.New(rand.NewSource(1)))
+					c = mathrand.Set(c, rand.New(rand.NewSource(1)))
 					err := createVM(c, &tasks.CreateVM{
 						Id: "id",
 						Attributes: &config.VM{
@@ -392,7 +392,7 @@ func TestQueues(t *testing.T) {
 								now := time.Time{}.Add(time.Hour)
 								So(now.Weekday(), ShouldEqual, time.Monday)
 								So(now.Hour(), ShouldEqual, 1)
-								c, _ := testclock.UseTime(c, now)
+								c, _ = testclock.UseTime(c, now)
 								v := &model.VM{
 									ID:     "id",
 									Config: "config",
@@ -408,7 +408,7 @@ func TestQueues(t *testing.T) {
 							Convey("equal", func() {
 								now := time.Time{}
 								So(now.Weekday(), ShouldEqual, time.Monday)
-								c, _ := testclock.UseTime(c, now)
+								c, _ = testclock.UseTime(c, now)
 								v := &model.VM{
 									ID:     "id",
 									Config: "config",
@@ -425,7 +425,7 @@ func TestQueues(t *testing.T) {
 								now := time.Time{}.Add(time.Hour)
 								So(now.Weekday(), ShouldEqual, time.Monday)
 								So(now.Hour(), ShouldEqual, 1)
-								c, _ := testclock.UseTime(c, now)
+								c, _ = testclock.UseTime(c, now)
 								v := &model.VM{
 									ID:     "id",
 									Config: "config",
@@ -545,7 +545,7 @@ func TestQueues(t *testing.T) {
 					Convey("default", func() {
 						now := time.Time{}
 						So(now.Weekday(), ShouldEqual, time.Monday)
-						c, _ := testclock.UseTime(c, now)
+						c, _ = testclock.UseTime(c, now)
 						err := expandConfig(c, &tasks.ExpandConfig{
 							Id: "id",
 						})
@@ -557,7 +557,7 @@ func TestQueues(t *testing.T) {
 						now := time.Time{}.Add(time.Hour)
 						So(now.Weekday(), ShouldEqual, time.Monday)
 						So(now.Hour(), ShouldEqual, 1)
-						c, _ := testclock.UseTime(c, now)
+						c, _ = testclock.UseTime(c, now)
 						err := expandConfig(c, &tasks.ExpandConfig{
 							Id: "id",
 						})

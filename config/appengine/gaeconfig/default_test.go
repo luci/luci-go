@@ -164,8 +164,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				s.DatastoreCacheMode = DSCacheDisabled
 				putSettings()
 
-				c = installConfig(c)
-				c, cnt := count.FilterRDS(c)
+				c, cnt := count.FilterRDS(installConfig(c))
 
 				projs, _, err := loadProjectConfigs(c, cfgclient.AsService)
 				So(err, ShouldBeNil)
@@ -180,8 +179,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				s.DatastoreCacheMode = DSCacheEnabled
 				putSettings()
 
-				c = installConfig(c)
-				c, cnt := count.FilterRDS(c)
+				c, cnt := count.FilterRDS(installConfig(c))
 				projs, _, err := loadProjectConfigs(c, cfgclient.AsService)
 				So(err, ShouldBeNil)
 				So(projs, ShouldResemble, allProjs)

@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
@@ -91,20 +91,20 @@ func TestMintMachineTokenRPC(t *testing.T) {
 
 	Convey("Unsuccessful RPC", t, func() {
 		// Modify testing CA to have no domains whitelisted.
-		testingCA := certconfig.CA{
+		testingCA2 := certconfig.CA{
 			CN: "Fake CA: fake.ca",
 			ParsedConfig: &admin.CertificateAuthorityConfig{
 				UniqueId: 123,
 			},
 		}
-		ctx := auth.WithState(testingContext(testingCA), &authtest.FakeState{
+		ctx := auth.WithState(testingContext(testingCA2), &authtest.FakeState{
 			PeerIPOverride: net.ParseIP("127.10.10.10"),
 		})
 
 		impl := MintMachineTokenRPC{
 			Signer: testingSigner(),
 			CheckCertificate: func(_ context.Context, cert *x509.Certificate) (*certconfig.CA, error) {
-				return &testingCA, nil
+				return &testingCA2, nil
 			},
 			LogToken: func(c context.Context, info *MintedTokenInfo) error {
 				panic("must not be called") // we log only successfully generated tokens

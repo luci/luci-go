@@ -81,7 +81,6 @@ func TestStrings(t *testing.T) {
 
 	Convey("strings", t, func() {
 		b := &bytes.Buffer{}
-		t := "this is a test"
 
 		Convey("empty", func() {
 			n, err := WriteString(b, "")
@@ -95,20 +94,21 @@ func TestStrings(t *testing.T) {
 		})
 
 		Convey("nulls", func() {
-			t := "\x00\x00\x00\x00\x00"
-			n, err := WriteString(b, t)
+			s := "\x00\x00\x00\x00\x00"
+			n, err := WriteString(b, s)
 			So(n, ShouldEqual, 6)
 			So(err, ShouldBeNil)
 			exn := b.Len()
 			r, n, err := ReadString(b)
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, exn)
-			So(r, ShouldEqual, t)
+			So(r, ShouldEqual, s)
 		})
 
 		Convey("bad (truncated buffer)", func() {
-			n, err := WriteString(b, t)
-			So(n, ShouldEqual, (len(t)*8)/7+1)
+			s := "this is a test"
+			n, err := WriteString(b, s)
+			So(n, ShouldEqual, (len(s)*8)/7+1)
 			So(err, ShouldBeNil)
 			bs := b.Bytes()[:b.Len()-1]
 			_, n, err = ReadString(bytes.NewBuffer(bs))
@@ -128,9 +128,10 @@ func TestStrings(t *testing.T) {
 		})
 
 		Convey("good", func() {
-			n, err := WriteString(b, t)
+			s := "this is a test"
+			n, err := WriteString(b, s)
 			So(err, ShouldBeNil)
-			So(n, ShouldEqual, (len(t)*8)/7+1)
+			So(n, ShouldEqual, (len(s)*8)/7+1)
 			So(b.Bytes()[:8], ShouldResemble, []byte{
 				b01110101, b00110101, b00011011, b00101111, b00110011, b00000011,
 				b10100101, b11100111,
@@ -138,9 +139,9 @@ func TestStrings(t *testing.T) {
 			exn := b.Len()
 			r, n, err := ReadString(b)
 			So(err, ShouldBeNil)
-			So(len(r), ShouldEqual, len(t))
+			So(len(r), ShouldEqual, len(s))
 			So(n, ShouldEqual, exn)
-			So(r, ShouldEqual, t)
+			So(r, ShouldEqual, s)
 		})
 
 	})
