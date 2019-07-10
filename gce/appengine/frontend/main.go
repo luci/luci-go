@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package frontend is the main entry point for the app.
-package frontend
+// Package main is the main entry point for the app.
+package main
 
 import (
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -34,7 +36,7 @@ import (
 	"go.chromium.org/luci/gce/vmtoken"
 )
 
-func init() {
+func main() {
 	mathrand.SeedRandomly()
 	api := prpc.Server{UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil)}
 	server.RegisterConfigurationServer(&api, rpc.NewConfigurationServer())
@@ -49,4 +51,5 @@ func init() {
 	config.InstallHandlers(r, mw)
 	http.DefaultServeMux.Handle("/", r)
 	standard.InstallHandlers(r)
+	appengine.Main()
 }
