@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package module is the main entry point for the `services` LogDog AppEngine
+// Binary services is the main entry point for the `services` LogDog AppEngine
 // executable. This executable is designed to be built with and deployed on the
 // Google AppEngine Engine classic infrastructure.
-package module
+package main

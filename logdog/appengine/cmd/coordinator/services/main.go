@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package module
+package main
 
 import (
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -30,7 +32,7 @@ import (
 )
 
 // Run installs and executes this site.
-func init() {
+func main() {
 	ps := endpoints.ProdService{}
 
 	r := router.New()
@@ -48,4 +50,5 @@ func init() {
 	standard.InstallHandlers(r)
 
 	http.Handle("/", r)
+	appengine.Main()
 }

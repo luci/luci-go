@@ -13,8 +13,7 @@
 # limitations under the License.
 
 service: static
-runtime: go
-api_version: go1
+runtime: go111
 
 # This is necessary for "switch" command. There is no corresponding support in
 # the static app.
