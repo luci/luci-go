@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fae1cee9_73192e19",
+        "filename": "common/system/environ/environment.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-10T00:03:13Z",
+      "side": 1,
+      "message": "why is this even a function? can this just be\n\nvar systemIsCaseInsensitive \u003d (runtime.GOOS \u003d \"windows\")\n\nand then make Env actually a map type?",
+      "range": {
+        "startLine": 31,
+        "startChar": 5,
+        "endLine": 31,
+        "endChar": 28
+      },
+      "revId": "351ebdab9dfdcbfe7ef33741874ab47723a1cfa7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
