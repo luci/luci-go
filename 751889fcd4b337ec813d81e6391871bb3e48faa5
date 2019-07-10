@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5811b936_2ea5c8da",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-10T01:33:26Z",
+      "side": 1,
+      "message": "to",
+      "range": {
+        "startLine": 78,
+        "startChar": 74,
+        "endLine": 78,
+        "endChar": 77
+      },
+      "revId": "751889fcd4b337ec813d81e6391871bb3e48faa5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
