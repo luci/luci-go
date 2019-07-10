@@ -22,6 +22,30 @@
       "revId": "351ebdab9dfdcbfe7ef33741874ab47723a1cfa7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6abc87fc_cc50cd52",
+        "filename": "common/system/environ/environment.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-10T00:50:07Z",
+      "side": 1,
+      "message": "For tests, I guess?.. Fine, making it a map.",
+      "parentUuid": "fae1cee9_73192e19",
+      "range": {
+        "startLine": 31,
+        "startChar": 5,
+        "endLine": 31,
+        "endChar": 28
+      },
+      "revId": "351ebdab9dfdcbfe7ef33741874ab47723a1cfa7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
