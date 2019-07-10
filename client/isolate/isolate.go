@@ -252,10 +252,8 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 		if err != nil {
 			return nil, err
 		}
-		mode := info.Mode()
-		if mode.IsDir() {
-			relPath, err := filepath.Rel(rootDir, dep)
-			if err != nil {
+		if mode := info.Mode(); mode.IsDir() {
+			if relPath, err = filepath.Rel(rootDir, dep); err != nil {
 				return nil, err
 			}
 			dirItems = append(dirItems, archiver.PushDirectory(arch, dep, relPath, opts.Blacklist))

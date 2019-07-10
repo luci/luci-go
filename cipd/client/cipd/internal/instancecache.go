@@ -219,18 +219,18 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 	moreGarbage := len(state.Entries) - garbage.Len() - c.maxSize
 	if moreGarbage > 0 {
 		logging.Infof(ctx, "cipd: still need to purge %d cached instance(s)", moreGarbage)
-		garbageHeap := make(garbageHeap, 0, len(state.Entries)-garbage.Len())
+		g := make(garbageHeap, 0, len(state.Entries)-garbage.Len())
 		for instanceID, e := range state.Entries {
 			if !garbage.Has(instanceID) {
-				garbageHeap = append(garbageHeap, &garbageCandidate{
+				g = append(g, &garbageCandidate{
 					instanceID:     instanceID,
 					lastAccessTime: google.TimeFromProto(e.LastAccess),
 				})
 			}
 		}
-		heap.Init(&garbageHeap)
+		heap.Init(&g)
 		for i := 0; i < moreGarbage; i++ {
-			item := heap.Pop(&garbageHeap).(*garbageCandidate)
+			item := heap.Pop(&g).(*garbageCandidate)
 			garbage.Add(item.instanceID)
 			logging.Infof(ctx, "cipd: purging cached instance %s (age %s)", item.instanceID, now.Sub(item.lastAccessTime))
 		}

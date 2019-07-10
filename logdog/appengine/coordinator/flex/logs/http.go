@@ -787,7 +787,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 		log, ierr := logResp.log, logResp.err
 		if ierr != nil {
 			merr = append(merr, ierr)
-			if ierr := errorTemplate.Execute(w, ierr); ierr != nil {
+			if ierr = errorTemplate.Execute(w, ierr); ierr != nil {
 				merr = append(merr, ierr)
 			}
 			continue
@@ -797,7 +797,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 			// For html full mode, we escape and wrap each line with a div.
 			// For html lite mode, just escape the line.
 			// For raw mode, we just regurgitate the line.
-			var ierr error
+			ierr = nil
 			switch data.options.format {
 			case formatHTMLFull:
 				lt := logLineStruct{

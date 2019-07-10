@@ -176,11 +176,11 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 	if err != nil {
 		return nil, nil, NotSet, "", err
 	}
-	configName := configName{}
+	cn := configName{}
 	var missingVars []string
 	for _, variable := range isolate.ConfigVariables {
 		if value, ok := configVariables[variable]; ok {
-			configName = append(configName, makeVariableValue(value))
+			cn = append(cn, makeVariableValue(value))
 		} else {
 			missingVars = append(missingVars, variable)
 		}
@@ -191,7 +191,7 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 		return nil, nil, NotSet, "", err
 	}
 	// A configuration is to be created with all the combinations of free variables.
-	config, err := isolate.GetConfig(configName)
+	config, err := isolate.GetConfig(cn)
 	if err != nil {
 		return nil, nil, NotSet, "", err
 	}
@@ -258,12 +258,12 @@ func (c *Configs) getSortedConfigPairs() configPairs {
 // GetConfig returns all configs that matches this config as a single ConfigSettings.
 //
 // Returns nil if none apply.
-func (c *Configs) GetConfig(configName configName) (*ConfigSettings, error) {
+func (c *Configs) GetConfig(cn configName) (*ConfigSettings, error) {
 	// Order byConfig according to configNames ordering function.
 	out := &ConfigSettings{}
 	for _, pair := range c.getSortedConfigPairs() {
 		ok := true
-		for i, confKey := range configName {
+		for i, confKey := range cn {
 			if pair.key[i].isBound() && pair.key[i].compare(confKey) != 0 {
 				ok = false
 				break
@@ -283,13 +283,13 @@ func (c *Configs) GetConfig(configName configName) (*ConfigSettings, error) {
 //
 // The key is a tuple of bounded or unbounded variables. The global variable
 // is the key where all values are unbounded.
-func (c *Configs) setConfig(confName configName, value *ConfigSettings) {
-	assert(len(confName) == len(c.ConfigVariables))
+func (c *Configs) setConfig(cn configName, value *ConfigSettings) {
+	assert(len(cn) == len(c.ConfigVariables))
 	assert(value != nil)
-	key := confName.key()
+	key := cn.key()
 	pair, ok := c.byConfig[key]
 	assert(!ok, "setConfig must not override existing keys (%s => %v)", key, pair.value)
-	c.byConfig[key] = configPair{confName, value}
+	c.byConfig[key] = configPair{cn, value}
 }
 
 // union returns a new Configs instance, the union of variables from self and rhs.

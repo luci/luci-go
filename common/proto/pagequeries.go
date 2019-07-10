@@ -111,8 +111,7 @@ func PageQuery(c context.Context, lim int32, tok string, rsp PagedResponse, q *d
 			// is returned by the callback. Since the query is still running, there
 			// are more results. Set the page token and halt the query. Don't invoke
 			// the callback since it isn't expecting any more results.
-			v := reflect.ValueOf(rsp).Elem()
-			f := v.FieldByName("NextPageToken")
+			f := reflect.ValueOf(rsp).Elem().FieldByName("NextPageToken")
 			f.SetString(cur.String())
 			return returnedStop
 		}

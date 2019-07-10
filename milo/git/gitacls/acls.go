@@ -43,8 +43,8 @@ func FromConfig(c context.Context, cfg []*config.Settings_SourceAcls) (*ACLs, er
 
 // ValidateConfig passes all validation errors through validation context.
 func ValidateConfig(ctx *validation.Context, cfg []*config.Settings_SourceAcls) {
-	var ACLs ACLs
-	ACLs.load(ctx, cfg)
+	var a ACLs
+	a.load(ctx, cfg)
 }
 
 // ACLs define readers for git repositories and Gerrits CLs.

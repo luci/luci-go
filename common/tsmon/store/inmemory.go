@@ -96,7 +96,7 @@ func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 	defer s.dataLock.Unlock()
 
 	// Check again in case another goroutine got the lock before us.
-	if d, ok := s.data[m.Info().Name]; ok {
+	if d, ok = s.data[m.Info().Name]; ok {
 		return d
 	}
 

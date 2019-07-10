@@ -132,14 +132,14 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 		var response struct {
 			Topic string `json:"topic"`
 		}
-		req := internal.Request{
+		req = internal.Request{
 			Method: "POST",
 			URL:    s.URL + "/auth_service/api/v1/authdb/subscription/authorization",
 			Scopes: oauthScopes,
 			Body:   map[string]string{},
 			Out:    &response,
 		}
-		if err := req.Do(c); err != nil {
+		if err = req.Do(c); err != nil {
 			return err
 		}
 		topic := response.Topic
