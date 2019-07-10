@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7bce066a_996ae931",
+        "filename": "gce/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-07-10T23:10:47Z",
+      "side": 1,
+      "message": "Elsewhere I\u0027ve written \"Package main\" (e.g. gce/cmd/agent/main.go).",
+      "revId": "51a846f748792aded350f5ee8e43beb327d4a3a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6a0df06_ba6f4b66",
+        "filename": "gce/appengine/frontend/rpcexplorer",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-07-10T23:10:47Z",
+      "side": 1,
+      "message": "Remind me how this differs from ../../../appengine/static/common.",
+      "revId": "51a846f748792aded350f5ee8e43beb327d4a3a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
