@@ -7,6 +7,8 @@ sources and make it available to users and systems for consumption. It is
 composed of several services and tools that work cooperatively to provide a
 reliable log streaming platform.
 
+See it in action at https://luci-logdog.appspot.com/app/
+
 Like other LUCI components, LogDog primarily aims to be useful to the
 [Chromium](https://www.chromium.org/) project.
 
