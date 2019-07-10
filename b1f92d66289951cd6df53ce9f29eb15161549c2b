@@ -22,6 +22,30 @@
       "revId": "b1f92d66289951cd6df53ce9f29eb15161549c2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11791e1a_6c34773a",
+        "filename": "common/system/environ/environment.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-10T00:56:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b13d4337_0f67e2f4",
+      "range": {
+        "startLine": 77,
+        "startChar": 23,
+        "endLine": 77,
+        "endChar": 37
+      },
+      "revId": "b1f92d66289951cd6df53ce9f29eb15161549c2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
