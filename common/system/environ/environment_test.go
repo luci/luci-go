@@ -15,23 +15,29 @@
 package environ
 
 import (
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func newImpl(caseInsensitive bool, entries []string) Env {
-	e := Env{CaseInsensitive: caseInsensitive}
-	e.LoadSlice(entries)
-	return e
+// Note: all tests here are NOT marked with t.Parallel() because they mutate
+// global 'normalizeKeyCase'.
+
+func pretendWindows() {
+	normalizeKeyCase = strings.ToUpper
+}
+
+func pretendLinux() {
+	normalizeKeyCase = func(k string) string { return k }
 }
 
 func TestEnvironmentConversion(t *testing.T) {
-	t.Parallel()
-
 	Convey(`Source environment slice translates correctly to/from an Env.`, t, func() {
 		Convey(`Case insensitive (e.g., Windows)`, func() {
-			env := newImpl(true, []string{
+			pretendWindows()
+
+			env := New([]string{
 				"",
 				"FOO",
 				"BAR=BAZ",
@@ -39,12 +45,9 @@ func TestEnvironmentConversion(t *testing.T) {
 				"qux=quux=quuuuuuux",
 			})
 			So(env, ShouldResemble, Env{
-				CaseInsensitive: true,
-				env: map[string]string{
-					"FOO": "FOO=",
-					"BAR": "bar=baz",
-					"QUX": "qux=quux=quuuuuuux",
-				},
+				"FOO": "FOO=",
+				"BAR": "bar=baz",
+				"QUX": "qux=quux=quuuuuuux",
 			})
 
 			So(env.Sorted(), ShouldResemble, []string{
@@ -62,7 +65,9 @@ func TestEnvironmentConversion(t *testing.T) {
 		})
 
 		Convey(`Case sensitive (e.g., POSIX)`, func() {
-			env := newImpl(false, []string{
+			pretendLinux()
+
+			env := New([]string{
 				"",
 				"FOO",
 				"BAR=BAZ",
@@ -70,12 +75,10 @@ func TestEnvironmentConversion(t *testing.T) {
 				"qux=quux=quuuuuuux",
 			})
 			So(env, ShouldResemble, Env{
-				env: map[string]string{
-					"FOO": "FOO=",
-					"BAR": "BAR=BAZ",
-					"bar": "bar=baz",
-					"qux": "qux=quux=quuuuuuux",
-				},
+				"FOO": "FOO=",
+				"BAR": "BAR=BAZ",
+				"bar": "bar=baz",
+				"qux": "qux=quux=quuuuuuux",
 			})
 
 			So(env.Sorted(), ShouldResemble, []string{
@@ -96,10 +99,35 @@ func TestEnvironmentConversion(t *testing.T) {
 }
 
 func TestEnvironmentManipulation(t *testing.T) {
-	t.Parallel()
-
 	Convey(`A zero-valued Env`, t, func() {
+		pretendLinux()
+
 		var env Env
+		So(env.Len(), ShouldEqual, 0)
+
+		Convey(`Can be sorted.`, func() {
+			So(env.Sorted(), ShouldEqual, nil)
+		})
+
+		Convey(`Can call Get`, func() {
+			v, ok := env.Get("foo")
+			So(ok, ShouldBeFalse)
+			So(v, ShouldEqual, "")
+		})
+
+		Convey(`Can be cloned`, func() {
+			So(env.Clone(), ShouldBeNil)
+		})
+
+		Convey(`Set panics`, func() {
+			So(func() { env.Set("foo", "bar") }, ShouldPanic)
+		})
+	})
+
+	Convey(`An empty Env`, t, func() {
+		pretendLinux()
+
+		env := New(nil)
 		So(env.Len(), ShouldEqual, 0)
 
 		Convey(`Can be sorted.`, func() {
@@ -118,14 +146,15 @@ func TestEnvironmentManipulation(t *testing.T) {
 			So(env.Sorted(), ShouldResemble, []string{"foo=bar"})
 		})
 
-		Convey(`Can be cloned, and propagates case insensitivity.`, func() {
-			env.CaseInsensitive = true
-			So(env.Clone(), ShouldResemble, env)
+		Convey(`Can be cloned`, func() {
+			So(env.Clone(), ShouldResemble, Env{})
 		})
 	})
 
 	Convey(`A testing Env`, t, func() {
-		env := newImpl(true, []string{
+		pretendWindows()
+
+		env := New([]string{
 			"PYTHONPATH=/foo:/bar:/baz",
 			"http_proxy=wiped-out-by-next",
 			"http_proxy=http://example.com",
@@ -200,8 +229,6 @@ func TestEnvironmentManipulation(t *testing.T) {
 
 			// Use a different-case key, and confirm that it still updated correctly.
 			Convey(`When case insensitive, will update common keys.`, func() {
-				env.CaseInsensitive = true
-
 				env.Set("pYtHoNpAtH", "/override:"+v)
 				So(env.Sorted(), ShouldResemble, []string{
 					"http_proxy=http://example.com",
@@ -224,16 +251,14 @@ func TestEnvironmentManipulation(t *testing.T) {
 					"novalue=",
 				})
 
-				var mergeMe Env
-				mergeMe.LoadSlice([]string{
+				orig.Update(New([]string{
 					"http_PROXY=foo",
 					"HTTP_PROXY=FOO",
 					"newkey=value",
-				})
-				orig.Update(mergeMe)
+				}))
 				So(orig.Sorted(), ShouldResemble, []string{
+					"HTTP_PROXY=FOO",
 					"PYTHONPATH=/foo:/bar:/baz",
-					"http_PROXY=foo",
 					"newkey=value",
 					"novalue=",
 				})
@@ -243,36 +268,17 @@ func TestEnvironmentManipulation(t *testing.T) {
 }
 
 func TestEnvironmentConstruction(t *testing.T) {
-	t.Parallel()
+	pretendLinux()
 
-	Convey(`Testing Load* with an empty environment`, t, func() {
-		var env Env
-
-		Convey(`Can load an initial set of values from a map`, func() {
-			env.Load(map[string]string{
-				"FOO": "BAR",
-				"foo": "bar",
-			})
-
-			So(env, ShouldResemble, Env{
-				env: map[string]string{
-					"FOO": "FOO=BAR",
-					"foo": "foo=bar",
-				},
-			})
+	Convey(`Can load an initial set of values from a map`, t, func() {
+		env := New(nil)
+		env.Load(map[string]string{
+			"FOO": "BAR",
+			"foo": "bar",
 		})
-
-		Convey(`Load with an nil/empty environment returns a zero value.`, func() {
-			env.Load(nil)
-			So(env.env, ShouldBeNil)
-
-			env.Load(map[string]string{})
-			So(env.env, ShouldBeNil)
+		So(env, ShouldResemble, Env{
+			"FOO": "FOO=BAR",
+			"foo": "foo=bar",
 		})
-	})
-
-	Convey(`New with a nil/empty slice returns a zero value.`, t, func() {
-		So(New(nil).env, ShouldBeNil)
-		So(New([]string{}).env, ShouldBeNil)
 	})
 }

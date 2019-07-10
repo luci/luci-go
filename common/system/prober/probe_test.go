@@ -84,7 +84,7 @@ func TestResolveSelf(t *testing.T) {
 func TestSystemProbe(t *testing.T) {
 	t.Parallel()
 
-	var envBase environ.Env
+	envBase := environ.New(nil)
 	var selfEXESuffix, otherEXESuffix string
 	if runtime.GOOS == "windows" {
 		selfEXESuffix = ".exe"

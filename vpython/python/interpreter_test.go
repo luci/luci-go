@@ -99,7 +99,7 @@ func TestInterpreterGetVersion(t *testing.T) {
 			Python: self,
 
 			testCommandHook: func(cmd *exec.Cmd) {
-				var env environ.Env
+				env := environ.New(nil)
 				env.Set(testGetVersionENV, versionString)
 				cmd.Env = env.Sorted()
 			},
