@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package frontend is the main entry point for the CQ app.
-package frontend
+// Binary frontend is the main entry point for the CQ app.
+package main
 
 import (
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -29,7 +31,7 @@ import (
 	_ "go.chromium.org/luci/cq/appengine/config"
 )
 
-func init() {
+func main() {
 	mathrand.SeedRandomly()
 	api := prpc.Server{UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil)}
 	discovery.Enable(&api)
@@ -39,4 +41,5 @@ func init() {
 	api.InstallHandlers(r, mw)
 	standard.InstallHandlers(r)
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }
