@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package appengine
+package main
 
 import (
+	"google.golang.org/appengine"
+
 	"go.chromium.org/luci/milo/frontend"
 )
 
-func init() {
+func main() {
 	frontend.Run("templates")
+	appengine.Main()
 }

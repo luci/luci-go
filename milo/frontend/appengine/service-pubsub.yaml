@@ -1,0 +1,26 @@
+service: pubsub
+runtime: go111
+
+instance_class: F4_1G
+
+automatic_scaling:
+  min_idle_instances: 5
+  max_idle_instances: automatic
+  min_pending_latency: 30ms
+  max_pending_latency: automatic
+  max_concurrent_requests: 3
+
+handlers:
+- url: /_ah/warmup
+  script: auto
+  secure: always
+  login: admin
+
+# Pubsub Handler.
+- url: /_ah/push-handlers/.*
+  script: auto
+  secure: always
+  login: admin
+
+inbound_services:
+- warmup
