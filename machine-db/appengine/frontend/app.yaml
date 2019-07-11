@@ -1,6 +1,5 @@
 service: default
-runtime: go
-api_version: go1
+runtime: go111
 
 automatic_scaling:
   min_idle_instances: 1
@@ -10,14 +9,27 @@ handlers:
   static_dir: bower_components
   secure: always
 
+- url: /rpcexplorer/?
+  static_files: rpcexplorer/index.html
+  upload: rpcexplorer/index.html
+  secure: always
+
+# The entire subpath is globbed because RPC Explorer uses native URL redirecting
+# for sub-pages, and we want all of them to map to the same HTML file.
+- url: /rpcexplorer/services/.*
+  static_files: rpcexplorer/index.html
+  upload: rpcexplorer/index.html
+  secure: always
+
+- url: /rpcexplorer
+  static_dir: rpcexplorer
+  secure: always
+
 - url: /(internal|admin)/.*
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 - url: /.*
-  script: _go_app
+  script: auto
   secure: always
-
-includes:
-- common
