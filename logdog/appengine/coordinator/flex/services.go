@@ -171,9 +171,9 @@ func (gsvc *GlobalServices) connectBigTableClient(c context.Context, cfg *config
 
 func (gsvc *GlobalServices) createGoogleStorageClientFactory(c context.Context, cfg *config.Config) error {
 	gsvc.gsClientFactory = func(c context.Context, project types.ProjectName) (client gs.Client, e error) {
-		// Get an Authenticator bound to the token scopes that we need for
-		// authenticated Cloud Storage access.
-		transport, err := auth.GetRPCTransport(c, auth.AsProject, auth.WithProject(project.String()), auth.WithScopes(gs.ReadOnlyScopes...))
+		// TODO(vadimsh): Switch to AsProject + WithProject(project.String()) once
+		// we are ready to roll out project scoped service accounts in Logdog.
+		transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gs.ReadOnlyScopes...))
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to create Google Storage RPC transport").Err()
 		}
