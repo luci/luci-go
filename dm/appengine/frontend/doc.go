@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package frontend is DM's Google AppEngine application stub.
+// Binary frontend is DM's Google AppEngine application stub.
 //
 // Setup
 //
@@ -21,4 +21,4 @@
 //     Topic: "projects/$APPID/topics/dm-distributor-notify"
 //     Name: "projects/$APPID/subscriptions/dm-distributor-notify"
 //     Push: "https://$APPID.$APPDOMAIN/_ah/push-handlers/dm-distributor-notify"
-package frontend
+package main

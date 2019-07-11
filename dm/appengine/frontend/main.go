@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package main
 
 import (
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/dm/appengine/deps"
@@ -29,7 +31,7 @@ import (
 	"go.chromium.org/luci/tumble"
 )
 
-func init() {
+func main() {
 	tmb := tumble.Service{}
 
 	distributors := distributor.FactoryMap{}
@@ -55,4 +57,5 @@ func init() {
 	standard.InstallHandlers(r)
 
 	http.Handle("/", r)
+	appengine.Main()
 }
