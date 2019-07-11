@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "129c1f8b_fcecc8ea",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:34:16Z",
+      "side": 1,
+      "message": "... // used as circular buffer",
+      "range": {
+        "startLine": 25,
+        "startChar": 1,
+        "endLine": 25,
+        "endChar": 13
+      },
+      "revId": "76948effb7677236632bc072e4510ee5dac31234",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be6970d9_32d5be18",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:34:16Z",
+      "side": 1,
+      "message": "nit: curIdx is better.",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "76948effb7677236632bc072e4510ee5dac31234",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2bf4f94_d8893d04",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:34:16Z",
+      "side": 1,
+      "message": "this seems like a wrong place to check it. Moving avg doesn\u0027t require positive values.",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 2
+      },
+      "revId": "76948effb7677236632bc072e4510ee5dac31234",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f28b3528_728c9871",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:34:16Z",
+      "side": 1,
+      "message": "nit: ... rounded up to next integer",
+      "range": {
+        "startLine": 50,
+        "startChar": 42,
+        "endLine": 50,
+        "endChar": 43
+      },
+      "revId": "76948effb7677236632bc072e4510ee5dac31234",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b49c937_6c2055c3",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:34:16Z",
+      "side": 1,
+      "message": "int64 to forget about (over/under)flows, since each val is int and window is definitely smaller than max(int) (which you can assert as \u003c 2^30 to be absolutely sure)\n\n(even though we aren\u0027t intending to store 2^31+1 items in a Channel)",
+      "range": {
+        "startLine": 52,
+        "startChar": 1,
+        "endLine": 52,
+        "endChar": 4
+      },
+      "revId": "76948effb7677236632bc072e4510ee5dac31234",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5fb7c5a_3de5e119",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:34:16Z",
+      "side": 1,
+      "message": "can be O(1) if you maintain m.sum inside record()",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 2
+      },
+      "revId": "76948effb7677236632bc072e4510ee5dac31234",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9e3823a_6c3684a3",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:34:16Z",
+      "side": 1,
+      "message": "ah, is this to deal with over/underflows? Then I really think L52 suggestion is better",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 64,
+        "endChar": 2
+      },
+      "revId": "76948effb7677236632bc072e4510ee5dac31234",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
