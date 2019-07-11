@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package frontend contains the Machine Database AppEngine front end.
-package frontend
+// Package main contains the Machine Database AppEngine front end.
+package main
 
 import (
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -34,7 +36,7 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/ui"
 )
 
-func init() {
+func main() {
 	mathrand.SeedRandomly()
 	databaseMiddleware := standard.Base().Extend(database.WithMiddleware)
 
@@ -54,4 +56,5 @@ func init() {
 	api.InstallHandlers(r, databaseMiddleware)
 
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }

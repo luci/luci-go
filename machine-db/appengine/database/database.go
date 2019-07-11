@@ -55,7 +55,7 @@ func getDatabaseConnection(c context.Context) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	connectionString := fmt.Sprintf("%s:%s@cloudsql(%s)/%s", settings.Username, settings.Password, settings.Server, settings.Database)
+	connectionString := fmt.Sprintf("%s:%s@unix(/cloudsql/%s)/%s", settings.Username, settings.Password, settings.Server, settings.Database)
 
 	// If the connection string matches what we expect, the current pointer is correct so just return it.
 	dbLock.RLock()
