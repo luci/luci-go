@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9f7fcab5_e5b36275",
+        "filename": "common/sync/dispatcher/buffer/heap.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-11T22:43:59Z",
+      "side": 1,
+      "message": "I don\u0027t think so; the heap is sorted by (nextSend, id); we need to drop the oldest batch by id, not by nextSend. We\u0027re using `id` as a reference for \"old\".\n\nI think the name of this method just sucks a bit.\n\nThe goal is:\n  * Given a potential id to be inserted\n  * Find the oldest-by-id batch in the heap\n  * Drop it, if it\u0027s older than the potential id to be inserted",
+      "parentUuid": "9a5f5fad_5e15294a",
+      "range": {
+        "startLine": 57,
+        "startChar": 20,
+        "endLine": 57,
+        "endChar": 41
+      },
+      "revId": "470dcb1f1e512f440a04342e05924a47f44e353e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aca8ede9_eed4ccfa",
         "filename": "common/sync/dispatcher/buffer/heap_test.go",
         "patchSetId": 3
