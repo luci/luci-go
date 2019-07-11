@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbot
+package main
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/grpc/prpc/talk/buildbot/proto"
+	buildbot "go.chromium.org/luci/grpc/prpc/talk/buildbot/proto"
 )
 
 type buildbotService struct{}

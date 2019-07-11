@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package gaetest implements a sloppy sample app that tests 'bqlog' on GAE.
+// Binary gae-test implements a sloppy sample app that tests 'bqlog' on GAE.
 //
 // It can be used to examine datastore performance and tweak bqlog parameters.
-package gaetest
+package main
 
 import (
 	"context"
@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/appengine"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -76,7 +77,7 @@ func getNextID() int {
 	return globalID
 }
 
-func init() {
+func main() {
 	r := router.New()
 	basemw := standard.Base()
 
@@ -121,4 +122,5 @@ func init() {
 	})
 
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }

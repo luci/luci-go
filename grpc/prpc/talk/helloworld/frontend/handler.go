@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helloworld
+package main
 
 import (
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/server/router"
 )
 
-func init() {
+func main() {
 	r := router.New()
 
 	standard.InstallHandlers(r)
 	InstallAPIRoutes(r, standard.Base())
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }
