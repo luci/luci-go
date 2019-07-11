@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a5f5fad_5e15294a",
+        "filename": "common/sync/dispatcher/buffer/heap.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:22:13Z",
+      "side": 1,
+      "message": "if you don\u0027t care which to drop, then return on L62 is in order.\nBut I suspect you actually want to remove the oldest, in which case how about:\n\nfunc... DropOldestBatchIfNot(keep *Batch) *Batch",
+      "range": {
+        "startLine": 57,
+        "startChar": 20,
+        "endLine": 57,
+        "endChar": 41
+      },
+      "revId": "470dcb1f1e512f440a04342e05924a47f44e353e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aca8ede9_eed4ccfa",
+        "filename": "common/sync/dispatcher/buffer/heap_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:22:13Z",
+      "side": 1,
+      "message": "well, this inserts them backwards, which under incorrect but plausible implementations may pass.\nConsider instead using coprime multiple but deterministic small-scale random-like sequence:\n\nid: 1 + uint64(i * 17 % 10) // enumerates set of 1..10",
+      "range": {
+        "startLine": 35,
+        "startChar": 6,
+        "endLine": 35,
+        "endChar": 25
+      },
+      "revId": "470dcb1f1e512f440a04342e05924a47f44e353e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06274790_5ce0e80d",
+        "filename": "common/sync/dispatcher/buffer/heap_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T08:22:13Z",
+      "side": 1,
+      "message": "if this fails, expectedIDs will provide no clue what\u0027s wrong. \n\nI think asserting inside the loop above that each next batch send time is non-decreasing and if eq, then ids are increasing will be better  (and also removes the need to keep track expectedIDs).",
+      "range": {
+        "startLine": 73,
+        "startChar": 4,
+        "endLine": 73,
+        "endChar": 40
+      },
+      "revId": "470dcb1f1e512f440a04342e05924a47f44e353e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
