@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package demo contains minimal demo for 'mapper' package.
-package demo
+// Binary demo contains minimal demo for 'mapper' package.
+package main
 
 import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/gae/service/datastore"
 
@@ -45,8 +47,7 @@ type TestEntity struct {
 	ID int64 `gae:"$id"`
 }
 
-func init() {
-
+func main() {
 	r := router.New()
 	base := standard.Base()
 	standard.InstallHandlers(r)
@@ -85,4 +86,5 @@ func init() {
 	})
 
 	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }

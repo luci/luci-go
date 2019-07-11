@@ -1,15 +1,12 @@
-application: bqlog-gae-test
-version: 1
-module: default
-runtime: go
-api_version: go1
+service: default
+runtime: go111
 
 handlers:
 - url: /internal.*
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 - url: /.*
-  script: _go_app
+  script: auto
   secure: always

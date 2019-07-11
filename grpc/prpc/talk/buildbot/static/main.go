@@ -1,4 +1,4 @@
-// Copyright 2015 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,24 +15,9 @@
 package main
 
 import (
-	"context"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	helloworld "go.chromium.org/luci/grpc/prpc/talk/helloworld/proto"
+	"google.golang.org/appengine"
 )
 
-type greeterService struct{}
-
-func (s *greeterService) SayHello(c context.Context, req *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
-	if req.Name == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "Name unspecified")
-	}
-
-	return &helloworld.HelloReply{
-		Message: "Hello " + req.Name,
-	}, nil
+func main() {
+	appengine.Main()
 }
-
-var _ helloworld.GreeterServer = (*greeterService)(nil)
