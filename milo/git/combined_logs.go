@@ -201,7 +201,7 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 	// Load missing logs from Gitiles.
 	newLogs := make(map[string][]*gitpb.Commit)
 	lock := sync.Mutex{} // for concurrent writes to the map
-	err := parallel.FanOutIn(func(ch chan<- func() error) {
+	err := parallel.WorkPool(8, func(ch chan<- func() error) {
 		numRequests := 0
 		for ref := range refTips {
 			if _, ok := cachedLogs[ref]; ok {

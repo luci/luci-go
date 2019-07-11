@@ -163,7 +163,7 @@ type builderHistory struct {
 func getBuilderHistories(c context.Context, builders []string, project string, limit int) ([]*builderHistory, error) {
 	// Populate the recent histories.
 	hists := make([]*builderHistory, len(builders))
-	err := parallel.WorkPool(16, func(ch chan<- func() error) {
+	err := parallel.WorkPool(4, func(ch chan<- func() error) {
 		for i, builder := range builders {
 			i := i
 			builder := builder

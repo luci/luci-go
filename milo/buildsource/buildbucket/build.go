@@ -247,7 +247,7 @@ func getRelatedBuilds(c context.Context, now *timestamp.Timestamp, client buildb
 	// A single large request is CPU bound to a single GAE instance on the buildbucket side.
 	// Multiple requests allows the use of multiple GAE instances, therefore more parallelism.
 	resps := make([]*buildbucketpb.SearchBuildsResponse, len(bs))
-	if err := parallel.FanOutIn(func(ch chan<- func() error) {
+	if err := parallel.WorkPool(8, func(ch chan<- func() error) {
 		for i, buildset := range bs {
 			i := i
 			buildset := buildset

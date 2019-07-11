@@ -132,7 +132,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 	}
 
 	// Inject cached builds information.
-	return m, parallel.FanOutIn(func(work chan<- func() error) {
+	return m, parallel.WorkPool(4, func(work chan<- func() error) {
 		for builderName, builder := range m.Builders {
 			builderName := builderName
 			builder := builder
@@ -330,7 +330,7 @@ func cleanUpExpiredBuilds(c context.Context, master *buildbot.Master, expiredCal
 	q := datastore.NewQuery(buildKind).
 		Eq("master", master.Name).
 		Eq("finished", false)
-	return parallel.WorkPool(10, func(work chan<- func() error) {
+	return parallel.WorkPool(4, func(work chan<- func() error) {
 		err := datastore.Run(c, q, func(b *buildEntity) {
 			now := clock.Now(c)
 			reason := ""

@@ -364,7 +364,7 @@ func getOncallData(c context.Context, name, url string) (ui.Oncall, error) {
 func consoleHeaderOncall(c context.Context, config []*config.Oncall) ([]ui.Oncall, error) {
 	// Get oncall data from URLs.
 	oncalls := make([]ui.Oncall, len(config))
-	err := parallel.FanOutIn(func(ch chan<- func() error) {
+	err := parallel.WorkPool(8, func(ch chan<- func() error) {
 		for i, oc := range config {
 			i := i
 			oc := oc
