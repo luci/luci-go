@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "225db09e_6f17d6da",
+        "filename": "common/sync/dispatcher/buffer/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T05:42:35Z",
+      "side": 1,
+      "message": "indeed. 👍",
+      "range": {
+        "startLine": 58,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 19
+      },
+      "revId": "b8b0a8aea30641f4847cb0ba50022b46c78074b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "414c7112_a5e5104f",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-11T05:42:35Z",
+      "side": 1,
+      "message": "This doesn\u0027t seem to belong to this CL. \nAre you trying to re-use batch objects in a follow up?",
+      "range": {
+        "startLine": 149,
+        "startChar": 0,
+        "endLine": 149,
+        "endChar": 54
+      },
+      "revId": "b8b0a8aea30641f4847cb0ba50022b46c78074b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
