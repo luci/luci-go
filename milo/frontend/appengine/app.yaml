@@ -1,8 +1,8 @@
-runtime: go
-api_version: go1
 service: default
+runtime: go111
 
 instance_class: F4_1G
+
 automatic_scaling:
   min_idle_instances: 10
   max_idle_instances: automatic  # default value
@@ -18,13 +18,13 @@ handlers:
 
 # For admin resources.
 - url: /admin/.*
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 # All internal handlers, such as cron.
 - url: /internal/.*
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
@@ -32,13 +32,13 @@ handlers:
 # contains a /.* routing rule, so if it was targeted directly, we still want
 # login:admin to apply.
 - url: /_ah/push-handlers/.*
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 # Everything goes here.
 - url: /.*
-  script: _go_app
+  script: auto
   secure: always
 
 includes:
