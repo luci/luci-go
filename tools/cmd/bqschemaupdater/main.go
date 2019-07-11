@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
+	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/proto/google/descutil"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -57,6 +58,7 @@ type tableDef struct {
 	PartitioningExpiration time.Duration
 	PartitioningField      string
 	Schema                 bigquery.Schema
+	ClusteringFields       []string
 }
 
 func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td tableDef) error {
@@ -90,6 +92,9 @@ func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td table
 				Expiration: td.PartitioningExpiration,
 				Field:      td.PartitioningField,
 			}
+		}
+		if len(td.ClusteringFields) > 0 {
+			md.Clustering = &bigquery.Clustering{Fields: td.ClusteringFields}
 		}
 		if err = ts.createTable(ctx, td.DataSetID, td.TableID, md); err != nil {
 			return err
@@ -148,6 +153,7 @@ func parseFlags() (*flags, error) {
 	flag.StringVar(&f.PartitioningField, "partitioning-field", "", "Name of a timestamp field to use for table partitioning (beta).")
 	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned.")
 	flag.DurationVar(&f.PartitioningExpiration, "partitioning-expiration", 0, "Expiration for partitions. 0 for no expiration.")
+	flag.Var(luciflag.StringSlice(&f.ClusteringFields), "clustering-field", "Optional, one or more clustering fields. Can be specified multiple times and order is signicant.")
 	flag.StringVar(&f.protoDir, "message-dir", ".", "path to directory with the .proto file that defines the schema message.")
 	flag.BoolVar(&f.force, "force", false, "proceed without a user confirmation.")
 	// -I matches protoc's flag and its error message suggesting to pass -I.
