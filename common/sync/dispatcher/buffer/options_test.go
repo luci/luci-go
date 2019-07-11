@@ -24,6 +24,30 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestBatchSizeGuessing(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Options.BatchSizeGuess`, t, func() {
+		Convey(`default BatchSize`, func() {
+			o := Options{}
+			So(o.normalize(), ShouldBeNil)
+			So(o.BatchSizeGuess(), ShouldEqual, 20)
+		})
+
+		Convey(`guess on zero BatchSize`, func() {
+			o := Options{BatchSize: -1}
+			So(o.normalize(), ShouldBeNil)
+			So(o.BatchSizeGuess(), ShouldEqual, 10)
+		})
+
+		Convey(`guess on different BatchSize`, func() {
+			o := Options{BatchSize: 93}
+			So(o.normalize(), ShouldBeNil)
+			So(o.BatchSizeGuess(), ShouldEqual, 93)
+		})
+	})
+}
+
 func TestOptionValidationGood(t *testing.T) {
 	t.Parallel()
 
@@ -43,14 +67,14 @@ func TestOptionValidationGood(t *testing.T) {
 			options: Options{
 				BatchSize:     99,
 				BatchDuration: 2 * time.Minute,
-				MaxItems:      12,
+				MaxItems:      100,
 				FullBehavior:  DropOldestBatch,
 				Retry:         retry.None,
 			},
 			expected: Options{
 				BatchSize:     99,
 				BatchDuration: 2 * time.Minute,
-				MaxItems:      12,
+				MaxItems:      100,
 				FullBehavior:  DropOldestBatch,
 				Retry:         retry.None,
 			},
@@ -81,7 +105,7 @@ func TestOptionValidationGood(t *testing.T) {
 				myOptions := options.options
 				expect := options.expected
 
-				So(myOptions.Normalize(), ShouldBeNil)
+				So(myOptions.normalize(), ShouldBeNil)
 
 				// ShouldResemble doesn't like function pointers, apparently, so
 				// explicitly compare Retry field.
@@ -140,7 +164,7 @@ func TestOptionValidationBad(t *testing.T) {
 		for _, options := range badOptions {
 			Convey(options.name, func() {
 				myOptions := options.options
-				So(myOptions.Normalize(), ShouldErrLike, options.expected)
+				So(myOptions.normalize(), ShouldErrLike, options.expected)
 			})
 		}
 	})

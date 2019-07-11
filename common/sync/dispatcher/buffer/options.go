@@ -63,7 +63,7 @@ type Options struct {
 	// runs it may also modify the number of items in Batch.Data; Reducing this
 	// count will reduce the dispatcher's current buffer size.
 	//
-	// Required: Must be > 0
+	// Required: Must be >= BatchSize
 	MaxItems int
 
 	// [OPTIONAL] The behavior of the Channel when it currently holds
@@ -104,9 +104,9 @@ var Defaults = Options{
 	},
 }
 
-// Normalize validates that Options is well formed and populates defaults
+// normalize validates that Options is well formed and populates defaults
 // which are missing.
-func (o *Options) Normalize() error {
+func (o *Options) normalize() error {
 	switch {
 	case o.BatchSize == 0:
 		o.BatchSize = Defaults.BatchSize
@@ -123,8 +123,9 @@ func (o *Options) Normalize() error {
 
 	if o.MaxItems == 0 {
 		o.MaxItems = Defaults.MaxItems
-	} else if o.MaxItems < 0 {
-		return errors.Reason("MaxItems must be > 0: got %d", o.MaxItems).Err()
+	} else if o.MaxItems < o.BatchSize {
+		return errors.Reason(
+			"MaxItems must be >= BatchSize: got %d < %d", o.MaxItems, o.BatchSize).Err()
 	}
 
 	switch o.FullBehavior {
@@ -141,4 +142,14 @@ func (o *Options) Normalize() error {
 	}
 
 	return nil
+}
+
+// BatchSizeGuess returns BatchSize if it's > 0, otherwise returns 10.
+//
+// Used to try to allocate Batches semi-intelligently.
+func (o *Options) BatchSizeGuess() int {
+	if o.BatchSize > 0 {
+		return o.BatchSize
+	}
+	return 10
 }
