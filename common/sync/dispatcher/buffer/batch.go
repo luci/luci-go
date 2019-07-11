@@ -15,8 +15,11 @@
 package buffer
 
 import (
+	"context"
+	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/retry"
 )
 
@@ -63,4 +66,82 @@ type Batch struct {
 	// as the original value of len(Batch.Data) and can decrease if
 	// len(Batch.Data) is smaller on a NACK().
 	countedSize int
+}
+
+// LeasedBatch is produced from Buffer.LeaseOne.
+//
+// It contains Batch, and you must call ACK or NACK on it.
+type LeasedBatch struct {
+	*Batch
+
+	mu sync.Mutex
+
+	// The size of the Batch at the time we leased it.
+	leasedSize int
+
+	// The Buffer that this Batch belongs to.
+	buf *bufferImpl
+}
+
+func (b *LeasedBatch) getBufferOnce() *bufferImpl {
+	b.mu.Lock()
+	buf := b.buf
+	b.buf = nil
+	b.mu.Unlock()
+
+	return buf
+}
+
+// ACK records that all the items in the batch have been processed.
+//
+// The Batch is no longer tracked by the associated Buffer.
+func (b *LeasedBatch) ACK() {
+	b.ackInner(b.getBufferOnce())
+}
+
+func (b *LeasedBatch) ackInner(buf *bufferImpl) {
+	if buf == nil {
+		return
+	}
+
+	buf.mu.Lock()
+	buf.itemsInHeap -= b.leasedSize
+	buf.mu.Unlock()
+}
+
+// NACK analyzes the current state of Batch.Data, potentially freeing space in
+// the Buffer's heap if the current Buffer.Data length is smaller than when the
+// Batch was originally leased.
+//
+// The Batch will be re-enqueued unless:
+//   * The Batch's retry Iterator returns retry.Stop
+//   * The Buffer has a DropOldestBatch policy and a new Batch has been added to
+//     the Buffer.
+func (b *LeasedBatch) NACK(ctx context.Context, err error) {
+	buf := b.getBufferOnce()
+
+	if buf == nil {
+		return
+	}
+
+	toWait := b.retry.Next(ctx, err)
+	if toWait == retry.Stop {
+		b.ackInner(buf)
+		return
+	}
+	b.nextSend = clock.Now(ctx).Add(toWait)
+
+	b.countedSize = b.leasedSize
+	if dataSize := len(b.Data); dataSize < b.countedSize {
+		b.countedSize = dataSize
+	}
+
+	buf.mu.Lock()
+	heapDiff := 0
+	if canInsert := buf.maybePruneLocked(b.id, false); canInsert {
+		heapDiff = b.countedSize
+		buf.heap.PushBatch(b.Batch)
+	}
+	buf.itemsInHeap -= b.leasedSize - heapDiff
+	buf.mu.Unlock()
 }
