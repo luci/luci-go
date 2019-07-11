@@ -18,9 +18,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// Normalize validates that Options is well formed and populates defaults which
+// normalize validates that Options is well formed and populates defaults which
 // are missing.
-func (o *Options) Normalize() error {
+func (o *Options) normalize() error {
 	if o.SendFn == nil {
 		return errors.New("SendFn is required: got nil")
 	}
@@ -39,10 +39,6 @@ func (o *Options) Normalize() error {
 		o.MaxQPS = Defaults.MaxQPS
 	} else if o.MaxQPS < 0 {
 		return errors.Reason("MaxQPS must be > 0: got %f", o.MaxQPS).Err()
-	}
-
-	if err := o.Buffer.Normalize(); err != nil {
-		return errors.Annotate(err, "normalizing Buffer").Err()
 	}
 
 	return nil

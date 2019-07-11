@@ -17,9 +17,7 @@ package dispatcher
 import (
 	"context"
 	"testing"
-	"time"
 
-	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,14 +40,6 @@ func TestOptionValidationGood(t *testing.T) {
 		ErrorFn:    dummyErrorFn,
 		MaxSenders: 7,
 		MaxQPS:     1337.0,
-
-		Buffer: buffer.Options{
-			BatchSize:     99,
-			BatchDuration: 2 * time.Minute,
-			MaxItems:      12,
-			FullBehavior:  buffer.DropOldestBatch,
-			Retry:         retry.None,
-		},
 	}
 
 	var goodOptions = []struct {
@@ -68,7 +58,6 @@ func TestOptionValidationGood(t *testing.T) {
 				ErrorFn:    Defaults.ErrorFn,
 				MaxSenders: Defaults.MaxSenders,
 				MaxQPS:     Defaults.MaxQPS,
-				Buffer:     buffer.Defaults,
 			},
 		},
 
@@ -85,7 +74,7 @@ func TestOptionValidationGood(t *testing.T) {
 				myOptions := options.options
 				expect := options.expected
 
-				So(myOptions.Normalize(), ShouldBeNil)
+				So(myOptions.normalize(), ShouldBeNil)
 
 				// ShouldResemble has issues with function pointers, so compare them
 				// explicitly.
@@ -96,8 +85,6 @@ func TestOptionValidationGood(t *testing.T) {
 				myOptions.ErrorFn = nil
 				expect.SendFn = nil
 				expect.ErrorFn = nil
-				myOptions.Buffer.Retry = nil
-				expect.Buffer.Retry = nil
 
 				So(myOptions, ShouldResemble, expect)
 			})
@@ -142,7 +129,7 @@ func TestOptionValidationBad(t *testing.T) {
 		for _, options := range badOptions {
 			Convey(options.name, func() {
 				myOptions := options.options
-				So(myOptions.Normalize(), ShouldErrLike, options.expected)
+				So(myOptions.normalize(), ShouldErrLike, options.expected)
 			})
 		}
 	})
