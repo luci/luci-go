@@ -45,6 +45,30 @@
       "revId": "b8b0a8aea30641f4847cb0ba50022b46c78074b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b6c9d25_a2e9b65b",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-11T07:15:42Z",
+      "side": 1,
+      "message": "Subsequent CL uses a moving average of actual batch sizes to pre-allocate Batch.Data when creating the batch initially.",
+      "parentUuid": "414c7112_a5e5104f",
+      "range": {
+        "startLine": 149,
+        "startChar": 0,
+        "endLine": 149,
+        "endChar": 54
+      },
+      "revId": "b8b0a8aea30641f4847cb0ba50022b46c78074b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
