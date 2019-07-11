@@ -13,8 +13,7 @@
 # limitations under the License.
 
 service: services
-runtime: go
-api_version: go1
+runtime: go111
 
 instance_class: F4_1G
 
@@ -23,10 +22,10 @@ inbound_services:
 
 handlers:
 - url: "/internal/*"
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 - url: "/.*"
-  script: _go_app
+  script: auto
   secure: always

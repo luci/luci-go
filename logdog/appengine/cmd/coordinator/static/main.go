@@ -12,25 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package stub doesn't actually do anything. It exists to give GAE a deployable
+// Binary stub doesn't actually do anything. It exists to give GAE a deployable
 // target so that the static pages for this service can be available.
 //
 // We include a warmup handler because it is a prerequisite for application-wide
 // version switching.
-package stub
+package main
 
 import (
 	"net/http"
+
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/warmup"
 )
 
-func init() {
+func main() {
 	r := router.New()
 
 	base := router.NewMiddlewareChain()
 	warmup.InstallHandlers(r, base)
 
 	http.Handle("/", r)
+	appengine.Main()
 }

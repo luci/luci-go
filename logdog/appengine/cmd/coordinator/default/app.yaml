@@ -13,23 +13,22 @@
 # limitations under the License.
 
 service: default
-runtime: go
-api_version: go1
+runtime: go111
 
 inbound_services:
   - warmup
 
 handlers:
 - url: "/internal/*"
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 - url: "/admin/*"
-  script: _go_app
+  script: auto
   secure: always
   login: admin
 
 - url: "/.*"
-  script: _go_app
+  script: auto
   secure: always
