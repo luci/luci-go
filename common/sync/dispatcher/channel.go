@@ -16,6 +16,8 @@ package dispatcher
 
 import (
 	"context"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // Channel holds a chan which you can push individual work items to.
@@ -45,6 +47,9 @@ func (*Channel) Close() error {
 //   * `opts` is optional (see Options for the defaults).
 //
 // The Channel must be Close()'d when you're done with it.
-func NewChannel(ctx context.Context, opts *Options) *Channel {
+func NewChannel(ctx context.Context, opts Options) (*Channel, error) {
+	if err := opts.normalize(); err != nil {
+		return nil, errors.Annotate(err, "normalizing dispatcher.Options").Err()
+	}
 	panic("not implemented")
 }

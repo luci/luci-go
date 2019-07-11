@@ -59,17 +59,3 @@ type Batch struct {
 	// will be called when the Batch is ReQueue'd.
 	retry retry.Iterator
 }
-
-// Len returns the current effective length of this Batch. It's the smaller of:
-//   * len(Data)
-//   * the original length of this Batch when it was cut.
-//
-// This means that if you add items to Data, the dispatcher will account for
-// this Batch as having its original number of data items.
-func (b *Batch) Len() int {
-	cur := len(b.Data)
-	if cur < b.originalLen {
-		return cur
-	}
-	return b.originalLen
-}
