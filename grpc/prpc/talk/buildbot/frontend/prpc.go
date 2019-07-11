@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbot
+package main
 
 import (
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/grpc/prpc/talk/buildbot/proto"
+	buildbot "go.chromium.org/luci/grpc/prpc/talk/buildbot/proto"
 )
 
 func InstallAPIRoutes(r *router.Router, base router.MiddlewareChain) {

@@ -1,1 +1,5 @@
-../../../../appengine/static/dispatch.yaml
+dispatch:
+  - url: "*/rpcexplorer/*"
+    module: static
+  - url: "*/static/*"
+    module: static
