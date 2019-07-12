@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e051e21_193da5f3",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T02:48:32Z",
+      "side": 1,
+      "message": "i didn\u0027t think of this, tbh, i was just doing defensive programming with (batch.Data). But comment makes sense.",
+      "range": {
+        "startLine": 129,
+        "startChar": 2,
+        "endLine": 131,
+        "endChar": 39
+      },
+      "revId": "ebff65c0fe88ec3288df23c8b55da4c252e5e619",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ac95700_86aeeee5",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T02:48:32Z",
+      "side": 1,
+      "message": "oh, right. I keep forgetting that float/int isn\u0027t allowed\u003e",
+      "range": {
+        "startLine": 52,
+        "startChar": 28,
+        "endLine": 52,
+        "endChar": 36
+      },
+      "revId": "ebff65c0fe88ec3288df23c8b55da4c252e5e619",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
