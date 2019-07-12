@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c19a5bdf_8ec47c5e",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T23:15:00Z",
+      "side": 1,
+      "message": "may fit better inside Options",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 1
+      },
+      "revId": "5640f81506a11b4b799760cd08912bf350f142c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75582aa6_3c1c2d28",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T23:15:00Z",
+      "side": 1,
+      "message": "this is a heavy call :( I really want to find a way to make it lighter.\n\nhave you considered using https://golang.org/pkg/time/#Ticker? Given the fixed workInterval, it seems like a good fit.",
+      "range": {
+        "startLine": 102,
+        "startChar": 4,
+        "endLine": 102,
+        "endChar": 23
+      },
+      "revId": "5640f81506a11b4b799760cd08912bf350f142c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "01b5102b_40418f45",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T23:15:00Z",
+      "side": 1,
+      "message": "move next to draining declaration",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 115,
+        "endChar": 36
+      },
+      "revId": "5640f81506a11b4b799760cd08912bf350f142c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d128956b_382929be",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T23:15:00Z",
+      "side": 1,
+      "message": "why not inline like in worker goroutine:\n\nif toWait :\u003d nextSend.Sub(clock.Now(c.ctx)); toWait \u003e 0 {\n ...\n}",
+      "range": {
+        "startLine": 140,
+        "startChar": 3,
+        "endLine": 142,
+        "endChar": 34
+      },
+      "revId": "5640f81506a11b4b799760cd08912bf350f142c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "602bfb36_bba26e5d",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T23:15:00Z",
+      "side": 1,
+      "message": "no idea what \"r\" stands for, is that \"receiving\"?\nmaybe call it newItemsChan or just itemsChan",
+      "range": {
+        "startLine": 147,
+        "startChar": 6,
+        "endLine": 147,
+        "endChar": 11
+      },
+      "revId": "5640f81506a11b4b799760cd08912bf350f142c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b57381c8_fde6d370",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T23:15:00Z",
+      "side": 1,
+      "message": "ACK() should also be called if err \u003d\u003d nil,\nright?",
+      "range": {
+        "startLine": 161,
+        "startChar": 4,
+        "endLine": 163,
+        "endChar": 5
+      },
+      "revId": "5640f81506a11b4b799760cd08912bf350f142c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8295b05_5315f6a7",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T23:15:00Z",
+      "side": 1,
+      "message": "do you want to mention that sticking items into channel again may result in deadlock?",
+      "revId": "5640f81506a11b4b799760cd08912bf350f142c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f163f91a_2eecb6b3",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T23:15:00Z",
+      "side": 1,
+      "message": "and sending",
+      "range": {
+        "startLine": 204,
+        "startChar": 54,
+        "endLine": 204,
+        "endChar": 55
+      },
+      "revId": "5640f81506a11b4b799760cd08912bf350f142c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
