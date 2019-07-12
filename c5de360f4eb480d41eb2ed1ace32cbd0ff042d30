@@ -46,6 +46,30 @@
       "revId": "c5de360f4eb480d41eb2ed1ace32cbd0ff042d30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82233e6d_b3e315e6",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-12T02:03:00Z",
+      "side": 1,
+      "message": "yep you\u0027re right, though I need int64 on both operands. done in next CL",
+      "parentUuid": "298159fb_73aef337",
+      "range": {
+        "startLine": 61,
+        "startChar": 13,
+        "endLine": 61,
+        "endChar": 31
+      },
+      "revId": "c5de360f4eb480d41eb2ed1ace32cbd0ff042d30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
