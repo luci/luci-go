@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea2ddb82_ca883871",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 1681,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-12T23:44:45Z",
+      "side": 1,
+      "message": ":( \n\nThis is wrong, but I can fix it in a separate CL.",
+      "range": {
+        "startLine": 1646,
+        "startChar": 0,
+        "endLine": 1681,
+        "endChar": 0
+      },
+      "revId": "698f0069a99c9b06f433703b71320c3993cc2c38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
