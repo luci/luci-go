@@ -27,6 +27,7 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarktest"
 
+	"go.chromium.org/luci/starlark/builtins"
 	// Register proto types in the protobuf lib registry.
 	_ "go.chromium.org/luci/starlark/starlarkproto/testprotos"
 )
@@ -71,6 +72,7 @@ func TestAllStarlark(t *testing.T) {
 			obj.Freeze()
 			return starlark.None, nil
 		}),
+		"struct": builtins.Struct,
 	}
 	importMod := func(m starlark.StringDict) {
 		for k, v := range m {
