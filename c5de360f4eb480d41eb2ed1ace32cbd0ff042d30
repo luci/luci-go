@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a9c95f8_0d7d6a14",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T01:32:39Z",
+      "side": 1,
+      "message": "int64(value) - old\n\n(unless Go automatically promotes  (int - int) as (int64 - int64) )\n\n\nlalso, can just be:\n\nm.curSum +\u003d int64(value) - m.values[m.curIdx]\nm.values[m.curIdx] \u003d value",
+      "range": {
+        "startLine": 61,
+        "startChar": 13,
+        "endLine": 61,
+        "endChar": 31
+      },
+      "revId": "c5de360f4eb480d41eb2ed1ace32cbd0ff042d30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
