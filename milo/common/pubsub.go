@@ -54,6 +54,12 @@ func (m *PubSubSubscription) GetData() ([]byte, error) {
 // the functions that Milo calls.  Internal use only, can be swapped
 // out for testing.
 type pubsubClient interface {
+	// close releases any resources held by the client, such as memory and
+	// goroutines.
+	//
+	// Uses the context for logging.
+	close(context.Context)
+
 	// getTopic returns the pubsub topic if it exists, a notExist error if
 	// it does not exist, or an error if there was an error.
 	getTopic(context.Context, string) (*pubsub.Topic, error)
@@ -73,6 +79,12 @@ type pubsubClientFactory func(context.Context, string) (pubsubClient, error)
 // prodPubSubClient is a wrapper around the production pubsub client.
 type prodPubSubClient struct {
 	*pubsub.Client
+}
+
+func (pc *prodPubSubClient) close(c context.Context) {
+	if err := pc.Close(); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to close PubSub client")
+	}
 }
 
 func (pc *prodPubSubClient) getTopic(c context.Context, id string) (*pubsub.Topic, error) {
@@ -139,11 +151,14 @@ func EnsurePubSubSubscribed(c context.Context, settings *config.Settings) error 
 // instance is properly subscribed to the buildbucket subscription endpoint.
 func ensureBuildbucketSubscribed(c context.Context, projectID string) error {
 	topicID := "builds"
+
 	// Check the buildbucket project to see if the topic exists first.
 	bbClient, err := newPubSubClient(c, projectID)
 	if err != nil {
 		return err
 	}
+	defer bbClient.close(c)
+
 	topic, err := bbClient.getTopic(c, topicID)
 	switch err {
 	case errNotExist:
@@ -167,11 +182,14 @@ func ensureBuildbucketSubscribed(c context.Context, projectID string) error {
 		}
 		return err
 	}
+
 	// Now check to see if the subscription already exists.
 	miloClient, err := newPubSubClient(c, info.AppID(c))
 	if err != nil {
 		return err
 	}
+	defer miloClient.close(c)
+
 	sub, err := miloClient.getSubscription(c, "buildbucket")
 	switch err {
 	case errNotExist:
