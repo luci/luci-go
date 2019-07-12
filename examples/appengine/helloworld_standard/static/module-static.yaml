@@ -1,8 +1,0 @@
-# This is a boilerplate "static" GAE module that will work for most of apps.
-# You can symlink it to yours like helloworld app does.
-
-service: static
-runtime: go111
-
-includes:
-  - common
