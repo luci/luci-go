@@ -11,7 +11,12 @@ automatic_scaling:
   max_concurrent_requests: 8  # note: the default value is 10
 
 handlers:
-# For static resources such as css and js files.
+# Single robots.txt file, must be served under root.
+- url: /robots.txt
+  static_files: static/robots.txt
+  upload: static/robots.txt
+
+# For other static resources such as css and js files.
 - url: /static
   secure: always
   static_dir: static
