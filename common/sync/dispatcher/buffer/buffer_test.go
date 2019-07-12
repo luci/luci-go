@@ -168,6 +168,33 @@ func TestBuffer(t *testing.T) {
 					So(batch2.Data[0], ShouldEqual, "charlie")
 					So(batch2.Data[1], ShouldEqual, "dakota")
 				})
+
+				Convey(`batch cut by flush`, func() {
+					b.AddNoBlock(ctx, "bobbie")
+					So(b.Len(), ShouldEqual, 1)
+
+					So(b.LeaseOne(ctx), ShouldBeNil)
+
+					b.Flush(ctx)
+					So(b.Len(), ShouldEqual, 1)
+					So(bi.currentBatch, ShouldBeNil)
+					So(bi.heap, ShouldHaveLength, 1)
+
+					Convey(`double flush is noop`, func() {
+						b.Flush(ctx)
+						So(b.Len(), ShouldEqual, 1)
+						So(bi.currentBatch, ShouldBeNil)
+						So(bi.heap, ShouldHaveLength, 1)
+					})
+
+					batch := b.LeaseOne(ctx)
+					So(batch, ShouldNotBeNil)
+					So(b.Len(), ShouldEqual, 1)
+
+					batch.ACK()
+
+					So(b.Len(), ShouldEqual, 0)
+				})
 			})
 
 			Convey(`retry limit eventually drops batch`, func() {
