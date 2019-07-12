@@ -22,6 +22,30 @@
       "revId": "c5de360f4eb480d41eb2ed1ace32cbd0ff042d30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "298159fb_73aef337",
+        "filename": "common/sync/dispatcher/buffer/moving_average.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-12T01:38:14Z",
+      "side": 1,
+      "message": "https://play.golang.com/p/dRjY1PaGeaK",
+      "parentUuid": "5a9c95f8_0d7d6a14",
+      "range": {
+        "startLine": 61,
+        "startChar": 13,
+        "endLine": 61,
+        "endChar": 31
+      },
+      "revId": "c5de360f4eb480d41eb2ed1ace32cbd0ff042d30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
