@@ -35,7 +35,10 @@ type testPubSubClient struct {
 	createdSubs    map[string]pubsub.SubscriptionConfig
 }
 
-// Topic returns an empty pubsub topic reference.
+func (client *testPubSubClient) close(context.Context) {
+
+}
+
 func (client *testPubSubClient) getTopic(c context.Context, id string) (*pubsub.Topic, error) {
 	if err, ok := client.topics[id]; ok {
 		return &pubsub.Topic{}, err
@@ -43,7 +46,6 @@ func (client *testPubSubClient) getTopic(c context.Context, id string) (*pubsub.
 	panic(fmt.Errorf("test error: unknown topic %s", id))
 }
 
-// Subscription returns an empty subscription reference.
 func (client *testPubSubClient) getSubscription(c context.Context, id string) (
 	*pubsub.Subscription, error) {
 	if err, ok := client.subscriptions[id]; ok {
@@ -52,8 +54,6 @@ func (client *testPubSubClient) getSubscription(c context.Context, id string) (
 	panic(fmt.Errorf("test error: unknown sub %s", id))
 }
 
-// CreateSubscription records that an attempt to create a subscription with
-// an id, then returns an empty subscription.
 func (client *testPubSubClient) createSubscription(
 	c context.Context, id string, cfg pubsub.SubscriptionConfig) (
 	*pubsub.Subscription, error) {
