@@ -15,8 +15,11 @@
 package buffer
 
 import (
+	"context"
+	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 )
 
@@ -63,4 +66,56 @@ type Batch struct {
 	// as the original value of len(Batch.Data) and can decrease if
 	// len(Batch.Data) is smaller on a NACK().
 	countedSize int
+}
+
+// LeasedBatch is produced from Buffer.LeaseOne.
+//
+// It contains Batch, and you must call ACK or NACK on it, exactly once.
+//
+// Calling ACK/NACK a second time will panic.
+type LeasedBatch struct {
+	*Batch
+
+	mu sync.Mutex
+
+	// The size of the Batch at the time we leased it.
+	leasedSize int
+
+	// The Buffer that this Batch belongs to.
+	buf *bufferImpl
+}
+
+// Returns non-nil pointer to b.buf, setting it to nil in the process.
+//
+// panics if b.buf == nil.
+func (b *LeasedBatch) detachBuffer() *bufferImpl {
+	b.mu.Lock()
+	buf := b.buf
+	b.buf = nil
+	b.mu.Unlock()
+
+	if buf == nil {
+		panic(errors.New("LeasedBatch may only have ACK/NACK called exactly once"))
+	}
+
+	return buf
+}
+
+// ACK records that all the items in the batch have been processed.
+//
+// The Batch is no longer tracked by the associated Buffer.
+func (b *LeasedBatch) ACK() {
+	b.detachBuffer().ackImpl(b.leasedSize)
+}
+
+// NACK analyzes the current state of Batch.Data, potentially freeing space in
+// the Buffer's heap if the current Buffer.Data length is smaller than when the
+// Batch was originally leased.
+//
+// The Batch will be re-enqueued unless:
+//   * The Batch's retry Iterator returns retry.Stop
+//   * The Buffer has a DropOldestBatch policy and a new Batch has been added to
+//     the Buffer.
+func (b *LeasedBatch) NACK(ctx context.Context, err error) {
+	b.detachBuffer().nackImpl(ctx, err, b.Batch, b.leasedSize)
 }

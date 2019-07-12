@@ -47,11 +47,9 @@ func newMovingAverage(window, seed int) *movingAverage {
 	return &movingAverage{values, 0, curSum}
 }
 
-// get retrieves the current average value rounded up to the next integer value.
-func (m *movingAverage) get() int {
-	numValues := int64(len(m.values))
-	// Do this to round up to the next integer value.
-	return int((m.curSum + numValues - 1) / numValues)
+// get retrieves the current average value.
+func (m *movingAverage) get() float64 {
+	return float64(m.curSum) / float64(len(m.values))
 }
 
 // adds a new value to track.
