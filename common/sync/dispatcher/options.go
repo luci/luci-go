@@ -24,20 +24,6 @@ import (
 
 // Options is the configuration options for NewChannel.
 type Options struct {
-	// [REQUIRED] This function does the work to actually transmit the Batch to
-	// the next stage of your processing pipeline (e.g. do an RPC to a remote
-	// service).
-	//
-	// The function may manipulate the Batch however it wants (see Batch).
-	//
-	// In particular, shrinking the size of Batch.Data for confirmed-sent items
-	// will allow the dispatcher to reduce its buffer count when SendFn returns,
-	// even if SendFn returns an error. Removing items from the Batch will not
-	// cause the remaining items to be coalesced into a different Batch.
-	//
-	// Non-nil errors returned by this function will be handled by ErrorFn.
-	SendFn func(ctx context.Context, data *buffer.Batch) error
-
 	// [OPTIONAL] ErrorFn is called to handle the error from SendFn. It executes
 	// in the main handler loop of the dispatcher so it can make synchronous
 	// decisions about the dispatcher state.

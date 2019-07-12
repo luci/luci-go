@@ -21,10 +21,6 @@ import (
 // normalize validates that Options is well formed and populates defaults which
 // are missing.
 func (o *Options) normalize() error {
-	if o.SendFn == nil {
-		return errors.New("SendFn is required: got nil")
-	}
-
 	if o.ErrorFn == nil {
 		o.ErrorFn = Defaults.ErrorFn
 	}

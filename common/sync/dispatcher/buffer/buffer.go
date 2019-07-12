@@ -40,6 +40,7 @@ type Buffer interface {
 
 	// The number of items currently in this Buffer
 	Len() int
+
 	// True iff the Buffer will accept an item from AddNoBlock.
 	CanAddItem() bool
 
