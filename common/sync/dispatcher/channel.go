@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 )
 
 // Channel holds a chan which you can push individual work items to.
@@ -50,6 +51,10 @@ func (*Channel) Close() error {
 func NewChannel(ctx context.Context, opts Options) (*Channel, error) {
 	if err := opts.normalize(); err != nil {
 		return nil, errors.Annotate(err, "normalizing dispatcher.Options").Err()
+	}
+	_, err := buffer.NewBuffer(&opts.Buffer)
+	if err != nil {
+		return nil, errors.Annotate(err, "creating Buffer").Err()
 	}
 	panic("not implemented")
 }

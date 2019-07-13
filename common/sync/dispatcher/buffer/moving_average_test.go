@@ -36,19 +36,19 @@ func TestMovingAverage(t *testing.T) {
 			ma := newMovingAverage(10, 17)
 
 			Convey(`avg matches seed`, func() {
-				So(ma.get(), ShouldEqual, 17)
+				So(ma.get(), ShouldEqual, 17.0)
 			})
 
 			Convey(`adding new data changes the average`, func() {
 				ma.record(100)
-				So(ma.get(), ShouldEqual, 26)
+				So(ma.get(), ShouldEqual, 25.3)
 			})
 
 			Convey(`adding a lot of data is fine`, func() {
 				for i := 0; i < 100; i++ {
 					ma.record(100)
 				}
-				So(ma.get(), ShouldEqual, 100)
+				So(ma.get(), ShouldEqual, 100.0)
 			})
 		})
 
