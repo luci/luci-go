@@ -1,0 +1,62 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package dispatcher
+
+import (
+	"context"
+	"time"
+
+	"go.chromium.org/luci/common/clock"
+)
+
+type qpsBucket <-chan struct{}
+
+func newQPSBucket(ctx context.Context, depth int, maxQPS float64) qpsBucket {
+	rawChan := make(chan struct{}, depth)
+
+	go func() {
+		defer close(rawChan)
+
+		interval := time.Duration(maxQPS / float64(time.Second))
+		timer := clock.NewTimer(clock.Tag(ctx, "qpsBucket"))
+		defer timer.Stop()
+
+		for {
+			timer.Reset(interval)
+
+			select {
+			case <-ctx.Done():
+				return
+			case timerResult := <-timer.GetC():
+				if timerResult.Incomplete() {
+					return
+				}
+
+				select {
+				case <-ctx.Done():
+					return
+				case rawChan <- struct{}{}:
+				}
+			}
+		}
+	}()
+	return rawChan
+}
+
+func newInfiniteQPSBucket() qpsBucket {
+	ret := make(chan struct{})
+	close(ret)
+	return ret
+}
