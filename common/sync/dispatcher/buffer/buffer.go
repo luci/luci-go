@@ -34,12 +34,16 @@ type Buffer interface {
 	// Block).
 	AddNoBlock(context.Context, interface{})
 
+	// Causes any buffered-but-not-batched data to be cut into a Batch.
+	Flush(context.Context)
+
 	// Returns the send time for the next-most-available-to-send Batch, or
 	// a Zero time.Time if no batches are available to send.
 	NextSendTime() time.Time
 
 	// The number of items currently in this Buffer
 	Len() int
+
 	// True iff the Buffer will accept an item from AddNoBlock.
 	CanAddItem() bool
 
@@ -125,14 +129,24 @@ func (buf *bufferImpl) maybeCutBatchLocked(ctx context.Context) {
 	batch := buf.currentBatch
 
 	switch {
-	case batch == nil || len(batch.Data) == 0:
-		// len(batch.Data) == 0 could happen if AddNoBlock panic'd due to
-		// Buffer fullness and BlockNewItems; a new batch would be allocated, but
-		// nothing would be appended to Data.
+	case batch == nil:
 		return
 	case buf.opts.BatchSize > 0 && len(batch.Data) >= buf.opts.BatchSize:
 	case clock.Now(ctx).After(batch.nextSend):
 	default:
+		return
+	}
+
+	buf.cutBatchLocked(ctx)
+}
+
+func (buf *bufferImpl) cutBatchLocked(ctx context.Context) {
+	batch := buf.currentBatch
+
+	if batch == nil || len(batch.Data) == 0 {
+		// len(batch.Data) == 0 could happen if AddNoBlock panic'd due to
+		// Buffer fullness and BlockNewItems; a new batch would be allocated, but
+		// nothing would be appended to Data.
 		return
 	}
 
@@ -168,6 +182,12 @@ func (buf *bufferImpl) AddNoBlock(ctx context.Context, item interface{}) {
 	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
 	buf.totalBufferedItems++
 	buf.maybeCutBatchLocked(ctx)
+}
+
+func (buf *bufferImpl) Flush(ctx context.Context) {
+	buf.mu.Lock()
+	buf.cutBatchLocked(ctx)
+	buf.mu.Unlock()
 }
 
 func (buf *bufferImpl) NextSendTime() time.Time {
