@@ -21,10 +21,6 @@ import (
 // normalize validates that Options is well formed and populates defaults which
 // are missing.
 func (o *Options) normalize() error {
-	if o.SendFn == nil {
-		return errors.New("SendFn is required: got nil")
-	}
-
 	if o.ErrorFn == nil {
 		o.ErrorFn = Defaults.ErrorFn
 	}
@@ -35,9 +31,11 @@ func (o *Options) normalize() error {
 		return errors.Reason("MaxSenders must be > 0: got %d", o.MaxSenders).Err()
 	}
 
-	if o.MaxQPS == 0 {
+	switch {
+	case o.MaxQPS == 0:
 		o.MaxQPS = Defaults.MaxQPS
-	} else if o.MaxQPS < 0 {
+	case o.MaxQPS == -1:
+	case o.MaxQPS < 0:
 		return errors.Reason("MaxQPS must be > 0: got %f", o.MaxQPS).Err()
 	}
 
