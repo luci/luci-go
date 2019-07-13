@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "73dba248_2ec815e3",
+        "filename": "common/sync/dispatcher/token_bucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-13T17:37:00Z",
+      "side": 1,
+      "message": "I think I actually want this in its own package; the code is small (and will be quite static) and the tests are kinda sketchy (so caching them separately from dispatcher\u0027s tests would be great)",
+      "parentUuid": "081339ad_73f33bcb",
+      "range": {
+        "startLine": 29,
+        "startChar": 20,
+        "endLine": 29,
+        "endChar": 28
+      },
+      "revId": "b0d77dc05ae853fc36b540b32c354f8bffa2c9e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "592d7802_2512e9b1",
         "filename": "common/sync/dispatcher/token_bucket.go",
         "patchSetId": 2
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "7da5b6bc_d412ad12",
+        "filename": "common/sync/dispatcher/token_bucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-13T17:37:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "962147a7_910f3bfe",
+      "range": {
+        "startLine": 46,
+        "startChar": 2,
+        "endLine": 46,
+        "endChar": 54
+      },
+      "revId": "b0d77dc05ae853fc36b540b32c354f8bffa2c9e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3e27e244_2438e11a",
         "filename": "common/sync/dispatcher/token_bucket.go",
         "patchSetId": 2
@@ -91,6 +139,30 @@
       "revId": "b0d77dc05ae853fc36b540b32c354f8bffa2c9e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b60f399_da6321d6",
+        "filename": "common/sync/dispatcher/token_bucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-13T17:37:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e27e244_2438e11a",
+      "range": {
+        "startLine": 57,
+        "startChar": 4,
+        "endLine": 60,
+        "endChar": 0
+      },
+      "revId": "b0d77dc05ae853fc36b540b32c354f8bffa2c9e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
