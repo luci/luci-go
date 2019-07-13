@@ -22,25 +22,50 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 )
 
+// ErrorFn is called to handle the error from SendFn.
+//
+// It executes in the main handler loop of the dispatcher so it can make
+// synchronous decisions about the dispatcher state.
+//
+// Blocking in this function will block ALL dispatcher actions, so be quick
+// :).
+//
+// DO NOT WRITE TO THE CHANNEL DIRECTLY FROM THIS FUNCTION. Doing so will very
+// likely cause deadlocks.
+//
+// This may:
+//   * inspect/log the error
+//   * manipulate the contents of failedBatch
+//   * return a boolean of whether this Batch should be retried or not. If
+//     this is false then the Batch is dropped. If it's true, then it will be
+//     re-queued as-is for transmission according to BufferFullBehavior.
+//   * pass the Batch.Data to another goroutine (in a non-blocking way!) to be
+//     re-queued through Channel.WriteChan.
+//
+// Args:
+//   * failedBatch - The Batch for which SendFn produced a non-nil error.
+//   * err - The error SendFn produced.
+//
+// Returns true iff the dispatcher should re-try sending this Batch, according
+// to Buffer.Retry.
+type ErrorFn func(failedBatch *buffer.Batch, err error) (retry bool)
+
 // Options is the configuration options for NewChannel.
 type Options struct {
-	// [REQUIRED] This function does the work to actually transmit the Batch to
-	// the next stage of your processing pipeline (e.g. do an RPC to a remote
-	// service).
+	// [OPTIONAL] The default ErrorFn to use (see ErrorFn docs for details).
 	//
-	// The function may manipulate the Batch however it wants (see Batch).
-	//
-	// In particular, shrinking the size of Batch.Data for confirmed-sent items
-	// will allow the dispatcher to reduce its buffer count when SendFn returns,
-	// even if SendFn returns an error. Removing items from the Batch will not
-	// cause the remaining items to be coalesced into a different Batch.
-	//
-	// Non-nil errors returned by this function will be handled by ErrorFn.
-	SendFn func(ctx context.Context, data *buffer.Batch) error
+	// Default: Logs the error and returns true on a transient error.
+	ErrorFn ErrorFn
 
-	// [OPTIONAL] ErrorFn is called to handle the error from SendFn. It executes
-	// in the main handler loop of the dispatcher so it can make synchronous
-	// decisions about the dispatcher state.
+	// [OPTIONAL] Called with the dropped batch any time the Channel drops a batch.
+	//
+	// This includes:
+	//   * When FullBehavior==DropOldestBatch and we get new data.
+	//   * When FullBehavior==DropOldestBatch and we attempt to retry old data.
+	//   * When ErrorFn returns false for a batch.
+	//
+	// It executes in the main handler loop of the dispatcher so it can make
+	// synchronous decisions about the dispatcher state.
 	//
 	// Blocking in this function will block ALL dispatcher actions, so be quick
 	// :).
@@ -48,25 +73,8 @@ type Options struct {
 	// DO NOT WRITE TO THE CHANNEL DIRECTLY FROM THIS FUNCTION. Doing so will very
 	// likely cause deadlocks.
 	//
-	// This may:
-	//   * inspect/log the error
-	//   * manipulate the contents of failedBatch
-	//   * return a boolean of whether this Batch should be retried or not. If
-	//     this is false then the Batch is dropped. If it's true, then it will be
-	//     re-queued as-is for transmission according to BufferFullBehavior.
-	//   * pass the Batch.Data to another goroutine (in a non-blocking way!) to be
-	//     re-queued through Channel.WriteChan.
-	//
-	// Args:
-	//   * ctx - The Context passed to NewChannel
-	//   * failedBatch - The Batch for which SendFn produced a non-nil error.
-	//   * err - The error SendFn produced.
-	//
-	// Returns true iff the dispatcher should re-try sending this Batch, according
-	// to Buffer.Retry.
-	//
-	// Default: Logs the error and returns true on a transient error.
-	ErrorFn func(ctx context.Context, failedBatch *buffer.Batch, err error) (retry bool)
+	// Default: logs the number of data items in the Batch being dropped.
+	DropFn func(*buffer.Batch)
 
 	// [OPTIONAL] The maximum number of concurrent invocations of SendFn.
 	//
@@ -86,7 +94,7 @@ type Options struct {
 	//
 	// Before accepting the next Batch.
 	//
-	// Required: Must be > 0
+	// Required: Must be > 0 or -1 for unlimited
 	// Default: 1
 	MaxQPS float64
 
@@ -98,15 +106,26 @@ type Options struct {
 //
 // DO NOT ASSIGN/WRITE TO THIS STRUCT.
 var Defaults = Options{
-	ErrorFn: func(ctx context.Context, failedBatch *buffer.Batch, err error) (retry bool) {
+	MaxSenders: 1,
+	MaxQPS:     1.0,
+}
+
+func defaultDropFnFactory(ctx context.Context) func(*buffer.Batch) {
+	return func(dropped *buffer.Batch) {
+		logging.Infof(
+			ctx,
+			"dropping batch: len(Batch.Data) == %s",
+			len(dropped.Data))
+	}
+}
+
+func defaultErrorFnFactory(ctx context.Context) ErrorFn {
+	return func(failedBatch *buffer.Batch, err error) (retry bool) {
 		logging.Errorf(
 			ctx,
-			"dispatcher.Channel: failed to send Batch(len(Data): %d, Meta: %q): %s",
+			"failed to send Batch(len(Data): %d, Meta: %q): %s",
 			len(failedBatch.Data), failedBatch.Meta, err)
 
 		return transient.Tag.In(err)
-	},
-
-	MaxSenders: 1,
-	MaxQPS:     1.0,
+	}
 }
