@@ -15,7 +15,6 @@
 package dispatcher
 
 import (
-	"context"
 	"testing"
 
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
@@ -24,11 +23,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func dummySendFn(ctx context.Context, data *buffer.Batch) error {
-	return nil
-}
-
-func dummyErrorFn(ctx context.Context, failedBatch *buffer.Batch, err error) bool {
+func dummyErrorFn(failedBatch *buffer.Batch, err error) bool {
 	return false
 }
 
@@ -36,7 +31,6 @@ func TestOptionValidationGood(t *testing.T) {
 	t.Parallel()
 
 	fullOptions := Options{
-		SendFn:     dummySendFn,
 		ErrorFn:    dummyErrorFn,
 		MaxSenders: 7,
 		MaxQPS:     1337.0,
@@ -48,13 +42,9 @@ func TestOptionValidationGood(t *testing.T) {
 		expected Options
 	}{
 		{
-			name: "minimal",
-			options: Options{
-				SendFn: dummySendFn,
-			},
+			name:    "minimal",
+			options: Options{},
 			expected: Options{
-				SendFn: dummySendFn,
-
 				ErrorFn:    Defaults.ErrorFn,
 				MaxSenders: Defaults.MaxSenders,
 				MaxQPS:     Defaults.MaxQPS,
@@ -78,12 +68,9 @@ func TestOptionValidationGood(t *testing.T) {
 
 				// ShouldResemble has issues with function pointers, so compare them
 				// explicitly.
-				So(myOptions.SendFn, ShouldEqual, expect.SendFn)
 				So(myOptions.ErrorFn, ShouldEqual, expect.ErrorFn)
 
-				myOptions.SendFn = nil
 				myOptions.ErrorFn = nil
-				expect.SendFn = nil
 				expect.ErrorFn = nil
 
 				So(myOptions, ShouldResemble, expect)
@@ -101,15 +88,8 @@ func TestOptionValidationBad(t *testing.T) {
 		expected string
 	}{
 		{
-			"no SendFn",
-			Options{},
-			"SendFn is required",
-		},
-
-		{
 			"MaxSenders",
 			Options{
-				SendFn:     dummySendFn,
 				MaxSenders: -2,
 			},
 			"MaxSenders must be",
@@ -118,7 +98,6 @@ func TestOptionValidationBad(t *testing.T) {
 		{
 			"MaxQPS",
 			Options{
-				SendFn: dummySendFn,
 				MaxQPS: -0.1,
 			},
 			"MaxQPS must be",

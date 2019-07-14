@@ -116,6 +116,6 @@ func (b *LeasedBatch) ACK() {
 //   * The Batch's retry Iterator returns retry.Stop
 //   * The Buffer has a DropOldestBatch policy and a new Batch has been added to
 //     the Buffer.
-func (b *LeasedBatch) NACK(ctx context.Context, err error) {
-	b.detachBuffer().nackImpl(ctx, err, b.Batch, b.leasedSize)
+func (b *LeasedBatch) NACK(ctx context.Context, err error) (dropped *Batch, requeued bool) {
+	return b.detachBuffer().nackImpl(ctx, err, b.Batch, b.leasedSize)
 }
