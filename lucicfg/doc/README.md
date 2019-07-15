@@ -1644,34 +1644,39 @@ failure.
 ### luci.cq {#luci.cq}
 
 ```python
-luci.cq(
-    # Optional arguments.
-    submit_max_burst = None,
-    submit_burst_delay = None,
-    draining_start_time = None,
-    status_host = None,
-    project_scoped_account = None,
-)
+luci.cq()
 ```
 
 
 
 Defines optional configuration of the CQ service for this project.
 
-CQ is a service that monitors Gerrit CLs in a configured set of Gerrit
-projects, launches presubmit jobs (aka tryjobs) whenever a CL is marked as
-ready for CQ, and submits the CL if it passes all checks.
+ CQ is a service that monitors Gerrit CLs in a configured set of Gerrit
+ projects, launches presubmit jobs (aka tryjobs) whenever a CL is marked as
+ ready for CQ, and submits the CL if it passes all checks.
 
-This optional rule can be used to set global CQ parameters that apply to all
-[luci.cq_group(...)](#luci.cq_group) defined in the project.
+ This optional rule can be used to set global CQ parameters that apply to all
+ [luci.cq_group(...)](#luci.cq_group) defined in the project.
 
-#### Arguments {#luci.cq-args}
+ Args:
+   submit_max_burst: maximum number of successful CQ attempts completed by
+       submitting corresponding Gerrit CL(s) before waiting
+       `submit_burst_delay`. This feature today applies to all attempts
+       processed by CQ, across all [luci.cq_group(...)](#luci.cq_group) instances. Optional, by
+       default there's no limit. If used, requires `submit_burst_delay` to be
+       set too.
+   submit_burst_delay: how long to wait between bursts of submissions of CQ
+       attempts. Required if `submit_max_burst` is used.
+   draining_start_time: if present, the CQ will refrain from processing any
+       CLs, on which CQ was triggered after the specified time. This is an UTC
+       RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and
+       Z is mandatory.
+   status_host: hostname of the CQ status app to push updates to. Optional and
+       deprecated.
+   project_scoped_account: Whether CQ used a project scoped account (if available)
+       to access external systems like Gerrit. This is a security feature helping
+to improve separation between LUCI projects.
 
-* **submit_max_burst**: maximum number of successful CQ attempts completed by submitting corresponding Gerrit CL(s) before waiting `submit_burst_delay`. This feature today applies to all attempts processed by CQ, across all [luci.cq_group(...)](#luci.cq_group) instances. Optional, by default there's no limit. If used, requires `submit_burst_delay` to be set too.
-* **submit_burst_delay**: how long to wait between bursts of submissions of CQ attempts. Required if `submit_max_burst` is used.
-* **draining_start_time**: if present, the CQ will refrain from processing any CLs, on which CQ was triggered after the specified time. This is an UTC RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z is mandatory.
-* **status_host**: hostname of the CQ status app to push updates to. Optional and deprecated.
-* **project_scoped_account**: Toggle to enable the use of project scoped accounts to authorize against external systems like Gerrit.
 
 
 
@@ -2580,6 +2585,27 @@ Deserializes a protobuf message given its JSONPB serialization.
 #### Returns  {#proto.from_jsonpb-returns}
 
 Deserialized message constructed via `ctor`.
+
+
+
+### proto.struct_to_textpb {#proto.struct_to_textpb}
+
+```python
+proto.struct_to_textpb(s = None)
+```
+
+
+
+Converts a struct to a text proto string.
+
+#### Arguments {#proto.struct_to_textpb-args}
+
+* **s**: a struct object. May not contain dicts.
+
+
+#### Returns  {#proto.struct_to_textpb-returns}
+
+A str containing a text format protocol buffer message.
 
 
 

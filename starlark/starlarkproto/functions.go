@@ -15,6 +15,7 @@
 package starlarkproto
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -37,7 +38,7 @@ import (
 //        msg: a *Message to serialize.
 //
 //      Returns:
-//        An str representing msg in text format.
+//        A str representing msg in text format.
 //      """
 //
 //    def to_jsonpb(msg, emit_defaults=False):
@@ -48,7 +49,7 @@ import (
 //        emit_defaults: if True, do not omit fields with default values.
 //
 //      Returns:
-//        An str representing msg in JSONPB format.
+//        A str representing msg in JSONPB format.
 //      """
 //
 //    def from_textpb(ctor, text):
@@ -76,13 +77,24 @@ import (
 //      Returns:
 //        Deserialized message constructed via `ctor`.
 //      """
+//
+//    def struct_to_textpb(s):
+//      """Converts a struct to a text proto string.
+//
+//      Args:
+//        s: a struct object. May not contain dicts.
+//
+//      Returns:
+//        A str containing a text format protocol buffer message.
+//      """
 func ProtoLib() starlark.StringDict {
 	return starlark.StringDict{
 		"proto": starlarkstruct.FromStringDict(starlark.String("proto"), starlark.StringDict{
-			"to_textpb":   starlark.NewBuiltin("to_textpb", toTextPb),
-			"to_jsonpb":   starlark.NewBuiltin("to_jsonpb", toJSONPb),
-			"from_textpb": starlark.NewBuiltin("from_textpb", fromTextPb),
-			"from_jsonpb": starlark.NewBuiltin("from_jsonpb", fromJSONPb),
+			"to_textpb":        starlark.NewBuiltin("to_textpb", toTextPb),
+			"to_jsonpb":        starlark.NewBuiltin("to_jsonpb", toJSONPb),
+			"from_textpb":      starlark.NewBuiltin("from_textpb", fromTextPb),
+			"from_jsonpb":      starlark.NewBuiltin("from_jsonpb", fromJSONPb),
+			"struct_to_textpb": starlark.NewBuiltin("struct_to_textpb", structToTextPb),
 		}),
 	}
 }
@@ -173,4 +185,85 @@ func fromJSONPb(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kw
 		return nil, fmt.Errorf("from_jsonpb: %s", err)
 	}
 	return msg, nil
+}
+
+// structToTextPb takes a struct and returns a string containing a text format protocol buffer.
+func structToTextPb(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var val starlark.Value
+	if err := starlark.UnpackArgs("struct_to_textpb", args, kwargs, "struct", &val); err != nil {
+		return nil, err
+	}
+	s, ok := val.(*starlarkstruct.Struct)
+	if !ok {
+		return nil, fmt.Errorf("struct_to_textpb: got %s, expecting a struct", val.Type())
+	}
+	var buf bytes.Buffer
+	err := writeProtoStruct(&buf, 0, s)
+	if err != nil {
+		return nil, err
+	}
+	return starlark.String(buf.String()), nil
+}
+
+// Based on
+// https://github.com/google/starlark-go/blob/32ce6ec36500ded2e2340a430fae42bc43da8467/starlarkstruct/struct.go
+func writeProtoStruct(out *bytes.Buffer, depth int, s *starlarkstruct.Struct) error {
+	for _, name := range s.AttrNames() {
+		val, err := s.Attr(name)
+		if err != nil {
+			return err
+		}
+		if err = writeProtoField(out, depth, name, val); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writeProtoField(out *bytes.Buffer, depth int, field string, v starlark.Value) error {
+	if depth > 16 {
+		return fmt.Errorf("to_proto: depth limit exceeded")
+	}
+
+	switch v := v.(type) {
+	case *starlarkstruct.Struct:
+		fmt.Fprintf(out, "%*s%s: <\n", 2*depth, "", field)
+		if err := writeProtoStruct(out, depth+1, v); err != nil {
+			return err
+		}
+		fmt.Fprintf(out, "%*s>\n", 2*depth, "")
+		return nil
+
+	case *starlark.List, starlark.Tuple:
+		iter := starlark.Iterate(v)
+		defer iter.Done()
+		var elem starlark.Value
+		for iter.Next(&elem) {
+			if err := writeProtoField(out, depth, field, elem); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// scalars
+	fmt.Fprintf(out, "%*s%s: ", 2*depth, "", field)
+	switch v := v.(type) {
+	case starlark.Bool:
+		fmt.Fprintf(out, "%t", v)
+
+	case starlark.Int:
+		out.WriteString(v.String())
+
+	case starlark.Float:
+		fmt.Fprintf(out, "%g", v)
+
+	case starlark.String:
+		fmt.Fprintf(out, "%q", string(v))
+
+	default:
+		return fmt.Errorf("struct_to_textpb: cannot convert %s to proto", v.Type())
+	}
+	out.WriteByte('\n')
+	return nil
 }

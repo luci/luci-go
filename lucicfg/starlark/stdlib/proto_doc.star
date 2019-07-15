@@ -59,10 +59,20 @@ def _from_jsonpb(ctor, text):
     Deserialized message constructed via `ctor`.
   """
 
+def _struct_to_textpb(s):
+  """Converts a struct to a text proto string.
+
+  Args:
+    s: a struct object. May not contain dicts.
+
+  Returns:
+    A str containing a text format protocol buffer message.
+  """
 
 proto = struct(
     to_textpb = _to_textpb,
     to_jsonpb = _to_jsonpb,
     from_textpb = _from_textpb,
     from_jsonpb = _from_jsonpb,
+    struct_to_textpb = _struct_to_textpb,
 )
