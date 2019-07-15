@@ -54,7 +54,7 @@ def _cq(
         deprecated.
     project_scoped_account: Whether CQ used a project scoped account (if available)
         to access external systems like Gerrit. This is a security feature helping
-	to improve separation between LUCI projects.
+        to improve separation between LUCI projects.
   """
   submit_max_burst = validate.int('submit_max_burst', submit_max_burst, required=False)
   submit_burst_delay = validate.duration('submit_burst_delay', submit_burst_delay, required=False)
@@ -72,8 +72,8 @@ def _cq(
       'status_host': validate.string('status_host', status_host, required=False),
       'project_scoped_account': validate.bool(
           'project_scoped_account',
-	  project_scoped_account,
-	  required=False,
+          project_scoped_account,
+          required=False,
       ),
   })
   graph.add_edge(keys.project(), key)
