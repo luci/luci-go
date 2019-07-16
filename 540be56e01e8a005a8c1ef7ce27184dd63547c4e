@@ -2,6 +2,304 @@
   "comments": [
     {
       "key": {
+        "uuid": "a8019c52_353a3804",
+        "filename": "results/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "thank you for not including \"test\" in here.\n\nresults is a bit too generic. Let\u0027s use \"luci.resultdb\"",
+      "range": {
+        "startLine": 17,
+        "startChar": 8,
+        "endLine": 17,
+        "endChar": 15
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b39811fa_121e75f7",
+        "filename": "results/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "based on the most recent developments, this will be \"realm\", not \"bucket\".\n\nVadim, can you send your doc to luci-eng and/or add jchinlee?\n\nFWIU, it is going to be a single string, as opposed to message with fields",
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45de2c78_8b5148da",
+        "filename": "results/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "thanks for keeping this generic :)",
+      "range": {
+        "startLine": 33,
+        "startChar": 8,
+        "endLine": 33,
+        "endChar": 14
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "01bb814e_2f79fc46",
+        "filename": "results/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "all proto fields and messages must have thorough documentation. In particular, it must answer the questions \"what is it\" and ideally \"how to use it\"? Feel free to add whatever you think should be there, based one the definitions in the design doc, and we can update it incrementally.",
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38b9efbd_69883710",
+        "filename": "results/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "a result?\n\nartifact belongs to a result, not invocation. However may you mean \"invocation\" in a general sense, not the term we coined here. In that case, consider using a synonym to avoid confusion",
+      "range": {
+        "startLine": 73,
+        "startChar": 33,
+        "endLine": 73,
+        "endChar": 46
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3f33258_1dc79c9c",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "note: in the doc we are currently wrestling to change this to /. We can update the proto later if choose /",
+      "range": {
+        "startLine": 31,
+        "startChar": 20,
+        "endLine": 31,
+        "endChar": 21
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3c0e2350_98c46ef7",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "with unexpected",
+      "range": {
+        "startLine": 42,
+        "startChar": 36,
+        "endLine": 42,
+        "endChar": 52
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdaf8572_fbd50a83",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "forgot to update the doc since \"superseded\" was replaced \"inconsequential\". Updated now.",
+      "range": {
+        "startLine": 55,
+        "startChar": 4,
+        "endLine": 58,
+        "endChar": 3
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f86a3939_3b14bab9",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "there is no ingestion section in these protos",
+      "range": {
+        "startLine": 64,
+        "startChar": 2,
+        "endLine": 64,
+        "endChar": 37
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e23070c1_50cee612",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "remove, this was relevant to readers of the design doc, not readers of this proto file",
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d5ade20_fec0d06c",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "this is more specific to RPCs than to invocations. Please move to rpc.proto",
+      "range": {
+        "startLine": 81,
+        "startChar": 8,
+        "endLine": 81,
+        "endChar": 22
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96c77649_d0d43ed7",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "one",
+      "range": {
+        "startLine": 82,
+        "startChar": 50,
+        "endLine": 82,
+        "endChar": 51
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef82bb7a_f341f405",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "please remove\n\nthe proto comments in the doc were written such that\n1) they do not duplicate what\u0027s already written in the domain model\n2) clarify proto-specific things for readers of the design doc\n\ncomments should be rewritten in concrete proto files. In particular, the readers no longer see the lengthy explanations of concepts (in domain model section)",
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "407fc461_1d1254d4",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "inconsequential",
+      "range": {
+        "startLine": 89,
+        "startChar": 38,
+        "endLine": 89,
+        "endChar": 48
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "848ba1f1_6fd0257b",
         "filename": "results/proto/rpc.proto",
         "patchSetId": 2
@@ -18,6 +316,29 @@
         "startChar": 3,
         "endLine": 24,
         "endChar": 10
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77b7cc7b_654b7207",
+        "filename": "results/proto/tests.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-16T19:40:44Z",
+      "side": 1,
+      "message": "an unexpected result of a test variant",
+      "range": {
+        "startLine": 46,
+        "startChar": 7,
+        "endLine": 46,
+        "endChar": 29
       },
       "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
