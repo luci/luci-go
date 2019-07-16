@@ -1,0 +1,52 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultsdb;
+
+// TODO(jchinlee): Update protos and clarify documentation when finalized.
+// Currently, these are for experimentation/iteration.
+
+option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
+
+import "go.chromium.org/luci/results/proto/v1/common.proto";
+
+// Specifies search predicate on test variants of results to return.
+message TestVariantIDPredicate {
+
+  // Test name predicate.
+  oneof name_predicate {
+    // If specified, test name must equal this value exactly.
+    string name = 1;
+
+    // If specified, a test name must have this prefix.
+    string name_prefix = 2;
+  }
+
+  oneof variant_predicate {
+    // If specified, a test result must be of this variant.
+    VariantDef variant = 3;
+
+    // If specified, a test result variant def must include these key-values,
+    // e.g. all variants having os:linux.
+    VariantDef variant_includes = 4;
+  }
+}
+
+// Indicates the test subject (e.g. a CL) is absolved from blame
+// for an unexpected result of a test variant.
+message Exoneration {
+  Markdown explanation = 1;
+}
