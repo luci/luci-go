@@ -64,7 +64,7 @@ func TestBuffer(t *testing.T) {
 							So(b.NextSendTime(), ShouldResemble,
 								start.Add(Defaults.BatchDuration+time.Millisecond))
 						}
-						b.AddNoBlock(ctx, i)
+						So(b.AddNoBlock(ctx, i), ShouldBeNil)
 					}
 
 					So(b.Len(), ShouldEqual, Defaults.BatchSize)
@@ -78,6 +78,7 @@ func TestBuffer(t *testing.T) {
 
 					batch := b.LeaseOne(ctx)
 					So(b.LeaseOne(ctx), ShouldBeNil)
+					So(batch.Live(), ShouldBeTrue)
 
 					So(b.Len(), ShouldEqual, Defaults.BatchSize)
 					So(batch.Data, ShouldHaveLength, Defaults.BatchSize)
@@ -87,11 +88,12 @@ func TestBuffer(t *testing.T) {
 
 					Convey(`ACK`, func() {
 						batch.ACK()
+						So(batch.Live(), ShouldBeFalse)
 
 						So(b.Len(), ShouldEqual, 0)
 
 						Convey(`double ACK panic`, func() {
-							So(batch.ACK, ShouldPanicLike, "LeasedBatch")
+							So(func() { batch.ACK() }, ShouldPanicLike, "LeasedBatch")
 							So(b.Len(), ShouldEqual, 0)
 						})
 					})
@@ -100,6 +102,7 @@ func TestBuffer(t *testing.T) {
 						batch.Data = batch.Data[:10] // pretend we processed some Data
 
 						batch.NACK(ctx, nil)
+						So(batch.Live(), ShouldBeFalse)
 
 						So(b.Len(), ShouldEqual, Defaults.BatchSize-10)
 						So(bi.heap.Len(), ShouldEqual, 1)
@@ -108,12 +111,16 @@ func TestBuffer(t *testing.T) {
 							// no batch yet; the one we NACK'd is sleeping
 							So(b.LeaseOne(ctx), ShouldBeNil)
 							tclock.Set(b.NextSendTime())
-							batch := b.LeaseOne(ctx)
-							So(batch, ShouldNotBeNil)
+							newBatch := b.LeaseOne(ctx)
+							So(newBatch, ShouldNotBeNil)
 
-							batch.Data = append(batch.Data, nil, nil, nil)
+							// Old lease stays dead, but new one is alive.
+							So(batch.Live(), ShouldBeFalse)
+							So(newBatch.Live(), ShouldBeTrue)
 
-							batch.NACK(ctx, nil)
+							newBatch.Data = append(newBatch.Data, nil, nil, nil)
+
+							newBatch.NACK(ctx, nil)
 
 							So(b.Len(), ShouldEqual, Defaults.BatchSize-10)
 							So(bi.heap.Len(), ShouldEqual, 1)
@@ -135,7 +142,7 @@ func TestBuffer(t *testing.T) {
 				})
 
 				Convey(`batch cut by time`, func() {
-					b.AddNoBlock(ctx, "bobbie")
+					So(b.AddNoBlock(ctx, "bobbie"), ShouldBeNil)
 
 					// should be equal to timeout of first batch, plus 1ms
 					nextSend := b.NextSendTime()
@@ -143,8 +150,8 @@ func TestBuffer(t *testing.T) {
 						start.Add(Defaults.BatchDuration+time.Millisecond))
 					tclock.Set(nextSend)
 
-					b.AddNoBlock(ctx, "charlie")
-					b.AddNoBlock(ctx, "dakota")
+					So(b.AddNoBlock(ctx, "charlie"), ShouldBeNil)
+					So(b.AddNoBlock(ctx, "dakota"), ShouldBeNil)
 
 					// We haven't leased one yet, so NextSendTime should stay the same.
 					So(b.NextSendTime(), ShouldResemble,
@@ -170,7 +177,7 @@ func TestBuffer(t *testing.T) {
 				})
 
 				Convey(`batch cut by flush`, func() {
-					b.AddNoBlock(ctx, "bobbie")
+					So(b.AddNoBlock(ctx, "bobbie"), ShouldBeNil)
 					So(b.Len(), ShouldEqual, 1)
 
 					So(b.LeaseOne(ctx), ShouldBeNil)
@@ -206,7 +213,7 @@ func TestBuffer(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 
-				b.AddNoBlock(ctx, 1)
+				So(b.AddNoBlock(ctx, 1), ShouldBeNil)
 
 				b.LeaseOne(ctx).NACK(ctx, nil)
 				So(b.Len(), ShouldEqual, 1)
@@ -225,7 +232,7 @@ func TestBuffer(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					for i := 0; i < Defaults.BatchSize; i++ {
-						b.AddNoBlock(ctx, i)
+						So(b.AddNoBlock(ctx, i), ShouldBeNil)
 					}
 
 					So(b.Len(), ShouldEqual, Defaults.BatchSize)
@@ -233,7 +240,7 @@ func TestBuffer(t *testing.T) {
 
 					Convey(`via new data`, func() {
 						So(b.Len(), ShouldEqual, Defaults.BatchSize)
-						b.AddNoBlock(ctx, 100)
+						So(b.AddNoBlock(ctx, 100), ShouldNotBeNil)
 						So(b.Len(), ShouldEqual, 1)
 
 						tclock.Set(b.NextSendTime())
@@ -246,16 +253,18 @@ func TestBuffer(t *testing.T) {
 					})
 
 					Convey(`via NACK`, func() {
-						batch := b.LeaseOne(ctx)
-						So(batch, ShouldNotBeNil)
+						leased := b.LeaseOne(ctx)
+						So(leased, ShouldNotBeNil)
 
-						b.AddNoBlock(ctx, 100)
+						dropped := b.AddNoBlock(ctx, 100)
+						So(dropped, ShouldNotBeNil)
+						So(dropped, ShouldEqual, leased.Batch)
 
-						// We exceed MaxItems because the outstanding batch still counts.
-						So(b.Len(), ShouldEqual, 21)
+						// Adding new data even dropped the outstanding batch.
+						So(b.Len(), ShouldEqual, 1)
 
-						// try to re-queue the batch, but it gets dropped.
-						batch.NACK(ctx, nil)
+						// NACK'ing the batch is a noop.
+						leased.NACK(ctx, nil)
 
 						So(b.Len(), ShouldEqual, 1) // it's gone
 					})
@@ -269,7 +278,7 @@ func TestBuffer(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					for i := 0; i < Defaults.BatchSize; i++ {
-						b.AddNoBlock(ctx, i)
+						So(b.AddNoBlock(ctx, i), ShouldBeNil)
 					}
 
 					So(b.Len(), ShouldEqual, Defaults.BatchSize)
@@ -289,7 +298,7 @@ func TestBuffer(t *testing.T) {
 							batch.ACK()
 							So(b.CanAddItem(), ShouldBeTrue)
 							So(b.Len(), ShouldEqual, 0)
-							b.AddNoBlock(ctx, 100)
+							So(b.AddNoBlock(ctx, 100), ShouldBeNil)
 						})
 
 						Convey(`partial NACK`, func() {
@@ -300,7 +309,7 @@ func TestBuffer(t *testing.T) {
 							So(b.Len(), ShouldEqual, Defaults.BatchSize-10)
 
 							for i := 0; i < 10; i++ {
-								b.AddNoBlock(ctx, 100+i)
+								So(b.AddNoBlock(ctx, 100+i), ShouldBeNil)
 							}
 
 							So(b.CanAddItem(), ShouldBeFalse)

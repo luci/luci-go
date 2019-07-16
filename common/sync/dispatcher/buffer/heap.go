@@ -16,8 +16,9 @@ package buffer
 
 import (
 	"container/heap"
+	"time"
 
-	"go.chromium.org/luci/common/data/sortby"
+	"go.chromium.org/luci/common/errors"
 )
 
 // batchHeap maintains sorted order based on (nextSend, id)
@@ -25,32 +26,13 @@ type batchHeap []*Batch
 
 var _ heap.Interface = &batchHeap{}
 
-// Len implements sort.Interface.
-func (h batchHeap) Len() int { return len(h) }
+// Implements sort.Interface.
+func (h batchHeap) Len() int           { return len(h) }
+func (h batchHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h batchHeap) Less(i, j int) bool { return h[i].Less(h[j]) }
 
-// Swap implements sort.Interface.
-func (h batchHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-
-// Less implements sort.Interface.
-func (h batchHeap) Less(i, j int) bool {
-	return (sortby.Chain{
-		func(i, j int) bool { return h[i].nextSend.Before(h[j].nextSend) },
-		func(i, j int) bool { return h[i].id < h[j].id },
-	}).Use(i, j)
-}
-
-// Push adds an element to the end of the underlying list; code in this package
-// should use PushBatch instead, which retains the heap invariant.
-//
 // Implements heap.Interface.
-func (h *batchHeap) Push(itm interface{}) {
-	*h = append(*h, itm.(*Batch))
-}
-
-// Pop removes the last element from the underlying list; code in this package
-// should use PopBatch instead, which retains the heap invariant.
-//
-// Implements heap.Interface.
+func (h *batchHeap) Push(itm interface{}) { *h = append(*h, itm.(*Batch)) }
 func (h *batchHeap) Pop() interface{} {
 	old := *h
 	n := len(old)
@@ -64,10 +46,37 @@ func (h *batchHeap) PushBatch(batch *Batch) {
 	heap.Push(h, batch)
 }
 
-// PopBatch removes the youngest (nextSend, id) *Batch from the heap,
+// LeaseBatch marks the youngest (-leased?, nextSend, id) *Batch from the heap,
 // maintaining the heap invariant.
-func (h *batchHeap) PopBatch() *Batch {
-	return heap.Pop(h).(*Batch)
+//
+// Panics if there are no unleased batches.
+func (h *batchHeap) LeaseBatch() *Batch {
+	batch := (*h)[0]
+	if batch.currentlyLeased {
+		panic(errors.New("cannot lease batch from heap; no unleased batches"))
+	}
+	batch.currentlyLeased = true
+	heap.Fix(h, 0)
+	return batch
+}
+
+// UnleaseBatch unleases a Batch by pointer. Maintains the heap invariant.
+//
+// Takes `nextSend` because this field is part of the Batch's sort-order in the
+// heap; the nextSend is applied to the Batch after finding the Batch's location
+// in the heap.
+func (h *batchHeap) UnleaseBatch(b *Batch, nextSend time.Time) {
+	idx := h.idxOf(b) // capture idx before mutating b
+	b.currentlyLeased = false
+	b.nextSend = nextSend
+	heap.Fix(h, idx)
+}
+
+// DropBatch removes the given batch from the heap. Maintains the heap
+// invariant.
+func (h *batchHeap) DropBatch(b *Batch) {
+	heap.Remove(h, h.idxOf(b))
+	b.currentlyLeased = false
 }
 
 // PopOldestBatchOlderThan finds, pops and returns the oldest batch whose id is
@@ -81,7 +90,19 @@ func (h *batchHeap) PopOldestBatchOlderThan(id uint64) *Batch {
 		}
 	}
 	if oldestIdx >= 0 {
-		return heap.Remove(h, oldestIdx).(*Batch)
+		ret := heap.Remove(h, oldestIdx).(*Batch)
+		ret.currentlyLeased = false
+		return ret
 	}
 	return nil
+}
+
+// idxOf returns the index of b in h or panics if b is not in h.
+func (h *batchHeap) idxOf(b *Batch) int {
+	for i, batch := range *h {
+		if batch == b {
+			return i
+		}
+	}
+	panic(errors.New("batch does not appear in heap"))
 }
