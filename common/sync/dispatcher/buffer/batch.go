@@ -16,7 +16,6 @@ package buffer
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -66,6 +65,34 @@ type Batch struct {
 	// as the original value of len(Batch.Data) and can decrease if
 	// len(Batch.Data) is smaller on a NACK().
 	countedSize int
+
+	// true if this batch is currently leased.
+	//
+	// This will be false for batches without an outstanding lease.
+	//
+	// This boolean is entirely maintained by batchHeap.
+	currentlyLeased bool
+}
+
+// Less returns true iff this Batch is less than the other Batch.
+//
+// Compares based on the (!currentlyLeased, nextSend, id) tuple.
+func (b *Batch) Less(o *Batch) bool {
+	if !b.currentlyLeased && o.currentlyLeased {
+		return true
+	}
+	if b.currentlyLeased && !o.currentlyLeased {
+		return false
+	}
+
+	if b.nextSend.Before(o.nextSend) {
+		return true
+	}
+	if o.nextSend.Before(b.nextSend) {
+		return false
+	}
+
+	return b.id < o.id
 }
 
 // LeasedBatch is produced from Buffer.LeaseOne.
@@ -76,11 +103,6 @@ type Batch struct {
 type LeasedBatch struct {
 	*Batch
 
-	mu sync.Mutex
-
-	// The size of the Batch at the time we leased it.
-	leasedSize int
-
 	// The Buffer that this Batch belongs to.
 	buf *bufferImpl
 }
@@ -89,10 +111,8 @@ type LeasedBatch struct {
 //
 // panics if b.buf == nil.
 func (b *LeasedBatch) detachBuffer() *bufferImpl {
-	b.mu.Lock()
 	buf := b.buf
 	b.buf = nil
-	b.mu.Unlock()
 
 	if buf == nil {
 		panic(errors.New("LeasedBatch may only have ACK/NACK called exactly once"))
@@ -105,7 +125,7 @@ func (b *LeasedBatch) detachBuffer() *bufferImpl {
 //
 // The Batch is no longer tracked by the associated Buffer.
 func (b *LeasedBatch) ACK() {
-	b.detachBuffer().ackImpl(b.leasedSize)
+	b.detachBuffer().ackImpl(b.Batch)
 }
 
 // NACK analyzes the current state of Batch.Data, potentially freeing space in
@@ -117,5 +137,14 @@ func (b *LeasedBatch) ACK() {
 //   * The Buffer has a DropOldestBatch policy and a new Batch has been added to
 //     the Buffer.
 func (b *LeasedBatch) NACK(ctx context.Context, err error) {
-	b.detachBuffer().nackImpl(ctx, err, b.Batch, b.leasedSize)
+	b.detachBuffer().nackImpl(ctx, err, b.Batch)
+}
+
+// Live returns true iff this LeasedBatch is still 'alive'.
+//
+// A LeasedBatch may become non-live if:
+//   * you call ACK/NACK on it.
+//   * it is evicted due to FullBehavior==DropOldestBatch.
+func (b *LeasedBatch) Live() bool {
+	return b.buf != nil && b.Batch.currentlyLeased
 }
