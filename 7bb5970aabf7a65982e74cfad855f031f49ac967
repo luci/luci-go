@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "825bd34c_4a49ff90",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-16T09:13:43Z",
+      "side": 1,
+      "message": "conclusion from above stands, but I have another idea:\n\none could also argue that O(batches) should be O(workers) in practice, so we could simplify code substantially by keeping all batches in a slice and maintaining {minNextSend, oldestBatchIdx}:\n  AddNoBlock: O(1) for both\n  Lease: O(batches)      [updates minNextSend]\n  NACK:  O(batches)      [updates oldestBatchIdx, minNextSend]\n  ACK:   O(batches)      [updates oldestBatchIdx]\nand I think code becomes simpler to think about -- just iterations over the slice, no more complex h[0] and Less() ordering to keep in mind.",
+      "parentUuid": "27ad7874_f4b1f80d",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 71
+      },
+      "revId": "7bb5970aabf7a65982e74cfad855f031f49ac967",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a1cbc3fb_741891da",
         "filename": "common/sync/dispatcher/buffer/buffer.go",
         "patchSetId": 3
