@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27ad7874_f4b1f80d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-16T09:12:23Z",
+      "side": 1,
+      "message": "on big-O:\n current impl. is\n   AddNoBlock: O(1) for blocking, O(batches) for dropOldest\n   Lease: O(log(batches))\n   NACK/ACK: O(batches)\n   \nAfter more thinking, why keep leased batches in the same heap instead of a separate data structure like a freelist?\n  AddNoBlock: O(1) for blocking, O(batches) for dropOldest\n  Lease: O(log(batches))\n  NACK/ACK: O(workers + log(batches))\n  \nNot sure if it\u0027s better or worse in the end. I\u0027m also willing to land this as is and iterate afterwards, because we are spending too much time on this :(",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 71
+      },
+      "revId": "7bb5970aabf7a65982e74cfad855f031f49ac967",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1cbc3fb_741891da",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-16T09:12:23Z",
+      "side": 1,
+      "message": "this effectively makes ack/nack O(batches). Maybe we shouldn\u0027t even bother with heap?",
+      "revId": "7bb5970aabf7a65982e74cfad855f031f49ac967",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "608808dd_a8a58578",
+        "filename": "common/sync/dispatcher/buffer/buffer_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-16T09:12:23Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 263,
+        "startChar": 25,
+        "endLine": 263,
+        "endChar": 38
+      },
+      "revId": "7bb5970aabf7a65982e74cfad855f031f49ac967",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
