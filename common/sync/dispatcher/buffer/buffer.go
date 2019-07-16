@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package buffer implements a batching buffer with batch lease and retry
+// management.
+//
+// It is meant to be used by something which handles synchronization
+// (primarially the "common/sync/dispatcher.Channel"). As such it IS NOT
+// GOROUTINE-SAFE.
 package buffer
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -25,14 +30,23 @@ import (
 )
 
 // Buffer batches individual data items into Batch objects
+//
+// All access to the Buffer (as well as invoking ACK/NACK on LeasedBatches) must
+// be done from the same goroutine because Buffer is not meant to be
+// goroutine-safe.
 type Buffer interface {
 	// Adds the item to the buffer.
 	//
 	// May cut a new Batch according to BatchSize and BatchDuration.
 	//
-	// If the Buffer is full, applies FullBehavior (panic'ing if FullBehavior ==
-	// Block).
-	AddNoBlock(context.Context, interface{})
+	// If the Buffer is full, applies FullBehavior:
+	//   * BlockNewItems - panics
+	//   * DropOldestBatch - returns dropped batch (or nil)
+	//
+	// Note that this may return a batch which is already leased; This can happen
+	// if you add new data to the Buffer which exceeds MaxItems and the
+	// currently-leased batch is the oldest.
+	AddNoBlock(context.Context, interface{}) *Batch
 
 	// Causes any buffered-but-not-batched data to be cut into a Batch.
 	Flush(context.Context)
@@ -41,7 +55,7 @@ type Buffer interface {
 	// a Zero time.Time if no batches are available to send.
 	NextSendTime() time.Time
 
-	// The number of items currently in this Buffer
+	// The number of items currently in this Buffer.
 	Len() int
 
 	// True iff the Buffer will accept an item from AddNoBlock.
@@ -66,8 +80,6 @@ type bufferImpl struct {
 	//   * Items in heap
 	//   * Items in LeasedBatches which haven'd been ACK/NACK'd
 	totalBufferedItems int
-
-	mu sync.Mutex
 
 	batchSizeGuess *movingAverage
 
@@ -95,37 +107,37 @@ func NewBuffer(o *Options) (Buffer, error) {
 	return ret, nil
 }
 
-// maybePruneLocked will possibly drop a batch from the heap if the heap is too
-// full.
+// maybePrune will possibly drop a batch from the heap if the heap is too full.
 //
 // Args:
 //   * id is the id of the batch that we're proposing to make space for
 //   * newBatch should be true if this is a batch which has never been inserted
 //     into the heap before.
 //
-// Returns true iff it's now OK to insert into the buffer.
-func (buf *bufferImpl) maybePruneLocked(id uint64, newBatch bool) bool {
+// Returns ok=true iff it's now OK to insert into the buffer. If this dropped
+// a batch, the dropped batch is returned.
+func (buf *bufferImpl) maybePrune(id uint64) (dropped *Batch, okToInsert bool) {
 	if buf.totalBufferedItems < buf.opts.MaxItems {
-		return true
+		return nil, true
 	}
 
 	switch buf.opts.FullBehavior {
 	case BlockNewItems:
-		return !newBatch
+		return nil, false
 
 	case DropOldestBatch:
 		dropped := buf.heap.PopOldestBatchOlderThan(id)
 		if dropped != nil {
 			buf.totalBufferedItems -= dropped.countedSize
 		}
-		return dropped != nil || newBatch
+		return dropped, true
 
 	default:
 		panic("invalid state")
 	}
 }
 
-func (buf *bufferImpl) maybeCutBatchLocked(ctx context.Context) {
+func (buf *bufferImpl) maybeCutBatch(ctx context.Context) {
 	batch := buf.currentBatch
 
 	switch {
@@ -137,10 +149,37 @@ func (buf *bufferImpl) maybeCutBatchLocked(ctx context.Context) {
 		return
 	}
 
-	buf.cutBatchLocked(ctx)
+	buf.Flush(ctx)
 }
 
-func (buf *bufferImpl) cutBatchLocked(ctx context.Context) {
+func (buf *bufferImpl) AddNoBlock(ctx context.Context, item interface{}) *Batch {
+	buf.maybeCutBatch(ctx) // in case currentBatch is already timed out
+
+	if buf.currentBatch == nil {
+		buf.currentBatch = &Batch{
+			// Try to minimize allocations by allocating 20% more slots in Data than
+			// the moving average for the last 10 batches' actual use.
+			Data:     make([]interface{}, 0, int(buf.batchSizeGuess.get()*1.2)),
+			id:       buf.lastBatchID + 1,
+			retry:    buf.opts.Retry(),
+			nextSend: clock.Now(ctx).Add(buf.opts.BatchDuration),
+		}
+		buf.lastBatchID++
+	}
+
+	dropped, canInsert := buf.maybePrune(buf.currentBatch.id)
+	if !canInsert {
+		panic(errors.New("buffer is full and FullBehavior==BlockNewItems"))
+	}
+
+	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
+	buf.totalBufferedItems++
+
+	buf.maybeCutBatch(ctx)
+	return dropped
+}
+
+func (buf *bufferImpl) Flush(ctx context.Context) {
 	batch := buf.currentBatch
 
 	if batch == nil || len(batch.Data) == 0 {
@@ -155,48 +194,13 @@ func (buf *bufferImpl) cutBatchLocked(ctx context.Context) {
 	buf.heap.PushBatch(batch)
 	buf.batchSizeGuess.record(batch.countedSize)
 	buf.currentBatch = nil
-}
-
-func (buf *bufferImpl) AddNoBlock(ctx context.Context, item interface{}) {
-	buf.mu.Lock()
-	defer buf.mu.Unlock()
-
-	buf.maybeCutBatchLocked(ctx) // in case currentBatch is already timed out
-
-	if buf.currentBatch == nil {
-		buf.currentBatch = &Batch{
-			// Try to minimize allocations by allocating 20% more slots in Data than
-			// the moving average for the last 10 batches' actual use.
-			Data:     make([]interface{}, 0, int(buf.batchSizeGuess.get()*1.2)),
-			id:       buf.lastBatchID + 1,
-			retry:    buf.opts.Retry(),
-			nextSend: clock.Now(ctx).Add(buf.opts.BatchDuration),
-		}
-		buf.lastBatchID++
-	}
-
-	if canInsert := buf.maybePruneLocked(buf.currentBatch.id, true); !canInsert {
-		panic(errors.New("buffer is full and FullBehavior==BlockNewItems"))
-	}
-
-	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
-	buf.totalBufferedItems++
-	buf.maybeCutBatchLocked(ctx)
-}
-
-func (buf *bufferImpl) Flush(ctx context.Context) {
-	buf.mu.Lock()
-	buf.cutBatchLocked(ctx)
-	buf.mu.Unlock()
+	return
 }
 
 func (buf *bufferImpl) NextSendTime() time.Time {
-	buf.mu.Lock()
-	defer buf.mu.Unlock()
-
 	ret := time.Time{}
 
-	if len(buf.heap) > 0 {
+	if buf.heap.HasUnleasedBatches() {
 		ret = buf.heap[0].nextSend
 	}
 
@@ -226,11 +230,8 @@ func (buf *bufferImpl) CanAddItem() bool {
 }
 
 func (buf *bufferImpl) LeaseOne(ctx context.Context) *LeasedBatch {
-	buf.mu.Lock()
-	defer buf.mu.Unlock()
-
-	buf.maybeCutBatchLocked(ctx)
-	if len(buf.heap) == 0 {
+	buf.maybeCutBatch(ctx)
+	if !buf.heap.HasUnleasedBatches() {
 		return nil
 	}
 
@@ -238,39 +239,34 @@ func (buf *bufferImpl) LeaseOne(ctx context.Context) *LeasedBatch {
 		return nil
 	}
 
-	batch := buf.heap.PopBatch()
 	return &LeasedBatch{
-		Batch:      batch,
-		leasedSize: batch.countedSize,
-		buf:        buf,
+		Batch: buf.heap.LeaseBatch(),
+		buf:   buf,
 	}
 }
 
-func (buf *bufferImpl) ackImpl(leasedSize int) {
-	buf.mu.Lock()
-	buf.totalBufferedItems -= leasedSize
-	buf.mu.Unlock()
+func (buf *bufferImpl) ackImpl(batch *Batch) {
+	if buf.heap.TryDropBatch(batch) {
+		buf.totalBufferedItems -= batch.countedSize
+	}
+	return
 }
 
-func (buf *bufferImpl) nackImpl(ctx context.Context, err error, batch *Batch, leasedSize int) {
+func (buf *bufferImpl) nackImpl(ctx context.Context, err error, batch *Batch) {
 	toWait := batch.retry.Next(ctx, err)
 	if toWait == retry.Stop {
-		buf.ackImpl(leasedSize)
+		buf.ackImpl(batch)
 		return
 	}
-	batch.nextSend = clock.Now(ctx).Add(toWait)
 
-	batch.countedSize = leasedSize
+	leasedSize := batch.countedSize
 	if dataSize := len(batch.Data); dataSize < batch.countedSize {
 		batch.countedSize = dataSize
 	}
 
-	buf.mu.Lock()
-	heapDiff := 0
-	if canInsert := buf.maybePruneLocked(batch.id, false); canInsert {
-		heapDiff = batch.countedSize
-		buf.heap.PushBatch(batch)
+	if buf.heap.TryUnleaseBatch(batch) {
+		buf.totalBufferedItems -= leasedSize - batch.countedSize
+		batch.nextSend = clock.Now(ctx).Add(toWait)
 	}
-	buf.totalBufferedItems -= leasedSize - heapDiff
-	buf.mu.Unlock()
+	return
 }
