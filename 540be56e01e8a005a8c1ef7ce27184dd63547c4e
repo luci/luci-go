@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cb0a1e45_3ca52146",
+        "filename": "results/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8019c52_353a3804",
+      "range": {
+        "startLine": 17,
+        "startChar": 8,
+        "endLine": 17,
+        "endChar": 15
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b39811fa_121e75f7",
         "filename": "results/proto/common.proto",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9b298df_f113d0d7",
+        "filename": "results/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b39811fa_121e75f7",
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "7ccfc43e_49654959",
+        "filename": "results/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Will send followup CL with additional documentation; blanket TODO for now",
+      "parentUuid": "01bb814e_2f79fc46",
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "38b9efbd_69883710",
         "filename": "results/proto/common.proto",
         "patchSetId": 2
@@ -105,6 +165,30 @@
     },
     {
       "key": {
+        "uuid": "29ee4102_6feea96d",
+        "filename": "results/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38b9efbd_69883710",
+      "range": {
+        "startLine": 73,
+        "startChar": 33,
+        "endLine": 73,
+        "endChar": 46
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3f33258_1dc79c9c",
         "filename": "results/proto/invocation.proto",
         "patchSetId": 2
@@ -116,6 +200,30 @@
       "writtenOn": "2019-07-16T19:40:44Z",
       "side": 1,
       "message": "note: in the doc we are currently wrestling to change this to /. We can update the proto later if choose /",
+      "range": {
+        "startLine": 31,
+        "startChar": 20,
+        "endLine": 31,
+        "endChar": 21
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e89a8e64_81519406",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d3f33258_1dc79c9c",
       "range": {
         "startLine": 31,
         "startChar": 20,
@@ -151,6 +259,30 @@
     },
     {
       "key": {
+        "uuid": "0a0b0dbd_849277bb",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c0e2350_98c46ef7",
+      "range": {
+        "startLine": 42,
+        "startChar": 36,
+        "endLine": 42,
+        "endChar": 52
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bdaf8572_fbd50a83",
         "filename": "results/proto/invocation.proto",
         "patchSetId": 2
@@ -171,6 +303,30 @@
       "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1dcee8f_a837f65e",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bdaf8572_fbd50a83",
+      "range": {
+        "startLine": 55,
+        "startChar": 4,
+        "endLine": 58,
+        "endChar": 3
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -197,6 +353,30 @@
     },
     {
       "key": {
+        "uuid": "e9b7fe3b_d935723c",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Yep, didn\u0027t git add, sorry... Added now!",
+      "parentUuid": "f86a3939_3b14bab9",
+      "range": {
+        "startLine": 64,
+        "startChar": 2,
+        "endLine": 64,
+        "endChar": 37
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e23070c1_50cee612",
         "filename": "results/proto/invocation.proto",
         "patchSetId": 2
@@ -211,6 +391,24 @@
       "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a56477a3_bad09811",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e23070c1_50cee612",
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -284,6 +482,30 @@
     },
     {
       "key": {
+        "uuid": "8df93eb5_29e33ade",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96c77649_d0d43ed7",
+      "range": {
+        "startLine": 82,
+        "startChar": 50,
+        "endLine": 82,
+        "endChar": 51
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef82bb7a_f341f405",
         "filename": "results/proto/invocation.proto",
         "patchSetId": 2
@@ -295,6 +517,24 @@
       "writtenOn": "2019-07-16T19:40:44Z",
       "side": 1,
       "message": "please remove\n\nthe proto comments in the doc were written such that\n1) they do not duplicate what\u0027s already written in the domain model\n2) clarify proto-specific things for readers of the design doc\n\ncomments should be rewritten in concrete proto files. In particular, the readers no longer see the lengthy explanations of concepts (in domain model section)",
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72f6e1d9_f6a9de61",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Will be in followup CL",
+      "parentUuid": "ef82bb7a_f341f405",
       "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -321,6 +561,30 @@
       "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a935155_946f7c09",
+        "filename": "results/proto/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-16T23:59:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "407fc461_1d1254d4",
+      "range": {
+        "startLine": 89,
+        "startChar": 38,
+        "endLine": 89,
+        "endChar": 48
+      },
+      "revId": "540be56e01e8a005a8c1ef7ce27184dd63547c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
