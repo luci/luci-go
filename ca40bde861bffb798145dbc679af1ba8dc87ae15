@@ -37,6 +37,41 @@
     },
     {
       "key": {
+        "uuid": "9fa4fbc4_ee676a92",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T17:56:28Z",
+      "side": 1,
+      "message": "Thanks, now I get it.\n\nThough may I suggest to add TIMEOUT here?",
+      "parentUuid": "4ba9455d_88f12469",
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a15f82d9_dc17835f",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T17:56:28Z",
+      "side": 1,
+      "message": "Nit: will it be more consistent with other statuses to use SKIP instead of SKIPPED here?",
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "62839ed9_01f4efb1",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 3
