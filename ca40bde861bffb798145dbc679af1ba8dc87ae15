@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4ba9455d_88f12469",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-17T06:53:10Z",
+      "side": 1,
+      "message": "it should cover all possible results, but not directly represent each result type of each test types. This wouldn\u0027t scale: it would mean each time we add a new test type, we might need to extend the enum. This would mean this enum is poorly designed.\n\nInstead, one enum member here may represent multiple result types of a particular test type. This way, a consuming layer does not have to distinguish between different test types. It still can, if it wants to, using tags, but does not have to.",
+      "parentUuid": "b15775ee_8e0a6fb0",
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "62839ed9_01f4efb1",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a28a4922_8b40c28f",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-17T06:53:10Z",
+      "side": 1,
+      "message": "i had a reason that made sense before these message were changed. Then the messages were changed, but were not moved out. \n\nLet me think about this a bit more. I might change in this in the follow up CL.",
+      "parentUuid": "62839ed9_01f4efb1",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 3
+      },
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "17c19c8e_6e6a0638",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-17T06:53:10Z",
+      "side": 1,
+      "message": "exactly right :) I will clarify that in the follow up CL",
+      "parentUuid": "37980772_0cdf6400",
+      "range": {
+        "startLine": 51,
+        "startChar": 26,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2dfe029_1f031d72",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 3
@@ -79,6 +145,24 @@
       "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a1d7873_02b3ef9f",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-17T06:53:10Z",
+      "side": 1,
+      "message": "good catch :) will followup",
+      "parentUuid": "f2dfe029_1f031d72",
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
