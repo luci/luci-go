@@ -36,6 +36,7 @@ import (
 	_ "go.chromium.org/chromiumos/infra/proto/go/chromiumos"
 	_ "go.chromium.org/chromiumos/infra/proto/go/device"
 	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform"
+	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform/config"
 	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform/migration/scheduler"
 	_ "go.chromium.org/chromiumos/infra/proto/go/testplans"
 
@@ -203,11 +204,19 @@ var publicProtos = map[string]struct {
 	//     "@proto//external/cros/test_platform/request.proto",
 	//     request_pb="test_platform")
 	// load(
+	//     "@proto//external/cros/test_platform/config/config.proto",
+	//     config_pb = "test_platform.config")
+	// load(
 	//     "@proto//external/cros/test_platform/migration/scheduler/traffic_split.proto",
 	//     migration_pb="test_platform.migration.scheduler")
 	"external/cros/test_platform/request.proto": {
 		"test_platform",
 		"test_platform/request.proto",
+		"",
+	},
+	"external/cros/test_platform/config/config.proto": {
+		"test_platform.config",
+		"test_platform/config/config.proto",
 		"",
 	},
 	"external/cros/test_platform/migration/scheduler/traffic_split.proto": {
