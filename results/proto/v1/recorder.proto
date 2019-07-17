@@ -1,0 +1,98 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultsdb;
+
+// TODO(jchinlee): Update protos and clarify documentation when finalized.
+// Currently, these are for experimentation/iteration.
+
+option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
+
+import "google/protobuf/empty.proto";
+import "go.chromium.org/luci/results/proto/v1/invocation.proto";
+
+// Service to record test results.
+service Recorder {
+  // InsertInvocation creates a new invocation.
+  //
+  // If invocation with the given ID already exists, returns ALREADY_EXISTS
+  // error code.
+  //
+  // It is inspired by ResultStoreUpload.CreateInvocation. Notable differences:
+  // - no CreateInvocationRequest: it is "inlined", i.e. Invocation used instead.
+  // - no request_id because it is unnecessary. ResultStore requires invocation_id
+  //   to be set if request_id is set. Invocation id must be unique, therefore
+  //   request_id gains nothing in addition to invocation id
+  // - no authorization_token: CreateInvocation handler will generate a token
+  //   associated with the invocation ID and return in the response.
+  //   Also "authorization_token" is abstract: authorizing what exactly?
+  //   This design uses the term "update_token".
+  //   READ permissions  are defined elsewhere.
+  //
+  // Impl note: transactionally inserts a new spanner row with invocation id
+  // primary key. If insertion fails with a conflict, returns ALREADY_EXISTS.
+  rpc InsertInvocation(Invocation) returns (Invocation) {};
+
+  // A request to update an existing non-final invocation.
+  //
+  // Compared to ResultStoreUpload:
+  // - In a sense, combines UpdateInvocation, FinishInvocation,
+  //   CreateTarget, UpdateTarget, CreateConfiguredTarget, UpdateConfiguredTarget,
+  //   CreateAction, UpdateAction, CreateConfiguration, UpdateConfiguration
+  //   to be more aligned with the intended usage of the API and because it is a
+  //   single Spanner mutation underneath.
+  // - Finalization is coarse: entire invocation, as opposed to per sub-entity.
+  // - More aligned with the domain model: test results can be only inserted.
+  //
+  // Impl note: Transactionally inserts a (invocation_id, request_id) row with
+  // the rest of the payload. If request insertion fails, exits successfully.
+  // Request table cleanup will be performed out of band.
+  rpc UpdateInvocation(UpdateInvocationRequest) returns (google.protobuf.Empty) {};
+}
+
+message UpdateInvocationRequest {
+  // If a request with same (invocation.id, request_id) was processed successfully
+  // before, then this request is a noop.
+  // In other words, UpdateInvocation is idempotent.
+  // Required.
+  //
+  // Internally, UpdateInvocation uses request id to generate test result keys:
+  // <request_id>-<a number unique within the request>
+  string request_id = 1;
+
+  // Invocation to update.
+  //
+  // Each test result is appended.
+  // Overwriting or removing test results is not supported.
+  //
+  // If a test log has contents, they are stored inline with the test result.
+  // Such log MUST be less than 8KB. If it is more, clients must supply log URL.
+  //
+  // If a test variant has an exoneration, it is ensured
+  // on the server.
+  // Removing exoneration is not supported.
+  //
+  // Includes are appended. An existing invocation can be marked inconsequential.
+  // Removing includes is not supported.
+  //
+  // If invocation.is_final is true, finalizes the invocation.
+  // If invocation.deadline is specified, overwrites the
+  // server-stored value.
+  //
+  // Invocation.update_token is required and must match the token
+  // returned by CreateInvocation.
+  Invocation invocation = 2;
+}

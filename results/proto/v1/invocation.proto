@@ -1,0 +1,79 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultsdb;
+
+// TODO(jchinlee): Update protos and clarify documentation when finalized.
+// Currently, these are for experimentation/iteration.
+
+option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/results/proto/v1/common.proto";
+import "go.chromium.org/luci/results/proto/v1/tests.proto";
+
+message Invocation {
+  string id = 1;
+
+  Bucket bucket = 2;
+
+  message Test {
+    // regex: ^\w+(\|\w+)*$
+    // max length: 1024
+    // TODO(jchinlee): Update regex format when finalized if needed.
+    string name = 1;
+    repeated TestVariant variants = 2;
+  }
+  message TestVariant {
+    string variant_id = 1; // see variant_defs below
+    repeated Result results = 2;
+    repeated Exoneration exonerations = 3;
+  }
+  // The tests in this and included invocations.
+  // By default, only test variants with only unexpected results are included.
+  // To load all test results, GetInvocationRequest.expected_tests must be true.
+  repeated Test tests = 3;
+
+  // Maps a variant id to its definition.
+  map<string, VariantDef> variant_defs = 4;
+
+  repeated StringPair tags = 5;
+
+  bool incomplete = 6;
+
+  message Include {
+    string invocation_id = 1;
+    // If specified, include inconsequential invocations.
+    bool inconsequential = 2;
+  }
+  // List of invocations to include
+  repeated Include includes = 7;
+
+  // A secret token required to update this invocation.
+  // Present only in CreateInvocation response.
+  // Elaborated in Ingestion section.
+  string update_token = 8;
+
+  // This invocation is no longer updatable.
+  bool is_final = 9;
+
+  // Timestamp when to forcefully finalize the invocation.
+  // Can be extended.
+  google.protobuf.Timestamp deadline = 10;
+
+  google.protobuf.Timestamp create_time = 11;
+  google.protobuf.Timestamp finalize_time = 12;
+}
