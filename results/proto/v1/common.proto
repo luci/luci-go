@@ -1,0 +1,101 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultsdb;
+
+// TODO(jchinlee): Update protos and clarify documentation when finalized.
+// Currently, these are for experimentation/iteration.
+
+option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+// Bucket definition for specifying ACLs to invocations and results.
+// TODO(jchinlee): This will change to "realm".
+message Bucket {
+  string project = 1;
+  string bucket = 2;
+}
+
+// Result of the lowest granularity we store.
+// This is often a test result, e.g. the result of a functional test run
+// within a swarming task.
+message Result {
+  // If unset on upload, set to (Status == PASS).
+  google.protobuf.BoolValue is_expected = 1;
+  Status status = 2;
+  Markdown summary = 3;
+
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp end_time = 5;
+
+  repeated StringPair tags = 6;
+
+  // note: avoid map<> because that would be tens of
+  // thousands of tiny hash tables for no good reason.
+  repeated Artifact artifacts = 7;
+}
+
+// Status associated with a result.
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  PASS = 1;
+  FAIL = 2;
+  CRASH = 3;
+  ABORT = 4;
+  SKIP = 5;
+}
+
+message VariantDef {
+  // key regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
+  // Max key length: 64
+  // value regex: ^[a-z][a-z0-9_]*$
+  // Max value length: 64
+  //
+  // Up to 16 pairs.
+  map<string, string> def = 1;
+
+  // hash func:
+  // hex(sha256(''.join('%s:%s\n' % (k, v) for k, v in sorted(def.items()))))
+  string digest = 2;
+}
+
+// Artifact generated as part of a Result.
+//
+// Examples include traces, logs, screenshots, memory dumps, profiler output.
+message Artifact {
+  string name = 1; // relative path, e.g. "traces/a.txt"
+
+  // must start with either of "rbe-cas://" "isolate://", "gs://" or "logdog://".
+  string fetch_url = 2;
+  // URL to human-consumable HTTP page with the file content.
+  string view_url = 3;
+
+  string content_type = 4;  // media type
+  int64 size = 5;
+}
+
+// Convenience proto to define key:value pairs.
+message StringPair {
+  string key = 1;
+  string value = 2;
+}
+
+// Markdown-formatted text (see https://spec.commonmark.org/0.28/).
+message Markdown {
+  string text = 1;
+}
