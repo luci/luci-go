@@ -302,6 +302,30 @@
     },
     {
       "key": {
+        "uuid": "a521a714_204be9b1",
+        "filename": "results/proto/v1/rpc.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T18:19:53Z",
+      "side": 1,
+      "message": "Yeah, that makes sense, thanks for the explanation!",
+      "parentUuid": "9265bbda_d71099bd",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 35
+      },
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "314349be_d9e20075",
         "filename": "results/proto/v1/tests.proto",
         "patchSetId": 3
@@ -331,6 +355,24 @@
       "side": 1,
       "message": "Will do in followup CL for clarifying documentation.\n\nThe reason why TestVariantIDPredicate and Exoneration are the only things included here is that they\u0027re (approximately) all that\u0027s actually test-specific; the distinction is admittedly fuzzy, since we could exonerate a CL based on a compile step (the design doc includes discussion on considering \"compile\" as a test). Does that clarify? I\u0027m also happy to move things around.",
       "parentUuid": "314349be_d9e20075",
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be6de322_30a7f470",
+        "filename": "results/proto/v1/tests.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T18:19:53Z",
+      "side": 1,
+      "message": "I think I understand a bit more now, thanks.",
+      "parentUuid": "a4e3e7cb_1d5a97ac",
       "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
