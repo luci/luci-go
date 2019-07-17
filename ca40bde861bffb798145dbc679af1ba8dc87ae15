@@ -278,6 +278,30 @@
     },
     {
       "key": {
+        "uuid": "9265bbda_d71099bd",
+        "filename": "results/proto/v1/rpc.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-17T18:06:44Z",
+      "side": 1,
+      "message": "The idea here is that if a test variant had at least one expected result, that\u0027s good enough not to show to the user in the UI (as idea as where as long as /any/ retry succeeds, it\u0027s considered a PASS). If that SGTY, maybe the Invocation comment can read \"By default, only test variants with only unexpected results are included\"?",
+      "parentUuid": "06e76b06_aec22ad2",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 35
+      },
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "314349be_d9e20075",
         "filename": "results/proto/v1/tests.proto",
         "patchSetId": 3
@@ -289,6 +313,24 @@
       "writtenOn": "2019-07-17T02:06:55Z",
       "side": 1,
       "message": "Could you add a high level docstring to explain what\u0027s the purpose of the module or what should be included in the module?\n\nFor example, based on the file name, I was expecting messages related to test(s), but instead there are TestVariantIDPredicate and Exoneration only, so I\u0027m confused..",
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4e3e7cb_1d5a97ac",
+        "filename": "results/proto/v1/tests.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-17T18:06:44Z",
+      "side": 1,
+      "message": "Will do in followup CL for clarifying documentation.\n\nThe reason why TestVariantIDPredicate and Exoneration are the only things included here is that they\u0027re (approximately) all that\u0027s actually test-specific; the distinction is admittedly fuzzy, since we could exonerate a CL based on a compile step (the design doc includes discussion on considering \"compile\" as a test). Does that clarify? I\u0027m also happy to move things around.",
+      "parentUuid": "314349be_d9e20075",
       "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
