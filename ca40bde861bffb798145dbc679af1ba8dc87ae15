@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b15775ee_8e0a6fb0",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T02:06:55Z",
+      "side": 1,
+      "message": "Should this enum include all possible results for all test types? \n\nFor example, more test result types are mentioned at: https://chromium.googlesource.com/chromium/src/+/master/docs/testing/json_test_results_format.md#Test-result-types",
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62839ed9_01f4efb1",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T02:06:55Z",
+      "side": 1,
+      "message": "Is there any particular reason to keep these protos inside Invocation? I.e. should these protos to be moved to tests.proto?",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 3
+      },
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37980772_0cdf6400",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T02:06:55Z",
+      "side": 1,
+      "message": "IIUC, this variant_defs is to maintain a map of variant_ids to definitions related to all tests in the invocation to avoid duplicated information, is that right?",
+      "range": {
+        "startLine": 51,
+        "startChar": 26,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2dfe029_1f031d72",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T02:06:55Z",
+      "side": 1,
+      "message": "Do we need a flag to indicate if the child invocation is ready or not?",
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06e76b06_aec22ad2",
+        "filename": "results/proto/v1/rpc.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T02:06:55Z",
+      "side": 1,
+      "message": "Seems to be inconsistent with the comment in Invocation: By default, only test variants with unexpected results are included.",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 35
+      },
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "314349be_d9e20075",
+        "filename": "results/proto/v1/tests.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-07-17T02:06:55Z",
+      "side": 1,
+      "message": "Could you add a high level docstring to explain what\u0027s the purpose of the module or what should be included in the module?\n\nFor example, based on the file name, I was expecting messages related to test(s), but instead there are TestVariantIDPredicate and Exoneration only, so I\u0027m confused..",
+      "revId": "ca40bde861bffb798145dbc679af1ba8dc87ae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
