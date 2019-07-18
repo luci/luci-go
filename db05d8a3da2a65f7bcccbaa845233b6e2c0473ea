@@ -1,0 +1,465 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8d2c77e6_88401fe0",
+        "filename": "common/sync/dispatcher/channel_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "(given L99, this seems redundant, but I don\u0027t want to delay this CL. Let\u0027s land this, and then if I feel like, I\u0027ll propose alternatives)",
+      "range": {
+        "startLine": 94,
+        "startChar": 3,
+        "endLine": 94,
+        "endChar": 20
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6ec7c20e_a4726e1d",
+        "filename": "common/sync/dispatcher/channel_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "i like this. Very readable.",
+      "range": {
+        "startLine": 99,
+        "startChar": 18,
+        "endLine": 99,
+        "endChar": 54
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c2a06ba1_846257a4",
+        "filename": "common/sync/dispatcher/channel_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "i think then it\u0027s better to specify retry options explicitly (to allow someone to change the default later and not have to debug this test)",
+      "range": {
+        "startLine": 110,
+        "startChar": 34,
+        "endLine": 110,
+        "endChar": 51
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42c730c6_8badb7b3",
+        "filename": "common/sync/dispatcher/channel_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "?\nseems like partial code of the above test",
+      "range": {
+        "startLine": 154,
+        "startChar": 0,
+        "endLine": 154,
+        "endChar": 2
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2357a948_4446559b",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "not convinced it\u0027s good idea to embed it -- there are only 3 state funcs needing ctx, which can be passed to them from the coordinator func. Additionally, you\u0027d then just use ctx in coordinator func, instead of state.ctx.",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 20
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0beee767_9cc6d193",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "our",
+      "range": {
+        "startLine": 47,
+        "startChar": 51,
+        "endLine": 47,
+        "endChar": 53
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1672ef8e_fdca8fb8",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "this may be noisy; shall this only be set for tests?",
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05a6b799_521076ba",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "mini-funcs on *coordinatorState are great, thanks :)",
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ada04aa0_a59267f5",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "return vars make it easier to understand signature, but more diffucult to follow actual returned values, particularly at the end of the func (where I\u0027d find it easier to read \"return nil, delay\"). \n\nConsider godoc + removing named return values",
+      "range": {
+        "startLine": 70,
+        "startChar": 62,
+        "endLine": 70,
+        "endChar": 66
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2a4e2c7_48b3f60a",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "nit: maybe rsv is better (standing for reservation)? I\u0027d personally write reservation -- you have just a few occurencies here.",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 4
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36afa361_8bae04e7",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "Hm, https://godoc.org/golang.org/x/time/rate#Limiter.ReserveN example of !OK with n\u003d1 means you have to explain that impossibility comes from validation of QPSLimit passed via Channel opts which ensures \u003e\u003d1 burst OR infinite rate.",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 82,
+        "endChar": 21
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16cae83e_397581b1",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "\u003e \"becasue\" is a possible misspelling of \"because\".\n\nPlease Fix",
+      "parentUuid": "651bbf37_43883278",
+      "range": {
+        "startLine": 92,
+        "startChar": 12,
+        "endLine": 92,
+        "endChar": 19
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "524ecae3_1d75b2ac",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "what about case of delay \u003e 0?",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 59
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b5867ba_29fec91b",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "\u003e \"recieve\" is a possible misspelling of \"receive\".\n\nPlease Fix",
+      "parentUuid": "2b59a443_d3459f52",
+      "range": {
+        "startLine": 137,
+        "startChar": 39,
+        "endLine": 137,
+        "endChar": 46
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47ef68f7_b52b993f",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "👍 I find this superbly readable, thanks for making it so clean.",
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aed5bc01_ec9a695b",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "when not reading what mkCoordinatorState does, it feels like state.ctx is intentionally different from just ctx, but it\u0027s not.\nSee also L35 comment.",
+      "range": {
+        "startLine": 199,
+        "startChar": 19,
+        "endLine": 199,
+        "endChar": 28
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2db80fbd_fea8ed6a",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "this is necessary because inside getSendChannel `dropped` batch was actually leased from the buffer, right?",
+      "range": {
+        "startLine": 227,
+        "startChar": 5,
+        "endLine": 227,
+        "endChar": 27
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b3637f8_be0dec04",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "nit: unintentional? if not, I wonder what did you have in mind?",
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28e13ec9_c55ad7a8",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "given this, maybe it makes sense to pass context? \n\nOr is the idea that this func is likely declared inline next to creation of the channel and so can easily use the same `ctx` from the closure?",
+      "range": {
+        "startLine": 29,
+        "startChar": 3,
+        "endLine": 29,
+        "endChar": 57
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "401ebadc_0ffd4ca8",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 57,
+        "startChar": 19,
+        "endLine": 57,
+        "endChar": 26
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d611ab8_0cffe1fa",
+        "filename": "common/sync/dispatcher/options_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-18T09:20:47Z",
+      "side": 1,
+      "message": "you only have 1 now...",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 28
+      },
+      "revId": "db05d8a3da2a65f7bcccbaa845233b6e2c0473ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
