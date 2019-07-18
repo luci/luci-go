@@ -90,6 +90,15 @@ type Options struct {
 	// Default: 1
 	MaxQPS float64
 
+	// [OPTIONAL] (see buffer.Options for description and defaults).
+	//
+	// This configures the behavior of the underlying Buffer owned by the Channel.
+	//
+	// Note that the channel places an additional constraint on Buffer.MaxItems;
+	// MaxItems is intended to be the maximum number of items that the Channel
+	// will keep in memory at any point in time. This includes in-flight (i.e.
+	// held-during-SendFn) items. Because of this, Buffer.MaxItems must be set to
+	// more than MaxSenders * Buffer.BatchSize.
 	Buffer buffer.Options
 }
 
