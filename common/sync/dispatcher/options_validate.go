@@ -15,30 +15,30 @@
 package dispatcher
 
 import (
+	"context"
+
+	"golang.org/x/time/rate"
+
 	"go.chromium.org/luci/common/errors"
 )
 
 // normalize validates that Options is well formed and populates defaults which
 // are missing.
-func (o *Options) normalize() error {
-	if o.SendFn == nil {
-		return errors.New("SendFn is required: got nil")
-	}
-
+func (o *Options) normalize(ctx context.Context) error {
 	if o.ErrorFn == nil {
-		o.ErrorFn = Defaults.ErrorFn
+		o.ErrorFn = defaultErrorFnFactory(ctx)
+	}
+	if o.DropFn == nil {
+		o.DropFn = defaultDropFnFactory(ctx, o.Buffer.FullBehavior)
 	}
 
-	if o.MaxSenders == 0 {
-		o.MaxSenders = Defaults.MaxSenders
-	} else if o.MaxSenders < 1 {
-		return errors.Reason("MaxSenders must be > 0: got %d", o.MaxSenders).Err()
+	if o.QPSLimit == nil {
+		o.QPSLimit = rate.NewLimiter(1, 1)
 	}
-
-	if o.MaxQPS == 0 {
-		o.MaxQPS = Defaults.MaxQPS
-	} else if o.MaxQPS < 0 {
-		return errors.Reason("MaxQPS must be > 0: got %f", o.MaxQPS).Err()
+	if o.QPSLimit.Limit() != rate.Inf && o.QPSLimit.Burst() < 1 {
+		return errors.Reason(
+			"QPSLimit has burst size < 1, but a non-infinite rate: %d",
+			o.QPSLimit.Burst()).Err()
 	}
 
 	return nil
