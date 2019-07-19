@@ -194,6 +194,30 @@
     },
     {
       "key": {
+        "uuid": "aad86d82_95d2e169",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-19T08:22:10Z",
+      "side": 1,
+      "message": "Exactly what you wrote.\n\nThis is how Vadim convinced me to change my habit of always writing \u003c\u003d when \u003d\u003d suffices.\n\nOf course, \u003c\u003d is was a good habit when I wasn\u0027t writing tests... :D",
+      "parentUuid": "0b1c8b34_b5ba2273",
+      "range": {
+        "startLine": 190,
+        "startChar": 59,
+        "endLine": 190,
+        "endChar": 61
+      },
+      "revId": "d789c2867cf03793805a705cfcd5162592aa94cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e403e7b4_6987782e",
         "filename": "common/sync/dispatcher/buffer/buffer.go",
         "patchSetId": 7
