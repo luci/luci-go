@@ -338,6 +338,30 @@
     },
     {
       "key": {
+        "uuid": "4b0604c3_2033ead1",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-19T20:17:58Z",
+      "side": 1,
+      "message": "All of this is covered, so it\u0027s exercised somewhere, just have to find it :)\n\nI think it\u0027s covered by the \u0027cut batch by time\u0027 case in TestBuffer",
+      "parentUuid": "6a94bb87_2f3942fe",
+      "range": {
+        "startLine": 263,
+        "startChar": 27,
+        "endLine": 263,
+        "endChar": 28
+      },
+      "revId": "d789c2867cf03793805a705cfcd5162592aa94cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "700392dd_1376d1a3",
         "filename": "common/sync/dispatcher/buffer/buffer.go",
         "patchSetId": 7
