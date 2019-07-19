@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate stringer -type FullBehavior
-
 package buffer
 
 import (
@@ -23,53 +21,34 @@ import (
 	"go.chromium.org/luci/common/retry"
 )
 
-// FullBehavior is an enumeration which tells the dispatcher how to behave
-// when its buffer is full (i.e. the number of buffered items is equal to
-// MaxBufferedData)
-type FullBehavior int
-
-const (
-	// BlockNewItems will prevent new items from being added to the Buffer until
-	// it's non-full.
-	BlockNewItems FullBehavior = iota + 1
-
-	// DropOldestBatch will instruct the dispatcher to drop whichever buffered
-	// batch is oldest.
-	DropOldestBatch
-)
-
-// Options configures how the buffer cuts new Batches.
+// Options configures policy for the Buffer.
 //
 // See Defaults for default values.
 type Options struct {
-	// [OPTIONAL] The maximum number of items to allow in a Batch before queuing
-	// it for transmission.
+	// [OPTIONAL] The maximum number of outstanding leases permitted.
 	//
-	// Required: Must be > 0 or -1 (If -1, then this relies entirely on BatchDuration)
+	// Attempting additional leases (with LeaseOne) while at the maximum will
+	// return nil.
+	//
+	// Requirement: Must be > 0
+	MaxLeases int
+
+	// [OPTIONAL] The maximum number of items to allow in a Batch before making it
+	// available to lease.
+	//
+	// Special value -1: unlimited
+	// Requirement: Must be == -1 (i.e. cut batches based on BatchDuration), or > 0
 	BatchSize int
 
 	// [OPTIONAL] The maximum amount of time to wait before queuing a Batch for
-	// transmission.
+	// transmission. Note that batches are only cut by time when a worker is ready
+	// to process them (i.e. LeaseOne is invoked).
 	//
-	// This only applies if there are buffered items and idle senders.
-	//
-	// Required: Must be > 0
+	// Requirement: Must be > 0
 	BatchDuration time.Duration
 
-	// [OPTIONAL] The maximum number of items to hold in the buffer before
-	// enacting FullBehavior.
-	//
-	// This counts unsent items as well as currently-sending items. When SendFn
-	// runs it may also modify the number of items in Batch.Data; Reducing this
-	// count will reduce the dispatcher's current buffer size.
-	//
-	// Required: Must be >= BatchSize
-	MaxItems int
-
-	// [OPTIONAL] The behavior of the Channel when it currently holds
-	// MaxItems.
-	//
-	// Required: Must be a valid FullBehavior.
+	// [OPTIONAL] Sets the policy for the Buffer around how many items the Buffer
+	// is allowed to hold, and what happens when that number is reached.
 	FullBehavior FullBehavior
 
 	// [OPTIONAL] Each batch will have a retry.Iterator assigned to it from this
@@ -88,10 +67,12 @@ type Options struct {
 //
 // DO NOT ASSIGN/WRITE TO THIS STRUCT.
 var Defaults = Options{
+	MaxLeases:     4,
 	BatchSize:     20,
 	BatchDuration: 10 * time.Second,
-	MaxItems:      1000,
-	FullBehavior:  BlockNewItems,
+	FullBehavior: &BlockNewItems{
+		MaxItems: 1000,
+	},
 	Retry: func() retry.Iterator {
 		return &retry.ExponentialBackoff{
 			Limited: retry.Limited{
@@ -108,46 +89,42 @@ var Defaults = Options{
 // which are missing.
 func (o *Options) normalize() error {
 	switch {
+	case o.MaxLeases == 0:
+		o.MaxLeases = Defaults.MaxLeases
+	case o.MaxLeases > 0:
+	default:
+		return errors.Reason("MaxLeases must be > 0: got %d", o.MaxLeases).Err()
+	}
+
+	switch {
 	case o.BatchSize == 0:
 		o.BatchSize = Defaults.BatchSize
-	case o.BatchSize > 0 || o.BatchSize == -1:
+	case o.BatchSize == -1:
+	case o.BatchSize > 0:
 	default:
 		return errors.Reason("BatchSize must be > 0 or == -1: got %d", o.BatchSize).Err()
 	}
 
-	if o.BatchDuration == 0 {
+	switch {
+	case o.BatchDuration == 0:
 		o.BatchDuration = Defaults.BatchDuration
-	} else if o.BatchDuration < 0 {
+	case o.BatchDuration > 0:
+	default:
 		return errors.Reason("BatchDuration must be > 0: got %s", o.BatchDuration).Err()
 	}
 
-	if o.MaxItems == 0 {
-		o.MaxItems = Defaults.MaxItems
-	} else if o.MaxItems < o.BatchSize {
-		return errors.Reason(
-			"MaxItems must be >= BatchSize: got %d < %d", o.MaxItems, o.BatchSize).Err()
-	}
-
-	switch o.FullBehavior {
-	case 0:
+	if o.FullBehavior == nil {
 		o.FullBehavior = Defaults.FullBehavior
-	case BlockNewItems, DropOldestBatch:
-		// OK
-	default:
-		return errors.Reason("FullBehavior is unknown: %s", o.FullBehavior).Err()
 	}
 
 	if o.Retry == nil {
 		o.Retry = Defaults.Retry
 	}
 
-	return nil
+	return errors.Annotate(o.FullBehavior.Check(*o), "FullBehavior.Check").Err()
 }
 
-// BatchSizeGuess returns BatchSize if it's > 0, otherwise returns 10.
-//
-// Used to try to allocate Batches semi-intelligently.
-func (o *Options) BatchSizeGuess() int {
+func (o *Options) batchSizeGuess() int {
 	if o.BatchSize > 0 {
 		return o.BatchSize
 	}
