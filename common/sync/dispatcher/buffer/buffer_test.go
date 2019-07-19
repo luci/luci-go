@@ -69,6 +69,8 @@ func TestBuffer(t *testing.T) {
 					}
 
 					So(b.stats, ShouldResemble, Stats{20, 0, 0})
+					So(b.Stats().Total(), ShouldResemble, 20)
+					So(b.Stats().Empty(), ShouldResemble, false)
 					// The next send time should be when the current batch is available to
 					// send. this is a test and time hasn't advanced, it's reset
 					// back to the start time.
@@ -90,6 +92,8 @@ func TestBuffer(t *testing.T) {
 						b.ACK(batch)
 
 						So(b.stats, ShouldResemble, Stats{})
+						So(b.Stats().Total(), ShouldResemble, 0)
+						So(b.Stats().Empty(), ShouldResemble, true)
 
 						Convey(`double ACK panic`, func() {
 							So(func() { b.ACK(batch) }, ShouldPanicLike, "unknown *Batch")
@@ -132,6 +136,22 @@ func TestBuffer(t *testing.T) {
 							So(b.stats, ShouldResemble, Stats{20, 0, 0})
 							So(b.unleased.Len(), ShouldEqual, 1)
 						})
+					})
+
+					Convey(`Max leases limits LeaseOne`, func() {
+						now := clock.Now(ctx)
+						So(b.AddNoBlock(now, 10), ShouldBeNil)
+						b.Flush(now)
+						So(b.AddNoBlock(now, 20), ShouldBeNil)
+						b.Flush(now)
+
+						So(b.LeaseOne(clock.Now(ctx)), ShouldNotBeNil)
+
+						// There's something to send
+						So(b.NextSendTime(), ShouldNotBeZeroValue)
+
+						// But lease limit of 2 is hit
+						So(b.LeaseOne(clock.Now(ctx)), ShouldBeNil)
 					})
 				})
 
