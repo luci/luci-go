@@ -17,44 +17,107 @@ package dispatcher
 import (
 	"context"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 )
 
+// Set to true on `go test -v`
+var verboseTests = false
+
 // Channel holds a chan which you can push individual work items to.
 type Channel struct {
-	// WriteChan is an unbuffered channel which you can push single work items
-	// into. If this channel is closed, it means that the Channel is no longer
-	// accepting any new work items.
-	WriteChan chan<- interface{}
+	// C is an unbuffered channel which you can push single work items into.
+	//
+	// Close this to shut down the Channel.
+	C chan<- interface{}
+
+	// DrainC will unblock when this Channel is closed/canceled and fully drained.
+	DrainC <-chan struct{}
 }
 
-// Close will prevent the Channel from accepting any new work items, and will
-// block until:
-//
-//   * All items have been sent/discarded; OR
-//   * The Context passed to NewChannel is Done.
-//
-// Returns Context.Err() (i.e. this only returns an error if the Context was
-// canceled).
-func (*Channel) Close() error {
-	panic("not implemented")
+// CloseAndDrain is a convenience function which closes C (and swallows panic if
+// already closed) and then blocks on DrainC/ctx.Done().
+func (c Channel) CloseAndDrain(ctx context.Context) {
+	func() {
+		defer func() { recover() }()
+		close(c.C)
+	}()
+
+	select {
+	case <-ctx.Done():
+	case <-c.DrainC:
+	}
 }
+
+// SendFn is the function which does the work to actually transmit the Batch to
+// the next stage of your processing pipeline (e.g. do an RPC to a remote
+// service).
+//
+// The function may manipulate the Batch however it wants (see Batch).
+//
+// In particular, shrinking the size of Batch.Data for confirmed-sent items
+// will allow the dispatcher to reduce its buffer count when SendFn returns,
+// even if SendFn returns an error. Removing items from the Batch will not
+// cause the remaining items to be coalesced into a different Batch.
+//
+// The SendFn should be bound to this Channel's Context; if the Channel's
+// Context is Cancel'd, SendFn should terminate. We don't pass it as part of
+// SendFn's signature in case SendFn needs to be bound to a derived Context.
+//
+// Non-nil errors returned by this function will be handled by ErrorFn.
+type SendFn func(data *buffer.Batch) error
 
 // NewChannel produces a new Channel ready to listen and send work items.
 //
 // Args:
 //   * `ctx` will be used for cancellation and logging.
+//   * `send` is required, and defines the function to use to process Batches
+//     of data.
 //   * `opts` is optional (see Options for the defaults).
 //
 // The Channel must be Close()'d when you're done with it.
-func NewChannel(ctx context.Context, opts Options) (*Channel, error) {
-	if err := opts.normalize(); err != nil {
-		return nil, errors.Annotate(err, "normalizing dispatcher.Options").Err()
+func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error) {
+	if send == nil {
+		return Channel{}, errors.New("send is required: got nil")
 	}
-	_, err := buffer.NewBuffer(&opts.Buffer)
+
+	var optsCopy Options
+	if opts != nil {
+		optsCopy = *opts
+	}
+
+	buf, err := buffer.NewBuffer(&optsCopy.Buffer)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating Buffer").Err()
+		return Channel{}, errors.Annotate(err, "allocating Buffer").Err()
 	}
-	panic("not implemented")
+
+	if err = optsCopy.normalize(ctx); err != nil {
+		return Channel{}, errors.Annotate(err, "normalizing dispatcher.Options").Err()
+	}
+
+	itemCh := make(chan interface{})
+	drainCh := make(chan struct{})
+
+	cstate := coordinatorState{
+		opts:    optsCopy,
+		buf:     buf,
+		itemCh:  itemCh,
+		drainCh: drainCh,
+
+		resultCh: make(chan workerResult),
+
+		timer: clock.NewTimer(clock.Tag(ctx, "coordinator")),
+	}
+
+	if verboseTests {
+		cstate.dbg = logging.Get(logging.SetField(ctx, "dispatcher.coordinator", true)).Infof
+	} else {
+		cstate.dbg = func(string, ...interface{}) {}
+	}
+
+	go cstate.run(ctx, send)
+
+	return Channel{C: itemCh, DrainC: drainCh}, nil
 }

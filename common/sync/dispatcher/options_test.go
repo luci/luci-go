@@ -18,28 +18,19 @@ import (
 	"context"
 	"testing"
 
+	"golang.org/x/time/rate"
+
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func dummySendFn(ctx context.Context, data *buffer.Batch) error {
-	return nil
-}
-
-func dummyErrorFn(ctx context.Context, failedBatch *buffer.Batch, err error) bool {
-	return false
-}
-
 func TestOptionValidationGood(t *testing.T) {
-	t.Parallel()
-
 	fullOptions := Options{
-		SendFn:     dummySendFn,
-		ErrorFn:    dummyErrorFn,
-		MaxSenders: 7,
-		MaxQPS:     1337.0,
+		ErrorFn:  func(*buffer.Batch, error) bool { return false },
+		DropFn:   func(*buffer.Batch) {},
+		QPSLimit: rate.NewLimiter(rate.Inf, 0),
 	}
 
 	var goodOptions = []struct {
@@ -48,16 +39,10 @@ func TestOptionValidationGood(t *testing.T) {
 		expected Options
 	}{
 		{
-			name: "minimal",
-			options: Options{
-				SendFn: dummySendFn,
-			},
+			name:    "minimal",
+			options: Options{},
 			expected: Options{
-				SendFn: dummySendFn,
-
-				ErrorFn:    Defaults.ErrorFn,
-				MaxSenders: Defaults.MaxSenders,
-				MaxQPS:     Defaults.MaxQPS,
+				QPSLimit: rate.NewLimiter(1, 1),
 			},
 		},
 
@@ -69,22 +54,31 @@ func TestOptionValidationGood(t *testing.T) {
 	}
 
 	Convey(`test good option groups`, t, func() {
+		ctx := context.Background()
 		for _, options := range goodOptions {
 			Convey(options.name, func() {
 				myOptions := options.options
 				expect := options.expected
 
-				So(myOptions.normalize(), ShouldBeNil)
+				So(myOptions.normalize(ctx), ShouldBeNil)
 
-				// ShouldResemble has issues with function pointers, so compare them
-				// explicitly.
-				So(myOptions.SendFn, ShouldEqual, expect.SendFn)
-				So(myOptions.ErrorFn, ShouldEqual, expect.ErrorFn)
-
-				myOptions.SendFn = nil
+				// Directly compare function pointers; ShouldResemble doesn't compare
+				// them sensibly.
+				if expect.ErrorFn == nil {
+					So(myOptions.ErrorFn, ShouldNotBeNil)
+				} else {
+					So(myOptions.ErrorFn, ShouldEqual, expect.ErrorFn)
+					expect.ErrorFn = nil
+				}
 				myOptions.ErrorFn = nil
-				expect.SendFn = nil
-				expect.ErrorFn = nil
+
+				if expect.DropFn == nil {
+					So(myOptions.DropFn, ShouldNotBeNil)
+				} else {
+					So(myOptions.DropFn, ShouldEqual, expect.DropFn)
+					expect.DropFn = nil
+				}
+				myOptions.DropFn = nil
 
 				So(myOptions, ShouldResemble, expect)
 			})
@@ -93,44 +87,9 @@ func TestOptionValidationGood(t *testing.T) {
 }
 
 func TestOptionValidationBad(t *testing.T) {
-	t.Parallel()
-
-	var badOptions = []struct {
-		name     string
-		options  Options
-		expected string
-	}{
-		{
-			"no SendFn",
-			Options{},
-			"SendFn is required",
-		},
-
-		{
-			"MaxSenders",
-			Options{
-				SendFn:     dummySendFn,
-				MaxSenders: -2,
-			},
-			"MaxSenders must be",
-		},
-
-		{
-			"MaxQPS",
-			Options{
-				SendFn: dummySendFn,
-				MaxQPS: -0.1,
-			},
-			"MaxQPS must be",
-		},
-	}
-
-	Convey(`test bad option groups`, t, func() {
-		for _, options := range badOptions {
-			Convey(options.name, func() {
-				myOptions := options.options
-				So(myOptions.normalize(), ShouldErrLike, options.expected)
-			})
-		}
+	Convey(`bad QPSLimit check`, t, func() {
+		ctx := context.Background()
+		opts := Options{QPSLimit: rate.NewLimiter(100, 0)}
+		So(opts.normalize(ctx), ShouldErrLike, "QPSLimit has burst size < 1")
 	})
 }
