@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "350826d0_52e61833",
+        "filename": "common/sync/dispatcher/buffer/full_behavior.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-19T09:53:46Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 127,
+        "endChar": 17
+      },
+      "revId": "2c9b56528e75334251fc4cfbe30819ff5a9eef9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "053b7800_f9ed6b17",
+        "filename": "common/sync/dispatcher/buffer/heap_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-19T09:53:46Z",
+      "side": 1,
+      "message": "no longer true.",
+      "range": {
+        "startLine": 79,
+        "startChar": 34,
+        "endLine": 79,
+        "endChar": 47
+      },
+      "revId": "2c9b56528e75334251fc4cfbe30819ff5a9eef9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
