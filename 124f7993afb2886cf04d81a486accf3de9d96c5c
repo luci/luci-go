@@ -46,6 +46,30 @@
       "revId": "124f7993afb2886cf04d81a486accf3de9d96c5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c0e9bb67_d6bcd509",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-19T06:15:05Z",
+      "side": 1,
+      "message": "the copy is never modified and there are no memory barriers, so instead LOAD/STORE/LOAD for each Stat member, i\u0027d expect just 1 LOAD instead.",
+      "parentUuid": "bb369e35_d65e11cd",
+      "range": {
+        "startLine": 9,
+        "startChar": 12,
+        "endLine": 10,
+        "endChar": 16
+      },
+      "revId": "124f7993afb2886cf04d81a486accf3de9d96c5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
