@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bce7575d_0765a27c",
+        "filename": "common/sync/dispatcher/channel_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-19T23:12:02Z",
+      "side": 1,
+      "message": "nit: parallel",
+      "range": {
+        "startLine": 238,
+        "startChar": 25,
+        "endLine": 238,
+        "endChar": 26
+      },
+      "revId": "cf482b6e5b727f5cfb053d6f711c90b14a94c8b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
