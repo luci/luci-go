@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package buffer implements a batching buffer with batch lease and retry
+// management.
+//
+// It is meant to be used by something which handles synchronization
+// (primarially the "common/sync/dispatcher.Channel"). As such, it IS NOT
+// GOROUTINE-SAFE. If you use this outside of dispatcher.Channel, you must
+// synchronize all access to the methods of Buffer.
 package buffer
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -24,144 +30,158 @@ import (
 	"go.chromium.org/luci/common/retry"
 )
 
-// Buffer batches individual data items into Batch objects
-type Buffer interface {
-	// Adds the item to the buffer.
-	//
-	// May cut a new Batch according to BatchSize and BatchDuration.
-	//
-	// If the Buffer is full, applies FullBehavior (panic'ing if FullBehavior ==
-	// Block).
-	AddNoBlock(context.Context, interface{})
+// Stats is a block of information about the Buffer's present state.
+type Stats struct {
+	// UnleasedItemCount is the total number of items (i.e. objects passed to
+	// AddNoBlock) which are currently owned by the Buffer but are not currently
+	// leased. This includes:
+	//    * Items buffered, but not yet cut into a Batch.
+	//    * Items in unleased Batches.
+	UnleasedItemCount int
 
-	// Causes any buffered-but-not-batched data to be cut into a Batch.
-	Flush(context.Context)
+	// LeasedItemCount is the total number of items (i.e. objects passed to
+	// AddNoBlock) which are currently owned by the Buffer and are in active
+	// leases.
+	LeasedItemCount int
 
-	// Returns the send time for the next-most-available-to-send Batch, or
-	// a Zero time.Time if no batches are available to send.
-	NextSendTime() time.Time
-
-	// The number of items currently in this Buffer
-	Len() int
-
-	// True iff the Buffer will accept an item from AddNoBlock.
-	CanAddItem() bool
-
-	// Removes and returns the most-available-to-send Batch from this Buffer.
-	//
-	// Context is used to see if we need to cut a new batch due to BatchDuration.
-	//
-	// The caller must invoke one of ACK/NACK on the LeasedBatch. The LeasedBatch
-	// will count against this Buffer's size until the caller does so.
-	//
-	// Returns nil if no such Batch exists.
-	LeaseOne(ctx context.Context) *LeasedBatch
+	// DroppedLeasedItemCount is the total number of items (i.e. objects passed to
+	// AddNoBlock) which were part of leases, but where those leases have been
+	// dropped (due to FullBehavior policy).
+	DroppedLeasedItemCount int
 }
 
-type bufferImpl struct {
+// Empty returns true iff the Buffer is totally empty (has zero user-provided
+// items).
+func (s Stats) Empty() bool {
+	return s.Total() == 0
+}
+
+// Total returns the total number of items currently referenced by the Buffer.
+func (s Stats) Total() int {
+	return s.UnleasedItemCount + s.LeasedItemCount + s.DroppedLeasedItemCount
+}
+
+// Buffer batches individual data items into Batch objects.
+//
+// All access to the Buffer (as well as invoking ACK/NACK on LeasedBatches) must
+// be synchronized because Buffer is not goroutine-safe.
+type Buffer struct {
+	// User-provided Options block; dictates all policy for this Buffer.
 	opts Options
 
-	// This includes:
-	//   * Items in currentBatch
-	//   * Items in heap
-	//   * Items in LeasedBatches which haven'd been ACK/NACK'd
-	totalBufferedItems int
-
-	mu sync.Mutex
-
+	// A moving average of batch sizes so far; Helps reduce the number of spurious
+	// re-allocations if the average batch size is roughly (within 20%) of a
+	// constant size.
 	batchSizeGuess *movingAverage
 
-	currentBatch *Batch
-	heap         batchHeap
+	// Current statistics for this Buffer. Can be read with the Stats() method,
+	// and is kept up to date by various functions in the Buffer.
+	stats Stats
 
+	// Currently-accumulating batch; Data added to the Buffer will extend this
+	// batch.
+	//
+	// NOTE: It is possible for this to be nil; if AddNoBlock fills this Batch up
+	// to the maximum permitted size (Options.BatchSize), it will be removed and
+	// pushed into `unleased`.
+	currentBatch *Batch
+
+	// Contains all of the cut, but not currently leased, Batches.
+	//
+	// Kept ordered by (nextSend, id), so the 0th element is always the
+	// next-batch-to-be-sent.
+	unleased batchHeap
+
+	// Contains all of the live leased batches.
+	liveLeases map[*Batch]struct{}
+
+	// Tracks the liveLeases which haven't been ack'd yet.
+	//
+	// Batches can be removed from liveLeases without being removed from
+	// unAckedLeases when the Batch is dropped from the Buffer due to the
+	// FullBehavior policy.
+	unAckedLeases map[*Batch]struct{}
+
+	// The `id` of the last Batch we cut. If currentBatch is non-nil, this is
+	// `currentBatch.id`.
+	//
+	// NOTE: 0 is not a valid Batch.id.
 	lastBatchID uint64
 }
 
-var _ Buffer = (*bufferImpl)(nil)
-
-// NewBuffer returns a new Buffer implementation configured with the given
-// Options.
-func NewBuffer(o *Options) (Buffer, error) {
+// NewBuffer returns a new Buffer configured with the given Options.
+//
+// If there's an issue with the provided Options, this returns an error.
+func NewBuffer(o *Options) (*Buffer, error) {
 	if o == nil {
 		o = &Options{}
 	}
-	ret := &bufferImpl{opts: *o} // copy o before normalizing it
+	ret := &Buffer{opts: *o} // copy o before normalizing it
 
 	if err := ret.opts.normalize(); err != nil {
 		return nil, errors.Annotate(err, "normalizing buffer.Options").Err()
 	}
 
-	ret.batchSizeGuess = newMovingAverage(10, ret.opts.BatchSizeGuess())
+	ret.batchSizeGuess = newMovingAverage(10, ret.opts.batchSizeGuess())
+	ret.liveLeases = map[*Batch]struct{}{}
+	ret.unAckedLeases = map[*Batch]struct{}{}
 	return ret, nil
 }
 
-// maybePruneLocked will possibly drop a batch from the heap if the heap is too
-// full.
-//
-// Args:
-//   * id is the id of the batch that we're proposing to make space for
-//   * newBatch should be true if this is a batch which has never been inserted
-//     into the heap before.
-//
-// Returns true iff it's now OK to insert into the buffer.
-func (buf *bufferImpl) maybePruneLocked(id uint64, newBatch bool) bool {
-	if buf.totalBufferedItems < buf.opts.MaxItems {
-		return true
-	}
-
-	switch buf.opts.FullBehavior {
-	case BlockNewItems:
-		return !newBatch
-
-	case DropOldestBatch:
-		dropped := buf.heap.PopOldestBatchOlderThan(id)
-		if dropped != nil {
-			buf.totalBufferedItems -= dropped.countedSize
+// Returns the oldest *Batch from liveLeases.
+func (buf *Buffer) oldestLiveLease() (oldest *Batch) {
+	for lb := range buf.liveLeases {
+		if oldest == nil || lb.id < oldest.id {
+			oldest = lb
 		}
-		return dropped != nil || newBatch
-
-	default:
-		panic("invalid state")
 	}
+	return
 }
 
-func (buf *bufferImpl) maybeCutBatchLocked(ctx context.Context) {
-	batch := buf.currentBatch
+// dropOldest will drop the oldest un-dropped batch.
+//
+// Returns the dropped Batch.
+func (buf *Buffer) dropOldest() (dropped *Batch) {
+	unleased, unleasedIdx := buf.unleased.Oldest()
+	leased := buf.oldestLiveLease()
 
 	switch {
-	case batch == nil:
-		return
-	case buf.opts.BatchSize > 0 && len(batch.Data) >= buf.opts.BatchSize:
-	case clock.Now(ctx).After(batch.nextSend):
+	case unleased != nil && (leased == nil || unleased.id < leased.id):
+		buf.unleased.RemoveAt(unleasedIdx)
+		buf.stats.UnleasedItemCount -= unleased.countedSize
+		return unleased
+
+	case leased != nil:
+		delete(buf.liveLeases, leased)
+		buf.stats.LeasedItemCount -= leased.countedSize
+		buf.stats.DroppedLeasedItemCount += leased.countedSize
+		return leased
+
 	default:
-		return
+		// At this point, the only thing left to drop is the currentBatch.
+		current := buf.currentBatch
+		if current == nil {
+			panic(errors.New(
+				"impossible; must drop Batch, but there's NO undropped data"))
+		}
+		buf.currentBatch = nil
+		buf.stats.UnleasedItemCount -= len(current.Data)
+		return current
 	}
-
-	buf.cutBatchLocked(ctx)
 }
 
-func (buf *bufferImpl) cutBatchLocked(ctx context.Context) {
-	batch := buf.currentBatch
-
-	if batch == nil || len(batch.Data) == 0 {
-		// len(batch.Data) == 0 could happen if AddNoBlock panic'd due to
-		// Buffer fullness and BlockNewItems; a new batch would be allocated, but
-		// nothing would be appended to Data.
-		return
+// AddNoBlock adds the item to the Buffer.
+//
+// Possibly drops a batch according to FullBehavior. If
+// FullBehavior.ComputeState returns okToInsert=false, AddNoBlock panics.
+func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch) {
+	okToInsert, dropBatch := buf.opts.FullBehavior.ComputeState(buf.stats)
+	if !okToInsert {
+		panic(errors.New("buffer is full"))
 	}
-
-	batch.countedSize = len(batch.Data)
-	batch.nextSend = clock.Now(ctx) // immediately make available to send
-	buf.heap.PushBatch(batch)
-	buf.batchSizeGuess.record(batch.countedSize)
-	buf.currentBatch = nil
-}
-
-func (buf *bufferImpl) AddNoBlock(ctx context.Context, item interface{}) {
-	buf.mu.Lock()
-	defer buf.mu.Unlock()
-
-	buf.maybeCutBatchLocked(ctx) // in case currentBatch is already timed out
+	if dropBatch {
+		dropped = buf.dropOldest()
+	}
 
 	if buf.currentBatch == nil {
 		buf.currentBatch = &Batch{
@@ -170,107 +190,160 @@ func (buf *bufferImpl) AddNoBlock(ctx context.Context, item interface{}) {
 			Data:     make([]interface{}, 0, int(buf.batchSizeGuess.get()*1.2)),
 			id:       buf.lastBatchID + 1,
 			retry:    buf.opts.Retry(),
-			nextSend: clock.Now(ctx).Add(buf.opts.BatchDuration),
+			nextSend: now.Add(buf.opts.BatchDuration),
 		}
 		buf.lastBatchID++
 	}
 
-	if canInsert := buf.maybePruneLocked(buf.currentBatch.id, true); !canInsert {
-		panic(errors.New("buffer is full and FullBehavior==BlockNewItems"))
+	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
+	buf.stats.UnleasedItemCount++
+
+	if buf.opts.BatchSize != -1 && len(buf.currentBatch.Data) == int(buf.opts.BatchSize) {
+		buf.Flush(now)
+	}
+	return
+}
+
+// Flush causes any buffered-but-not-batched data to be immediately cut into
+// a Batch.
+//
+// No-op if there's no such data.
+func (buf *Buffer) Flush(now time.Time) {
+	batch := buf.currentBatch
+	if batch == nil {
+		return
 	}
 
-	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
-	buf.totalBufferedItems++
-	buf.maybeCutBatchLocked(ctx)
+	batch.countedSize = len(batch.Data)
+	batch.nextSend = now // immediately make available to send
+	buf.unleased.PushBatch(batch)
+	buf.batchSizeGuess.record(batch.countedSize)
+	buf.currentBatch = nil
+	return
 }
 
-func (buf *bufferImpl) Flush(ctx context.Context) {
-	buf.mu.Lock()
-	buf.cutBatchLocked(ctx)
-	buf.mu.Unlock()
-}
-
-func (buf *bufferImpl) NextSendTime() time.Time {
-	buf.mu.Lock()
-	defer buf.mu.Unlock()
-
+// NextSendTime returns the send time for the next-most-available-to-send Batch,
+// or a Zero time.Time if no batches are available to send.
+//
+// NOTE: Because LeaseOne enforces MaxLeases, this time may not guarantee an
+// available lease.
+func (buf *Buffer) NextSendTime() time.Time {
 	ret := time.Time{}
 
-	if len(buf.heap) > 0 {
-		ret = buf.heap[0].nextSend
+	if len(buf.unleased) > 0 {
+		ret = buf.unleased[0].nextSend
 	}
 
 	if buf.currentBatch != nil {
-		ns := buf.currentBatch.nextSend
-		if ret.IsZero() || ns.Before(ret) {
-			ret = ns.Add(time.Millisecond)
+		if ns := buf.currentBatch.nextSend; ret.IsZero() || ns.Before(ret) {
+			ret = ns
 		}
 	}
 
 	return ret
 }
 
-func (buf *bufferImpl) Len() int {
-	return buf.totalBufferedItems
+// Stats returns information about the Buffer's state.
+func (buf *Buffer) Stats() Stats {
+	return buf.stats
 }
 
-func (buf *bufferImpl) CanAddItem() bool {
-	switch buf.opts.FullBehavior {
-	case DropOldestBatch:
-		return true
-	case BlockNewItems:
-		return buf.Len() < buf.opts.MaxItems
+// CanAddItem returns true iff the Buffer will accept an item from AddNoBlock
+// without panicing.
+func (buf *Buffer) CanAddItem() bool {
+	okToInsert, _ := buf.opts.FullBehavior.ComputeState(buf.stats)
+	return okToInsert
+}
+
+// LeaseOne returns the most-available-to-send Batch from this Buffer.
+//
+// The caller must invoke one of ACK/NACK on the Batch. The Batch will count
+// against this Buffer's Stats().Total() until the caller does so.
+//
+// Returns nil if no batch is available to lease, or if the Buffer has reached
+// MaxLeases.
+func (buf *Buffer) LeaseOne(now time.Time) (leased *Batch) {
+	cur := buf.currentBatch
+
+	switch {
+	case len(buf.unAckedLeases) == int(buf.opts.MaxLeases):
+		// too many outstanding leases
+		return
+
+	case len(buf.unleased) > 0 && !now.Before(buf.unleased[0].nextSend):
+		// lowest unleased batch is fine to use
+
+	case cur != nil && !now.Before(cur.nextSend):
+		// currentBatch has data we can send
+		buf.Flush(now)
+
 	default:
-		panic("invalid state")
-	}
-}
-
-func (buf *bufferImpl) LeaseOne(ctx context.Context) *LeasedBatch {
-	buf.mu.Lock()
-	defer buf.mu.Unlock()
-
-	buf.maybeCutBatchLocked(ctx)
-	if len(buf.heap) == 0 {
-		return nil
-	}
-
-	if clock.Now(ctx).Before(buf.heap[0].nextSend) {
-		return nil
-	}
-
-	batch := buf.heap.PopBatch()
-	return &LeasedBatch{
-		Batch:      batch,
-		leasedSize: batch.countedSize,
-		buf:        buf,
-	}
-}
-
-func (buf *bufferImpl) ackImpl(leasedSize int) {
-	buf.mu.Lock()
-	buf.totalBufferedItems -= leasedSize
-	buf.mu.Unlock()
-}
-
-func (buf *bufferImpl) nackImpl(ctx context.Context, err error, batch *Batch, leasedSize int) {
-	toWait := batch.retry.Next(ctx, err)
-	if toWait == retry.Stop {
-		buf.ackImpl(leasedSize)
+		// Nothing's ready.
 		return
 	}
-	batch.nextSend = clock.Now(ctx).Add(toWait)
 
-	batch.countedSize = leasedSize
-	if dataSize := len(batch.Data); dataSize < batch.countedSize {
-		batch.countedSize = dataSize
+	leased = buf.unleased.PopBatch()
+	buf.unAckedLeases[leased] = struct{}{}
+	buf.liveLeases[leased] = struct{}{}
+	buf.stats.UnleasedItemCount -= leased.countedSize
+	buf.stats.LeasedItemCount += leased.countedSize
+	return
+}
+
+// ACK records that all the items in the batch have been processed.
+//
+// The Batch is no longer tracked in any form by the Buffer.
+//
+// Calling ACK/NACK on the same Batch twice will panic.
+// Calling ACK/NACK on a Batch not returned from LeaseOne will panic.
+func (buf *Buffer) ACK(leased *Batch) {
+	buf.removeLease(leased)
+}
+
+func (buf *Buffer) removeLease(leased *Batch) (live bool) {
+	if _, known := buf.unAckedLeases[leased]; !known {
+		panic(errors.New("unknown *Batch; are you ACK/NACK'ing multiple times?"))
+	}
+	delete(buf.unAckedLeases, leased)
+
+	if _, live = buf.liveLeases[leased]; live {
+		delete(buf.liveLeases, leased)
+		buf.stats.LeasedItemCount -= leased.countedSize
+	} else {
+		buf.stats.DroppedLeasedItemCount -= leased.countedSize
+	}
+	return
+}
+
+// NACK analyzes the current state of Batch.Data, potentially reducing
+// UnleasedItemCount in the Buffer's if the given Batch.Data length is
+// smaller than when the Batch was originally leased.
+//
+// The Batch will be re-enqueued unless:
+//   * The Batch's retry Iterator returns retry.Stop
+//   * The Batch has been dropped already due to FullBehavior policy. If this
+//     is the case, AddNoBlock would already have returned this *Batch pointer
+//     to you.
+//
+// Calling ACK/NACK on the same Batch twice will panic.
+// Calling ACK/NACK on a Batch not returned from LeaseOne will panic.
+func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
+	if live := buf.removeLease(leased); !live {
+		return
 	}
 
-	buf.mu.Lock()
-	heapDiff := 0
-	if canInsert := buf.maybePruneLocked(batch.id, false); canInsert {
-		heapDiff = batch.countedSize
-		buf.heap.PushBatch(batch)
+	// TODO(iannucci): decouple retry from context (pass in 'now' instead)
+	toWait := leased.retry.Next(ctx, err)
+	if toWait == retry.Stop {
+		return
 	}
-	buf.totalBufferedItems -= leasedSize - heapDiff
-	buf.mu.Unlock()
+
+	leased.nextSend = clock.Now(ctx).Add(toWait)
+	if dataSize := len(leased.Data); dataSize < leased.countedSize {
+		leased.countedSize = dataSize
+	}
+	buf.unleased.PushBatch(leased)
+	buf.stats.UnleasedItemCount += leased.countedSize
+
+	return
 }
