@@ -236,6 +236,16 @@ func (buf *Buffer) Stats() Stats {
 	return buf.stats
 }
 
+// Total is shorthand for Stats().Total()
+func (buf *Buffer) Total() int {
+	return buf.stats.Total()
+}
+
+// Empty is shorthand for Stats().Empty()
+func (buf *Buffer) Empty() bool {
+	return buf.stats.Empty()
+}
+
 // CanAddItem returns true iff the Buffer will accept an item from AddNoBlock.
 func (buf *Buffer) CanAddItem() bool {
 	canAdd, _ := buf.opts.FullBehavior.ComputeState(buf.opts, buf.stats)
