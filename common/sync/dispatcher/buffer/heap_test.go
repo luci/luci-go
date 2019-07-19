@@ -15,82 +15,78 @@
 package buffer
 
 import (
+	"container/heap"
 	"math/rand"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	//. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBatchHeap(t *testing.T) {
 	Convey(`batchHeap`, t, func() {
 		h := batchHeap{}
 
-		Convey(`usage`, func() {
-
-			Convey(`sorts batches by ID`, func() {
-				// pseudo-randomly enumerate set of 1..10.
-				for i := uint64(0); i < 10; i++ {
-					h.PushBatch(&Batch{
-						id: 1 + uint64(i*17%10),
-					})
+		Convey(`ordering`, func() {
+			checkSorted := func() {
+				for i := 1; i < len(h); i++ {
+					So(h.Less(i-1, i), ShouldBeTrue)
+					So(h.Less(i, i-1), ShouldBeFalse)
 				}
+			}
 
-				ids := []uint64{}
-				for len(h) > 0 {
-					ids = append(ids, h.PopBatch().id)
-				}
-				So(ids, ShouldResemble, []uint64{
-					1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+			Convey(`id`, func() {
+				h = append(h, &Batch{id: 0}, &Batch{id: 1})
+				checkSorted()
+			})
+
+			Convey(`nextSend`, func() {
+				now := time.Now()
+				h = append(h, &Batch{nextSend: now}, &Batch{nextSend: now.Add(time.Second)})
+				checkSorted()
+			})
+
+			Convey(`(nextSend, id)`, func() {
+				now := time.Now().UTC()
+				h = append(h,
+					&Batch{nextSend: now, id: 0},
+					&Batch{nextSend: now.Add(time.Second), id: 0},
+					&Batch{nextSend: now.Add(time.Second), id: 1},
+					&Batch{nextSend: now.Add(2 * time.Second), id: 0},
+				)
+				checkSorted()
+
+				Convey(`test push-pop yields sorted`, func() {
+					shuffled := make(batchHeap, len(h))
+					copy(shuffled, h)
+					rand.Shuffle(len(shuffled), shuffled.Swap)
+					So(shuffled, ShouldNotResemble, h)
+
+					heap.Init(&shuffled)
+					sorted := make(batchHeap, 0, len(shuffled))
+					for len(shuffled) > 0 {
+						sorted = append(sorted, heap.Pop(&shuffled).(*Batch))
+					}
+					So(sorted, ShouldResemble, h)
 				})
 			})
 
-			Convey(`sorts batches by time, then ID`, func() {
-				now := time.Now()
+			Convey(`batch dropping`, func() {
+				h.PushBatch(&Batch{id: 10})
+				h.PushBatch(&Batch{id: 20})
 
-				for i := 0; i < 10; i++ {
-					id := rand.Uint64()
+				Convey(`drops an old batch`, func() {
+					oldest, idx := h.Oldest()
+					So(oldest.id, ShouldEqual, 10)
+					So(idx, ShouldEqual, 0)
+					h.RemoveAt(idx)
+					So(h.PopBatch(), ShouldResemble, &Batch{id: 20})
+					So(h, ShouldBeEmpty)
+				})
 
-					// Each batch is pushed in with a DECREASING time; we expect the heap
-					// to reorder these so they will be popped with INCREASING time.
-					nextSend := now.Add(-time.Duration(i+1) * time.Second)
-
-					h.PushBatch(&Batch{nextSend: nextSend, id: id})
-					h.PushBatch(&Batch{nextSend: nextSend, id: id + 1})
-				}
-
-				prevBatch := h.PopBatch()
-				for len(h) > 0 {
-					batch := h.PopBatch()
-					if batch.nextSend == prevBatch.nextSend {
-						So(prevBatch.id, ShouldEqual, batch.id-1)
-					} else {
-						So(prevBatch.nextSend, ShouldHappenBefore, batch.nextSend)
-					}
-					prevBatch = batch
-				}
 			})
 
 		})
-
-		Convey(`batch dropping`, func() {
-			h.PushBatch(&Batch{id: 10})
-			h.PushBatch(&Batch{id: 20})
-
-			Convey(`will not drop batch if target is older than oldest batch`, func() {
-				So(h.PopOldestBatchOlderThan(5), ShouldBeNil)
-				So(h.PopBatch(), ShouldResemble, &Batch{id: 10})
-				So(h.PopBatch(), ShouldResemble, &Batch{id: 20})
-				So(h, ShouldBeEmpty)
-			})
-
-			Convey(`drops an old batch`, func() {
-				So(h.PopOldestBatchOlderThan(15), ShouldResemble, &Batch{id: 10})
-				So(h.PopBatch(), ShouldResemble, &Batch{id: 20})
-				So(h, ShouldBeEmpty)
-			})
-		})
-
 	})
+
 }
