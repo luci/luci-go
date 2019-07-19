@@ -24,33 +24,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestBatchSizeGuessing(t *testing.T) {
-	t.Parallel()
-
-	Convey(`Options.BatchSizeGuess`, t, func() {
-		Convey(`default BatchSize`, func() {
-			o := Options{}
-			So(o.normalize(), ShouldBeNil)
-			So(o.BatchSizeGuess(), ShouldEqual, 20)
-		})
-
-		Convey(`guess on zero BatchSize`, func() {
-			o := Options{BatchSize: -1}
-			So(o.normalize(), ShouldBeNil)
-			So(o.BatchSizeGuess(), ShouldEqual, 10)
-		})
-
-		Convey(`guess on different BatchSize`, func() {
-			o := Options{BatchSize: 93}
-			So(o.normalize(), ShouldBeNil)
-			So(o.BatchSizeGuess(), ShouldEqual, 93)
-		})
-	})
-}
-
 func TestOptionValidationGood(t *testing.T) {
-	t.Parallel()
-
 	var goodOptions = []struct {
 		name     string
 		options  Options
@@ -65,35 +39,107 @@ func TestOptionValidationGood(t *testing.T) {
 		{
 			name: "full",
 			options: Options{
+				MaxLeases:     2,
 				BatchSize:     99,
 				BatchDuration: 2 * time.Minute,
-				MaxItems:      100,
-				FullBehavior:  DropOldestBatch,
+				FullBehavior:  &DropOldestBatch{400},
 				Retry:         retry.None,
 			},
 			expected: Options{
+				MaxLeases:     2,
 				BatchSize:     99,
 				BatchDuration: 2 * time.Minute,
-				MaxItems:      100,
-				FullBehavior:  DropOldestBatch,
+				FullBehavior:  &DropOldestBatch{400},
 				Retry:         retry.None,
 			},
 		},
 
 		{
-			name: "Batch.BatchSize == -1 OK",
+			name: "BatchSize == -1 OK",
 			options: Options{
+				MaxLeases:     Defaults.MaxLeases,
 				BatchSize:     -1,
 				BatchDuration: Defaults.BatchDuration,
-				MaxItems:      Defaults.MaxItems,
 				FullBehavior:  Defaults.FullBehavior,
 				Retry:         Defaults.Retry,
 			},
 			expected: Options{
+				MaxLeases:     Defaults.MaxLeases,
 				BatchSize:     -1,
 				BatchDuration: Defaults.BatchDuration,
-				MaxItems:      Defaults.MaxItems,
 				FullBehavior:  Defaults.FullBehavior,
+				Retry:         Defaults.Retry,
+			},
+		},
+
+		{
+			name: "DropOldestBatch default",
+			options: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchSize:     -1,
+				BatchDuration: Defaults.BatchDuration,
+				FullBehavior:  &DropOldestBatch{},
+				Retry:         Defaults.Retry,
+			},
+			expected: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchSize:     -1,
+				BatchDuration: Defaults.BatchDuration,
+				FullBehavior:  &DropOldestBatch{1000},
+				Retry:         Defaults.Retry,
+			},
+		},
+
+		{
+			name: "DropOldestBatch default large BatchSize",
+			options: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchSize:     2000,
+				BatchDuration: Defaults.BatchDuration,
+				FullBehavior:  &DropOldestBatch{},
+				Retry:         Defaults.Retry,
+			},
+			expected: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchSize:     2000,
+				BatchDuration: Defaults.BatchDuration,
+				FullBehavior:  &DropOldestBatch{2000},
+				Retry:         Defaults.Retry,
+			},
+		},
+
+		{
+			name: "BlockNewItems default",
+			options: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchSize:     -1,
+				BatchDuration: Defaults.BatchDuration,
+				FullBehavior:  &BlockNewItems{},
+				Retry:         Defaults.Retry,
+			},
+			expected: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchSize:     -1,
+				BatchDuration: Defaults.BatchDuration,
+				FullBehavior:  &BlockNewItems{1000},
+				Retry:         Defaults.Retry,
+			},
+		},
+
+		{
+			name: "BlockNewItems default large BatchSize",
+			options: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchSize:     2000,
+				BatchDuration: Defaults.BatchDuration,
+				FullBehavior:  &BlockNewItems{},
+				Retry:         Defaults.Retry,
+			},
+			expected: Options{
+				MaxLeases:     Defaults.MaxLeases,
+				BatchSize:     2000,
+				BatchDuration: Defaults.BatchDuration,
+				FullBehavior:  &BlockNewItems{2000},
 				Retry:         Defaults.Retry,
 			},
 		},
@@ -120,13 +166,19 @@ func TestOptionValidationGood(t *testing.T) {
 }
 
 func TestOptionValidationBad(t *testing.T) {
-	t.Parallel()
-
 	var badOptions = []struct {
 		name     string
 		options  Options
 		expected string
 	}{
+		{
+			"MaxLeases",
+			Options{
+				MaxLeases: -1,
+			},
+			"MaxLeases must be",
+		},
+
 		{
 			"BatchSize",
 			Options{
@@ -144,19 +196,19 @@ func TestOptionValidationBad(t *testing.T) {
 		},
 
 		{
-			"buffer: MaxItems",
+			"DropOldestBatch.MaxLiveItems < -1",
 			Options{
-				MaxItems: -1,
+				FullBehavior: &DropOldestBatch{-2},
 			},
-			"MaxItems must be",
+			"DropOldestBatch.MaxLiveItems must be",
 		},
 
 		{
-			"buffer: FullBehavior",
+			"BlockNewItems.MaxItems < -1",
 			Options{
-				FullBehavior: 20,
+				FullBehavior: &BlockNewItems{-2},
 			},
-			"FullBehavior is unknown",
+			"BlockNewItems.MaxItems must be",
 		},
 	}
 

@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/retry"
 
@@ -27,18 +28,16 @@ import (
 )
 
 func TestBuffer(t *testing.T) {
-	t.Parallel()
-
 	Convey(`Buffer`, t, func() {
 		Convey(`construction`, func() {
 			Convey(`success`, func() {
 				b, err := NewBuffer(nil)
 				So(err, ShouldBeNil)
 
-				So(b.Len(), ShouldEqual, 0)
+				So(b.Stats(), ShouldResemble, Stats{})
 				So(b.NextSendTime(), ShouldBeZeroValue)
 				So(b.CanAddItem(), ShouldBeTrue)
-				So(b.LeaseOne(context.Background()), ShouldBeNil)
+				So(b.LeaseOne(time.Time{}), ShouldBeNil)
 			})
 			Convey(`fail`, func() {
 				_, err := NewBuffer(&Options{BatchSize: -100})
@@ -51,149 +50,146 @@ func TestBuffer(t *testing.T) {
 			ctx, tclock := testclock.UseTime(context.Background(), start)
 
 			Convey(`common behavior`, func() {
-				b, err := NewBuffer(nil)
+				b, err := NewBuffer(&Options{
+					MaxLeases: 2,
+					BatchSize: 20,
+				})
 				So(err, ShouldBeNil)
-				bi := b.(*bufferImpl)
+				nextSendTimeOffset := b.opts.BatchDuration
 
 				Convey(`batch cut by count`, func() {
-					for i := 0; i < Defaults.BatchSize; i++ {
-						So(bi.heap.Len(), ShouldEqual, 0)
+					for i := 0; i < int(b.opts.BatchSize); i++ {
+						So(b.unleased.Len(), ShouldEqual, 0)
 						if i > 0 {
 							// The next send time should be when the current batch will be
 							// forcibly cut due to BatchDuration.
-							So(b.NextSendTime(), ShouldResemble,
-								start.Add(Defaults.BatchDuration+time.Millisecond))
+							So(b.NextSendTime(), ShouldResemble, start.Add(nextSendTimeOffset))
 						}
-						b.AddNoBlock(ctx, i)
+						So(b.AddNoBlock(clock.Now(ctx), i), ShouldBeNil)
 					}
 
-					So(b.Len(), ShouldEqual, Defaults.BatchSize)
+					So(b.stats, ShouldResemble, Stats{20, 0, 0})
 					// The next send time should be when the current batch is available to
-					// send. Since this is a test and time hasn't advanced, it's reset
+					// send. this is a test and time hasn't advanced, it's reset
 					// back to the start time.
 					So(b.NextSendTime(), ShouldEqual, start)
 					So(b.CanAddItem(), ShouldBeTrue)
-					So(bi.heap.Len(), ShouldEqual, 1)
-					So(bi.currentBatch, ShouldBeNil)
+					So(b.unleased.Len(), ShouldEqual, 1)
+					So(b.currentBatch, ShouldBeNil)
 
-					batch := b.LeaseOne(ctx)
-					So(b.LeaseOne(ctx), ShouldBeNil)
+					batch := b.LeaseOne(clock.Now(ctx))
+					So(b.LeaseOne(clock.Now(ctx)), ShouldBeNil)
 
-					So(b.Len(), ShouldEqual, Defaults.BatchSize)
-					So(batch.Data, ShouldHaveLength, Defaults.BatchSize)
+					So(b.stats, ShouldResemble, Stats{0, 20, 0})
+					So(batch.Data, ShouldHaveLength, b.opts.BatchSize)
 					for i := range batch.Data {
 						So(batch.Data[i], ShouldEqual, i)
 					}
 
 					Convey(`ACK`, func() {
-						batch.ACK()
+						b.ACK(batch)
 
-						So(b.Len(), ShouldEqual, 0)
+						So(b.stats, ShouldResemble, Stats{})
 
 						Convey(`double ACK panic`, func() {
-							So(batch.ACK, ShouldPanicLike, "LeasedBatch")
-							So(b.Len(), ShouldEqual, 0)
+							So(func() { b.ACK(batch) }, ShouldPanicLike, "unknown *Batch")
+							So(b.stats, ShouldResemble, Stats{})
 						})
 					})
 
 					Convey(`Partial NACK`, func() {
 						batch.Data = batch.Data[:10] // pretend we processed some Data
 
-						batch.NACK(ctx, nil)
+						b.NACK(ctx, nil, batch)
 
-						So(b.Len(), ShouldEqual, Defaults.BatchSize-10)
-						So(bi.heap.Len(), ShouldEqual, 1)
+						So(b.stats, ShouldResemble, Stats{10, 0, 0})
+						So(b.unleased.Len(), ShouldEqual, 1)
 
 						Convey(`Adding Data does nothing`, func() {
 							// no batch yet; the one we NACK'd is sleeping
-							So(b.LeaseOne(ctx), ShouldBeNil)
+							So(b.LeaseOne(clock.Now(ctx)), ShouldBeNil)
 							tclock.Set(b.NextSendTime())
-							batch := b.LeaseOne(ctx)
-							So(batch, ShouldNotBeNil)
+							newBatch := b.LeaseOne(clock.Now(ctx))
+							So(newBatch, ShouldNotBeNil)
 
-							batch.Data = append(batch.Data, nil, nil, nil)
+							newBatch.Data = append(newBatch.Data, nil, nil, nil)
 
-							batch.NACK(ctx, nil)
+							b.NACK(ctx, nil, newBatch)
 
-							So(b.Len(), ShouldEqual, Defaults.BatchSize-10)
-							So(bi.heap.Len(), ShouldEqual, 1)
+							So(b.stats, ShouldResemble, Stats{10, 0, 0})
+							So(b.unleased.Len(), ShouldEqual, 1)
 						})
 					})
 
 					Convey(`Full NACK`, func() {
-						batch.NACK(ctx, nil)
+						b.NACK(ctx, nil, batch)
 
-						So(b.Len(), ShouldEqual, Defaults.BatchSize)
-						So(bi.heap.Len(), ShouldEqual, 1)
+						So(b.stats, ShouldResemble, Stats{20, 0, 0})
+						So(b.unleased.Len(), ShouldEqual, 1)
 
 						Convey(`double NACK panic`, func() {
-							So(func() { batch.NACK(ctx, nil) }, ShouldPanicLike, "LeasedBatch")
-							So(b.Len(), ShouldEqual, Defaults.BatchSize)
-							So(bi.heap.Len(), ShouldEqual, 1)
+							So(func() { b.NACK(ctx, nil, batch) }, ShouldPanicLike, "unknown *Batch")
+							So(b.stats, ShouldResemble, Stats{20, 0, 0})
+							So(b.unleased.Len(), ShouldEqual, 1)
 						})
 					})
 				})
 
 				Convey(`batch cut by time`, func() {
-					b.AddNoBlock(ctx, "bobbie")
+					So(b.AddNoBlock(clock.Now(ctx), "bobbie"), ShouldBeNil)
 
 					// should be equal to timeout of first batch, plus 1ms
 					nextSend := b.NextSendTime()
-					So(nextSend, ShouldResemble,
-						start.Add(Defaults.BatchDuration+time.Millisecond))
+					So(nextSend, ShouldResemble, start.Add(nextSendTimeOffset))
 					tclock.Set(nextSend)
 
-					b.AddNoBlock(ctx, "charlie")
-					b.AddNoBlock(ctx, "dakota")
+					So(b.AddNoBlock(clock.Now(ctx), "charlie"), ShouldBeNil)
+					So(b.AddNoBlock(clock.Now(ctx), "dakota"), ShouldBeNil)
 
 					// We haven't leased one yet, so NextSendTime should stay the same.
-					So(b.NextSendTime(), ShouldResemble,
-						start.Add(Defaults.BatchDuration+time.Millisecond))
+					nextSend = b.NextSendTime()
+					So(nextSend, ShouldResemble, start.Add(nextSendTimeOffset))
 
-					batch1 := b.LeaseOne(ctx)
-					So(batch1, ShouldNotBeNil)
+					// Eventually time passes, and we can lease the batch.
+					tclock.Set(nextSend)
+					batch := b.LeaseOne(clock.Now(ctx))
+					So(batch, ShouldNotBeNil)
 
-					// Now it's an extra iteration in the future.
-					So(b.NextSendTime(), ShouldResemble,
-						start.Add(2*(Defaults.BatchDuration+time.Millisecond)))
-					tclock.Set(b.NextSendTime())
+					// that batch included everything
+					So(b.NextSendTime(), ShouldBeZeroValue)
 
-					So(batch1.Data, ShouldHaveLength, 1)
-					So(batch1.Data[0], ShouldEqual, "bobbie")
+					So(batch.Data, ShouldHaveLength, 3)
+					So(batch.Data, ShouldResemble, []interface{}{
+						"bobbie", "charlie", "dakota",
+					})
 
-					batch2 := b.LeaseOne(ctx)
-					So(batch2, ShouldNotBeNil)
-
-					So(batch2.Data, ShouldHaveLength, 2)
-					So(batch2.Data[0], ShouldEqual, "charlie")
-					So(batch2.Data[1], ShouldEqual, "dakota")
 				})
 
 				Convey(`batch cut by flush`, func() {
-					b.AddNoBlock(ctx, "bobbie")
-					So(b.Len(), ShouldEqual, 1)
+					So(b.AddNoBlock(clock.Now(ctx), "bobbie"), ShouldBeNil)
+					So(b.stats, ShouldResemble, Stats{1, 0, 0})
 
-					So(b.LeaseOne(ctx), ShouldBeNil)
+					So(b.LeaseOne(clock.Now(ctx)), ShouldBeNil)
 
-					b.Flush(ctx)
-					So(b.Len(), ShouldEqual, 1)
-					So(bi.currentBatch, ShouldBeNil)
-					So(bi.heap, ShouldHaveLength, 1)
+					b.Flush(start)
+					So(b.stats, ShouldResemble, Stats{1, 0, 0})
+					So(b.currentBatch, ShouldBeNil)
+					So(b.unleased, ShouldHaveLength, 1)
 
 					Convey(`double flush is noop`, func() {
-						b.Flush(ctx)
-						So(b.Len(), ShouldEqual, 1)
-						So(bi.currentBatch, ShouldBeNil)
-						So(bi.heap, ShouldHaveLength, 1)
+						b.Flush(start)
+						So(b.stats, ShouldResemble, Stats{1, 0, 0})
+						So(b.currentBatch, ShouldBeNil)
+						So(b.unleased, ShouldHaveLength, 1)
 					})
 
-					batch := b.LeaseOne(ctx)
+					batch := b.LeaseOne(clock.Now(ctx))
 					So(batch, ShouldNotBeNil)
-					So(b.Len(), ShouldEqual, 1)
+					So(b.stats, ShouldResemble, Stats{0, 1, 0})
 
-					batch.ACK()
+					b.ACK(batch)
 
-					So(b.Len(), ShouldEqual, 0)
+					So(b.stats.Empty(), ShouldBeTrue)
 				})
 			})
 
@@ -206,113 +202,129 @@ func TestBuffer(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 
-				b.AddNoBlock(ctx, 1)
+				So(b.AddNoBlock(clock.Now(ctx), 1), ShouldBeNil)
 
-				b.LeaseOne(ctx).NACK(ctx, nil)
-				So(b.Len(), ShouldEqual, 1)
-				b.LeaseOne(ctx).NACK(ctx, nil)
-				// only one retry was allowed, now it's gone.
-				So(b.Len(), ShouldEqual, 0)
+				b.NACK(ctx, nil, b.LeaseOne(clock.Now(ctx)))
+				So(b.stats, ShouldResemble, Stats{1, 0, 0})
+				b.NACK(ctx, nil, b.LeaseOne(clock.Now(ctx)))
+				// only one retry was allowed, start it's gone.
+				So(b.stats, ShouldResemble, Stats{})
 			})
 
 			Convey(`full buffer behavior`, func() {
 
 				Convey(`DropOldestBatch`, func() {
 					b, err := NewBuffer(&Options{
-						FullBehavior: DropOldestBatch,
-						MaxItems:     Defaults.BatchSize,
+						FullBehavior: &DropOldestBatch{1},
+						BatchSize:    1,
 					})
 					So(err, ShouldBeNil)
 
-					for i := 0; i < Defaults.BatchSize; i++ {
-						b.AddNoBlock(ctx, i)
-					}
+					So(b.AddNoBlock(clock.Now(ctx), 0), ShouldBeNil)
+					So(b.AddNoBlock(clock.Now(ctx), 1), ShouldNotBeNil) // drops 0
 
-					So(b.Len(), ShouldEqual, Defaults.BatchSize)
+					So(b.stats, ShouldResemble, Stats{1, 0, 0}) // full!
 					So(b.CanAddItem(), ShouldBeTrue)
 
 					Convey(`via new data`, func() {
-						So(b.Len(), ShouldEqual, Defaults.BatchSize)
-						b.AddNoBlock(ctx, 100)
-						So(b.Len(), ShouldEqual, 1)
+						So(b.AddNoBlock(clock.Now(ctx), 100), ShouldNotBeNil) // drops 1
+						So(b.stats, ShouldResemble, Stats{1, 0, 0})           // still full
 
 						tclock.Set(b.NextSendTime())
 
-						batch := b.LeaseOne(ctx)
+						batch := b.LeaseOne(clock.Now(ctx))
 						So(batch, ShouldNotBeNil)
 						So(batch.Data, ShouldHaveLength, 1)
 						So(batch.Data[0], ShouldEqual, 100)
-						So(batch.id, ShouldEqual, 2)
+						So(batch.id, ShouldEqual, 3)
 					})
 
 					Convey(`via NACK`, func() {
-						batch := b.LeaseOne(ctx)
-						So(batch, ShouldNotBeNil)
+						leased := b.LeaseOne(clock.Now(ctx))
+						So(leased, ShouldNotBeNil)
+						So(b.stats, ShouldResemble, Stats{0, 1, 0})
 
-						b.AddNoBlock(ctx, 100)
+						dropped := b.AddNoBlock(clock.Now(ctx), 100)
+						So(dropped, ShouldResemble, leased)
+						So(b.stats, ShouldResemble, Stats{1, 0, 1})
 
-						// We exceed MaxItems because the outstanding batch still counts.
-						So(b.Len(), ShouldEqual, 21)
+						dropped = b.AddNoBlock(clock.Now(ctx), 200)
+						So(dropped.Data, ShouldResemble, []interface{}{100})
+						So(b.stats, ShouldResemble, Stats{1, 0, 1})
 
-						// try to re-queue the batch, but it gets dropped.
-						batch.NACK(ctx, nil)
+						b.NACK(ctx, nil, leased)
 
-						So(b.Len(), ShouldEqual, 1) // it's gone
+						So(b.stats, ShouldResemble, Stats{1, 0, 0})
 					})
+				})
+
+				Convey(`DropOldestBatch dropping items from the current batch`, func() {
+					b, err := NewBuffer(&Options{
+						FullBehavior: &DropOldestBatch{1},
+						BatchSize:    -1,
+					})
+					So(err, ShouldBeNil)
+
+					So(b.AddNoBlock(clock.Now(ctx), 0), ShouldBeNil)
+					So(b.stats, ShouldResemble, Stats{1, 0, 0})
+					So(b.AddNoBlock(clock.Now(ctx), 1), ShouldNotBeNil)
+					So(b.stats, ShouldResemble, Stats{1, 0, 0})
 				})
 
 				Convey(`BlockNewItems`, func() {
 					b, err := NewBuffer(&Options{
-						FullBehavior: BlockNewItems,
-						MaxItems:     Defaults.BatchSize,
+						FullBehavior: &BlockNewItems{21},
+						BatchSize:    20,
 					})
 					So(err, ShouldBeNil)
 
-					for i := 0; i < Defaults.BatchSize; i++ {
-						b.AddNoBlock(ctx, i)
+					for i := 0; i < int(b.opts.BatchSize)+1; i++ {
+						So(b.AddNoBlock(clock.Now(ctx), i), ShouldBeNil)
 					}
 
-					So(b.Len(), ShouldEqual, Defaults.BatchSize)
+					So(b.stats, ShouldResemble, Stats{21, 0, 0})
 					So(b.CanAddItem(), ShouldBeFalse)
 
 					Convey(`Adding more panics`, func() {
-						So(func() { b.AddNoBlock(ctx, 100) }, ShouldPanicLike, "buffer is full")
+						So(func() { b.AddNoBlock(clock.Now(ctx), 100) }, ShouldPanicLike, "buffer is full")
 					})
 
 					Convey(`Leasing a batch still rejects Adds`, func() {
-						batch := b.LeaseOne(ctx)
+						batch := b.LeaseOne(clock.Now(ctx))
+						So(b.stats, ShouldResemble, Stats{1, 20, 0})
 
 						So(b.CanAddItem(), ShouldBeFalse)
-						So(func() { b.AddNoBlock(ctx, 100) }, ShouldPanic)
+						So(func() { b.AddNoBlock(clock.Now(ctx), 100) }, ShouldPanic)
 
 						Convey(`ACK`, func() {
-							batch.ACK()
+							b.ACK(batch)
 							So(b.CanAddItem(), ShouldBeTrue)
-							So(b.Len(), ShouldEqual, 0)
-							b.AddNoBlock(ctx, 100)
+							So(b.stats, ShouldResemble, Stats{1, 0, 0})
+							So(b.AddNoBlock(clock.Now(ctx), 100), ShouldBeNil)
+							So(b.stats, ShouldResemble, Stats{2, 0, 0})
 						})
 
 						Convey(`partial NACK`, func() {
 							batch.Data = batch.Data[:10]
-							batch.NACK(ctx, nil)
+							b.NACK(ctx, nil, batch)
 
 							So(b.CanAddItem(), ShouldBeTrue)
-							So(b.Len(), ShouldEqual, Defaults.BatchSize-10)
+							So(b.stats, ShouldResemble, Stats{11, 0, 0})
 
 							for i := 0; i < 10; i++ {
-								b.AddNoBlock(ctx, 100+i)
+								So(b.AddNoBlock(clock.Now(ctx), 100+i), ShouldBeNil)
 							}
 
 							So(b.CanAddItem(), ShouldBeFalse)
-							So(b.LeaseOne(ctx), ShouldBeNil) // no batch cut yet
+							So(b.LeaseOne(clock.Now(ctx)), ShouldBeNil) // no batch cut yet
 							tclock.Set(b.NextSendTime())
 
-							So(b.LeaseOne(ctx), ShouldNotBeNil)
+							So(b.LeaseOne(clock.Now(ctx)), ShouldNotBeNil)
 						})
 
 						Convey(`NACK`, func() {
-							batch.NACK(ctx, nil)
-							So(b.Len(), ShouldEqual, Defaults.BatchSize)
+							b.NACK(ctx, nil, batch)
+							So(b.stats, ShouldResemble, Stats{21, 0, 0})
 							So(b.CanAddItem(), ShouldBeFalse)
 						})
 

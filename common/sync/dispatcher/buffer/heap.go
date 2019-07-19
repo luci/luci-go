@@ -16,8 +16,6 @@ package buffer
 
 import (
 	"container/heap"
-
-	"go.chromium.org/luci/common/data/sortby"
 )
 
 // batchHeap maintains sorted order based on (nextSend, id)
@@ -25,32 +23,13 @@ type batchHeap []*Batch
 
 var _ heap.Interface = &batchHeap{}
 
-// Len implements sort.Interface.
-func (h batchHeap) Len() int { return len(h) }
+// Implements sort.Interface.
+func (h batchHeap) Len() int           { return len(h) }
+func (h batchHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h batchHeap) Less(i, j int) bool { return h[i].Less(h[j]) }
 
-// Swap implements sort.Interface.
-func (h batchHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-
-// Less implements sort.Interface.
-func (h batchHeap) Less(i, j int) bool {
-	return (sortby.Chain{
-		func(i, j int) bool { return h[i].nextSend.Before(h[j].nextSend) },
-		func(i, j int) bool { return h[i].id < h[j].id },
-	}).Use(i, j)
-}
-
-// Push adds an element to the end of the underlying list; code in this package
-// should use PushBatch instead, which retains the heap invariant.
-//
 // Implements heap.Interface.
-func (h *batchHeap) Push(itm interface{}) {
-	*h = append(*h, itm.(*Batch))
-}
-
-// Pop removes the last element from the underlying list; code in this package
-// should use PopBatch instead, which retains the heap invariant.
-//
-// Implements heap.Interface.
+func (h *batchHeap) Push(itm interface{}) { *h = append(*h, itm.(*Batch)) }
 func (h *batchHeap) Pop() interface{} {
 	old := *h
 	n := len(old)
@@ -59,29 +38,31 @@ func (h *batchHeap) Pop() interface{} {
 	return x
 }
 
-// PushBatch pushes a *Batch into the heap, maintaining the heap invariant.
+// PushBatch pushes a *Batch into the heap.
 func (h *batchHeap) PushBatch(batch *Batch) {
 	heap.Push(h, batch)
 }
 
-// PopBatch removes the youngest (nextSend, id) *Batch from the heap,
-// maintaining the heap invariant.
+// PopBatch pops the lowest *Batch off the heap.
 func (h *batchHeap) PopBatch() *Batch {
 	return heap.Pop(h).(*Batch)
 }
 
-// PopOldestBatchOlderThan finds, pops and returns the oldest batch whose id is
-// less than `id`. If no such batch exists, returns nil without removing
-// anything.
-func (h *batchHeap) PopOldestBatchOlderThan(id uint64) *Batch {
-	oldestID, oldestIdx := id, -1
+// Oldest finds and returns the oldest batch and its index.
+//
+// If not found, the returned idx will be -1
+func (h *batchHeap) Oldest() (oldest *Batch, idx int) {
+	idx = -1
 	for i, batch := range *h {
-		if batch.id < oldestID {
-			oldestID, oldestIdx = batch.id, i
+		if oldest == nil || batch.id < oldest.id {
+			oldest, idx = batch, i
 		}
 	}
-	if oldestIdx >= 0 {
-		return heap.Remove(h, oldestIdx).(*Batch)
-	}
-	return nil
+	return
+}
+
+// RemoveAt removes the *Batch at the given index in the heap. Used in
+// conjunction with OldestID.
+func (h *batchHeap) RemoveAt(idx int) {
+	heap.Remove(h, idx)
 }
