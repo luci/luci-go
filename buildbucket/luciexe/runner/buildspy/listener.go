@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package luciexe
+package buildspy
 
 import (
 	"net/url"
@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/luci/buildbucket/luciexe"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -30,13 +31,8 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-// BuildStreamName is the name of the build stream, relative to $LOGDOG_STREAM_PREFIX.
-// For more details, see Executable message in
-// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
-const BuildStreamName = "build.proto"
-
-// buildListener extracts a Build message from LogDog streams.
-type buildListener struct {
+// Spy extracts a Build message from LogDog streams.
+type Spy struct {
 	streamNamePrefix string // ends with slash, typically "u/".
 	buildStreamName  string // build stream name, typically "u/build.proto".
 
@@ -46,25 +42,25 @@ type buildListener struct {
 	buildMU sync.Mutex
 }
 
-// newBuildListener creates a build listener.
+// New creates a build listener.
 //
 // Root build proto will be expected at "<streamNamePrefix>/build.proto".
 // All logs of its steps and of steps of sub-builds must have this prefix.
-func newBuildListener(streamNamePrefix string, onErr func(error)) *buildListener {
+func New(streamNamePrefix string, onErr func(error)) *Spy {
 	if onErr == nil {
 		panic("onErr is nil")
 	}
 
 	streamNamePrefix = strings.TrimSuffix(streamNamePrefix, "/") + "/"
-	return &buildListener{
+	return &Spy{
 		streamNamePrefix: streamNamePrefix,
-		buildStreamName:  streamNamePrefix + BuildStreamName,
+		buildStreamName:  streamNamePrefix + luciexe.BuildStreamName,
 		onErr:            onErr,
 	}
 }
 
 // StreamRegistrationCallback can be used as logdogServer.StreamRegistrationCallback.
-func (l *buildListener) StreamRegistrationCallback(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
+func (l *Spy) StreamRegistrationCallback(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
 	if desc.Name == l.buildStreamName {
 		switch {
 		case desc.ContentType != protoutil.BuildMediaType:
@@ -81,13 +77,13 @@ func (l *buildListener) StreamRegistrationCallback(desc *logpb.LogStreamDescript
 	return nil
 }
 
-func (l *buildListener) onBuildChunk(log *logpb.LogEntry) {
+func (l *Spy) onBuildChunk(log *logpb.LogEntry) {
 	if err := l.processBuildLogEntry(log); err != nil {
 		l.report(errors.Annotate(err, "received an build.proto log entry").Err())
 	}
 }
 
-func (l *buildListener) processBuildLogEntry(log *logpb.LogEntry) error {
+func (l *Spy) processBuildLogEntry(log *logpb.LogEntry) error {
 	dg := log.GetDatagram()
 	switch {
 	case dg == nil:
@@ -115,7 +111,7 @@ func (l *buildListener) processBuildLogEntry(log *logpb.LogEntry) error {
 }
 
 // Build returns most recently retrieved Build message.
-func (l *buildListener) Build() *pb.Build {
+func (l *Spy) Build() *pb.Build {
 	l.buildMU.Lock()
 	defer l.buildMU.Unlock()
 
@@ -125,7 +121,7 @@ func (l *buildListener) Build() *pb.Build {
 	return proto.Clone(l.build).(*pb.Build)
 }
 
-func (l *buildListener) validateBuild(build *pb.Build) error {
+func (l *Spy) validateBuild(build *pb.Build) error {
 	for _, step := range build.Steps {
 		for _, log := range step.Logs {
 			u, err := url.Parse(log.Url)
@@ -146,6 +142,6 @@ func (l *buildListener) validateBuild(build *pb.Build) error {
 }
 
 // report reports a LUCI executable protocol violation via l.onErr.
-func (l *buildListener) report(err error) {
+func (l *Spy) report(err error) {
 	l.onErr(errors.Annotate(err, "LUCI executable protocol violation").Err())
 }

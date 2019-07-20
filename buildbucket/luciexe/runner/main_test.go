@@ -14,7 +14,7 @@
 
 // +build !windows
 
-package luciexe
+package runner
 
 import (
 	"context"
@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/integration/authtest"
 	"go.chromium.org/luci/auth/integration/localauth"
+	"go.chromium.org/luci/buildbucket/luciexe"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
@@ -217,7 +218,7 @@ var subtests = map[string]func(t *testing.T){
 	"testSuccess":      testSuccess,
 }
 
-var client = Client{
+var client = luciexe.Client{
 	BuildTimestamp: testclock.TestRecentTimeUTC,
 }
 

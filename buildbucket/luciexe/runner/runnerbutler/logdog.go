@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package luciexe
+package runnerbutler
 
 import (
 	"context"
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 
@@ -40,8 +41,8 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 )
 
-// logdogServer is a LogDog local server (aka butler).
-type logdogServer struct {
+// Server is a LogDog local server (aka butler).
+type Server struct {
 	WorkDir         string
 	Authenticator   *auth.Authenticator
 	CoordinatorHost string
@@ -64,7 +65,7 @@ type logdogServer struct {
 // Start starts the server.
 // Disables gRPC logging.
 // The caller is responsible for calling Stop().
-func (l *logdogServer) Start(ctx context.Context) error {
+func (l *Server) Start(ctx context.Context) error {
 	if l.serv != nil {
 		return errors.Reason("already started").Err()
 	}
@@ -99,7 +100,7 @@ func (l *logdogServer) Start(ctx context.Context) error {
 			Project:        l.Project,
 			Prefix:         l.Prefix,
 			SourceInfo:     []string{"luci_runner"},
-			RPCTimeout:     defaultRPCTimeout,
+			RPCTimeout:     30 * time.Second,
 			PublishContext: withNonCancel(ctx),
 		}
 		output, err = outCfg.Register(ctx)
@@ -146,7 +147,7 @@ func (l *logdogServer) Start(ctx context.Context) error {
 
 // SetInEnviron modifies env to export location of this local LogDog server
 // into the environment, so a subprocesses can stream logs.
-func (l *logdogServer) SetInEnviron(env environ.Env) error {
+func (l *Server) SetInEnviron(env environ.Env) error {
 	if l.serv == nil {
 		return fmt.Errorf("not started")
 	}
@@ -163,12 +164,12 @@ func (l *logdogServer) SetInEnviron(env environ.Env) error {
 // AddStream adds a new stream.
 // If no error is returned, the logdogServ assumes ownership of the supplied
 // stream. The stream will be closed when processing is finished.
-func (l *logdogServer) AddStream(rc io.ReadCloser, props *streamproto.Properties) error {
+func (l *Server) AddStream(rc io.ReadCloser, props *streamproto.Properties) error {
 	return l.butler.AddStream(rc, props)
 }
 
 // Stop stops the server.
-func (l *logdogServer) Stop() error {
+func (l *Server) Stop() error {
 	if l.serv == nil {
 		return fmt.Errorf("not started")
 	}

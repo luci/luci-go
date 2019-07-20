@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package luciexe
+package runner
 
 import (
 	"bytes"
@@ -92,8 +92,8 @@ func readBuildSecrets(ctx context.Context) (*pb.BuildSecrets, error) {
 	return secrets, nil
 }
 
-// RunnerMain runs LUCI runner, a program that runs a LUCI executable.
-func RunnerMain(args []string) int {
+// Main runs LUCI runner, a program that runs a LUCI executable.
+func Main(args []string) int {
 	if err := mainErr(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1

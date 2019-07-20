@@ -19,9 +19,9 @@ package main
 import (
 	"os"
 
-	"go.chromium.org/luci/buildbucket/luciexe"
+	runner "go.chromium.org/luci/buildbucket/luciexe/runner"
 )
 
 func main() {
-	os.Exit(luciexe.RunnerMain(os.Args))
+	os.Exit(runner.Main(os.Args))
 }

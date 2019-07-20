@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build darwin dragonfly freebsd linux netbsd openbsd
-
-package luciexe
+package runnerbutler
 
 import (
 	"context"
-	"path/filepath"
+	"fmt"
+	"os"
 
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 )
 
 // newLogDogStreamServerForPlatform creates a StreamServer instance usable on
-// POSIX.
+// Windows.
 func newLogDogStreamServerForPlatform(ctx context.Context, workDir string) (streamserver.StreamServer, error) {
-	// POSIX, use UNIX domain socket.
-	return streamserver.NewUNIXDomainSocketServer(ctx, filepath.Join(workDir, "ld.sock"))
+	// Windows, use named pipe.
+	return streamserver.NewNamedPipeServer(ctx, fmt.Sprintf("LUCILogDogRunBuild_%d", os.Getpid()))
 }
