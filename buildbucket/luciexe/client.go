@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package luciexe implements LUCI Executable protocol, documented in
+// message Executable in
+// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
 package luciexe
 
 import (
@@ -31,6 +34,11 @@ import (
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+// BuildStreamName is the name of the build stream, relative to $LOGDOG_STREAM_PREFIX.
+// For more details, see Executable message in
+// https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
+const BuildStreamName = "build.proto"
 
 // Client can be used by Go programs to implement LUCI Executable protocol.
 //
