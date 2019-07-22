@@ -65,12 +65,6 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Validate and normalize parameters.
-	args = proto.Clone(args).(*pb.RunnerArgs)
-	if err := normalizeArgs(args); err != nil {
-		return errors.Annotate(err, "invalid args").Err()
-	}
-
 	// Print our input.
 	argsJSON, err := indentedJSONPB(args)
 	if err != nil {
