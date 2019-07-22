@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/metadata"
@@ -75,6 +76,33 @@ func parseArgs(args []string) (*pb.RunnerArgs, error) {
 	if err := proto.Unmarshal(decompressed, ret); err != nil {
 		return nil, ann(err)
 	}
+
+	// Validate and normalize parameters.
+	switch {
+	case ret.BuildbucketHost == "":
+		return nil, errors.Reason("buildbucket_host is required").Err()
+	case ret.LogdogHost == "":
+		return nil, errors.Reason("logdog_host is required").Err()
+	case ret.Build.GetId() == 0:
+		return nil, errors.Reason("build.id is required").Err()
+	}
+
+	normalizePath := func(title, path string) (string, error) {
+		if path == "" {
+			return "", errors.Reason("%s is required", title).Err()
+		}
+		return filepath.Abs(path)
+	}
+	if ret.WorkDir, err = normalizePath("work_dir", ret.WorkDir); err != nil {
+		return nil, err
+	}
+	if ret.ExecutablePath, err = normalizePath("executable_path", ret.ExecutablePath); err != nil {
+		return nil, err
+	}
+	if ret.CacheDir, err = normalizePath("cache_dir", ret.CacheDir); err != nil {
+		return nil, err
+	}
+
 	return ret, nil
 }
 

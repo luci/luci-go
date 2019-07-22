@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"path/filepath"
 
 	"github.com/golang/protobuf/ptypes"
 
@@ -27,42 +26,11 @@ import (
 	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerbutler"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/common/types"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
-
-func normalizeArgs(a *pb.RunnerArgs) error {
-	normalizePath := func(title, path string) (string, error) {
-		if path == "" {
-			return "", errors.Reason("%s is required", title).Err()
-		}
-		return filepath.Abs(path)
-	}
-
-	switch {
-	case a.BuildbucketHost == "":
-		return errors.Reason("buildbucket_host is required").Err()
-	case a.LogdogHost == "":
-		return errors.Reason("logdog_host is required").Err()
-	case a.Build.GetId() == 0:
-		return errors.Reason("build.id is required").Err()
-	}
-
-	var err error
-	if a.WorkDir, err = normalizePath("work_dir", a.WorkDir); err != nil {
-		return err
-	}
-	if a.ExecutablePath, err = normalizePath("executable_path", a.ExecutablePath); err != nil {
-		return err
-	}
-	if a.CacheDir, err = normalizePath("cache_dir", a.CacheDir); err != nil {
-		return err
-	}
-	return nil
-}
 
 func (r *runner) startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Authenticator, spy *buildspy.Spy) (*runnerbutler.Server, error) {
 	globalLogTags := make(map[string]string, 4)
