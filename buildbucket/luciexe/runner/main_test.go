@@ -83,6 +83,7 @@ func TestMain(t *testing.T) {
 			args := &pb.RunnerArgs{}
 			err := proto.UnmarshalText(argsText, args)
 			So(err, ShouldBeNil)
+			args.LogdogHost = "file://" + filepath.Join(tempDir, "logs")
 
 			// We spawn ourselves, see https://npf.io/2015/06/testing-exec-command/
 			args.ExecutablePath = os.Args[0]
@@ -94,7 +95,6 @@ func TestMain(t *testing.T) {
 
 			var ret []*pb.UpdateBuildRequest
 			r := runner{
-				localLogFile: filepath.Join(tempDir, "logs"),
 				UpdateBuild: func(ctx context.Context, req *pb.UpdateBuildRequest) error {
 					ret = append(ret, req)
 					reqJSON, err := indentedJSONPB(req)
@@ -110,24 +110,9 @@ func TestMain(t *testing.T) {
 			return ret
 		}
 
-		dummyInputBuild := `
-			buildbucket_host: "buildbucket.example.com"
-			logdog_host: "logdog.example.com"
-			build {
-				id: 1
-				builder {
-					project: "chromium"
-					bucket: "try"
-					builder: "linux-rel"
-				}
-			}
-			luci_system_account: "system"
-		`
-
 		Convey("Echo", func() {
 			updates := runSubtest("testSuccess", `
 				buildbucket_host: "buildbucket.example.com"
-				logdog_host: "logdog.example.com"
 				build {
 					id: 1
 					builder {
@@ -156,6 +141,19 @@ func TestMain(t *testing.T) {
 				}
 			`)
 		})
+
+		dummyInputBuild := `
+			buildbucket_host: "buildbucket.example.com"
+			build {
+				id: 1
+				builder {
+					project: "chromium"
+					bucket: "try"
+					builder: "linux-rel"
+				}
+			}
+			luci_system_account: "system"
+		`
 
 		Convey("Final UpdateBuild does not set status to SUCCESS", func() {
 			updates := runSubtest("testSuccess", dummyInputBuild)

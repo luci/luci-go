@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path/filepath"
+	"strings"
 
 	"github.com/golang/protobuf/ptypes"
 
@@ -26,6 +28,7 @@ import (
 	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerbutler"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/common/types"
 
@@ -51,13 +54,23 @@ func (r *runner) startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAut
 		globalLogTags["swarming.bot_id"] = v
 	}
 
+	coordinatorHost, localFile := args.LogdogHost, ""
+	if strings.HasPrefix(coordinatorHost, "file://") {
+		localFile = coordinatorHost[len("file://"):]
+		coordinatorHost = ""
+		if !filepath.IsAbs(localFile) {
+			return nil, errors.Reason(
+				"logdog_host is file:// scheme, but not absolute: %q", args.LogdogHost).Err()
+		}
+	}
+
 	logdogServ := &runnerbutler.Server{
 		WorkDir:                    args.WorkDir,
 		Authenticator:              systemAuth,
-		CoordinatorHost:            args.LogdogHost,
+		CoordinatorHost:            coordinatorHost,
 		Project:                    types.ProjectName(args.Build.Builder.Project),
 		Prefix:                     types.StreamName(fmt.Sprintf("buildbucket/%s/%d", args.BuildbucketHost, args.Build.Id)),
-		LocalFile:                  r.localLogFile,
+		LocalFile:                  localFile,
 		GlobalTags:                 globalLogTags,
 		StreamRegistrationCallback: spy.StreamRegistrationCallback,
 	}
