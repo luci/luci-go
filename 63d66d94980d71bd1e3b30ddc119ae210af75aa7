@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d216dd69_200007b7",
+        "filename": "buildbucket/luciexe/runner/run_exe.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T21:18:25Z",
+      "side": 1,
+      "message": "\\n",
+      "revId": "63d66d94980d71bd1e3b30ddc119ae210af75aa7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2002c47_ae759c68",
+        "filename": "buildbucket/luciexe/runner/run_helpers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T21:18:25Z",
+      "side": 1,
+      "message": "\\n",
+      "revId": "63d66d94980d71bd1e3b30ddc119ae210af75aa7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16351eb4_c0c1d63b",
+        "filename": "buildbucket/luciexe/runner/run_helpers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T21:18:25Z",
+      "side": 1,
+      "message": "btw this error message confuses everyone",
+      "range": {
+        "startLine": 120,
+        "startChar": 25,
+        "endLine": 120,
+        "endChar": 84
+      },
+      "revId": "63d66d94980d71bd1e3b30ddc119ae210af75aa7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a8e4ae5_9d6c37b3",
+        "filename": "buildbucket/luciexe/runner/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T21:18:25Z",
+      "side": 1,
+      "message": "nit: group third party imports separate before luci imports",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 32
+      },
+      "revId": "63d66d94980d71bd1e3b30ddc119ae210af75aa7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8878dcd7_96ec6c35",
+        "filename": "buildbucket/luciexe/runner/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T21:18:25Z",
+      "side": 1,
+      "message": "nit: errors.Reason(...).Err()?",
+      "range": {
+        "startLine": 60,
+        "startChar": 10,
+        "endLine": 60,
+        "endChar": 20
+      },
+      "revId": "63d66d94980d71bd1e3b30ddc119ae210af75aa7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
