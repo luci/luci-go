@@ -145,15 +145,12 @@ func mainErr(rawArgs []string) error {
 
 	client := newBuildsClient(args)
 
-	r := &runner{
-		UpdateBuild: func(ctx context.Context, req *pb.UpdateBuildRequest) error {
-			// Insert the build token into the context.
-			ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
-			_, err := client.UpdateBuild(ctx, req)
-			return err
-		},
-	}
-	return r.Run(ctx, args)
+	return Run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+		// Insert the build token into the context.
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
+		_, err := client.UpdateBuild(ctx, req)
+		return err
+	})
 }
 
 // newBuildsClient creates a buildbucket client.
