@@ -45,9 +45,6 @@ type runner struct {
 	UpdateBuild func(context.Context, *pb.UpdateBuildRequest) error
 
 	localLogFile string
-
-	testExtraArgs []string // extra args to pass to the executable, for tests
-	testExtraEnv  []string // extra environ to pass to the executable, for tests
 }
 
 // Run runs a user executable and periodically calls r.UpdateBuild with the
