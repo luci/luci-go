@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9c40bb24_b1231f82",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T21:26:15Z",
+      "side": 1,
+      "message": "should it be \"file:///path/to/log/root\" for better realism? Or you intended to showcase relative path usage? Does \"file://\" URI scheme even allow relative paths?",
+      "range": {
+        "startLine": 39,
+        "startChar": 36,
+        "endLine": 39,
+        "endChar": 59
+      },
+      "revId": "226009eea99106bcfb779c5deab7c2ade4e89fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
