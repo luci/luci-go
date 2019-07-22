@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "601ce974_49cc520d",
+        "filename": "auth/authctx/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T20:26:43Z",
+      "side": 1,
+      "message": "This is where it originally happens. It is ErrLoginRequired and it is handled in the switch below.\n\nIn previous version of this code, \u0027err\u0027 was later reset to nil by another operation (which succeeded). This operation was moved to another function in CL where this stuff regressed, making ErrLoginRequired survive till the very end.\n\nIt\u0027s the first time I was bitten by named return values in go :(",
+      "range": {
+        "startLine": 222,
+        "startChar": 11,
+        "endLine": 222,
+        "endChar": 44
+      },
+      "revId": "9ab025db75ae84b582a947e8f484b9b2e50ec270",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
