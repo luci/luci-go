@@ -43,8 +43,6 @@ type runner struct {
 	// Should return a GRPC error, e.g. status.Errorf. The error MAY be wrapped
 	// with errors.Annotate.
 	UpdateBuild func(context.Context, *pb.UpdateBuildRequest) error
-
-	localLogFile string
 }
 
 // Run runs a user executable and periodically calls r.UpdateBuild with the

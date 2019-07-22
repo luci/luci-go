@@ -35,6 +35,9 @@ message RunnerArgs {
   string buildbucket_host = 1;
 
   // LogDog service hostname, e.g. "logs.chromium.org".
+  //
+  // As a special case, if this is "file://path/to/log/root" the logs will
+  // be written to the given local path.
   string logdog_host = 2;
 
   // Initial state of the build, including immutable state such as id and input
