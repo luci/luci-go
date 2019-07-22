@@ -45,8 +45,6 @@ import (
 )
 
 func TestMain(t *testing.T) {
-	t.Parallel()
-
 	Convey("Main", t, func(c C) {
 		ctx := context.Background()
 
@@ -91,11 +89,12 @@ func TestMain(t *testing.T) {
 			args.WorkDir = filepath.Join(tempDir, "w")
 			args.CacheDir = filepath.Join(tempDir, "cache")
 
+			So(os.Setenv("LUCI_EXE_SUBTEST_NAME", subtestName), ShouldBeNil)
+			defer os.Unsetenv("LUCI_EXE_SUBTEST_NAME")
+
 			var ret []*pb.UpdateBuildRequest
 			r := runner{
-				localLogFile:  filepath.Join(tempDir, "logs"),
-				testExtraArgs: []string{"-test.run=TestSubprocessDispatcher"},
-				testExtraEnv:  []string{"LUCI_EXE_SUBTEST_NAME=" + subtestName},
+				localLogFile: filepath.Join(tempDir, "logs"),
 				UpdateBuild: func(ctx context.Context, req *pb.UpdateBuildRequest) error {
 					ret = append(ret, req)
 					reqJSON, err := indentedJSONPB(req)
@@ -212,6 +211,16 @@ func TestSubprocessDispatcher(t *testing.T) {
 // These test* routines are individual subtests launched in a separate process.
 //
 // See TestSubprocessDispatcher for the environment and global vars they get.
+
+func init() {
+	// This allows `LUCI_EXE_SUBTEST_NAME="something" go test` to exactly
+	// implement the luci user executable protocol.
+	subtest := os.Getenv("LUCI_EXE_SUBTEST_NAME")
+	if subtest == "" {
+		return
+	}
+	os.Args = append(os.Args, "-test.run=TestSubprocessDispatcher")
+}
 
 var subtests = map[string]func(t *testing.T){
 	"testAuthContext":  testAuthContext,
