@@ -276,7 +276,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 		}
 	}
 
-	return
+	return nil
 }
 
 // Close stops this context, cleaning up after it.
