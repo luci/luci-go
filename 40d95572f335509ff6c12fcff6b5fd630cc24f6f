@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2d746b4_9c0a4f9a",
+        "filename": "buildbucket/luciexe/runner/main_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T21:21:54Z",
+      "side": 1,
+      "message": "remove this then, this test now mutates global state",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 13
+      },
+      "revId": "40d95572f335509ff6c12fcff6b5fd630cc24f6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
