@@ -74,7 +74,7 @@ func (l *Server) Start(ctx context.Context) error {
 	// for the entire process.
 	disableGRPCLogging(ctx)
 
-	serv, err := newLogDogStreamServerForPlatform(withNonCancel(ctx), l.WorkDir)
+	serv, err := newLogDogStreamServerForPlatform(ctx, l.WorkDir)
 	if err != nil {
 		return errors.Annotate(err, "failed to create stream server").Err()
 	}
@@ -103,7 +103,7 @@ func (l *Server) Start(ctx context.Context) error {
 			Prefix:         l.Prefix,
 			SourceInfo:     []string{"luci_runner"},
 			RPCTimeout:     30 * time.Second,
-			PublishContext: withNonCancel(ctx),
+			PublishContext: ctx,
 		}
 		output, err = outCfg.Register(ctx)
 		if err != nil {
