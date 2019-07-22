@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
@@ -137,6 +138,11 @@ func mainErr(rawArgs []string) error {
 	if err != nil {
 		return err
 	}
+	argsJSON, err := indentedJSONPB(args)
+	if err != nil {
+		return err
+	}
+	logging.Infof(ctx, "RunnerArgs: %s", argsJSON)
 
 	secrets, err := readBuildSecrets(ctx)
 	if err != nil {
@@ -145,7 +151,7 @@ func mainErr(rawArgs []string) error {
 
 	client := newBuildsClient(args)
 
-	return Run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+	return run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
 		// Insert the build token into the context.
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
 		_, err := client.UpdateBuild(ctx, req)
