@@ -39,7 +39,7 @@ import (
 )
 
 // setupUserEnv prepares user subprocess environment.
-func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Context, logdogServ *runnerbutler.Server, logdogNamespace string) (environ.Env, error) {
+func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Context, logdogServ *runnerbutler.Server, logdogNamespace string) (environ.Env, error) {
 	env := environ.System()
 	ctx = authCtx.Export(ctx, env)
 	if err := logdogServ.SetInEnviron(env); err != nil {
@@ -79,14 +79,14 @@ func (r *runner) setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx 
 // runUserExecutable runs the user executable.
 // Requires LogDog server to be running.
 // Sends user executable stdout/stderr into logdogServ, with teeing enabled.
-func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Context, logdogServ *runnerbutler.Server, logdogNamespace string) (err error) {
+func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Context, logdogServ *runnerbutler.Server, logdogNamespace string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, args.ExecutablePath)
 
 	// Prepare user env.
-	env, err := r.setupUserEnv(ctx, args, authCtx, logdogServ, logdogNamespace)
+	env, err := setupUserEnv(ctx, args, authCtx, logdogServ, logdogNamespace)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, aut
 	logging.Infof(ctx, "Started user executable successfully")
 
 	// Send subprocess stdout/stderr to logdog.
-	if err := r.hookStdoutStderr(ctx, logdogServ, stdout, stderr, streamNamePrefix); err != nil {
+	if err := hookStdoutStderr(ctx, logdogServ, stdout, stderr, streamNamePrefix); err != nil {
 		return err
 	}
 
@@ -146,7 +146,7 @@ func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, aut
 
 // hookStdoutStderr sends stdout/stderr to logdogServ and also tees to the
 // current process's stdout/stderr respectively.
-func (r *runner) hookStdoutStderr(ctx context.Context, logdogServ *runnerbutler.Server, stdout, stderr io.ReadCloser, streamNamePrefix string) error {
+func hookStdoutStderr(ctx context.Context, logdogServ *runnerbutler.Server, stdout, stderr io.ReadCloser, streamNamePrefix string) error {
 	tsNow, err := ptypes.TimestampProto(clock.Now(ctx))
 	if err != nil {
 		return err
