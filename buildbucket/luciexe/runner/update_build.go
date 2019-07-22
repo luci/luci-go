@@ -38,7 +38,7 @@ import (
 //
 // May return a transient error (in the event that the final RPC was actually
 // a retryable error).
-func updateBuild(ctx context.Context, build *pb.Build, final bool, rawCB UpdateBuildCB) error {
+func updateBuild(ctx context.Context, build *pb.Build, final bool, rawCB updateBuildCB) error {
 	req := &pb.UpdateBuildRequest{
 		Build: build,
 		UpdateMask: &field_mask.FieldMask{

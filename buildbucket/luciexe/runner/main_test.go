@@ -94,7 +94,7 @@ func TestMain(t *testing.T) {
 			defer os.Unsetenv("LUCI_EXE_SUBTEST_NAME")
 
 			var ret []*pb.UpdateBuildRequest
-			So(Run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+			So(run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
 				ret = append(ret, req)
 				reqJSON, err := indentedJSONPB(req)
 				c.So(err, ShouldBeNil)

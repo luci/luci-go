@@ -36,33 +36,26 @@ const (
 	streamNamePrefix = "u"
 )
 
-// UpdateBuildCB is periodically called with the latest state of the build and
+// updateBuildCB is periodically called with the latest state of the build and
 // the list field paths that have changes.
 // Should return a GRPC error, e.g. status.Errorf. The error MAY be wrapped
 // with errors.Annotate.
-type UpdateBuildCB func(context.Context, *pb.UpdateBuildRequest) error
+type updateBuildCB func(context.Context, *pb.UpdateBuildRequest) error
 
-// Run runs a user executable and periodically calls rawCB with the
+// run runs a user executable and periodically calls rawCB with the
 // latest state of the build.
 // Calls rawCB sequentially.
 //
 // If rawCB is nil, panics.
 // Users are expected to initialize rawCB at least to read the latest
 // state of the build.
-func Run(ctx context.Context, args *pb.RunnerArgs, rawCB UpdateBuildCB) error {
+func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	if rawCB == nil {
 		panic("rawCB is nil")
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	// Print our input.
-	argsJSON, err := indentedJSONPB(args)
-	if err != nil {
-		return err
-	}
-	logging.Infof(ctx, "RunnerArgs: %s", argsJSON)
 
 	// Prepare workdir.
 	if err := setupWorkDir(args.WorkDir); err != nil {
