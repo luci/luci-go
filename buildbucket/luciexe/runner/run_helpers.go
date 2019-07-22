@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/auth"
@@ -50,13 +51,19 @@ func (r *runner) startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAut
 		globalLogTags["swarming.bot_id"] = v
 	}
 
+	coordinatorHost, localFile := args.LogdogHost, ""
+	if strings.HasPrefix(coordinatorHost, "file://") {
+		localFile = coordinatorHost[len("file://"):]
+		coordinatorHost = ""
+	}
+
 	logdogServ := &runnerbutler.Server{
 		WorkDir:                    args.WorkDir,
 		Authenticator:              systemAuth,
-		CoordinatorHost:            args.LogdogHost,
+		CoordinatorHost:            coordinatorHost,
 		Project:                    types.ProjectName(args.Build.Builder.Project),
 		Prefix:                     types.StreamName(fmt.Sprintf("buildbucket/%s/%d", args.BuildbucketHost, args.Build.Id)),
-		LocalFile:                  r.localLogFile,
+		LocalFile:                  localFile,
 		GlobalTags:                 globalLogTags,
 		StreamRegistrationCallback: spy.StreamRegistrationCallback,
 	}
