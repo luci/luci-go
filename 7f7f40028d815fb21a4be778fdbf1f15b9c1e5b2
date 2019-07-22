@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1299870c_8fdfdd4c",
+        "filename": "buildbucket/cmd/luci_runner/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T17:59:59Z",
+      "side": 1,
+      "message": "this looks unnecessary",
+      "range": {
+        "startLine": 22,
+        "startChar": 1,
+        "endLine": 22,
+        "endChar": 8
+      },
+      "revId": "7f7f40028d815fb21a4be778fdbf1f15b9c1e5b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72acdee6_027842c9",
+        "filename": "buildbucket/luciexe/runner/buildspy/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T17:59:59Z",
+      "side": 1,
+      "message": "I think the more conventional name for this kind of object is Observer? But I\u0027m not insisting, Spy sounds cooler.",
+      "range": {
+        "startLine": 34,
+        "startChar": 3,
+        "endLine": 34,
+        "endChar": 6
+      },
+      "revId": "7f7f40028d815fb21a4be778fdbf1f15b9c1e5b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4e353896_479b4e65",
+        "filename": "buildbucket/luciexe/runner/runnerauth/auth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T17:59:59Z",
+      "side": 1,
+      "message": "this shouldn\u0027t be used from luci-go, use go.chromium.org/luci/hardcoded/chromeinfra instead",
+      "range": {
+        "startLine": 19,
+        "startChar": 1,
+        "endLine": 19,
+        "endChar": 22
+      },
+      "revId": "7f7f40028d815fb21a4be778fdbf1f15b9c1e5b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2eced8a6_a817809a",
+        "filename": "buildbucket/luciexe/runner/runnerauth/auth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T17:59:59Z",
+      "side": 1,
+      "message": "this comment is now out of place",
+      "range": {
+        "startLine": 74,
+        "startChar": 3,
+        "endLine": 74,
+        "endChar": 72
+      },
+      "revId": "7f7f40028d815fb21a4be778fdbf1f15b9c1e5b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04535b7e_24a02a1a",
+        "filename": "buildbucket/luciexe/runner/runnerbutler/logdog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T17:59:59Z",
+      "side": 1,
+      "message": "IMHO this should be moved into Main(...) or some other \"global\" place. This mutates global state of gRPC library. Can be done in a separate CL though.",
+      "range": {
+        "startLine": 73,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 24
+      },
+      "revId": "7f7f40028d815fb21a4be778fdbf1f15b9c1e5b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
