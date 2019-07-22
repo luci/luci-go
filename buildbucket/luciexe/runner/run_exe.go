@@ -84,14 +84,14 @@ func (r *runner) runUserExecutable(ctx context.Context, args *pb.RunnerArgs, aut
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, args.ExecutablePath, r.testExtraArgs...)
+	cmd := exec.CommandContext(ctx, args.ExecutablePath)
 
 	// Prepare user env.
 	env, err := r.setupUserEnv(ctx, args, authCtx, logdogServ, logdogNamespace)
 	if err != nil {
 		return err
 	}
-	cmd.Env = append(env.Sorted(), r.testExtraEnv...)
+	cmd.Env = env.Sorted()
 
 	// Setup user working directory. This is the CWD for the user executable itself.
 	// Keep it short. This is important to allow tasks on Windows to have as many
