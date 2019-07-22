@@ -70,6 +70,8 @@ func (l *Server) Start(ctx context.Context) error {
 		return errors.Reason("already started").Err()
 	}
 
+	// TODO(iannucci): Move this to 'main'; this modifies the global grpc logging
+	// for the entire process.
 	disableGRPCLogging(ctx)
 
 	serv, err := newLogDogStreamServerForPlatform(withNonCancel(ctx), l.WorkDir)
