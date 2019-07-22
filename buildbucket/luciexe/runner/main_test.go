@@ -94,17 +94,13 @@ func TestMain(t *testing.T) {
 			defer os.Unsetenv("LUCI_EXE_SUBTEST_NAME")
 
 			var ret []*pb.UpdateBuildRequest
-			r := runner{
-				UpdateBuild: func(ctx context.Context, req *pb.UpdateBuildRequest) error {
-					ret = append(ret, req)
-					reqJSON, err := indentedJSONPB(req)
-					c.So(err, ShouldBeNil)
-					logging.Infof(ctx, "UpdateBuildRequest: %s", reqJSON)
-					return nil
-				},
-			}
-			err = r.Run(ctx, args)
-			So(err, ShouldBeNil)
+			So(Run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+				ret = append(ret, req)
+				reqJSON, err := indentedJSONPB(req)
+				c.So(err, ShouldBeNil)
+				logging.Infof(ctx, "UpdateBuildRequest: %s", reqJSON)
+				return nil
+			}), ShouldBeNil)
 
 			So(ret, ShouldNotBeEmpty)
 			return ret

@@ -30,7 +30,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-// updateBuild calls r.UpdateBuild.
+// updateBuild calls rawCB.
 // If final is true, may update the build status, making it immutable.
 //
 // Final calls will retry with exponential backoff for up to 5 minutes.
@@ -38,7 +38,7 @@ import (
 //
 // May return a transient error (in the event that the final RPC was actually
 // a retryable error).
-func (r *runner) updateBuild(ctx context.Context, build *pb.Build, final bool) error {
+func updateBuild(ctx context.Context, build *pb.Build, final bool, rawCB UpdateBuildCB) error {
 	req := &pb.UpdateBuildRequest{
 		Build: build,
 		UpdateMask: &field_mask.FieldMask{
@@ -84,7 +84,7 @@ func (r *runner) updateBuild(ctx context.Context, build *pb.Build, final bool) e
 	return retry.Retry(
 		ctx, retryFactory,
 		func() error {
-			err := r.UpdateBuild(ctx, req)
+			err := rawCB(ctx, req)
 			switch status.Code(errors.Unwrap(err)) {
 			case codes.OK:
 				return nil

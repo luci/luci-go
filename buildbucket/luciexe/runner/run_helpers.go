@@ -35,7 +35,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func (r *runner) startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Authenticator, spy *buildspy.Spy) (*runnerbutler.Server, error) {
+func startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Authenticator, spy *buildspy.Spy) (*runnerbutler.Server, error) {
 	globalLogTags := make(map[string]string, 4)
 	globalLogTags["logdog.viewer_url"] = fmt.Sprintf("https://%s/build/%d", args.BuildbucketHost, args.Build.Id)
 

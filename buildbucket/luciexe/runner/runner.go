@@ -36,25 +36,22 @@ const (
 	streamNamePrefix = "u"
 )
 
-// runner runs a LUCI executable.
-type runner struct {
-	// UpdateBuild is periodically called with the latest state of the build and
-	// the list field paths that have changes.
-	// Should return a GRPC error, e.g. status.Errorf. The error MAY be wrapped
-	// with errors.Annotate.
-	UpdateBuild func(context.Context, *pb.UpdateBuildRequest) error
-}
+// UpdateBuildCB is periodically called with the latest state of the build and
+// the list field paths that have changes.
+// Should return a GRPC error, e.g. status.Errorf. The error MAY be wrapped
+// with errors.Annotate.
+type UpdateBuildCB func(context.Context, *pb.UpdateBuildRequest) error
 
-// Run runs a user executable and periodically calls r.UpdateBuild with the
+// Run runs a user executable and periodically calls rawCB with the
 // latest state of the build.
-// Calls r.UpdateBuild sequentially.
+// Calls rawCB sequentially.
 //
-// If r.UpdateBuild is nil, panics.
-// Users are expected to initialize r.UpdateBuild at least to read the latest
+// If rawCB is nil, panics.
+// Users are expected to initialize rawCB at least to read the latest
 // state of the build.
-func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
-	if r.UpdateBuild == nil {
-		panic("r.UpdateBuild is nil")
+func Run(ctx context.Context, args *pb.RunnerArgs, rawCB UpdateBuildCB) error {
+	if rawCB == nil {
+		panic("rawCB is nil")
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -68,7 +65,7 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 	logging.Infof(ctx, "RunnerArgs: %s", argsJSON)
 
 	// Prepare workdir.
-	if err := r.setupWorkDir(args.WorkDir); err != nil {
+	if err := setupWorkDir(args.WorkDir); err != nil {
 		return err
 	}
 
@@ -103,7 +100,7 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 	})
 
 	// Start a local LogDog server.
-	logdogServ, err := r.startLogDog(ctx, args, systemAuth, listener)
+	logdogServ, err := startLogDog(ctx, args, systemAuth, listener)
 	if err != nil {
 		return errors.Annotate(err, "failed to start local logdog server").Err()
 	}
@@ -114,7 +111,7 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 	}()
 
 	// Run the user executable.
-	err = r.runUserExecutable(ctx, args, authCtx, logdogServ, streamNamePrefix)
+	err = runUserExecutable(ctx, args, authCtx, logdogServ, streamNamePrefix)
 	if err != nil {
 		return err
 	}
@@ -149,7 +146,7 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 
 	// The final update is critical.
 	// If it fails, it is fatal to the build.
-	if err := r.updateBuild(ctx, build, true); err != nil {
+	if err := updateBuild(ctx, build, true, rawCB); err != nil {
 		return errors.Annotate(err, "final UpdateBuild failed").Err()
 	}
 	return nil
@@ -157,7 +154,7 @@ func (r *runner) Run(ctx context.Context, args *pb.RunnerArgs) error {
 
 // setupWorkDir creates a work dir.
 // If workdir already exists, returns an error.
-func (r *runner) setupWorkDir(workDir string) error {
+func setupWorkDir(workDir string) error {
 	switch _, err := os.Stat(workDir); {
 	case err == nil:
 		return errors.Reason("workdir %q already exists; it must not", workDir).Err()
