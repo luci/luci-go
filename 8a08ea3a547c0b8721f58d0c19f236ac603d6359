@@ -22,6 +22,30 @@
       "revId": "8a08ea3a547c0b8721f58d0c19f236ac603d6359",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f5feba7_8b24a5cc",
+        "filename": "buildbucket/luciexe/runner/run_helpers.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-07-22T22:01:24Z",
+      "side": 1,
+      "message": "discussed offline; this code won\u0027t run when swarming times out the build. I think \"did the build crash?\" should be enough of a hint here. The similar string in the buildbucket service needs to be updated too: https://cs.chromium.org/chromium/infra/appengine/cr-buildbucket/model.py?type\u003dcs\u0026q\u003d%22step+was+canceled+because+it+did+not+end+before+build+ended%22\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d463",
+      "parentUuid": "cfeacb5b_bf70e84a",
+      "range": {
+        "startLine": 121,
+        "startChar": 51,
+        "endLine": 121,
+        "endChar": 70
+      },
+      "revId": "8a08ea3a547c0b8721f58d0c19f236ac603d6359",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
