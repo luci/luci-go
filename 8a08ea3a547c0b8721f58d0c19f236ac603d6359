@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cfeacb5b_bf70e84a",
+        "filename": "buildbucket/luciexe/runner/run_helpers.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-22T21:56:48Z",
+      "side": 1,
+      "message": "in 90% cases I saw, the swarming task times out. \"did the build time out or crash?\"",
+      "range": {
+        "startLine": 121,
+        "startChar": 51,
+        "endLine": 121,
+        "endChar": 70
+      },
+      "revId": "8a08ea3a547c0b8721f58d0c19f236ac603d6359",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
