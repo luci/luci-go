@@ -67,6 +67,9 @@ type RunnerArgs struct {
 	// Buildbucket service hostname, e.g. "cr-buildbucket.appspot.com".
 	BuildbucketHost string `protobuf:"bytes,1,opt,name=buildbucket_host,json=buildbucketHost,proto3" json:"buildbucket_host,omitempty"`
 	// LogDog service hostname, e.g. "logs.chromium.org".
+	//
+	// As a special case, if this is "file://path/to/log/root" the logs will
+	// be written to the given local path.
 	LogdogHost string `protobuf:"bytes,2,opt,name=logdog_host,json=logdogHost,proto3" json:"logdog_host,omitempty"`
 	// Initial state of the build, including immutable state such as id and input
 	// properties.
