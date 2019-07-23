@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1af51197_0e55ed1d",
+        "filename": "buildbucket/luciexe/runner/buildspy/listener.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T23:44:39Z",
+      "side": 1,
+      "message": "err... why?",
+      "range": {
+        "startLine": 132,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 14
+      },
+      "revId": "fbfb9c4ff29ea80f00a62204385ae0fcd881c1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
