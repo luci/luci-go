@@ -50,12 +50,30 @@ func GetWrappedTextCallback(cb bundler.StreamChunkCallback) bundler.StreamChunkC
 		return nil
 	}
 
+	var flushed bool
 	var buf []*logpb.Text_Line
 	var bufSize int
 	var curLogEntryBase *logpb.LogEntry
 	return func(le *logpb.LogEntry) {
-		if le == nil {
+		if le == nil && !flushed { // "flush"
+			flushed = true
+
+			if bufSize > 0 {
+				cb(&logpb.LogEntry{
+					Content: &logpb.LogEntry_Text{
+						Text: &logpb.Text{
+							Lines: buf,
+						},
+					},
+				})
+				bufSize = 0
+				buf = nil
+			}
+			cb(nil)
 			return
+		}
+		if flushed {
+			panic(errors.New("called with nil multiple times"))
 		}
 		txt := assertGetText(le)
 

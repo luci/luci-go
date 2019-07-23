@@ -47,12 +47,22 @@ func GetWrappedDatagramCallback(cb bundler.StreamChunkCallback) bundler.StreamCh
 		return nil
 	}
 
+	var flushed bool
 	var buf [][]byte
 	var bufSize int
 	var curLogEntryBase logpb.LogEntry
 	return func(le *logpb.LogEntry) {
-		if le == nil {
+		if le == nil && !flushed { // "flush"
+			flushed = true
+
+			// if we have buffered data, just ignore it. This means that we're being
+			// flushed in the middle of a partial datagram. Sending a partial datagram
+			// will do more harm than good, so just ignore it.
+			cb(nil)
 			return
+		}
+		if flushed {
+			panic(errors.New("called with nil multiple times"))
 		}
 		dg := assertGetDatagram(le)
 
