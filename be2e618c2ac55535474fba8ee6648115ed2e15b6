@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "102ef48b_575bac2d",
+        "filename": "buildbucket/luciexe/runner/buildspy/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T22:41:43Z",
+      "side": 1,
+      "message": "I usually do something like:\n\nif s.sendC !\u003d nil {\n  close(s.sendC)\n  s.sendC \u003d nil // disabled now\n}",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 9
+      },
+      "revId": "be2e618c2ac55535474fba8ee6648115ed2e15b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "484c3017_ac5f4594",
+        "filename": "buildbucket/luciexe/runner/buildspy/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T22:41:43Z",
+      "side": 1,
+      "message": "is this used?",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 18
+      },
+      "revId": "be2e618c2ac55535474fba8ee6648115ed2e15b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "860786df_55eb97e9",
+        "filename": "buildbucket/luciexe/runner/buildspy/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T22:41:43Z",
+      "side": 1,
+      "message": "🤔",
+      "range": {
+        "startLine": 68,
+        "startChar": 23,
+        "endLine": 68,
+        "endChar": 25
+      },
+      "revId": "be2e618c2ac55535474fba8ee6648115ed2e15b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "19e0dc58_da4bd3a1",
+        "filename": "buildbucket/luciexe/runner/buildspy/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T22:41:43Z",
+      "side": 1,
+      "message": "ah, my eyes! underscore in a package name, ah! burns, burns!",
+      "range": {
+        "startLine": 89,
+        "startChar": 11,
+        "endLine": 89,
+        "endChar": 28
+      },
+      "revId": "be2e618c2ac55535474fba8ee6648115ed2e15b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc021ad0_a72629da",
+        "filename": "buildbucket/luciexe/runner/buildspy/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T22:41:43Z",
+      "side": 1,
+      "message": "is this still used?",
+      "range": {
+        "startLine": 140,
+        "startChar": 14,
+        "endLine": 140,
+        "endChar": 21
+      },
+      "revId": "be2e618c2ac55535474fba8ee6648115ed2e15b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96ae0aab_7d437e21",
+        "filename": "buildbucket/luciexe/runner/buildspy/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T22:41:43Z",
+      "side": 1,
+      "message": "this is in danger to deadlock if the reading side of the channel decides to use e.g. spy.Build(). Better to pass builds *exclusively* through the channel and remove .Build().",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 8
+      },
+      "revId": "be2e618c2ac55535474fba8ee6648115ed2e15b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11339a8b_6c42e2ea",
+        "filename": "buildbucket/luciexe/runner/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T22:41:43Z",
+      "side": 1,
+      "message": "have you considered using a callback instead? I.e. call the body if this loop from inside logdog butler callbacks instead of doing indirection through a channel. May be a bit simpler.",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 84,
+        "endChar": 12
+      },
+      "revId": "be2e618c2ac55535474fba8ee6648115ed2e15b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f6162d4_d1b27b81",
+        "filename": "buildbucket/luciexe/runner/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T22:41:43Z",
+      "side": 1,
+      "message": "it is totally non-obvious here that this is actually populated :)",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 117,
+        "endChar": 24
+      },
+      "revId": "be2e618c2ac55535474fba8ee6648115ed2e15b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
