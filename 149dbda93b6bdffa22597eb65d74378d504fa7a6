@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "025a127e_5ec23414",
+        "filename": "buildbucket/luciexe/runner/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T00:10:48Z",
+      "side": 1,
+      "message": "this is weird, it would be less weird if spy.Build below returned this error instead. I assume this is what the TODO above is about.",
+      "range": {
+        "startLine": 96,
+        "startChar": 10,
+        "endLine": 96,
+        "endChar": 18
+      },
+      "revId": "149dbda93b6bdffa22597eb65d74378d504fa7a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fd26ee7f_ac1c33d6",
+        "filename": "buildbucket/luciexe/runner/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T00:10:48Z",
+      "side": 1,
+      "message": "consider returning atomic.Value with err instead (unless you plan to refactor this)",
+      "range": {
+        "startLine": 122,
+        "startChar": 91,
+        "endLine": 122,
+        "endChar": 103
+      },
+      "revId": "149dbda93b6bdffa22597eb65d74378d504fa7a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9a2b9dd_459ce357",
+        "filename": "buildbucket/luciexe/runner/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-23T00:10:48Z",
+      "side": 1,
+      "message": "nit:\n\nspyErrMu.Lock()\ndefer spyErrMu.Unlock()\nreturn spyErr\n\nminus one line of code!",
+      "range": {
+        "startLine": 143,
+        "startChar": 2,
+        "endLine": 146,
+        "endChar": 12
+      },
+      "revId": "149dbda93b6bdffa22597eb65d74378d504fa7a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
