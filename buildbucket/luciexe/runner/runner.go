@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/luciexe/runner/buildspy"
 	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerauth"
+	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerbutler"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -54,49 +55,25 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 		panic("rawCB is nil")
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	// Prepare workdir.
+	// Prepare workdir and auth
 	if err := setupWorkDir(args.WorkDir); err != nil {
 		return err
 	}
-
-	// Prepare authenticator used by luciexe internals (Logdog, Buildbucket).
-	// It is not exported outside the process in any way.
-	systemAuth, err := runnerauth.System(ctx, args)
-	if err != nil {
-		return err
-	}
-
-	// Prepare auth context used by the user executable. This launches a ton of
-	// various local token server for various third party tools.
 	authCtx, err := runnerauth.UserServers(ctx, args)
 	if err != nil {
 		return err
 	}
 	defer authCtx.Close(ctx)
 
-	// Prepare a build listener.
-	var listenerErr error
-	var listenerErrMU sync.Mutex
-	listener := buildspy.New(streamNamePrefix, func(err error) {
-		logging.Errorf(ctx, "%s", err)
+	cancelCtx, cancelExe := context.WithCancel(ctx)
+	defer cancelExe()
 
-		listenerErrMU.Lock()
-		defer listenerErrMU.Unlock()
-		if listenerErr == nil {
-			listenerErr = err
-			logging.Warningf(ctx, "canceling the user subprocess")
-			cancel()
-		}
-	})
-
-	// Start a local LogDog server.
-	logdogServ, err := startLogDog(ctx, args, systemAuth, listener)
-	if err != nil {
-		return errors.Annotate(err, "failed to start local logdog server").Err()
-	}
+	// TODO(iannucci): refactor spy so that:
+	//   * it holds its own error
+	//   * calls rawCB
+	//   * has sane way to send 'final' Build message (so it can 'own' rawCB
+	//     entirely and we don't race with ourself)
+	spy, spyErr, logdogServ, err := runButler(ctx, args, cancelExe)
 	defer func() {
 		if logdogServ != nil {
 			_ = logdogServ.Stop()
@@ -104,7 +81,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	}()
 
 	// Run the user executable.
-	err = runUserExecutable(ctx, args, authCtx, logdogServ, streamNamePrefix)
+	err = runUserExecutable(cancelCtx, args, authCtx, logdogServ, streamNamePrefix)
 	if err != nil {
 		return err
 	}
@@ -115,16 +92,13 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	}
 	logdogServ = nil // do not stop for the second time.
 
-	// Check listener error.
-	listenerErrMU.Lock()
-	err = listenerErr
-	listenerErrMU.Unlock()
-	if err != nil {
+	// Check spy error.
+	if err = spyErr(); err != nil {
 		return err
 	}
 
 	// Read the final build state.
-	build := listener.Build()
+	build := spy.Build()
 	if build == nil {
 		return errors.Reason("user executable did not send a build").Err()
 	}
@@ -143,6 +117,42 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 		return errors.Annotate(err, "final UpdateBuild failed").Err()
 	}
 	return nil
+}
+
+func runButler(ctx context.Context, args *pb.RunnerArgs, cancelExe func()) (*buildspy.Spy, func() error, *runnerbutler.Server, error) {
+	systemAuth, err := runnerauth.System(ctx, args)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Prepare a build spy.
+	var spyErr error
+	var spyErrMu sync.Mutex
+	spy := buildspy.New(streamNamePrefix, func(err error) {
+		logging.Errorf(ctx, "%s", err)
+
+		spyErrMu.Lock()
+		defer spyErrMu.Unlock()
+		if spyErr == nil {
+			spyErr = err
+			logging.Warningf(ctx, "canceling the user subprocess")
+			cancelExe()
+		}
+	})
+	getErr := func() error {
+		spyErrMu.Lock()
+		err := spyErr
+		spyErrMu.Unlock()
+		return err
+	}
+
+	// Start a local LogDog server.
+	logdogServ, err := startLogDog(ctx, args, systemAuth, spy)
+	if err != nil {
+		return nil, nil, nil, errors.Annotate(err, "failed to start local logdog server").Err()
+	}
+
+	return spy, getErr, logdogServ, nil
 }
 
 // setupWorkDir creates a work dir.
