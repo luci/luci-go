@@ -50,28 +50,53 @@ func GetWrappedTextCallback(cb bundler.StreamChunkCallback) bundler.StreamChunkC
 		return nil
 	}
 
+	var flushed bool
 	var buf []*logpb.Text_Line
-	var bufSize int
-	var curLogEntryBase *logpb.LogEntry
-	return func(le *logpb.LogEntry) {
-		if le == nil {
+	var streamIdx uint64
+	var sequence uint64
+
+	flushBuffer := func() {
+		if len(buf) == 0 {
 			return
 		}
+
+		data := &logpb.LogEntry{
+			Content: &logpb.LogEntry_Text{
+				Text: &logpb.Text{
+					Lines: buf,
+				},
+			},
+			StreamIndex: streamIdx,
+			Sequence:    sequence,
+		}
+
+		cb(data)
+
+		streamIdx++
+		sequence += uint64(len(buf))
+		buf = nil
+	}
+
+	return func(le *logpb.LogEntry) {
+		if le == nil && !flushed { // "flush"
+			flushed = true
+			flushBuffer()
+			cb(nil)
+			return
+		}
+		if flushed {
+			panic(errors.New("called with nil multiple times"))
+		}
+
 		txt := assertGetText(le)
 
 		if len(txt.Lines) == 0 {
-			return
+			panic(errors.New("called with no lines"))
 		}
-		if curLogEntryBase == nil {
-			curLogEntryBase = &(*le)
-		}
-
-		toCallback := make([]*logpb.Text_Line, 0, len(txt.Lines))
 
 		// Process the first line, which may be partial.
 		firstLine := txt.Lines[0]
 		buf = append(buf, firstLine)
-		bufSize += len(firstLine.Value)
 
 		if firstLine.Delimiter == "" {
 			if len(txt.Lines) > 1 {
@@ -81,50 +106,41 @@ func GetWrappedTextCallback(cb bundler.StreamChunkCallback) bundler.StreamChunkC
 		}
 
 		// Convert buf's contents into a single line and store that.
-		var lineCompletion *logpb.Text_Line
-		if len(buf) == 1 {
-			lineCompletion = buf[0]
-		} else {
-			lineCompletion = &logpb.Text_Line{
+		if len(buf) > 1 {
+			bufSize := 0
+			for _, line := range buf {
+				bufSize += len(line.Value)
+			}
+			wholeFirstLine := &logpb.Text_Line{
 				Value:     make([]byte, 0, bufSize),
 				Delimiter: firstLine.Delimiter,
 			}
 			for _, line := range buf {
-				lineCompletion.Value = append(lineCompletion.Value, line.Value...)
+				wholeFirstLine.Value = append(wholeFirstLine.Value, line.Value...)
 			}
+			buf = []*logpb.Text_Line{wholeFirstLine}
 		}
-		toCallback = append(toCallback, lineCompletion)
-		buf, bufSize = nil, 0
 
 		// Process the next lines, which should be all complete with at most one partial at the end.
 		wholeLines := txt.Lines[1:]
 		var lastPartialLine *logpb.Text_Line
-		lastLineIdx := len(wholeLines) - 1
-		if lastLineIdx >= 0 && wholeLines[lastLineIdx].Delimiter == "" {
-			lastPartialLine = wholeLines[lastLineIdx]
-			wholeLines = wholeLines[:lastLineIdx]
+		if lastIdx := len(wholeLines) - 1; lastIdx >= 0 && wholeLines[lastIdx].Delimiter == "" {
+			lastPartialLine = wholeLines[lastIdx]
+			wholeLines = wholeLines[:lastIdx]
 		}
 
 		for _, line := range wholeLines {
 			if line.Delimiter == "" {
 				panic(PartialLineNotLast)
 			}
-			toCallback = append(toCallback, line)
+			buf = append(buf, line)
 		}
 
-		curLogEntryBase.Content = &logpb.LogEntry_Text{
-			Text: &logpb.Text{
-				Lines: toCallback,
-			},
-		}
-		curLogEntryBase.PrefixIndex++
-		cb(curLogEntryBase)
+		flushBuffer()
 
 		// If the last line is partial, record it.
 		if lastPartialLine != nil {
 			buf = []*logpb.Text_Line{lastPartialLine}
-			bufSize = len(lastPartialLine.Value)
 		}
-		curLogEntryBase = nil
 	}
 }

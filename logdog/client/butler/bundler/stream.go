@@ -53,7 +53,11 @@ type Stream interface {
 	Close()
 }
 
-// StreamChunkCallback is a callback to invoke on a complete LogEntry. See streamConfig.callback.
+// StreamChunkCallback is a callback to invoke on a complete LogEntry.
+//
+// Called once with nil when this stream has come to an end.
+//
+// See streamConfig.callback.
 type StreamChunkCallback func(*logpb.LogEntry)
 
 // streamConfig is the set of static configuration parameters for the stream.
@@ -287,6 +291,9 @@ func (s *streamImpl) nextBundleEntry(bb *builder, aggressive bool) bool {
 	if s.noMoreDataLocked() {
 		if s.lastLogEntry != nil {
 			bb.setStreamTerminal(&s.c.template, s.lastLogEntry.StreamIndex)
+		}
+		if s.c.nextBundleEntryCallback != nil {
+			s.c.nextBundleEntryCallback(nil)
 		}
 		s.setDrained()
 	}

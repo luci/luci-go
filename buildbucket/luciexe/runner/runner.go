@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"sync/atomic"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -68,11 +67,6 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	cancelCtx, cancelExe := context.WithCancel(ctx)
 	defer cancelExe()
 
-	// TODO(iannucci): refactor spy so that:
-	//   * it holds its own error
-	//   * calls rawCB
-	//   * has sane way to send 'final' Build message (so it can 'own' rawCB
-	//     entirely and we don't race with ourself)
 	spy, logdogServ, err := runButler(ctx, args, cancelExe)
 	defer func() {
 		if logdogServ != nil {
@@ -80,8 +74,11 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 		}
 	}()
 
-	var lastBuild atomic.Value
+	var lastBuild *pb.Build
+	spyDone := make(chan struct{})
 	go func() {
+		defer close(spyDone)
+
 		for spyData := range spy.C {
 			if spyData.Err != nil {
 				logging.Errorf(ctx, "%s", err)
@@ -90,7 +87,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 				break
 			}
 
-			lastBuild.Store(spyData.Build)
+			lastBuild = spyData.Build
 			// TODO(iannucci): Actually send the build.proto somewhere
 		}
 		// This should be a no-op, but sink spy.C just in case.
@@ -105,6 +102,17 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 		return err
 	}
 
+	// Wait for spy to drain. This should occur automatically even without
+	// stopping the logdog server, since the build.proto pipe will have been
+	// closed when the user executable terminated.
+	//
+	// TODO(iannucci): currently this blocks for up to 5 seconds to let butler's
+	// internal buffer age out. I should rework the butler callbacks so they're
+	// not tied to the internal batching mechanisms of butler.
+	logging.Infof(ctx, "waiting for final build.proto")
+	<-spyDone
+	logging.Infof(ctx, "got final build.proto")
+
 	// Wait for logdog server to stop before returning the build.
 	// TODO(iannucci): compute the real last build before closing logdog so we can
 	// send the last build to logdog as well.
@@ -114,15 +122,13 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	logdogServ = nil // do not stop for the second time.
 
 	// Read the final build state.
-	lbi := lastBuild.Load()
-	if lbi == nil {
+	if lastBuild == nil {
 		return errors.Reason("user executable did not send a build").Err()
 	}
-	build := lbi.(*pb.Build)
-	processFinalBuild(ctx, build)
+	processFinalBuild(ctx, lastBuild)
 
 	// Print the final build state.
-	buildJSON, err := indentedJSONPB(build)
+	buildJSON, err := indentedJSONPB(lastBuild)
 	if err != nil {
 		return err
 	}
@@ -130,7 +136,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 
 	// The final update is critical.
 	// If it fails, it is fatal to the build.
-	if err := updateBuild(ctx, build, true, rawCB); err != nil {
+	if err := updateBuild(ctx, lastBuild, true, rawCB); err != nil {
 		return errors.Annotate(err, "final UpdateBuild failed").Err()
 	}
 	return nil

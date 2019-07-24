@@ -115,6 +115,22 @@ type Config struct {
 	// they're guaranteed complete. This behavior can be turned off explicitly
 	// with NoWrapStreamRegistrationCallback above.
 	//
+	// In wrapped callbacks for text and datagram streams, LogEntry .TimeOffset,
+	// and .PrefixIndex will be 0. .StreamIndex and .Sequence WILL NOT correspond
+	// to the values that the logdog service sees. They will, however, be
+	// internally consistent within the stream.
+	//
+	// Wrapped datagram streams never send a partial datagram; If the logdog
+	// server or stream is shut down while we have a partial datagram buffered,
+	// the partially buffered datagram will not be observed by the buffered
+	// callback.
+	//
+	// Wrapping a binary stream is a noop (i.e. your callback will see the exact
+	// same values wrapped and unwrapped).
+	//
+	// When the stream ends (either due to EOF from the user, or when the butler
+	// is stopped), your callback will be invoked exactly once with `nil`.
+	//
 	// Expects passed *logpb.LogStreamDescriptor reference to be safe to keep, and
 	// should treat it as read-only.
 	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
