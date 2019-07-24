@@ -22,64 +22,85 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/buildbucket/luciexe"
+	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerbutler"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butler/buffered_callback"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+// Data represents a (build, err) tuple.
+//
+// Every time a Spy intercepts a *Build, it will emit this. If the Spy
+// encounters an error, it will emit this and close the channel.
+type Data struct {
+	Build *pb.Build
+	Err   error
+}
 
 // Spy extracts a Build message from LogDog streams.
 type Spy struct {
 	streamNamePrefix string // ends with slash, typically "u/".
 	buildStreamName  string // build stream name, typically "u/build.proto".
 
-	onErr func(error)
+	buildMU sync.Mutex // protects assignment to sendC
 
-	build   *pb.Build // most recently extracted Build message.
-	buildMU sync.Mutex
+	// sendC will be nil when this Spy is stopped.
+	sendC chan<- Data
+	C     <-chan Data
 }
 
-// New creates a build listener.
+// New creates a build spy.
 //
 // Root build proto will be expected at "<streamNamePrefix>/build.proto".
 // All logs of its steps and of steps of sub-builds must have this prefix.
-func New(streamNamePrefix string, onErr func(error)) *Spy {
-	if onErr == nil {
-		panic("onErr is nil")
-	}
-
+//
+// The user of this Spy must drain `C` at all times; failure to do so will
+// potentially block all incoming work to the logdog butler this Spy is attached
+// to.
+func New(streamNamePrefix string) *Spy {
 	streamNamePrefix = strings.TrimSuffix(streamNamePrefix, "/") + "/"
+	ch := make(chan Data, 16)
 	return &Spy{
 		streamNamePrefix: streamNamePrefix,
 		buildStreamName:  streamNamePrefix + luciexe.BuildStreamName,
-		onErr:            onErr,
+		sendC:            ch,
+		C:                ch,
 	}
 }
 
-// StreamRegistrationCallback can be used as logdogServer.StreamRegistrationCallback.
-func (l *Spy) StreamRegistrationCallback(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
-	if desc.Name == l.buildStreamName {
-		switch {
-		case desc.ContentType != protoutil.BuildMediaType:
-			l.report(errors.Reason("stream %q has content type %q, expected %q", desc.Name, desc.ContentType, protoutil.BuildMediaType).Err())
-		case desc.StreamType != logpb.StreamType_DATAGRAM:
-			l.report(errors.Reason("stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM).Err())
-		default:
-			return buffered_callback.GetWrappedDatagramCallback(l.onBuildChunk)
+// On must be used to associate this Spy with a butler service. Otherwise the
+// Spy does nothing.
+func (l *Spy) On(s *runnerbutler.Server) {
+	prev := s.StreamRegistrationCallback
+	s.StreamRegistrationCallback = func(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
+		if !l.checkDisabled() && desc.Name == l.buildStreamName {
+			switch {
+			case desc.ContentType != protoutil.BuildMediaType:
+				l.abort(errors.Reason("stream %q has content type %q, expected %q", desc.Name, desc.ContentType, protoutil.BuildMediaType).Err())
+			case desc.StreamType != logpb.StreamType_DATAGRAM:
+				l.abort(errors.Reason("stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM).Err())
+			default:
+				return l.onBuildChunk
+			}
 		}
+		// TODO(iannucci): add support for sub-builds.
+		if prev != nil {
+			return prev(desc)
+		}
+		return nil
 	}
-
-	// TODO(nodir): add support for sub-builds.
-
-	return nil
 }
 
 func (l *Spy) onBuildChunk(log *logpb.LogEntry) {
+	if l.checkDisabled() {
+		return
+	}
+
 	if err := l.processBuildLogEntry(log); err != nil {
-		l.report(errors.Annotate(err, "received an build.proto log entry").Err())
+		l.abort(errors.Annotate(err, "received build.proto log entry").Err())
 	}
 }
 
@@ -102,23 +123,13 @@ func (l *Spy) processBuildLogEntry(log *logpb.LogEntry) error {
 	}
 
 	l.buildMU.Lock()
-	l.build = build
-	l.buildMU.Unlock()
-
-	// TODO(nodir): make UpdateBuild call.
-
-	return nil
-}
-
-// Build returns most recently retrieved Build message.
-func (l *Spy) Build() *pb.Build {
-	l.buildMU.Lock()
 	defer l.buildMU.Unlock()
-
-	if l.build == nil {
+	if l.sendC == nil {
 		return nil
 	}
-	return proto.Clone(l.build).(*pb.Build)
+	l.sendC <- Data{build, nil}
+
+	return nil
 }
 
 func (l *Spy) validateBuild(build *pb.Build) error {
@@ -141,7 +152,25 @@ func (l *Spy) validateBuild(build *pb.Build) error {
 	return nil
 }
 
-// report reports a LUCI executable protocol violation via l.onErr.
-func (l *Spy) report(err error) {
-	l.onErr(errors.Annotate(err, "LUCI executable protocol violation").Err())
+// abort reports a LUCI executable protocol violation via s.C.
+//
+// It causes this Spy to stop doing any further work and shuts down s.C.
+func (l *Spy) abort(err error) {
+	l.buildMU.Lock()
+	defer l.buildMU.Unlock()
+
+	if l.sendC == nil {
+		return
+	}
+	l.sendC <- Data{
+		Err: errors.Annotate(err, "LUCI executable protocol violation").Err(),
+	}
+	close(l.sendC)
+	l.sendC = nil
+}
+
+func (l *Spy) checkDisabled() bool {
+	l.buildMU.Lock()
+	defer l.buildMU.Unlock()
+	return l.sendC == nil
 }

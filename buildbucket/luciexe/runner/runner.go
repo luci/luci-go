@@ -19,7 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"sync"
+	"sync/atomic"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -73,10 +73,29 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	//   * calls rawCB
 	//   * has sane way to send 'final' Build message (so it can 'own' rawCB
 	//     entirely and we don't race with ourself)
-	spy, spyErr, logdogServ, err := runButler(ctx, args, cancelExe)
+	spy, logdogServ, err := runButler(ctx, args, cancelExe)
 	defer func() {
 		if logdogServ != nil {
 			_ = logdogServ.Stop()
+		}
+	}()
+
+	var lastBuild atomic.Value
+	go func() {
+		for spyData := range spy.C {
+			if spyData.Err != nil {
+				logging.Errorf(ctx, "%s", err)
+				logging.Warningf(ctx, "canceling the user subprocess")
+				cancelExe()
+				break
+			}
+
+			lastBuild.Store(spyData.Build)
+			// TODO(iannucci): Actually send the build.proto somewhere
+		}
+		// This should be a no-op, but sink spy.C just in case.
+		for range spy.C {
+			logging.Errorf(ctx, "got extra build.proto?")
 		}
 	}()
 
@@ -87,21 +106,19 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	}
 
 	// Wait for logdog server to stop before returning the build.
+	// TODO(iannucci): compute the real last build before closing logdog so we can
+	// send the last build to logdog as well.
 	if err := logdogServ.Stop(); err != nil {
 		return errors.Annotate(err, "failed to stop logdog server").Err()
 	}
 	logdogServ = nil // do not stop for the second time.
 
-	// Check spy error.
-	if err = spyErr(); err != nil {
-		return err
-	}
-
 	// Read the final build state.
-	build := spy.Build()
-	if build == nil {
+	lbi := lastBuild.Load()
+	if lbi == nil {
 		return errors.Reason("user executable did not send a build").Err()
 	}
+	build := lbi.(*pb.Build)
 	processFinalBuild(ctx, build)
 
 	// Print the final build state.
@@ -119,40 +136,26 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	return nil
 }
 
-func runButler(ctx context.Context, args *pb.RunnerArgs, cancelExe func()) (*buildspy.Spy, func() error, *runnerbutler.Server, error) {
+func runButler(ctx context.Context, args *pb.RunnerArgs, cancelExe func()) (*buildspy.Spy, *runnerbutler.Server, error) {
 	systemAuth, err := runnerauth.System(ctx, args)
 	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// Prepare a build spy.
-	var spyErr error
-	var spyErrMu sync.Mutex
-	spy := buildspy.New(streamNamePrefix, func(err error) {
-		logging.Errorf(ctx, "%s", err)
-
-		spyErrMu.Lock()
-		defer spyErrMu.Unlock()
-		if spyErr == nil {
-			spyErr = err
-			logging.Warningf(ctx, "canceling the user subprocess")
-			cancelExe()
-		}
-	})
-	getErr := func() error {
-		spyErrMu.Lock()
-		err := spyErr
-		spyErrMu.Unlock()
-		return err
+		return nil, nil, err
 	}
 
 	// Start a local LogDog server.
-	logdogServ, err := startLogDog(ctx, args, systemAuth, spy)
+	logdogServ, err := makeButler(ctx, args, systemAuth)
 	if err != nil {
-		return nil, nil, nil, errors.Annotate(err, "failed to start local logdog server").Err()
+		return nil, nil, errors.Annotate(err, "failed to create local logdog server").Err()
 	}
 
-	return spy, getErr, logdogServ, nil
+	// Install the spy before we start the server.
+	spy := buildspy.New(streamNamePrefix)
+	spy.On(logdogServ)
+	if err := logdogServ.Start(ctx); err != nil {
+		return nil, nil, errors.Annotate(err, "failed to start local logdog server").Err()
+	}
+
+	return spy, logdogServ, nil
 }
 
 // setupWorkDir creates a work dir.

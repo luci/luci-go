@@ -24,7 +24,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/buildbucket/luciexe/runner/buildspy"
 	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerbutler"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
@@ -35,7 +34,8 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Authenticator, spy *buildspy.Spy) (*runnerbutler.Server, error) {
+// returns an unstarted logdog butler service.
+func makeButler(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Authenticator) (*runnerbutler.Server, error) {
 	globalLogTags := make(map[string]string, 4)
 	globalLogTags["logdog.viewer_url"] = fmt.Sprintf("https://%s/build/%d", args.BuildbucketHost, args.Build.Id)
 
@@ -64,17 +64,15 @@ func startLogDog(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Auth
 		}
 	}
 
-	logdogServ := &runnerbutler.Server{
-		WorkDir:                    args.WorkDir,
-		Authenticator:              systemAuth,
-		CoordinatorHost:            coordinatorHost,
-		Project:                    types.ProjectName(args.Build.Builder.Project),
-		Prefix:                     types.StreamName(fmt.Sprintf("buildbucket/%s/%d", args.BuildbucketHost, args.Build.Id)),
-		LocalFile:                  localFile,
-		GlobalTags:                 globalLogTags,
-		StreamRegistrationCallback: spy.StreamRegistrationCallback,
-	}
-	return logdogServ, logdogServ.Start(ctx)
+	return &runnerbutler.Server{
+		WorkDir:         args.WorkDir,
+		Authenticator:   systemAuth,
+		CoordinatorHost: coordinatorHost,
+		Project:         types.ProjectName(args.Build.Builder.Project),
+		Prefix:          types.StreamName(fmt.Sprintf("buildbucket/%s/%d", args.BuildbucketHost, args.Build.Id)),
+		LocalFile:       localFile,
+		GlobalTags:      globalLogTags,
+	}, nil
 }
 
 // processFinalBuild adjusts the final state of the build if needed.
