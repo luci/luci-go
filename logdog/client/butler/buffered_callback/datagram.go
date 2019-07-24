@@ -47,53 +47,78 @@ func GetWrappedDatagramCallback(cb bundler.StreamChunkCallback) bundler.StreamCh
 		return nil
 	}
 
+	var flushed bool
 	var buf [][]byte
-	var bufSize int
-	var curLogEntryBase logpb.LogEntry
-	return func(le *logpb.LogEntry) {
-		if le == nil {
+	var streamIdx uint64
+
+	flushData := func(data []byte) {
+		cb(&logpb.LogEntry{
+			Content: &logpb.LogEntry_Datagram{
+				Datagram: &logpb.Datagram{
+					Data: data,
+				},
+			},
+			StreamIndex: streamIdx,
+			Sequence:    streamIdx, // same as StreamIndex for buffered datagrams
+		})
+		streamIdx++
+	}
+
+	flushBuffer := func() {
+		if len(buf) == 0 {
 			return
 		}
+
+		bufSize := 0
+		for _, chunk := range buf {
+			bufSize += len(chunk)
+		}
+		rawData := make([]byte, 0, bufSize)
+		for _, chunk := range buf {
+			rawData = append(rawData, chunk...)
+		}
+
+		flushData(rawData)
+
+		buf = nil
+	}
+
+	return func(le *logpb.LogEntry) {
+		if le == nil && !flushed { // "flush"
+			flushed = true
+
+			// if we have buffered data, just ignore it. This means that we're being
+			// flushed in the middle of a partial datagram.
+			buf = nil
+
+			cb(nil)
+			return
+		}
+		if flushed {
+			panic(errors.New("called with nil multiple times"))
+		}
+
 		dg := assertGetDatagram(le)
 
-		// If we're a complete Datagram and the buffer is empty, which is the expected case except
-		// when aggressively flushing the stream, just call the callback and be done.
+		// If we're a complete Datagram and the buffer is empty, which is the
+		// expected case except when aggressively flushing the stream, just call the
+		// callback and be done.
 		if dg.Partial == nil {
 			if buf != nil {
 				panic(LostDatagramChunk)
 			}
-			cb(le)
+			flushData(dg.Data)
 			return
 		}
 
-		if buf == nil {
-			curLogEntryBase = *le
-		}
 		buf = append(buf, dg.Data)
-		bufSize += len(dg.Data)
 
 		// We're a partial Datagram; if we're not the last chunk, just return.
-		// We don't check order because the LogEntries on which this is called should already be checked
-		// for order by fixupLogEntry.
 		if !dg.Partial.Last {
 			return
 		}
 
-		// We're either already a full Datagram, or the end of one, so reconstruct.
-		bytes := make([]byte, 0, bufSize)
-		for _, bytesPart := range buf {
-			bytes = append(bytes, bytesPart...)
-		}
-
-		// Use the first LogEntry as the source for indices etc. in the full one.
-		curLogEntryBase.Content = &logpb.LogEntry_Datagram{
-			Datagram: &logpb.Datagram{
-				Data: bytes,
-			},
-		}
-
-		// Reset the buffer and invoke callback.
-		buf, bufSize = nil, 0
-		cb(&curLogEntryBase)
+		// We're either already a full Datagram, or the end of one, so send it.
+		flushBuffer()
 	}
 }
