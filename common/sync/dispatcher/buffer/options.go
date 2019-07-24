@@ -54,11 +54,16 @@ type Options struct {
 	// [OPTIONAL] Each batch will have a retry.Iterator assigned to it from this
 	// retry.Factory.
 	//
-	// When a Batch is NACK'd, it will be retried at a later time, according the
-	// the retry.Iterator.
+	// When a Batch is NACK'd, it will be retried at "now", plus the Duration
+	// returned by the retry.Iterator.
 	//
 	// If the retry.Iterator returns retry.Stop, the Batch will be silently
 	// dropped.
+	//
+	// If the retry.Iterator returing <= 0, it makes the batch available to send
+	// at its previously-allotted time. You can use this to implement 'in-order'
+	// transmission of data by setting MaxLeases to 1 and having the
+	// retry.Iterator always return time.Duration(0).
 	Retry retry.Factory
 }
 

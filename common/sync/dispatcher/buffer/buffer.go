@@ -333,12 +333,15 @@ func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
 	}
 
 	// TODO(iannucci): decouple retry from context (pass in 'now' instead)
-	toWait := leased.retry.Next(ctx, err)
-	if toWait == retry.Stop {
+	switch toWait := leased.retry.Next(ctx, err); {
+	case toWait == retry.Stop:
 		return
+	case toWait <= 0:
+		// "keep previous time"
+	default:
+		leased.nextSend = clock.Now(ctx).Add(toWait)
 	}
 
-	leased.nextSend = clock.Now(ctx).Add(toWait)
 	if dataSize := len(leased.Data); dataSize < leased.countedSize {
 		leased.countedSize = dataSize
 	}
