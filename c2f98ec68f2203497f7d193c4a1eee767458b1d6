@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c35fec56_bf61aee2",
+        "filename": "logdog/client/butler/buffered_callback/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-24T22:04:40Z",
+      "side": 1,
+      "message": "this code (and especially its Lines counterpart below) will be more readable if bufSize is demoted from a \"global\" state, to be calculated on the spot when needed from \u0027buf\u0027:\n\nif bufSize \u003c\u003d 0 \u003d\u003e if len(buf) \u003d\u003d 0 \n\nbufSize :\u003d 0\nfor _, b :\u003d range buf {\n  bufSize +\u003d len(b)\n}\n\nAs is, it is very easy to make a mistake (\"desynchronize\" buf and bufSize), that will go unnoticed (because it will just cause unnecessary realloc, nothing more).",
+      "range": {
+        "startLine": 69,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 3
+      },
+      "revId": "c2f98ec68f2203497f7d193c4a1eee767458b1d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
