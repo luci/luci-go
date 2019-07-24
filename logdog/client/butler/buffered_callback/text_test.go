@@ -50,6 +50,9 @@ func mkTextLogEntry(lines []line, seq uint64) *logpb.LogEntry {
 
 func mkWrappedTextCb(values *[]string, seq *[]uint64) bundler.StreamChunkCallback {
 	cb := func(le *logpb.LogEntry) {
+		if le == nil {
+			return
+		}
 		for _, l := range le.GetText().Lines {
 			*values = append(*values, fmt.Sprintf(
 				"%s!%s", string(l.Value), l.Delimiter,
@@ -115,6 +118,16 @@ func TestTextReassembler(t *testing.T) {
 						"hi!\n",
 						"there!\n",
 						"how are you!\n",
+					})
+					So(seq, ShouldResemble, []uint64{0, 2})
+				})
+
+				Convey(`Flushes when called with niil`, func() {
+					cbWrapped(nil)
+					So(values, ShouldResemble, []string{
+						"hi!\n",
+						"there!\n",
+						"ho!",
 					})
 					So(seq, ShouldResemble, []uint64{0, 2})
 				})

@@ -297,6 +297,8 @@ func (b *Bundler) makeBundles() {
 			//
 			// This will release our state lock during switch execution. The lock will
 			// be held after the switch statement has finished.
+			//
+			// TODO(iannucci): remove this contex/condition in favor of a channel.
 			condC := context.Background()
 			switch {
 			case has && nextExpire.After(state.now):

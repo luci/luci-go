@@ -45,6 +45,9 @@ func mkDatagramLogEntry(data []byte, partial, last bool, index uint32, size uint
 
 func mkWrappedDatagramCb(values *[][]byte, seq *[]uint64) bundler.StreamChunkCallback {
 	cb := func(le *logpb.LogEntry) {
+		if le == nil {
+			return
+		}
 		*values = append(*values, append(le.GetDatagram().Data, 0xbb))
 		*seq = append(*seq, le.Sequence)
 	}

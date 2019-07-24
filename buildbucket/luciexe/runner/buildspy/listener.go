@@ -76,12 +76,12 @@ func New(streamNamePrefix string) *Spy {
 func (l *Spy) On(s *runnerbutler.Server) {
 	prev := s.StreamRegistrationCallback
 	s.StreamRegistrationCallback = func(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
-		if !l.checkDisabled() && desc.Name == l.buildStreamName {
+		if !l.checkStopped() && desc.Name == l.buildStreamName {
 			switch {
 			case desc.ContentType != protoutil.BuildMediaType:
-				l.abort(errors.Reason("stream %q has content type %q, expected %q", desc.Name, desc.ContentType, protoutil.BuildMediaType).Err())
+				l.stop(errors.Reason("stream %q has content type %q, expected %q", desc.Name, desc.ContentType, protoutil.BuildMediaType).Err())
 			case desc.StreamType != logpb.StreamType_DATAGRAM:
-				l.abort(errors.Reason("stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM).Err())
+				l.stop(errors.Reason("stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM).Err())
 			default:
 				return l.onBuildChunk
 			}
@@ -95,12 +95,17 @@ func (l *Spy) On(s *runnerbutler.Server) {
 }
 
 func (l *Spy) onBuildChunk(log *logpb.LogEntry) {
-	if l.checkDisabled() {
+	if l.checkStopped() {
+		return
+	}
+
+	if log == nil { // flush
+		l.stop(nil)
 		return
 	}
 
 	if err := l.processBuildLogEntry(log); err != nil {
-		l.abort(errors.Annotate(err, "received build.proto log entry").Err())
+		l.stop(errors.Annotate(err, "received build.proto log entry").Err())
 	}
 }
 
@@ -152,24 +157,29 @@ func (l *Spy) validateBuild(build *pb.Build) error {
 	return nil
 }
 
-// abort reports a LUCI executable protocol violation via s.C.
+// stop causes the Spy to stop all monitoring operations.
 //
-// It causes this Spy to stop doing any further work and shuts down s.C.
-func (l *Spy) abort(err error) {
+// If `err` is not nil, this reports a LUCI executable protocol violation via
+// s.C before stopping.
+//
+// This closes s.C to unblock downstream clients and makes sendC nil.
+func (l *Spy) stop(err error) {
 	l.buildMU.Lock()
 	defer l.buildMU.Unlock()
 
 	if l.sendC == nil {
 		return
 	}
-	l.sendC <- Data{
-		Err: errors.Annotate(err, "LUCI executable protocol violation").Err(),
+	if err != nil {
+		l.sendC <- Data{
+			Err: errors.Annotate(err, "LUCI executable protocol violation").Err(),
+		}
 	}
 	close(l.sendC)
 	l.sendC = nil
 }
 
-func (l *Spy) checkDisabled() bool {
+func (l *Spy) checkStopped() bool {
 	l.buildMU.Lock()
 	defer l.buildMU.Unlock()
 	return l.sendC == nil
