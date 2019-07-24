@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5f8eecef_5f445601",
+        "filename": "buildbucket/luciexe/runner/buildspy/listener.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-24T01:13:23Z",
+      "side": 1,
+      "message": "this comment is no longer true",
+      "range": {
+        "startLine": 161,
+        "startChar": 3,
+        "endLine": 161,
+        "endChar": 61
+      },
+      "revId": "6177b18214b77842088251b553778e9158dc53b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eda5233b_4af8b84c",
+        "filename": "buildbucket/luciexe/runner/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-24T01:13:23Z",
+      "side": 1,
+      "message": "ugh :(",
+      "range": {
+        "startLine": 109,
+        "startChar": 46,
+        "endLine": 110,
+        "endChar": 28
+      },
+      "revId": "6177b18214b77842088251b553778e9158dc53b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "85b58eab_942e5135",
+        "filename": "logdog/client/butler/buffered_callback/datagram.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-24T01:13:23Z",
+      "side": 1,
+      "message": "wat...",
+      "range": {
+        "startLine": 39,
+        "startChar": 30,
+        "endLine": 40,
+        "endChar": 51
+      },
+      "revId": "6177b18214b77842088251b553778e9158dc53b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3f62bf2f_7268d0b0",
+        "filename": "logdog/client/butler/buffered_callback/datagram.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-24T01:13:23Z",
+      "side": 1,
+      "message": "does the caller guarantee there\u0027ll be a memory barrier of some sort between calls (or that they are happen on same goroutine)?",
+      "range": {
+        "startLine": 55,
+        "startChar": 18,
+        "endLine": 56,
+        "endChar": 17
+      },
+      "revId": "6177b18214b77842088251b553778e9158dc53b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7dc1ba6_00aa5755",
+        "filename": "logdog/client/butler/buffered_callback/datagram_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-24T01:13:23Z",
+      "side": 1,
+      "message": "may the test check that this actually happens?",
+      "range": {
+        "startLine": 48,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 3
+      },
+      "revId": "6177b18214b77842088251b553778e9158dc53b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e02f0d8_4deb711b",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-24T01:13:23Z",
+      "side": 1,
+      "message": "do we need to set PrefixIndex to something? It seems to be maintained below for non-flush entries.",
+      "range": {
+        "startLine": 62,
+        "startChar": 3,
+        "endLine": 62,
+        "endChar": 20
+      },
+      "revId": "6177b18214b77842088251b553778e9158dc53b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05beaf55_1b0a8629",
+        "filename": "logdog/client/butler/bundler/stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-24T01:13:23Z",
+      "side": 1,
+      "message": "stream",
+      "range": {
+        "startLine": 58,
+        "startChar": 34,
+        "endLine": 58,
+        "endChar": 40
+      },
+      "revId": "6177b18214b77842088251b553778e9158dc53b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
