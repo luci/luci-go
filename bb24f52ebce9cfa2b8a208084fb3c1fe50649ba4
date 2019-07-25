@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1fb99ae8_f11926d8",
+        "filename": "common/sync/dispatcher/buffer/heap_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-25T05:06:59Z",
+      "side": 1,
+      "message": "why not add make the heap ~20 batches long s.t. almost any shuffle would suffice?",
+      "range": {
+        "startLine": 67,
+        "startChar": 6,
+        "endLine": 68,
+        "endChar": 68
+      },
+      "revId": "bb24f52ebce9cfa2b8a208084fb3c1fe50649ba4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3dd3a71_af0c9360",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2019-07-25T05:06:59Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 71,
+        "startChar": 55,
+        "endLine": 71,
+        "endChar": 56
+      },
+      "revId": "bb24f52ebce9cfa2b8a208084fb3c1fe50649ba4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
