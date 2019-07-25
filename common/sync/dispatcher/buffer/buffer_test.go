@@ -16,6 +16,7 @@ package buffer
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -229,6 +230,44 @@ func TestBuffer(t *testing.T) {
 				b.NACK(ctx, nil, b.LeaseOne(clock.Now(ctx)))
 				// only one retry was allowed, start it's gone.
 				So(b.stats, ShouldResemble, Stats{})
+			})
+
+			Convey(`in-order delivery`, func() {
+				b, err := NewBuffer(&Options{
+					MaxLeases:    1,
+					BatchSize:    1,
+					FullBehavior: InfiniteGrowth{},
+					Retry: func() retry.Iterator {
+						return &retry.Limited{Retries: -1}
+					},
+				})
+				So(err, ShouldBeNil)
+
+				expect := make([]int, 20)
+				for i := 0; i < 20; i++ {
+					expect[i] = i
+					So(b.AddNoBlock(clock.Now(ctx), i), ShouldBeNil)
+					tclock.Add(time.Millisecond)
+				}
+
+				out := make([]int, 0, 20)
+
+				// ensure a reasonably random distribution below.
+				rand.Seed(time.Now().UnixNano())
+
+				for !b.Stats().Empty() {
+					batch := b.LeaseOne(clock.Now(ctx))
+					tclock.Add(time.Millisecond)
+
+					if rand.Intn(2) == 0 {
+						out = append(out, batch.Data[0].(int))
+						b.ACK(batch)
+					} else {
+						b.NACK(ctx, nil, batch)
+					}
+				}
+
+				So(out, ShouldResemble, expect)
 			})
 
 			Convey(`full buffer behavior`, func() {
