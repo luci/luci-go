@@ -122,6 +122,7 @@ func NewBuffer(o *Options) (*Buffer, error) {
 		return nil, errors.Annotate(err, "normalizing buffer.Options").Err()
 	}
 
+	ret.unleased.onlyID = o.FIFO
 	ret.batchSizeGuess = newMovingAverage(10, ret.opts.batchSizeGuess())
 	ret.liveLeases = map[*Batch]struct{}{}
 	ret.unAckedLeases = map[*Batch]struct{}{}
@@ -230,8 +231,8 @@ func (buf *Buffer) Flush(now time.Time) {
 func (buf *Buffer) NextSendTime() time.Time {
 	ret := time.Time{}
 
-	if len(buf.unleased) > 0 {
-		ret = buf.unleased[0].nextSend
+	if next := buf.unleased.Peek(); next != nil {
+		ret = next.nextSend
 	}
 
 	if buf.currentBatch != nil {
@@ -263,15 +264,15 @@ func (buf *Buffer) CanAddItem() bool {
 // Returns nil if no batch is available to lease, or if the Buffer has reached
 // MaxLeases.
 func (buf *Buffer) LeaseOne(now time.Time) (leased *Batch) {
-	cur := buf.currentBatch
+	cur, next := buf.currentBatch, buf.unleased.Peek()
 
 	switch {
 	case len(buf.unAckedLeases) == int(buf.opts.MaxLeases):
 		// too many outstanding leases
 		return
 
-	case len(buf.unleased) > 0 && !now.Before(buf.unleased[0].nextSend):
-		// lowest unleased batch is fine to use
+	case next != nil && !now.Before(next.nextSend):
+		// next unleased batch is fine to use
 
 	case cur != nil && !now.Before(cur.nextSend):
 		// currentBatch has data we can send
@@ -333,12 +334,13 @@ func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
 	}
 
 	// TODO(iannucci): decouple retry from context (pass in 'now' instead)
-	toWait := leased.retry.Next(ctx, err)
-	if toWait == retry.Stop {
+	switch toWait := leased.retry.Next(ctx, err); {
+	case toWait == retry.Stop:
 		return
+	default:
+		leased.nextSend = clock.Now(ctx).Add(toWait)
 	}
 
-	leased.nextSend = clock.Now(ctx).Add(toWait)
 	if dataSize := len(leased.Data); dataSize < leased.countedSize {
 		leased.countedSize = dataSize
 	}

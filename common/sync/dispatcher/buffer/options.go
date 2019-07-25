@@ -51,11 +51,25 @@ type Options struct {
 	// is allowed to hold, and what happens when that number is reached.
 	FullBehavior FullBehavior
 
+	// [OPTIONAL] If true, ensures that the next available batch is always the one
+	// with the oldest data.
+	//
+	// If this is false (the default), batches will be leased in the order that
+	// they're available to send; If a Batch has a retry with a high delay, it's
+	// possible that the next leased Batch actually contains newer data than
+	// a later batch.
+	//
+	// NOTE: if this is combined with high Retry values, it can lead to a
+	// head-of-line blocking situation.
+	//
+	// Required: May only be true if MaxLeases == 1
+	FIFO bool
+
 	// [OPTIONAL] Each batch will have a retry.Iterator assigned to it from this
 	// retry.Factory.
 	//
-	// When a Batch is NACK'd, it will be retried at a later time, according the
-	// the retry.Iterator.
+	// When a Batch is NACK'd, it will be retried at "now" plus the Duration
+	// returned by the retry.Iterator.
 	//
 	// If the retry.Iterator returns retry.Stop, the Batch will be silently
 	// dropped.
@@ -111,6 +125,10 @@ func (o *Options) normalize() error {
 	case o.BatchDuration > 0:
 	default:
 		return errors.Reason("BatchDuration must be > 0: got %s", o.BatchDuration).Err()
+	}
+
+	if o.FIFO && o.MaxLeases != 1 {
+		return errors.Reason("FIFO is true, but MaxLeases != 1: got %d", o.MaxLeases).Err()
 	}
 
 	if o.FullBehavior == nil {
