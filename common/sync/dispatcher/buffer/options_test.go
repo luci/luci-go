@@ -196,6 +196,15 @@ func TestOptionValidationBad(t *testing.T) {
 		},
 
 		{
+			"FIFO",
+			Options{
+				MaxLeases: 10,
+				FIFO:      true,
+			},
+			"FIFO is true, but MaxLeases",
+		},
+
+		{
 			"DropOldestBatch.MaxLiveItems < -1",
 			Options{
 				FullBehavior: &DropOldestBatch{-2},

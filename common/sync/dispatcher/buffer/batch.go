@@ -68,16 +68,3 @@ type Batch struct {
 	// len(Batch.Data) is smaller on a NACK().
 	countedSize int
 }
-
-// Less returns true iff this Batch is less than the other Batch.
-//
-// Compares based on the (next time to send, channel unique id) tuple.
-func (b *Batch) Less(o *Batch) bool {
-	if b.nextSend.Before(o.nextSend) {
-		return true
-	}
-	if o.nextSend.Before(b.nextSend) {
-		return false
-	}
-	return b.id < o.id
-}
