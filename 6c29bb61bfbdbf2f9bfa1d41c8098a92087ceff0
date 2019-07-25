@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6008138c_4f481f16",
+        "filename": "common/errctx/errctx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002377
+      },
+      "writtenOn": "2019-07-25T17:56:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "666d4f2e_075ef6ac",
+      "range": {
+        "startLine": 64,
+        "startChar": 39,
+        "endLine": 64,
+        "endChar": 49
+      },
+      "revId": "6c29bb61bfbdbf2f9bfa1d41c8098a92087ceff0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
