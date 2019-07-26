@@ -30,15 +30,10 @@ func TestTimerResult(t *testing.T) {
 			So(TimerResult{}.Incomplete(), ShouldBeFalse)
 		})
 
-		Convey(`A TimerResult with context.Canceled or context.DeadlineExceeded is incomplete.`, func() {
+		Convey(`A TimerResult with context.Canceled, context.DeadlineExceeded, or another error is incomplete.`, func() {
 			So(TimerResult{Err: context.Canceled}.Incomplete(), ShouldBeTrue)
 			So(TimerResult{Err: context.DeadlineExceeded}.Incomplete(), ShouldBeTrue)
-		})
-
-		Convey(`A TimerResult with an unknown error will panic during Incomplete().`, func() {
-			So(func() {
-				TimerResult{Err: errors.New("test error")}.Incomplete()
-			}, ShouldPanic)
+			So(TimerResult{Err: errors.New("foo")}.Incomplete(), ShouldBeTrue)
 		})
 	})
 }
