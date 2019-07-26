@@ -69,10 +69,12 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 
 	spy, logdogServ, err := runButler(ctx, args, cancelExe)
 	defer func() {
-		if logdogServ != nil {
-			_ = logdogServ.Stop()
+		if lerr := logdogServ.Stop(); lerr != nil {
+			logging.WithError(err).Errorf(ctx, "failed to stop logdog server")
 		}
 	}()
+
+	buildChan, closewait := runBuildDispatcher(ctx, logdogServ, rawCB)
 
 	var lastBuild *pb.Build
 	spyDone := make(chan struct{})
@@ -88,7 +90,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 			}
 
 			lastBuild = spyData.Build
-			// TODO(iannucci): Actually send the build.proto somewhere
+			buildChan <- &dispatchBuild{spyData.Build, true, nil}
 		}
 		// This should be a no-op, but sink spy.C just in case.
 		for range spy.C {
@@ -113,14 +115,6 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	<-spyDone
 	logging.Infof(ctx, "got final build.proto")
 
-	// Wait for logdog server to stop before returning the build.
-	// TODO(iannucci): compute the real last build before closing logdog so we can
-	// send the last build to logdog as well.
-	if err := logdogServ.Stop(); err != nil {
-		return errors.Annotate(err, "failed to stop logdog server").Err()
-	}
-	logdogServ = nil // do not stop for the second time.
-
 	// Read the final build state.
 	if lastBuild == nil {
 		return errors.Reason("user executable did not send a build").Err()
@@ -134,12 +128,16 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	}
 	logging.Infof(ctx, "final build state: %s", buildJSON)
 
-	// The final update is critical.
-	// If it fails, it is fatal to the build.
-	if err := updateBuild(ctx, lastBuild, true, rawCB); err != nil {
-		return errors.Annotate(err, "final UpdateBuild failed").Err()
+	finalBuildPayload := &dispatchBuild{
+		lastBuild,
+		true,
+		errors.New("final build was never processed"), // overwritten with nil on success, err on failure
 	}
-	return nil
+	buildChan <- finalBuildPayload
+	logging.Infof(ctx, "waiting for build dispatcher to flush")
+	closewait(ctx)
+
+	return errors.Annotate(finalBuildPayload.bbError, "failed to send last build update").Err()
 }
 
 func runButler(ctx context.Context, args *pb.RunnerArgs, cancelExe func()) (*buildspy.Spy, *runnerbutler.Server, error) {

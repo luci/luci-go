@@ -170,6 +170,12 @@ func (l *Server) AddStream(rc io.ReadCloser, props *streamproto.Properties) erro
 	return l.butler.AddStream(rc, props)
 }
 
+// NewDatagramStream adds a new in-memory datagram stream with the given
+// properties.
+func (l *Server) NewDatagramStream(p *streamproto.Properties) (*butler.MemoryDatagramStream, error) {
+	return l.butler.NewDatagramStream(p)
+}
+
 // Stop stops the server.
 func (l *Server) Stop() error {
 	if l.serv == nil {
