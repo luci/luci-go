@@ -426,7 +426,7 @@ func TestButler(t *testing.T) {
 
 				So(mds.SendString("hello"), ShouldBeNil)
 				So(mds.SendString("world"), ShouldBeNil)
-				So(mds.Close(), ShouldBeNil)
+				mds.Close()
 
 				So(b.Wait(), ShouldBeNil)
 				logs := to.logs("datagrams")

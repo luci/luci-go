@@ -138,11 +138,7 @@ func mainErr(rawArgs []string) error {
 	if err != nil {
 		return err
 	}
-	argsJSON, err := indentedJSONPB(args)
-	if err != nil {
-		return err
-	}
-	logging.Infof(ctx, "RunnerArgs: %s", argsJSON)
+	logging.Infof(ctx, "RunnerArgs: %s", indentedJSONPB(args))
 
 	secrets, err := readBuildSecrets(ctx)
 	if err != nil {
