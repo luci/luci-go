@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4f7812f_3cd95e0e",
+        "filename": "buildbucket/luciexe/runner/build_dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-29T19:14:48Z",
+      "side": 1,
+      "message": "nit: This is slightly different logic than in the previous patch set. Was: ignore context errors as long as we\u0027ve got a final build somehow. Now: if the context dies concurrently with ending build, the result depends on an outcome of a race. I like the previous one better (more deterministic in a way). I think it will make code slightly shorter too, in exchange for an ugly hack:\n\nin mkBuildbucketBuffer:\n\nif final {\n  if err !\u003d nil {\n    finalErr.Store(err)\n  } else {\n    finalErr.Store(errSuccess) // ugh\n  }\n}\n\nhere:\n\nif err, _ :\u003d finalErr.Load().(error); err !\u003d nil {\n  if err \u003d\u003d errSuccess {\n    return nil\n  }\n  return err\n}\nreturn errors.New(\"final build was never processed\")",
+      "range": {
+        "startLine": 205,
+        "startChar": 2,
+        "endLine": 207,
+        "endChar": 3
+      },
+      "revId": "81c0ad5c78ba9793e607aabdfe146d1629c834c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
