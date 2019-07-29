@@ -40,31 +40,26 @@ message RunnerArgs {
   // be written to the given local path.
   string logdog_host = 2;
 
-  // Initial state of the build, including immutable state such as id and input
-  // properties.
-  Build build = 3;
-
-  // Where to put temp files and create CWD for the user executable.
-  // MUST not exist.
-  // Required.
-  string work_dir = 4;
-
   // Path to the user executable.
   // Required.
-  string executable_path = 5;
+  string executable_path = 3;
 
   // Path to a directory where each subdirectory is a cache dir.
   // Managed by Swarming.
   // Required.
-  string cache_dir = 6;
+  string cache_dir = 4;
 
 	// List of Gerrit hosts to force git authentication for.
 	//
 	// By default public hosts are accessed anonymously, and the anonymous access
 	// has very low quota. Context needs to know all such hostnames in advance to
 	// be able to force authenticated access to them.
-  repeated string known_public_gerrit_hosts = 7;
+  repeated string known_public_gerrit_hosts = 5;
 
   // Use this LUCI context logical account for system-level operations.
-  string luci_system_account = 8;
+  string luci_system_account = 6;
+
+  // Initial state of the build, including immutable state such as id and input
+  // properties.
+  Build build = 7;
 }

@@ -16,6 +16,8 @@ package runnerauth
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"go.chromium.org/luci/auth"
@@ -123,7 +125,14 @@ func UserServers(ctx context.Context, args *pb.RunnerArgs) (*authctx.Context, er
 		user.Options.Scopes = append(authOpts.Scopes, "https://www.googleapis.com/auth/firebase")
 	}
 
-	if err := user.Launch(ctx, args.WorkDir); err != nil {
+	authDir, err := filepath.Abs("auth-configs")
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get absolute path").Err()
+	}
+	if err := os.Mkdir(authDir, 0700); err != nil {
+		return nil, errors.Annotate(err, "failed to mkdir %s", authDir).Err()
+	}
+	if err := user.Launch(ctx, authDir); err != nil {
 		return nil, errors.Annotate(err, "failed to start user auth context").Err()
 	}
 

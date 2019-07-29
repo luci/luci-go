@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -64,8 +65,13 @@ func makeButler(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Authe
 		}
 	}
 
+	logdogDir := "logdog"
+	if err := os.Mkdir(logdogDir, 0700); err != nil {
+		return nil, errors.Annotate(err, "failed to mkdir %s", logdogDir).Err()
+	}
+
 	return &runnerbutler.Server{
-		WorkDir:         args.WorkDir,
+		WorkDir:         logdogDir,
 		Authenticator:   systemAuth,
 		CoordinatorHost: coordinatorHost,
 		Project:         types.ProjectName(args.Build.Builder.Project),

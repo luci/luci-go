@@ -94,9 +94,6 @@ func parseArgs(args []string) (*pb.RunnerArgs, error) {
 		}
 		return filepath.Abs(path)
 	}
-	if ret.WorkDir, err = normalizePath("work_dir", ret.WorkDir); err != nil {
-		return nil, err
-	}
 	if ret.ExecutablePath, err = normalizePath("executable_path", ret.ExecutablePath); err != nil {
 		return nil, err
 	}

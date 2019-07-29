@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"os"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -54,10 +53,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 		panic("rawCB is nil")
 	}
 
-	// Prepare workdir and auth
-	if err := setupWorkDir(args.WorkDir); err != nil {
-		return err
-	}
+	// Prepare auth
 	authCtx, err := runnerauth.UserServers(ctx, args)
 	if err != nil {
 		return err
@@ -147,23 +143,6 @@ func runButler(ctx context.Context, args *pb.RunnerArgs, cancelExe func()) (*bui
 	}
 
 	return spy, logdogServ, nil
-}
-
-// setupWorkDir creates a work dir.
-// If workdir already exists, returns an error.
-func setupWorkDir(workDir string) error {
-	switch _, err := os.Stat(workDir); {
-	case err == nil:
-		return errors.Reason("workdir %q already exists; it must not", workDir).Err()
-
-	case os.IsNotExist(err):
-		// good
-
-	default:
-		return err
-	}
-
-	return errors.Annotate(os.MkdirAll(workDir, 0700), "failed to create %q", workDir).Err()
 }
 
 // indentedJSONPB returns m marshaled to indented JSON.

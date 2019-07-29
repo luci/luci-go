@@ -55,7 +55,11 @@ func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Con
 	if err != nil {
 		return nil, err
 	}
-	lctx, err := lucictx.ExportInto(ctx, args.WorkDir)
+	abs, err := filepath.Abs(".")
+	if err != nil {
+		return nil, err
+	}
+	lctx, err := lucictx.ExportInto(ctx, abs)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +70,11 @@ func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Con
 	// like to remove everything they find under TEMPDIR, and it breaks LUCI
 	// runner internals that keep some files in workdir (in particular git and
 	// gsutil configs setup by AuthContext).
-	userTempDir := filepath.Join(args.WorkDir, "ut")
-	if err := os.MkdirAll(userTempDir, 0700); err != nil {
+	userTempDir, err := filepath.Abs("ut")
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get abspath of temp dir").Err()
+	}
+	if err := os.Mkdir(userTempDir, 0700); err != nil {
 		return nil, errors.Annotate(err, "failed to create temp dir").Err()
 	}
 	for _, v := range []string{"TEMPDIR", "TMPDIR", "TEMP", "TMP", "MAC_CHROMIUM_TMPDIR"} {
@@ -96,8 +103,8 @@ func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, authCtx *authct
 	// Setup user working directory. This is the CWD for the user executable itself.
 	// Keep it short. This is important to allow tasks on Windows to have as many
 	// characters as possible; otherwise they run into MAX_PATH issues.
-	cmd.Dir = filepath.Join(args.WorkDir, "u")
-	if err := os.MkdirAll(cmd.Dir, 0700); err != nil {
+	cmd.Dir = "u"
+	if err := os.Mkdir(cmd.Dir, 0700); err != nil {
 		return errors.Annotate(err, "failed to create user workdir dir at %q", cmd.Dir).Err()
 	}
 

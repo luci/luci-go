@@ -93,11 +93,15 @@ func TestMain(t *testing.T) {
 
 			// We spawn ourselves, see https://npf.io/2015/06/testing-exec-command/
 			args.ExecutablePath = os.Args[0]
-			args.WorkDir = filepath.Join(tempDir, "w")
 			args.CacheDir = filepath.Join(tempDir, "cache")
 
 			So(os.Setenv("LUCI_EXE_SUBTEST_NAME", subtestName), ShouldBeNil)
 			defer os.Unsetenv("LUCI_EXE_SUBTEST_NAME")
+
+			origCwd, err := os.Getwd()
+			So(err, ShouldBeNil)
+			So(os.Chdir(tempDir), ShouldBeNil)
+			defer os.Chdir(origCwd)
 
 			var ret []*pb.UpdateBuildRequest
 			So(run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
