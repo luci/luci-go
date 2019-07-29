@@ -444,7 +444,7 @@ func (b *Butler) AddStreamServer(streamServer streamserver.StreamServer) {
 // NewDatagramStream and useful for sending message-based data to logdog from
 // inside the same process as the butler service.
 type MemoryDatagramStream struct {
-	pipe io.WriteCloser
+	pipe *io.PipeWriter
 }
 
 // Send transmits a single datagram (`data`) to the butler.
@@ -464,8 +464,8 @@ func (mds *MemoryDatagramStream) SendString(data string) error {
 
 // Close terminates the datagram stream; the butler will know to flush the
 // stream and no more messages can be written.
-func (mds *MemoryDatagramStream) Close() error {
-	return mds.pipe.Close()
+func (mds *MemoryDatagramStream) Close() {
+	mds.pipe.Close()
 }
 
 // NewDatagramStream adds a datagram Stream to the Butler. This is
