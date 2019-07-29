@@ -69,10 +69,12 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 
 	spy, logdogServ, err := runButler(ctx, args, cancelExe)
 	defer func() {
-		if logdogServ != nil {
-			_ = logdogServ.Stop()
+		if lerr := logdogServ.Stop(); lerr != nil {
+			logging.WithError(err).Errorf(ctx, "failed to stop logdog server")
 		}
 	}()
+
+	buildChan, closewait := runBuildDispatcher(ctx, logdogServ, rawCB)
 
 	var lastBuild *pb.Build
 	spyDone := make(chan struct{})
@@ -88,7 +90,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 			}
 
 			lastBuild = spyData.Build
-			// TODO(iannucci): Actually send the build.proto somewhere
+			buildChan <- spyData.Build
 		}
 		// This should be a no-op, but sink spy.C just in case.
 		for range spy.C {
@@ -113,33 +115,16 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	<-spyDone
 	logging.Infof(ctx, "got final build.proto")
 
-	// Wait for logdog server to stop before returning the build.
-	// TODO(iannucci): compute the real last build before closing logdog so we can
-	// send the last build to logdog as well.
-	if err := logdogServ.Stop(); err != nil {
-		return errors.Annotate(err, "failed to stop logdog server").Err()
-	}
-	logdogServ = nil // do not stop for the second time.
-
-	// Read the final build state.
 	if lastBuild == nil {
 		return errors.Reason("user executable did not send a build").Err()
 	}
 	processFinalBuild(ctx, lastBuild)
 
-	// Print the final build state.
-	buildJSON, err := indentedJSONPB(lastBuild)
-	if err != nil {
-		return err
-	}
-	logging.Infof(ctx, "final build state: %s", buildJSON)
+	logging.Infof(ctx, "final build state: %s", indentedJSONPB(lastBuild))
 
-	// The final update is critical.
-	// If it fails, it is fatal to the build.
-	if err := updateBuild(ctx, lastBuild, true, rawCB); err != nil {
-		return errors.Annotate(err, "final UpdateBuild failed").Err()
-	}
-	return nil
+	buildChan <- lastBuild
+	logging.Infof(ctx, "waiting for build dispatcher to flush")
+	return errors.Annotate(closewait(ctx), "failed to send last build update").Err()
 }
 
 func runButler(ctx context.Context, args *pb.RunnerArgs, cancelExe func()) (*buildspy.Spy, *runnerbutler.Server, error) {
@@ -182,16 +167,18 @@ func setupWorkDir(workDir string) error {
 }
 
 // indentedJSONPB returns m marshaled to indented JSON.
-func indentedJSONPB(m proto.Message) ([]byte, error) {
+//
+// panics on failure
+func indentedJSONPB(m proto.Message) []byte {
 	// Note: json.Indent indents more nicely than jsonpb.Marshaler.
 	unindented := &bytes.Buffer{}
 	if err := (&jsonpb.Marshaler{}).Marshal(unindented, m); err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	indented := &bytes.Buffer{}
 	if err := json.Indent(indented, unindented.Bytes(), "", "  "); err != nil {
-		return nil, err
+		panic(err)
 	}
-	return indented.Bytes(), nil
+	return indented.Bytes()
 }

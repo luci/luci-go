@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"golang.org/x/oauth2/google"
+	"golang.org/x/time/rate"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -43,6 +44,11 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func init() {
+	// mock buildbucket's dispatcher.Channel rate so that it doesn't block
+	buildbucketQPS = rate.Inf
+}
 
 func TestMain(t *testing.T) {
 	Convey("Main", t, func(c C) {
@@ -75,7 +81,7 @@ func TestMain(t *testing.T) {
 		So(err, ShouldBeNil)
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
-		tempDir, err := ioutil.TempDir("", "")
+		tempDir, err := ioutil.TempDir("", "luci_runner_test-")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
@@ -96,9 +102,7 @@ func TestMain(t *testing.T) {
 			var ret []*pb.UpdateBuildRequest
 			So(run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
 				ret = append(ret, req)
-				reqJSON, err := indentedJSONPB(req)
-				c.So(err, ShouldBeNil)
-				logging.Infof(ctx, "UpdateBuildRequest: %s", reqJSON)
+				logging.Infof(ctx, "UpdateBuildRequest: %s", indentedJSONPB(req))
 				return nil
 			}), ShouldBeNil)
 
