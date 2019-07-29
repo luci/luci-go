@@ -15,8 +15,6 @@
 package clock
 
 import (
-	"context"
-	"fmt"
 	"time"
 )
 
@@ -53,7 +51,7 @@ type Timer interface {
 //
 // Time will be set to the time when the result was generated. If the source of
 // the result was prematurely terminated due to Context cancellation, Err will
-// be one of the valid Context Err() return values.
+// be non-nil, and will indicate the cancellation reason.
 type TimerResult struct {
 	time.Time
 
@@ -66,12 +64,5 @@ type TimerResult struct {
 // operation was canceled prematurely due to Context cancellation or deadline
 // expiration.
 func (tr TimerResult) Incomplete() bool {
-	switch tr.Err {
-	case nil:
-		return false
-	case context.Canceled, context.DeadlineExceeded:
-		return true
-	default:
-		panic(fmt.Errorf("unknown TimerResult error value: %v", tr.Err))
-	}
+	return tr.Err != nil
 }
