@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "10255629_5e75cfae",
+        "filename": "buildbucket/luciexe/runner/run_exe.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-29T23:16:58Z",
+      "side": 1,
+      "message": "This will now fail if \u0027ut\u0027 already exists (MkdirAll doesn\u0027t). Was this intended side effect? Same below for \u0027u\u0027.",
+      "range": {
+        "startLine": 77,
+        "startChar": 11,
+        "endLine": 77,
+        "endChar": 38
+      },
+      "revId": "bf34dc9144a381228f7928b940ba103e77788166",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcbdd2b3_d46faca4",
+        "filename": "buildbucket/luciexe/runner/runnerauth/auth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-29T23:16:58Z",
+      "side": 1,
+      "message": "nit: auth-configs then (since we store .gitconfig, .boto, gcloud and docker configs there).",
+      "range": {
+        "startLine": 128,
+        "startChar": 31,
+        "endLine": 128,
+        "endChar": 45
+      },
+      "revId": "bf34dc9144a381228f7928b940ba103e77788166",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
