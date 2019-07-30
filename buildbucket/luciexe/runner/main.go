@@ -40,52 +40,83 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func parseArgs(args []string) (*pb.RunnerArgs, error) {
-	fs := flag.FlagSet{}
-	argsB64 := fs.String("args-b64gz", "", text.Doc(`
-		(standard raw, unpadded base64)-encoded,
-		zlib-compressed,
-		binary buildbucket.v2.RunnerArgs protobuf message.
-	`))
-	if err := fs.Parse(args); err != nil {
-		return nil, err
-	}
+type workdir struct {
+	authDir    string
+	logdogDir  string
+	luciCtxDir string
 
-	ann := func(err error) error {
-		return errors.Annotate(err, "-args-b64gz").Err()
-	}
+	// This is the CWD for the user executable itself. Keep it short. This
+	// is important to allow tasks on Windows to have as many path characters as
+	// possible; otherwise they run into MAX_PATH issues.
+	userDir string
 
-	if *argsB64 == "" {
-		return nil, ann(errors.Reason("required").Err())
-	}
+	// We can't use a subdir of userDir because some overzealous scripts like to
+	// remove everything they find under TEMPDIR.
+	userTempDir string
+}
 
-	compressed, err := base64.RawStdEncoding.DecodeString(*argsB64)
+func mkAbs(base, path string) (string, error) {
+	ret, err := filepath.Abs(filepath.Join(base, path))
 	if err != nil {
-		return nil, ann(err)
+		return "", errors.Annotate(err, "filepath.Abs(%q)", path).Err()
+	}
+	if err = os.Mkdir(ret, 0700); err != nil {
+		return "", errors.Annotate(err, "os.Mkdir(%q)", path).Err()
+	}
+	return ret, nil
+}
+
+func (w *workdir) prep(base string) error {
+	var err error
+	if w.authDir, err = mkAbs(base, "auth-configs"); err != nil {
+		return err
+	}
+	if w.logdogDir, err = mkAbs(base, "logdog"); err != nil {
+		return err
+	}
+	if w.luciCtxDir, err = mkAbs(base, "luci-context"); err != nil {
+		return err
+	}
+	if w.userDir, err = mkAbs(base, "u"); err != nil {
+		return err
+	}
+	if w.userTempDir, err = mkAbs(base, "ut"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func parseRunnerArgs(encodedData string) (*pb.RunnerArgs, error) {
+	if encodedData == "" {
+		return nil, errors.Reason("required").Err()
+	}
+
+	compressed, err := base64.RawStdEncoding.DecodeString(encodedData)
+	if err != nil {
+		return nil, err
 	}
 
 	decompressing, err := zlib.NewReader(bytes.NewReader(compressed))
 	if err != nil {
-		return nil, ann(err)
+		return nil, err
 	}
 	decompressed, err := ioutil.ReadAll(decompressing)
 	if err != nil {
-		return nil, ann(err)
+		return nil, err
 	}
 
 	ret := &pb.RunnerArgs{}
-	if err := proto.Unmarshal(decompressed, ret); err != nil {
-		return nil, ann(err)
-	}
+	return ret, proto.Unmarshal(decompressed, ret)
+}
 
-	// Validate and normalize parameters.
+func normalizeRunnerArgs(args *pb.RunnerArgs) error {
 	switch {
-	case ret.BuildbucketHost == "":
-		return nil, errors.Reason("buildbucket_host is required").Err()
-	case ret.LogdogHost == "":
-		return nil, errors.Reason("logdog_host is required").Err()
-	case ret.Build.GetId() == 0:
-		return nil, errors.Reason("build.id is required").Err()
+	case args.BuildbucketHost == "":
+		return errors.Reason("buildbucket_host is required").Err()
+	case args.LogdogHost == "":
+		return errors.Reason("logdog_host is required").Err()
+	case args.Build.GetId() == 0:
+		return errors.Reason("build.id is required").Err()
 	}
 
 	normalizePath := func(title, path string) (string, error) {
@@ -94,14 +125,41 @@ func parseArgs(args []string) (*pb.RunnerArgs, error) {
 		}
 		return filepath.Abs(path)
 	}
-	if ret.ExecutablePath, err = normalizePath("executable_path", ret.ExecutablePath); err != nil {
-		return nil, err
+
+	var err error
+	if args.ExecutablePath, err = normalizePath("executable_path", args.ExecutablePath); err != nil {
+		return err
 	}
-	if ret.CacheDir, err = normalizePath("cache_dir", ret.CacheDir); err != nil {
-		return nil, err
+	if args.CacheDir, err = normalizePath("cache_dir", args.CacheDir); err != nil {
+		return err
+	}
+	return nil
+}
+
+func parseArgs(args []string) (ret *pb.RunnerArgs, wkDir workdir, err error) {
+	fs := flag.FlagSet{}
+	argsB64 := fs.String("args-b64gz", "", text.Doc(`
+		(standard raw, unpadded base64)-encoded,
+		zlib-compressed,
+		binary buildbucket.v2.RunnerArgs protobuf message.
+	`))
+	if err = fs.Parse(args); err != nil {
+		return
 	}
 
-	return ret, nil
+	if ret, err = parseRunnerArgs(*argsB64); err != nil {
+		err = errors.Annotate(err, "-args-b64gz").Err()
+		return
+	}
+
+	// Validate and normalize parameters.
+	if err = normalizeRunnerArgs(ret); err != nil {
+		err = errors.Annotate(err, "normalizing args").Err()
+		return
+	}
+
+	err = wkDir.prep(".")
+	return
 }
 
 // readBuildSecrets reads BuildSecrets message from swarming secret bytes.
@@ -131,7 +189,7 @@ func mainErr(rawArgs []string) error {
 	ctx := context.Background()
 	ctx = gologger.StdConfig.Use(ctx)
 
-	args, err := parseArgs(rawArgs)
+	args, wkDir, err := parseArgs(rawArgs)
 	if err != nil {
 		return err
 	}
@@ -144,7 +202,7 @@ func mainErr(rawArgs []string) error {
 
 	client := newBuildsClient(args)
 
-	return run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+	return run(ctx, args, wkDir, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
 		// Insert the build token into the context.
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
 		_, err := client.UpdateBuild(ctx, req)
