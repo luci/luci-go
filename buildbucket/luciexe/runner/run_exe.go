@@ -18,10 +18,8 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -40,7 +38,7 @@ import (
 )
 
 // setupUserEnv prepares user subprocess environment.
-func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Context, logdogServ *runnerbutler.Server, logdogNamespace string) (environ.Env, error) {
+func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, authCtx *authctx.Context, logdogServ *runnerbutler.Server, logdogNamespace string) (environ.Env, error) {
 	env := environ.System()
 	ctx = authCtx.Export(ctx, env)
 	if err := logdogServ.SetInEnviron(env); err != nil {
@@ -55,30 +53,14 @@ func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Con
 	if err != nil {
 		return nil, err
 	}
-	abs, err := filepath.Abs(".")
-	if err != nil {
-		return nil, err
-	}
-	lctx, err := lucictx.ExportInto(ctx, abs)
+	lctx, err := lucictx.ExportInto(ctx, wkDir.luciCtxDir)
 	if err != nil {
 		return nil, err
 	}
 	lctx.SetInEnviron(env)
 
-	// Prepare a user temp dir.
-	// Note that we can't use workdir directly because some overzealous scripts
-	// like to remove everything they find under TEMPDIR, and it breaks LUCI
-	// runner internals that keep some files in workdir (in particular git and
-	// gsutil configs setup by AuthContext).
-	userTempDir, err := filepath.Abs("ut")
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get abspath of temp dir").Err()
-	}
-	if err := os.Mkdir(userTempDir, 0700); err != nil {
-		return nil, errors.Annotate(err, "failed to create temp dir").Err()
-	}
 	for _, v := range []string{"TEMPDIR", "TMPDIR", "TEMP", "TMP", "MAC_CHROMIUM_TMPDIR"} {
-		env.Set(v, userTempDir)
+		env.Set(v, wkDir.userTempDir)
 	}
 
 	return env, nil
@@ -87,26 +69,19 @@ func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Con
 // runUserExecutable runs the user executable.
 // Requires LogDog server to be running.
 // Sends user executable stdout/stderr into logdogServ, with teeing enabled.
-func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, authCtx *authctx.Context, logdogServ *runnerbutler.Server, logdogNamespace string) (err error) {
+func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, authCtx *authctx.Context, logdogServ *runnerbutler.Server, logdogNamespace string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, args.ExecutablePath)
 
 	// Prepare user env.
-	env, err := setupUserEnv(ctx, args, authCtx, logdogServ, logdogNamespace)
+	env, err := setupUserEnv(ctx, args, wkDir, authCtx, logdogServ, logdogNamespace)
 	if err != nil {
 		return err
 	}
 	cmd.Env = env.Sorted()
-
-	// Setup user working directory. This is the CWD for the user executable itself.
-	// Keep it short. This is important to allow tasks on Windows to have as many
-	// characters as possible; otherwise they run into MAX_PATH issues.
-	cmd.Dir = "u"
-	if err := os.Mkdir(cmd.Dir, 0700); err != nil {
-		return errors.Annotate(err, "failed to create user workdir dir at %q", cmd.Dir).Err()
-	}
+	cmd.Dir = wkDir.userDir
 
 	// Pass initial build on stdin.
 	buildBytes, err := proto.Marshal(args.Build)

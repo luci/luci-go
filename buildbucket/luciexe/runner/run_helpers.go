@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -36,7 +35,7 @@ import (
 )
 
 // returns an unstarted logdog butler service.
-func makeButler(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Authenticator) (*runnerbutler.Server, error) {
+func makeButler(ctx context.Context, args *pb.RunnerArgs, logdogDir string, systemAuth *auth.Authenticator) (*runnerbutler.Server, error) {
 	globalLogTags := make(map[string]string, 4)
 	globalLogTags["logdog.viewer_url"] = fmt.Sprintf("https://%s/build/%d", args.BuildbucketHost, args.Build.Id)
 
@@ -63,11 +62,6 @@ func makeButler(ctx context.Context, args *pb.RunnerArgs, systemAuth *auth.Authe
 			return nil, errors.Reason(
 				"logdog_host is file:// scheme, but not absolute: %q", args.LogdogHost).Err()
 		}
-	}
-
-	logdogDir := "logdog"
-	if err := os.Mkdir(logdogDir, 0700); err != nil {
-		return nil, errors.Annotate(err, "failed to mkdir %s", logdogDir).Err()
 	}
 
 	return &runnerbutler.Server{

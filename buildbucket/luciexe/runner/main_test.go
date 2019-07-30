@@ -98,13 +98,11 @@ func TestMain(t *testing.T) {
 			So(os.Setenv("LUCI_EXE_SUBTEST_NAME", subtestName), ShouldBeNil)
 			defer os.Unsetenv("LUCI_EXE_SUBTEST_NAME")
 
-			origCwd, err := os.Getwd()
-			So(err, ShouldBeNil)
-			So(os.Chdir(tempDir), ShouldBeNil)
-			defer os.Chdir(origCwd)
+			wd := workdir{}
+			wd.prep(tempDir)
 
 			var ret []*pb.UpdateBuildRequest
-			So(run(ctx, args, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
+			So(run(ctx, args, wd, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
 				ret = append(ret, req)
 				logging.Infof(ctx, "UpdateBuildRequest: %s", indentedJSONPB(req))
 				return nil
