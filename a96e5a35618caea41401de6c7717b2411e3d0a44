@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "045abf0a_9cfb0353",
+        "filename": "buildbucket/luciexe/runner/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-30T01:36:22Z",
+      "side": 1,
+      "message": "ret",
+      "range": {
+        "startLine": 64,
+        "startChar": 20,
+        "endLine": 64,
+        "endChar": 29
+      },
+      "revId": "a96e5a35618caea41401de6c7717b2411e3d0a44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91bd49b9_b38a8f7b",
+        "filename": "buildbucket/luciexe/runner/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-30T01:36:22Z",
+      "side": 1,
+      "message": "nit: I\u0027m 80% sure Mkdir errors already include this information",
+      "range": {
+        "startLine": 65,
+        "startChar": 36,
+        "endLine": 65,
+        "endChar": 48
+      },
+      "revId": "a96e5a35618caea41401de6c7717b2411e3d0a44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5058b500_56bcb3da",
+        "filename": "buildbucket/luciexe/runner/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-30T01:36:22Z",
+      "side": 1,
+      "message": "nit: \".\" (more readable IMHO)",
+      "range": {
+        "startLine": 162,
+        "startChar": 18,
+        "endLine": 162,
+        "endChar": 20
+      },
+      "revId": "a96e5a35618caea41401de6c7717b2411e3d0a44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
