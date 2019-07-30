@@ -48,13 +48,13 @@ type updateBuildCB func(context.Context, *pb.UpdateBuildRequest) error
 // If rawCB is nil, panics.
 // Users are expected to initialize rawCB at least to read the latest
 // state of the build.
-func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
+func run(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, rawCB updateBuildCB) error {
 	if rawCB == nil {
 		panic("rawCB is nil")
 	}
 
 	// Prepare auth
-	authCtx, err := runnerauth.UserServers(ctx, args)
+	authCtx, err := runnerauth.UserServers(ctx, args, wkDir.authDir)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	cancelCtx, cancelExe := context.WithCancel(ctx)
 	defer cancelExe()
 
-	spy, logdogServ, err := runButler(ctx, args, cancelExe)
+	spy, logdogServ, err := runButler(ctx, args, wkDir, cancelExe)
 	defer func() {
 		if lerr := logdogServ.Stop(); lerr != nil {
 			logging.WithError(err).Errorf(ctx, "failed to stop logdog server")
@@ -95,7 +95,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	}()
 
 	// Run the user executable.
-	err = runUserExecutable(cancelCtx, args, authCtx, logdogServ, streamNamePrefix)
+	err = runUserExecutable(cancelCtx, args, wkDir, authCtx, logdogServ, streamNamePrefix)
 	if err != nil {
 		return err
 	}
@@ -123,14 +123,14 @@ func run(ctx context.Context, args *pb.RunnerArgs, rawCB updateBuildCB) error {
 	return errors.Annotate(closewait(ctx), "failed to send last build update").Err()
 }
 
-func runButler(ctx context.Context, args *pb.RunnerArgs, cancelExe func()) (*buildspy.Spy, *runnerbutler.Server, error) {
+func runButler(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, cancelExe func()) (*buildspy.Spy, *runnerbutler.Server, error) {
 	systemAuth, err := runnerauth.System(ctx, args)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Start a local LogDog server.
-	logdogServ, err := makeButler(ctx, args, systemAuth)
+	logdogServ, err := makeButler(ctx, args, wkDir.logdogDir, systemAuth)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "failed to create local logdog server").Err()
 	}

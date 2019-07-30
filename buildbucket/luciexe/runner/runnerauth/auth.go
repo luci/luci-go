@@ -16,8 +16,6 @@ package runnerauth
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"go.chromium.org/luci/auth"
@@ -72,7 +70,7 @@ func System(ctx context.Context, args *pb.RunnerArgs) (*auth.Authenticator, erro
 
 // UserServers launches various local servers that serve tokens to the user
 // executable.
-func UserServers(ctx context.Context, args *pb.RunnerArgs) (*authctx.Context, error) {
+func UserServers(ctx context.Context, args *pb.RunnerArgs, authConfigDir string) (*authctx.Context, error) {
 	// Construct authentication option with the set of scopes to be used through
 	// out the runner. This is superset of all scopes we might need. It is more
 	// efficient to create a single token with all the scopes than make a bunch
@@ -125,14 +123,7 @@ func UserServers(ctx context.Context, args *pb.RunnerArgs) (*authctx.Context, er
 		user.Options.Scopes = append(authOpts.Scopes, "https://www.googleapis.com/auth/firebase")
 	}
 
-	authDir, err := filepath.Abs("auth-configs")
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get absolute path").Err()
-	}
-	if err := os.Mkdir(authDir, 0700); err != nil {
-		return nil, errors.Annotate(err, "failed to mkdir %s", authDir).Err()
-	}
-	if err := user.Launch(ctx, authDir); err != nil {
+	if err := user.Launch(ctx, authConfigDir); err != nil {
 		return nil, errors.Annotate(err, "failed to start user auth context").Err()
 	}
 
