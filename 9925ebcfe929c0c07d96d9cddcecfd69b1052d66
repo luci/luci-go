@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "980307d6_f8cbc674",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-31T16:45:49Z",
+      "side": 1,
+      "message": "An alternative is to build off of the existing gke.py, which currently I think is used for at most logdog. I found this deployment flow simpler, but am open to investing in gke.py if we want a deployment flow more similar to what we have for GAE.",
+      "range": {
+        "startLine": 7,
+        "startChar": 33,
+        "endLine": 7,
+        "endChar": 41
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f8f7405_d8b3d9e9",
+        "filename": "results/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-31T16:45:49Z",
+      "side": 1,
+      "message": "There\u0027s a lot of duplication here that could be factored out in a variety of ways, but I wasn\u0027t convinced it\u0027d be any clearer, and in fact it could be less clear. Please let me know if you have thoughts/preferences.",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8a9c549_f12942e2",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-31T16:45:49Z",
+      "side": 1,
+      "message": "An alternative to a separate deployment [within the same app] is to use the same deployment.yaml but set the project, but this would require changing/patching the image name.",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 28
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ca2d6fc_031438cf",
+        "filename": "results/k8s/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-31T16:45:49Z",
+      "side": 1,
+      "message": "This is currently a dupe of the helloworld example.",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 12
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
