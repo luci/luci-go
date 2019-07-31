@@ -388,6 +388,23 @@
     },
     {
       "key": {
+        "uuid": "e2dc0f54_9a728093",
+        "filename": "results/k8s/Dockerfile",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:35:53Z",
+      "side": 1,
+      "message": "i think will have multiple services inside results, so perhaps it should be in `results/k8s/recorder`?",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "abc692d2_8b276a10",
         "filename": "results/k8s/Dockerfile",
         "patchSetId": 1
