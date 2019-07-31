@@ -1,0 +1,113 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: skeleton-service
+  labels:
+    app: skeleton-service
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: http-server
+    targetPort: 8800
+    protocol: TCP
+    name: http
+  selector:
+    app: skeleton-service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: skeleton-service-dev
+  labels:
+    app: skeleton-service-dev
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: http-server
+    targetPort: 8800
+    protocol: TCP
+    name: http
+  selector:
+    app: skeleton-service-dev
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: skeleton-service
+  labels:
+    app: skeleton-service
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: skeleton-service
+    spec:
+      volumes:
+      - name: service-account-json
+        secret:
+          secretName: test-secret
+      containers:
+      - name: helloworld
+        image: gcr.io/luci-test-results/helloworld:stable
+        args: ["--service-account-json", "$(GOOGLE_APPLICATION_CREDENTIALS)"]
+        imagePullPolicy: Always
+        ports:
+        - name: http-server
+          containerPort: 8800
+        volumeMounts:
+        - name: service-account-json
+          mountPath: /var/secrets/google
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/test-service-account.json
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: skeleton-service-dev
+  labels:
+    app: skeleton-service-dev
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: skeleton-service-dev
+    spec:
+      volumes:
+      - name: service-account-json
+        secret:
+          secretName: test-secret
+      containers:
+      - name: helloworld
+        image: gcr.io/luci-test-results-dev/helloworld:stable
+        args: ["--service-account-json", "$(GOOGLE_APPLICATION_CREDENTIALS)"]
+        imagePullPolicy: Always
+        ports:
+        - name: http-server
+          containerPort: 8800
+        volumeMounts:
+        - name: service-account-json
+          mountPath: /var/secrets/google
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/test-service-account.json
