@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "4b181959_6edfe0b7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-31T21:27:33Z",
+      "side": 1,
+      "message": "Let\u0027s not touch gke.py for now. I\u0027d like to use something based on more standard tools (probably kustomize) and something that can be automated more naturally. Meanwhile, using Makefiles is fiiiiine...",
+      "parentUuid": "f9c094b2_4637b3f5",
+      "range": {
+        "startLine": 7,
+        "startChar": 33,
+        "endLine": 7,
+        "endChar": 41
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f8f7405_d8b3d9e9",
         "filename": "results/Makefile",
         "patchSetId": 1
@@ -302,6 +326,30 @@
     },
     {
       "key": {
+        "uuid": "77842c48_43d3a6f5",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-31T21:27:33Z",
+      "side": 1,
+      "message": "I\u0027m still thinking about it. I want as much of the state as possible to be specified in some repository (so we have history and code review and BUG\u003d... references and Revert button, etc).\n\nIf not using Spinnaker:\n  * Images are tagged with unique immutable tags that identify their origin (I\u0027m planning to use \"\u003cdate\u003e_\u003ccommitposition\u003e_\u003ccommit\u003e\", e.g. \"20190731_24797_a365bd5c\", \u003cdate\u003e is for eyeballing by humans, \u003ccommitposition\u003e is for sorting within a day, \u003ccommit\u003e is just for easier mapping back into git).\n  * k8s manifests use these tags to refer to images, not \"floating\" tags like \u0027stable\u0027 or \u0027latest\u0027.\n  * k8s manifests live in a separate repo. There\u0027s post commit builder that deploys them on each commit.\n  * There\u0027s an auto-roller that takes a tag of latest produced image and commits it as a version to use for -dev cluster (thus kicking off the rollout).\n  * Prod versions are updated manually (i.e. by manual commit to the repository with k8s configs).\n\nIf using Spinnaker: needs more research.",
+      "parentUuid": "434888c6_8f33f563",
+      "range": {
+        "startLine": 102,
+        "startChar": 55,
+        "endLine": 102,
+        "endChar": 61
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a9d86855_2113d919",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -313,6 +361,30 @@
       "writtenOn": "2019-07-31T18:34:07Z",
       "side": 1,
       "message": "this seems to imply that all args in all apps we will deploy to GKE going forward will cargo-cult this line. GOOGLE_APPLICATION_CREDENTIALS seems standard https://developers.google.com/identity/protocols/application-default-credentials\nVadim, WDYT about standardizing on it in code instead of passing it in args?",
+      "range": {
+        "startLine": 103,
+        "startChar": 42,
+        "endLine": 103,
+        "endChar": 75
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f76470b_be76c71e",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-31T21:27:33Z",
+      "side": 1,
+      "message": "We have two choices:\n\n1. Standardize on GOOGLE_APPLICATION_CREDENTIALS and disable all other ways LUCI server picks up credentials, such us using developer tokens (via `luci-auth login`) or using Swarming task accounts.\n2. Do not use GOOGLE_APPLICATION_CREDENTIALS at all, and write server code to use luci-go auth library to pick up the default credential.\n\nThe reason is that GOOGLE_APPLICATION_CREDENTIALS is picked up by Google Cloud libraries by default. But these Cloud libraries are unable to use any other form of authentication when running locally (unlike LUCI libraries). If we standardize on GOOGLE_APPLICATION_CREDENTIALS, but not set it when running stuff locally, LUCI libraries *will* work, but native Cloud libraries *will not* work, and this is kind of random. They all either should work (will happen with choice 2), or neither of them should work (will happen with choice 1).\n\nI personally much prefer 2, but I can be convinced to drop support for running as developer locally and switch to 1.\n\n----\n\nI assume GOOGLE_APPLICATION_CREDENTIALS was chosen here because Spanner client is initialized as\n\n  spanner.NewClient(ctx, \"\u003cdb\u003e\")\n\nIf we want to follow (2), it should be\n\n  ts, err :\u003d auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(spanner.Scope))\n  ...\n  spanner.NewClient(ctx, \"\u003cdb\u003e\", option.WithTokenSource(ts))\n\n(where \u0027auth\u0027 is https://godoc.org/go.chromium.org/luci/server/auth)",
+      "parentUuid": "a9d86855_2113d919",
       "range": {
         "startLine": 103,
         "startChar": 42,
@@ -353,6 +425,30 @@
       "writtenOn": "2019-07-31T18:34:07Z",
       "side": 1,
       "message": "why is this \"google\"? i think this name should entail the purpose\n\ni assume this is copied from \nhttps://cloud.google.com/kubernetes-engine/docs/tutorials/authenticating-to-cloud-platform\nit seems \"google\" is used because it is an authentication to google service. Will we use these credentials to authenticate to other services (e.g. another LUCI service) as well? In that case, we might generalize this to \"app\" or something.\n\nAnyway, this should be consistent with future GKE-based apps, so I wonder what Vadim thinks",
+      "range": {
+        "startLine": 110,
+        "startChar": 34,
+        "endLine": 110,
+        "endChar": 40
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "408b79fc_067a63a8",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-31T21:27:33Z",
+      "side": 1,
+      "message": "Eh, it doesn\u0027t matter what paths are exactly, as long as everything is consistent within a single deployment.\n\nAs a precedent I used /secrets/main-service-account-key and /secrets/root-luci-secret in https://chrome-internal.googlesource.com/infra/infra_internal/+/refs/heads/master/services/deployments/qscheduler-prod/manifests/deployments.yaml",
+      "parentUuid": "5a93a6c7_9e7daf5a",
       "range": {
         "startLine": 110,
         "startChar": 34,
