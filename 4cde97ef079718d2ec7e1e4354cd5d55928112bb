@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3a8bab72_064fe5b6",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-31T20:23:35Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s imperative at all; my understanding was that this CL was precisely for a starting point, not at all for an end state, and I\u0027m happy to expect refactoring.",
+      "parentUuid": "d3e8af6c_b1036172",
+      "revId": "4cde97ef079718d2ec7e1e4354cd5d55928112bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "312c6bb1_81978eb8",
         "filename": "results/k8s/Dockerfile",
         "patchSetId": 2
@@ -30,6 +48,30 @@
       "writtenOn": "2019-07-31T19:58:06Z",
       "side": 1,
       "message": "This is not good.\n\nIt takes an image with (old) go1.11, copies \u0027results\u0027 source code (and only it) from the local checkout, then asks \u0027go\u0027 tool inside the container to fetch all dependencies from the internet, at whatever state they happened to be at the time (no version pinning). In particular, this fetches go.chromium.org/luci/* from internet, not local checkout. So if you happen to work on some dependency of results/* which is outside of results/* directory tree, it will not pick it up.\n\nThere\u0027s absolutely no reason to use \"golang\" image, we already have local go building environment that produces reproducible builds.\n\nWe should build the server binary locally, outside the container, using all source code we already have there, and then just copy the final binary into a tiny image.\n\nSee for example: \nhttps://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/src/infra/appengine/qscheduler-swarming/cmd/qscheduler-swarming/Dockerfile\nhttps://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/src/infra/appengine/qscheduler-swarming/Makefile?autodive\u003d0#55\n\nIt uses Cloud Build, but same would work with \"docker build\":\n\n```\nFROM gcr.io/distroless/static:latest\nCOPY bin/frontend ./frontend\nUSER nobody\nENTRYPOINT [\"./frontend\"]\n```\n\n$ CGO_ENABLED\u003d0 GOOS\u003dlinux GOARCH\u003damd64 go build -o bin/frontend ./app/frontend\n$ docker build .",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 28
+      },
+      "revId": "4cde97ef079718d2ec7e1e4354cd5d55928112bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fceb0cab_4c0d2c45",
+        "filename": "results/k8s/Dockerfile",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-07-31T20:23:35Z",
+      "side": 1,
+      "message": "OK, I saw the qscheduler Dockerfile; the reason I didn\u0027t go with that approach here is that my understanding is that this CL is meant to get /some/ pipeline up for deploying [pieces of] test results, with the full expectation of needing changing later, and it wasn\u0027t clear to me how much of the k8s qscheduler implementation (and go/chops-docker-ci) was actually settled.\n\nLet me go ahead and switch over the Dockerfile and Makefile.",
+      "parentUuid": "312c6bb1_81978eb8",
       "range": {
         "startLine": 7,
         "startChar": 0,
