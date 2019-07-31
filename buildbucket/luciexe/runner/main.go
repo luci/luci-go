@@ -189,7 +189,7 @@ func mainErr(rawArgs []string) error {
 	ctx := context.Background()
 	ctx = gologger.StdConfig.Use(ctx)
 
-	args, wkDir, err := parseArgs(rawArgs)
+	args, wkDir, err := parseArgs(rawArgs[1:])
 	if err != nil {
 		return err
 	}
