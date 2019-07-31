@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d3e8af6c_b1036172",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-31T19:58:06Z",
+      "side": 1,
+      "message": "I think we should get away from the habit of hardcoding operational details on *concrete* Chops deployment in *supposedly reusable* LUCI source code. GAE promoted this ugly practice by blurring the line between builds and deploys. We should not repeat this mistake with k8s. \n\nWith k8s there are multiple distinct stage:\n1. Build process. It takes sources as input and spits out some local Docker image as output.\n2. Publishing the image. It takes a docker image and uploads it to some registry.\n3. Rolling out the image. It takes published image and deploys into one or many Kubernetes clusters.\n\nStage 1 is pure local transformation from source code to an image. There\u0027s no hardcoded operational details here yet. It is OK (even good) when Dockerfile lives side by side with source code it \"wraps\".\n\nStage 2 has some operation configuration (a docker registry to push the image to). It can potentially live in the same source code tree, but doesn\u0027t have to.\n\nStage 3 has A LOT of operational details (names of our clusters, their location, sizes, etc. etc.). This information is specific to us and must not be committed into luci-go repository. At most we can commit some common template for k8s configs, and then apply all our specifics in some other repo, which will closely \"track\" what *we* deploy.\n\nIs it imperative for Kubernetes configs to live in this repository? We can start as is, but prepare for them to be moved or significantly refactored in the future.",
+      "revId": "4cde97ef079718d2ec7e1e4354cd5d55928112bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "312c6bb1_81978eb8",
+        "filename": "results/k8s/Dockerfile",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-07-31T19:58:06Z",
+      "side": 1,
+      "message": "This is not good.\n\nIt takes an image with (old) go1.11, copies \u0027results\u0027 source code (and only it) from the local checkout, then asks \u0027go\u0027 tool inside the container to fetch all dependencies from the internet, at whatever state they happened to be at the time (no version pinning). In particular, this fetches go.chromium.org/luci/* from internet, not local checkout. So if you happen to work on some dependency of results/* which is outside of results/* directory tree, it will not pick it up.\n\nThere\u0027s absolutely no reason to use \"golang\" image, we already have local go building environment that produces reproducible builds.\n\nWe should build the server binary locally, outside the container, using all source code we already have there, and then just copy the final binary into a tiny image.\n\nSee for example: \nhttps://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/src/infra/appengine/qscheduler-swarming/cmd/qscheduler-swarming/Dockerfile\nhttps://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/src/infra/appengine/qscheduler-swarming/Makefile?autodive\u003d0#55\n\nIt uses Cloud Build, but same would work with \"docker build\":\n\n```\nFROM gcr.io/distroless/static:latest\nCOPY bin/frontend ./frontend\nUSER nobody\nENTRYPOINT [\"./frontend\"]\n```\n\n$ CGO_ENABLED\u003d0 GOOS\u003dlinux GOARCH\u003damd64 go build -o bin/frontend ./app/frontend\n$ docker build .",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 28
+      },
+      "revId": "4cde97ef079718d2ec7e1e4354cd5d55928112bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
