@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f9c094b2_4637b3f5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "I\u0027d like to ask Vadim for help here because this is not specific to LUCI Test Results, and will affect all GKE-based apps going forward.",
+      "parentUuid": "980307d6_f8cbc674",
+      "range": {
+        "startLine": 7,
+        "startChar": 33,
+        "endLine": 7,
+        "endChar": 41
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2f8f7405_d8b3d9e9",
         "filename": "results/Makefile",
         "patchSetId": 1
@@ -36,6 +60,126 @@
       "writtenOn": "2019-07-31T16:45:49Z",
       "side": 1,
       "message": "There\u0027s a lot of duplication here that could be factored out in a variety of ways, but I wasn\u0027t convinced it\u0027d be any clearer, and in fact it could be less clear. Please let me know if you have thoughts/preferences.",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0868280c_15b97691",
+        "filename": "results/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "nit: blank line after headers\nstyle guide: https://www.google.com/url?q\u003dhttps://github.com/google/styleguide/tree/gh-pages/docguide",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d03efdcb_52a377da",
+        "filename": "results/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "is this done only for getting credentials? if so, wouldn\u0027t be use easier to use --project and list two concrete commands here?",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 23
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d733c8e4_59b63ad6",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "let\u0027s give a more long-term name, entailing ingestion. I think when we implement recorder, it would be here too, and recorder will stay, so let\u0027s name it \"recorder\" or \"recorder-service\". same with label",
+      "range": {
+        "startLine": 18,
+        "startChar": 8,
+        "endLine": 18,
+        "endChar": 24
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d4afce7_3a0c9c2b",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "overwritten by L26",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f0ee9c8_a316e7aa",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "nit: in documentation, i see name being first",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49df0890_518fba0f",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "this overwrites whatever written in L15-L30. I assume this wasn\u0027t intentional\n\nstepping back, why do we need two separate definitions for prod an dev. Separation is already done when we specify cloud project to deploy to\n\nsame happens with Deployment below",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 0
+      },
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -65,6 +209,225 @@
     },
     {
       "key": {
+        "uuid": "cbd867e1_2ece2274",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "why image name is different for different deployments? we have the same code base and same image building pipeline",
+      "parentUuid": "a8a9c549_f12942e2",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 28
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4b359e5_f3353ca5",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "recorder?",
+      "range": {
+        "startLine": 101,
+        "startChar": 14,
+        "endLine": 101,
+        "endChar": 24
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "434888c6_8f33f563",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "Vadim, how do you envisioned updates?",
+      "range": {
+        "startLine": 102,
+        "startChar": 55,
+        "endLine": 102,
+        "endChar": 61
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6f1ed6c_506c7209",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "recorder?",
+      "range": {
+        "startLine": 102,
+        "startChar": 44,
+        "endLine": 102,
+        "endChar": 54
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9d86855_2113d919",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "this seems to imply that all args in all apps we will deploy to GKE going forward will cargo-cult this line. GOOGLE_APPLICATION_CREDENTIALS seems standard https://developers.google.com/identity/protocols/application-default-credentials\nVadim, WDYT about standardizing on it in code instead of passing it in args?",
+      "range": {
+        "startLine": 103,
+        "startChar": 42,
+        "endLine": 103,
+        "endChar": 75
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a94d949_d57182ac",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "nit: this seems to be related to image more than to args, so let\u0027s place it closer to image",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a93a6c7_9e7daf5a",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "why is this \"google\"? i think this name should entail the purpose\n\ni assume this is copied from \nhttps://cloud.google.com/kubernetes-engine/docs/tutorials/authenticating-to-cloud-platform\nit seems \"google\" is used because it is an authentication to google service. Will we use these credentials to authenticate to other services (e.g. another LUCI service) as well? In that case, we might generalize this to \"app\" or something.\n\nAnyway, this should be consistent with future GKE-based apps, so I wonder what Vadim thinks",
+      "range": {
+        "startLine": 110,
+        "startChar": 34,
+        "endLine": 110,
+        "endChar": 40
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30574b13_c6782b38",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "app-service-account.json?",
+      "range": {
+        "startLine": 113,
+        "startChar": 37,
+        "endLine": 113,
+        "endChar": 41
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abc692d2_8b276a10",
+        "filename": "results/k8s/Dockerfile",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "have you seen https://docs.google.com/document/d/1_aNsMpiIpDYwNUQNYpRXunFuVgHDgAQWNYdG0iWA6Qw/edit#\n?\n\nit implies that the build is done outside of the docker image. Let\u0027s be compatible with that design",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 28
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b47a1228_5096bb91",
+        "filename": "results/k8s/Dockerfile.prod",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "it seem we won\u0027t need this file if the design is compatible with https://docs.google.com/document/d/1_aNsMpiIpDYwNUQNYpRXunFuVgHDgAQWNYdG0iWA6Qw/edit#",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0ca2d6fc_031438cf",
         "filename": "results/k8s/frontend/main.go",
         "patchSetId": 1
@@ -85,6 +448,30 @@
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11175f46_51e8a813",
+        "filename": "results/k8s/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-07-31T18:34:07Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "0ca2d6fc_031438cf",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 12
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
