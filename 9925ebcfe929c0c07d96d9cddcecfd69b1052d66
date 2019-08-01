@@ -709,6 +709,30 @@
     },
     {
       "key": {
+        "uuid": "fb6dc12f_05075a8c",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-01T18:10:10Z",
+      "side": 1,
+      "message": "\u003e my question to Vadim above still stands. Repeating: Vadim, how can we reduce duplication in other GKE apps? It seems that all deployment.yaml files will have to have this line. Are you thinking of solving this with kustomize? I.e. ideally there is only one place where implements passing of the creds.\n\nAs I said, I don\u0027t know the answer to this problem yet, prepare to be copy-pasting configs for now. Kustomize is for applying patches on top of other existing configs, not for building configs from bottom up. There are many other tools for generating k8s configs (Helm, Ksonnet, Skaffold, Terraform, Skycfg, ...) with different designs, learning curves and tradeoffs. I haven\u0027t evaluated them yet.",
+      "parentUuid": "8af9f031_66414693",
+      "range": {
+        "startLine": 103,
+        "startChar": 42,
+        "endLine": 103,
+        "endChar": 75
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5a94d949_d57182ac",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
