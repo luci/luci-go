@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "8035b7b3_76bb05b6",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T22:14:50Z",
+      "side": 1,
+      "message": "\u003e Is the concern that having such a tag would could be confusing as the image contains more changes than the image tag?\n\nyes, because it would be a lie\n\nfor `\u003cdate\u003e_\u003ccommitposition\u003e_\u003ccommit\u003e`, I am pretty sure that is in the context of continuously built images on CI, will be implemented in some common place (agnostic to specific services) by Vadim. This implementation won\u0027t be used for that.\n\nadding -tainted if there are local changes is not that trivial: https://cs.chromium.org/chromium/infra/luci/appengine/components/tools/calculate_version.py?type\u003dcs\u0026q\u003dcalculate_version\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d108\nso I am not sure we can do it easily, moreso in bash. I tried running `gae.py version` but it requires an dir with an appengine app.\n\nalways adding -tainted seems to be the best option so far",
+      "parentUuid": "6dd757ce_302aa478",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 8
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "972a846d_8298a305",
         "filename": "results/Makefile",
         "patchSetId": 5
@@ -142,6 +166,24 @@
     },
     {
       "key": {
+        "uuid": "a1737856_f9f8f7e8",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T22:14:50Z",
+      "side": 1,
+      "message": "1) I hope Vadim will provide a more generic solution by that time\n2) even if not, i don\u0027t think we\u0027d be pushing multiple services at the same time, so I\u0027d expect this file to accept a parameter (which service to build/push/deploy) and the rest of the variables will adapt, e.g. $IMAGE_ID would be a full image path to the service in question",
+      "parentUuid": "d63e7da7_5e7739c3",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4daa0652_53a18af0",
         "filename": "results/Makefile",
         "patchSetId": 5
@@ -194,6 +236,30 @@
       "side": 1,
       "message": "Right now, tagging with \"stable\" is meant to be done in `make deploy`, so `image-label` is just whatever description with which the user wants to annotate.\n\nFor instance, let\u0027s say I have two branches with changes FOO (with commit hash f00d) and BAR (with commit hash baad) committed, respectively. I might label them `with-change-foo` and `with-change-bar`, and they\u0027d both /also/ be tagged `f00d` and `baad`, respectively.\n\nThen on deployment, if I decided I wanted to deploy f00d, I could say `make deploy LABEL\u003dwith-change-foo`.\n\nThese retagging shenanigans aren\u0027t fantastic.\n\nVadim mentioned manually changing the deployment, specifically, \"[via] manual commit to the repository with k8s configs\". I can adapt that into here by getting rid of the \"stable\" label.\n\nThoughts?",
       "parentUuid": "8f32717e_f4c6957a",
+      "range": {
+        "startLine": 16,
+        "startChar": 22,
+        "endLine": 16,
+        "endChar": 33
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "043ae2df_610d4bba",
+        "filename": "results/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T22:14:50Z",
+      "side": 1,
+      "message": "i see the intention now. I see the value in LABEL parameter for specifying what to deploy.\n\nI don\u0027t see value of LABEL parameter in other scenarios: we could use the label derived from `get-rev HEAD` to identify the version. It matches your use case (foo, f00d, baad), already implemented and does not require extra typing. So I think LABEL is unnecessary for building and pushing images.\n\ni suspect using a concrete tag (not stable) would be more useful. In https://pantheon.corp.google.com/kubernetes/deployment/us-central1-a/ingestion-cluster/default/recorder-service?project\u003dluci-test-results-dev\u0026tab\u003dhistory\u0026deployment_overview_active_revisions_tablesize\u003d50\u0026duration\u003dPT1H\u0026pod_summary_list_tablesize\u003d20\u0026service_list_datatablesize\u003d20\u0026deployment_revision_history_tablesize\u003d50 I see a list of pod revisions, but each revision does not tell me which git revision was used.\n\nVadim, please note this ^ I assume using revision-based tags in yaml files will solve this problem, since I see \"stable\" in that list",
+      "parentUuid": "183cb9ec_2699473e",
       "range": {
         "startLine": 16,
         "startChar": 22,
