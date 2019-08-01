@@ -282,15 +282,6 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 		return a.runDirect(c, a.opts.CommandLine, &lp)
 	}
 
-	// -S prevents 'site.py' from importing implicitly. This is guaranteed to
-	// break VirtualEnv which relies on site to actually set up the VirtualEnv.
-	// You might use this flag if you wanted to isolate from the system python;
-	// however vpython already guarantees this isolation (better than passing -S
-	// would anyway).
-	if a.opts.CommandLine.RemoveAllFlag("S") {
-		logging.Warningf(c, "Removing unsupported arg -S")
-	}
-
 	// Should we clear PYTHONPATH when we run the Python script?
 	a.opts.ClearPythonPath = a.opts.Environ.Remove(ClearPythonPathENV)
 
