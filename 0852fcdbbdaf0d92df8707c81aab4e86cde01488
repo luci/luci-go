@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6dd757ce_302aa478",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T20:46:11Z",
+      "side": 1,
+      "message": "Is the concern that having such a tag would could be confusing as the image contains more changes than the image tag?\n\nVadim also mentioned the naming scheme of `\u003cdate\u003e_\u003ccommitposition\u003e_\u003ccommit\u003e`, which sgtm (modulo not knowing off the top of my head where to fetch the commit position) but also doesn\u0027t accommodate local non-committed changes.\n\nWhat if we included e.g. \"-tainted\" in the tag if there are local non-committed changes?",
+      "parentUuid": "f97a6030_9511e13c",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 8
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "972a846d_8298a305",
         "filename": "results/Makefile",
         "patchSetId": 5
@@ -36,6 +60,24 @@
       "writtenOn": "2019-08-01T19:24:00Z",
       "side": 1,
       "message": "FWIU, standard locations for binaries compiled from Go code are:\n- $GOBIN, when one runs `go install`. It is expected to be in $PATH on dev machines\n- the dir where the main package is, when one runs `go build` in that dir\n\nthis seems to introduce a 3rd dir. Can we reuse one of the existing ones?",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e42ced6_6094705c",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T20:46:11Z",
+      "side": 1,
+      "message": "This was based off https://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/src/infra/appengine/qscheduler-swarming/Makefile?autodive\u003d0#7\n\nI don\u0027t feel strongly about reusing vs. using a new one. Vadim, do you have a preference?",
+      "parentUuid": "972a846d_8298a305",
       "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -82,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "d63e7da7_5e7739c3",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T20:46:11Z",
+      "side": 1,
+      "message": "OK, I can consolidate.\n\nThis will need to change with building different images for the different services, though, yes? As in, the image name will change but the handling for gcr_prefix, label, and commit tags will stay the same.",
+      "parentUuid": "0ecf856a_cdceb4d6",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4daa0652_53a18af0",
         "filename": "results/Makefile",
         "patchSetId": 5
@@ -110,6 +170,30 @@
       "writtenOn": "2019-08-01T19:24:00Z",
       "side": 1,
       "message": "from this doc it is unclear to me what are the recommendation for this value, or what is the intention. What values do you anticipate?\n\nif \"stable\", then seems to imply that we\u0027d build and mark at stable at the same time? this sounds risky to me: we\u0027d first need to verify that it is indeed stable (build image, push to staging, see how it behaves there), and only then mark it as stable (without rebuilding)",
+      "range": {
+        "startLine": 16,
+        "startChar": 22,
+        "endLine": 16,
+        "endChar": 33
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "183cb9ec_2699473e",
+        "filename": "results/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T20:46:11Z",
+      "side": 1,
+      "message": "Right now, tagging with \"stable\" is meant to be done in `make deploy`, so `image-label` is just whatever description with which the user wants to annotate.\n\nFor instance, let\u0027s say I have two branches with changes FOO (with commit hash f00d) and BAR (with commit hash baad) committed, respectively. I might label them `with-change-foo` and `with-change-bar`, and they\u0027d both /also/ be tagged `f00d` and `baad`, respectively.\n\nThen on deployment, if I decided I wanted to deploy f00d, I could say `make deploy LABEL\u003dwith-change-foo`.\n\nThese retagging shenanigans aren\u0027t fantastic.\n\nVadim mentioned manually changing the deployment, specifically, \"[via] manual commit to the repository with k8s configs\". I can adapt that into here by getting rid of the \"stable\" label.\n\nThoughts?",
+      "parentUuid": "8f32717e_f4c6957a",
       "range": {
         "startLine": 16,
         "startChar": 22,
