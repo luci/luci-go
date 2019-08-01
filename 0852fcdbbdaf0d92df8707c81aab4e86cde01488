@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f97a6030_9511e13c",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T19:24:00Z",
+      "side": 1,
+      "message": "what is the intention? `git rev-parse HEAD` ignores local non-commited changes",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 8
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "972a846d_8298a305",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T19:24:00Z",
+      "side": 1,
+      "message": "FWIU, standard locations for binaries compiled from Go code are:\n- $GOBIN, when one runs `go install`. It is expected to be in $PATH on dev machines\n- the dir where the main package is, when one runs `go build` in that dir\n\nthis seems to introduce a 3rd dir. Can we reuse one of the existing ones?",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2de42382_c152b19e",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T19:24:00Z",
+      "side": 1,
+      "message": "chops-public-images-dev already exists. Can we use it?",
+      "range": {
+        "startLine": 13,
+        "startChar": 20,
+        "endLine": 13,
+        "endChar": 41
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ecf856a_cdceb4d6",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T19:24:00Z",
+      "side": 1,
+      "message": "this is used only as $(gcr_prefix)/$(image) and $(gcr_prefix)/$(image) is repeated 10 times. Can the value of this be $(gcr_prefix)/recorder ?\n\nfurther they are used onoly with LABEL and IMAGE_ID, so variables for these two, with full values, would make the code more readable, e.g.\n\n\tdocker push $(LABEL)\n\tdocker push $(IMAGE_ID)\n\nor something like that.",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4daa0652_53a18af0",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T19:24:00Z",
+      "side": 1,
+      "message": "-t can be specified multiple times\n\n\tdocker build \\\n\t  -t $(gcr_prefix)/$(image):$(IMAGE_ID) \\\n\t  -t $(gcr_prefix)/$(image):$(LABEL) \\\n\t  -f $(projdir)/k8s/$(service)/Dockerfile $(projdir)",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f32717e_f4c6957a",
+        "filename": "results/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T19:24:00Z",
+      "side": 1,
+      "message": "from this doc it is unclear to me what are the recommendation for this value, or what is the intention. What values do you anticipate?\n\nif \"stable\", then seems to imply that we\u0027d build and mark at stable at the same time? this sounds risky to me: we\u0027d first need to verify that it is indeed stable (build image, push to staging, see how it behaves there), and only then mark it as stable (without rebuilding)",
+      "range": {
+        "startLine": 16,
+        "startChar": 22,
+        "endLine": 16,
+        "endChar": 33
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39b7993c_93418f4d",
+        "filename": "results/k8s/recorder/Dockerfile",
+        "patchSetId": 5
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T19:24:00Z",
+      "side": 1,
+      "message": "what does this mean? our prod images will also be built from \"local code\", which will be non-tainted code from the repository",
+      "range": {
+        "startLine": 5,
+        "startChar": 54,
+        "endLine": 5,
+        "endChar": 61
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "592a7985_27425483",
+        "filename": "results/k8s/recorder/Dockerfile",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T19:24:00Z",
+      "side": 1,
+      "message": "this is inconsistent with https://docs.google.com/document/d/1_aNsMpiIpDYwNUQNYpRXunFuVgHDgAQWNYdG0iWA6Qw/edit#\ncan this be just\n\n  COPY recorder .\n\n?\n\nthis is also related to the comment about bindir",
+      "range": {
+        "startLine": 10,
+        "startChar": 5,
+        "endLine": 10,
+        "endChar": 9
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
