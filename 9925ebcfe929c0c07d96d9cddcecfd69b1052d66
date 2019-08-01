@@ -305,6 +305,30 @@
     },
     {
       "key": {
+        "uuid": "ad07f352_389176c2",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T17:22:01Z",
+      "side": 1,
+      "message": "Yes, I know that doc suggests all the apps images will go into a separate cloud project dedicated to images. That\u0027s why (given the discussion last night) I wanted to check with Vadim about having different project IDs for dev vs. prod, i.e. prod goes into chops-public-prod-images and dev goes into chops-public-nonprod-images, or whatever names they end/ed up being. IIUC, that still means we have different image project IDs?",
+      "parentUuid": "3c79fa86_48574adb",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 28
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f4b359e5_f3353ca5",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -505,6 +529,30 @@
       "side": 1,
       "message": "i think this indicates incorrect configuration in code, i.e. the problem should be solved at the same level as the problem. This file is different level",
       "parentUuid": "41174a0b_6605fe92",
+      "range": {
+        "startLine": 103,
+        "startChar": 42,
+        "endLine": 103,
+        "endChar": 75
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33433345_94ec7a9c",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T17:22:01Z",
+      "side": 1,
+      "message": "Agreed, this is solvable in code. I thought this CL was supposed to touch code minimally (hence just duping the helloworld example code) as it set up just a basic pipeline.\n\nDo you prefer for this CL to deal with it in code or to inline the args into the image (or something else)?",
+      "parentUuid": "8693fa88_fefed3e8",
       "range": {
         "startLine": 103,
         "startChar": 42,
