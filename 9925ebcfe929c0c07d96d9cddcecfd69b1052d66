@@ -353,6 +353,30 @@
     },
     {
       "key": {
+        "uuid": "acf41b21_bff0cb97",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T17:34:27Z",
+      "side": 1,
+      "message": "just going to paste this below, as I think that was the intention :)",
+      "parentUuid": "ed8c6616_56f13e1f",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 28
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f4b359e5_f3353ca5",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -577,6 +601,30 @@
       "side": 1,
       "message": "Agreed, this is solvable in code. I thought this CL was supposed to touch code minimally (hence just duping the helloworld example code) as it set up just a basic pipeline.\n\nDo you prefer for this CL to deal with it in code or to inline the args into the image (or something else)?",
       "parentUuid": "8693fa88_fefed3e8",
+      "range": {
+        "startLine": 103,
+        "startChar": 42,
+        "endLine": 103,
+        "endChar": 75
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a6bcdc2_f8794583",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T17:34:27Z",
+      "side": 1,
+      "message": "From Vadim above: \nJust passing \"--service-account-json /var/secrets/google/test-service-account.json\" (or whatever the name of the file is) should be sufficient to make it stop complaining. There\u0027s no need to ALSO set the env var.\n\n\u003d\u003d\u003d\n\nOh, sure! I thought the concerns were with /both/ 1) passing service-account-json at all (in the params), and 2) setting envvar.\n\nIf we\u0027re OK with just passing service-account-json directly (but not setting envvar) that\u0027s fine by me too. Nodir, SGTY?",
+      "parentUuid": "33433345_94ec7a9c",
       "range": {
         "startLine": 103,
         "startChar": 42,
