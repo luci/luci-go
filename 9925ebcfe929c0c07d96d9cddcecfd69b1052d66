@@ -107,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "76a57b16_9de63b77",
+        "filename": "results/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0868280c_15b97691",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d03efdcb_52a377da",
         "filename": "results/README.md",
         "patchSetId": 1
@@ -124,6 +142,47 @@
         "endLine": 9,
         "endChar": 23
       },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6121a810_7937da6b",
+        "filename": "results/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Yes, that seems to suffice. Do the lines in PS5 achieve what you mean?",
+      "parentUuid": "d03efdcb_52a377da",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 23
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7514bb72_6619ebd5",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Renamed to recorder-deployment.yaml",
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -153,6 +212,30 @@
     },
     {
       "key": {
+        "uuid": "cdf7382a_4e485043",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d733c8e4_59b63ad6",
+      "range": {
+        "startLine": 18,
+        "startChar": 8,
+        "endLine": 18,
+        "endChar": 24
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d4afce7_3a0c9c2b",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -167,6 +250,24 @@
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df20ea18_bdf6ee93",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d4afce7_3a0c9c2b",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -187,6 +288,24 @@
     },
     {
       "key": {
+        "uuid": "951e1393_71dac866",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f0ee9c8_a316e7aa",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49df0890_518fba0f",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -198,6 +317,30 @@
       "writtenOn": "2019-07-31T18:34:07Z",
       "side": 1,
       "message": "this overwrites whatever written in L15-L30. I assume this wasn\u0027t intentional\n\nstepping back, why do we need two separate definitions for prod an dev. Separation is already done when we specify cloud project to deploy to\n\nsame happens with Deployment below",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 0
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d9430e3_f1d9a972",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Removed the dev/prod duplication",
+      "parentUuid": "49df0890_518fba0f",
       "range": {
         "startLine": 31,
         "startChar": 0,
@@ -448,6 +591,30 @@
     },
     {
       "key": {
+        "uuid": "a135483a_e3a546ad",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f4b359e5_f3353ca5",
+      "range": {
+        "startLine": 101,
+        "startChar": 14,
+        "endLine": 101,
+        "endChar": 24
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "434888c6_8f33f563",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -515,6 +682,30 @@
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "091c63d4_784169cb",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a6f1ed6c_506c7209",
+      "range": {
+        "startLine": 102,
+        "startChar": 44,
+        "endLine": 102,
+        "endChar": 54
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -750,6 +941,24 @@
     },
     {
       "key": {
+        "uuid": "0816e4e8_db8faf57",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a94d949_d57182ac",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a93a6c7_9e7daf5a",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -821,6 +1030,30 @@
     },
     {
       "key": {
+        "uuid": "cf485384_ac00814c",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4b05d74_1ab92c63",
+      "range": {
+        "startLine": 110,
+        "startChar": 34,
+        "endLine": 110,
+        "endChar": 40
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30574b13_c6782b38",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -844,6 +1077,30 @@
     },
     {
       "key": {
+        "uuid": "c4cfcb4b_9e21cccb",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30574b13_c6782b38",
+      "range": {
+        "startLine": 113,
+        "startChar": 37,
+        "endLine": 113,
+        "endChar": 41
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e2dc0f54_9a728093",
         "filename": "results/k8s/Dockerfile",
         "patchSetId": 1
@@ -858,6 +1115,24 @@
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49c49953_22f0122f",
+        "filename": "results/k8s/Dockerfile",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2dc0f54_9a728093",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -884,6 +1159,30 @@
     },
     {
       "key": {
+        "uuid": "7bddeb0d_0d427e40",
+        "filename": "results/k8s/Dockerfile",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "abc692d2_8b276a10",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 28
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b47a1228_5096bb91",
         "filename": "results/k8s/Dockerfile.prod",
         "patchSetId": 1
@@ -898,6 +1197,24 @@
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3679d92_d99906d4",
+        "filename": "results/k8s/Dockerfile.prod",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b47a1228_5096bb91",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

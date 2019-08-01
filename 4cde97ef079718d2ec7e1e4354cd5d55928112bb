@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "ba1c85a3_b3f1d972",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "This file has been renamed to results/recorder-deployment.yaml, and I agree that we expect this to be moved and significantly refactored.",
+      "parentUuid": "3a8bab72_064fe5b6",
+      "revId": "4cde97ef079718d2ec7e1e4354cd5d55928112bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "312c6bb1_81978eb8",
         "filename": "results/k8s/Dockerfile",
         "patchSetId": 2
@@ -81,6 +99,30 @@
       "revId": "4cde97ef079718d2ec7e1e4354cd5d55928112bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2043e33d_00e9ebd2",
+        "filename": "results/k8s/Dockerfile",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:43:37Z",
+      "side": 1,
+      "message": "Done (moved to results/k8s/recorder/Dockerfile)",
+      "parentUuid": "fceb0cab_4c0d2c45",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 28
+      },
+      "revId": "4cde97ef079718d2ec7e1e4354cd5d55928112bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
