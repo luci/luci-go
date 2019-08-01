@@ -281,6 +281,30 @@
     },
     {
       "key": {
+        "uuid": "3c79fa86_48574adb",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T17:11:01Z",
+      "side": 1,
+      "message": "https://docs.google.com/document/d/1_aNsMpiIpDYwNUQNYpRXunFuVgHDgAQWNYdG0iWA6Qw/edit#heading\u003dh.rptjunbffmam suggests that images of all apps (and their instances) will be in a separate cloud project dedicated to images. Quote:\n\n  image: gcr.io/chops-prod-images/helloworld\n\n--\n\nhowever I just realized I left my comment in a wrong place. The image is below. This place is about metadata. This one is definitely scoped to the GKE cluster (and moreso, to the cloud project), so we can keep generic names in metadata",
+      "parentUuid": "312a6f99_24469947",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 28
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f4b359e5_f3353ca5",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -457,6 +481,30 @@
       "side": 1,
       "message": "For context, passing GOOGLE_APPLICATION_CREDENTIALS was to prevent the below from happening:\n\n [I2019-08-01T16:54:17.280839Z 1 0 server.go:962] Disabling tsmon, -ts-mon-account is not set\n [E2019-08-01T16:54:17.280949Z 1 0 server.go:893] Looks like you run the server locally and it \ndoesn\u0027t have credentials for some OAuth scopes\n [E2019-08-01T16:54:17.280975Z 1 0 server.go:894] Run the following command to set them up: \n [E2019-08-01T16:54:17.280990Z 1 0 server.go:895]   $ luci-auth login -scopes \"https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email\"\n [E2019-08-01T16:54:17.281064Z 1 0 server.go:381] Failed to initialize auth                   {\"error\":\"failed to initialize the token source: interactive login is required\"}\n [I2019-08-01T16:54:17.280839Z 1 0 server.go:962] Disabling tsmon, -ts-mon-account is not set\n [E2019-08-01T16:54:17.280949Z 1 0 server.go:893] Looks like you run the server locally and it doesn\u0027t have credentials for some OAuth scopes\n [E2019-08-01T16:54:17.280975Z 1 0 server.go:894] Run the following command to set them up: \n [E2019-08-01T16:54:17.280990Z 1 0 server.go:895]   $ luci-auth login -scopes \"https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email\"\n [E2019-08-01T16:54:17.281064Z 1 0 server.go:381] Failed to initialize auth                   {\"error\":\"failed to initialize the token source: interactive login is required\"}\n\nIn particular, the logs do show that the localhost is set up to serve at the proper ports without passing the credentials, but it can\u0027t actually serve the \"hello, world\" message.\n\nIf you think just the former is sufficient (or have another preferred way of going about it), I\u0027m happy to remove the argument passed (and envvar).",
       "parentUuid": "7f76470b_be76c71e",
+      "range": {
+        "startLine": 103,
+        "startChar": 42,
+        "endLine": 103,
+        "endChar": 75
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8693fa88_fefed3e8",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-01T17:11:01Z",
+      "side": 1,
+      "message": "i think this indicates incorrect configuration in code, i.e. the problem should be solved at the same level as the problem. This file is different level",
+      "parentUuid": "41174a0b_6605fe92",
       "range": {
         "startLine": 103,
         "startChar": 42,
