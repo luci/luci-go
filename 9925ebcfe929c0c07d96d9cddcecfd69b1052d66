@@ -401,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "d6537253_8ba66ede",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-01T18:05:15Z",
+      "side": 1,
+      "message": "This was in \"LUCI Team\" chat, not sure a better way of linking it to you but I think all the pertinent information is in Vadim\u0027s summary here w.r.t \"Re sharing of images and dev/prod\"",
+      "parentUuid": "b1ae2fbb_18c0b3d5",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 28
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f4b359e5_f3353ca5",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
