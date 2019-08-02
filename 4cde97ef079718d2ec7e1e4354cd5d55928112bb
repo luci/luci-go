@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "eff69b2f_4d463463",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ba1c85a3_b3f1d972",
+      "revId": "4cde97ef079718d2ec7e1e4354cd5d55928112bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "312c6bb1_81978eb8",
         "filename": "results/k8s/Dockerfile",
         "patchSetId": 2

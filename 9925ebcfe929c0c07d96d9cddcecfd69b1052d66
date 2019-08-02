@@ -90,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "0712fd37_1b327085",
+        "filename": "results/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2f8f7405_d8b3d9e9",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0868280c_15b97691",
         "filename": "results/README.md",
         "patchSetId": 1
@@ -210,6 +228,24 @@
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54e16320_e7da631e",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7514bb72_6619ebd5",
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -374,6 +410,30 @@
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90d1e308_38e0ce0f",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4d9430e3_f1d9a972",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 0
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -592,6 +652,30 @@
     },
     {
       "key": {
+        "uuid": "fbbc6616_dfe68359",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d6537253_8ba66ede",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 28
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f4b359e5_f3353ca5",
         "filename": "results/deployment.yaml",
         "patchSetId": 1
@@ -730,6 +814,30 @@
       "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1cda526c_5da8d21f",
+        "filename": "results/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "I\u0027ve added a TODO for revisiting naming and in the meantime set the deployed image manually.",
+      "parentUuid": "77842c48_43d3a6f5",
+      "range": {
+        "startLine": 102,
+        "startChar": 55,
+        "endLine": 102,
+        "endChar": 61
+      },
+      "revId": "9925ebcfe929c0c07d96d9cddcecfd69b1052d66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {

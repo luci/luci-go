@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "9da30ffa_a56f1195",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8035b7b3_76bb05b6",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 8
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "972a846d_8298a305",
         "filename": "results/Makefile",
         "patchSetId": 5
@@ -108,6 +132,24 @@
     },
     {
       "key": {
+        "uuid": "a65d504a_b6bf9ff4",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "To elaborate, what I liked about the bin dir is that it puts all the binaries into one place (hence easy to .gitignore and not likely easily to check in by accident) that\u0027s still within the tree of the overall results/ project. It\u0027s not a strong preference though.",
+      "parentUuid": "8e42ced6_6094705c",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2de42382_c152b19e",
         "filename": "results/Makefile",
         "patchSetId": 5
@@ -128,6 +170,30 @@
       "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fac6f2b_f8ed0a5c",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2de42382_c152b19e",
+      "range": {
+        "startLine": 13,
+        "startChar": 20,
+        "endLine": 13,
+        "endChar": 41
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -184,6 +250,24 @@
     },
     {
       "key": {
+        "uuid": "f2f406bd_fb9a0e4c",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "Removed image as well as service, which now must be passed as parameter (e.g. service\u003drecorder)",
+      "parentUuid": "a1737856_f9f8f7e8",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4daa0652_53a18af0",
         "filename": "results/Makefile",
         "patchSetId": 5
@@ -198,6 +282,24 @@
       "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24f687f6_d271af2c",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4daa0652_53a18af0",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -272,6 +374,30 @@
     },
     {
       "key": {
+        "uuid": "9a0c1a5e_a1a7a6ca",
+        "filename": "results/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "In accordance with using a concrete tag for deployment, I\u0027ve gotten rid of the stable tag, both in Makefile and recorder-deployment.yaml.\n\nThis consequently means the `deploy` target no longer accepts a LABEL, and gets rid of the `all` target.\n\nI\u0027ve also gotten rid of LABEL for building and pushing images (that means no manual descriptions for distinguishing two images with side-by-side changes at a glance, but we can add that back later if we want). Note that IMAGE_ID can still be overwritten if passed to make, in which case the image will /not/ be tagged with \u003chash\u003e-tainted.\n\nDoes that match what you mean?",
+      "parentUuid": "043ae2df_610d4bba",
+      "range": {
+        "startLine": 16,
+        "startChar": 22,
+        "endLine": 16,
+        "endChar": 33
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "39b7993c_93418f4d",
         "filename": "results/k8s/recorder/Dockerfile",
         "patchSetId": 5
@@ -292,6 +418,30 @@
       "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46365f11_db4a9100",
+        "filename": "results/k8s/recorder/Dockerfile",
+        "patchSetId": 5
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T03:09:09Z",
+      "side": 1,
+      "message": "I actually removed the line altogether.",
+      "parentUuid": "39b7993c_93418f4d",
+      "range": {
+        "startLine": 5,
+        "startChar": 54,
+        "endLine": 5,
+        "endChar": 61
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
