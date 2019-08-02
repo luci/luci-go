@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc9811db_876cf87f",
+        "filename": "results/Makefile",
+        "patchSetId": 13
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-02T16:52:46Z",
+      "side": 1,
+      "message": "nit: unclear what\u0027s the value/intention of having this variable. If the intention is to clearly specify which GCR project to use, then consider making the code closer to the intention:\n\n  gcr_project \u003d chops-public-images-dev\n  image_id \u003d gcr.io/$(gcr_project)/$(service)...........\n\notherwise consider inlining",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 10
+      },
+      "revId": "e5096f4e4a09033cb1d9c4fa931ce6a73408e935",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84541507_7f913a35",
+        "filename": "results/Makefile",
+        "patchSetId": 13
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-02T16:52:46Z",
+      "side": 1,
+      "message": "nit: it is not very readable to have two variables that differ only by case (in any language), and this is the only place where IMAGE_ID is used. Let\u0027s inline IMAGE_ID",
+      "range": {
+        "startLine": 14,
+        "startChar": 38,
+        "endLine": 14,
+        "endChar": 46
+      },
+      "revId": "e5096f4e4a09033cb1d9c4fa931ce6a73408e935",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c35b654_f244e07a",
+        "filename": "results/Makefile",
+        "patchSetId": 13
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-02T16:52:46Z",
+      "side": 1,
+      "message": "nit: this space is a bit hard to notice visually, so it is not immediately obvious that this is another argument. Please consider putting \\ here too, so that this statement is more self-consistent",
+      "range": {
+        "startLine": 24,
+        "startChar": 41,
+        "endLine": 24,
+        "endChar": 42
+      },
+      "revId": "e5096f4e4a09033cb1d9c4fa931ce6a73408e935",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d07acb3_8f3c8830",
+        "filename": "results/README.md",
+        "patchSetId": 13
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-02T16:52:46Z",
+      "side": 1,
+      "message": "nit: since this an ordered list (steps), consider using 1.  as prefix instead of *",
+      "range": {
+        "startLine": 4,
+        "startChar": 0,
+        "endLine": 4,
+        "endChar": 1
+      },
+      "revId": "e5096f4e4a09033cb1d9c4fa931ce6a73408e935",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95dee5f4_e34656fc",
+        "filename": "results/README.md",
+        "patchSetId": 13
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-02T16:52:46Z",
+      "side": 1,
+      "message": "t",
+      "range": {
+        "startLine": 35,
+        "startChar": 21,
+        "endLine": 35,
+        "endChar": 22
+      },
+      "revId": "e5096f4e4a09033cb1d9c4fa931ce6a73408e935",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -150,6 +150,24 @@
     },
     {
       "key": {
+        "uuid": "a98f5ec5_24e41200",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-02T16:52:46Z",
+      "side": 1,
+      "message": "i like that there is only one .gitignore\n\nthe downsides are\n\n* inconsistent with the long term direction, so we will likely to change this in the future anyway\n* some additional complexity. If kept binaries in the standard place (location of main.go), then the following wouldn\u0027t be needed in the Makefile: \n  * `-o $(bindir)/$(service)`\n  *`.setup-bindir:` target\n  * the $bindir variable itself\n\nI don\u0027t insist",
+      "parentUuid": "a65d504a_b6bf9ff4",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2de42382_c152b19e",
         "filename": "results/Makefile",
         "patchSetId": 5
