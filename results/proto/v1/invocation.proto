@@ -28,7 +28,7 @@ import "go.chromium.org/luci/results/proto/v1/tests.proto";
 message Invocation {
   string id = 1;
 
-  Bucket bucket = 2;
+  string realm = 2;
 
   message Test {
     // regex: ^\w+(\|\w+)*$
@@ -58,6 +58,8 @@ message Invocation {
     string invocation_id = 1;
     // If specified, include inconsequential invocations.
     bool inconsequential = 2;
+    // If specified, the child invocation has been finalized before the parent.
+    bool ready = 3;
   }
   // List of invocations to include
   repeated Include includes = 7;
