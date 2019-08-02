@@ -1,0 +1,38 @@
+# Copyright 2019 The LUCI Authors. All rights reserved.
+# Use of this source code is governed under the Apache License, Version 2.0
+# that can be found in the LICENSE file.
+
+IMAGE_ID = $(shell git rev-parse HEAD)-tainted
+
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
+bindir := $(projdir)/bin
+
+gcr_prefix = gcr.io/chops-public-images-dev
+image_id = $(gcr_prefix)/recorder:$(IMAGE_ID)
+
+build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v \
+		-o $(bindir)/$(SERVICE) $(projdir)/k8s/$(service)
+
+image: build
+	chmod a+x $(bindir)/$(SERVICE)
+	docker build \
+		-t $(image_id) \
+		-f $(projdir)/k8s/$(SERVICE)/Dockerfile $(projdir)
+	@echo [INFO] built $(image_id)
+
+upload: image
+	docker push $(image_id)
+	@echo [INFO] pushed $(image_id)
+
+deploy:
+	kubectl apply -f $(projdir)/$(SERVICE)-deployment.yaml
+	# Patch the deployment with a new date to trigger an actual deployment update.
+	kubectl patch deployment $(SERVICE)-service -p \
+		"{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+
+# Helpers
+.setup-bindir:
+	rm -rf $(bindir)
+	mkdir -p $(bindir)
