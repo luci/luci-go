@@ -168,6 +168,24 @@
     },
     {
       "key": {
+        "uuid": "67706ab4_6d52f4f2",
+        "filename": "results/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T18:18:21Z",
+      "side": 1,
+      "message": "I don\u0027t mind either. Since the chops-docker-ci doc and the qscheduler model differ too, I\u0027ll keep this here but add a TODO to revisit.",
+      "parentUuid": "a98f5ec5_24e41200",
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2de42382_c152b19e",
         "filename": "results/Makefile",
         "patchSetId": 5
@@ -428,6 +446,30 @@
       "side": 1,
       "message": "yeah, i think this is fine. I didn\u0027t meant to put a concrete tag in the deployment.yaml, since we could potentially use kubctl patch to set the version, but let\u0027s just move on to work that is more directly contributes to our KR. What we have here is good enough and I looking forward to what Vadim will come up with.",
       "parentUuid": "9a0c1a5e_a1a7a6ca",
+      "range": {
+        "startLine": 16,
+        "startChar": 22,
+        "endLine": 16,
+        "endChar": 33
+      },
+      "revId": "0852fcdbbdaf0d92df8707c81aab4e86cde01488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2d99e194_9e35a6aa",
+        "filename": "results/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-02T18:18:21Z",
+      "side": 1,
+      "message": "OK, thanks for confirming!",
+      "parentUuid": "cdc103eb_38c7258a",
       "range": {
         "startLine": 16,
         "startChar": 22,
