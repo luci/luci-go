@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ca12bed5_7612baf5",
+        "filename": "results/k8s/storage/spanner/row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-03T00:03:07Z",
+      "side": 1,
+      "message": "!row.LastUpdateTime.IsZero()",
+      "range": {
+        "startLine": 118,
+        "startChar": 4,
+        "endLine": 118,
+        "endChar": 42
+      },
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6fe644f_31e2c8b7",
+        "filename": "results/k8s/storage/spanner/row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-03T00:03:07Z",
+      "side": 1,
+      "message": "this means the number of reads for each CounterShard is number of rows we insert? this defeats the purpose of the sharded counter. One transaction should touch exactly one shard row, increment it by the number of results we are inserting, and write that. The generality hurts performance.\n\n\n---\n\nstepping back, i just realized that, if we are going to have one bot writing to one invocation at a time, i.e. we have one writer at a time anyway, then we don\u0027t actually benefit from sharded counters. So i now think we don\u0027t need to shard the counter. We could keep the count in the invocation actually. WDYT?",
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3da54dcb_d6a14b67",
+        "filename": "results/k8s/storage/spanner/row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-03T00:03:07Z",
+      "side": 1,
+      "message": "this means we will be writing all cells of the row every time, even if they didn\u0027t change? say, if the invocation is finalized, all we need to write is FinalizeTime, but with this implementation we are sending all fields.\n\nrelated to the other comment, I think we are trying to write generic code here, but the generality comes with performance costs",
+      "range": {
+        "startLine": 212,
+        "startChar": 19,
+        "endLine": 212,
+        "endChar": 39
+      },
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eafb41ef_61e1690d",
+        "filename": "results/k8s/storage/spanner/writer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-03T00:03:07Z",
+      "side": 1,
+      "message": "what is the intention of this package and what problem this package is trying to solve? is the intention is to wire all spanner interaction through this package? Is it going to grow proportional with all use cases, e.g. number of different SQL queries we will send? it is hard to reason about the design being implied here without seeing the full picture, i.e. what\u0027s coming next. That\u0027s why top-\u003ebottom CLs are easier to review, e.g. I expected the next CL to be based on the previous one. I don\u0027t see clearly how we will connect the two. \n\nOptions to consider:\n- send CLs top-to-bottom\n- write a short doc that outlines packages and layers of abstraction that you envision",
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d09c5659_1c84c847",
+        "filename": "results/k8s/storage/spanner/writer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-03T00:03:07Z",
+      "side": 1,
+      "message": "i am not sure how this is supposed to be used. Specifically, we need to \n\n- read invocation\n- see if it finalized, exit if it is\n- write result rows\n\nall in one transaction. This is not possible with this abstraction. I think we are over-generalizing",
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
