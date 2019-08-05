@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "5c4df38b_84d0e3aa",
+        "filename": "buildbucket/luciexe/runner/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-05T21:47:49Z",
+      "side": 0,
+      "message": "also where is this now? I was looking at CL 1735907 and how it uses `bp.infra.buildbucket.hostname \u003d app_identity.get_default_version_hostname()` and recalled that on devserver `get_default_version_hostname()` is None, which potentially could lead to confusing if we ever try run this stack 100% locally.",
+      "range": {
+        "startLine": 113,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 2
+      },
+      "revId": "884036baa3b4678fe130d710f54acb4a7fa5c086",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "908ae78b_800a5a52",
         "filename": "buildbucket/luciexe/runner/run_exe.go",
         "patchSetId": 2
