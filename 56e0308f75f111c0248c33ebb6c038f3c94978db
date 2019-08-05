@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "a4b03aeb_9d4f375d",
+        "filename": "buildbucket/luciexe/runner/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-05T21:36:00Z",
+      "side": 1,
+      "message": "Can we move all magical constants documented in proto into a dedicate file, make them \"public\", and cross-reference documentation between *.go\u003c-\u003e*.proto?",
+      "range": {
+        "startLine": 92,
+        "startChar": 36,
+        "endLine": 92,
+        "endChar": 47
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b058278d_fc41a2ee",
+        "filename": "buildbucket/luciexe/runner/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-05T21:36:00Z",
+      "side": 1,
+      "message": "a more robust check would be to fail if err !\u003d nil \u0026\u0026 !os.IsNotExist(err). It means run_build is in some weird state (e.g. caller has no permissions to list it).",
+      "range": {
+        "startLine": 95,
+        "startChar": 38,
+        "endLine": 95,
+        "endChar": 48
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcc71c1e_1dc1efff",
+        "filename": "buildbucket/luciexe/runner/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-05T21:36:00Z",
+      "side": 1,
+      "message": "should this still be here?",
+      "range": {
+        "startLine": 96,
+        "startChar": 3,
+        "endLine": 96,
+        "endChar": 50
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b6323fff_398cd8fe",
         "filename": "buildbucket/luciexe/runner/run_exe.go",
         "patchSetId": 2
@@ -48,6 +117,29 @@
     },
     {
       "key": {
+        "uuid": "1160bbe4_7bac6d87",
+        "filename": "buildbucket/luciexe/runner/runner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-05T21:36:00Z",
+      "side": 1,
+      "message": "does this need an annotation?",
+      "range": {
+        "startLine": 68,
+        "startChar": 9,
+        "endLine": 68,
+        "endChar": 12
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "34d156c3_bbe2d467",
         "filename": "buildbucket/proto/build.proto",
         "patchSetId": 2
@@ -59,6 +151,30 @@
       "writtenOn": "2019-08-05T06:18:21Z",
       "side": 1,
       "message": "this mimics the same-named field in \u0027logdog\u0027 and \u0027swarming\u0027",
+      "range": {
+        "startLine": 251,
+        "startChar": 11,
+        "endLine": 251,
+        "endChar": 19
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bbd931eb_316693b0",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-05T21:36:00Z",
+      "side": 1,
+      "message": "I find it suspicious that \u00271\u0027 wasn\u0027t in use before :)",
+      "parentUuid": "34d156c3_bbe2d467",
       "range": {
         "startLine": 251,
         "startChar": 11,
@@ -105,6 +221,30 @@
       "writtenOn": "2019-08-05T06:18:21Z",
       "side": 1,
       "message": "I\u0027m actually a bit confused about this... will this ever be something other than \"system\"?",
+      "range": {
+        "startLine": 58,
+        "startChar": 9,
+        "endLine": 58,
+        "endChar": 28
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c11c7d2c_bc72d8e2",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-05T21:36:00Z",
+      "side": 1,
+      "message": "On Swarming: no.\nWhen running luciexe locally: yes (it can be empty, to indicate to use developer\u0027s account).\n\nI still don\u0027t fully grasp relations between all the binaries and protos. If this field is used exclusively to pass information from Buildbucket to luciexe, then hardcoding \"system\" is probably OK.",
+      "parentUuid": "52722e9c_9ee45c9b",
       "range": {
         "startLine": 58,
         "startChar": 9,
