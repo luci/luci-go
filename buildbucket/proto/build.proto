@@ -247,9 +247,13 @@ message BuildInfra {
   message Buildbucket {
     reserved 4; // field "canary" was moved to Build message.
 
+    // The hostname of the buildbucket service this Build was scheduled with.
+    string hostname = 1;
+
     // Version of swarming task template. Defines
     // versions of kitchen, git, git wrapper, python, vpython, etc.
     string service_config_revision = 2;
+
     // Properties that were specified in ScheduleBuildRequest to create this
     // build.
     //

@@ -37,7 +37,8 @@ import (
 // returns an unstarted logdog butler service.
 func makeButler(ctx context.Context, args *pb.RunnerArgs, logdogDir string, systemAuth *auth.Authenticator) (*runnerbutler.Server, error) {
 	globalLogTags := make(map[string]string, 4)
-	globalLogTags["logdog.viewer_url"] = fmt.Sprintf("https://%s/build/%d", args.BuildbucketHost, args.Build.Id)
+	globalLogTags["logdog.viewer_url"] = fmt.Sprintf(
+		"https://%s/build/%d", args.Build.Infra.Buildbucket.Hostname, args.Build.Id)
 
 	// SWARMING_SERVER is the full URL: https://example.com
 	// We want just the hostname.
@@ -54,22 +55,23 @@ func makeButler(ctx context.Context, args *pb.RunnerArgs, logdogDir string, syst
 		globalLogTags["swarming.bot_id"] = v
 	}
 
-	coordinatorHost, localFile := args.LogdogHost, ""
+	coordinatorHost, localFile := args.Build.Infra.Logdog.Hostname, ""
 	if strings.HasPrefix(coordinatorHost, "file://") {
 		localFile = coordinatorHost[len("file://"):]
 		coordinatorHost = ""
 		if !filepath.IsAbs(localFile) {
 			return nil, errors.Reason(
-				"logdog_host is file:// scheme, but not absolute: %q", args.LogdogHost).Err()
+				"logdog_host is file:// scheme, but not absolute: %q",
+				args.Build.Infra.Logdog.Hostname).Err()
 		}
 	}
 
 	return &runnerbutler.Server{
 		WorkDir:         logdogDir,
 		Authenticator:   systemAuth,
-		CoordinatorHost: coordinatorHost,
+		CoordinatorHost: args.Build.Infra.Logdog.Hostname,
 		Project:         types.ProjectName(args.Build.Builder.Project),
-		Prefix:          types.StreamName(fmt.Sprintf("buildbucket/%s/%d", args.BuildbucketHost, args.Build.Id)),
+		Prefix:          types.StreamName(args.Build.Infra.Logdog.Prefix),
 		LocalFile:       localFile,
 		GlobalTags:      globalLogTags,
 	}, nil

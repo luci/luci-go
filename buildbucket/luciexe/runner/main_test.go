@@ -18,6 +18,7 @@ package runner
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -85,21 +86,31 @@ func TestMain(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
+		logdogHostname := "file://" + filepath.Join(tempDir, "logs")
+
 		runSubtest := func(subtestName, argsText string) []*pb.UpdateBuildRequest {
 			args := &pb.RunnerArgs{}
 			err := proto.UnmarshalText(argsText, args)
 			So(err, ShouldBeNil)
-			args.LogdogHost = "file://" + filepath.Join(tempDir, "logs")
-
-			// We spawn ourselves, see https://npf.io/2015/06/testing-exec-command/
-			args.ExecutablePath = os.Args[0]
-			args.CacheDir = filepath.Join(tempDir, "cache")
+			args.Build.Infra = &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "buildbucket.example.com",
+				},
+				Logdog: &pb.BuildInfra_LogDog{
+					Hostname: logdogHostname,
+					Prefix:   "test",
+				},
+			}
 
 			So(os.Setenv("LUCI_EXE_SUBTEST_NAME", subtestName), ShouldBeNil)
 			defer os.Unsetenv("LUCI_EXE_SUBTEST_NAME")
 
-			wd := workdir{}
-			wd.prep(tempDir)
+			wd := workdir{
+				// We spawn ourselves, see https://npf.io/2015/06/testing-exec-command/
+				userExe:  os.Args[0],
+				cacheDir: filepath.Join(tempDir, "cache"),
+			}
+			wd.prep(args, tempDir)
 
 			var ret []*pb.UpdateBuildRequest
 			So(run(ctx, args, wd, func(ctx context.Context, req *pb.UpdateBuildRequest) error {
@@ -114,7 +125,6 @@ func TestMain(t *testing.T) {
 
 		Convey("Echo", func() {
 			updates := runSubtest("testSuccess", `
-				buildbucket_host: "buildbucket.example.com"
 				build {
 					id: 1
 					builder {
@@ -125,7 +135,7 @@ func TestMain(t *testing.T) {
 				}
 			`)
 			// Assert the final update.
-			So(updates[len(updates)-1], ShouldResembleProtoText, `
+			So(updates[len(updates)-1], ShouldResembleProtoText, fmt.Sprintf(`
 				build {
 					id: 1
 					builder {
@@ -134,6 +144,13 @@ func TestMain(t *testing.T) {
 						builder: "linux-rel"
 					}
 					status: SUCCESS
+					infra {
+						buildbucket { hostname: "buildbucket.example.com" }
+						logdog {
+							hostname: "%s"
+							prefix:   "test"
+						}
+					}
 				}
 				update_mask {
 					paths: "build.steps"
@@ -141,11 +158,10 @@ func TestMain(t *testing.T) {
 					paths: "build.output.gitiles_commit"
 					paths: "build.summary_markdown"
 				}
-			`)
+			`, logdogHostname))
 		})
 
 		dummyInputBuild := `
-			buildbucket_host: "buildbucket.example.com"
 			build {
 				id: 1
 				builder {

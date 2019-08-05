@@ -64,6 +64,9 @@ func run(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, rawCB updateBu
 	defer cancelExe()
 
 	spy, logdogServ, err := runButler(ctx, args, wkDir, cancelExe)
+	if err != nil {
+		return err
+	}
 	defer func() {
 		if lerr := logdogServ.Stop(); lerr != nil {
 			logging.WithError(err).Errorf(ctx, "failed to stop logdog server")

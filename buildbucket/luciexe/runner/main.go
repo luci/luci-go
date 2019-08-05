@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/metadata"
@@ -53,6 +54,12 @@ type workdir struct {
 	// We can't use a subdir of userDir because some overzealous scripts like to
 	// remove everything they find under TEMPDIR.
 	userTempDir string
+
+	// Resolved path to the `run_build` executable.
+	userExe string
+
+	// Resolved path to the `cache_dir`.
+	cacheDir string
 }
 
 func mkAbs(base, path string) (string, error) {
@@ -66,7 +73,37 @@ func mkAbs(base, path string) (string, error) {
 	return ret, nil
 }
 
-func (w *workdir) prep(base string) error {
+var runBuildExts []string
+
+func init() {
+	if runtime.GOOS == "windows" {
+		runBuildExts = []string{".exe", ".bat"}
+	} else {
+		runBuildExts = []string{""}
+	}
+}
+
+func findRunBuild(baseDir string) (string, error) {
+	baseDir, err := filepath.Abs(baseDir)
+	if err != nil {
+		return "", errors.Annotate(err, "filepath.Abs(%q)", baseDir).Err()
+	}
+
+	baseName := filepath.Join(baseDir, "run_build")
+	for _, ext := range runBuildExts {
+		candidate := baseName + ext
+		if info, err := os.Stat(candidate); err != nil || (info.Mode()&os.ModeType) != 0 {
+			fmt.Printf("GOT: %q -> %+v\n", candidate, info)
+			// doesn't exist or isn't a regular file.
+			continue
+		}
+		return candidate, nil
+	}
+
+	return "", errors.Reason("could not find any run_build executable at %q", baseDir).Err()
+}
+
+func (w *workdir) prep(args *pb.RunnerArgs, base string) error {
 	var err error
 	if w.authDir, err = mkAbs(base, "auth-configs"); err != nil {
 		return err
@@ -82,6 +119,18 @@ func (w *workdir) prep(base string) error {
 	}
 	if w.userTempDir, err = mkAbs(base, "ut"); err != nil {
 		return err
+	}
+
+	// these are set ahead-of-time in the tests
+	if w.userExe == "" {
+		if w.userExe, err = findRunBuild(args.ExecutableDir); err != nil {
+			return err
+		}
+	}
+	if w.cacheDir == "" {
+		if w.cacheDir, err = mkAbs(base, args.CacheDir); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -109,33 +158,6 @@ func parseRunnerArgs(encodedData string) (*pb.RunnerArgs, error) {
 	return ret, proto.Unmarshal(decompressed, ret)
 }
 
-func normalizeRunnerArgs(args *pb.RunnerArgs) error {
-	switch {
-	case args.BuildbucketHost == "":
-		return errors.Reason("buildbucket_host is required").Err()
-	case args.LogdogHost == "":
-		return errors.Reason("logdog_host is required").Err()
-	case args.Build.GetId() == 0:
-		return errors.Reason("build.id is required").Err()
-	}
-
-	normalizePath := func(title, path string) (string, error) {
-		if path == "" {
-			return "", errors.Reason("%s is required", title).Err()
-		}
-		return filepath.Abs(path)
-	}
-
-	var err error
-	if args.ExecutablePath, err = normalizePath("executable_path", args.ExecutablePath); err != nil {
-		return err
-	}
-	if args.CacheDir, err = normalizePath("cache_dir", args.CacheDir); err != nil {
-		return err
-	}
-	return nil
-}
-
 func parseArgs(args []string) (ret *pb.RunnerArgs, wkDir workdir, err error) {
 	fs := flag.FlagSet{}
 	argsB64 := fs.String("args-b64gz", "", text.Doc(`
@@ -152,13 +174,12 @@ func parseArgs(args []string) (ret *pb.RunnerArgs, wkDir workdir, err error) {
 		return
 	}
 
-	// Validate and normalize parameters.
-	if err = normalizeRunnerArgs(ret); err != nil {
-		err = errors.Annotate(err, "normalizing args").Err()
+	if ret.Build.GetId() == 0 {
+		err = errors.Reason("build.id is required").Err()
 		return
 	}
 
-	err = wkDir.prep(".")
+	err = wkDir.prep(ret, ".")
 	return
 }
 
@@ -212,12 +233,14 @@ func mainErr(rawArgs []string) error {
 
 // newBuildsClient creates a buildbucket client.
 func newBuildsClient(args *pb.RunnerArgs) pb.BuildsClient {
+	bbHost := args.Build.Infra.Buildbucket.Hostname
+
 	opts := prpc.DefaultOptions()
-	opts.Insecure = lhttp.IsLocalHost(args.BuildbucketHost)
+	opts.Insecure = lhttp.IsLocalHost(bbHost)
 	opts.Retry = nil // luciexe handles retries itself.
 
 	return pb.NewBuildsPRPCClient(&prpc.Client{
-		Host:    args.BuildbucketHost,
+		Host:    bbHost,
 		Options: opts,
 	})
 }

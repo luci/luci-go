@@ -48,7 +48,7 @@ func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, authC
 
 	// Prepare user LUCI context.
 	ctx, err := lucictx.Set(ctx, "luci_executable", map[string]string{
-		"cache_dir": args.CacheDir,
+		"cache_dir": wkDir.cacheDir,
 	})
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, args.ExecutablePath)
+	cmd := exec.CommandContext(ctx, wkDir.userExe)
 
 	// Prepare user env.
 	env, err := setupUserEnv(ctx, args, wkDir, authCtx, logdogServ, logdogNamespace)

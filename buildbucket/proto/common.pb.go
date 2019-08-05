@@ -137,8 +137,6 @@ func (Trinary) EnumDescriptor() ([]byte, []int) {
 //   For LUCI Context doc, see
 //   https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md
 //   See also CacheEntry.
-// - LUCI_CONTEXT["buildbucket"]["hostname"]: Buildbucket hostname,
-//   e.g. "cr-buildbucket.appspot.com".
 //
 // The executable MUST write "$LOGDOG_NAMESPACE/build.proto" stream using the
 // LogDog streamserver at $LOGDOG_STREAM_SERVER_PATH.
@@ -155,15 +153,22 @@ func (Trinary) EnumDescriptor() ([]byte, []int) {
 // The step tree from the second datagram will appear as substeps of step S.
 // This rule applies recursively, i.e. a leaf step in the datagram MAY also
 // have a "$build.proto" log.
-// The graph of datagram streams MUST be a tree, i.e. acyclic.
+//
+// The graph of datagram streams MUST be acyclic. Typically it should be a tree,
+// but having two leaves point to the same substream is not checked
+// for/rejected.
 //
 // All build step log urls of all Build messages MUST be relative to
-// $LOGDOG_STREAM_PREFIX (only stream name) and start with $LOGDOG_NAMESPACE.
+// $LOGDOG_STREAM_PREFIX (i.e. only stream name) and start with
+// $LOGDOG_NAMESPACE.
 type Executable struct {
 	// The CIPD package containing the executable.
-	// On Linux/Mac, the executable MUST be named "run_build".
-	// On Windows, it MUST be named "run_build.exe" or "run_build.bat",
-	// in this order of precedence.
+	//
+	// On Linux/Mac, the executable MUST be named "run_build", and must have the
+	// +x (executable) permission bit set.
+	//
+	// On Windows, it MUST be named "run_build.exe" or "run_build.bat".
+	// Buildbucket will search for the executable in this order of precedence.
 	CipdPackage string `protobuf:"bytes,1,opt,name=cipd_package,json=cipdPackage,proto3" json:"cipd_package,omitempty"`
 	// The CIPD version to fetch. Defaults to `latest`.
 	CipdVersion          string   `protobuf:"bytes,2,opt,name=cipd_version,json=cipdVersion,proto3" json:"cipd_version,omitempty"`
