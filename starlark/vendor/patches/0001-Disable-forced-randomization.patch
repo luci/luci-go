@@ -1,0 +1,81 @@
+From e941c345835f621c521a3d72d1ba21aa01ec280a Mon Sep 17 00:00:00 2001
+From: Vadim Shtayura <vadimsh@chromium.org>
+Date: Sun, 4 Aug 2019 23:46:05 -0700
+Subject: [PATCH] Disable forced randomization.
+
+See https://github.com/golang/protobuf/issues/920
+---
+ internal/detrand/rand.go | 48 ++--------------------------------------
+ 1 file changed, 2 insertions(+), 46 deletions(-)
+
+diff --git a/internal/detrand/rand.go b/internal/detrand/rand.go
+index f5d9eeb..f87ea7a 100644
+--- a/internal/detrand/rand.go
++++ b/internal/detrand/rand.go
+@@ -9,61 +9,17 @@
+ // while ensuring that the output is unstable across different builds.
+ package detrand
+ 
+-import (
+-	"encoding/binary"
+-	"hash/fnv"
+-	"os"
+-)
+-
+ // Disable disables detrand such that all functions returns the zero value.
+ // This function is not concurrent-safe and must be called during program init.
+ func Disable() {
+-	binHash = 0
+ }
+ 
+ // Bool returns a deterministically random boolean.
+ func Bool() bool {
+-	return binHash%2 == 1
++	return false
+ }
+ 
+ // Intn returns a deterministically random integer within [0,n).
+ func Intn(n int) int {
+-	if n <= 0 {
+-		panic("invalid argument to Intn")
+-	}
+-	return int(binHash % uint64(n))
+-}
+-
+-// binHash is a best-effort at an approximate hash of the Go binary.
+-var binHash = binaryHash()
+-
+-func binaryHash() uint64 {
+-	// Open the Go binary.
+-	s, err := os.Executable()
+-	if err != nil {
+-		return 0
+-	}
+-	f, err := os.Open(s)
+-	if err != nil {
+-		return 0
+-	}
+-	defer f.Close()
+-
+-	// Hash the size and several samples of the Go binary.
+-	const numSamples = 8
+-	var buf [64]byte
+-	h := fnv.New64()
+-	fi, err := f.Stat()
+-	if err != nil {
+-		return 0
+-	}
+-	binary.LittleEndian.PutUint64(buf[:8], uint64(fi.Size()))
+-	h.Write(buf[:8])
+-	for i := int64(0); i < numSamples; i++ {
+-		if _, err := f.ReadAt(buf[:], i*fi.Size()/numSamples); err != nil {
+-			return 0
+-		}
+-		h.Write(buf[:])
+-	}
+-	return h.Sum64()
++	return 0
+ }
+-- 
+2.18.0
+
