@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6323fff_398cd8fe",
+        "filename": "buildbucket/luciexe/runner/run_exe.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-05T06:18:21Z",
+      "side": 1,
+      "message": "this was just a bug; It used the non-absolute path before",
+      "range": {
+        "startLine": 51,
+        "startChar": 21,
+        "endLine": 51,
+        "endChar": 29
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cb1c6a21_6fb33cd9",
+        "filename": "buildbucket/luciexe/runner/runner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-05T06:18:21Z",
+      "side": 1,
+      "message": "obvious bug :(",
+      "range": {
+        "startLine": 67,
+        "startChar": 4,
+        "endLine": 67,
+        "endChar": 7
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "34d156c3_bbe2d467",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-05T06:18:21Z",
+      "side": 1,
+      "message": "this mimics the same-named field in \u0027logdog\u0027 and \u0027swarming\u0027",
+      "range": {
+        "startLine": 251,
+        "startChar": 11,
+        "endLine": 251,
+        "endChar": 19
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7820a2e7_ed1cddea",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-05T06:18:21Z",
+      "side": 1,
+      "message": "this is now just the directory to find `run_build` in; the buildbucket service doesn\u0027t need to know that the executable is called \u0027run_build\u0027, but it does need to tell luci_runner where it dumped the user\u0027s binaries.",
+      "range": {
+        "startLine": 40,
+        "startChar": 9,
+        "endLine": 40,
+        "endChar": 23
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "52722e9c_9ee45c9b",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-05T06:18:21Z",
+      "side": 1,
+      "message": "I\u0027m actually a bit confused about this... will this ever be something other than \"system\"?",
+      "range": {
+        "startLine": 58,
+        "startChar": 9,
+        "endLine": 58,
+        "endChar": 28
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

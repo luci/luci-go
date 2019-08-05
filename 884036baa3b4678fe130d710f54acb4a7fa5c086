@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "908ae78b_800a5a52",
+        "filename": "buildbucket/luciexe/runner/run_exe.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-05T06:18:21Z",
+      "side": 0,
+      "message": "This was two bugs:\n  * using the non-absolute path\n  * this wasn\u0027t resolved to .exe/.bat correctly on windows",
+      "range": {
+        "startLine": 76,
+        "startChar": 38,
+        "endLine": 76,
+        "endChar": 52
+      },
+      "revId": "884036baa3b4678fe130d710f54acb4a7fa5c086",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "544a994c_fe2d2816",
+        "filename": "buildbucket/luciexe/runner/run_helpers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-05T06:18:21Z",
+      "side": 0,
+      "message": "bug; this was statically computed from unrelated arguments instead of respecting the prefix set in infra.logdog.",
+      "revId": "884036baa3b4678fe130d710f54acb4a7fa5c086",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "40e52856_762545ec",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-05T06:18:21Z",
+      "side": 0,
+      "message": "passed via stdin (build.proto) now.",
+      "range": {
+        "startLine": 78,
+        "startChar": 34,
+        "endLine": 78,
+        "endChar": 42
+      },
+      "revId": "884036baa3b4678fe130d710f54acb4a7fa5c086",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18f6cd3a_9a2a1ff8",
         "filename": "buildbucket/proto/launcher.proto",
         "patchSetId": 1
