@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "d0b69bdb_fa4daf9a",
+        "filename": "results/k8s/storage/spanner/row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-05T18:48:18Z",
+      "side": 1,
+      "message": "Agreed, I\u0027ll remove the sharded counter.",
+      "parentUuid": "d6fe644f_31e2c8b7",
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3da54dcb_d6a14b67",
         "filename": "results/k8s/storage/spanner/row.go",
         "patchSetId": 3
@@ -53,6 +71,30 @@
       "writtenOn": "2019-08-03T00:03:07Z",
       "side": 1,
       "message": "this means we will be writing all cells of the row every time, even if they didn\u0027t change? say, if the invocation is finalized, all we need to write is FinalizeTime, but with this implementation we are sending all fields.\n\nrelated to the other comment, I think we are trying to write generic code here, but the generality comes with performance costs",
+      "range": {
+        "startLine": 212,
+        "startChar": 19,
+        "endLine": 212,
+        "endChar": 39
+      },
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c825cc4_5c505cf9",
+        "filename": "results/k8s/storage/spanner/row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-05T18:48:18Z",
+      "side": 1,
+      "message": "That is true, yes.\n\nAside from the InvocationRow and InclusionRow structs, the other structs will only be written once, yes? (Side note: I\u0027m looking at the ExonerationRow again, and actually when would we want to update that instead of just insert?) What do you think if the InvocationRows and InclusionRows didn\u0027t InsertOrUpdateStruct but only columns, and/or instead of a single \"GetWriteMutations\" we got separate mutations for insertion or update?",
+      "parentUuid": "3da54dcb_d6a14b67",
       "range": {
         "startLine": 212,
         "startChar": 19,
@@ -82,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "7c306ad4_ea091de9",
+        "filename": "results/k8s/storage/spanner/writer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-05T18:48:18Z",
+      "side": 1,
+      "message": "I worked on this bit based on what you mentioned in our 1:1 about having more independent CLs that wouldn\u0027t be blocked on each other. We\u0027ll definitely need /some/ sort of writing to Spanner, so even if this gets refactored and reorganized into a different file structure the basic functionality is still there.\n\nThe intention is to wire Spanner interaction through this package; we\u0027ll have BigQuery interaction later too, and as available storage options change and needs develop we might need to swap out one storage backend for another, so pulling it out into a separate package under storage/ was intended to prevent entwining from the get-go. What do you think?\n\n(In the meantime I can put together a structure outline.)",
+      "parentUuid": "eafb41ef_61e1690d",
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d09c5659_1c84c847",
         "filename": "results/k8s/storage/spanner/writer.go",
         "patchSetId": 3
@@ -93,6 +153,24 @@
       "writtenOn": "2019-08-03T00:03:07Z",
       "side": 1,
       "message": "i am not sure how this is supposed to be used. Specifically, we need to \n\n- read invocation\n- see if it finalized, exit if it is\n- write result rows\n\nall in one transaction. This is not possible with this abstraction. I think we are over-generalizing",
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f31aaa36_a0920eb4",
+        "filename": "results/k8s/storage/spanner/writer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-05T18:48:18Z",
+      "side": 1,
+      "message": "Why is that not possible with this abstraction? The intention was that it would be, so it\u0027s a question on (im)possibility, not on level of generality.\n\nThe part that\u0027s missing seems to be the early exit, which should be straightforward to add (pass in an invocation ID, read the invocation in the transaction, early exit if finalized), and the part about it all happening in one transaction is /meant/ to be handled by the fact that it\u0027s the same txn being passed in to ReadWriteTransaction. How do you think is this working instead?",
+      "parentUuid": "d09c5659_1c84c847",
       "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
