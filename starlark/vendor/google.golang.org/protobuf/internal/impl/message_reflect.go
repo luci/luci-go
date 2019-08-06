@@ -9,7 +9,6 @@ import (
 	"reflect"
 
 	"google.golang.org/protobuf/internal/pragma"
-	pvalue "google.golang.org/protobuf/internal/value"
 	pref "google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -66,8 +65,8 @@ type MessageState struct {
 type messageState MessageState
 
 var (
-	_ pref.Message     = (*messageState)(nil)
-	_ pvalue.Unwrapper = (*messageState)(nil)
+	_ pref.Message = (*messageState)(nil)
+	_ Unwrapper    = (*messageState)(nil)
 )
 
 // messageDataType is a tuple of a pointer to the message data and
@@ -86,9 +85,9 @@ type (
 
 var (
 	_ pref.Message      = (*messageReflectWrapper)(nil)
-	_ pvalue.Unwrapper  = (*messageReflectWrapper)(nil)
+	_ Unwrapper         = (*messageReflectWrapper)(nil)
 	_ pref.ProtoMessage = (*messageIfaceWrapper)(nil)
-	_ pvalue.Unwrapper  = (*messageIfaceWrapper)(nil)
+	_ Unwrapper         = (*messageIfaceWrapper)(nil)
 )
 
 // MessageOf returns a reflective view over a message. The input must be a
@@ -106,7 +105,8 @@ func (mi *MessageInfo) MessageOf(m interface{}) pref.Message {
 	return &messageReflectWrapper{p, mi}
 }
 
-func (m *messageReflectWrapper) pointer() pointer { return m.p }
+func (m *messageReflectWrapper) pointer() pointer          { return m.p }
+func (m *messageReflectWrapper) messageInfo() *MessageInfo { return m.mi }
 
 func (m *messageIfaceWrapper) ProtoReflect() pref.Message {
 	return (*messageReflectWrapper)(m)

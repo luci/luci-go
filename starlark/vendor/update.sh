@@ -10,8 +10,8 @@ cd google.golang.org/protobuf
 git rev-parse HEAD > ../../REVISION
 
 # Apply local patches.
-git apply --check ../../patches/0001-Disable-forced-randomization.patch
-git am < ../../patches/0001-Disable-forced-randomization.patch
+git apply --check ../../patches/*.patch
+git am ../../patches/*.patch
 
 # Trim unnecessary fat, leaving essentially only non-test *.go and legal stuff.
 rm -rf benchmarks

@@ -1,0 +1,28 @@
+From 7e2b442e52217aa6159d62d56f45ce1c53327453 Mon Sep 17 00:00:00 2001
+From: Vadim Shtayura <vadimsh@chromium.org>
+Date: Mon, 5 Aug 2019 16:57:21 -0700
+Subject: [PATCH] Use angular brackets in text encoding.
+
+New protobuf lib uses '{...}' by default which is different from what is used
+in the old one. Switch back to '<...>' to reduce the diff during the initial
+switch. We can deal with migration to '{...}' later.
+---
+ encoding/prototext/encode.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/encoding/prototext/encode.go b/encoding/prototext/encode.go
+index 5d8cd46..be91e9a 100644
+--- a/encoding/prototext/encode.go
++++ b/encoding/prototext/encode.go
+@@ -60,7 +60,7 @@ func (o MarshalOptions) Marshal(m proto.Message) ([]byte, error) {
+ 		return nil, err
+ 	}
+ 
+-	delims := [2]byte{'{', '}'}
++	delims := [2]byte{'<', '>'}
+ 	const outputASCII = false
+ 	b, err := text.Marshal(v, o.Indent, delims, outputASCII)
+ 	if err != nil {
+-- 
+2.18.0
+

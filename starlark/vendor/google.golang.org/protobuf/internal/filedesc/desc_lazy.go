@@ -32,12 +32,8 @@ func (file *File) resolveMessages() {
 		for j := range md.L2.Fields.List {
 			fd := &md.L2.Fields.List[j]
 
-			// Weak fields are only resolved by name.
+			// Weak fields are resolved upon actual use.
 			if fd.L1.IsWeak {
-				r := file.builder.FileRegistry
-				if d, _ := r.FindDescriptorByName(fd.L1.Message.FullName()); d != nil {
-					fd.L1.Message = d.(pref.MessageDescriptor)
-				}
 				continue
 			}
 
@@ -682,7 +678,7 @@ func appendOptions(dst, src []byte) []byte {
 //
 // The type of message to unmarshal to is passed as a pointer since the
 // vars in descopts may not yet be populated at the time this function is called.
-func (db *DescBuilder) optionsUnmarshaler(p *pref.ProtoMessage, b []byte) func() pref.ProtoMessage {
+func (db *Builder) optionsUnmarshaler(p *pref.ProtoMessage, b []byte) func() pref.ProtoMessage {
 	if b == nil {
 		return nil
 	}
