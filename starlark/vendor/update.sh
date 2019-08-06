@@ -28,3 +28,7 @@ find . -type f -name '*_test.go' -delete
 find . -type f -name '*.bash' -delete
 
 rm -rf .git
+
+# Presubmit scripts in luci-go are too dumb to recognize vendor/* or to skip
+# linting it if it hasn't been touched.
+gofmt -w -s .
