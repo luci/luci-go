@@ -34,6 +34,24 @@
       "revId": "6d18d84aa51570394ba8a14a81b90596302aac55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38e5b1ca_ce12c566",
+        "filename": "results/k8s/apiservers/recorder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-06T14:52:28Z",
+      "side": 1,
+      "message": "Jao-ke, if it helps, consider writing a super short doc that outlines the file structure you envision. I am currently struggling to guess it from these CLs.",
+      "parentUuid": "2f745a99_460efc24",
+      "revId": "6d18d84aa51570394ba8a14a81b90596302aac55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
