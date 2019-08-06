@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8822e4e2_65a87c4b",
+        "filename": "results/k8s/apiservers/recorder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-06T14:17:45Z",
+      "side": 1,
+      "message": "this file is directly related to recorder service (k8s/recorder). Why it is not there?\n\nVadim, what are the expectations from k8s\u0027s sub-directories? I perceive them as something k8s specific code, is this right? If not, why do we need k8s directory in the first place, as opposed to a more flats structure, e.g. //results/recorder/recorder.go?\n\n(the code below is fine)",
+      "revId": "6d18d84aa51570394ba8a14a81b90596302aac55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
