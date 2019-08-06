@@ -107,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "60821c6e_0dd50c77",
+        "filename": "results/k8s/storage/spanner/row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-06T14:39:00Z",
+      "side": 1,
+      "message": "you are right: the structs are useful.\n\nI am less sure about usefulness of this particular function. For one, it generates a lot of small slices that are then concatenated in one giant slice (e.g. 2000 test result mutations). This hurts performance.\n\nUsing this function seems to be at least as hard as using InsertOrUpdateStruct\n  \n  // With this function\n  mutation, err :\u003d convertStructToSingleMut(ctx, row)\n  // check err\n\n  // Without this function\n  mutation, err :\u003d spanner.InsertOrUpdate(MyTableNameConst, row)\n  // check err\n\nthis is pretty much the same amount of code, so I am not exactly sure what problem does this function solve.\n    \nThis could be prevented by doing the work top-bottom\n\n--\n\nbtw ctx is unused",
+      "parentUuid": "5c825cc4_5c505cf9",
+      "range": {
+        "startLine": 212,
+        "startChar": 19,
+        "endLine": 212,
+        "endChar": 39
+      },
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "eafb41ef_61e1690d",
         "filename": "results/k8s/storage/spanner/writer.go",
         "patchSetId": 3
@@ -142,6 +166,24 @@
     },
     {
       "key": {
+        "uuid": "6471fd99_ee3610d8",
+        "filename": "results/k8s/storage/spanner/writer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-06T14:39:00Z",
+      "side": 1,
+      "message": "to document what I said in 1:1 (after the 1:1 you refer to): by \"blocked\" relationship I meant \"blocking parallel work\", not \"blocking landing a CL\". Specifically, ideally CLs are based on each other (not entirely independent) extending the part of the base CL is not controversial (straightforward). For example, a CL that would be added on top of https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1729501 would extend main.go which is not controversial. It was safe to start working on the next CL the moment https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1729501 was sent out for review.\n\nThis approach enables both\n1) top-bottom\n2) parallel work in small CLs",
+      "parentUuid": "7c306ad4_ea091de9",
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d09c5659_1c84c847",
         "filename": "results/k8s/storage/spanner/writer.go",
         "patchSetId": 3
@@ -171,6 +213,24 @@
       "side": 1,
       "message": "Why is that not possible with this abstraction? The intention was that it would be, so it\u0027s a question on (im)possibility, not on level of generality.\n\nThe part that\u0027s missing seems to be the early exit, which should be straightforward to add (pass in an invocation ID, read the invocation in the transaction, early exit if finalized), and the part about it all happening in one transaction is /meant/ to be handled by the fact that it\u0027s the same txn being passed in to ReadWriteTransaction. How do you think is this working instead?",
       "parentUuid": "d09c5659_1c84c847",
+      "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "453f4bad_81ff275e",
+        "filename": "results/k8s/storage/spanner/writer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-06T14:39:00Z",
+      "side": 1,
+      "message": "it is currently not possible to express the if statement without breaking the abstraction. Passing the invocation id is breaking the abstraction: it would be a different abstraction. \n\nIf we do put the if condition here, then this function cannot be used to create a new invocation (without breaking the abstraction again).\n\nAnother reason why abstraction is not sound: how the behavior is defined if invocation id is passed, and we have TWO Invocation rows passed?\n\nIt would be simpler not to try to cover all possible cases with one generic function, but have a few specialized functions, and maybe a few generic helper functions each doing one thing well.",
+      "parentUuid": "f31aaa36_a0920eb4",
       "revId": "f7901f5816ba144b2eb15c4c7a6cfbb48d1eb6d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
