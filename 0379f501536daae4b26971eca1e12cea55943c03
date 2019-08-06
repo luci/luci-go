@@ -1,0 +1,377 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f46bfc16_7cd52b36",
+        "filename": "starlark/starlarkprotov2/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "no changes here",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 64
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d3dc464e_baec8c1e",
+        "filename": "starlark/starlarkprotov2/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "this is new, struct_to_textpb was added as a crutch to workaround lack of support for custom protos",
+      "range": {
+        "startLine": 58,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 60
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1c0670b4_b5be0e40",
+        "filename": "starlark/starlarkprotov2/functions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "Most of this file is starlark glue and docs, no changes there. Changes are concentrated in inner bodies of functions (and they all are pretty similar).\n\nstruct_to_textpb was copied 100% as is.",
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8de58084_fab07c80",
+        "filename": "starlark/starlarkprotov2/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "I decided to be strict about missing type references because otherwise errors are delayed to runtime (just like with typos in Python). No one likes that.",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 3
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5358e8a4_3fd05b79",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "this is existing logic/caveat ported from v1",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 187,
+        "endChar": 56
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "382778fe_94750073",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "this is also existing logic (that lucicfg relies on in some places), ported almost as is from v1",
+      "range": {
+        "startLine": 223,
+        "startChar": 1,
+        "endLine": 233,
+        "endChar": 2
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "00bbc879_24818d6d",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "I did this initially before adding missing references check to Loader. Decided to keep this error anyway, in case I missed something... Without it unknown types appear as empty messages, which looks confusing.",
+      "range": {
+        "startLine": 267,
+        "startChar": 0,
+        "endLine": 272,
+        "endChar": 109
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c03b40e_a23972d5",
+        "filename": "starlark/starlarkprotov2/testdata/bool.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "Tests are almost identical to tests from v1. Differences:\n  * Use proto.loader(...) to instantiate stuff.\n  * Error messages have slightly different format now (also much more uniform).",
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f0c8dbc6_67b6301f",
+        "filename": "starlark/starlarkprotov2/testprotos/compile.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "This is new, this is how descriptor sets will be generated.",
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "68074fb7_51b40694",
+        "filename": "starlark/starlarkprotov2/values.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "these are needed to \"extract\" O(1) type checks from implementation of Starlark\u003d\u003eProto assigners, v1 had similar construct",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 52
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1a565961_86ef5a71",
+        "filename": "starlark/starlarkprotov2/values.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "this is top-level \"cardinality\" switch for Proto\u003d\u003eStarlark direction, fine grain type switches are in values_singular.go.",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 7
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3cb6b999_d465b544",
+        "filename": "starlark/starlarkprotov2/values.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "this is the real entry point for Starlark\u003d\u003eProto direction.",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 16
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d09ea9c5_89f86704",
+        "filename": "starlark/starlarkprotov2/values_map.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "this is refreshingly symmetric compared to ugly v1 implementation that used go reflection :(",
+      "range": {
+        "startLine": 106,
+        "startChar": 0,
+        "endLine": 113,
+        "endChar": 3
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d32d01d2_0ecb5b58",
+        "filename": "starlark/starlarkprotov2/values_singular.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "here it is, unavoidable uber type switch. It is much cleaner in this implementation compared to v1: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/starlark/starlarkproto/conversions.go",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 19
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6b450a95_6e119709",
+        "filename": "starlark/starlarkprotov2/values_singular.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "I think it is something from proto1 era... IIUC, it is \n\nmessage Outer {\n  optional Inner message {\n     optional a \u003d 1;\n  }\n}\n\nso sort of like anonymous inner message. Semantically it is identical to regular message-valued fields from Starlark\u003c\u003d\u003eProto point of view.",
+      "range": {
+        "startLine": 61,
+        "startChar": 45,
+        "endLine": 61,
+        "endChar": 54
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8d96c67a_2fce2937",
+        "filename": "starlark/starlarkprotov2/values_singular.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "and the uber switch in another direction...",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 95,
+        "endChar": 33
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ae3aff2_0dd951be",
+        "filename": "starlark/starlarkprotov2/values_singular.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T00:55:56Z",
+      "side": 1,
+      "message": "these type casts are significant, protobuf lib \"remembers\" the original type of interface{} passed to valueOf(...) and uses it when checking types (e.g. assigning valueOf(int64(i)) to a protoreflect.Int32Kind will panic).",
+      "range": {
+        "startLine": 117,
+        "startChar": 17,
+        "endLine": 117,
+        "endChar": 22
+      },
+      "revId": "0379f501536daae4b26971eca1e12cea55943c03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
