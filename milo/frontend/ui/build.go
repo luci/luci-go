@@ -22,6 +22,7 @@ import (
 	"html"
 	"html/template"
 	"net/url"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -39,6 +40,8 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
+
+var crosMasterRE = regexp.MustCompile(`^cros/master_buildbucket_id/(\d+)$`)
 
 // Step encapsulates a buildbucketpb.Step, and also allows it to carry
 // nesting information.
@@ -203,6 +206,28 @@ func (bp *BuildPage) BuildbucketLink() *Link {
 
 func (bp *BuildPage) BuildSets() []string {
 	return protoutil.BuildSets(bp.Build.Build)
+}
+
+func (bp *BuildPage) BuildSetLinks() []template.HTML {
+	buildSets := bp.BuildSets()
+	links := make([]template.HTML, 0, len(buildSets))
+	for _, buildSet := range buildSets {
+		result := crosMasterRE.FindStringSubmatch(buildSet)
+		if result == nil {
+			// Don't know how to link, just return the text.
+			links = append(links, template.HTML(template.HTMLEscapeString(buildSet)))
+		} else {
+			// This linking is for legacy ChromeOS builders to show a linke to their
+			// master builder, it can be removed when these have been transitioned
+			// to parallel CQ.
+			buildbucketId := result[1]
+			builderURL := fmt.Sprintf("https://ci.chromium.org/b/%s", buildbucketId)
+			ariaLabel := fmt.Sprintf("Master builder %s", buildbucketId)
+			link := NewLink(buildSet, builderURL, ariaLabel)
+			links = append(links, link.HTML())
+		}
+	}
+	return links
 }
 
 // Steps converts the flat Steps from the underlying Build into a tree.
