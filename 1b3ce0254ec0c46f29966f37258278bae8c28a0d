@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ec69f62_d3196fbd",
+        "filename": "milo/api/proto/pb.discovery.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T01:33:58Z",
+      "side": 1,
+      "message": "This file shouldn\u0027t have changed. I think there\u0027s something different in your local go environment and/or protoc. Please remove this file from the CL.",
+      "revId": "1b3ce0254ec0c46f29966f37258278bae8c28a0d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
