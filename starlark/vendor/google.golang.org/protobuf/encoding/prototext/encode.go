@@ -60,7 +60,7 @@ func (o MarshalOptions) Marshal(m proto.Message) ([]byte, error) {
 		return nil, err
 	}
 
-	delims := [2]byte{'{', '}'}
+	delims := [2]byte{'<', '>'}
 	const outputASCII = false
 	b, err := text.Marshal(v, o.Indent, delims, outputASCII)
 	if err != nil {
