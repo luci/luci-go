@@ -16,6 +16,24 @@
       "revId": "1b3ce0254ec0c46f29966f37258278bae8c28a0d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9c9817f_4f39fde6",
+        "filename": "milo/api/proto/pb.discovery.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-08-06T04:24:02Z",
+      "side": 1,
+      "message": "I think the generated bindings are stale. This change happens from\na \"make train\" in a clean CL.\n\nI cut a separate CL with just this change in it. Please take a look, https://crrev.com/c/1735803. If you agree with the change then after\nsubmitting that CL I can rebase this one to keep this unrelated change\nout of here.",
+      "parentUuid": "3ec69f62_d3196fbd",
+      "revId": "1b3ce0254ec0c46f29966f37258278bae8c28a0d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
