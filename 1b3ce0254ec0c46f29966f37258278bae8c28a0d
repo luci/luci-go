@@ -34,6 +34,24 @@
       "revId": "1b3ce0254ec0c46f29966f37258278bae8c28a0d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "108c0a69_a3b51e2d",
+        "filename": "milo/api/proto/pb.discovery.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-06T04:26:12Z",
+      "side": 1,
+      "message": "Yeah, I just tried it locally myself and also got the diff. Thanks for splitting into a separate CL.",
+      "parentUuid": "c9c9817f_4f39fde6",
+      "revId": "1b3ce0254ec0c46f29966f37258278bae8c28a0d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
