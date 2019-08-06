@@ -16,6 +16,24 @@
       "revId": "6d18d84aa51570394ba8a14a81b90596302aac55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f745a99_460efc24",
+        "filename": "results/k8s/apiservers/recorder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-06T14:41:38Z",
+      "side": 1,
+      "message": "k8s dir makes sense if we plan to have k8s-specific service discovery or something like that",
+      "parentUuid": "8822e4e2_65a87c4b",
+      "revId": "6d18d84aa51570394ba8a14a81b90596302aac55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
