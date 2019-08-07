@@ -748,8 +748,7 @@ lucicfg.emit(
 #       recipients: "someone@example,com"
 #     >
 #     template: "notifier-template"
-#     notify_blamelist: <
-#     >
+#     notify_blamelist: <>
 #   >
 #   builders: <
 #     bucket: "ci"
@@ -764,8 +763,7 @@ lucicfg.emit(
 #       recipients: "someone@example,com"
 #     >
 #     template: "notifier-template"
-#     notify_blamelist: <
-#     >
+#     notify_blamelist: <>
 #   >
 #   builders: <
 #     bucket: "ci"
@@ -780,8 +778,7 @@ lucicfg.emit(
 #       recipients: "someone@example,com"
 #     >
 #     template: "notifier-template"
-#     notify_blamelist: <
-#     >
+#     notify_blamelist: <>
 #   >
 #   builders: <
 #     bucket: "ci"
