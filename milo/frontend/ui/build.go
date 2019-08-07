@@ -347,8 +347,16 @@ func (b *Build) BuilderLink() *Link {
 		panic("Invalid build")
 	}
 	builder := b.Builder
+	label := builder.Builder
+	// Chrome OS legacy builders use a single builder where a "cbb_config"
+	// input property indicates more specifically what is being built.
+	// This and the fetching of the input properties field for related
+	// builds can be removed when legacy Chrome OS CQ is shut down.
+	if cbbConfig, ok := b.Input.Properties.Fields["cbb_config"]; ok {
+		label += " (" + cbbConfig.GetStringValue() + ")"
+	}
 	return NewLink(
-		builder.Builder,
+		label,
 		fmt.Sprintf("/p/%s/builders/%s/%s", builder.Project, builder.Bucket, builder.Builder),
 		fmt.Sprintf("Builder %s in bucket %s", builder.Builder, builder.Bucket))
 }

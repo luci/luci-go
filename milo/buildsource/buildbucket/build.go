@@ -223,6 +223,7 @@ var summaryBuildsMask = &field_mask.FieldMask{
 		"builds.*.update_time",
 		"builds.*.status",
 		"builds.*.summary_markdown",
+		"builds.*.input",
 	},
 }
 
