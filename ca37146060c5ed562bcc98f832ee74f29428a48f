@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2bfa5c65_64e56231",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-07T23:48:41Z",
+      "side": 1,
+      "message": "🤯",
+      "range": {
+        "startLine": 354,
+        "startChar": 0,
+        "endLine": 364,
+        "endChar": 3
+      },
+      "revId": "ca37146060c5ed562bcc98f832ee74f29428a48f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
