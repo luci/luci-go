@@ -399,12 +399,13 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	// Wait for async cleanup to finish.
 	logging.Infof(ctx, "Cleaning up...")
 	wg := sync.WaitGroup{}
+	origPin := pin // to prevent `return common.Pin{}, err` from clobbering it
 	defer func() {
 		wg.Wait()
 		if err == nil {
-			logging.Infof(ctx, "Deployed %s", pin)
+			logging.Infof(ctx, "Deployed %s", origPin)
 		} else {
-			logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
+			logging.Errorf(ctx, "Failed to deploy %s: %s", origPin, err)
 		}
 	}()
 
@@ -469,6 +470,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkgname string
 		out = nil
 		return // this error is fatal, reinstalling probably won't help
 	case out.packagePath == "":
+		logging.Errorf(ctx, "Failed to figure out packagePath of %q in %q: no matching .cipd/pkgs/*/description.json", pkgname, subdir)
 		return // not fully deployed
 	}
 
@@ -479,6 +481,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkgname string
 		err = nil // this error MAY be recovered from by reinstalling
 		return
 	case current == "":
+		logging.Errorf(ctx, "Failed to figure out installed instance ID of %q in %q: missing _current", pkgname, subdir)
 		return // not deployed
 	default:
 		out.instancePath = filepath.Join(out.packagePath, current)
