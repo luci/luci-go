@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a39b382a_5ebb4149",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 472,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-07T16:56:32Z",
+      "side": 1,
+      "message": "It\u0027s not \u003cunknown\u003e. As documented in .packagePath(...), it happens if there\u0027s no \u003cnumber\u003e such that pkgs/\u003cnumber\u003e/description.json contains the package name.",
+      "range": {
+        "startLine": 472,
+        "startChar": 67,
+        "endLine": 472,
+        "endChar": 78
+      },
+      "revId": "dcce89935a49f06830f9590b2e77892661a4cb29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12c3ee4c_8030e53c",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 483,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-07T16:56:32Z",
+      "side": 1,
+      "message": "and this happens if there\u0027s no \u0027pkgname/_current\u0027 symlink",
+      "range": {
+        "startLine": 483,
+        "startChar": 78,
+        "endLine": 483,
+        "endChar": 88
+      },
+      "revId": "dcce89935a49f06830f9590b2e77892661a4cb29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
