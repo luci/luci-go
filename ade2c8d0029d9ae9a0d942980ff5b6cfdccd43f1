@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "72004008_8241aa3f",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-07T17:30:13Z",
+      "side": 1,
+      "message": "Nodir, is it OK to pull inputs like that? I\u0027m afraid it may make existing slow queries noticeably slower. IIRC, Buildbucket stores inputs in a separate entity and fetching (and reserializing) them would take additional time?",
+      "range": {
+        "startLine": 226,
+        "startChar": 2,
+        "endLine": 226,
+        "endChar": 19
+      },
+      "revId": "ade2c8d0029d9ae9a0d942980ff5b6cfdccd43f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
