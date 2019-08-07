@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "158657bc_7c982f03",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 473,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-07T17:12:41Z",
+      "side": 1,
+      "message": "description.json",
+      "range": {
+        "startLine": 473,
+        "startChar": 94,
+        "endLine": 473,
+        "endChar": 106
+      },
+      "revId": "bdfa7a7851ac3cec67d6b87ec5b2de557c16cde1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9098a4b1_e723845b",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-07T17:12:41Z",
+      "side": 1,
+      "message": "just `_current` (it is not a symlink on Windows)",
+      "range": {
+        "startLine": 484,
+        "startChar": 87,
+        "endLine": 484,
+        "endChar": 103
+      },
+      "revId": "bdfa7a7851ac3cec67d6b87ec5b2de557c16cde1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
