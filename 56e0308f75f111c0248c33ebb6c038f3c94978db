@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d2a35442_0dc12855",
+        "filename": "buildbucket/luciexe/runner/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-07T18:49:41Z",
+      "side": 1,
+      "message": "i don\u0027t see a reason for the magic to be introduced at this level in the first place. Why was executable_path replaced with executable_dir? Before this CL, the magic was contained on buildbucket server. Before this CL we didn\u0027t need findRunBuild function.",
+      "parentUuid": "a4b03aeb_9d4f375d",
+      "range": {
+        "startLine": 92,
+        "startChar": 36,
+        "endLine": 92,
+        "endChar": 47
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b058278d_fc41a2ee",
         "filename": "buildbucket/luciexe/runner/main.go",
         "patchSetId": 2
@@ -65,6 +89,23 @@
         "endLine": 96,
         "endChar": 50
       },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d946290f_a6f6ccfb",
+        "filename": "buildbucket/luciexe/runner/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-07T18:49:41Z",
+      "side": 1,
+      "message": "i am somewhat confused by the name \"workDir\". Unlike other dirs above, these two are not children of base.\n\nMaybe \"workspace\" would be a better name.",
       "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -187,6 +228,46 @@
     },
     {
       "key": {
+        "uuid": "d3162afd_4eb3ff51",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-07T18:49:41Z",
+      "side": 1,
+      "message": "consistency: either remove this blank line, or add one between \"On Windows\" and \"Buildbucket will search\"",
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53b25ef0_c03a6e87",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-07T18:49:41Z",
+      "side": 1,
+      "message": "is",
+      "range": {
+        "startLine": 36,
+        "startChar": 25,
+        "endLine": 36,
+        "endChar": 34
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7820a2e7_ed1cddea",
         "filename": "buildbucket/proto/launcher.proto",
         "patchSetId": 2
@@ -245,6 +326,30 @@
       "side": 1,
       "message": "On Swarming: no.\nWhen running luciexe locally: yes (it can be empty, to indicate to use developer\u0027s account).\n\nI still don\u0027t fully grasp relations between all the binaries and protos. If this field is used exclusively to pass information from Buildbucket to luciexe, then hardcoding \"system\" is probably OK.",
       "parentUuid": "52722e9c_9ee45c9b",
+      "range": {
+        "startLine": 58,
+        "startChar": 9,
+        "endLine": 58,
+        "endChar": 28
+      },
+      "revId": "56e0308f75f111c0248c33ebb6c038f3c94978db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5b6c47a_17072b4b",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-07T18:49:41Z",
+      "side": 1,
+      "message": "re relationship: hardcoding for now might be ok. The field is here only because it was in kitchen. We can always re-introduce the field. This proto is internal API.",
+      "parentUuid": "c11c7d2c_bc72d8e2",
       "range": {
         "startLine": 58,
         "startChar": 9,

@@ -65,6 +65,24 @@
     },
     {
       "key": {
+        "uuid": "e9157e55_cd41d0bd",
+        "filename": "buildbucket/luciexe/runner/run_helpers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-07T18:49:41Z",
+      "side": 0,
+      "message": "i suspect logdog prefix was added later, but this code was not updated",
+      "parentUuid": "544a994c_fe2d2816",
+      "revId": "884036baa3b4678fe130d710f54acb4a7fa5c086",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40e52856_762545ec",
         "filename": "buildbucket/proto/common.proto",
         "patchSetId": 2
