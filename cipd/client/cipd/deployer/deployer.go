@@ -469,6 +469,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkgname string
 		out = nil
 		return // this error is fatal, reinstalling probably won't help
 	case out.packagePath == "":
+		logging.Errorf(ctx, "Failed to figure out packagePath of %q in %q: <unknown>", pkgname, subdir)
 		return // not fully deployed
 	}
 
@@ -479,6 +480,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkgname string
 		err = nil // this error MAY be recovered from by reinstalling
 		return
 	case current == "":
+		logging.Errorf(ctx, "Failed to figure out installed instance ID of %q in %q: <unknown>", pkgname, subdir)
 		return // not deployed
 	default:
 		out.instancePath = filepath.Join(out.packagePath, current)
