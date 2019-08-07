@@ -22,6 +22,53 @@
       "revId": "ade2c8d0029d9ae9a0d942980ff5b6cfdccd43f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24ba95aa_83d539c3",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-07T17:35:00Z",
+      "side": 1,
+      "message": "you are right. Moreover, this variable is *summary*. Asking for input is definitely more than summary",
+      "parentUuid": "72004008_8241aa3f",
+      "range": {
+        "startLine": 226,
+        "startChar": 2,
+        "endLine": 226,
+        "endChar": 19
+      },
+      "revId": "ade2c8d0029d9ae9a0d942980ff5b6cfdccd43f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e0e8f36_15515183",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-07T17:35:00Z",
+      "side": 1,
+      "message": "this is very cros-specific in a generic part of the code. Let\u0027s not do this.",
+      "range": {
+        "startLine": 355,
+        "startChar": 48,
+        "endLine": 355,
+        "endChar": 58
+      },
+      "revId": "ade2c8d0029d9ae9a0d942980ff5b6cfdccd43f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
