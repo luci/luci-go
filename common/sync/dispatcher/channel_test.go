@@ -329,6 +329,7 @@ func TestImplicitDrops(t *testing.T) {
 		}
 
 		sentBatches := []int{}
+		sendBlocker := make(chan struct{})
 
 		limiter := rate.NewLimiter(rate.Every(10*time.Millisecond), 1)
 		ch, err := NewChannel(ctx, &Options{
@@ -340,6 +341,7 @@ func TestImplicitDrops(t *testing.T) {
 			},
 		}, func(batch *buffer.Batch) (err error) {
 			sentBatches = append(sentBatches, batch.Data[0].(int))
+			<-sendBlocker
 			return
 		})
 		So(err, ShouldBeNil)
@@ -352,10 +354,14 @@ func TestImplicitDrops(t *testing.T) {
 		for i := 0; i < 20; i++ {
 			ch.C <- i
 		}
-		ch.CloseAndDrain(ctx)
+		// At this point we can start draining the channel.
+		close(ch.C)
+		// then unblock the sender
+		close(sendBlocker)
+		// Then wait for the channel to drain
+		<-ch.DrainC
 
-		// At this point we wait for our limiter (whatever is left of the 10ms), and
-		// send can run. We should only have seen one batch actually sent.
+		// We should only have seen one batch actually sent.
 		So(sentBatches, ShouldHaveLength, 1)
 	})
 }
