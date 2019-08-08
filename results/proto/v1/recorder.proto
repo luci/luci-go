@@ -61,6 +61,37 @@ service Recorder {
   // the rest of the payload. If request insertion fails, exits successfully.
   // Request table cleanup will be performed out of band.
   rpc UpdateInvocation(UpdateInvocationRequest) returns (google.protobuf.Empty) {};
+
+  // A request to create an invocation given a swarming task.
+  //
+  // Similar to InsertInvocation but takes a swarming task.
+  //
+  // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
+  // in which we derive invocations given swarming task IDs, rather than have
+  // tasks make RPCs directly.
+  rpc InsertInvocationFromSwarming(SwarmingTask) returns (Invocation) {};
+
+  // A request to update an invocation given a swarming task ID.
+  //
+  // Similar to UpdateInvocation but takes a swarming task.
+  //
+  // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
+  // in which we derive invocations given swarming task IDs, rather than have
+  // tasks make RPCs directly.
+  rpc UpdateInvocationFromSwarming(UpdateInvocationFromSwarmingRequest) returns (Invocation) {};
+}
+
+message SwarmingTask {
+  // ID of swarming task to process and insert.
+  string id = 1;
+}
+
+message UpdateInvocationFromSwarmingRequest {
+  // Similarly to UpdateInvocationRequest below, identifies update for idempotency.
+  string request_id = 1;
+
+  // Swarming task to use in update.
+  SwarmingTask task = 2;
 }
 
 message UpdateInvocationRequest {
