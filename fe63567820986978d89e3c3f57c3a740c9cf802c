@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "80df399a_9b2e7233",
+        "filename": "starlark/starlarkprotov2/doc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T21:53:39Z",
+      "side": 1,
+      "message": "Err... I formed concrete plans while replying to your comments :)",
+      "parentUuid": "e118445e_2758d4a3",
+      "range": {
+        "startLine": 30,
+        "startChar": 19,
+        "endLine": 30,
+        "endChar": 28
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fc8f78c8_bfb721fa",
         "filename": "starlark/starlarkprotov2/doc.go",
         "patchSetId": 10
