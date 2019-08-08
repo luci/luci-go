@@ -70,6 +70,24 @@
       "revId": "6d18d84aa51570394ba8a14a81b90596302aac55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7d3ac16_cb5327e9",
+        "filename": "results/k8s/apiservers/recorder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-08T15:53:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f9bba4e_885b85af",
+      "revId": "6d18d84aa51570394ba8a14a81b90596302aac55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
