@@ -25,7 +25,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/auth/authctx"
-	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerbutler"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -33,6 +32,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/luciexe/runner/runnerbutler"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )

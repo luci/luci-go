@@ -21,12 +21,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/buildbucket/luciexe"
-	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerbutler"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
+	"go.chromium.org/luci/luciexe"
+	"go.chromium.org/luci/luciexe/runner/runnerbutler"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
