@@ -1,0 +1,510 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "966db20e_8d11c676",
+        "filename": "starlark/starlarkprotov2/doc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "golang",
+      "range": {
+        "startLine": 17,
+        "startChar": 53,
+        "endLine": 17,
+        "endChar": 59
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f84896fe_cd2e0a92",
+        "filename": "starlark/starlarkprotov2/doc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": ":)",
+      "range": {
+        "startLine": 18,
+        "startChar": 47,
+        "endLine": 18,
+        "endChar": 53
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "424c9f2a_8623e901",
+        "filename": "starlark/starlarkprotov2/doc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "do you plan to fix at some point this to error out immediately?",
+      "range": {
+        "startLine": 30,
+        "startChar": 19,
+        "endLine": 30,
+        "endChar": 28
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc8f78c8_bfb721fa",
+        "filename": "starlark/starlarkprotov2/doc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "\\o/",
+      "range": {
+        "startLine": 42,
+        "startChar": 49,
+        "endLine": 45,
+        "endChar": 14
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f7fade54_bc8c8d92",
+        "filename": "starlark/starlarkprotov2/functions.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "why iterate twice? why not just do this second loop body at line 180?",
+      "range": {
+        "startLine": 183,
+        "startChar": 18,
+        "endLine": 183,
+        "endChar": 19
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "957bda84_7a6bda0d",
+        "filename": "starlark/starlarkprotov2/functions.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "vt?",
+      "range": {
+        "startLine": 267,
+        "startChar": 8,
+        "endLine": 267,
+        "endChar": 9
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5847caa5_15f453d3",
+        "filename": "starlark/starlarkprotov2/functions.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "does this cover \"bytes\"?",
+      "range": {
+        "startLine": 300,
+        "startChar": 15,
+        "endLine": 300,
+        "endChar": 21
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27d16fd8_8bf5772e",
+        "filename": "starlark/starlarkprotov2/loader.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "reflect.ValueOf(ptrOfThing).Pointer() -\u003e uintptr?\n\nno unsafe code necessary",
+      "range": {
+        "startLine": 61,
+        "startChar": 3,
+        "endLine": 62,
+        "endChar": 18
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d98adc8b_4f3f3299",
+        "filename": "starlark/starlarkprotov2/loader.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "nit: I like ending methods with \"Locked\" to indicate the caller must hold the lock. imo, makes reading the caller code easier.",
+      "range": {
+        "startLine": 241,
+        "startChar": 17,
+        "endLine": 241,
+        "endChar": 32
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa8aeec0_e4323a50",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "wait why?\n\nedit: because of the auto-initialization of empty fields",
+      "range": {
+        "startLine": 37,
+        "startChar": 12,
+        "endLine": 37,
+        "endChar": 28
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10808c4e_d56bddc6",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "Wouldn\u0027t this be more convenient if it returned `len(m.fields) !\u003d 0`?",
+      "range": {
+        "startLine": 147,
+        "startChar": 24,
+        "endLine": 147,
+        "endChar": 28
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db711d51_623e03e9",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "slightly misleading; it implies that SOME proto messages might be hashable?",
+      "range": {
+        "startLine": 152,
+        "startChar": 0,
+        "endLine": 152,
+        "endChar": 67
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "017b0023_7e197183",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": ".. This is important for chained message fields to work without requiring users to create a series of empty Messages.",
+      "range": {
+        "startLine": 179,
+        "startChar": 68,
+        "endLine": 179,
+        "endChar": 73
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "822914de_da387e04",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "can we? What about repeated message fields? In python protobuf it has a custom lazy List implementation for this purpose\n\nWhy is an internal lock insufficient?",
+      "range": {
+        "startLine": 194,
+        "startChar": 31,
+        "endLine": 195,
+        "endChar": 22
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77286eb2_ecb4fbaf",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "assigned to?",
+      "range": {
+        "startLine": 214,
+        "startChar": 38,
+        "endLine": 214,
+        "endChar": 44
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f91e9038_61f67577",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "Thinking about this... why not? The cost is linearly proportional to the input, which seems OK? I think this means we\u0027ll end up with bogus values, but not seeing where they were assigned. Couldn\u0027t we also simultaneously reduce the cost of ToProto by converting dicts to Messages too?\n\nI think this would also potentially make Attr cheaper because m.fields would always be string-\u003eMessage, string-\u003eRepeated(primitive) or string-\u003eRepeated(Message), right?\n\nLike if I have\n\n  message Foo {\n    repeated Message bar \u003d 1;\n  }\n\nAnd do\n\n  f \u003d Foo()\n  f.bar \u003d [10]\n  f.bar[0].field  \n\nwhat happens?",
+      "range": {
+        "startLine": 243,
+        "startChar": 32,
+        "endLine": 243,
+        "endChar": 73
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "110541b6_e2f23f52",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "maybe add \"LUCICFG BUG\" in here so they know it\u0027s not their fault? (i.e. lucicfg SHOULD have prevented us from getting here)",
+      "range": {
+        "startLine": 280,
+        "startChar": 26,
+        "endLine": 280,
+        "endChar": 36
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c744900_fac0a1e0",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "IIUC, this means\n\n   l \u003d [{...}]\n   msg.repeated \u003d l\n   l.append({...})\n\nWill NOT behave like the comment here? (i.e. msg.repeated won\u0027t be updated)",
+      "range": {
+        "startLine": 314,
+        "startChar": 37,
+        "endLine": 314,
+        "endChar": 74
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a5766ae_99eecabe",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "It\u0027s not possible to substitute the values in-place? The discrepancy between the converted list and the not-converted list is disconcerting. Why is it important to preserve the original list in the comment above?",
+      "range": {
+        "startLine": 326,
+        "startChar": 5,
+        "endLine": 326,
+        "endChar": 16
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "702ab9d6_fe8d7abf",
+        "filename": "starlark/starlarkprotov2/testdata/oneof.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "is there an api for \u0027clear all alternatives of the oneof named \"blah\"\u0027?",
+      "range": {
+        "startLine": 40,
+        "startChar": 2,
+        "endLine": 40,
+        "endChar": 9
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c7fcc93_349ffa70",
+        "filename": "starlark/starlarkprotov2/type.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "would MessageType be a good place for a ToMessage(starlark.Value) which tries to coerce the starlark.Value (dict, Message) into something of MessageType? i.e. if it\u0027s a dict, tries to populate a Message, if it\u0027s a Message, asserts that the type matches.",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 20
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15dcdfc7_9ad90508",
+        "filename": "starlark/starlarkprotov2/values_singular.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-08T19:08:20Z",
+      "side": 1,
+      "message": "is there a reason not to combine this with the Int32Kind.... case?",
+      "range": {
+        "startLine": 46,
+        "startChar": 19,
+        "endLine": 46,
+        "endChar": 28
+      },
+      "revId": "fe63567820986978d89e3c3f57c3a740c9cf802c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
