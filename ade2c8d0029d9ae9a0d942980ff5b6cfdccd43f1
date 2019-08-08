@@ -69,6 +69,30 @@
       "revId": "ade2c8d0029d9ae9a0d942980ff5b6cfdccd43f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "140f4c25_253b24ac",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-08-08T17:56:25Z",
+      "side": 1,
+      "message": "I understand your reluctance. The reason I\u0027m wanting to make this change is that we are pulling down Legoland features now so that Milo legacy APIs can be removed and no longer need to be supported. With one Legoland feature removal our TPMs mentioned that it was a lot more work for them in gathering information on failures for release builds. So far they asked for two features to improve the situation. One was implemented and deployed in linkifying the link to the master builder on the related builds page (https://crrev.com/c/1735793). This was the second feature requested and would fix this problem for the TPMs:\n\nhttps://screenshot.googleplex.com/pXoAjOXZcwv.png\n\nI don\u0027t consider having this Chrome OS specific piece right here that bad - although yes it is not ideal. We should mark these clearly so that we can later remove them. The bigger concern to me was whether the addition of the input properties was going to slow down those queries / pages significantly. I don\u0027t have enough knowledge here to know how bad this latency hit would be. Anyway, thanks for taking a look.",
+      "parentUuid": "8e0e8f36_15515183",
+      "range": {
+        "startLine": 355,
+        "startChar": 48,
+        "endLine": 355,
+        "endChar": 58
+      },
+      "revId": "ade2c8d0029d9ae9a0d942980ff5b6cfdccd43f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
