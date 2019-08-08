@@ -2,6 +2,121 @@
   "comments": [
     {
       "key": {
+        "uuid": "217d3c91_ed8dedcb",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T22:19:28Z",
+      "side": 1,
+      "message": "I forgot, is this event detectable from the writing end of os.pipe? What happens if I read all input, but didn\u0027t close the file?\n\nShould w remove \"is running\" bit if it\u0027s not detectable from the other side?",
+      "range": {
+        "startLine": 36,
+        "startChar": 53,
+        "endLine": 37,
+        "endChar": 15
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e9c7222_37d7b911",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T22:19:28Z",
+      "side": 1,
+      "message": "please document somewhere that locations of all these directories are NOT STABLE across different invocations (IIUC)",
+      "range": {
+        "startLine": 41,
+        "startChar": 40,
+        "endLine": 41,
+        "endChar": 74
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3625e33a_941a62ee",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T22:19:28Z",
+      "side": 1,
+      "message": "if there anything else luciexe specific that is/will be in LUCI_CONTEXT? If its only to pass cache_dir location, it seems like an overkill and a simple env var is better.\n\nAlso, why \"run_build\"? Why not \"luciexe\"?",
+      "range": {
+        "startLine": 49,
+        "startChar": 48,
+        "endLine": 50,
+        "endChar": 45
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e437b07_944c1f57",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T22:19:28Z",
+      "side": 1,
+      "message": "I feel butthurt by random interchangable usage of run_build and luciexe...",
+      "range": {
+        "startLine": 112,
+        "startChar": 42,
+        "endLine": 112,
+        "endChar": 51
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bf0f7c41_3d76e0ae",
+        "filename": "luciexe/exe/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T22:19:28Z",
+      "side": 1,
+      "message": "does it have to be global? It maybe *very* hard to make it non-global later if we need it to.\n\nCan we refactor this code to be mostly implemented in a struct, and have a few thin global wrappers sticking out that manipulate \"var defaultExe \u003d Exe{}\"?",
+      "range": {
+        "startLine": 57,
+        "startChar": 26,
+        "endLine": 57,
+        "endChar": 46
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b003d802_9120970f",
         "filename": "luciexe/exe/client.go",
         "patchSetId": 1
@@ -48,6 +163,98 @@
       "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a4e92442_a0dec94e",
+        "filename": "luciexe/exe/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T22:19:28Z",
+      "side": 1,
+      "message": "It doesn\u0027t have to be atomic. I believe sync.Once has a barrier already. If it doesn\u0027t, then e.g. call to GetInputBuild from another core could crash, because writes to inputBuild global var are not atomic here. So might just as well write to \u0027initialized\u0027 non-atomically too (it is used no differently from other globals from memory perspective).",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 36
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1371512b_e2ec3289",
+        "filename": "luciexe/exe/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T22:19:28Z",
+      "side": 1,
+      "message": "This comment is misleading. What does \"may only be called once at a time\" mean? I\u0027d assume it means there\u0027s no locking inside (i.e. stuff will crash if I call the method concurrently). But the implementation is clearly safe for concurrent calls.",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 72
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22e8d73d_f7a4d6d5",
+        "filename": "luciexe/exe/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T22:19:28Z",
+      "side": 1,
+      "message": "does this block? If so, WriteBuild needs to accept context.Context for timeout and cancellation.",
+      "range": {
+        "startLine": 131,
+        "startChar": 8,
+        "endLine": 131,
+        "endChar": 38
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c391b8c_bdcbf5a7",
+        "filename": "luciexe/exe/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-08T22:19:28Z",
+      "side": 1,
+      "message": "same comment about context.Context here",
+      "range": {
+        "startLine": 141,
+        "startChar": 0,
+        "endLine": 141,
+        "endChar": 20
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
