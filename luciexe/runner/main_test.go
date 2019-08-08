@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/lucictx"
-	"go.chromium.org/luci/luciexe"
+	"go.chromium.org/luci/luciexe/exe"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -198,11 +198,12 @@ func TestSubprocessDispatcher(t *testing.T) {
 		t.Fatalf("no such subtest %q", subtest)
 	}
 
-	if err := client.Init(); err != nil {
+	ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+	if err := exe.Initialize(ctx); err != nil {
 		panic(err)
 	}
 	st(t)
-	if err := client.Close(); err != nil {
+	if err := exe.Close(); err != nil {
 		panic(err)
 	}
 }
@@ -229,12 +230,8 @@ var subtests = map[string]func(t *testing.T){
 	"testSuccess":      testSuccess,
 }
 
-var client = luciexe.Client{
-	BuildTimestamp: testclock.TestRecentTimeUTC,
-}
-
 func writeBuild(build *pb.Build) {
-	if err := client.WriteBuild(build); err != nil {
+	if err := exe.WriteBuild(build); err != nil {
 		panic(err)
 	}
 }
@@ -289,7 +286,7 @@ func testAuthContext(t *testing.T) {
 	})
 
 	// Report the test result through Build proto.
-	build := client.InitBuild
+	build := exe.GetInputBuild()
 	if t.Failed() {
 		build.Status = pb.Status_FAILURE
 	} else {
@@ -300,7 +297,7 @@ func testAuthContext(t *testing.T) {
 
 // Marks the build as INFRA_FAILURE and exits.
 func testInfraFailure(t *testing.T) {
-	build := client.InitBuild
+	build := exe.GetInputBuild()
 
 	// Final build must have a terminal status.
 	build.Status = pb.Status_INFRA_FAILURE
@@ -309,7 +306,7 @@ func testInfraFailure(t *testing.T) {
 
 // Emits a successful build with an incomplete step.
 func testPendingStep(t *testing.T) {
-	build := client.InitBuild
+	build := exe.GetInputBuild()
 
 	// Final build must have a terminal status.
 	build.Status = pb.Status_INFRA_FAILURE
@@ -321,7 +318,7 @@ func testPendingStep(t *testing.T) {
 
 // Marks the build as SUCCESS and exits.
 func testSuccess(t *testing.T) {
-	build := client.InitBuild
+	build := exe.GetInputBuild()
 
 	// Final build must have a terminal status.
 	build.Status = pb.Status_SUCCESS
