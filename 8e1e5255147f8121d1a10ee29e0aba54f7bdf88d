@@ -1,0 +1,215 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09a77019_0aa55a1e",
+        "filename": "results/proto/v1/recorder.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "there should be a gen.go file that causes this file to be generated",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3313f3f_86122860",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "hostname is missing",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd343225_6c70f97f",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "I think this implies that if two different users ask for results of of the same swarming task id, two invocations will be inserted into the db (undesirable). If this isn\u0027t the case, then this is not needed.",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0467f3f6_d58fb62b",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "this message should contain everything that we need to insert correct invocation, and that is not present in the swarming task. Things that are definitely not present:\n- variant information, e.g. including name of a test suite in test_suites.pyl\n- test path prefix, e.g. including GN target name\n\nsee https://docs.google.com/document/d/1nzqrwfTJtzU71no_IiOh80HYBIpr1OPoJJonQIJPWtI/edit#",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7817a3e_967d9345",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "please try following the order of messages specified in https://cloud.google.com/apis/design/file_structure",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57ed3c45_dd9d3dfe",
+        "filename": "results/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "does gofmt add this?",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0975c137_aba77a4e",
+        "filename": "results/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "nit: these endpoints aren\u0027t grpc though. \"pRPC\" or just \"RPC\"",
+      "range": {
+        "startLine": 52,
+        "startChar": 13,
+        "endLine": 52,
+        "endChar": 17
+      },
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46962680_fa1c90b7",
+        "filename": "results/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/auth#OAuthScopeEmail",
+      "range": {
+        "startLine": 56,
+        "startChar": 21,
+        "endLine": 56,
+        "endChar": 69
+      },
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "911f9867_3f2b5188",
+        "filename": "results/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "currently the callsite unconditionally passes an empty middleware. Let\u0027s either pass something meaningful, or add a TODO to pass something meaningful, or delete the param",
+      "range": {
+        "startLine": 67,
+        "startChar": 39,
+        "endLine": 67,
+        "endChar": 45
+      },
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33fece32_cf22e7fe",
+        "filename": "results/recorder/recorder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "in this file, this import is in the same block of imports as other luci imports, but it is different in main.go. Let\u0027s be consistent",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "865a69c8_4ca420db",
+        "filename": "results/recorder/recorder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-08T16:25:25Z",
+      "side": 1,
+      "message": "i think this is a rather strong statement. This is our public API. Maybe say \"typically\" or something like that?",
+      "range": {
+        "startLine": 29,
+        "startChar": 11,
+        "endLine": 29,
+        "endChar": 46
+      },
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
