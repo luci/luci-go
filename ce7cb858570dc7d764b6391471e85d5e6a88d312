@@ -22,6 +22,30 @@
       "revId": "ce7cb858570dc7d764b6391471e85d5e6a88d312",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00bc2c54_80a5ac7e",
+        "filename": "common/tsmon/OWNERS",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-08-08T04:12:05Z",
+      "side": 1,
+      "message": "It was to follow the convention of the existing OWNERS. I thought that all OWNERS under luci-go only contains @chromium account, but just found that smut@ has the google account in luci/ONWERS\n: https://paste.googleplex.com/5658969055952896\n\n\nAdded @google.com.",
+      "parentUuid": "646407ba_41bcc472",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 2,
+        "endChar": 19
+      },
+      "revId": "ce7cb858570dc7d764b6391471e85d5e6a88d312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
