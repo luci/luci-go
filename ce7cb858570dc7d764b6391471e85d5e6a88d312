@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "646407ba_41bcc472",
+        "filename": "common/tsmon/OWNERS",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1306846
+      },
+      "writtenOn": "2019-08-08T03:47:12Z",
+      "side": 1,
+      "message": "Why not the @google.com identities as well?",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 2,
+        "endChar": 19
+      },
+      "revId": "ce7cb858570dc7d764b6391471e85d5e6a88d312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
