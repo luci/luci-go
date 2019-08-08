@@ -27,13 +27,13 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/buildbucket/deprecated"
-	"go.chromium.org/luci/buildbucket/luciexe"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/logdog/client/annotee"
 	"go.chromium.org/luci/logdog/client/annotee/annotation"
+	"go.chromium.org/luci/luciexe"
 )
 
 var (

@@ -22,11 +22,11 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/buildbucket/luciexe/runner/buildspy"
-	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerauth"
-	"go.chromium.org/luci/buildbucket/luciexe/runner/runnerbutler"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/luciexe/runner/buildspy"
+	"go.chromium.org/luci/luciexe/runner/runnerauth"
+	"go.chromium.org/luci/luciexe/runner/runnerbutler"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )

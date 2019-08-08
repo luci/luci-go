@@ -19,7 +19,7 @@ package main
 import (
 	"os"
 
-	"go.chromium.org/luci/buildbucket/luciexe/runner"
+	"go.chromium.org/luci/luciexe/runner"
 )
 
 func main() {

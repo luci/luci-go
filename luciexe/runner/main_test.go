@@ -33,11 +33,11 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/integration/authtest"
 	"go.chromium.org/luci/auth/integration/localauth"
-	"go.chromium.org/luci/buildbucket/luciexe"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/luciexe"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
