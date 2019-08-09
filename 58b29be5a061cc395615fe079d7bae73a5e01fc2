@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "948a309a_c5e132e3",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-09T17:58:25Z",
+      "side": 1,
+      "message": "it shouldn\u0027t be called a link then. The common abstraction here is \"piece of html\"",
+      "range": {
+        "startLine": 217,
+        "startChar": 3,
+        "endLine": 218,
+        "endChar": 8
+      },
+      "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38c62ab1_5de93a4e",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-09T17:58:25Z",
+      "side": 1,
+      "message": "i am not very happy to see cros-specific code in generic code. I am positive it is possible to come up with common abstractions that violate layering and still gets the job done.\n\nThere is summary markdown there for this reason, and it already supports links. Was it considered?\n\nit would automatically solve the problem in both build and builder pages.",
+      "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
