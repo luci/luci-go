@@ -75,6 +75,24 @@
       "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c5ce045_f8a05a25",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-08-09T22:11:02Z",
+      "side": 1,
+      "message": "OK, it looks like there are already cases of presenting a lot of information there and no one is complaining about the vertical space taken by that page.\n\nIn that case it appears I may be able to augment our legacy recipe summary markdown output with:\n\n1) a link to the parent builder\n2) a text blurb that gives the cbb_config value\n\nand then I could back out this CL and abandon the other.\n\nDoes that sound about right?",
+      "parentUuid": "ea163dc8_5eae4b80",
+      "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
