@@ -39,6 +39,24 @@
       "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6817328e_cd97e437",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-08-09T21:46:59Z",
+      "side": 1,
+      "message": "I didn\u0027t consider it. It sounds like it might be a possible solution, however, isn\u0027t there only a smallish \"summary\" cell on the \"Related Builds\" tab. If this summary markdown field is the single summary markdown stored for a build I would imagine for some approaches it gets rather large - how would this look on that related builds page?",
+      "parentUuid": "38c62ab1_5de93a4e",
+      "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
