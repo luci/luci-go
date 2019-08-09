@@ -634,19 +634,28 @@ func (e *Env) getStdlibPath(c context.Context, env []string) (string, error) {
 	return stdout.String(), nil
 }
 
+// This script will return a list of 3-entry lists:
+// [0]: version (e.g., "cp27")
+// [1]: abi (e.g., "cp27mu", "none")
+// [2]: arch (e.g., "x86_64", "armv7l", "any")
+//
+// pep425tags was moved from pip to pip._internal around version 10.0.0.
+const pep425TagsScript = `
+import json, sys
+try:
+  import pip._internal.pep425tags as pep425tags
+except ImportError:
+  import pip.pep425tags as pep425tags
+sys.stdout.write(json.dumps(pep425tags.get_supported()))
+`
+
 // getPEP425Tags calls Python's pip.pep425tags package to retrieve the tags.
 //
 // This must be run while "pip" is installed in the VirtualEnv.
 func (e *Env) getPEP425Tags(c context.Context, env []string) ([]*vpython.PEP425Tag, error) {
-	// This script will return a list of 3-entry lists:
-	// [0]: version (e.g., "cp27")
-	// [1]: abi (e.g., "cp27mu", "none")
-	// [2]: arch (e.g., "x86_64", "armv7l", "any")
-	const script = `import json, pip.pep425tags, sys; ` +
-		`sys.stdout.write(json.dumps(pip.pep425tags.get_supported()))`
 	type pep425TagEntry []string
 
-	cmd := e.Interpreter().IsolatedCommand(c, python.CommandTarget{Command: script})
+	cmd := e.Interpreter().IsolatedCommand(c, python.CommandTarget{Command: pep425TagsScript})
 	cmd.Env = env
 
 	var stdout bytes.Buffer
