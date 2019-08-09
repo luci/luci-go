@@ -93,6 +93,30 @@
       "revId": "ade2c8d0029d9ae9a0d942980ff5b6cfdccd43f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ba281dd_fdc150aa",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-09T17:59:03Z",
+      "side": 1,
+      "message": "I\u0027ve replied in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1735793\n\nwhy we are not using summary markdown here? It is already fetched, it is user-controlled and supports links",
+      "parentUuid": "140f4c25_253b24ac",
+      "range": {
+        "startLine": 355,
+        "startChar": 48,
+        "endLine": 355,
+        "endChar": 58
+      },
+      "revId": "ade2c8d0029d9ae9a0d942980ff5b6cfdccd43f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
