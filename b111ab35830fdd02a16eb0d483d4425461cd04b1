@@ -1,0 +1,228 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56078e32_c8a47beb",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "maybe \u0027itemT\u0027? `List.item` doesn\u0027t immediately scream \u0027converter\u0027 to me",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 5
+      },
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "047d39ea_ea704aa7",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "is there an interface assertion that could/should go here? `var _ starlark.Thingy \u003d (*List)(nil)`?",
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d30b86c_925fc791",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "I think this could just be \u0027break\u0027?",
+      "range": {
+        "startLine": 82,
+        "startChar": 3,
+        "endLine": 82,
+        "endChar": 7
+      },
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9591f1e9_8dbf05c8",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "same, though in this case having `y1.item` and `l.item` as part of the error would be helpful.",
+      "range": {
+        "startLine": 103,
+        "startChar": 4,
+        "endLine": 103,
+        "endChar": 8
+      },
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43aba97e_fc60b807",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "important?",
+      "range": {
+        "startLine": 166,
+        "startChar": 5,
+        "endLine": 166,
+        "endChar": 9
+      },
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44641f85_347339c5",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "IF ONLY THERE WAS A WAY TO INDICATE THIS WITH A TYPE; OH WELL, TOO BAD.",
+      "range": {
+        "startLine": 175,
+        "startChar": 14,
+        "endLine": 175,
+        "endChar": 36
+      },
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "540aabf1_630c8b1d",
+        "filename": "starlark/typed/testdata/list.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "not sure what this is supposed to do... do you mean `type(x) !\u003d \u0027int\u0027 or x \u003c 0: fail`?",
+      "range": {
+        "startLine": 17,
+        "startChar": 4,
+        "endLine": 17,
+        "endChar": 18
+      },
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba067fde_18544fb5",
+        "filename": "starlark/typed/testdata/list.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "could we have \u0027typed\u0027 and \u0027another_typed\u0027 specify their fake type names? That way this will make sense :p",
+      "range": {
+        "startLine": 106,
+        "startChar": 71,
+        "endLine": 106,
+        "endChar": 72
+      },
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef796892_749a58c2",
+        "filename": "starlark/typed/testdata/list.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "typo \u0027operatos\u0027",
+      "range": {
+        "startLine": 116,
+        "startChar": 4,
+        "endLine": 116,
+        "endChar": 29
+      },
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74328b5f_ab630df4",
+        "filename": "starlark/typed/testdata/list.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-09T22:06:54Z",
+      "side": 1,
+      "message": "bummer :(",
+      "range": {
+        "startLine": 118,
+        "startChar": 77,
+        "endLine": 118,
+        "endChar": 78
+      },
+      "revId": "b111ab35830fdd02a16eb0d483d4425461cd04b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
