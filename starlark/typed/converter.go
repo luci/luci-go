@@ -15,8 +15,6 @@
 package typed
 
 import (
-	"fmt"
-
 	"go.starlark.net/starlark"
 )
 
@@ -49,51 +47,4 @@ type Converter interface {
 	//
 	// Used only to construct composite type names such as "list<T>".
 	Type() string
-}
-
-// convertingIterable is a starlark.Iterable that wraps another Iterable by
-// converting its elements during iteration.
-type convertingIterable struct {
-	starlark.Iterable
-
-	converter Converter
-	err       error
-}
-
-func (it *convertingIterable) Iterate() starlark.Iterator {
-	return &convertingIterator{
-		Iterator: it.Iterable.Iterate(),
-		parent:   it,
-	}
-}
-
-type convertingIterator struct {
-	starlark.Iterator
-
-	count  int
-	parent *convertingIterable
-}
-
-// If the iterator is exhausted, Next returns false.
-// Otherwise it sets *p to the current element of the sequence,
-// advances the iterator, and returns true.
-func (it *convertingIterator) Next(p *starlark.Value) bool {
-	if it.parent.err != nil {
-		return false // exhausted due to hitting an error
-	}
-
-	var next starlark.Value
-	if hasNext := it.Iterator.Next(&next); !hasNext {
-		return false // naturally exhausted
-	}
-
-	converted, err := it.parent.converter.Convert(next)
-	if err != nil {
-		it.parent.err = fmt.Errorf("item #%d: %s", it.count, err)
-		return false // exhausted due to hitting an error
-	}
-
-	it.count++
-	*p = converted
-	return true
 }
