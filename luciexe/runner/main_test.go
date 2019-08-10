@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/lucictx"
-	"go.chromium.org/luci/luciexe"
+	"go.chromium.org/luci/luciexe/exe"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -198,11 +198,12 @@ func TestSubprocessDispatcher(t *testing.T) {
 		t.Fatalf("no such subtest %q", subtest)
 	}
 
-	if err := client.Init(); err != nil {
+	ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+	if err := exe.Initialize(ctx); err != nil {
 		panic(err)
 	}
-	st(t)
-	if err := client.Close(); err != nil {
+	st(ctx, t)
+	if err := exe.Close(ctx); err != nil {
 		panic(err)
 	}
 }
@@ -222,25 +223,21 @@ func init() {
 	os.Args = append(os.Args, "-test.run=TestSubprocessDispatcher")
 }
 
-var subtests = map[string]func(t *testing.T){
+var subtests = map[string]func(ctx context.Context, t *testing.T){
 	"testAuthContext":  testAuthContext,
 	"testInfraFailure": testInfraFailure,
 	"testPendingStep":  testPendingStep,
 	"testSuccess":      testSuccess,
 }
 
-var client = luciexe.Client{
-	BuildTimestamp: testclock.TestRecentTimeUTC,
-}
-
-func writeBuild(build *pb.Build) {
-	if err := client.WriteBuild(build); err != nil {
+func writeBuild(ctx context.Context, build *pb.Build) {
+	if err := exe.WriteBuild(ctx, build); err != nil {
 		panic(err)
 	}
 }
 
 // Verifies auth context is setup correctly.
-func testAuthContext(t *testing.T) {
+func testAuthContext(ctx context.Context, t *testing.T) {
 	checkContextAuth := func(ctx context.Context, expectedEmail, expectedToken string) {
 		a := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
 			Method: auth.LUCIContextMethod,
@@ -289,41 +286,41 @@ func testAuthContext(t *testing.T) {
 	})
 
 	// Report the test result through Build proto.
-	build := client.InitBuild
+	build := exe.GetInputBuild()
 	if t.Failed() {
 		build.Status = pb.Status_FAILURE
 	} else {
 		build.Status = pb.Status_SUCCESS
 	}
-	writeBuild(build)
+	writeBuild(ctx, build)
 }
 
 // Marks the build as INFRA_FAILURE and exits.
-func testInfraFailure(t *testing.T) {
-	build := client.InitBuild
+func testInfraFailure(ctx context.Context, t *testing.T) {
+	build := exe.GetInputBuild()
 
 	// Final build must have a terminal status.
 	build.Status = pb.Status_INFRA_FAILURE
-	writeBuild(build)
+	writeBuild(ctx, build)
 }
 
 // Emits a successful build with an incomplete step.
-func testPendingStep(t *testing.T) {
-	build := client.InitBuild
+func testPendingStep(ctx context.Context, t *testing.T) {
+	build := exe.GetInputBuild()
 
 	// Final build must have a terminal status.
 	build.Status = pb.Status_INFRA_FAILURE
 	build.Steps = append(build.Steps, &pb.Step{
 		Name: "pending step",
 	})
-	writeBuild(build)
+	writeBuild(ctx, build)
 }
 
 // Marks the build as SUCCESS and exits.
-func testSuccess(t *testing.T) {
-	build := client.InitBuild
+func testSuccess(ctx context.Context, t *testing.T) {
+	build := exe.GetInputBuild()
 
 	// Final build must have a terminal status.
 	build.Status = pb.Status_SUCCESS
-	writeBuild(build)
+	writeBuild(ctx, build)
 }
