@@ -33,35 +33,37 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/logdog/client/annotee"
 	"go.chromium.org/luci/logdog/client/annotee/annotation"
-	"go.chromium.org/luci/luciexe"
+	"go.chromium.org/luci/luciexe/exe"
 )
 
 var (
-	client  luciexe.Client
 	build   *pb.Build
 	buildMU sync.Mutex
 )
 
 // check marks the build as INFRA_FAILURE and exits with code 1 if err is not nil.
-func check(err error) {
+func check(ctx context.Context, err error) {
 	if err == nil {
 		return
 	}
+	fmt.Fprintln(os.Stderr, err)
 
 	buildMU.Lock()
 	defer buildMU.Unlock()
 	build.Status = pb.Status_INFRA_FAILURE
 	build.SummaryMarkdown = fmt.Sprintf("run_annotations failure: `%s`", err)
-	client.WriteBuild(build)
-	fmt.Fprintln(os.Stderr, err)
+	if err = exe.WriteBuild(ctx, build); err != nil {
+		fmt.Fprintln(os.Stderr, "While writing final build: ", err)
+	}
 	os.Exit(1)
 }
 
 // sendAnnotations parses steps and properties from ann, updates build and sends
 // to the caller.
 func sendAnnotations(ctx context.Context, ann *milo.Step) error {
-	fullPrefix := fmt.Sprintf("%s/%s", client.Logdog.Prefix, client.Logdog.Namespace)
-	steps, err := deprecated.ConvertBuildSteps(ctx, ann.Substep, client.Logdog.CoordinatorHost, fullPrefix)
+	logdog := exe.GetLogdog()
+	fullPrefix := fmt.Sprintf("%s/%s", logdog.Prefix, logdog.Namespace)
+	steps, err := deprecated.ConvertBuildSteps(ctx, ann.Substep, logdog.CoordinatorHost, fullPrefix)
 	if err != nil {
 		return errors.Annotate(err, "failed to extra steps from annotations").Err()
 	}
@@ -75,7 +77,7 @@ func sendAnnotations(ctx context.Context, ann *milo.Step) error {
 	defer buildMU.Unlock()
 	build.Steps = steps
 	build.Output.Properties = props
-	return errors.Annotate(client.WriteBuild(build), "failed to write build message").Err()
+	return errors.Annotate(exe.WriteBuild(ctx, build), "failed to write build message").Err()
 }
 
 func main() {
@@ -88,36 +90,36 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := client.Init(); err != nil {
+	if err := exe.Initialize(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "failed to initialize LUCI Executable client")
 		os.Exit(1)
 	}
 
 	cwd, err := os.Getwd()
-	check(err)
+	check(ctx, err)
 
 	// Start the subprocess.
 	cmd := exec.CommandContext(ctx, args[1], args[2:]...)
 	stdout, err := cmd.StdoutPipe()
-	check(err)
+	check(ctx, err)
 	stderr, err := cmd.StderrPipe()
-	check(err)
+	check(ctx, err)
 	err = cmd.Start()
-	check(errors.Annotate(err, "failed to start subprocess").Err())
+	check(ctx, errors.Annotate(err, "failed to start subprocess").Err())
 
 	// Run STDOUT/STDERR streams through the processor.
 	// Run the process' output streams through Annotee. This will block until
 	// they are all consumed.
 	processor := annotee.New(ctx, annotee.Options{
-		Client:                 client.Logdog.Client,
+		Client:                 exe.GetLogdog().Client,
 		Execution:              annotation.ProbeExecution(os.Args, os.Environ(), cwd),
 		MetadataUpdateInterval: 30 * time.Second,
 		Offline:                false,
 		CloseSteps:             true,
 		AnnotationUpdated: func(annBytes []byte) {
 			ann := &milo.Step{}
-			check(errors.Annotate(proto.Unmarshal(annBytes, ann), "failed to parse annotation proto").Err())
-			check(sendAnnotations(ctx, ann))
+			check(ctx, errors.Annotate(proto.Unmarshal(annBytes, ann), "failed to parse annotation proto").Err())
+			check(ctx, sendAnnotations(ctx, ann))
 		},
 	})
 	streams := []*annotee.Stream{
@@ -133,16 +135,16 @@ func main() {
 		},
 	}
 	err = processor.RunStreams(streams)
-	check(errors.Annotate(err, "failed to process annotations").Err())
+	check(ctx, errors.Annotate(err, "failed to process annotations").Err())
 
 	// Wait for the subprocess to exist.
 	switch err := cmd.Wait().(type) {
 	case *exec.ExitError:
 	case nil:
 	default:
-		check(errors.Annotate(err, "failed to wait for the subprocess to exit").Err())
+		check(ctx, errors.Annotate(err, "failed to wait for the subprocess to exit").Err())
 	}
 
 	// Send the final state.
-	check(sendAnnotations(ctx, processor.Finish().RootStep().Proto()))
+	check(ctx, sendAnnotations(ctx, processor.Finish().RootStep().Proto()))
 }

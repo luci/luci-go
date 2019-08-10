@@ -114,56 +114,16 @@ func (Trinary) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_a1a0c34bd7fcf0dc, []int{1}
 }
 
-// An executable to run when the build is ready to start.
+// A package containing a LUCI Executable ('luciexe') to run when the build is
+// ready to start.
 //
-// The following describes the protocol between buildbucket and the executable.
-// The executable MUST NOT assume/rely on anything that is not explicitly
-// specified below.
+// See go.chromium.org/luci/luciexe for documentation on this protocol.
 //
-// The executable will be started with the following input:
-// - empty current working directory (CWD).
-// - stdin: binary-encoded buildbucket.v2.Build message.
-// - $TMPDIR, $TEMP, $TMP: env variables point to an empty directory, on the
-//   same file system as CWD.
-// - $LOGDOG_COORDINATOR_HOST, $LOGDOG_STREAM_PROJECT, $LOGDOG_STREAM_PREFIX,
-//   $LOGDOG_NAMESPACE, $LOGDOG_STREAM_SERVER_PATH: env variables describing
-//   LogDog context, part of the LogDog Butler protocol.
-//   The executable MAY create logdog streams using these variables.
-//   Read more at https://godoc.org/go.chromium.org/luci/logdog/client/butlerlib/bootstrap
-// - LUCI_CONTEXT["run_build"]["cache_dir"]: a LUCI context value pointing to
-//   the root directory of Swarming named caches.
-//   MAY be on the same file system as CWD.
-//   For example, builder cache is available at "<cache_dir>/builder".
-//   For LUCI Context doc, see
-//   https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md
-//   See also CacheEntry.
-// - LUCI_CONTEXT["buildbucket"]["hostname"]: Buildbucket hostname,
-//   e.g. "cr-buildbucket.appspot.com".
-//
-// The executable MUST write "$LOGDOG_NAMESPACE/build.proto" stream using the
-// LogDog streamserver at $LOGDOG_STREAM_SERVER_PATH.
-// The stream MUST have a binary-encoded buildbucket.v2.Build message datagrams,
-// with content type "application/luci+proto; message=buildbucket.v2.Build".
-// Each build message must be valid, as defined by the comments in proto files.
-// Server-side build will be updated with the values from the latest message.
-//
-// A build step S without children in the datagram MAY have a Step.Log named
-// "$build.proto".
-// It MUST point to a LogDog datagram stream with binary-encoded
-// buildbucket.v2.Build messages and content type
-// "application/luci+proto; message=buildbucket.v2.Build".
-// The step tree from the second datagram will appear as substeps of step S.
-// This rule applies recursively, i.e. a leaf step in the datagram MAY also
-// have a "$build.proto" log.
-// The graph of datagram streams MUST be a tree, i.e. acyclic.
-//
-// All build step log urls of all Build messages MUST be relative to
-// $LOGDOG_STREAM_PREFIX (only stream name) and start with $LOGDOG_NAMESPACE.
+// The CIPD package is expected to contain an executable named 'luciexe' which
+// implements this protocol (it could be a shell script). On Windows Buildbucket
+// will search for 'luciexe.exe' and then 'luciexe.bat'.
 type Executable struct {
 	// The CIPD package containing the executable.
-	// On Linux/Mac, the executable MUST be named "run_build".
-	// On Windows, it MUST be named "run_build.exe" or "run_build.bat",
-	// in this order of precedence.
 	CipdPackage string `protobuf:"bytes,1,opt,name=cipd_package,json=cipdPackage,proto3" json:"cipd_package,omitempty"`
 	// The CIPD version to fetch. Defaults to `latest`.
 	CipdVersion          string   `protobuf:"bytes,2,opt,name=cipd_version,json=cipdVersion,proto3" json:"cipd_version,omitempty"`
