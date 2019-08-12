@@ -94,6 +94,30 @@
     },
     {
       "key": {
+        "uuid": "10be932a_e7a4fbec",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-12T20:55:55Z",
+      "side": 1,
+      "message": "json.Unmarshal doesn\u0027t know how to convert to map[string]string, does it? I only saw map[string]interface{}.",
+      "parentUuid": "9551ff57_c90083a3",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 44
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a8148529_738999d3",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -191,6 +215,30 @@
       "writtenOn": "2019-08-12T17:46:35Z",
       "side": 1,
       "message": "why not\n\n  Times []float64 `json:\"times\"\n\n?",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 19
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "693ef054_8783ef9d",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-12T20:55:55Z",
+      "side": 1,
+      "message": "json.Unmarshal doesn\u0027t know how to convert to []float64, does it? I only saw []interface{}.",
+      "parentUuid": "c6a1bd30_81969696",
       "range": {
         "startLine": 99,
         "startChar": 1,
