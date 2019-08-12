@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5c71816b_e8befc5f",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-12T17:55:10Z",
+      "side": 1,
+      "message": "FetchOutputJSON seems to be a generic function, where prod-vs-fake swarming is abstracted away. However, this line uses prod isolate, which defeats the purpose of the abstraction.",
+      "revId": "444789313d3aa3f9a6f8340f943fe3989e381cc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "733c8a65_217fc67f",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-12T17:55:10Z",
+      "side": 1,
+      "message": "i think func fetches some valuable information, but returns only the isolated ref. Consider returning the whole thing.\n\nif done, i don\u0027t see why we would need IsolatedRef type. The user could easily use taskResult.OutputsRef",
+      "range": {
+        "startLine": 104,
+        "startChar": 5,
+        "endLine": 104,
+        "endChar": 18
+      },
+      "revId": "444789313d3aa3f9a6f8340f943fe3989e381cc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae594575_64fbce6c",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-12T17:55:10Z",
+      "side": 1,
+      "message": "BasePath is a URL. Host is not.\n\nsame in L140",
+      "revId": "444789313d3aa3f9a6f8340f943fe3989e381cc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa062465_0e8b4a08",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-12T17:55:10Z",
+      "side": 1,
+      "message": "all requests should be made with context",
+      "revId": "444789313d3aa3f9a6f8340f943fe3989e381cc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
