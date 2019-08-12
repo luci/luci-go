@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "03a43ce0_9c557319",
+        "filename": "starlark/typed/dict.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-12T21:40:49Z",
+      "side": 1,
+      "message": "I\u0027m not sure I follow this... It means that if you had\n\n  d \u003d Dict(messageType)()\n  d.update(field\u003d\"value\")              # doesn\u0027t work\n  d.update(messageType(field\u003d\"value\")) # does work\n\n?\n\nI kind of suspect that key as a string is overwhelmingly common",
+      "range": {
+        "startLine": 36,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 49
+      },
+      "revId": "f4f9ec6ae95f1d17f29162da03698d1a882d52da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd142083_68521747",
+        "filename": "starlark/typed/dict.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-12T21:40:49Z",
+      "side": 1,
+      "message": "when is it necessary to have non-string keys?\n\nOr are you just expecting that Dict and List will be generally useful for other things too?",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 5
+      },
+      "revId": "f4f9ec6ae95f1d17f29162da03698d1a882d52da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bef93f4d_d3175b7c",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-12T21:40:49Z",
+      "side": 1,
+      "message": "I don\u0027t suppose we can adjust \u0027capacity\u0027 first?",
+      "range": {
+        "startLine": 254,
+        "startChar": 16,
+        "endLine": 254,
+        "endChar": 22
+      },
+      "revId": "f4f9ec6ae95f1d17f29162da03698d1a882d52da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
