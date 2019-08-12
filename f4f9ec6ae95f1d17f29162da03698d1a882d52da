@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2fbfe04a_340e52e8",
+        "filename": "starlark/typed/dict.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T21:53:47Z",
+      "side": 1,
+      "message": "d.update(field\u003d\"value\")       # doesn\u0027t work\nd.update({\"field\": \"value\"})  # works\n\n(I\u0027m not sure what you mean by `d.update(messageType(field\u003d\"value\"))`)\n\n\u003e I kind of suspect that key as a string is overwhelmingly common\n\nThey are overwhelmingly common when dicts are using as poor man\u0027s structs:\n\n   d \u003d dict(param1\u003d123, param2\u003d245)\n\nFor this case, there are starlark structs.\n\nWhen inside protos, dicts are {key \u003d\u003e value} mappings. It is possible keys are strings:\n\nmessage M {\n  map\u003cstring, int32\u003e bananas \u003d 1;\n}\n\nThe following syntax is thus proclaimed as not supported (by me, in this CL) because it is abusive and misleading:\n\n  m \u003d M()\n  m.bananas(banana1\u003d123, banana2\u003d456)\n\nInstead either use \n\n  m.bananas.update({\u0027banana1\u0027: 123, \u0027banana2\u0027: 456})\n\nOr declare \u0027bananas\u0027 as a message, with fields:\n\nmessage M {\n  message Bananas {\n    int32 banana1 \u003d 1;\n    int32 banana2 \u003d 2;\n  }\n  Bananas bananas \u003d 1;\n}\n\nm.bananas \u003d M.Bananas(banana1\u003d123, banana2\u003d456)\n\nOr, if you really want to,\n\nm.bananas.update(dict(banana1\u003d123, banana2\u003d456))",
+      "parentUuid": "03a43ce0_9c557319",
+      "range": {
+        "startLine": 36,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 49
+      },
+      "revId": "f4f9ec6ae95f1d17f29162da03698d1a882d52da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fd142083_68521747",
         "filename": "starlark/typed/dict.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "336cb83e_aa19a99c",
+        "filename": "starlark/typed/dict.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T21:53:47Z",
+      "side": 1,
+      "message": "Protobuf dicts can have keys of types bool, (u)int(32|64) and string.",
+      "parentUuid": "fd142083_68521747",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 5
+      },
+      "revId": "f4f9ec6ae95f1d17f29162da03698d1a882d52da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bef93f4d_d3175b7c",
         "filename": "starlark/typed/list.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "f4f9ec6ae95f1d17f29162da03698d1a882d52da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2507c95_8d9572d5",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T21:53:47Z",
+      "side": 1,
+      "message": "There\u0027s no way to do this.",
+      "parentUuid": "bef93f4d_d3175b7c",
+      "range": {
+        "startLine": 254,
+        "startChar": 16,
+        "endLine": 254,
+        "endChar": 22
+      },
+      "revId": "f4f9ec6ae95f1d17f29162da03698d1a882d52da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
