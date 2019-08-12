@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "328bcc2a_f6157645",
+        "filename": "starlark/typed/dict.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-12T22:04:08Z",
+      "side": 1,
+      "message": "Yep, I forgot that proto maps were a thing and was only thinking of proto message -\u003e Dict representation.",
+      "parentUuid": "2fbfe04a_340e52e8",
+      "range": {
+        "startLine": 36,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 49
+      },
+      "revId": "f4f9ec6ae95f1d17f29162da03698d1a882d52da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd142083_68521747",
         "filename": "starlark/typed/dict.go",
         "patchSetId": 3
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "Protobuf dicts can have keys of types bool, (u)int(32|64) and string.",
       "parentUuid": "fd142083_68521747",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 5
+      },
+      "revId": "f4f9ec6ae95f1d17f29162da03698d1a882d52da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cb29f595_eee10cc0",
+        "filename": "starlark/typed/dict.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-12T22:04:08Z",
+      "side": 1,
+      "message": "See above :)",
+      "parentUuid": "336cb83e_aa19a99c",
       "range": {
         "startLine": 40,
         "startChar": 1,
