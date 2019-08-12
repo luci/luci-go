@@ -142,7 +142,7 @@ func maybeSwap(l, r starlark.Value, side starlark.Side) (starlark.Value, starlar
 // starlark.List methods we reimplement or proxy.
 
 func (l *List) Append(v starlark.Value) error {
-	v, err := l.conv(v, l.Len())
+	v, err := l.conv(v, -1)
 	if err != nil {
 		return err
 	}
@@ -165,17 +165,18 @@ func (l *List) AttrNames() []string {
 }
 
 func (l *List) Attr(name string) (starlark.Value, error) {
+	if name == "append" {
+		return l.implAppend(), nil // fully reimplemented, no need for orig
+	}
 	orig, err := l.list.Attr(name)
 	if err != nil {
 		return nil, err
 	}
 	switch name {
-	case "append":
-		return l.wrappedAppend(orig.(*starlark.Builtin)), nil
 	case "extend":
-		return l.wrappedExtend(orig.(*starlark.Builtin)), nil
+		return l.implExtend(orig.(*starlark.Builtin)), nil
 	case "insert":
-		return l.wrappedInsert(orig.(*starlark.Builtin)), nil
+		return l.implInsert(orig.(*starlark.Builtin)), nil
 	default:
 		return orig, nil // no need to wrap
 	}
@@ -216,75 +217,58 @@ func (l *List) Iterate() starlark.Iterator { return l.list.Iterate() }
 func (l *List) Len() int                   { return l.list.Len() }
 func (l *List) Truth() starlark.Bool       { return l.list.Truth() }
 
-// Wrapped builtins.
-//
-// List methods are trivial, but we still wrap the original implementation
-// (instead of reimplementing them) for following reasons:
-//   * For consistency with typed dict impl (its builtins are not trivial).
-//   * To rely on freezing checks in the original starlark.List.
-//   * To return exact same error messages 'list' methods return.
-//
-// Note that for simple wrappers it is totally OK to call CallInternal directly
-// (instead of going through starlark.Call that allocates a new frame).
+// Reimplemented builtins.
 
-func (l *List) wrappedAppend(orig *starlark.Builtin) *starlark.Builtin {
+// implAppend reimplements 'append' via Append(...).
+func (l *List) implAppend() *starlark.Builtin {
 	return starlark.NewBuiltin("append", func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		var object starlark.Value
 		if err := starlark.UnpackPositionalArgs("append", args, kwargs, 1, &object); err != nil {
 			return nil, err
 		}
-		x, err := l.conv(object, -1)
-		if err != nil {
+		if err := l.Append(object); err != nil {
 			return nil, fmt.Errorf("append: %s", err)
 		}
-		return orig.CallInternal(th, starlark.Tuple{x}, nil)
+		return starlark.None, nil
 	})
 }
 
-func (l *List) wrappedExtend(orig *starlark.Builtin) *starlark.Builtin {
+// implExtend reimplements 'extend' via Append(...).
+//
+// Uses original extend() for the fast path to optimize memory allocations.
+func (l *List) implExtend(orig *starlark.Builtin) *starlark.Builtin {
 	return starlark.NewBuiltin("extend", func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		var iterable starlark.Iterable
 		if err := starlark.UnpackPositionalArgs("extend", args, kwargs, 1, &iterable); err != nil {
 			return nil, err
 		}
 
-		// We wrap 'iterable' into another iterable that does on-the-fly type
-		// conversion when iterating, and feed this iterable to the original
-		// 'extend', so basically we do `list.extend(convert(x) for x in iterable)`.
-		//
-		// Our wrapping iterable stops on a first conversion error, "remembering"
-		// it, so we can return it as an overall error.
-		//
-		// Note that by wrapping 'iterable' we wipe all its type information that
-		// 'orig' may otherwise sniff via checked type casts. But it appears
-		// 'extend' only cares about detecting *starlark.List for its fast path.
-		//
-		// We'll do the same (with variation).
-
 		// Fast path: the iterable has the exact same type as us, we can skip the
 		// conversion completely, since per Convert idempotency property this will
-		// be a noop anyway.
+		// be a noop anyway. By calling original 'extend' implementation we are
+		// basically doing one big memcpy(...) instead of adding items one by one.
 		if it, ok := iterable.(*List); ok && it.itemT == l.itemT {
 			return orig.CallInternal(th, starlark.Tuple{it.list}, nil)
 		}
 
-		// Slow path: the wrapping iterator that converts items one-by-one.
-		it := &convertingIterable{
-			Iterable:  iterable,
-			converter: l.itemT,
+		// Slow path: append items one by one.
+		iter := iterable.Iterate()
+		defer iter.Done()
+		var x starlark.Value
+		for i := 0; iter.Next(&x); i++ {
+			if err := l.Append(x); err != nil {
+				return nil, fmt.Errorf("extend: item #%d: %s", i, err)
+			}
 		}
-		switch ret, err := orig.CallInternal(th, starlark.Tuple{it}, nil); {
-		case err != nil:
-			return nil, err // e.g. "can't mutate frozen list"
-		case it.err != nil:
-			return nil, it.err // e.g. "can't convert item Z"
-		default:
-			return ret, nil
-		}
+		return starlark.None, nil
 	})
 }
 
-func (l *List) wrappedInsert(orig *starlark.Builtin) *starlark.Builtin {
+// implInsert implements 'insert' by wrapping the original 'insert'.
+//
+// It's not easily reimplementable, since starlark.List doesn't expose its
+// internal list in a simple way.
+func (l *List) implInsert(orig *starlark.Builtin) *starlark.Builtin {
 	return starlark.NewBuiltin("insert", func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		var index starlark.Value
 		var object starlark.Value

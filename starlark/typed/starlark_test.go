@@ -31,13 +31,31 @@ func init() {
 func TestAllStarlark(t *testing.T) {
 	t.Parallel()
 
-	var letters = []string{"T", "K", "L", "M"}
-	allocLetter := func() (l string) {
-		if len(letters) == 0 {
+	var (
+		listLetters = []string{"T", "K", "L", "M"}
+		dictLetters = []string{"K", "V", "T", "M"}
+	)
+
+	allocLetter := func(letters *[]string) (l string) {
+		if len(*letters) == 0 {
 			return "X"
 		}
-		l, letters = letters[0], letters[1:]
+		l, *letters = (*letters)[0], (*letters)[1:]
 		return
+	}
+
+	converter := func(th *starlark.Thread, cb starlark.Callable, letters *[]string) Converter {
+		// Cache *callbackConverter so that all converters build from same
+		// callback have same address. This is used to test list.extend fast
+		// path.
+		if th.Local("converters") == nil {
+			th.SetLocal("converters", map[starlark.Callable]Converter{})
+		}
+		converters := th.Local("converters").(map[starlark.Callable]Converter)
+		if converters[cb] == nil {
+			converters[cb] = &callbackConverter{th, cb, allocLetter(letters)}
+		}
+		return converters[cb]
 	}
 
 	starlarktest.RunTests(t, starlarktest.Options{
@@ -57,19 +75,18 @@ func TestAllStarlark(t *testing.T) {
 						vals[i] = l.Index(i)
 					}
 				}
-
-				// Cache *callbackConverter so that all converters build from same
-				// callback have same address. This is used to test list.extend fast
-				// path.
-				if th.Local("converters") == nil {
-					th.SetLocal("converters", map[starlark.Callable]Converter{})
+				return NewList(converter(th, cb, &listLetters), vals)
+			}),
+			// typed_dict(key_cb, val_cb): new typed.Dict using callbacks as converters.
+			"typed_dict": starlark.NewBuiltin("typed_dict", func(th *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+				var keyCB starlark.Callable
+				var valCB starlark.Callable
+				if err := starlark.UnpackPositionalArgs("typed_dict", args, kwargs, 2, &keyCB, &valCB); err != nil {
+					return nil, err
 				}
-				converters := th.Local("converters").(map[starlark.Callable]Converter)
-				if converters[cb] == nil {
-					converters[cb] = &callbackConverter{th, cb, allocLetter()}
-				}
-
-				return NewList(converters[cb], vals)
+				return NewDict(
+					converter(th, keyCB, &dictLetters),
+					converter(th, valCB, &dictLetters), 0), nil
 			}),
 		},
 	})
