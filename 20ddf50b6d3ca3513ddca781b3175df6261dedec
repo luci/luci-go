@@ -118,6 +118,30 @@
     },
     {
       "key": {
+        "uuid": "b2e1ef54_c9ce8f48",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-12T23:54:21Z",
+      "side": 1,
+      "message": "it does https://play.golang.org/p/oxcNVuy8Yoi",
+      "parentUuid": "10be932a_e7a4fbec",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 44
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a8148529_738999d3",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -239,6 +263,30 @@
       "side": 1,
       "message": "json.Unmarshal doesn\u0027t know how to convert to []float64, does it? I only saw []interface{}.",
       "parentUuid": "c6a1bd30_81969696",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 19
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10be4c9b_a12f2988",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-12T23:54:21Z",
+      "side": 1,
+      "message": "it does https://play.golang.org/p/5XRZu8lBOXM\n\nplease use play.golang.org or local code to verify simple things like this. It is inefficient to use review time for this.",
+      "parentUuid": "693ef054_8783ef9d",
       "range": {
         "startLine": 99,
         "startChar": 1,
