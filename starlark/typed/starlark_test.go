@@ -64,29 +64,23 @@ func TestAllStarlark(t *testing.T) {
 			// typed_list(cb, list): new typed.List using the callback as converter.
 			"typed_list": starlark.NewBuiltin("typed_list", func(th *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 				var cb starlark.Callable
-				var l *starlark.List
-				if err := starlark.UnpackPositionalArgs("typed_list", args, kwargs, 2, &cb, &l); err != nil {
+				var vals starlark.Value
+				if err := starlark.UnpackPositionalArgs("typed_list", args, kwargs, 2, &cb, &vals); err != nil {
 					return nil, err
 				}
-				var vals []starlark.Value
-				if l != nil {
-					vals = make([]starlark.Value, l.Len())
-					for i := 0; i < l.Len(); i++ {
-						vals[i] = l.Index(i)
-					}
-				}
-				return NewList(converter(th, cb, &listLetters), vals)
+				return AsTypedList(converter(th, cb, &listLetters), vals)
 			}),
 			// typed_dict(key_cb, val_cb): new typed.Dict using callbacks as converters.
 			"typed_dict": starlark.NewBuiltin("typed_dict", func(th *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 				var keyCB starlark.Callable
 				var valCB starlark.Callable
-				if err := starlark.UnpackPositionalArgs("typed_dict", args, kwargs, 2, &keyCB, &valCB); err != nil {
+				var items starlark.Value
+				if err := starlark.UnpackPositionalArgs("typed_dict", args, kwargs, 3, &keyCB, &valCB, &items); err != nil {
 					return nil, err
 				}
-				return NewDict(
+				return AsTypedDict(
 					converter(th, keyCB, &dictLetters),
-					converter(th, valCB, &dictLetters), 0), nil
+					converter(th, valCB, &dictLetters), items)
 			}),
 		},
 	})

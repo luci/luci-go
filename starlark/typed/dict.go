@@ -61,6 +61,25 @@ func NewDict(key, val Converter, size int) *Dict {
 	}
 }
 
+// AsTypedDict allocates a new dict<k,v>, and copies it from 'x'.
+//
+// Returns an error if 'x' is not an iterable mapping or some of its (k, v)
+// pairs can't be converted to requested types.
+func AsTypedDict(k, v Converter, x starlark.Value) (*Dict, error) {
+	m, ok := x.(starlark.IterableMapping)
+	if !ok {
+		return nil, fmt.Errorf("got %s, want an iterable mapping", x.Type())
+	}
+	items := m.Items()
+	d := NewDict(k, v, len(items))
+	for _, kv := range items {
+		if err := d.SetKey(kv[0], kv[1]); err != nil {
+			return nil, err
+		}
+	}
+	return d, nil
+}
+
 // KeyConverter returns the type converter used for keys of this dict.
 func (d *Dict) KeyConverter() Converter { return d.keyT }
 
