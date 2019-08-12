@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4da55c71_4ccba7ce",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-12T16:09:38Z",
+      "side": 1,
+      "message": "These are currently explicitly pulled out into non-raw versions of the fields.\n\nAlternatively, don\u0027t include the field in the struct, and just use intermediate variables in the conversion to spanner row.",
+      "range": {
+        "startLine": 40,
+        "startChar": 55,
+        "endLine": 40,
+        "endChar": 64
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
