@@ -22,10 +22,20 @@ import (
 	"go.starlark.net/syntax"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/starlark/typed"
 )
 
-// toStarlarkDict does protoreflect.Map => starlark.Dict conversion.
-func toStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, m protoreflect.Map) (*starlark.Dict, error) {
+// newStarlarkDict returns a new typed.Dict of an appropriate type.
+func newStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, capacity int) *typed.Dict {
+	return typed.NewDict(
+		converter(l, fd.MapKey()),
+		converter(l, fd.MapValue()),
+		capacity)
+}
+
+// toStarlarkDict does protoreflect.Map => typed.Dict conversion.
+func toStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, m protoreflect.Map) (*typed.Dict, error) {
 	keyFD := fd.MapKey()
 	valFD := fd.MapValue()
 
@@ -66,7 +76,7 @@ func toStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, m protoreflect.M
 	}
 
 	// Construct starlark.Dict from sorted keys and values from the proto map.
-	d := starlark.NewDict(len(keys))
+	d := newStarlarkDict(l, fd, len(keys))
 	for _, k := range keys {
 		sv, err := toStarlarkSingular(l, valFD, m.Get(k.pv))
 		if err != nil {
@@ -81,39 +91,30 @@ func toStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, m protoreflect.M
 }
 
 // assignProtoMap does m.fd = iter, where fd is a map.
-func assignProtoMap(m protoreflect.Message, fd protoreflect.FieldDescriptor, iter starlark.IterableMapping) error {
+//
+// Assumes type checks have been done already (this is responsibility of
+// prepareRHS). Panics on type mismatch.
+func assignProtoMap(m protoreflect.Message, fd protoreflect.FieldDescriptor, dict *typed.Dict) {
 	mp := m.Mutable(fd).Map()
 	if mp.Len() != 0 {
-		panic("the map is not empty")
+		panic("the proto map is not empty")
 	}
 
 	keyFD := fd.MapKey()
 	valFD := fd.MapValue()
 
-	it := iter.Iterate()
+	it := dict.Iterate()
 	defer it.Done()
 
 	var sk starlark.Value
 	for it.Next(&sk) {
-		sv, ok, err := iter.Get(sk)
-		if err != nil {
-			return fmt.Errorf("key %s: %s", sk, err)
+		switch sv, ok, err := dict.Get(sk); {
+		case err != nil:
+			panic(fmt.Errorf("key %s: %s", sk, err))
+		case !ok:
+			panic(fmt.Errorf("key %s: suddenly gone while iterating", sk))
+		default:
+			mp.Set(toProtoSingular(keyFD, sk).MapKey(), toProtoSingular(valFD, sv))
 		}
-		if !ok {
-			continue // should not really be happening for well-behaved Starlark types
-		}
-
-		pk, err := toProtoSingular(keyFD, sk)
-		if err != nil {
-			return fmt.Errorf("key %s: %s", sk, err)
-		}
-		pv, err := toProtoSingular(valFD, sv)
-		if err != nil {
-			return fmt.Errorf("value of key %s: %s", sk, err)
-		}
-
-		mp.Set(pk.MapKey(), pv)
 	}
-
-	return nil
 }

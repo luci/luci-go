@@ -17,34 +17,38 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 
 msg = testprotos.MapWithPrimitiveType()
 
-# Default value is empty dict.
-assert.eq(msg.m, {})
+# Default value is empty typed dict.
+assert.eq(type(msg.m), 'dict<string,int64>')
+assert.eq(len(msg.m), 0)
 
 # Setting individual keys is OK.
 msg.m['k'] = 1
-assert.eq(msg.m, {'k': 1})
+assert.eq(dict(msg.m), {'k': 1})
 
-# No type checks at this stage.
-msg.m[123] = 'zzz'
-assert.eq(msg.m, {'k': 1, 123: 'zzz'})
+# Performs type checks for both keys and values.
+def wrong_key_type():
+  msg.m[123] = 123
+assert.fails(wrong_key_type, 'bad key: got int, want string')
+def wrong_val_type():
+  msg.m['zzz'] = 'zzz'
+assert.fails(wrong_val_type, 'bad value: got string, want int')
 
 # Overriding the value entirely is OK.
 msg.m = {'v': 1}
-assert.eq(msg.m, {'v': 1})
+assert.eq(dict(msg.m), {'v': 1})
 
-# Checking that it is a dict, but nothing else at this stage.
-msg.m = {123: 'zzz'}
+# Checking that it is a dict.
 def set_to_int():
   msg.m = 1
-assert.fails(set_to_int, 'can\'t assign "int" to a map field')
+assert.fails(set_to_int, 'got int, want an iterable mapping')
 
 # Clearing resets the field to its default value (empty dict).
 msg.m = None
-assert.eq(msg.m, {})
+assert.eq(len(msg.m), 0)
 
 # Setting through constructor works
 msg2 = testprotos.MapWithPrimitiveType(m={'k': 2})
-assert.eq(msg2.m, {'k': 2})
+assert.eq(dict(msg2.m), {'k': 2})
 
 # Serialization to text proto works.
 text = proto.to_textpb(testprotos.MapWithPrimitiveType(m={
@@ -60,13 +64,3 @@ m: <
   value: 2
 >
 """)
-
-# Conversion to proto does full type checking.
-def check_fail(m, msg):
-  assert.fails(lambda: proto.to_textpb(testprotos.MapWithPrimitiveType(m=m)), msg)
-
-check_fail({0: 1}, 'key 0: can\'t assign "int" to "string" field')
-check_fail({'': 'zzz'}, 'value of key "": can\'t assign "string" to "int64" field')
-check_fail({None: 1}, 'key None: can\'t assign "NoneType" to "string" field')
-check_fail({'': None}, 'value of key "": can\'t assign "NoneType" to "int64" field')
-check_fail({'': msg}, 'value of key "": can\'t assign "testprotos.MapWithPrimitiveType" to "int64" field')

@@ -33,10 +33,12 @@ assert.eq(m2.f64, 1.0)
 m2.f64 = None
 assert.eq(m2.f64, 0.0)
 
+# TODO: assigning ints.
+
 # Setting wrong type fails.
 def set_bad():
   m2.f64 = [1, 2, 3]
-assert.fails(set_bad, 'can\'t assign "list" to "double" field')
+assert.fails(set_bad, 'got list, want float')
 
 # Implicit conversion from int to float is supported.
 m2.f64 = 123

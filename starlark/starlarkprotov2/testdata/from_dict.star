@@ -24,7 +24,7 @@ m1 = from_dict(testprotos.MessageFields, {
   'rep': [{'i': 456}, {'i': 789}, None, testprotos.Simple(i=999)],
 })
 assert.eq(m1.single.i, 123)
-assert.eq(type(m1.rep), 'list')
+assert.eq(type(m1.rep), 'list<testprotos.Simple>')
 assert.eq(len(m1.rep), 4)
 assert.eq(m1.rep[0].i, 456)
 assert.eq(m1.rep[1].i, 789)
@@ -43,7 +43,7 @@ assert.eq(m2.rep[1].i, 0)
 m3 = from_dict(testprotos.MessageFields, {
   'rep': ({'i': 456},),
 })
-assert.eq(type(m3.rep), 'list')  # converted to a list
+assert.eq(type(m3.rep), 'list<testprotos.Simple>')  # converted to a list
 assert.eq(len(m3.rep), 1)
 assert.eq(m3.rep[0].i, 456)
 
@@ -60,18 +60,18 @@ def wrong_schema_single():
   from_dict(testprotos.MessageFields, {
     'single': {'z': '???'},
   })
-assert.fails(wrong_schema_single, 'when constructing "single" in proto "testprotos.MessageFields" - proto message "testprotos.Simple" has no field "z"')
+assert.fails(wrong_schema_single, 'proto message testprotos.Simple has no field "z"')
 
 # Fails on wrong schema (repeated field).
 def wrong_schema_repeated():
   from_dict(testprotos.MessageFields, {
     'rep': [{'z': '???'}],
   })
-assert.fails(wrong_schema_repeated, 'when constructing "rep" in proto "testprotos.MessageFields" - proto message "testprotos.Simple" has no field "z"')
+assert.fails(wrong_schema_repeated, 'item #0: proto message testprotos.Simple has no field "z"')
 
 # Fails on non-string keys.
 def bad_key_type():
   from_dict(testprotos.MessageFields, {
     'single': {123: 1},
   })
-assert.fails(bad_key_type, 'when constructing "single" in proto "testprotos.MessageFields" - got "int" dict key, expecting "string"')
+assert.fails(bad_key_type, 'got int dict key, want string')

@@ -39,15 +39,15 @@ assert.eq(m2.b, False)
 # Setting wrong type fails.
 def set_bad():
   m2.b = [1, 2, 3]
-assert.fails(set_bad, 'can\'t assign "list" to "bool" field')
+assert.fails(set_bad, 'got list, want bool')
 
 # We don't support implicit conversions to bool. Callers should use bool(...)
 # cast explicitly.
 def set_int():
   m2.b = 0
-assert.fails(set_int, 'can\'t assign "int" to "bool" field')
+assert.fails(set_int, 'got int, want bool')
 
 # Assiging bool to non-bool field fails.
 def set_bool_to_int():
   m2.i64 = False
-assert.fails(set_bool_to_int, 'can\'t assign "bool" to "int64" field')
+assert.fails(set_bool_to_int, 'got bool, want int')
