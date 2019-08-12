@@ -64,6 +64,29 @@ func NewList(item Converter, elems []starlark.Value) (*List, error) {
 	return l, nil
 }
 
+// AsTypedList allocates a new list<t>, and copies it from 'x'.
+//
+// Returns an error if 'x' is not an iterable or some of its elements can't be
+// converted to 't'.
+func AsTypedList(t Converter, x starlark.Value) (*List, error) {
+	it := starlark.Iterate(x)
+	if it == nil {
+		return nil, fmt.Errorf("got %s, want an iterable", x.Type())
+	}
+	defer it.Done()
+
+	var vals []starlark.Value
+	if l := starlark.Len(x); l > 0 {
+		vals = make([]starlark.Value, 0, l)
+	}
+	var itm starlark.Value
+	for it.Next(&itm) {
+		vals = append(vals, itm)
+	}
+
+	return NewList(t, vals)
+}
+
 // conv calls Convert, annotating the error with item's index if idx >= 0.
 func (l *List) conv(v starlark.Value, idx int) (starlark.Value, error) {
 	switch v, err := l.itemT.Convert(v); {
