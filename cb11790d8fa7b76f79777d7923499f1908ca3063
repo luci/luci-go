@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5f6eafd_4ec4c426",
+        "filename": "buildbucket/cmd/run_annotations/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T15:52:36Z",
+      "side": 1,
+      "message": "Is this intentional? :) Looks like forgotten debug line.\n\nDo we want fancy errors.Log(...) logging here instead of stack traces?",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 29
+      },
+      "revId": "cb11790d8fa7b76f79777d7923499f1908ca3063",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24c545db_51f89712",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T15:52:36Z",
+      "side": 1,
+      "message": "please document how luciexe exit code is interpreter and what happens if luciexe crashes unexpectedly or violates the protocol in some way\n\nI\u0027m also concerned there\u0027s no back channel from the runner to luciexe to communicate errors. For example, if logdog has a bad day and doesn\u0027t accept messages, where are they accumulated and how would luciexe know?",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 27
+      },
+      "revId": "cb11790d8fa7b76f79777d7923499f1908ca3063",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc0784f1_4b6d0093",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T15:52:36Z",
+      "side": 1,
+      "message": "I wonder, how would we update Buildbucket build state? Will buildbucket runner \"intercept\" build.proto stream and call UpdateBuild RPC? What if it fails? There\u0027s no way to communicate errors to luciexe.",
+      "range": {
+        "startLine": 62,
+        "startChar": 71,
+        "endLine": 63,
+        "endChar": 9
+      },
+      "revId": "cb11790d8fa7b76f79777d7923499f1908ca3063",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0ff9b34_e5224511",
+        "filename": "luciexe/exe/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T15:52:36Z",
+      "side": 1,
+      "message": "nit: !exe.initialized \u0026\u0026 exe.initializationErr \u003d\u003d nil, also can deindent it right away to reduce anxiety level:\n\nif exe.initialized || exe.initializationErr !\u003d nil {\n  return exe.initializtionErr\n}",
+      "range": {
+        "startLine": 53,
+        "startChar": 4,
+        "endLine": 53,
+        "endChar": 20
+      },
+      "revId": "cb11790d8fa7b76f79777d7923499f1908ca3063",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddca92d7_a14d4320",
+        "filename": "luciexe/exe/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T15:52:36Z",
+      "side": 1,
+      "message": "nit: consider splitting this into \n\nfunc(...) initialize(...) {\n  // locking\n  if ... {\n    exe.initializationErr \u003d exe.initializeLocked(ctx)\n  }\n  return ...\n}\n\nfunc (...) initializeLocked(...) error {\n   ...\n   return errors.Annotate(err, \u0027...).Err()\n}",
+      "range": {
+        "startLine": 58,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 31
+      },
+      "revId": "cb11790d8fa7b76f79777d7923499f1908ca3063",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "373747ed_800f02cf",
+        "filename": "luciexe/exe/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T15:52:36Z",
+      "side": 1,
+      "message": "strictly speaking this should be under the reader lock then",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 47
+      },
+      "revId": "cb11790d8fa7b76f79777d7923499f1908ca3063",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c572ecd_b7e5ba4d",
+        "filename": "luciexe/exe/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T15:52:36Z",
+      "side": 1,
+      "message": "this is pretty evil :( Maybe it would be better to remove it for now (i.e. keep the context, just don\u0027t react to its cancelation signal). My concern is that it essentially introduces \"undefined\" state. What happens when \u0027ctx\u0027 is canceled? Who knows, it may do something in background (and hold the lock), or may not.",
+      "range": {
+        "startLine": 100,
+        "startChar": 5,
+        "endLine": 100,
+        "endChar": 19
+      },
+      "revId": "cb11790d8fa7b76f79777d7923499f1908ca3063",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a0024e06_925edd17",
+        "filename": "luciexe/exe/doc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T15:52:36Z",
+      "side": 1,
+      "message": "This is still the misleading part. \n\n\"Can be safely called concurrently, there\u0027s a lock inside that serializes the execution\" (or something)\n\n\"may only be called once at a time\" reads as \"NOT thread safe, will blow up\".",
+      "range": {
+        "startLine": 52,
+        "startChar": 30,
+        "endLine": 52,
+        "endChar": 70
+      },
+      "revId": "cb11790d8fa7b76f79777d7923499f1908ca3063",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -98,6 +98,30 @@
     },
     {
       "key": {
+        "uuid": "af97d5ac_6be48649",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T15:52:36Z",
+      "side": 1,
+      "message": "Yes. Otherwise someone will hardcode /b/s/... prefix somewhere.",
+      "parentUuid": "fb09cd08_3f29f7cb",
+      "range": {
+        "startLine": 41,
+        "startChar": 40,
+        "endLine": 41,
+        "endChar": 74
+      },
+      "revId": "082ad85c6e21c5259fae8cc02f55cb669de5b912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3625e33a_941a62ee",
         "filename": "luciexe/doc.go",
         "patchSetId": 1
