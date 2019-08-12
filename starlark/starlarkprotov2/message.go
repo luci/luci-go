@@ -50,19 +50,12 @@ func (m *Message) MessageType() *MessageType {
 }
 
 // ToProto returns a new populated proto message of an appropriate type.
-//
-// Returns an error if some fields of this Starlark value can't be converted
-// into protos. For example, a field declared as `repeated int64` can actually
-// contains a list of strings on Starlark side, which will cause ToProto to
-// return an error.
-func (m *Message) ToProto() (proto.Message, error) {
+func (m *Message) ToProto() proto.Message {
 	msg := dynamicpb.New(m.typ.desc)
 	for k, v := range m.fields {
-		if err := assign(msg, m.typ.fields[k], v); err != nil {
-			return nil, fmt.Errorf("bad value for field %q of %q - %s", k, m.Type(), err)
-		}
+		assign(msg, m.typ.fields[k], v)
 	}
-	return msg, nil
+	return msg
 }
 
 // FromProto populates fields of this message based on values in proto.Message.
@@ -72,14 +65,14 @@ func (m *Message) FromProto(p proto.Message) error {
 	refl := p.ProtoReflect()
 
 	if got, want := refl.Descriptor(), m.typ.desc; got != want {
-		return fmt.Errorf("bad message type: got %q, want %q", got.FullName(), want.FullName())
+		return fmt.Errorf("bad message type: got %s, want %s", got.FullName(), want.FullName())
 	}
 
 	var err error
 	refl.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
 		var sv starlark.Value
 		if sv, err = toStarlark(m.typ.loader, fd, v); err != nil {
-			err = fmt.Errorf("in %q: %s", fd.Name(), err)
+			err = fmt.Errorf("field %q: %s", fd.Name(), err)
 			return false
 		}
 		err = m.SetField(string(fd.Name()), sv)
@@ -89,7 +82,8 @@ func (m *Message) FromProto(p proto.Message) error {
 	return err
 }
 
-// FromDict populates fields of this message based on values in a starlark.Dict.
+// FromDict populates fields of this message based on values in an iterable
+// mapping (usually a starlark.Dict).
 //
 // Doesn't reset the message. Basically does this:
 //
@@ -97,7 +91,7 @@ func (m *Message) FromProto(p proto.Message) error {
 //     setattr(msg, k, d[k])
 //
 // Returns an error on type mismatch.
-func (m *Message) FromDict(d *starlark.Dict) error {
+func (m *Message) FromDict(d starlark.IterableMapping) error {
 	iter := d.Iterate()
 	defer iter.Done()
 
@@ -105,7 +99,7 @@ func (m *Message) FromDict(d *starlark.Dict) error {
 	for iter.Next(&k) {
 		key, ok := k.(starlark.String)
 		if !ok {
-			return fmt.Errorf("got %q dict key, expecting \"string\"", k.Type())
+			return fmt.Errorf("got %s dict key, want string", k.Type())
 		}
 		v, _, _ := d.Get(k)
 		if err := m.SetField(key.GoString(), v); err != nil {
@@ -120,11 +114,7 @@ func (m *Message) FromDict(d *starlark.Dict) error {
 
 // String returns compact text serialization of this message.
 func (m *Message) String() string {
-	msg, err := m.ToProto()
-	if err != nil {
-		return fmt.Sprintf("<!Bad %s: %s!>", m.Type(), err)
-	}
-	return fmt.Sprintf("%s", msg) // this is a compact text serialization
+	return fmt.Sprintf("%s", m.ToProto())
 }
 
 // Type returns full proto message name.
@@ -150,7 +140,7 @@ func (m *Message) Truth() starlark.Bool { return starlark.True }
 
 // Hash returns an error, indicating proto messages are not hashable.
 func (m *Message) Hash() (uint32, error) {
-	return 0, fmt.Errorf("proto messages (and %q in particular) are not hashable", m.Type())
+	return 0, fmt.Errorf("proto messages (and %s in particular) are not hashable", m.Type())
 }
 
 // HasAttrs and HasSetField interfaces that make the message look like a struct.
@@ -231,29 +221,15 @@ func (m *Message) SetField(name string, val starlark.Value) error {
 		return nil
 	}
 
-	// When assigning to a message-valued field (singular or repeated), recognize
-	// dicts and Nones and use them to instantiate values (perhaps empty) of the
-	// corresponding proto type. This allows to construct deeply nested protobuf
-	// messages just by using lists, dicts and primitive values. Python does this
-	// too.
-	if fd.Kind() == protoreflect.MessageKind {
-		var err error
-		if val, err = maybeMakeMessages(m.typ.loader, fd, val); err != nil {
-			return fmt.Errorf("when constructing %q in proto %q - %s", name, m.Type(), err)
-		}
-	}
-
-	// Do a light O(1) type check. It doesn't "recurse" into lists or tuples. So
-	// it is still possible to assign e.g. a list of strings to a "repeated int64"
-	// field. This will be discovered later in ToProto when trying to construct
-	// a proto message from Starlark values.
-	if err := canAssign(fd, val); err != nil {
-		return fmt.Errorf("can't assign value of type %q to field %q in proto %q - %s", val.Type(), name, m.Type(), err)
+	// Check the type, do implicit type casts.
+	rhs, err := prepareRHS(m.typ.loader, fd, val)
+	if err != nil {
+		return fmt.Errorf("can't assign %s to field %q in %s: %s", val.Type(), name, m.Type(), err)
 	}
 	if err := m.checkMutable(); err != nil {
 		return err
 	}
-	m.fields[name] = val
+	m.fields[name] = rhs
 
 	// When assigning to a oneof alternative, clear its all other alternatives.
 	if oneof := fd.ContainingOneof(); oneof != nil {
@@ -280,92 +256,16 @@ func (m *Message) fieldDesc(name string) (protoreflect.FieldDescriptor, error) {
 		// not really be happening since AddDescriptorSet(...) checks that all
 		// references are resolved. But handle this case anyway for a clearer error
 		// message if some unnoticed edge case pops up.
-		return nil, fmt.Errorf("internal error: descriptor of proto message %q is not available, can't use this type", m.Type())
+		return nil, fmt.Errorf("internal error: descriptor of proto message %s is not available, can't use this type", m.Type())
 	default:
-		return nil, fmt.Errorf("proto message %q has no field %q", m.Type(), name)
+		return nil, fmt.Errorf("proto message %s has no field %q", m.Type(), name)
 	}
 }
 
 // checkMutable returns an error if the message is frozen.
 func (m *Message) checkMutable() error {
 	if m.frozen {
-		return fmt.Errorf("cannot modify frozen proto message %q", m.Type())
+		return fmt.Errorf("cannot modify frozen proto message %s", m.Type())
 	}
 	return nil
-}
-
-// maybeMakeMessages recognizes when a dict is assigned to a message field or
-// when a list or tuple of dicts or Nones is assigned to a repeated message
-// field.
-//
-// It converts dicts or Nones to *Message of corresponding type and returns them
-// as Starlark values to use in place of the passed value.
-//
-// Returns an error if some dict can't be converted to *Message of the requested
-// type (e.g. it has wrong schema).
-func maybeMakeMessages(l *Loader, fd protoreflect.FieldDescriptor, val starlark.Value) (starlark.Value, error) {
-	// Assigning a dict to singular field.
-	if dict, ok := val.(*starlark.Dict); ok && fd.Cardinality() != protoreflect.Repeated {
-		msg := l.MessageType(fd.Message()).NewMessage()
-		return msg, msg.FromDict(dict)
-	}
-
-	// Assigning a primitive sequence (not a map!) to a repeated field.
-	seq, _ := val.(starlark.Sequence)
-	mapping, _ := val.(starlark.Mapping)
-	if seq != nil && mapping == nil && fd.Cardinality() == protoreflect.Repeated {
-		// Return 'seq' as is (not a copy!) if it doesn't need to be transformed.
-		// This is important in the following case:
-		//   l = [m1]
-		//   msg.repeated = l
-		//   l.append(m2)  # msg.repeated is also mutated
-		if !shouldMakeMessages(seq) {
-			return val, nil
-		}
-
-		iter := seq.Iterate()
-		defer iter.Done()
-
-		// Make a copy of 'seq' by replacing dicts and Nones with messages.
-		out := make([]starlark.Value, 0, seq.Len())
-		typ := l.MessageType(fd.Message())
-
-		var v starlark.Value
-		for iter.Next(&v) {
-			switch val := v.(type) {
-			case starlark.NoneType:
-				out = append(out, typ.NewMessage())
-			case *starlark.Dict:
-				msg := typ.NewMessage()
-				if err := msg.FromDict(val); err != nil {
-					return nil, err
-				}
-				out = append(out, msg)
-			default:
-				out = append(out, v)
-			}
-		}
-
-		return starlark.NewList(out), nil
-	}
-
-	// Unrecognized combination, let SetField deal with it.
-	return val, nil
-}
-
-// shouldMakeMessages returns true if seq has at least one dict or None that
-// should be converted to a proto message.
-func shouldMakeMessages(seq starlark.Sequence) bool {
-	iter := seq.Iterate()
-	defer iter.Done()
-	var v starlark.Value
-	for iter.Next(&v) {
-		if v == starlark.None {
-			return true
-		}
-		if _, ok := v.(*starlark.Dict); ok {
-			return true
-		}
-	}
-	return false
 }

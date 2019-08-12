@@ -21,7 +21,8 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 m = testprotos.MessageFields()
 
 # Default value.
-assert.eq(m.rep, [])
+assert.eq(type(m.rep), 'list<testprotos.Simple>')
+assert.eq(len(m.rep), 0)
 
 # Can append to it, it is just a list.
 m.rep.append(testprotos.Simple(i=123))
@@ -31,12 +32,10 @@ assert.eq(m.rep[0].i, 123)
 m.rep = [testprotos.Simple(i=456)]
 assert.eq(m.rep[0].i, 456)
 
-# Sneakily adding wrong-typed element to the list is NOT an immediate error
-# currently. This is discovered later when trying to serialize the object.
-m.rep = [testprotos.Simple(i=456), testprotos.MessageFields()]
-def serialize():
-  proto.to_textpb(m)
-assert.fails(serialize, 'list item #1: can\'t assign message "testprotos.MessageFields" to a message field "testprotos.Simple"')
+# Sneakily adding wrong-typed element to the list is an immediate error.
+def bad_list_element():
+  m.rep = [testprotos.Simple(i=456), testprotos.MessageFields()]
+assert.fails(bad_list_element, 'item #1: got testprotos.MessageFields, want testprotos.Simple')
 
 # Serialization to text proto works.
 text = proto.to_textpb(testprotos.MessageFields(

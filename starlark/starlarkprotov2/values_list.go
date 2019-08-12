@@ -20,10 +20,18 @@ import (
 	"go.starlark.net/starlark"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/starlark/typed"
 )
 
-// toStarlarkList does protoreflect.List => starlark.List conversion.
-func toStarlarkList(l *Loader, fd protoreflect.FieldDescriptor, list protoreflect.List) (*starlark.List, error) {
+// newStarlarkList returns a new typed.List of an appropriate type.
+func newStarlarkList(l *Loader, fd protoreflect.FieldDescriptor) *typed.List {
+	list, _ := typed.NewList(converter(l, fd), nil)
+	return list
+}
+
+// toStarlarkList does protoreflect.List => typed.List conversion.
+func toStarlarkList(l *Loader, fd protoreflect.FieldDescriptor, list protoreflect.List) (*typed.List, error) {
 	vals := make([]starlark.Value, list.Len())
 	for i := 0; i < list.Len(); i++ {
 		var err error
@@ -31,27 +39,19 @@ func toStarlarkList(l *Loader, fd protoreflect.FieldDescriptor, list protoreflec
 			return nil, fmt.Errorf("list item #%d: %s", i, err)
 		}
 	}
-	return starlark.NewList(vals), nil
+	return typed.NewList(converter(l, fd), vals)
 }
 
-// assignProtoList does m.fd = iter, where fd is a repeated field.
-func assignProtoList(m protoreflect.Message, fd protoreflect.FieldDescriptor, iter starlark.Iterable) error {
-	l := m.Mutable(fd).List()
-	if l.Len() != 0 {
-		panic("the list is not empty")
+// assignProtoList does m.fd = list, where fd is a repeated field.
+//
+// Assumes type checks have been done already (this is responsibility of
+// prepareRHS). Panics on type mismatch.
+func assignProtoList(m protoreflect.Message, fd protoreflect.FieldDescriptor, list *typed.List) {
+	protoList := m.Mutable(fd).List()
+	if protoList.Len() != 0 {
+		panic("the proto list is not empty")
 	}
-
-	it := iter.Iterate()
-	defer it.Done()
-
-	var x starlark.Value
-	for it.Next(&x) {
-		val, err := toProtoSingular(fd, x)
-		if err != nil {
-			return fmt.Errorf("list item #%d: %s", l.Len(), err)
-		}
-		l.Append(val)
+	for i := 0; i < list.Len(); i++ {
+		protoList.Append(toProtoSingular(fd, list.Index(i)))
 	}
-
-	return nil
 }

@@ -18,7 +18,7 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 msg = testprotos.MapWithMessageType()
 
 # Default value is empty dict.
-assert.eq(msg.m, {})
+assert.eq(len(msg.m), 0)
 
 # Can set and get values.
 msg.m['k'] = testprotos.Simple(i=123)
@@ -42,11 +42,3 @@ m: <
   >
 >
 """)
-
-# Conversion to proto does full type checking.
-def check_fail(m, msg):
-  assert.fails(lambda: proto.to_textpb(testprotos.MapWithMessageType(m=m)), msg)
-
-check_fail({'': None}, 'value of key "": can\'t assign "NoneType" to "message" field')
-check_fail({'': 1}, 'value of key "": can\'t assign "int" to "message" field')
-check_fail({'': msg}, 'can\'t assign message "testprotos.MapWithMessageType" to a message field "testprotos.Simple"')
