@@ -21,46 +21,45 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 m = testprotos.SimpleFields()
 
 # Default value.
-assert.eq(m.i64_rep, [])
+assert.eq(type(m.i64_rep), 'list<int64>')
+assert.eq(len(m.i64_rep), 0)
 
 # Can append to it, it is just a list.
 m.i64_rep.append(1)
-assert.eq(m.i64_rep, [1])
+assert.eq(list(m.i64_rep), [1])
 
 # Can completely recreated the field by replacing with default.
 m.i64_rep = None
-assert.eq(m.i64_rep, [])
+assert.eq(len(m.i64_rep), 0)
 
 # The list is stored as a reference, not as a value.
-l1 = []
-m2 = testprotos.SimpleFields(i64_rep=l1)
-l1.append(123)
-assert.eq(m2.i64_rep, [123])
+# TODO(vadimsh): Add an aliasing test.
+#l1 = []
+#l1.append(123)
+#assert.eq(list(m2.i64_rep), [123])
 
 # Setter works. It preserves the reference and type of the value as long as it
 # is iterable.
 
-l2 = [1, 2]
-m2.i64_rep = l2
-assert.eq(m2.i64_rep, [1, 2])
-l2.append(3)
-assert.eq(m2.i64_rep, [1, 2, 3])
+#l2 = [1, 2]
+#m1.i64_rep = l2
+#assert.eq(m2.i64_rep, [1, 2])
+#l2.append(3)
+#assert.eq(m2.i64_rep, [1, 2, 3])
 
-t = (1, 2)
-m2.i64_rep = t
-assert.eq(m2.i64_rep, (1, 2))
+#t = (1, 2)
+#m2.i64_rep = t
+#assert.eq(m2.i64_rep, (1, 2))
 
 # Trying to set a wrong type is an error.
 def set_int():
-  m2.i64_rep = 123
-assert.fails(set_int, 'can\'t assign "int" to a repeated field')
+  m.i64_rep = 123
+assert.fails(set_int, 'got "int", want an iterable')
 
-# Sneakily adding wrong-typed element to the list is NOT an immediate error
-# currently. This is discovered later when trying to serialize the object.
-m2.i64_rep = [1, 2, None]
-def serialize():
-  proto.to_textpb(m2)
-assert.fails(serialize, 'list item #2: can\'t assign "NoneType" to "int64" field')
+# Sneakily adding wrong-typed element to the list is an immediate error.
+def set_bad_item():
+  m.i64_rep = [1, 2, None]
+assert.fails(set_bad_item, 'item #2: got NoneType, want int')
 
 # Serialization to text proto works.
 text = proto.to_textpb(testprotos.SimpleFields(i64_rep=[1, 2, 3]))

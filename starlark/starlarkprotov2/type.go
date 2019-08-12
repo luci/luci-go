@@ -15,6 +15,7 @@
 package starlarkprotov2
 
 import (
+	"fmt"
 	"sort"
 
 	"go.starlark.net/starlark"
@@ -85,4 +86,32 @@ func (t *MessageType) AttrNames() []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// typed.Converter interface.
+
+// Convert returns 'x' as is if it already has type 't', otherwise initializes
+// a new message of type 't' from 'x'. 'x' can be either None (in which case
+// an empty message is initialize) or a dict.
+func (t *MessageType) Convert(x starlark.Value) (starlark.Value, error) {
+	if msg, ok := x.(*Message); ok {
+		if msg.typ == t {
+			return msg, nil
+		}
+		return nil, fmt.Errorf("got %q, want %q", msg.Type(), t.Type())
+	}
+
+	if x == starlark.None {
+		return t.NewMessage(), nil
+	}
+
+	if d, ok := x.(starlark.IterableMapping); ok {
+		m := t.NewMessage()
+		if err := m.FromDict(d); err != nil {
+			return nil, err
+		}
+		return m, nil
+	}
+
+	return nil, fmt.Errorf("got %q, want %q", x.Type(), t.Type())
 }
