@@ -22,10 +22,7 @@ def val_conv(x):
     fail('nope')
   return str(x)
 def typed(d):
-  r = typed_dict(key_conv, val_conv)
-  for k, v in d.items():
-    r[k] = v
-  return r
+  return typed_dict(key_conv, val_conv, d)
 
 
 # Typed dict implements same methods as a regular dict. If this test fails, it
