@@ -23,6 +23,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"go.chromium.org/luci/starlark/typed"
 )
 
 // Message is a Starlark value that implements a struct-like type structured
@@ -97,7 +99,7 @@ func (m *Message) FromProto(p proto.Message) error {
 //     setattr(msg, k, d[k])
 //
 // Returns an error on type mismatch.
-func (m *Message) FromDict(d *starlark.Dict) error {
+func (m *Message) FromDict(d starlark.IterableMapping) error {
 	iter := d.Iterate()
 	defer iter.Done()
 
@@ -105,7 +107,7 @@ func (m *Message) FromDict(d *starlark.Dict) error {
 	for iter.Next(&k) {
 		key, ok := k.(starlark.String)
 		if !ok {
-			return fmt.Errorf("got %q dict key, expecting \"string\"", k.Type())
+			return fmt.Errorf("got %q dict key, want \"string\"", k.Type())
 		}
 		v, _, _ := d.Get(k)
 		if err := m.SetField(key.GoString(), v); err != nil {
@@ -177,12 +179,27 @@ func (m *Message) Attr(name string) (starlark.Value, error) {
 		return starlark.None, nil
 	}
 
-	// If this is not a oneof field, auto-initialize it to its default value. In
-	// particular this is important when chaining through fields `a.b.c.d`. We
-	// want intermediates to be silently auto-initialized.
-	def, err := toStarlark(m.typ.loader, fd, fd.Default())
-	if err != nil {
-		return nil, err
+	var def starlark.Value
+
+	// If this is a repeated field or a dict, instantiate corresponding empty
+	// typed.List or typed.Dict instance.
+	loader := m.typ.loader
+	switch {
+	case fd.IsList():
+		def, _ = typed.NewList(converter(loader, fd), nil)
+	case fd.IsMap():
+		def = typed.NewDict(
+			converter(loader, fd.MapKey()),
+			converter(loader, fd.MapValue()),
+			0,
+		)
+	default:
+		// If this is a singular field, auto-initialize it to its default value.
+		// In particular this is important when chaining through fields `a.b.c.d`.
+		// We want intermediates to be silently auto-initialized.
+		if def, err = toStarlark(m.typ.loader, fd, fd.Default()); err != nil {
+			return nil, err
+		}
 	}
 
 	// Note that lazy initialization of fields is an implementation detail. This
@@ -231,24 +248,25 @@ func (m *Message) SetField(name string, val starlark.Value) error {
 		return nil
 	}
 
-	// When assigning to a message-valued field (singular or repeated), recognize
-	// dicts and Nones and use them to instantiate values (perhaps empty) of the
-	// corresponding proto type. This allows to construct deeply nested protobuf
-	// messages just by using lists, dicts and primitive values. Python does this
-	// too.
-	if fd.Kind() == protoreflect.MessageKind {
-		var err error
-		if val, err = maybeMakeMessages(m.typ.loader, fd, val); err != nil {
-			return fmt.Errorf("when constructing %q in proto %q - %s", name, m.Type(), err)
-		}
+	origVal := val
+	loader := m.typ.loader
+	switch {
+	case fd.IsList():
+		// Reuse typed lists of correct type by reference, copy the rest.
+		val, err = asTypedList(val, converter(loader, fd))
+	case fd.IsMap():
+		// Reuse typed dicts of correct type by reference, copy the rest.
+		val, err = asTypedDict(val, converter(loader, fd.MapKey()), converter(loader, fd.MapValue()))
+	case fd.Kind() == protoreflect.MessageKind || fd.Kind() == protoreflect.GroupKind:
+		// Reuse messages of correct type by reference, convert dicts to messages.
+		val, err = loader.MessageType(fd.Message()).Convert(val)
+	default:
+		// Check types compatibility, int ranges, etc.
+		err = canAssign(fd, val)
 	}
 
-	// Do a light O(1) type check. It doesn't "recurse" into lists or tuples. So
-	// it is still possible to assign e.g. a list of strings to a "repeated int64"
-	// field. This will be discovered later in ToProto when trying to construct
-	// a proto message from Starlark values.
-	if err := canAssign(fd, val); err != nil {
-		return fmt.Errorf("can't assign value of type %q to field %q in proto %q - %s", val.Type(), name, m.Type(), err)
+	if err != nil {
+		return fmt.Errorf("can't assign value of type %q to field %q in proto %q - %s", origVal.Type(), name, m.Type(), err)
 	}
 	if err := m.checkMutable(); err != nil {
 		return err
@@ -294,78 +312,49 @@ func (m *Message) checkMutable() error {
 	return nil
 }
 
-// maybeMakeMessages recognizes when a dict is assigned to a message field or
-// when a list or tuple of dicts or Nones is assigned to a repeated message
-// field.
-//
-// It converts dicts or Nones to *Message of corresponding type and returns them
-// as Starlark values to use in place of the passed value.
-//
-// Returns an error if some dict can't be converted to *Message of the requested
-// type (e.g. it has wrong schema).
-func maybeMakeMessages(l *Loader, fd protoreflect.FieldDescriptor, val starlark.Value) (starlark.Value, error) {
-	// Assigning a dict to singular field.
-	if dict, ok := val.(*starlark.Dict); ok && fd.Cardinality() != protoreflect.Repeated {
-		msg := l.MessageType(fd.Message()).NewMessage()
-		return msg, msg.FromDict(dict)
+// asTypedList returns x as is if it is already list<c>, otherwise allocates
+// new list<c>, and copies it from 'x'.
+func asTypedList(x starlark.Value, c typed.Converter) (*typed.List, error) {
+	if tp, ok := x.(*typed.List); ok && tp.Converter() == c {
+		return tp, nil // the exact same type, can reuse the reference
 	}
 
-	// Assigning a primitive sequence (not a map!) to a repeated field.
-	seq, _ := val.(starlark.Sequence)
-	mapping, _ := val.(starlark.Mapping)
-	if seq != nil && mapping == nil && fd.Cardinality() == protoreflect.Repeated {
-		// Return 'seq' as is (not a copy!) if it doesn't need to be transformed.
-		// This is important in the following case:
-		//   l = [m1]
-		//   msg.repeated = l
-		//   l.append(m2)  # msg.repeated is also mutated
-		if !shouldMakeMessages(seq) {
-			return val, nil
-		}
+	it := starlark.Iterate(x)
+	if it == nil {
+		return nil, fmt.Errorf("got %q, want an iterable", x.Type())
+	}
+	defer it.Done()
 
-		iter := seq.Iterate()
-		defer iter.Done()
-
-		// Make a copy of 'seq' by replacing dicts and Nones with messages.
-		out := make([]starlark.Value, 0, seq.Len())
-		typ := l.MessageType(fd.Message())
-
-		var v starlark.Value
-		for iter.Next(&v) {
-			switch val := v.(type) {
-			case starlark.NoneType:
-				out = append(out, typ.NewMessage())
-			case *starlark.Dict:
-				msg := typ.NewMessage()
-				if err := msg.FromDict(val); err != nil {
-					return nil, err
-				}
-				out = append(out, msg)
-			default:
-				out = append(out, v)
-			}
-		}
-
-		return starlark.NewList(out), nil
+	var vals []starlark.Value
+	if l := starlark.Len(x); l > 0 {
+		vals = make([]starlark.Value, 0, l)
+	}
+	var itm starlark.Value
+	for it.Next(&itm) {
+		vals = append(vals, itm)
 	}
 
-	// Unrecognized combination, let SetField deal with it.
-	return val, nil
+	return typed.NewList(c, vals)
 }
 
-// shouldMakeMessages returns true if seq has at least one dict or None that
-// should be converted to a proto message.
-func shouldMakeMessages(seq starlark.Sequence) bool {
-	iter := seq.Iterate()
-	defer iter.Done()
-	var v starlark.Value
-	for iter.Next(&v) {
-		if v == starlark.None {
-			return true
-		}
-		if _, ok := v.(*starlark.Dict); ok {
-			return true
+// asTypedDict returns x as is if it is already dict<k,v>, otherwise allocates
+// new dict<k,v>, and copies it from 'x'.
+func asTypedDict(x starlark.Value, k, v typed.Converter) (*typed.Dict, error) {
+	if tp, ok := x.(*typed.Dict); ok && tp.KeyConverter() == k && tp.ValueConverter() == v {
+		return tp, nil // the exact same type, can reuse the reference
+	}
+
+	m, ok := x.(starlark.IterableMapping)
+	if !ok {
+		return nil, fmt.Errorf("got %q, want an iterable mapping", x.Type())
+	}
+	items := m.Items()
+
+	d := typed.NewDict(k, v, len(items))
+	for _, kv := range items {
+		if err := d.SetKey(kv[0], kv[1]); err != nil {
+			return nil, err
 		}
 	}
-	return false
+	return d, nil
 }
