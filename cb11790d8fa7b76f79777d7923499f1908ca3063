@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6e9c0905_af8c324c",
+        "filename": "buildbucket/cmd/run_annotations/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-12T16:06:45Z",
+      "side": 1,
+      "message": "\u003e ... instead of stack traces?\n\nerr.. I meant \"with stack traces\".",
+      "parentUuid": "b5f6eafd_4ec4c426",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 29
+      },
+      "revId": "cb11790d8fa7b76f79777d7923499f1908ca3063",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "24c545db_51f89712",
         "filename": "luciexe/doc.go",
         "patchSetId": 5
