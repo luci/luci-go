@@ -28,12 +28,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/starlark/starlarkproto"
+	"go.chromium.org/luci/starlark/starlarkprotov2"
 )
 
 // Output is an in-memory representation of all generated output files.
@@ -251,7 +250,7 @@ func (o *outputBuilder) SetKey(k, v starlark.Value) error {
 	}
 
 	_, str := v.(starlark.String)
-	_, msg := v.(*starlarkproto.Message)
+	_, msg := v.(*starlarkprotov2.Message)
 	if !str && !msg {
 		return fmt.Errorf("output set value should be either a string or a proto message, not %s", v.Type())
 	}
@@ -275,7 +274,8 @@ func (o *outputBuilder) renderWithTextProto(includePBHeader bool) (map[string][]
 			continue
 		}
 
-		msg, err := v.(*starlarkproto.Message).ToProto()
+		msg := v.(*starlarkprotov2.Message)
+		blob, err := starlarkprotov2.ToTextPB(msg)
 		if err != nil {
 			return nil, err
 		}
@@ -291,7 +291,7 @@ func (o *outputBuilder) renderWithTextProto(includePBHeader bool) (map[string][]
 			}
 			buf.WriteString("\n")
 		}
-		proto.MarshalText(&buf, msg)
+		buf.Write(blob)
 
 		out[k.GoString()] = buf.Bytes()
 	}

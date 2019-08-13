@@ -25,12 +25,11 @@ def _to_textpb(msg):
   """
 
 
-def _to_jsonpb(msg, emit_defaults=False):
+def _to_jsonpb(msg):
   """Serializes a protobuf message to a string using JSONPB serialization.
 
   Args:
     msg: a proto message to serialize. Required.
-    emit_defaults: if True, include proto default values in the output.
   """
 
 

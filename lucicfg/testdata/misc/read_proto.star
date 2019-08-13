@@ -17,8 +17,8 @@ def test_read_proto_fail():
   assert.fails(lambda: call('missing_file.txt'), 'no such file')
   assert.fails(lambda: call('//missing_file.txt'), 'no such file')
   assert.fails(lambda: call('../../../README.md'), 'outside the package root')
-  assert.fails(lambda: call('support/proto.json', 'textpb'), 'unknown field name "{" in testproto.Msg')
-  assert.fails(lambda: call('support/proto.textpb', 'jsonpb'), 'invalid character \'i\' looking for beginning of value')
+  assert.fails(lambda: call('support/proto.json', 'textpb'), 'syntax error')
+  assert.fails(lambda: call('support/proto.textpb', 'jsonpb'), 'syntax error')
   assert.fails(lambda: call('support/proto.json', 'huh'), 'unknown proto encoding "huh"')
 
 test_read_proto_ok()

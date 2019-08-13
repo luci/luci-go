@@ -19,10 +19,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
-	"go.chromium.org/luci/lucicfg/testproto"
 	"go.chromium.org/luci/starlark/interpreter"
+
+	_ "go.chromium.org/luci/lucicfg/testproto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -62,18 +61,4 @@ func TestProtosAreImportable(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 	}
-}
-
-func TestProtoMessageDoc(t *testing.T) {
-	t.Parallel()
-
-	Convey("Works", t, func() {
-		name, doc := protoMessageDoc(&testproto.Msg{})
-		So(name, ShouldEqual, "Msg")
-		So(doc, ShouldEqual, "https://example.com/proto-doc")
-
-		name, doc = protoMessageDoc(&empty.Empty{})
-		So(name, ShouldEqual, "")
-		So(doc, ShouldEqual, "")
-	})
 }

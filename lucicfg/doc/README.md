@@ -2524,7 +2524,7 @@ Serializes a protobuf message to a string using ASCII proto serialization.
 ### proto.to_jsonpb {#proto.to_jsonpb}
 
 ```python
-proto.to_jsonpb(msg, emit_defaults = None)
+proto.to_jsonpb(msg)
 ```
 
 
@@ -2534,7 +2534,6 @@ Serializes a protobuf message to a string using JSONPB serialization.
 #### Arguments {#proto.to_jsonpb-args}
 
 * **msg**: a proto message to serialize. Required.
-* **emit_defaults**: if True, include proto default values in the output.
 
 
 
