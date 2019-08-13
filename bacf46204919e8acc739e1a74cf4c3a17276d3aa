@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6905f7c1_5b859442",
+        "filename": "milo/buildsource/swarming/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T19:58:32Z",
+      "side": 0,
+      "message": "I think this can be deleted too... (why do I work as dead code detector?..)",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 1
+      },
+      "revId": "bacf46204919e8acc739e1a74cf4c3a17276d3aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
