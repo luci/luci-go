@@ -57,11 +57,7 @@ func FromTextPB(typ *MessageType, blob []byte) (*Message, error) {
 	if err := opts.Unmarshal(blob, pb); err != nil {
 		return nil, err
 	}
-	msg := typ.NewMessage()
-	if err := msg.FromProto(pb); err != nil {
-		return nil, err
-	}
-	return msg, nil
+	return typ.MessageFromProto(pb), nil
 }
 
 // FromJSONPB deserializes a protobuf message given as JBONPB string.
@@ -75,11 +71,7 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 	if err := opts.Unmarshal(blob, pb); err != nil {
 		return nil, err
 	}
-	msg := typ.NewMessage()
-	if err := msg.FromProto(pb); err != nil {
-		return nil, err
-	}
-	return msg, nil
+	return typ.MessageFromProto(pb), nil
 }
 
 // ProtoLib returns a dict with single struct named "proto" that holds public
