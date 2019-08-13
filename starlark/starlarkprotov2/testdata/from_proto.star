@@ -32,7 +32,7 @@ bs_rep: "b0"
 bs_rep: "b1"
 """)
 assert.eq(m.i64, -64)
-assert.eq(m.i64_rep, [1, 2])
+assert.eq(list(m.i64_rep), [1, 2])
 assert.eq(m.i32, -32)
 assert.eq(m.ui64, 64)
 assert.eq(m.ui32, 32)
@@ -41,7 +41,7 @@ assert.eq(m.f32, 2.0)
 assert.eq(m.f64, 3.0)
 assert.eq(m.s, "hello")
 assert.eq(m.bs, "bytes")
-assert.eq(m.bs_rep, ["b0", "b1"])
+assert.eq(list(m.bs_rep), ["b0", "b1"])
 
 # Enums.
 m2 = proto.from_textpb(testprotos.Complex, "enum_val: ENUM_VAL_1")
@@ -65,16 +65,16 @@ assert.eq(m4.another_simple, None)
 
 # Maps with primitive values.
 m5 = proto.from_textpb(testprotos.MapWithPrimitiveType, """
-m <
+m1 <
   key: "abc"
   value: 1
 >
-m <
+m1 <
   key: "def"
   value: 2
 >
 """)
-assert.eq(m5.m, {'abc': 1, 'def': 2})
+assert.eq(dict(m5.m1), {'abc': 1, 'def': 2})
 
 # Maps with message values.
 m6 = proto.from_textpb(testprotos.MapWithMessageType, """

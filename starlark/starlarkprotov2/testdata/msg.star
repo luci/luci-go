@@ -39,19 +39,12 @@ assert.eq(m.single.i, 0)
 # Setting wrong type is forbidden.
 def set_as_int():
   m.single = 123
-assert.fails(set_as_int, 'can\'t assign "int" to "message" field')
+assert.fails(set_as_int, 'got int, want testprotos.Simple')
 
 # Setting to a message of a wrong type is also forbidden.
 def set_as_msg():
   m.single = testprotos.MessageFields()
-assert.fails(set_as_msg, 'can\'t assign message "testprotos.MessageFields" to a message field "testprotos.Simple"')
-
-# The full type-correctness of the inner message is checked only during
-# serialization.
-m.single = testprotos.Simple(many_i=[None])
-def serialize():
-  proto.to_textpb(m)
-assert.fails(serialize, 'can\'t assign "NoneType" to "int64" field')
+assert.fails(set_as_msg, 'got testprotos.MessageFields, want testprotos.Simple')
 
 # Serialization works.
 text = proto.to_textpb(testprotos.MessageFields(single=testprotos.Simple(i=999)))

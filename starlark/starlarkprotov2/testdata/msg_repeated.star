@@ -21,9 +21,10 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 m = testprotos.MessageFields()
 
 # Default value.
-assert.eq(m.rep, [])
+assert.eq(type(m.rep), 'list<testprotos.Simple>')
+assert.eq(len(m.rep), 0)
 
-# Can append to it, it is just a list.
+# Can append to it, it is just like a list.
 m.rep.append(testprotos.Simple(i=123))
 assert.eq(m.rep[0].i, 123)
 
@@ -31,12 +32,26 @@ assert.eq(m.rep[0].i, 123)
 m.rep = [testprotos.Simple(i=456)]
 assert.eq(m.rep[0].i, 456)
 
-# Sneakily adding wrong-typed element to the list is NOT an immediate error
-# currently. This is discovered later when trying to serialize the object.
-m.rep = [testprotos.Simple(i=456), testprotos.MessageFields()]
-def serialize():
-  proto.to_textpb(m)
-assert.fails(serialize, 'list item #1: can\'t assign message "testprotos.MessageFields" to a message field "testprotos.Simple"')
+# Assigning None initializes a new empty message.
+m.rep[0] = None
+assert.eq(m.rep[0].i, 0)
+
+# Assigning a dict initializes a new message.
+m.rep[0] = {'i': 999}
+assert.eq(m.rep[0].i, 999)
+
+# Does type checks when updating the list.
+def append_bad_value():
+  m.rep.append(testprotos.MessageFields())
+assert.fails(append_bad_value, 'append: got testprotos.MessageFields, want testprotos.Simple')
+def set_bad_value():
+  m.rep[0] = testprotos.MessageFields()
+assert.fails(set_bad_value, 'item #0: got testprotos.MessageFields, want testprotos.Simple')
+
+# Checks types of elements when constructing from a list.
+def copy_bad_list():
+  m.rep = [testprotos.Simple(i=456), testprotos.MessageFields()]
+assert.fails(copy_bad_list, 'item #1: got testprotos.MessageFields, want testprotos.Simple')
 
 # Serialization to text proto works.
 text = proto.to_textpb(testprotos.MessageFields(

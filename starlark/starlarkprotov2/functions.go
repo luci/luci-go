@@ -29,30 +29,22 @@ import (
 
 // ToTextPB serializes a protobuf message to text proto.
 func ToTextPB(msg *Message) ([]byte, error) {
-	pb, err := msg.ToProto()
-	if err != nil {
-		return nil, err
-	}
 	opts := prototext.MarshalOptions{
 		AllowPartial: true,
 		Indent:       "  ",
 		Resolver:     msg.typ.loader.types, // used for google.protobuf.Any fields
 	}
-	return opts.Marshal(pb)
+	return opts.Marshal(msg.ToProto())
 }
 
 // ToJSONPB serializes a protobuf message to JSONPB string.
 func ToJSONPB(msg *Message) ([]byte, error) {
-	pb, err := msg.ToProto()
-	if err != nil {
-		return nil, err
-	}
 	opts := protojson.MarshalOptions{
 		AllowPartial: true,
 		Indent:       "\t",
 		Resolver:     msg.typ.loader.types, // used for google.protobuf.Any fields
 	}
-	return opts.Marshal(pb)
+	return opts.Marshal(msg.ToProto())
 }
 
 // FromTextPB deserializes a protobuf message given in text proto form.

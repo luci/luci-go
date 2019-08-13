@@ -36,9 +36,9 @@ assert.eq(m2.s, '')
 # Setting wrong type fails.
 def set_bad():
   m2.s = 1
-assert.fails(set_bad, 'can\'t assign "int" to "string" field')
+assert.fails(set_bad, 'got int, want string')
 
 # Assiging string to a non-string field fails.
 def set_string_to_int():
-  m2.i64 = ""
-assert.fails(set_string_to_int, 'can\'t assign "string" to "int64" field')
+  m2.i64 = ''
+assert.fails(set_string_to_int, 'got string, want int')

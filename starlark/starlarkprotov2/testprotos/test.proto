@@ -36,6 +36,8 @@ message SimpleFields {
   string s = 9;
   bytes bs = 10;
   repeated bytes bs_rep = 11;
+  repeated sint64 si64_rep = 12;
+  repeated string str_rep = 13;
 }
 
 message MessageFields {
@@ -81,7 +83,9 @@ message RefsOtherProtos {
 }
 
 message MapWithPrimitiveType {
-  map<string, int64> m = 1;
+  map<string, int64> m1 = 1;
+  map<string, int32> m2 = 2;
+  map<int64, int64> m3 = 3;
 }
 
 message MapWithMessageType {

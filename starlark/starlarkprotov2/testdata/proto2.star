@@ -24,9 +24,9 @@ m.i = 123
 assert.eq(m.i, 123)
 
 # Repeated fields.
-assert.eq(m.rep_i, [])
+assert.eq(len(m.rep_i), 0)
 m.rep_i = [1, 2, 3]
-assert.eq(m.rep_i, [1, 2, 3])
+assert.eq(list(m.rep_i), [1, 2, 3])
 
 # Serialization works.
 assert.eq(proto.to_textpb(m), "i: 123\nrep_i: 1\nrep_i: 2\nrep_i: 3\n")
