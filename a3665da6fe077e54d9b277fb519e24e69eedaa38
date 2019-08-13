@@ -117,6 +117,30 @@
       "revId": "a3665da6fe077e54d9b277fb519e24e69eedaa38",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "281946da_5a200f19",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T21:28:10Z",
+      "side": 1,
+      "message": "Er... to be precise, \"[There is no such thing as] dumb questions\" :)",
+      "parentUuid": "3f92ff80_fa857302",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 41
+      },
+      "revId": "a3665da6fe077e54d9b277fb519e24e69eedaa38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
