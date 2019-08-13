@@ -55,7 +55,7 @@ assert.eq(
 # Setting to a wrong type fails.
 def set_bad_val():
   m.enum_val = ''
-assert.fails(set_bad_val, 'can\'t assign "string" to "enum" field')
+assert.fails(set_bad_val, 'got string, want int')
 
 # Attempting to overwrite enum constant fails.
 def overwrite_global():

@@ -19,13 +19,13 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 m1 = testprotos.Simple(i=456, many_i=[1, 2, 3])
 freeze(m1)
 assert.eq(m1.i, 456)
-assert.eq(m1.many_i, [1, 2, 3])
+assert.eq(list(m1.many_i), [1, 2, 3])
 def change_m1_i_1():
   m1.i = 456
-assert.fails(change_m1_i_1, 'cannot modify frozen proto message "testprotos.Simple"')
+assert.fails(change_m1_i_1, 'cannot modify frozen proto message testprotos.Simple')
 def change_m1_i_2():
   m1.i = None
-assert.fails(change_m1_i_2, 'cannot modify frozen proto message "testprotos.Simple"')
+assert.fails(change_m1_i_2, 'cannot modify frozen proto message testprotos.Simple')
 
 # Freezes recursively.
 def change_m1_many_i():
@@ -36,7 +36,7 @@ assert.fails(change_m1_many_i, 'cannot append to frozen list')
 m2 = testprotos.Simple()
 freeze(m2)
 assert.eq(m2.i, 0)
-assert.eq(m2.many_i, [])
+assert.eq(len(m2.many_i), 0)
 def change_m2_many_i():
   m2.many_i.append(4)
 assert.fails(change_m2_many_i, 'cannot append to frozen list')

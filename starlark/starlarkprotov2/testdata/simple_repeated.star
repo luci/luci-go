@@ -21,46 +21,65 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 m = testprotos.SimpleFields()
 
 # Default value.
-assert.eq(m.i64_rep, [])
+assert.eq(type(m.i64_rep), 'list<int64>')
+assert.eq(len(m.i64_rep), 0)
 
-# Can append to it, it is just a list.
+# Can append to it, it is just like a list.
 m.i64_rep.append(1)
-assert.eq(m.i64_rep, [1])
+assert.eq(list(m.i64_rep), [1])
 
 # Can completely recreated the field by replacing with default.
 m.i64_rep = None
-assert.eq(m.i64_rep, [])
+assert.eq(len(m.i64_rep), 0)
 
-# The list is stored as a reference, not as a value.
-l1 = []
-m2 = testprotos.SimpleFields(i64_rep=l1)
-l1.append(123)
-assert.eq(m2.i64_rep, [123])
+# Fields of the exact same type can point to a single object.
+m2 = testprotos.SimpleFields()
+m2.i64_rep = m.i64_rep
+assert.true(m2.i64_rep == m.i64_rep)
+m.i64_rep.append(4444)
+assert.eq(m2.i64_rep[-1], 4444)
 
-# Setter works. It preserves the reference and type of the value as long as it
-# is iterable.
+# Assigning a regular list makes a copy.
+lst = [1, 2, 3]
+m.i64_rep = lst
+assert.true(m.i64_rep != lst)
+lst.append(4)
+assert.eq(m.i64_rep[-1], 3)  # old one
 
-l2 = [1, 2]
-m2.i64_rep = l2
-assert.eq(m2.i64_rep, [1, 2])
-l2.append(3)
-assert.eq(m2.i64_rep, [1, 2, 3])
+# Rejects list<T> with different T.
+def set_wrong_list():
+  m.i64_rep = m.bs_rep
+assert.fails(set_wrong_list, 'want list<int64> or just list')
 
-t = (1, 2)
-m2.i64_rep = t
-assert.eq(m2.i64_rep, (1, 2))
+# int64 and sint64 (etc) are actually same type on Starlark side and thus can
+# be assigned to one another.
+m.si64_rep = [1, 2, 3]
+m.i64_rep = m.si64_rep
+assert.true(m.i64_rep == m.si64_rep)
 
-# Trying to set a wrong type is an error.
+# Same with bytes and string.
+m.bs_rep = ['a', 'b', 'c']
+m.str_rep = m.bs_rep
+assert.true(m.str_rep == m.bs_rep)
+
+# Trying to replace with a completely wrong type is an error.
 def set_int():
-  m2.i64_rep = 123
-assert.fails(set_int, 'can\'t assign "int" to a repeated field')
+  m.i64_rep = 123
+assert.fails(set_int, 'got int, want an iterable')
 
-# Sneakily adding wrong-typed element to the list is NOT an immediate error
-# currently. This is discovered later when trying to serialize the object.
-m2.i64_rep = [1, 2, None]
-def serialize():
-  proto.to_textpb(m2)
-assert.fails(serialize, 'list item #2: can\'t assign "NoneType" to "int64" field')
+# Does type checks when updating the list.
+def append_bad_value():
+  m.i64_rep.append('zzz')
+assert.fails(append_bad_value, 'append: got string, want int')
+m.i64_rep = [0]
+def set_bad_value():
+  m.i64_rep[0] = None
+assert.fails(set_bad_value, 'item #0: got NoneType, want int')
+
+# Checks types of elements when constructing from a list.
+def copy_bad_list():
+  m.i64_rep = [1, 2, None]
+assert.fails(copy_bad_list, 'when constructing list<int64>: item #2: got NoneType, want int')
 
 # Serialization to text proto works.
 text = proto.to_textpb(testprotos.SimpleFields(i64_rep=[1, 2, 3]))

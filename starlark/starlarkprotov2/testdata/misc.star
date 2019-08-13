@@ -29,18 +29,6 @@ assert.true(bool(m))
 # Stringification works.
 assert.eq(str(testprotos.Simple(i=123)), "i:123")
 
-# Protobuf lib abstraction leaking fields are not accessible.
-def get_XXX_sizecache():
-  print(m.XXX_sizecache)
-assert.fails(get_XXX_sizecache, 'has no field "XXX_sizecache"')
-
-# Broken protos also stringify, but to an error message.
-assert.eq(
-  str(testprotos.Simple(many_i=[None])),
-  "<!Bad testprotos.Simple: bad value for field \"many_i\" of " +
-  "\"testprotos.Simple\" - list item #0: can't assign \"NoneType\" " +
-  "to \"int64\" field!>")
-
 # Proto messages are comparable by identity, but not by value.
 m1 = testprotos.Simple()
 m2 = testprotos.Simple()
@@ -50,17 +38,17 @@ assert.true(m1 != m2)
 # Assigning totally unsupported types to fields fails.
 def set_unrelated():
   m.i = set([])
-assert.fails(set_unrelated, 'can\'t assign "set" to "int64" field')
+assert.fails(set_unrelated, 'got set, want int')
 
 # Grabbing unknown field fails.
 def get_unknown():
   print(m.zzz)
-assert.fails(get_unknown, 'proto message "testprotos.Simple" has no field "zzz"')
+assert.fails(get_unknown, 'proto message testprotos.Simple has no field "zzz"')
 
 # Setting unknown field fails.
 def set_unknown():
   m.zzz = 123
-assert.fails(set_unknown, 'proto message "testprotos.Simple" has no field "zzz"')
+assert.fails(set_unknown, 'proto message testprotos.Simple has no field "zzz"')
 
 # Proto messages are non-hashable currently.
 def use_as_key():

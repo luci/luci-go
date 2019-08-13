@@ -20,42 +20,32 @@ import (
 	"go.starlark.net/starlark"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/starlark/typed"
 )
-
-// assigner assigns some value to some field of 'm'.
-//
-// It allows to split assignment 'm.fd=val' into two phases:
-//   1. Check type of 'val' matches 'fd', produce 'assigner' if so.
-//   2. Actually do the assignment in 'assigner(m)'.
-//
-// This is useful since step (1) is used independently of step (2) in SetField,
-// where we just want to check the type, but don't need to do any proto message
-// manipulations yet.
-type assigner func(m protoreflect.Message) error
-
-// instantiator creates some new singular protoreflect.Value on demand.
-//
-// Its application is similar to the 'assigner' described above: during
-// 'm.fd=val' assignment it allows to delay conversion of 'val' into proto to
-// a later stage.
-type instantiator func() (protoreflect.Value, error)
 
 // toStarlark converts a protobuf value (whose kind is described by the given
 // descriptor) to a Starlark value, using the loader to instantiate messages.
 //
 // Type of 'v' should match 'fd' (panics otherwise). This is always the case
 // because we extract both 'v' and 'fd' from the same protoreflect message.
+//
+// TODO(vadimsh): We can probably get rid of 'error' here and panic on errors
+// instead. In all call sites 'fd' and 'v' are extracted from same protoreflect
+// object, which should already guarantee that 'fd' and 'v' are compatible.
+// This is also confirmed by tests that can't hit the error code path here no
+// matter how they try.
 func toStarlark(l *Loader, fd protoreflect.FieldDescriptor, v protoreflect.Value) (starlark.Value, error) {
 	switch {
 	case fd.IsList():
-		if !v.IsValid() { // unset repeated field => empty list
-			return starlark.NewList(nil), nil
+		if !v.IsValid() { // unset repeated field => empty list<T>
+			return newStarlarkList(l, fd), nil
 		}
 		return toStarlarkList(l, fd, v.List())
 
 	case fd.IsMap():
-		if !v.IsValid() { // unset map field => empty dict
-			return starlark.NewDict(0), nil
+		if !v.IsValid() { // unset map field => empty dict<K,V>
+			return newStarlarkDict(l, fd, 0), nil
 		}
 		return toStarlarkDict(l, fd, v.Map())
 
@@ -64,62 +54,72 @@ func toStarlark(l *Loader, fd protoreflect.FieldDescriptor, v protoreflect.Value
 	}
 }
 
-// assign does 'm.fd = v' (even if fd is a repeated field or a map).
+// prepareRHS examines right hand side of some assignment `msg.fd = v`.
 //
-// Returns an error if type of 'v' doesn't match 'fd'.
+// It checks whether 'v' can be assigned to a field described by 'fd', and
+// converts it to necessary type (using 'converter(fd)') if required.
+//
+// On success returns a value of a type matching 'fd'. It can either be 'v' as
+// is, or a type-converter copy of 'v'.
+//
+// See doc.go for the conversion rules.
+func prepareRHS(l *Loader, fd protoreflect.FieldDescriptor, v starlark.Value) (starlark.Value, error) {
+	switch {
+	case fd.IsList():
+		// Reuse list<T> by reference if it has matching type. Reject it right away
+		// if it is some other list<T'>, T'!=T. Otherwise make a copy.
+		myT := converter(l, fd)
+		if tpd, ok := v.(*typed.List); ok {
+			if tpd.Converter() == myT {
+				return v, nil // exact same type, reuse by reference
+			}
+			return nil, fmt.Errorf("want list<%s> or just list", myT.Type())
+		}
+		v, err := typed.AsTypedList(myT, v) // make a copy
+		if err != nil {
+			return nil, fmt.Errorf("when constructing list<%s>: %s", myT.Type(), err)
+		}
+		return v, nil
+
+	case fd.IsMap():
+		// Reuse dict<K,V> by reference if it has matching type. Reject it right
+		// away if it is some other dict<K',V'>, K'!=K || V'!=V. Otherwise make
+		// a copy.
+		myK := converter(l, fd.MapKey())
+		myV := converter(l, fd.MapValue())
+		if tpd, ok := v.(*typed.Dict); ok {
+			if tpd.KeyConverter() == myK && tpd.ValueConverter() == myV {
+				return v, nil // exact same type, reuse by reference
+			}
+			return nil, fmt.Errorf("want dict<%s,%s> or just dict", myK.Type(), myV.Type())
+		}
+		v, err := typed.AsTypedDict(myK, myV, v) // make a copy
+		if err != nil {
+			return nil, fmt.Errorf("when constructing dict<%s,%s>: %s", myK.Type(), myV.Type(), err)
+		}
+		return v, nil
+
+	default:
+		// Attempt to type-cast 'v' to the necessary type. In particular this
+		// converts dict to messages, checks int ranges, etc.
+		return converter(l, fd).Convert(v)
+	}
+}
+
+// assign does 'm.fd = v'.
+//
+// Here 'v' is a result of some prepareRHS(.., fd, ...) or toStarlark(fd, ...)
+// call. Panics if type of 'v' doesn't match 'fd'. This should not be possible.
 //
 // m.fd is assumed to be in the initial state (i.e. if it is a list or a map,
 // they are empty). Panics otherwise.
-func assign(m protoreflect.Message, fd protoreflect.FieldDescriptor, v starlark.Value) error {
-	a, err := getAssigner(fd, v)
-	if err != nil {
-		return err
-	}
-	return a(m)
-}
-
-// canAssign returns an error if the given Starlark value can't be assigned to
-// a proto field with the given descriptor.
-//
-// Runs in O(1). Doesn't recurse into lists or tuples. Type mismatches there
-// will be discovered in 'assign'.
-func canAssign(fd protoreflect.FieldDescriptor, v starlark.Value) error {
-	_, err := getAssigner(fd, v)
-	return err
-}
-
-// getAssigner returns a callback that sets field 'fd' to 'v' in some message.
-//
-// Does initial light O(1) type checks. All heavier O(N) checks are done in
-// the returned callback which actually does the assignment.
-func getAssigner(fd protoreflect.FieldDescriptor, v starlark.Value) (assigner, error) {
+func assign(m protoreflect.Message, fd protoreflect.FieldDescriptor, v starlark.Value) {
 	switch {
 	case fd.IsList():
-		iter, ok := v.(starlark.Iterable)
-		if !ok {
-			return nil, fmt.Errorf("can't assign %q to a repeated field", v.Type())
-		}
-		return func(m protoreflect.Message) error { return assignProtoList(m, fd, iter) }, nil
-
+		assignProtoList(m, fd, v.(*typed.List))
 	case fd.IsMap():
-		iter, ok := v.(starlark.IterableMapping)
-		if !ok {
-			return nil, fmt.Errorf("can't assign %q to a map field", v.Type())
-		}
-		return func(m protoreflect.Message) error { return assignProtoMap(m, fd, iter) }, nil
-
+		assignProtoMap(m, fd, v.(*typed.Dict))
 	default:
-		futVal, err := prepProtoSingular(fd, v)
-		if err != nil {
-			return nil, err
-		}
-		return func(m protoreflect.Message) error {
-			val, err := futVal()
-			if err != nil {
-				return err
-			}
-			m.Set(fd, val)
-			return nil
-		}, nil
+		m.Set(fd, toProtoSingular(fd, v))
 	}
 }

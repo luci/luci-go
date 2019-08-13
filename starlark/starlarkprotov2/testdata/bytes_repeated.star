@@ -20,28 +20,33 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 m = testprotos.SimpleFields()
 
 # Default value.
-assert.eq(m.bs_rep, [])
+assert.eq(len(m.bs_rep), 0)
 
 # Setter and getter works.
 m.bs_rep = ['', '\x01\x02\x03']
-assert.eq(m.bs_rep, ['', '\x01\x02\x03'])
+assert.eq(list(m.bs_rep), ['', '\x01\x02\x03'])
 assert.eq(proto.to_textpb(m), 'bs_rep: ""\nbs_rep: "\\x01\\x02\\x03"\n')
 
 # Setting through constructor works.
 m2 = testprotos.SimpleFields(bs_rep=['a', 'b'])
-assert.eq(m2.bs_rep, ['a', 'b'])
+assert.eq(list(m2.bs_rep), ['a', 'b'])
 
 # Clearing works.
 m2.bs_rep = None
-assert.eq(m2.bs_rep, [])
+assert.eq(len(m2.bs_rep), 0)
 
 # Setting wrong type fails.
 def set_bad():
   m2.bs_rep = 1
-assert.fails(set_bad, 'can\'t assign "int" to a repeated field')
+assert.fails(set_bad, 'got int, want an iterable')
 
-# Trying to put a wrong type into the list fails when serializing.
-def set_bad_item():
+# Trying to put a wrong type into the list fails.
+def set_bad_item1():
   m2.bs_rep = [1]
-  proto.to_textpb(m2)
-assert.fails(set_bad_item, 'can\'t assign "int" to "bytes" field')
+assert.fails(set_bad_item1, 'item #0: got int, want string')
+
+
+# Trying to put a wrong type into the list fails.
+def set_bad_item2():
+  m2.bs_rep = [None]
+assert.fails(set_bad_item2, 'item #0: got NoneType, want string')

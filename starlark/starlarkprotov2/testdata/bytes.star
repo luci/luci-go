@@ -38,4 +38,4 @@ assert.eq(m2.bs, '')
 # Setting wrong type fails.
 def set_bad():
   m2.bs = 1
-assert.fails(set_bad, 'can\'t assign "int" to "bytes" field')
+assert.fails(set_bad, 'got int, want string')
