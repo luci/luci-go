@@ -31,15 +31,18 @@ func newStarlarkList(l *Loader, fd protoreflect.FieldDescriptor) *typed.List {
 }
 
 // toStarlarkList does protoreflect.List => typed.List conversion.
-func toStarlarkList(l *Loader, fd protoreflect.FieldDescriptor, list protoreflect.List) (*typed.List, error) {
+//
+// Panics if type of 'list' (or some of its items) doesn't match 'fd'.
+func toStarlarkList(l *Loader, fd protoreflect.FieldDescriptor, list protoreflect.List) *typed.List {
 	vals := make([]starlark.Value, list.Len())
 	for i := 0; i < list.Len(); i++ {
-		var err error
-		if vals[i], err = toStarlarkSingular(l, fd, list.Get(i)); err != nil {
-			return nil, fmt.Errorf("list item #%d: %s", i, err)
-		}
+		vals[i] = toStarlarkSingular(l, fd, list.Get(i))
 	}
-	return typed.NewList(converter(l, fd), vals)
+	tl, err := typed.NewList(converter(l, fd), vals)
+	if err != nil {
+		panic(fmt.Errorf("unexpectedly wrong protoreflect.List %s", list))
+	}
+	return tl
 }
 
 // assignProtoList does m.fd = list, where fd is a repeated field.

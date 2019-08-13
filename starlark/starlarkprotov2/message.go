@@ -31,7 +31,8 @@ import (
 // Implements starlark.Value, starlark.HasAttrs and starlark.HasSetField
 // interfaces.
 //
-// Can be instantiated through Loader as loader.MessageType(...).NewMessage().
+// Can be instantiated through Loader as loader.MessageType(...).Message() or
+// loader.MessageType(...).MessageFromProto(p).
 //
 // TODO(vadimsh): Currently not safe for a cross-goroutine use without external
 // locking, even when frozen, due to lazy initialization of default fields on
@@ -56,30 +57,6 @@ func (m *Message) ToProto() proto.Message {
 		assign(msg, m.typ.fields[k], v)
 	}
 	return msg
-}
-
-// FromProto populates fields of this message based on values in proto.Message.
-//
-// Returns an error if type of `p` doesn't match `m`.
-func (m *Message) FromProto(p proto.Message) error {
-	refl := p.ProtoReflect()
-
-	if got, want := refl.Descriptor(), m.typ.desc; got != want {
-		return fmt.Errorf("bad message type: got %s, want %s", got.FullName(), want.FullName())
-	}
-
-	var err error
-	refl.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-		var sv starlark.Value
-		if sv, err = toStarlark(m.typ.loader, fd, v); err != nil {
-			err = fmt.Errorf("field %q: %s", fd.Name(), err)
-			return false
-		}
-		err = m.SetField(string(fd.Name()), sv)
-		return err == nil
-	})
-
-	return err
 }
 
 // FromDict populates fields of this message based on values in an iterable
@@ -170,11 +147,7 @@ func (m *Message) Attr(name string) (starlark.Value, error) {
 	// If this is not a oneof field, auto-initialize it to its default value. In
 	// particular this is important when chaining through fields `a.b.c.d`. We
 	// want intermediates to be silently auto-initialized.
-	def, err := toStarlark(m.typ.loader, fd, fd.Default())
-	if err != nil {
-		return nil, err
-	}
-
+	//
 	// Note that lazy initialization of fields is an implementation detail. This
 	// is significant when considering frozen messages. From the caller's point of
 	// view, all fields had had their default values even before the object was
@@ -186,10 +159,10 @@ func (m *Message) Attr(name string) (starlark.Value, error) {
 	// assumed to be safe for cross-goroutine use, which is not the case here.
 	// If this becomes important, we can force-initialize and freeze all default
 	// fields in Freeze(), but this is generally expensive.
+	def := toStarlark(m.typ.loader, fd, fd.Default())
 	if m.frozen {
 		def.Freeze()
 	}
-
 	m.fields[name] = def
 	return def, nil
 }
