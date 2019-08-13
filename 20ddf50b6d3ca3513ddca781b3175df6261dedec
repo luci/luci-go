@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e0deae95_c23583cc",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4da55c71_4ccba7ce",
+      "range": {
+        "startLine": 40,
+        "startChar": 55,
+        "endLine": 40,
+        "endChar": 64
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5193ed21_3e142128",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2019-08-12T17:46:35Z",
       "side": 1,
       "message": "how is this going to be used?",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 45
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32f863b7_e1f11849",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "path_delimiter documentation says\n\nOptional, will be mandatory. The separator string to use in between components of a tests name; normally “.” for GTest- and Python-based tests and “/” for web tests; if not present, you should default to “/” for backwards-compatibility.\n\nThis suggests that PathDelimiter, not delim, should be used when flattening the trie. However, I\u0027m not sure if this conflicts with the naming scheme we are intending.",
+      "parentUuid": "5193ed21_3e142128",
       "range": {
         "startLine": 46,
         "startChar": 1,
@@ -68,6 +116,30 @@
       "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01be427c_10f0ea9c",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90c5484e_25890ce5",
+      "range": {
+        "startLine": 54,
+        "startChar": 21,
+        "endLine": 54,
+        "endChar": 22
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -142,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "7220533e_34a2e176",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b2e1ef54_c9ce8f48",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 44
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a8148529_738999d3",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -156,6 +252,24 @@
       "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7d3ef77_bae90b27",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8148529_738999d3",
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -182,6 +296,30 @@
     },
     {
       "key": {
+        "uuid": "19346f2b_5c372af8",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee471c69_b51b00e0",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 35
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35907a22_15842497",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -205,6 +343,30 @@
     },
     {
       "key": {
+        "uuid": "7b6f4ebc_4b949467",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35907a22_15842497",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 33
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e8c0bfd6_bd785b0f",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -225,6 +387,30 @@
       "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b23b67a6_46e918fb",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8c0bfd6_bd785b0f",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 0
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -347,6 +533,30 @@
     },
     {
       "key": {
+        "uuid": "d00d448f_d8c47e99",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "898ad8b8_ef319ce9",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 19
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "142bc1be_b166ab70",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -367,6 +577,30 @@
       "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2162d234_8a00f050",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "142bc1be_b166ab70",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 107,
+        "endChar": 47
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -393,6 +627,30 @@
     },
     {
       "key": {
+        "uuid": "2364d80c_86bf85a2",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4835ef33_4fe44b5b",
+      "range": {
+        "startLine": 113,
+        "startChar": 42,
+        "endLine": 113,
+        "endChar": 59
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7f767225_2c39def4",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -416,6 +674,30 @@
     },
     {
       "key": {
+        "uuid": "e1b62538_e7ba8d7d",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7f767225_2c39def4",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 115,
+        "endChar": 4
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e5c54aa_58d82a6f",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -436,6 +718,30 @@
       "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd75cd21_d32af457",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9e5c54aa_58d82a6f",
+      "range": {
+        "startLine": 121,
+        "startChar": 1,
+        "endLine": 121,
+        "endChar": 36
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -486,6 +792,30 @@
     },
     {
       "key": {
+        "uuid": "e673735a_b0f5b7ce",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done\n\nIn particular: we try to unmarshal json.RawMessage to TestFields. It won\u0027t fail even if it\u0027s an intermediate node, because unknown fields are ignored, and missing fields are not populated.\n\nInstead, we check that the \"actual\" and \"expected\" fields are not empty strings. Right now it\u0027s inlined, since checking the fields in a list would otherwise require reflection, and there are only two.\n\nChan, do you think it makes sense to check \"actual\" and \"expected\" /only/? If so, how do you feel about it being inlined, vs. pulled out into a helper function? I don\u0027t mind either way.",
+      "parentUuid": "b4a88158_5fab1354",
+      "range": {
+        "startLine": 141,
+        "startChar": 4,
+        "endLine": 141,
+        "endChar": 24
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa097303_0b8d0209",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -506,6 +836,30 @@
       "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f611e44_4e245027",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa097303_0b8d0209",
+      "range": {
+        "startLine": 144,
+        "startChar": 13,
+        "endLine": 146,
+        "endChar": 39
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -532,6 +886,30 @@
     },
     {
       "key": {
+        "uuid": "8d3bdd20_cde5e94a",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d83e7cdc_78d7a05e",
+      "range": {
+        "startLine": 154,
+        "startChar": 16,
+        "endLine": 154,
+        "endChar": 24
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "567e54de_4cdaeb81",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
@@ -552,6 +930,30 @@
       "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58066f62_a04574c9",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T17:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "567e54de_4cdaeb81",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 159,
+        "endChar": 28
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
