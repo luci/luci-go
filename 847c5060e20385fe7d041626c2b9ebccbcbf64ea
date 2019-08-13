@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e0cd426f_2fecf715",
+        "filename": "starlark/starlarkprotov2/doc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-13T00:24:49Z",
+      "side": 1,
+      "message": "technically two copies?",
+      "range": {
+        "startLine": 87,
+        "startChar": 60,
+        "endLine": 87,
+        "endChar": 64
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56f6e58d_f52e5b3e",
+        "filename": "starlark/starlarkprotov2/type.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-13T00:24:49Z",
+      "side": 1,
+      "message": "nit: initialized",
+      "range": {
+        "startLine": 99,
+        "startChar": 23,
+        "endLine": 99,
+        "endChar": 33
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3251086b_b088f195",
+        "filename": "starlark/starlarkprotov2/values.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-13T00:24:49Z",
+      "side": 1,
+      "message": "nit: if it is",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 7
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2214463e_b38c8897",
+        "filename": "starlark/starlarkprotov2/values_map.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-13T00:24:49Z",
+      "side": 1,
+      "message": "since we control Dict, would it be dumb to have an Dict.Iter(func(k, v starlark.Value)) ?",
+      "range": {
+        "startLine": 106,
+        "startChar": 7,
+        "endLine": 106,
+        "endChar": 11
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dafac952_13a32ca9",
+        "filename": "starlark/starlarkprotov2/values_singular.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-13T00:24:49Z",
+      "side": 1,
+      "message": "it\u0027s unfortunate that enums get flattened to ints inside starlark land :/. This could make \u0027print\u0027 debugging harder (though I forget what printing ability we have inside starlark code).\n\nmaybe TODO for later?",
+      "range": {
+        "startLine": 188,
+        "startChar": 19,
+        "endLine": 188,
+        "endChar": 27
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
