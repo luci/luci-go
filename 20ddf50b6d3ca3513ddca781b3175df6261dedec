@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "63d6bd51_f423fe10",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-13T21:53:02Z",
+      "side": 1,
+      "message": "i don\u0027t know if we saw that, but we no longer require \"/\". It can use periods (go/chrome-test-id), so let\u0027s use PathDelimeter. There is another comment about this, so resolving this one",
+      "parentUuid": "32f863b7_e1f11849",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 45
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "90c5484e_25890ce5",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
