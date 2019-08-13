@@ -19,8 +19,7 @@ luci.gitiles_poller(
 # === cr-buildbucket.cfg
 # buckets: <
 #   name: "ci"
-#   swarming: <
-#   >
+#   swarming: <>
 # >
 # ===
 #
