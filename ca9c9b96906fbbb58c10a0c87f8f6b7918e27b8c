@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "9f11b7ff_636a0acc",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-13T22:35:48Z",
+      "side": 1,
+      "message": "i see ok",
+      "parentUuid": "31f71c00_3967a5f0",
+      "range": {
+        "startLine": 77,
+        "startChar": 3,
+        "endLine": 77,
+        "endChar": 7
+      },
+      "revId": "ca9c9b96906fbbb58c10a0c87f8f6b7918e27b8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "eb70f612_c9575304",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 3
@@ -222,6 +246,24 @@
       "revId": "ca9c9b96906fbbb58c10a0c87f8f6b7918e27b8c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ca07ba6_d39feb37",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-13T22:35:48Z",
+      "side": 1,
+      "message": "ah, right. What you have in ps7 is perfect.",
+      "parentUuid": "be70ea37_3ae2e95c",
+      "revId": "ca9c9b96906fbbb58c10a0c87f8f6b7918e27b8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
