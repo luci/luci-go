@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0752d3e1_3fbb320b",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-08-13T18:29:19Z",
+      "side": 1,
+      "message": "I guess these lines can be removed now?",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 4
+      },
+      "revId": "a3665da6fe077e54d9b277fb519e24e69eedaa38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f03644f0_79823caf",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-08-13T18:29:19Z",
+      "side": 1,
+      "message": "I don\u0027t have much experience in go so this could be a dumb question: why maybeNode is declared in this way and maybeFields at L111 is declared in a different way?",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 41
+      },
+      "revId": "a3665da6fe077e54d9b277fb519e24e69eedaa38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
