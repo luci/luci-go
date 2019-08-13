@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b31c979e_d4c26e6a",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T19:00:56Z",
+      "side": 1,
+      "message": "Gah, yes, thanks!",
+      "parentUuid": "0752d3e1_3fbb320b",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 4
+      },
+      "revId": "a3665da6fe077e54d9b277fb519e24e69eedaa38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f03644f0_79823caf",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2019-08-13T18:29:19Z",
       "side": 1,
       "message": "I don\u0027t have much experience in go so this could be a dumb question: why maybeNode is declared in this way and maybeFields at L111 is declared in a different way?",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 41
+      },
+      "revId": "a3665da6fe077e54d9b277fb519e24e69eedaa38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75f12276_e04d4fcb",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T19:00:56Z",
+      "side": 1,
+      "message": "No dumb questions!\n\nI used var up here so I wouldn\u0027t have to do the allocation with\n\n maybeNode :\u003d make(map[string]json.RawMessage)\n\nwhich is just that tiny bit longer, and used :\u003d in L111 to get the pointer directly (we need to allocate a new TestFields anyway each time).\n\nSee also https://golang.org/ref/spec#Short_variable_declarations",
+      "parentUuid": "f03644f0_79823caf",
       "range": {
         "startLine": 103,
         "startChar": 1,
