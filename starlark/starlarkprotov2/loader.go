@@ -216,7 +216,8 @@ func (l *Loader) Module(path string) (*starlarkstruct.Module, error) {
 
 // MessageType creates new (or returns existing) MessageType.
 //
-// The return value can be used to instantiate Starlark values via NewMessage().
+// The return value can be used to instantiate Starlark values via Message() or
+// MessageFromProto(m).
 func (l *Loader) MessageType(desc protoreflect.MessageDescriptor) *MessageType {
 	l.m.RLock()
 	mt := l.mtypes[desc]
@@ -248,7 +249,7 @@ func (l *Loader) initMessageTypeLocked(desc protoreflect.MessageDescriptor) *Mes
 		if len(args) != 0 {
 			return nil, fmt.Errorf("proto message constructors accept only keyword arguments")
 		}
-		msg := typ.NewMessage()
+		msg := typ.Message()
 		for _, kv := range kwargs {
 			if err := msg.SetField(string(kv[0].(starlark.String)), kv[1]); err != nil {
 				return nil, err
