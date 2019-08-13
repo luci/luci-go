@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff30c62a_2be3d4df",
+        "filename": "starlark/starlarkprotov2/values_singular.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T00:01:02Z",
+      "side": 0,
+      "message": "it was very satisfying to replace this crap with one line of code :)",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 183,
+        "endChar": 8
+      },
+      "revId": "00aa99dcb21bc86f0317d91c888754eb2f21cbe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
