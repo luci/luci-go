@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "97b5e153_aefe3b1c",
+        "filename": "starlark/starlarkprotov2/doc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T04:23:49Z",
+      "side": 1,
+      "message": "Yes, but the one is short lived. Clarified the comment.",
+      "parentUuid": "e0cd426f_2fecf715",
+      "range": {
+        "startLine": 87,
+        "startChar": 60,
+        "endLine": 87,
+        "endChar": 64
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "56f6e58d_f52e5b3e",
         "filename": "starlark/starlarkprotov2/type.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa91be7f_8ff50eb6",
+        "filename": "starlark/starlarkprotov2/type.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T04:23:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "56f6e58d_f52e5b3e",
+      "range": {
+        "startLine": 99,
+        "startChar": 23,
+        "endLine": 99,
+        "endChar": 33
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "74d953be_a33c8ebc",
+        "filename": "starlark/starlarkprotov2/values.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T04:23:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3251086b_b088f195",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 7
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2214463e_b38c8897",
         "filename": "starlark/starlarkprotov2/values_map.go",
         "patchSetId": 6
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "d8f5541c_c6dc3469",
+        "filename": "starlark/starlarkprotov2/values_map.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T04:23:49Z",
+      "side": 1,
+      "message": "I\u0027d prefer it to stay similar to *starlark.Dict and use \"idiomatic\" starlark constructs for iteration.",
+      "parentUuid": "2214463e_b38c8897",
+      "range": {
+        "startLine": 106,
+        "startChar": 7,
+        "endLine": 106,
+        "endChar": 11
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dafac952_13a32ca9",
         "filename": "starlark/starlarkprotov2/values_singular.go",
         "patchSetId": 6
@@ -114,6 +210,30 @@
       "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cad435d0_6f0f3f8b",
+        "filename": "starlark/starlarkprotov2/values_singular.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T04:23:49Z",
+      "side": 1,
+      "message": "They also get flattened in Python too. I prefer not to touch this can of worms for now. I expect it might be hard to \"alias\" non-reference types like int in Starlark. Note that python has Enum.Name(int) function. We can pretty easily add such function too, if necessary, e.g. `proto.enum_name(protos.Message.EnumType, msg.val) \u003d\u003d \u0027SOME_ENUM\u0027`",
+      "parentUuid": "dafac952_13a32ca9",
+      "range": {
+        "startLine": 188,
+        "startChar": 19,
+        "endLine": 188,
+        "endChar": 27
+      },
+      "revId": "847c5060e20385fe7d041626c2b9ebccbcbf64ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
