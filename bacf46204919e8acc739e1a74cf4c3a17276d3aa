@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e25739be_4f330a9b",
+        "filename": "starlark/starlarkprotov2/values_singular.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-13T17:38:37Z",
+      "side": 0,
+      "message": "mmm I like this so much",
+      "range": {
+        "startLine": 31,
+        "startChar": 107,
+        "endLine": 31,
+        "endChar": 112
+      },
+      "revId": "bacf46204919e8acc739e1a74cf4c3a17276d3aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
