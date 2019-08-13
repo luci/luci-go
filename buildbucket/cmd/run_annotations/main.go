@@ -33,11 +33,11 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/logdog/client/annotee"
 	"go.chromium.org/luci/logdog/client/annotee/annotation"
-	"go.chromium.org/luci/luciexe"
+	"go.chromium.org/luci/luciexe/old_client"
 )
 
 var (
-	client  luciexe.Client
+	client  old_client.Client
 	build   *pb.Build
 	buildMU sync.Mutex
 )

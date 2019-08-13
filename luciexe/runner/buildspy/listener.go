@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
-	"go.chromium.org/luci/luciexe"
+	"go.chromium.org/luci/luciexe/old_client"
 	"go.chromium.org/luci/luciexe/runner/runnerbutler"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -65,7 +65,7 @@ func New(streamNamePrefix string) *Spy {
 	ch := make(chan Data, 16)
 	return &Spy{
 		streamNamePrefix: streamNamePrefix,
-		buildStreamName:  streamNamePrefix + luciexe.BuildStreamName,
+		buildStreamName:  streamNamePrefix + old_client.BuildStreamName,
 		sendC:            ch,
 		C:                ch,
 	}

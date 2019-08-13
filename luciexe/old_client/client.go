@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package luciexe implements LUCI Executable protocol, documented in
+// Package old_client implements LUCI Executable protocol, documented in
 // message Executable in
 // https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto
-package luciexe
+package old_client
 
 import (
 	"io/ioutil"

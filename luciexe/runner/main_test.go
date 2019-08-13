@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/lucictx"
-	"go.chromium.org/luci/luciexe"
+	"go.chromium.org/luci/luciexe/old_client"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -229,7 +229,7 @@ var subtests = map[string]func(t *testing.T){
 	"testSuccess":      testSuccess,
 }
 
-var client = luciexe.Client{
+var client = old_client.Client{
 	BuildTimestamp: testclock.TestRecentTimeUTC,
 }
 
