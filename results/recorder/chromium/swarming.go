@@ -1,0 +1,119 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package chromium
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
+)
+
+const (
+	outputJSONFilename  = "output.json"
+	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
+)
+
+// FetchOutputJSON fetches the output.json from the given task on the given host.
+//
+// TODO: convert the bytes.Buffer to a resultspb.Invocation.
+func FetchOutputJSON(ctx context.Context, host, id string) (*bytes.Buffer, error) {
+	// Set up swarming service for getting task info.
+	swarmSvc, err := swarming.NewService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	swarmSvc.BasePath = fmt.Sprintf("%s/%s", host, swarmingAPIEndpoint)
+
+	// Get the ref for the isolated outs of the given task.
+	ref, err := GetOutputsRef(ctx, swarmSvc, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get isolated client for getting isolated objects.
+	// TODO: check auth client is handled correctly.
+	authTransport, err := auth.GetRPCTransport(ctx, auth.AsSelf)
+	if err != nil {
+		return nil, err
+	}
+
+	isoClient := isolatedclient.New(
+		nil,
+		&http.Client{Transport: authTransport},
+		ref.Isolatedserver,
+		ref.Namespace,
+		nil,
+		nil,
+	)
+
+	// Fetch the isolate.
+	logging.Infof(
+		ctx, "Fetching %s for isolated outs of task %s in %s", string(ref.Isolated), id, host)
+	buf := &bytes.Buffer{}
+	if err := isoClient.Fetch(ctx, isolated.HexDigest(ref.Isolated), buf); err != nil {
+		return nil, err
+	}
+
+	isolates := &isolated.Isolated{}
+	err = json.Unmarshal(buf.Bytes(), isolates)
+	if err != nil {
+		return nil, err
+	}
+
+	outputFile, ok := isolates.Files[outputJSONFilename]
+	if !ok {
+		return nil, errors.Reason(
+			"Missing expected output %s in isolated outputs of task %s in %s",
+			outputJSONFilename, id, host).Err()
+	}
+
+	// Now fetch (from the same server and namespace) the output file by digest.
+	logging.Infof(ctx, "Fetching %s for output of task %s in %s", string(outputFile.Digest), id, host)
+	buf = &bytes.Buffer{}
+	if err := isoClient.Fetch(ctx, outputFile.Digest, buf); err != nil {
+		return nil, err
+	}
+
+	// TODO: Get the right format for buffer conversion and convert accordingly.
+
+	return buf, nil
+}
+
+// GetOutputsRef gets the data needed to fetch the isolated outputs given a task and swarming host.
+func GetOutputsRef(ctx context.Context, swarmSvc *swarming.Service, id string) (*swarming.SwarmingRpcsFilesRef, error) {
+	logging.Infof(ctx, "Fetching outputs ref for task %s (%s)", id, swarmSvc.BasePath)
+	resultCall := swarmSvc.Task.Result(id)
+	resultCall = resultCall.Context(ctx)
+	taskResult, err := resultCall.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	if taskResult.OutputsRef == nil || taskResult.OutputsRef.Isolated == "" {
+		return nil, errors.Reason("Task %s (%s) had no isolated outputs", id, swarmSvc.BasePath).Err()
+	}
+
+	return taskResult.OutputsRef, nil
+}
