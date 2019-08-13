@@ -30,15 +30,11 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/buildbucket/deprecated"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/discovery"
-	"go.chromium.org/luci/grpc/grpcmon"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
@@ -53,11 +49,6 @@ func Run(templatePath string) {
 	standard.InstallHandlers(r)
 
 	baseMW := standard.Base()
-	apiMW := baseMW.Extend(
-		middleware.WithContextTimeout(time.Minute),
-		withGitMiddleware,
-		withBuildbucketClient,
-	)
 	htmlMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
 		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
@@ -144,18 +135,6 @@ func Run(templatePath string) {
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbot", backendMW, buildbot.PubSubHandler)
 	r.POST("/_ah/push-handlers/buildbucket", backendMW, buildbucket.PubSubHandler)
-
-	// pRPC style endpoints.
-	api := prpc.Server{
-		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
-	}
-
-	milo.RegisterBuildbotServer(&api, &milo.DecoratedBuildbot{
-		Service: &buildbot.Service{},
-		Prelude: buildbotAPIPrelude,
-	})
-	discovery.Enable(&api)
-	api.InstallHandlers(r, apiMW)
 
 	http.DefaultServeMux.Handle("/", r)
 }
