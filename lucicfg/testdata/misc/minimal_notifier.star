@@ -74,8 +74,7 @@ luci.builder(
 # notifiers: <
 #   notifications: <
 #     on_failure: true
-#     notify_blamelist: <
-#     >
+#     notify_blamelist: <>
 #   >
 #   builders: <
 #     bucket: "bucket"

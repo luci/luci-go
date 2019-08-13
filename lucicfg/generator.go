@@ -30,7 +30,7 @@ import (
 
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
-	"go.chromium.org/luci/starlark/starlarkproto"
+	"go.chromium.org/luci/starlark/starlarkprotov2"
 
 	generated "go.chromium.org/luci/lucicfg/starlark"
 )
@@ -59,7 +59,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	predeclared := starlark.StringDict{
 		// Part of public API of the generator.
 		"fail":       builtins.Fail,
-		"proto":      starlarkproto.ProtoLib()["proto"],
+		"proto":      starlarkprotov2.ProtoLib()["proto"],
 		"stacktrace": builtins.Stacktrace,
 		"struct":     builtins.Struct,
 		"to_json":    builtins.ToJSON,
