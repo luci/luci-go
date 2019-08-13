@@ -19,11 +19,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
-	milo "go.chromium.org/luci/milo/api/proto"
-	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 )
 
 // BuildInfoProvider provides build information.
@@ -43,69 +40,6 @@ func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (
 		return newProdService(c, host)
 	}
 	return p.swarmingServiceFunc(c, host)
-}
-
-// GetBuildInfo resolves a Milo protobuf Step for a given Swarming task.
-func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_Swarming,
-	projectHint string) (*milo.BuildInfoResponse, error) {
-
-	// Load the Swarming task (no log content).
-	sf, err := p.newSwarmingService(c, req.Host)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to create Swarming fetcher.")
-		return nil, grpcutil.Internal
-	}
-
-	// Use default Swarming host.
-	host := sf.GetHost()
-	logging.Infof(c, "Loading build info for Swarming host %s, task %s.", host, req.Task)
-
-	fr, err := swarmingFetch(c, sf, req.Task, swarmingFetchParams{})
-	if err != nil {
-		if err == ErrNotMiloJob {
-			logging.Warningf(c, "User requested nonexistent task or does not have permissions.")
-			return nil, grpcutil.NotFound
-		}
-
-		logging.WithError(err).Errorf(c, "Failed to load Swarming task.")
-		return nil, grpcutil.Internal
-	}
-
-	// Determine the LogDog annotation stream path for this Swarming task.
-	//
-	// On failure, will return a gRPC error.
-	stream, err := resolveLogDogAnnotations(c, fr.res.Tags)
-	if err != nil {
-		logging.WithError(err).Warningf(c, "Failed to get annotation stream parameters.")
-		return nil, err
-	}
-
-	logging.Fields{
-		"host":    stream.Host,
-		"project": stream.Project,
-		"path":    stream.Path,
-	}.Infof(c, "Resolved LogDog annotation stream.")
-
-	step, err := rawpresentation.ReadAnnotations(c, stream)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to read annotations").Err()
-	}
-
-	// Add Swarming task parameters to the Milo step.
-	if err := addTaskToMiloStep(c, sf.GetHost(), fr.res, step); err != nil {
-		return nil, err
-	}
-
-	prefix, name := stream.Path.Split()
-	return &milo.BuildInfoResponse{
-		Project: string(stream.Project),
-		Step:    step,
-		AnnotationStream: &miloProto.LogdogStream{
-			Server: stream.Host,
-			Prefix: string(prefix),
-			Name:   string(name),
-		},
-	}, nil
 }
 
 // resolveLogDogAnnotations returns a configured AnnotationStream given the input
