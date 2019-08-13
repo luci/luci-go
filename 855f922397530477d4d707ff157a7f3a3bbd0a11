@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98a874f9_74d7d8a1",
+        "filename": "lucictx/luciexe.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T23:31:54Z",
+      "side": 1,
+      "message": "le for \"luciexe\"\nla is \"local_auth\"\n\n(our code is slowly turning French, M-A will be glad)",
+      "range": {
+        "startLine": 47,
+        "startChar": 37,
+        "endLine": 47,
+        "endChar": 39
+      },
+      "revId": "855f922397530477d4d707ff157a7f3a3bbd0a11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
