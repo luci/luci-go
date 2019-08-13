@@ -22,6 +22,30 @@
       "revId": "7d1b27775f16100b30e3981261a5812ea2a3f547",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9e88b61_3eb720e0",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-13T17:21:01Z",
+      "side": 1,
+      "message": "i think it is not important in this CL. This CL is not focused on auth. For auth, we need more stuff which is not in this CL, so it does not really matter what\u0027s in this CL.\n\ni\u0027d start without any auth for now. We don\u0027t have any security now, so we will start with public jobs, and for that we don\u0027t need any auth",
+      "parentUuid": "126abf6e_343a0f29",
+      "range": {
+        "startLine": 57,
+        "startChar": 54,
+        "endLine": 57,
+        "endChar": 60
+      },
+      "revId": "7d1b27775f16100b30e3981261a5812ea2a3f547",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
