@@ -29,23 +29,17 @@ import (
 //
 // Type of 'v' should match 'fd' (panics otherwise). This is always the case
 // because we extract both 'v' and 'fd' from the same protoreflect message.
-//
-// TODO(vadimsh): We can probably get rid of 'error' here and panic on errors
-// instead. In all call sites 'fd' and 'v' are extracted from same protoreflect
-// object, which should already guarantee that 'fd' and 'v' are compatible.
-// This is also confirmed by tests that can't hit the error code path here no
-// matter how they try.
-func toStarlark(l *Loader, fd protoreflect.FieldDescriptor, v protoreflect.Value) (starlark.Value, error) {
+func toStarlark(l *Loader, fd protoreflect.FieldDescriptor, v protoreflect.Value) starlark.Value {
 	switch {
 	case fd.IsList():
 		if !v.IsValid() { // unset repeated field => empty list<T>
-			return newStarlarkList(l, fd), nil
+			return newStarlarkList(l, fd)
 		}
 		return toStarlarkList(l, fd, v.List())
 
 	case fd.IsMap():
 		if !v.IsValid() { // unset map field => empty dict<K,V>
-			return newStarlarkDict(l, fd, 0), nil
+			return newStarlarkDict(l, fd, 0)
 		}
 		return toStarlarkDict(l, fd, v.Map())
 

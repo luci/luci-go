@@ -20,6 +20,7 @@ import (
 
 	"go.starlark.net/starlark"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/starlark/typed"
@@ -62,12 +63,33 @@ func (t *MessageType) Descriptor() protoreflect.MessageDescriptor {
 	return t.desc
 }
 
-// NewMessage instantiates a new empty message of this type.
-func (t *MessageType) NewMessage() *Message {
+// Message instantiates a new empty message of this type.
+func (t *MessageType) Message() *Message {
 	return &Message{
 		typ:    t,
 		fields: starlark.StringDict{},
 	}
+}
+
+// MessageFromProto instantiates a new message of this type and populates it
+// based on values in the given proto.Message that should have a matching type.
+//
+// Here "matching type" means p.ProtoReflect().Descriptor() *is* t.Descriptor().
+// Panics otherwise.
+func (t *MessageType) MessageFromProto(p proto.Message) *Message {
+	refl := p.ProtoReflect()
+	if got := refl.Descriptor(); got != t.desc {
+		panic(fmt.Errorf("bad message type: got %s, want %s", got.FullName(), t.desc.FullName()))
+	}
+	m := t.Message()
+	refl.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		err := m.SetField(string(fd.Name()), toStarlark(t.loader, fd, v))
+		if err != nil {
+			panic(fmt.Errorf("internal error: field %q: %s", fd.Name(), err))
+		}
+		return true
+	})
+	return m
 }
 
 // Starlark.Value interface.
@@ -106,11 +128,11 @@ func (t *MessageType) Convert(x starlark.Value) (starlark.Value, error) {
 	}
 
 	if x == starlark.None {
-		return t.NewMessage(), nil
+		return t.Message(), nil
 	}
 
 	if d, ok := x.(starlark.IterableMapping); ok {
-		m := t.NewMessage()
+		m := t.Message()
 		if err := m.FromDict(d); err != nil {
 			return nil, err
 		}

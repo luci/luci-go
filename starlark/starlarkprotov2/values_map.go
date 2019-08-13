@@ -35,7 +35,9 @@ func newStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, capacity int) *
 }
 
 // toStarlarkDict does protoreflect.Map => typed.Dict conversion.
-func toStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, m protoreflect.Map) (*typed.Dict, error) {
+//
+// Panics if type of 'm' (or some of its items) doesn't match 'fd'.
+func toStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, m protoreflect.Map) *typed.Dict {
 	keyFD := fd.MapKey()
 	valFD := fd.MapValue()
 
@@ -48,46 +50,31 @@ func toStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, m protoreflect.M
 	// Protobuf maps are unordered, but Starlark dicts retain order, so collect
 	// keys first to sort them before adding to a dict.
 	keys := make([]key, 0, m.Len())
-	var err error
 	m.Range(func(k protoreflect.MapKey, _ protoreflect.Value) bool {
-		var sv starlark.Value
-		if sv, err = toStarlarkSingular(l, keyFD, k.Value()); err != nil {
-			err = fmt.Errorf("key %s: %s", k, err)
-			return false
-		}
-		keys = append(keys, key{k, sv})
+		keys = append(keys, key{k, toStarlarkSingular(l, keyFD, k.Value())})
 		return true
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	// Sort keys as Starlark values.
-	var sortErr error
+	// Sort keys as Starlark values. Proto map keys are (u)int(32|64) or bools,
+	// they *must* be sortable, so panic on errors.
 	sort.Slice(keys, func(i, j int) bool {
 		lt, err := starlark.Compare(syntax.LT, keys[i].sv, keys[j].sv)
 		if err != nil {
-			sortErr = err
+			panic(fmt.Errorf("internal error: when sorting dict keys: %s", err))
 		}
 		return lt
 	})
-	if sortErr != nil {
-		return nil, fmt.Errorf("failed to sort map keys: %s", sortErr)
-	}
 
-	// Construct starlark.Dict from sorted keys and values from the proto map.
+	// Construct typed.Dict from sorted keys and values from the proto map.
 	d := newStarlarkDict(l, fd, len(keys))
 	for _, k := range keys {
-		sv, err := toStarlarkSingular(l, valFD, m.Get(k.pv))
-		if err != nil {
-			return nil, fmt.Errorf("value of key %s: %s", k.pv, err)
-		}
+		sv := toStarlarkSingular(l, valFD, m.Get(k.pv))
 		if err := d.SetKey(k.sv, sv); err != nil {
-			return nil, fmt.Errorf("value of key %s: %s", k.pv, err)
+			panic(fmt.Errorf("internal error: value of key %s: %s", k.pv, err))
 		}
 	}
 
-	return d, nil
+	return d
 }
 
 // assignProtoMap does m.fd = iter, where fd is a map.
@@ -97,7 +84,7 @@ func toStarlarkDict(l *Loader, fd protoreflect.FieldDescriptor, m protoreflect.M
 func assignProtoMap(m protoreflect.Message, fd protoreflect.FieldDescriptor, dict *typed.Dict) {
 	mp := m.Mutable(fd).Map()
 	if mp.Len() != 0 {
-		panic("the proto map is not empty")
+		panic(fmt.Errorf("internal error: the proto map is not empty"))
 	}
 
 	keyFD := fd.MapKey()
@@ -110,9 +97,9 @@ func assignProtoMap(m protoreflect.Message, fd protoreflect.FieldDescriptor, dic
 	for it.Next(&sk) {
 		switch sv, ok, err := dict.Get(sk); {
 		case err != nil:
-			panic(fmt.Errorf("key %s: %s", sk, err))
+			panic(fmt.Errorf("internal error: key %s: %s", sk, err))
 		case !ok:
-			panic(fmt.Errorf("key %s: suddenly gone while iterating", sk))
+			panic(fmt.Errorf("internal error: key %s: suddenly gone while iterating", sk))
 		default:
 			mp.Set(toProtoSingular(keyFD, sk).MapKey(), toProtoSingular(valFD, sv))
 		}

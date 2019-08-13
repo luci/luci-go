@@ -28,49 +28,49 @@ import (
 // toStarlarkSingular converts 'v' to starlark, based on type in 'fd'.
 //
 // This is Proto => Starlark converter. Ignores 'repeated' qualifier.
-func toStarlarkSingular(l *Loader, fd protoreflect.FieldDescriptor, v protoreflect.Value) (starlark.Value, error) {
+//
+// Panics if type of 'v' doesn't match 'fd'.
+func toStarlarkSingular(l *Loader, fd protoreflect.FieldDescriptor, v protoreflect.Value) starlark.Value {
 	// See https://godoc.org/google.golang.org/protobuf/reflect/protoreflect#Kind
 	// Also https://developers.google.com/protocol-buffers/docs/proto#scalar
 
 	switch fd.Kind() {
 	case protoreflect.BoolKind:
-		return starlark.Bool(v.Bool()), nil
+		return starlark.Bool(v.Bool())
 
 	case protoreflect.EnumKind:
-		return starlark.MakeInt(int(v.Enum())), nil
+		return starlark.MakeInt(int(v.Enum()))
 
 	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-		return starlark.MakeInt64(v.Int()), nil
+		return starlark.MakeInt64(v.Int())
 
 	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-		return starlark.MakeUint64(v.Uint()), nil
+		return starlark.MakeUint64(v.Uint())
 
 	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-		return starlark.MakeInt64(v.Int()), nil
+		return starlark.MakeInt64(v.Int())
 
 	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-		return starlark.MakeUint64(v.Uint()), nil
+		return starlark.MakeUint64(v.Uint())
 
 	case protoreflect.FloatKind, protoreflect.DoubleKind:
-		return starlark.Float(v.Float()), nil
+		return starlark.Float(v.Float())
 
 	case protoreflect.StringKind:
-		return starlark.String(v.String()), nil
+		return starlark.String(v.String())
 
 	case protoreflect.BytesKind:
-		return starlark.String(v.Bytes()), nil
+		return starlark.String(v.Bytes())
 
 	case protoreflect.MessageKind, protoreflect.GroupKind:
-		msg := l.MessageType(fd.Message()).NewMessage()
+		typ := l.MessageType(fd.Message())
 		if v.IsValid() {
-			if err := msg.FromProto(v.Message().Interface()); err != nil {
-				return nil, err
-			}
+			return typ.MessageFromProto(v.Message().Interface())
 		}
-		return msg, nil
+		return typ.Message()
 
 	default:
-		return nil, fmt.Errorf("unexpected field kind %s", fd.Kind())
+		panic(fmt.Errorf("internal error: unexpected field kind %s", fd.Kind()))
 	}
 }
 
@@ -120,7 +120,7 @@ func toProtoSingular(fd protoreflect.FieldDescriptor, v starlark.Value) protoref
 		return protoreflect.ValueOf(v.(*Message).ToProto())
 
 	default:
-		panic(fmt.Errorf("unexpected field kind %s", fd.Kind()))
+		panic(fmt.Errorf("internal error: unexpected field kind %s", fd.Kind()))
 	}
 }
 
@@ -128,11 +128,11 @@ func toProtoSingular(fd protoreflect.FieldDescriptor, v starlark.Value) protoref
 func starlarkToInt(v starlark.Value, k protoreflect.Kind, min, max int64) int64 {
 	si, ok := v.(starlark.Int)
 	if !ok {
-		panic(fmt.Errorf("got %s, expect %s", v.Type(), k))
+		panic(fmt.Errorf("internal error: got %s, expect %s", v.Type(), k))
 	}
 	i, ok := si.Int64()
 	if !ok || i < min || i > max {
-		panic(fmt.Errorf("%s doesn't fit into %s field", v, k))
+		panic(fmt.Errorf("internal error: %s doesn't fit into %s field", v, k))
 	}
 	return i
 }
@@ -141,11 +141,11 @@ func starlarkToInt(v starlark.Value, k protoreflect.Kind, min, max int64) int64 
 func starlarkToUint(v starlark.Value, k protoreflect.Kind, max uint64) uint64 {
 	si, ok := v.(starlark.Int)
 	if !ok {
-		panic(fmt.Errorf("got %s, expect %s", v.Type(), k))
+		panic(fmt.Errorf("internal error: got %s, expect %s", v.Type(), k))
 	}
 	i, ok := si.Uint64()
 	if !ok || i > max {
-		panic(fmt.Errorf("%s doesn't fit into %s field", v, k))
+		panic(fmt.Errorf("internal error: %s doesn't fit into %s field", v, k))
 	}
 	return i
 }
@@ -207,7 +207,7 @@ func converter(l *Loader, fd protoreflect.FieldDescriptor) typed.Converter {
 		return l.MessageType(fd.Message())
 
 	default:
-		panic(fmt.Errorf("unexpected field kind %s", fd.Kind()))
+		panic(fmt.Errorf("internal error: unexpected field kind %s", fd.Kind()))
 	}
 }
 
