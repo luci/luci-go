@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3b0e5d1_f4ce6ce4",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T15:05:49Z",
+      "side": 1,
+      "message": "nit: asynchronously update\n(since we agreed there\u0027ll be no back channel for errors and updates can be \"batched\" together)",
+      "range": {
+        "startLine": 24,
+        "startChar": 6,
+        "endLine": 24,
+        "endChar": 12
+      },
+      "revId": "c2f00adacfbed80c1ca73e60e42aab5dfc85b348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7235c819_3b7d3fb3",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T15:05:49Z",
+      "side": 1,
+      "message": "nit: \"LUCI ambient authentication\"\nluci-auth service can be confused with chrome-infra-auth",
+      "range": {
+        "startLine": 33,
+        "startChar": 32,
+        "endLine": 33,
+        "endChar": 49
+      },
+      "revId": "c2f00adacfbed80c1ca73e60e42aab5dfc85b348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "905ed9f4_b79386e2",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T15:05:49Z",
+      "side": 1,
+      "message": "does it do anything to the luciexe (e.g. SIGTERM/SIGKILL) and allows it to finish doing its corrupted dead?",
+      "range": {
+        "startLine": 54,
+        "startChar": 55,
+        "endLine": 54,
+        "endChar": 56
+      },
+      "revId": "c2f00adacfbed80c1ca73e60e42aab5dfc85b348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14f824f7_7feb4c88",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T15:05:49Z",
+      "side": 1,
+      "message": "nit: opaque byte streams (since we also have datagram streams, I believe)",
+      "range": {
+        "startLine": 64,
+        "startChar": 6,
+        "endLine": 64,
+        "endChar": 20
+      },
+      "revId": "c2f00adacfbed80c1ca73e60e42aab5dfc85b348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14a15a4b_ba04c8ba",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T15:05:49Z",
+      "side": 1,
+      "message": "Kitchen also sets TEMPDIR and our favorite MAC_CHROMIUM_TMPDIR. What about them?",
+      "range": {
+        "startLine": 73,
+        "startChar": 17,
+        "endLine": 73,
+        "endChar": 37
+      },
+      "revId": "c2f00adacfbed80c1ca73e60e42aab5dfc85b348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19e0e816_d0940e5d",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T15:05:49Z",
+      "side": 1,
+      "message": "this unfortunately makes this protocol description very vague :( Unless there\u0027s a doc that describes butler protocol you can link to.",
+      "range": {
+        "startLine": 77,
+        "startChar": 7,
+        "endLine": 78,
+        "endChar": 67
+      },
+      "revId": "c2f00adacfbed80c1ca73e60e42aab5dfc85b348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a2935e8_76f19597",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T15:05:49Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 96,
+        "startChar": 49,
+        "endLine": 97,
+        "endChar": 49
+      },
+      "revId": "c2f00adacfbed80c1ca73e60e42aab5dfc85b348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "79b52b66_3ce0132b",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-13T15:05:49Z",
+      "side": 1,
+      "message": "what about the use case of recursive invocation? Is the parent process supposed to parse the final build.proto from the child disregarding its exit code?",
+      "range": {
+        "startLine": 122,
+        "startChar": 36,
+        "endLine": 123,
+        "endChar": 61
+      },
+      "revId": "c2f00adacfbed80c1ca73e60e42aab5dfc85b348",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
