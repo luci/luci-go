@@ -39,18 +39,18 @@ assert.eq(m2.i64, 0)
 # Setting wrong type fails.
 def set_bad():
   m2.i64 = [1, 2, 3]
-assert.fails(set_bad, 'can\'t assign "list" to "int64" field')
+assert.fails(set_bad, 'got list, want int')
 
 # Setting to a message fails.
 def set_msg():
   m2.i64 = testprotos.SimpleFields()
-assert.fails(set_msg, 'can\'t assign "testprotos.SimpleFields" to "int64" field')
+assert.fails(set_msg, 'got testprotos.SimpleFields, want int')
 
 # We don't support implicit conversions from float to int. Callers should use
 # int(...) cast explicitly.
 def set_float():
   m2.i64 = 123.4
-assert.fails(set_float, 'can\'t assign "float" to "int64" field')
+assert.fails(set_float, 'got float, want int')
 
 # Serialization to text proto works.
 text = proto.to_textpb(testprotos.SimpleFields(i64=987))

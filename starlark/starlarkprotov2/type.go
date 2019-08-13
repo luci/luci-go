@@ -15,11 +15,14 @@
 package starlarkprotov2
 
 import (
+	"fmt"
 	"sort"
 
 	"go.starlark.net/starlark"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/starlark/typed"
 )
 
 // MessageType represents a proto message type and acts as its constructor: it
@@ -39,6 +42,8 @@ type MessageType struct {
 	attrs  starlark.StringDict                     // nested symbols, e.g. submessages and enums
 	fields map[string]protoreflect.FieldDescriptor // message fields (including oneof alternatives)
 }
+
+var _ typed.Converter = (*MessageType)(nil)
 
 // initLocked preprocesses message descriptor.
 //
@@ -85,4 +90,32 @@ func (t *MessageType) AttrNames() []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// typed.Converter interface.
+
+// Convert returns 'x' as is if it already has type 't', otherwise initializes
+// a new message of type 't' from 'x'. 'x' can be either None (in which case
+// an empty message is initialized) or an iterable mapping (e.g. a dict).
+func (t *MessageType) Convert(x starlark.Value) (starlark.Value, error) {
+	if msg, ok := x.(*Message); ok {
+		if msg.typ == t {
+			return msg, nil
+		}
+		return nil, fmt.Errorf("got %s, want %s", msg.Type(), t.Type())
+	}
+
+	if x == starlark.None {
+		return t.NewMessage(), nil
+	}
+
+	if d, ok := x.(starlark.IterableMapping); ok {
+		m := t.NewMessage()
+		if err := m.FromDict(d); err != nil {
+			return nil, err
+		}
+		return m, nil
+	}
+
+	return nil, fmt.Errorf("got %s, want %s", x.Type(), t.Type())
 }

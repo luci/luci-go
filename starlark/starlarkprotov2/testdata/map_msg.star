@@ -18,11 +18,30 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 msg = testprotos.MapWithMessageType()
 
 # Default value is empty dict.
-assert.eq(msg.m, {})
+assert.eq(len(msg.m), 0)
 
-# Can set and get values.
-msg.m['k'] = testprotos.Simple(i=123)
+# Can set and get values, they are stored by reference.
+simple = testprotos.Simple(i=123)
+msg.m['k'] = simple
 assert.eq(msg.m['k'].i, 123)
+simple.i = 456
+assert.eq(msg.m['k'].i, 456)
+
+# None values are converted to empty messages. Use 'pop' to throw values away.
+msg.m['k'] = None
+assert.eq(type(msg.m['k']), 'testprotos.Simple')
+assert.eq(str(msg.m['k']), '')
+msg.m.pop('k')
+assert.eq(msg.m.get('k'), None)
+
+# Dicts are converted to corresponding messages.
+msg.m['k'] = {'i': 999}
+assert.eq(msg.m['k'].i, 999)
+
+# Dicts with wrong schema are rejected.
+def bad_schema():
+  msg.m['k'] = {'unknown': 123}
+assert.fails(bad_schema, 'proto message testprotos.Simple has no field "unknown"')
 
 # Serialization to text proto works.
 text = proto.to_textpb(testprotos.MapWithMessageType(m={
@@ -42,11 +61,3 @@ m: <
   >
 >
 """)
-
-# Conversion to proto does full type checking.
-def check_fail(m, msg):
-  assert.fails(lambda: proto.to_textpb(testprotos.MapWithMessageType(m=m)), msg)
-
-check_fail({'': None}, 'value of key "": can\'t assign "NoneType" to "message" field')
-check_fail({'': 1}, 'value of key "": can\'t assign "int" to "message" field')
-check_fail({'': msg}, 'can\'t assign message "testprotos.MapWithMessageType" to a message field "testprotos.Simple"')

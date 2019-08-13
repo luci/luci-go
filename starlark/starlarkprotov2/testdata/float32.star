@@ -33,12 +33,12 @@ assert.eq(m2.f32, 1.0)
 m2.f32 = None
 assert.eq(m2.f32, 0.0)
 
-# Setting wrong type fails.
-def set_bad():
-  m2.f32 = [1, 2, 3]
-assert.fails(set_bad, 'can\'t assign "list" to "float" field')
-
 # Implicit conversion from int to float is supported.
 m2.f32 = 123
 assert.eq(m2.f32, 123.0)
 assert.eq(proto.to_textpb(m2), 'f32: 123\n')
+
+# Setting wrong type fails.
+def set_bad():
+  m2.f32 = [1, 2, 3]
+assert.fails(set_bad, 'got list, want float')
