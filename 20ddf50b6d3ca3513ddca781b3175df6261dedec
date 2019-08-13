@@ -462,6 +462,30 @@
     },
     {
       "key": {
+        "uuid": "7d0d72d2_65bba07c",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-08-13T06:26:19Z",
+      "side": 1,
+      "message": "I think it\u0027s actually a valid assumption that only the leaves of the trie have \"actual\" and \"expected\".\n\nThough the function name hasRequiredFieldKeys is a little vague to me, how about something like isLeaf, isResultsForOneTest, isTestFieldsCompatible...",
+      "parentUuid": "b4a88158_5fab1354",
+      "range": {
+        "startLine": 141,
+        "startChar": 4,
+        "endLine": 141,
+        "endChar": 24
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fa097303_0b8d0209",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
