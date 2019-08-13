@@ -172,8 +172,7 @@ luci.builder(
 #       build_numbers: NO
 #       service_account: "new@example.com"
 #       experimental: NO
-#       task_template_canary_percentage: <
-#       >
+#       task_template_canary_percentage: <>
 #     >
 #   >
 # >

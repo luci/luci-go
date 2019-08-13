@@ -19,10 +19,22 @@ package lucicfg
 // type information.
 
 import (
-	"github.com/golang/protobuf/descriptor"
-	"github.com/golang/protobuf/proto"
+	"bytes"
+	"compress/gzip"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"sync"
+
+	proto_v1 "github.com/golang/protobuf/proto"
+	descpb_v1 "github.com/golang/protobuf/protoc-gen-go/descriptor"
+
+	"go.starlark.net/starlark"
+
+	"go.chromium.org/luci/common/data/stringset"
 
 	"go.chromium.org/luci/starlark/interpreter"
+	"go.chromium.org/luci/starlark/starlarkprotov2"
 
 	_ "github.com/golang/protobuf/ptypes/any"
 	_ "github.com/golang/protobuf/ptypes/duration"
@@ -327,38 +339,105 @@ var publicProtos = map[string]struct {
 	"google/type/dayofweek.proto": {"google.type", "google/type/dayofweek.proto", ""},
 }
 
+// Note: we use sync.Once instead of init() to allow tests to add stuff to
+// publicProtos in their own init().
+var (
+	loader interpreter.Loader
+	once   sync.Once
+)
+
 // protoLoader returns a loader that is capable of loading publicProtos.
 func protoLoader() interpreter.Loader {
-	mapping := make(map[string]string, len(publicProtos))
-	for path, proto := range publicProtos {
-		mapping[path] = proto.goPath
+	once.Do(func() {
+		ploader := starlarkprotov2.NewLoader()
+
+		// Populate protobuf v2 loader using protobuf v1 registry embedded into
+		// the binary. This visits imports in topological order, to make sure all
+		// cross-file references are correctly resolved. We assume there are no
+		// circular dependencies (if there are, they'll be caught by hanging unit
+		// tests).
+		visited := stringset.New(0)
+		for _, info := range publicProtos {
+			if err := addWithDeps(ploader, info.goPath, visited); err != nil {
+				panic(fmt.Errorf("%s: %s", info.goPath, err))
+			}
+		}
+
+		// Use this loader to resolve load("@proto://...") references.
+		loader = func(path string) (dict starlark.StringDict, _ string, err error) {
+			info, ok := publicProtos[path]
+			if !ok {
+				return nil, "", errors.New("no such proto file in lucicfg's internal proto registry")
+			}
+			mod, err := ploader.Module(info.goPath)
+			if err != nil {
+				return nil, "", err
+			}
+			return starlark.StringDict{mod.Name: mod}, "", nil
+		}
+	})
+	return loader
+}
+
+// addWithDeps loads dependencies of 'path', and then 'path' itself.
+func addWithDeps(l *starlarkprotov2.Loader, path string, visited stringset.Set) error {
+	if !visited.Add(path) {
+		return nil // visited it already
 	}
-	return interpreter.ProtoLoader(mapping)
+	raw, deps, err := rawFileDescriptor(path)
+	if err != nil {
+		return err
+	}
+	for _, d := range deps {
+		if err := addWithDeps(l, d, visited); err != nil {
+			return fmt.Errorf("%s: %s", d, err)
+		}
+	}
+	return l.AddDescriptor(raw)
+}
+
+// rawFileDescriptor extracts raw FileDescriptor from protobuf v1 registry and
+// returns it along with a list of *.proto files it depends on (imports).
+func rawFileDescriptor(name string) ([]byte, []string, error) {
+	gzblob := proto_v1.FileDescriptor(name)
+	if gzblob == nil {
+		return nil, nil, fmt.Errorf("proto %q is not in the registry", name)
+	}
+
+	r, err := gzip.NewReader(bytes.NewReader(gzblob))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to open gzip reader for %q - %s", name, err)
+	}
+	defer r.Close()
+
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to uncompress descriptor for %q - %s", name, err)
+	}
+
+	fd := &descpb_v1.FileDescriptorProto{}
+	if err := proto_v1.Unmarshal(b, fd); err != nil {
+		return nil, nil, fmt.Errorf("malformed FileDescriptorProto %q - %s", name, err)
+	}
+	return b, fd.Dependency, nil
 }
 
 // protoMessageDoc returns the message name and a link to its schema doc.
 //
 // If there's no documentation, returns two empty strings.
-func protoMessageDoc(msg proto.Message) (name, doc string) {
-	withDesc, ok := msg.(descriptor.Message)
-	if !ok {
+func protoMessageDoc(msg *starlarkprotov2.Message) (name, doc string) {
+	fd := msg.MessageType().Descriptor().ParentFile()
+	if fd == nil {
 		return "", ""
 	}
-
-	fd, md := descriptor.ForMessage(withDesc)
-	if fd == nil || md == nil {
-		return "", ""
-	}
-
 	for _, info := range publicProtos {
 		// Find the exact same *.proto file within publicProtos struct.
-		if info.goPath == fd.GetName() {
+		if info.goPath == fd.Path() {
 			if info.docURL == "" {
 				return "", "" // no docs for it
 			}
-			return md.GetName(), info.docURL
+			return string(msg.MessageType().Descriptor().Name()), info.docURL
 		}
 	}
-
 	return "", "" // not a public proto
 }
