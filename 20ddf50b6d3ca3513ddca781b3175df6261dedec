@@ -299,6 +299,30 @@
     },
     {
       "key": {
+        "uuid": "898ad8b8_ef319ce9",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-13T00:06:49Z",
+      "side": 1,
+      "message": "I had tried it and it didn\u0027t work, which is the only reason I introduced \"Raw\".\n\nIt does seem to work (trying the change in the code itself too), so I\u0027m not sure what didn\u0027t work before.",
+      "parentUuid": "10be4c9b_a12f2988",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 19
+      },
+      "revId": "20ddf50b6d3ca3513ddca781b3175df6261dedec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "142bc1be_b166ab70",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
