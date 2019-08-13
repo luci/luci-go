@@ -18,5 +18,4 @@ package milo
 //go:generate go install go.chromium.org/luci/grpc/cmd/svcdec
 //go:generate cproto
 //go:generate svcdec -type BuildbotServer
-//go:generate svcdec -type BuildInfoServer
 //go:generate goimports -w .
