@@ -19,10 +19,10 @@ package luci.resultsdb;
 // TODO(jchinlee): Update protos and clarify documentation when finalized.
 // Currently, these are for experimentation/iteration.
 
-option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
-
 import "google/protobuf/empty.proto";
 import "go.chromium.org/luci/results/proto/v1/invocation.proto";
+
+option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
 
 // Service to record test results.
 service Recorder {
@@ -61,6 +61,24 @@ service Recorder {
   // the rest of the payload. If request insertion fails, exits successfully.
   // Request table cleanup will be performed out of band.
   rpc UpdateInvocation(UpdateInvocationRequest) returns (google.protobuf.Empty) {};
+
+  // A request to create an invocation given a swarming task.
+  //
+  // Similar to InsertInvocation but takes a swarming task.
+  //
+  // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
+  // in which we derive invocations given swarming task IDs, rather than have
+  // tasks make RPCs directly.
+  rpc InsertInvocationFromSwarming(SwarmingTask) returns (Invocation) {};
+
+  // A request to update an invocation given a swarming task ID.
+  //
+  // Similar to UpdateInvocation but takes a swarming task.
+  //
+  // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
+  // in which we derive invocations given swarming task IDs, rather than have
+  // tasks make RPCs directly.
+  rpc UpdateInvocationFromSwarming(UpdateInvocationFromSwarmingRequest) returns (Invocation) {};
 }
 
 message UpdateInvocationRequest {
@@ -95,4 +113,32 @@ message UpdateInvocationRequest {
   // Invocation.update_token is required and must match the token
   // returned by CreateInvocation.
   Invocation invocation = 2;
+}
+
+message SwarmingTask {
+  // Swarming host of task.
+  string hostname = 1;
+
+  // ID of swarming task to process and insert.
+  string id = 2;
+}
+
+message UpdateInvocationFromSwarmingRequest {
+  // Swarming task to use in update.
+  SwarmingTask task = 1;
+
+  // Test path prefix.
+  //
+  // Examples (gn):
+  // * GTest: gn/{label}/{suite}/{case}
+  // * javatests: gn/{label}/{full_java_method_name}
+  // * web tests: gn/{label}/{file_name}
+	string test_path_prefix = 2;
+
+  // Test variant.
+  //
+  // For Chromium, expected keys in the def map are:
+  // "bucket", "builder", "test_suite", "param/instantiation" (for GTest), and
+  // "param/index".
+	VariantDef test_variant = 3;
 }
