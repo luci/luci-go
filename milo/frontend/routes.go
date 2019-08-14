@@ -44,7 +44,6 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
-	"go.chromium.org/luci/milo/rpc"
 )
 
 // Run sets up all the routes and runs the server.
@@ -155,7 +154,6 @@ func Run(templatePath string) {
 		Service: &buildbot.Service{},
 		Prelude: buildbotAPIPrelude,
 	})
-	milo.RegisterBuildInfoServer(&api, &rpc.BuildInfoService{})
 	discovery.Enable(&api)
 	api.InstallHandlers(r, apiMW)
 
