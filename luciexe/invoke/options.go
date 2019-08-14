@@ -1,0 +1,341 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Package invoke implements the process of invoking a 'luciexe' compatible
+// subprocess, but without setting up any of the 'host' requirements (like
+// a Logdog Butler or LUCI Auth).
+//
+// See go.chromium.org/luci/luciexe for details on the protocol.
+package invoke
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/clockflag"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/luciexe"
+)
+
+// Options represents a luciexe being prepaired or run.
+type Options struct {
+	// Namespace is used as:
+	//   * The Step name of the enclosing Build Step.
+	//   * This is appended to the current Logdog namespace in the environment
+	//     for the subprocess. i.e. if the current LOGDOG_NAMESPACE is "u",
+	//     and this namespace is "x|y|z", then LOGDOG_NAMESPACE for the subprocess
+	//     will be "u/x/y/z".
+	//   * The basis for the stdout/stderr Logdog streams for the subprocess.
+	//   * The LUCI Executable host process will adjust the subprocess's step
+	//     names to be relative to this. i.e. if the subprocess emits a step "a|b"
+	//     and the Namespace is "x|y|z", then the step will show up as "x|y|z|a|b"
+	//     on the overall Build.
+	//   * The LUCI Executable host process will assert that all logdog stream
+	//     names mentioned in the subprocess's Build are relative to this.
+	//
+	// TODO(iannucci): Find a way to have logdog stream name namespacing be more
+	// transparent (i.e. without needing explicit cooperation from the logdog
+	// client library via LOGDOG_NAMESPACE envvar).
+	//
+	// This should be in Build.Step.Name format, i.e. "parent|parent|leaf".
+	//
+	// Default: The Namespace is empty. This is ONLY useful when writing
+	// a transparent wrapper for a luciexe which doesn't, itself, implement the
+	// luciexe protocol. If Namespace is empty, then Subprocess.Step will be
+	// `nil`.
+	Namespace string
+
+	// Absolute path to the cache base directory. This must exist and be
+	// a directory.
+	//
+	// Default: If LUCI_CONFIG['lucictx']['cache_dir'] is set, it will be passed
+	// through unchanged. Otherwise a new empty directory is allocated which will
+	// be destroyed on the subprocess's completion.
+	CacheDir string
+
+	// If set, the subprocess's final Build message will be collected and returned
+	// from Wait.
+	//
+	// If CollectOutput is specified, but CollectOutputPath is not, a temporary
+	// path will be seleceted and destroyed on the subprocess's completion.
+	CollectOutput bool
+
+	// If set, will be used as the path to output the subprocess's final Build
+	// state. Must end with one of {'.pb', '.json', '.textpb'}. This must be
+	// a path to a non-existent file (i.e. parent must be a directory).
+	//
+	// If CollectOutputPath is specified, but CollectOutput is not, the subprocess
+	// will be instructed to dump the result to this path, but we won't attempt to
+	// parse or validate it in any way, and Wait will return a nil `output`.
+	CollectOutputPath string
+
+	// A replacement environment for the Options.
+	//
+	// If this is not specified, the current process's environment is inherited.
+	//
+	// The following environment variables will be ignored from this `Env`:
+	//   * LOGDOG_NAMESPACE
+	//   * LUCI_CONTEXT
+	Env environ.Env
+}
+
+// launchOptions is a 'digested' form of Options, used for starting
+// a subprocess.
+type launchOptions struct {
+	// lctx is the exported LUCI_CONTEXT object must be Close()'d by the caller of
+	// Options.rationalize. It's already been set in `env`.
+	lctx lucictx.Exported
+
+	// step is the constructed Step object for the user of the invoke library. It
+	// may be nil if Namespace was omitted.
+	step *bbpb.Step
+
+	// workDir is the working directory for the invoked luciexe.
+	workDir string
+
+	// args are the CLI arguments to the luciexe.
+	args []string
+
+	// parseOutput is a bound function which will return the parsed final Build.
+	//
+	// May return (nil, nil) if the user indicated that they didn't want us to
+	// parse the final output.
+	parseOutput func() (*bbpb.Build, error)
+
+	stdout io.WriteCloser
+	stderr io.WriteCloser
+
+	// env is an environment suitable to run the luciexe in.
+	env environ.Env
+}
+
+func prepDir(name string) (string, error) {
+	// Allocate a new temporary directory. This respects the current os-specific
+	// temp directory value, which means the luciexe host application is
+	// responsible for cleaning it up (or ensuring some higher layer will clean it
+	// up).
+	tdir, err := ioutil.TempDir("", fmt.Sprintf("luciexe_%s-", name))
+	if err != nil {
+		return "", errors.Annotate(err, "preparing %s: generating tmpdir", name).Err()
+	}
+	return tdir, nil
+}
+
+func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
+	if o.Namespace == "" {
+		return nil
+	}
+
+	curLogdogNamespace := lo.env.GetEmpty(luciexe.LogdogNamespaceEnv)
+	ldNS, _ := types.MakeStreamName(
+		"_", curLogdogNamespace, strings.ReplaceAll(o.Namespace, "|", "/"))
+	lo.env.Set(luciexe.LogdogNamespaceEnv, string(ldNS))
+
+	startTime, err := ptypes.TimestampProto(clock.Now(ctx))
+	if err != nil {
+		return errors.Annotate(err, "invalid StartTime").Err()
+	}
+	lo.step = &bbpb.Step{
+		Name:      o.Namespace,
+		StartTime: startTime,
+		Status:    bbpb.Status_STARTED,
+		Logs: []*bbpb.Log{{
+			Name: luciexe.BuildProtoLogName,
+			Url:  string(ldNS.Concat(luciexe.BuildProtoStreamSuffix)),
+		}},
+	}
+	return nil
+}
+
+func (o *Options) prepCacheDir(ctx context.Context, lo *launchOptions) (err error) {
+	newDir := o.CacheDir
+
+	if newDir == "" {
+		if curval := lucictx.GetLUCIExe(ctx); curval != nil && curval.CacheDir != "" {
+			return
+		}
+		if newDir, err = prepDir("cache_dir"); err != nil {
+			return
+		}
+	}
+
+	lo.lctx, err = lucictx.Export(lucictx.SetLUCIExe(
+		ctx, &lucictx.LUCIExe{CacheDir: newDir}))
+	lo.lctx.SetInEnviron(lo.env)
+	return
+}
+
+func (o *Options) prepTempDir(lo *launchOptions) error {
+	tempdir, err := prepDir("tempdir")
+	if err != nil {
+		return err
+	}
+	for _, key := range luciexe.TempDirEnvVars {
+		o.Env.Set(key, tempdir)
+	}
+	return nil
+}
+
+func (o *Options) prepCollection(lo *launchOptions) error {
+	if !o.CollectOutput && o.CollectOutputPath == "" {
+		lo.parseOutput = func() (*bbpb.Build, error) { return nil, nil }
+		return nil
+	}
+
+	collect := o.CollectOutputPath
+	lo.args = []string{luciexe.OutputCLIArg, collect}
+	if collect == "" {
+		outdir, err := prepDir("collect-output")
+		if err != nil {
+			return err
+		}
+		collect = filepath.Join(outdir, "out"+luciexe.OutputBinaryFileExt)
+	} else {
+		if _, err := os.Stat(collect); !os.IsNotExist(err) {
+			return errors.Reason("CollectOutputPath points to an existing file: %q", collect).Err()
+		}
+		parDir := filepath.Dir(collect)
+		finfo, err := os.Stat(parDir)
+		if err != nil {
+			return errors.Annotate(err, "CollectOutputPath's parent %q is un-statable", parDir).Err()
+		}
+		if !finfo.IsDir() {
+			return errors.Reason("CollectOutputPath's parent %q is not a directory", parDir).Err()
+		}
+	}
+
+	switch ext := filepath.Ext(collect); ext {
+	case luciexe.OutputBinaryFileExt:
+		lo.parseOutput = func() (*bbpb.Build, error) {
+			fileData, err := ioutil.ReadFile(collect)
+			if err != nil {
+				return nil, errors.Annotate(err, "reading output file %q", collect).Err()
+			}
+			ret := &bbpb.Build{}
+			err = errors.Annotate(proto.Unmarshal(fileData, ret), "parsing output file %q", collect).Err()
+			return ret, err
+		}
+
+	case luciexe.OutputTextFileExt:
+		lo.parseOutput = func() (*bbpb.Build, error) {
+			fileData, err := ioutil.ReadFile(collect)
+			if err != nil {
+				return nil, errors.Annotate(err, "reading output file %q", collect).Err()
+			}
+			ret := &bbpb.Build{}
+			err = errors.Annotate(proto.UnmarshalText(
+				string(fileData), ret), "parsing output file %q", collect).Err()
+			return ret, err
+		}
+
+	case luciexe.OutputJSONFileExt:
+		lo.parseOutput = func() (*bbpb.Build, error) {
+			file, err := os.Open(collect)
+			if err != nil {
+				return nil, errors.Annotate(err, "opening output file %q", collect).Err()
+			}
+			defer file.Close()
+
+			ret := &bbpb.Build{}
+			err = errors.Annotate(jsonpb.Unmarshal(file, ret), "parsing output file %q", collect).Err()
+			return ret, err
+		}
+	}
+
+	return errors.Reason("CollectOutputPath has bad extension: %q", collect).Err()
+}
+
+func (lo *launchOptions) prepStdio(ctx context.Context) error {
+	// NOTE: bootstrapping doesn't do any 'write' actions to the logdog state and
+	// is a fancy way of reading a couple of envvars and building a struct (i.e.
+	// this is quite cheap).
+	bs, err := bootstrap.GetFromEnv(lo.env) // picks up Namespace
+	if err != nil {
+		return errors.Annotate(err, "bootstrapping logdog client").Err()
+	}
+
+	now := clockflag.Time(clock.Now(ctx))
+	openStream := func(targ *io.WriteCloser, name string) (err error) {
+		fullName := streamproto.StreamNameFlag(bs.Namespace.Concat(types.StreamName(name)))
+		*targ, err = bs.Client.NewStream(streamproto.Flags{Name: fullName, Timestamp: now})
+		return errors.Annotate(err, "opening %q", fullName).Err()
+	}
+
+	if err := openStream(&lo.stdout, "stdout"); err != nil {
+		return err
+	}
+	if err := openStream(&lo.stderr, "stderr"); err != nil {
+		lo.stdout.Close()
+		return err
+	}
+	return nil
+}
+
+// rationalize converts from a set of requested Options to a usable
+// launchOptions object.
+func (o *Options) rationalize(ctx context.Context) (ret launchOptions, err error) {
+	if o == nil {
+		o = &Options{}
+	}
+	ret.env = o.Env
+	if ret.env == nil {
+		ret.env = environ.System()
+	}
+
+	if err = o.prepCacheDir(ctx, &ret); err != nil {
+		err = errors.Annotate(err, "preparing cachedir").Err()
+		return
+	}
+
+	if err = o.prepNamespace(ctx, &ret); err != nil {
+		err = errors.Annotate(err, "preparing namespace").Err()
+		return
+	}
+
+	if err = o.prepTempDir(&ret); err != nil {
+		return
+	}
+
+	if ret.workDir, err = prepDir("workdir"); err != nil {
+		return
+	}
+
+	if err = o.prepCollection(&ret); err != nil {
+		err = errors.Annotate(err, "preparing collection").Err()
+		return
+	}
+
+	if err = ret.prepStdio(ctx); err != nil {
+		err = errors.Annotate(err, "preparing outputs").Err()
+		return
+	}
+
+	return
+}
