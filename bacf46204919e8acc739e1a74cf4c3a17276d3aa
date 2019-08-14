@@ -47,6 +47,76 @@
       "revId": "bacf46204919e8acc739e1a74cf4c3a17276d3aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88cbc6a1_97e5d655",
+        "filename": "milo/buildsource/swarming/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-14T15:10:22Z",
+      "side": 0,
+      "message": "When I see a deleted code that calls an oddly specific function, I check who else call this function using grep. It\u0027s the best time to do this. It\u0027s much harder to detect unused functions later (without a CL\u0027s diff to guide you). Especially in a codebase with not very great tests.\n\nIt is much faster to do locally, without round tripping through CLs...",
+      "parentUuid": "a84b3c71_74f9d153",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 1
+      },
+      "revId": "bacf46204919e8acc739e1a74cf4c3a17276d3aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c95db36d_8d67a403",
+        "filename": "milo/buildsource/swarming/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-14T15:10:22Z",
+      "side": 0,
+      "message": "guess what? :)",
+      "range": {
+        "startLine": 115,
+        "startChar": 5,
+        "endLine": 115,
+        "endChar": 29
+      },
+      "revId": "bacf46204919e8acc739e1a74cf4c3a17276d3aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c34a6e89_29138e22",
+        "filename": "milo/buildsource/swarming/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-14T15:10:22Z",
+      "side": 0,
+      "message": "and this now can be moved to a file with its sole caller (buildsource/swarming/build.go)",
+      "range": {
+        "startLine": 124,
+        "startChar": 5,
+        "endLine": 124,
+        "endChar": 36
+      },
+      "revId": "bacf46204919e8acc739e1a74cf4c3a17276d3aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
