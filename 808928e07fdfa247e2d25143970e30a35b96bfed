@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c053549_250db9d7",
+        "filename": "logdog/client/butlerlib/streamclient/client_namedPipe_posix.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-14T03:49:51Z",
+      "side": 1,
+      "message": "note that `conn.File()` here returns a dup of conn, so we need to close conn or we\u0027ll have an extra file descriptor for the socket hanging around. This is also true of the tcp implementation (which exactly zero things use and we should probably delete).",
+      "range": {
+        "startLine": 55,
+        "startChar": 15,
+        "endLine": 55,
+        "endChar": 19
+      },
+      "revId": "808928e07fdfa247e2d25143970e30a35b96bfed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97c57652_cbeec57d",
+        "filename": "logdog/client/butlerlib/streamclient/client_namedPipe_windows.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-14T03:49:51Z",
+      "side": 1,
+      "message": "This is a bit dicey; winio returns an internal pipe type which embeds an internal file type, which exposes a public Fd() method. os.NewFile creates a wrapper (not a duplicate) around the os-specific file descriptor type (in this case, a windows HANDLE).\n\nClosing this `NewFile` will close the underlying pipe (since the File in this case is just a thin wrapper).",
+      "range": {
+        "startLine": 44,
+        "startChar": 13,
+        "endLine": 44,
+        "endChar": 20
+      },
+      "revId": "808928e07fdfa247e2d25143970e30a35b96bfed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
