@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0e52382f_a2e19bb2",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T23:46:40Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "3b7e58b2_a2576d58",
+      "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95a5f8ff_93590923",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 6
@@ -30,6 +48,30 @@
       "writtenOn": "2019-08-14T18:36:42Z",
       "side": 1,
       "message": "as a reader and a client, I\u0027d expect examples of prefixes that I\u0027d pass here, but these are examples of resulting paths, i.e. prefix and something we read from output.json. Please give examples of prefixes",
+      "range": {
+        "startLine": 132,
+        "startChar": 5,
+        "endLine": 132,
+        "endChar": 13
+      },
+      "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dccc82bb_2ccf39c7",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T23:46:40Z",
+      "side": 1,
+      "message": "IIUC in practice that just means \"gn/\", correct?\n\nDo we need to specify this field explicitly in this request if this request is meant to only to cover Chromium cases? That is, in the Chromium case the only prefix for tests is gn/, and I wasn\u0027t aware we were planning on supporting e.g. \"cq/\" case using UpdateInvocationFromSwarmingRequest.\n\nIf it\u0027s indeed the case that UpdateInvocationFromSwarmingRequest will be used only for Chromium, then in InsertInvocationFromSwarming, which is performing Chromium-specific logic by parsing output.json into the Chromium-specific GTest or JSON Test Results formats, can also know to perform the Chromium-specific logic of prepending gn/.\n\nTest.Name in Invocation could be updated to describe for this identification scheme regardless though --- that will persist when we start to insert and update invocations from within harnesses.",
+      "parentUuid": "95a5f8ff_93590923",
       "range": {
         "startLine": 132,
         "startChar": 5,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "a92c3e61_21942bfc",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T23:46:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ea697a3_b05bec34",
+      "range": {
+        "startLine": 143,
+        "startChar": 12,
+        "endLine": 143,
+        "endChar": 24
+      },
+      "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69fa1821_2fe56a5d",
         "filename": "results/proto/v1/rpc.proto",
         "patchSetId": 6
@@ -76,6 +142,24 @@
       "writtenOn": "2019-08-14T18:36:42Z",
       "side": 1,
       "message": "this repeating change in all .proto files should have been in a separate CL",
+      "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85d7951a_27349eef",
+        "filename": "results/proto/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T23:46:40Z",
+      "side": 1,
+      "message": "This was part of resolving your comment on following the order specified in https://cloud.google.com/apis/design/file_structure --- your comment only mentioned messages, but the link covers messages as well as imports, options, etc. Is there a particular reason for preferring it in a separate CL?",
+      "parentUuid": "69fa1821_2fe56a5d",
       "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
