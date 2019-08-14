@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "d77c663c_717138ea",
+        "filename": "results/proto/v1/recorder.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-14T18:36:42Z",
+      "side": 1,
+      "message": "ah, i see, thanks",
+      "parentUuid": "b3ca414b_04503b0a",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2d589638_fe50c817",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 2
@@ -166,6 +184,24 @@
     },
     {
       "key": {
+        "uuid": "c8dbddfd_6d85e0c2",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-14T18:36:42Z",
+      "side": 1,
+      "message": "replied in the new patchset",
+      "parentUuid": "504f96ce_56cc12c0",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b7817a3e_967d9345",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 2
@@ -230,6 +266,24 @@
       "side": 1,
       "message": "Add which part, the empty line?\n\nIt didn\u0027t, but it also didn\u0027t complain about it.\n\nThe blocks above were structured after https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/examples/k8s/helloworld/main.go; https://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/src/infra/appengine/qscheduler-swarming/cmd/qscheduler-swarming/main.go groups differently.",
       "parentUuid": "57ed3c45_dd9d3dfe",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e32e99b0_d5c82901",
+        "filename": "results/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-14T18:36:42Z",
+      "side": 1,
+      "message": "i meant, \"resultspb\" alias here. I was wondering if it was added manually or gofmt forced it",
+      "parentUuid": "a49b2089_402c95bb",
       "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
