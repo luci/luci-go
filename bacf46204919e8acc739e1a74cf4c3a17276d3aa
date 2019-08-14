@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "51b78ff4_bdd3d5ab",
+        "filename": "milo/buildsource/swarming/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-14T19:30:38Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "c95db36d_8d67a403",
+      "range": {
+        "startLine": 115,
+        "startChar": 5,
+        "endLine": 115,
+        "endChar": 29
+      },
+      "revId": "bacf46204919e8acc739e1a74cf4c3a17276d3aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c34a6e89_29138e22",
         "filename": "milo/buildsource/swarming/buildinfo.go",
         "patchSetId": 2
@@ -117,6 +141,30 @@
       "revId": "bacf46204919e8acc739e1a74cf4c3a17276d3aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a774653_8ee33822",
+        "filename": "milo/buildsource/swarming/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-14T19:30:38Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "c34a6e89_29138e22",
+      "range": {
+        "startLine": 124,
+        "startChar": 5,
+        "endLine": 124,
+        "endChar": 36
+      },
+      "revId": "bacf46204919e8acc739e1a74cf4c3a17276d3aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
