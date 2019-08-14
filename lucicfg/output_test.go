@@ -55,9 +55,9 @@ func TestOutput(t *testing.T) {
 
 		Convey("Writing", func() {
 			out := Output{
-				Data: map[string][]byte{
-					"a":     []byte("111"),
-					"dir/a": []byte("222"),
+				Data: map[string]Datum{
+					"a":     BlobDatum("111"),
+					"dir/a": BlobDatum("222"),
 				},
 			}
 			changed, unchanged, err := out.Write(tmp)
@@ -68,7 +68,7 @@ func TestOutput(t *testing.T) {
 			So(read("a"), ShouldResemble, []byte("111"))
 			So(read("dir/a"), ShouldResemble, []byte("222"))
 
-			out.Data["a"] = []byte("333")
+			out.Data["a"] = BlobDatum("333")
 			changed, unchanged, err = out.Write(tmp)
 			So(changed, ShouldResemble, []string{"a"})
 			So(unchanged, ShouldResemble, []string{"dir/a"})
@@ -80,9 +80,9 @@ func TestOutput(t *testing.T) {
 		Convey("DiscardChangesToUntracked", func() {
 			generated := func() Output {
 				return Output{
-					Data: map[string][]byte{
-						"a.cfg":        []byte("new a\n"),
-						"subdir/b.cfg": []byte("new b\n"),
+					Data: map[string]Datum{
+						"a.cfg":        BlobDatum("new a\n"),
+						"subdir/b.cfg": BlobDatum("new b\n"),
 					},
 				}
 			}
@@ -96,24 +96,24 @@ func TestOutput(t *testing.T) {
 			Convey("Untracked files are restored from disk", func() {
 				out := generated()
 				So(out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, tmp), ShouldBeNil)
-				So(out.Data, ShouldResemble, map[string][]byte{
+				So(out.Data, ShouldResemble, map[string]Datum{
 					"a.cfg":        generated().Data["a.cfg"],
-					"subdir/b.cfg": original["subdir/b.cfg"],
+					"subdir/b.cfg": BlobDatum(original["subdir/b.cfg"]),
 				})
 			})
 
 			Convey("Untracked files are discarded when dumping to stdout", func() {
 				out := generated()
 				So(out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, "-"), ShouldBeNil)
-				So(out.Data, ShouldResemble, map[string][]byte{
+				So(out.Data, ShouldResemble, map[string]Datum{
 					"a.cfg": generated().Data["a.cfg"],
 				})
 			})
 
 			Convey("Untracked files are discarded if don't exist on disk", func() {
 				out := Output{
-					Data: map[string][]byte{
-						"c.cfg": []byte("generated"),
+					Data: map[string]Datum{
+						"c.cfg": BlobDatum("generated"),
 					},
 				}
 				So(out.DiscardChangesToUntracked(ctx, []string{"!c.cfg"}, tmp), ShouldBeNil)
@@ -122,29 +122,22 @@ func TestOutput(t *testing.T) {
 		})
 	})
 
-	Convey("Digests", t, func() {
-		out := Output{
-			Data: map[string][]byte{
-				"a": nil,
-				"b": []byte("123"),
-			},
-		}
-		So(out.Digests(), ShouldResemble, map[string]string{
-			"a": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-			"b": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
-		})
-	})
-
 	Convey("ConfigSets", t, func() {
 		out := Output{
-			Data: map[string][]byte{
-				"f1":          {0},
-				"dir1/f2":     {1},
-				"dir1/f3":     {2},
-				"dir1/sub/f4": {3},
-				"dir2/f5":     {4},
+			Data: map[string]Datum{
+				"f1":          BlobDatum("0"),
+				"dir1/f2":     BlobDatum("1"),
+				"dir1/f3":     BlobDatum("2"),
+				"dir1/sub/f4": BlobDatum("3"),
+				"dir2/f5":     BlobDatum("4"),
 			},
 			Roots: map[string]string{},
+		}
+
+		// Same data, as raw bytes.
+		everything := map[string][]byte{}
+		for k, v := range out.Data {
+			everything[k] = v.Bytes()
 		}
 
 		Convey("No roots", func() {
@@ -166,7 +159,7 @@ func TestOutput(t *testing.T) {
 			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
 				{
 					Name: "set",
-					Data: out.Data, // everything
+					Data: everything,
 				},
 			})
 		})
@@ -177,9 +170,9 @@ func TestOutput(t *testing.T) {
 				{
 					Name: "set",
 					Data: map[string][]byte{
-						"f2":     {1},
-						"f3":     {2},
-						"sub/f4": {3},
+						"f2":     []byte("1"),
+						"f3":     []byte("2"),
+						"sub/f4": []byte("3"),
 					},
 				},
 			})
@@ -193,21 +186,21 @@ func TestOutput(t *testing.T) {
 				{
 					Name: "set1",
 					Data: map[string][]byte{
-						"f2":     {1},
-						"f3":     {2},
-						"sub/f4": {3},
+						"f2":     []byte("1"),
+						"f3":     []byte("2"),
+						"sub/f4": []byte("3"),
 					},
 				},
 				{
 					Name: "set2",
 					Data: map[string][]byte{
-						"f5": {4},
+						"f5": []byte("4"),
 					},
 				},
 				{
 					Name: "set3",
 					Data: map[string][]byte{
-						"f4": {3},
+						"f4": []byte("3"),
 					},
 				},
 			})

@@ -46,6 +46,19 @@ type ConfigSet struct {
 	Data map[string][]byte
 }
 
+// AsOutput converts this config set into Output that have it at the given root
+// path (usually ".").
+func (cs ConfigSet) AsOutput(root string) Output {
+	data := make(map[string]Datum, len(cs.Data))
+	for k, v := range cs.Data {
+		data[k] = BlobDatum(v)
+	}
+	return Output{
+		Data:  data,
+		Roots: map[string]string{cs.Name: root},
+	}
+}
+
 // ValidationResult is what we get after validating a config set.
 type ValidationResult struct {
 	ConfigSet string               `json:"config_set"`          // a config set being validated

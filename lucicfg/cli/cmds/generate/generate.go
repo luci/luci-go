@@ -64,8 +64,6 @@ type generateRun struct {
 }
 
 type generateResult struct {
-	// Digests is a map: config name -> SHA256 of the body. To spot differences.
-	Digests map[string]string `json:"digests,omitempty"`
 	// Meta is the final meta parameters used by the generator.
 	Meta *lucicfg.Meta `json:"meta,omitempty"`
 	// Validation is per config set validation results (if -validate was used).
@@ -94,10 +92,7 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 		return nil, err
 	}
 
-	result := &generateResult{
-		Digests: output.Digests(),
-		Meta:    &meta,
-	}
+	result := &generateResult{Meta: &meta}
 
 	if meta.ConfigDir == "-" {
 		output.DebugDump()
