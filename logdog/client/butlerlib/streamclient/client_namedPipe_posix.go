@@ -45,7 +45,14 @@ func newUnixSocketClient(path string, ns types.StreamName) (Client, error) {
 
 	return &clientImpl{
 		factory: func() (io.WriteCloser, error) {
-			return net.Dial("unix", path)
+			conn, err := net.DialUnix(
+				"unix", nil,
+				&net.UnixAddr{Name: path, Net: "unix"})
+			if err != nil {
+				return nil, err
+			}
+			defer conn.Close()
+			return conn.File()
 		},
 		ns: ns,
 	}, nil
