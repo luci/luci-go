@@ -17,10 +17,7 @@ package lucicfg
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -43,7 +40,7 @@ type Output struct {
 	// Data is all output files.
 	//
 	// Keys are slash-separated filenames, values are corresponding file bodies.
-	Data map[string][]byte
+	Data map[string]Datum
 
 	// Roots is mapping "config set name => its root".
 	//
@@ -51,6 +48,23 @@ type Output struct {
 	// '.' matches ALL output files.
 	Roots map[string]string
 }
+
+// Datum represents one generated output file.
+type Datum interface {
+	// Bytes is a raw file body to put on disk.
+	Bytes() []byte
+	// SemanticallySame is true if 'other' represents the same datum.
+	SemanticallySame(other []byte) bool
+}
+
+// BlobDatum is a Datum which is just a raw byte blob.
+type BlobDatum []byte
+
+// Bytes is a raw file body to put on disk.
+func (b BlobDatum) Bytes() []byte { return b }
+
+// SemanticallySame is true if 'other == b'.
+func (b BlobDatum) SemanticallySame(other []byte) bool { return bytes.Equal(b, other) }
 
 // ConfigSets partitions this output into 0 or more config sets based on Roots.
 func (o Output) ConfigSets() []ConfigSet {
@@ -76,7 +90,7 @@ func (o Output) ConfigSets() []ConfigSet {
 		for f, body := range o.Data {
 			f = path.Clean(f)
 			if strings.HasPrefix(f, root) {
-				files[f[len(root):]] = body
+				files[f[len(root):]] = body.Bytes()
 			}
 		}
 
@@ -90,12 +104,18 @@ func (o Output) ConfigSets() []ConfigSet {
 //
 // Returns names of files that are different ('changed') and same ('unchanged').
 //
-// Files on disk that are not in the output set are totally ignored. Files that
-// cannot be read are considered outdated.
-func (o Output) Compare(dir string) (changed, unchanged []string) {
+// Files on disk that are not in the output set are totally ignored. Missing
+// files that are listed in the output set are considered changed.
+//
+// Returns an error if some file can't be read.
+func (o Output) Compare(dir string) (changed, unchanged []string, err error) {
 	for _, name := range o.Files() {
 		path := filepath.Join(dir, filepath.FromSlash(name))
-		if bytes.Equal(fileDigest(path), blobDigest(o.Data[name])) {
+		existing, err := ioutil.ReadFile(path)
+		if err != nil && !os.IsNotExist(err) {
+			return nil, nil, errors.Annotate(err, "when checking diff of %q", name).Err()
+		}
+		if err == nil && o.Data[name].SemanticallySame(existing) {
 			unchanged = append(unchanged, name)
 		} else {
 			changed = append(changed, name)
@@ -113,7 +133,10 @@ func (o Output) Compare(dir string) (changed, unchanged []string) {
 func (o Output) Write(dir string) (changed, unchanged []string, err error) {
 	// First pass: populate 'changed' and 'unchanged', so we have a valid result
 	// even when failing midway through writes.
-	changed, unchanged = o.Compare(dir)
+	changed, unchanged, err = o.Compare(dir)
+	if err != nil {
+		return
+	}
 
 	// Second pass: update changed files.
 	for _, name := range changed {
@@ -121,21 +144,12 @@ func (o Output) Write(dir string) (changed, unchanged []string, err error) {
 		if err = os.MkdirAll(filepath.Dir(path), 0777); err != nil {
 			return
 		}
-		if err = ioutil.WriteFile(path, o.Data[name], 0666); err != nil {
+		if err = ioutil.WriteFile(path, o.Data[name].Bytes(), 0666); err != nil {
 			return
 		}
 	}
 
 	return
-}
-
-// Digests returns a map "file name -> hex SHA256 of its body".
-func (o Output) Digests() map[string]string {
-	out := make(map[string]string, len(o.Data))
-	for file, body := range o.Data {
-		out[file] = hex.EncodeToString(blobDigest(body))
-	}
-	return out
 }
 
 // Files returns a sorted list of file names in the output.
@@ -154,7 +168,7 @@ func (o Output) DebugDump() {
 		fmt.Println("--------------------------------------------------")
 		fmt.Println(f)
 		fmt.Println("--------------------------------------------------")
-		fmt.Print(string(o.Data[f]))
+		fmt.Print(string(o.Data[f].Bytes()))
 		fmt.Println("--------------------------------------------------")
 	}
 }
@@ -191,7 +205,7 @@ func (o Output) DiscardChangesToUntracked(ctx context.Context, tracked []string,
 
 		switch body, err := ioutil.ReadFile(filepath.Join(dir, filepath.FromSlash(path))); {
 		case err == nil:
-			o.Data[path] = body
+			o.Data[path] = BlobDatum(body)
 		case os.IsNotExist(err):
 			delete(o.Data, path)
 		case err != nil:
@@ -200,30 +214,6 @@ func (o Output) DiscardChangesToUntracked(ctx context.Context, tracked []string,
 	}
 
 	return nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Misc helpers used above.
-
-// fileDigest returns SHA256 digest of a file on disk or nil if it's not there
-// or can't be read.
-func fileDigest(path string) []byte {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil
-	}
-	defer f.Close()
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return nil
-	}
-	return h.Sum(nil)
-}
-
-// blobDigest returns SHA256 digest of a byte buffer.
-func blobDigest(blob []byte) []byte {
-	d := sha256.Sum256(blob)
-	return d[:]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -258,19 +248,20 @@ func (o *outputBuilder) SetKey(k, v starlark.Value) error {
 	return o.Dict.SetKey(k, v)
 }
 
-// renderWithTextProto returns output files with all protos serialized to text
-// proto format (optionally with the header that tells how the file was
-// generated).
+// finalize returns all output files in a single map.
+//
+// Protos are eventually serialized to text proto format (optionally with the
+// header that tells how the file was generated).
 //
 // Configs supplied as strings are serialized using UTF-8 encoding.
-func (o *outputBuilder) renderWithTextProto(includePBHeader bool) (map[string][]byte, error) {
-	out := make(map[string][]byte, o.Len())
+func (o *outputBuilder) finalize(includePBHeader bool) (map[string]Datum, error) {
+	out := make(map[string]Datum, o.Len())
 
 	for _, kv := range o.Items() {
 		k, v := kv[0].(starlark.String), kv[1]
 
 		if s, ok := v.(starlark.String); ok {
-			out[k.GoString()] = []byte(s.GoString())
+			out[k.GoString()] = BlobDatum(s.GoString())
 			continue
 		}
 
@@ -280,6 +271,7 @@ func (o *outputBuilder) renderWithTextProto(includePBHeader bool) (map[string][]
 			return nil, err
 		}
 
+		// TODO(vadimsh): Use MessageDatum instead when it exists.
 		buf := bytes.Buffer{}
 		if includePBHeader {
 			buf.WriteString("# Auto-generated by lucicfg.\n")
@@ -293,7 +285,7 @@ func (o *outputBuilder) renderWithTextProto(includePBHeader bool) (map[string][]
 		}
 		buf.Write(blob)
 
-		out[k.GoString()] = buf.Bytes()
+		out[k.GoString()] = BlobDatum(buf.Bytes())
 	}
 
 	return out, nil

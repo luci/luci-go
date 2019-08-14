@@ -124,7 +124,7 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 		}
 		for name, body := range output.Data {
 			if strings.HasSuffix(name, pair.name) {
-				pair.generated = body
+				pair.generated = body.Bytes()
 				break
 			}
 		}

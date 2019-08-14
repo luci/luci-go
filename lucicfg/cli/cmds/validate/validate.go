@@ -130,10 +130,7 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 	}
 	res, err := base.ValidateOutput(
 		ctx,
-		lucicfg.Output{
-			Data:  configSet.Data,
-			Roots: map[string]string{configSet.Name: "."},
-		},
+		configSet.AsOutput("."),
 		vr.ConfigService,
 		vr.Meta.ConfigServiceHost,
 		vr.Meta.FailOnWarnings)
@@ -170,7 +167,10 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 			}
 		}
 		// Find files that are newer in the output or do not exist on disk.
-		changed, _ := output.Compare(meta.ConfigDir)
+		changed, _, err := output.Compare(meta.ConfigDir)
+		if err != nil {
+			return result, err
+		}
 		result.Stale = append(result.Stale, changed...)
 	}
 

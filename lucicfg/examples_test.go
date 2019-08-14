@@ -69,10 +69,12 @@ func runExample(script string) error {
 		return err
 	}
 
-	diff, _ := state.Output.Compare(output)
-	if len(diff) != 0 {
+	switch diff, _, err := state.Output.Compare(output); {
+	case err != nil:
+		return err
+	case len(diff) != 0:
 		return fmt.Errorf("the following generated files are stale, run `go generate .`: %q", diff)
+	default:
+		return nil
 	}
-
-	return nil
 }
