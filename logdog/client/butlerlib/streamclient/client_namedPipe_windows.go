@@ -17,6 +17,7 @@ package streamclient
 import (
 	"errors"
 	"io"
+	"os"
 
 	"github.com/Microsoft/go-winio"
 	"go.chromium.org/luci/logdog/common/types"
@@ -35,7 +36,12 @@ func newNamedPipeClient(path string, ns types.StreamName) (Client, error) {
 
 	return &clientImpl{
 		factory: func() (io.WriteCloser, error) {
-			return winio.DialPipe(LocalNamedPipePath(path), nil)
+			name := LocalNamedPipePath(path)
+			conn, err := winio.DialPipe(name, nil)
+			if err != nil {
+				return err
+			}
+			return os.NewFile(conn.(interface{ Fd() uintptr }).Fd(), name), nil
 		},
 		ns: ns,
 	}, nil

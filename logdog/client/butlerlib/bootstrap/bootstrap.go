@@ -97,9 +97,14 @@ func (bs *Bootstrap) initializeClient(v string, reg *streamclient.Registry) erro
 	return nil
 }
 
-// Get loads a Bootstrap instance from the environment. It will return an error
-// if the bootstrap data is invalid, and will return ErrNotBootstrapped if the
-// current process is not bootstrapped.
+// GetFromEnv loads a Bootstrap instance from the supplied environment. It will
+// return an error if the bootstrap data is invalid, and will return
+// ErrNotBootstrapped if the current process is not bootstrapped.
+func GetFromEnv(env environ.Env) (*Bootstrap, error) {
+	return getFromEnv(env, streamclient.GetDefaultRegistry())
+}
+
+// Get is a shortcut for `GetFromEnv(environ.System())`.
 func Get() (*Bootstrap, error) {
 	return getFromEnv(environ.System(), streamclient.GetDefaultRegistry())
 }

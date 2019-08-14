@@ -43,7 +43,8 @@ func tcpProtocolClientFactory(netType string) ClientFactory {
 				if err != nil {
 					return nil, errors.Annotate(err, "failed to dial %q address %q", netType, raddr).Err()
 				}
-				return conn, nil
+				defer conn.Close()
+				return conn.File()
 			},
 			ns: ns,
 		}, nil
