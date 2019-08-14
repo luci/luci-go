@@ -19,6 +19,48 @@
     },
     {
       "key": {
+        "uuid": "b3ca414b_04503b0a",
+        "filename": "results/proto/v1/recorder.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Something different from https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/results/proto/v1/gen.go?sq\u003dpackage:chromium\u0026dr\u003dCSs\u0026g\u003d0?",
+      "parentUuid": "09a77019_0aa55a1e",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d589638_fe50c817",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6b36b8c_936d9c20",
+      "range": {
+        "startLine": 76,
+        "startChar": 16,
+        "endLine": 76,
+        "endChar": 22
+      },
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3313f3f_86122860",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 2
@@ -33,6 +75,24 @@
       "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa794c22_141b092d",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3313f3f_86122860",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "dd6de032_170a8391",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Oh, yes, thank you. We don\u0027t have that issue with UpdateInvocationRequest because we handle the task deduplication with the inclusion edges, and each swarming task uploads its own invocation.",
+      "parentUuid": "cd343225_6c70f97f",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0467f3f6_d58fb62b",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 2
@@ -64,6 +142,24 @@
       "writtenOn": "2019-08-08T16:25:25Z",
       "side": 1,
       "message": "this message should contain everything that we need to insert correct invocation, and that is not present in the swarming task. Things that are definitely not present:\n- variant information, e.g. including name of a test suite in test_suites.pyl\n- test path prefix, e.g. including GN target name\n\nsee https://docs.google.com/document/d/1nzqrwfTJtzU71no_IiOh80HYBIpr1OPoJJonQIJPWtI/edit#",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "504f96ce_56cc12c0",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Added test path prefix and variant information, as VariantDef, since the difference between the Chromium variant definition and the general variant definition is just that the keys are defined to be from a particular set. How does that sound?",
+      "parentUuid": "0467f3f6_d58fb62b",
       "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -87,6 +183,24 @@
     },
     {
       "key": {
+        "uuid": "c296ef8d_befe8b8c",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b7817a3e_967d9345",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "57ed3c45_dd9d3dfe",
         "filename": "results/recorder/main.go",
         "patchSetId": 2
@@ -98,6 +212,24 @@
       "writtenOn": "2019-08-08T16:25:25Z",
       "side": 1,
       "message": "does gofmt add this?",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a49b2089_402c95bb",
+        "filename": "results/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Add which part, the empty line?\n\nIt didn\u0027t, but it also didn\u0027t complain about it.\n\nThe blocks above were structured after https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/examples/k8s/helloworld/main.go; https://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/src/infra/appengine/qscheduler-swarming/cmd/qscheduler-swarming/main.go groups differently.",
+      "parentUuid": "57ed3c45_dd9d3dfe",
       "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -127,6 +259,30 @@
     },
     {
       "key": {
+        "uuid": "93db5d97_03700aac",
+        "filename": "results/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0975c137_aba77a4e",
+      "range": {
+        "startLine": 52,
+        "startChar": 13,
+        "endLine": 52,
+        "endChar": 17
+      },
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "46962680_fa1c90b7",
         "filename": "results/recorder/main.go",
         "patchSetId": 2
@@ -147,6 +303,30 @@
       "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df05b564_b4fe5698",
+        "filename": "results/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46962680_fa1c90b7",
+      "range": {
+        "startLine": 56,
+        "startChar": 21,
+        "endLine": 56,
+        "endChar": 69
+      },
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -173,6 +353,30 @@
     },
     {
       "key": {
+        "uuid": "e112f84f_2556fa61",
+        "filename": "results/recorder/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Deleted the param.\n\napiServer.InstallHandlers needs a middleware, but when we need it we can set it up to pass it in.",
+      "parentUuid": "911f9867_3f2b5188",
+      "range": {
+        "startLine": 67,
+        "startChar": 39,
+        "endLine": 67,
+        "endChar": 45
+      },
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33fece32_cf22e7fe",
         "filename": "results/recorder/recorder.go",
         "patchSetId": 2
@@ -187,6 +391,24 @@
       "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "841a8ca3_bddc4e1b",
+        "filename": "results/recorder/recorder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33fece32_cf22e7fe",
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -210,6 +432,30 @@
       "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ce20631_23b91c78",
+        "filename": "results/recorder/recorder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-14T08:15:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "865a69c8_4ca420db",
+      "range": {
+        "startLine": 29,
+        "startChar": 11,
+        "endLine": 29,
+        "endChar": 46
+      },
+      "revId": "8e1e5255147f8121d1a10ee29e0aba54f7bdf88d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
