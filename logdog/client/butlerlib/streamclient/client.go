@@ -33,6 +33,12 @@ type Client interface {
 
 // streamFactory is a factory method to generate an io.WriteCloser stream for
 // the current clientImpl.
+//
+// It's important for this to attempt to return a *os.File; users
+// will use this to connect stdout/stderr on "os/exec".Cmd's. "os/exec" has
+// special logic to root out (exactly) the `*os.File` type from the io.Writer
+// and connect it directly. If we return 'conn' instead, "os/exec" will burn an
+// extra goroutine to copy data through a pipe.
 type streamFactory func() (io.WriteCloser, error)
 
 // clientImpl is an implementation of the Client interface using a net.Conn
