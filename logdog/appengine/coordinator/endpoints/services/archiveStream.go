@@ -110,8 +110,6 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 		lst.ArchiveStreamSize = req.StreamSize
 		lst.ArchiveIndexURL = req.IndexUrl
 		lst.ArchiveIndexSize = req.IndexSize
-		lst.ArchiveDataURL = req.DataUrl
-		lst.ArchiveDataSize = req.DataSize
 
 		// Update the log stream.
 		if err := ds.Put(c, lst); err != nil {
