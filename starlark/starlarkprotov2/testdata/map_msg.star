@@ -29,7 +29,7 @@ assert.eq(msg.m['k'].i, 456)
 
 # None values are converted to empty messages. Use 'pop' to throw values away.
 msg.m['k'] = None
-assert.eq(type(msg.m['k']), 'testprotos.Simple')
+assert.eq(type(msg.m['k']), 'proto.Message<testprotos.Simple>')
 assert.eq(str(msg.m['k']), '')
 msg.m.pop('k')
 assert.eq(msg.m.get('k'), None)
@@ -41,7 +41,7 @@ assert.eq(msg.m['k'].i, 999)
 # Dicts with wrong schema are rejected.
 def bad_schema():
   msg.m['k'] = {'unknown': 123}
-assert.fails(bad_schema, 'proto message testprotos.Simple has no field "unknown"')
+assert.fails(bad_schema, 'proto.Message<testprotos.Simple> has no field "unknown"')
 
 # Serialization to text proto works.
 text = proto.to_textpb(testprotos.MapWithMessageType(m={
