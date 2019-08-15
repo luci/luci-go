@@ -69,12 +69,11 @@ type application struct {
 	cli.Application
 	context.Context
 
-	project             types.ProjectName
-	prefix              types.StreamName
-	coordinatorHost     string
-	outputWorkers       int
-	outputConfig        outputConfigFlag
-	ioKeepAliveInterval clockflag.Duration
+	project         types.ProjectName
+	prefix          types.StreamName
+	coordinatorHost string
+	outputWorkers   int
+	outputConfig    outputConfigFlag
 
 	authFlags authcli.Flags
 
@@ -123,8 +122,6 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&a.noBufferLogs, "output-no-buffer", false,
 		"If true, dispatch logs immediately. Setting this flag simplifies output at the expense "+
 			"of wire-format efficiency.")
-	fs.Var(&a.ioKeepAliveInterval, "io-keepalive-stderr",
-		"If supplied, periodically write messages to STDERR if data is received on any Butler stream.")
 }
 
 func (a *application) authenticator(ctx context.Context) (*auth.Authenticator, error) {
@@ -157,17 +154,15 @@ func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butl
 
 	// Instantiate our Butler.
 	butlerOpts := butler.Config{
-		Project:             a.project,
-		Prefix:              a.prefix,
-		GlobalTags:          a.globalTags,
-		MaxBufferAge:        time.Duration(a.maxBufferAge),
-		BufferLogs:          !a.noBufferLogs,
-		Output:              out,
-		OutputWorkers:       a.outputWorkers,
-		TeeStdout:           os.Stdout,
-		TeeStderr:           os.Stderr,
-		IOKeepAliveInterval: time.Duration(a.ioKeepAliveInterval),
-		IOKeepAliveWriter:   os.Stderr,
+		Project:       a.project,
+		Prefix:        a.prefix,
+		GlobalTags:    a.globalTags,
+		MaxBufferAge:  time.Duration(a.maxBufferAge),
+		BufferLogs:    !a.noBufferLogs,
+		Output:        out,
+		OutputWorkers: a.outputWorkers,
+		TeeStdout:     os.Stdout,
+		TeeStderr:     os.Stderr,
 	}
 	b, err := butler.New(a, butlerOpts)
 	if err != nil {
