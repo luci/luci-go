@@ -299,13 +299,15 @@ func (b *Bundler) makeBundles() {
 			// be held after the switch statement has finished.
 			//
 			// TODO(iannucci): remove this contex/condition in favor of a channel.
-			condC := context.Background()
 			switch {
 			case has && nextExpire.After(state.now):
 				// No immediate data, so block until the next known data expiration
 				// time.
-				condC, _ = context.WithDeadline(condC, nextExpire)
-				b.streamsCond.Wait(condC)
+				condC, cancel := context.WithDeadline(context.Background(), nextExpire)
+				func() {
+					defer cancel()
+					b.streamsCond.Wait(condC)
+				}()
 
 			case has:
 				// There is more data, and it has already expired, so go immediately.
@@ -314,7 +316,7 @@ func (b *Bundler) makeBundles() {
 			default:
 				// No data, and no enqueued stream data, so block indefinitely until we
 				// get a signal.
-				b.streamsCond.Wait(condC)
+				b.streamsCond.Wait(context.Background())
 			}
 		}
 
