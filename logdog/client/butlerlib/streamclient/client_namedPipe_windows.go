@@ -22,8 +22,8 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 )
 
-func registerPlatformProtocols(r *Registry) {
-	r.Register("net.pipe", newNamedPipeClient)
+func init() {
+	protocolRegistry["net.pipe"] = newNamedPipeClient
 }
 
 // newNamedPipeClient creates a new Client instance bound to a named pipe stream

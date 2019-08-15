@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 )
 
-func registerPlatformProtocols(r *Registry) {
-	r.Register("unix", newUnixSocketClient)
+func init() {
+	protocolRegistry["unix"] = newUnixSocketClient
 }
 
 // newUnixSocketClient creates a new Client instance bound to a named pipe stream

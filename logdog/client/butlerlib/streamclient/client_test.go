@@ -16,13 +16,13 @@ package streamclient
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"testing"
 
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 
@@ -49,42 +49,41 @@ func (ts *testStreamWriteCloser) Close() error {
 	return nil
 }
 
+// A list of all streams opened with the 'test' protocol.
+var testError error
+var testStreams = []*testStreamWriteCloser{}
+
+func init() {
+	protocolRegistry["test"] = func(addr string, ns types.StreamName) (Client, error) {
+		return &clientImpl{
+			factory: func() (io.WriteCloser, error) {
+				tswc := &testStreamWriteCloser{addr: addr, err: testError}
+				testStreams = append(testStreams, tswc)
+				return tswc, nil
+			},
+			ns: ns,
+		}, nil
+	}
+}
+
 func TestClient(t *testing.T) {
 	Convey(`A client registry with a test protocol`, t, func() {
-		tswcErr := error(nil)
-		tswc := (*testStreamWriteCloser)(nil)
-
-		reg := Registry{}
-		reg.Register("test", func(addr string, ns types.StreamName) (Client, error) {
-			return &clientImpl{
-				factory: func() (io.WriteCloser, error) {
-					tswc = &testStreamWriteCloser{
-						addr: addr,
-						err:  tswcErr,
-					}
-					return tswc, nil
-				},
-				ns: ns,
-			}, nil
-		})
+		// clear out test globals
+		testError = nil
+		testStreams = nil
 
 		flags := streamproto.Flags{
 			Name:      "test",
 			Timestamp: clockflag.Time(testclock.TestTimeUTC),
 		}
 
-		Convey(`Will panic if the same protocol is registered twice.`, func() {
-			So(func() { reg.Register("test", nil) }, ShouldPanic)
-			So(func() { reg.Register("test2", nil) }, ShouldNotPanic)
-		})
-
 		Convey(`Will fail to instantiate a Client with an invalid protocol.`, func() {
-			_, err := reg.NewClient("fake:foo", "")
+			_, err := New("fake:foo", "")
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey(`Can instantiate a new client.`, func() {
-			client, err := reg.NewClient("test:foo", "namespace")
+			client, err := New("test:foo", "namespace")
 			So(err, ShouldBeNil)
 			So(client, ShouldHaveSameTypeAs, &clientImpl{})
 
@@ -111,17 +110,17 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey(`If the stream fails to write the handshake, it will be closed.`, func() {
-				tswcErr = errors.New("test error")
+				testError = errors.New("test error")
 				_, err := client.NewStream(flags)
 				So(err, ShouldNotBeNil)
 
-				So(tswc, ShouldNotBeNil)
-				So(tswc.closed, ShouldBeTrue)
+				So(testStreams, ShouldHaveLength, 1)
+				So(testStreams[0].closed, ShouldBeTrue)
 			})
 		})
 
 		Convey(`Can instantiate a new client without namespace.`, func() {
-			client, err := reg.NewClient("test:foo", "")
+			client, err := New("test:foo", "")
 			stream, err := client.NewStream(flags)
 			So(err, ShouldBeNil)
 			So(stream, ShouldHaveSameTypeAs, &BaseStream{})
