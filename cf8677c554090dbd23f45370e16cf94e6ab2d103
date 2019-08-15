@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "761dad23_3285186c",
+        "filename": "logdog/client/butlerlib/bootstrap/bootstrap.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T22:22:26Z",
+      "side": 1,
+      "message": "nit: move it to Bootstrap as \"testingNewClient\", no need for global variables if they can easily be avoided. Tests here do not look very trivial, I\u0027m worried globals may introduce flakes.",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 0
+      },
+      "revId": "cf8677c554090dbd23f45370e16cf94e6ab2d103",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48e7722e_99e21ae2",
+        "filename": "logdog/client/butlerlib/bootstrap/bootstrap.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T22:22:26Z",
+      "side": 1,
+      "message": "make it accept testingNewClien too (it is private function, why not)",
+      "range": {
+        "startLine": 59,
+        "startChar": 5,
+        "endLine": 59,
+        "endChar": 32
+      },
+      "revId": "cf8677c554090dbd23f45370e16cf94e6ab2d103",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d318fa90_76ad78d9",
+        "filename": "logdog/client/butlerlib/streamclient/registry.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T22:22:26Z",
+      "side": 1,
+      "message": "nit: move this to client.go where it is read, no need for a separate file anymore",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 49
+      },
+      "revId": "cf8677c554090dbd23f45370e16cf94e6ab2d103",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
