@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "eea833a9_2cf6ab70",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-15T23:05:02Z",
+      "side": 1,
+      "message": "yeah, agreed, but it\u0027s not as dumb as I initially thought when I first read this :).",
+      "parentUuid": "646ad3d7_ddfc4c98",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 42
+      },
+      "revId": "98e19ad6b0435de45d57e92f1cad270e3738111f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea73b9e0_4b30f2da",
         "filename": "starlark/starlarkprotov2/testdata/cmp.star",
         "patchSetId": 3
