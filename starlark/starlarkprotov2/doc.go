@@ -107,5 +107,4 @@
 package starlarkprotov2
 
 // TODO: support more known types (any, struct).
-// TODO: support '==' ?
 // TODO: delete struct_to_textpb, use dynamic protos instead

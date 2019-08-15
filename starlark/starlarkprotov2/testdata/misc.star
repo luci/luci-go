@@ -29,12 +29,6 @@ assert.true(bool(m))
 # Stringification works.
 assert.eq(str(testprotos.Simple(i=123)), "i:123")
 
-# Proto messages are comparable by identity, but not by value.
-m1 = testprotos.Simple()
-m2 = testprotos.Simple()
-assert.true(m1 == m1)
-assert.true(m1 != m2)
-
 # Assigning totally unsupported types to fields fails.
 def set_unrelated():
   m.i = set([])
