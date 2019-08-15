@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"go.starlark.net/starlark"
 
@@ -52,7 +53,7 @@ type Output struct {
 // Datum represents one generated output file.
 type Datum interface {
 	// Bytes is a raw file body to put on disk.
-	Bytes() []byte
+	Bytes() ([]byte, error)
 	// SemanticallySame is true if 'other' represents the same datum.
 	SemanticallySame(other []byte) bool
 }
@@ -61,13 +62,54 @@ type Datum interface {
 type BlobDatum []byte
 
 // Bytes is a raw file body to put on disk.
-func (b BlobDatum) Bytes() []byte { return b }
+func (b BlobDatum) Bytes() ([]byte, error) { return b, nil }
 
 // SemanticallySame is true if 'other == b'.
 func (b BlobDatum) SemanticallySame(other []byte) bool { return bytes.Equal(b, other) }
 
+// MessageDatum is a Datum constructed from a proto message.
+type MessageDatum struct {
+	Header  string
+	Message *starlarkprotov2.Message
+
+	// Cache serialized representation, since we often call Bytes() twice: once
+	// when constructing ConfigSet for sending to the validation, and another when
+	// writing them to disk.
+	once sync.Once
+	blob []byte
+	err  error
+}
+
+// Bytes is a raw file body to put on disk.
+func (m *MessageDatum) Bytes() ([]byte, error) {
+	m.once.Do(func() {
+		if msg, err := starlarkprotov2.ToTextPB(m.Message); err != nil {
+			m.err = err
+		} else {
+			m.blob = make([]byte, 0, len(m.Header)+len(msg))
+			m.blob = append(m.blob, m.Header...)
+			m.blob = append(m.blob, msg...)
+		}
+	})
+	return m.blob, m.err
+}
+
+// SemanticallySame is true if 'other' deserializes and equals b.Message.
+//
+// On deserialization or comparison errors returns false.
+func (m *MessageDatum) SemanticallySame(other []byte) bool {
+	o, err := starlarkprotov2.FromTextPB(m.Message.MessageType(), other)
+	if err != nil {
+		return false // e.g. the schema has changed or the file is totally bogus
+	}
+	eq, err := starlark.Equal(m.Message, o)
+	return err == nil && eq
+}
+
 // ConfigSets partitions this output into 0 or more config sets based on Roots.
-func (o Output) ConfigSets() []ConfigSet {
+//
+// Returns an error if some output Datum can't be serialized.
+func (o Output) ConfigSets() ([]ConfigSet, error) {
 	names := make([]string, 0, len(o.Roots))
 	for name := range o.Roots {
 		names = append(names, name)
@@ -90,19 +132,25 @@ func (o Output) ConfigSets() []ConfigSet {
 		for f, body := range o.Data {
 			f = path.Clean(f)
 			if strings.HasPrefix(f, root) {
-				files[f[len(root):]] = body.Bytes()
+				var err error
+				if files[f[len(root):]], err = body.Bytes(); err != nil {
+					return nil, errors.Annotate(err, "serializing %s", f).Err()
+				}
 			}
 		}
 
 		cs[i] = ConfigSet{Name: nm, Data: files}
 	}
 
-	return cs
+	return cs, nil
 }
 
 // Compare compares files on disk to what's in the output.
 //
 // Returns names of files that are different ('changed') and same ('unchanged').
+//
+// For output files based on proto messages uses semantic comparison, i.e. loads
+// the file on disk as a proto message and compares it the output message.
 //
 // Files on disk that are not in the output set are totally ignored. Missing
 // files that are listed in the output set are considered changed.
@@ -126,16 +174,24 @@ func (o Output) Compare(dir string) (changed, unchanged []string, err error) {
 
 // Write updates files on disk to match the output.
 //
+// By defaults writes only files that have semantic changes (based on Compare).
+// If 'force' is true, writes all files no matter what.
+//
 // Returns a list of updated files and a list of files that are already
-// up-to-date, same as Compare.
+// up-to-date, same as Compare. If 'force' is true, the latter list is always
+// empty.
 //
 // Creates missing directories. Not atomic. All files have mode 0666.
-func (o Output) Write(dir string) (changed, unchanged []string, err error) {
+func (o Output) Write(dir string, force bool) (changed, unchanged []string, err error) {
 	// First pass: populate 'changed' and 'unchanged', so we have a valid result
 	// even when failing midway through writes.
-	changed, unchanged, err = o.Compare(dir)
-	if err != nil {
-		return
+	if force {
+		changed = o.Files()
+	} else {
+		changed, unchanged, err = o.Compare(dir)
+		if err != nil {
+			return
+		}
 	}
 
 	// Second pass: update changed files.
@@ -144,7 +200,11 @@ func (o Output) Write(dir string) (changed, unchanged []string, err error) {
 		if err = os.MkdirAll(filepath.Dir(path), 0777); err != nil {
 			return
 		}
-		if err = ioutil.WriteFile(path, o.Data[name].Bytes(), 0666); err != nil {
+		var blob []byte
+		if blob, err = o.Data[name].Bytes(); err != nil {
+			return
+		}
+		if err = ioutil.WriteFile(path, blob, 0666); err != nil {
 			return
 		}
 	}
@@ -168,7 +228,11 @@ func (o Output) DebugDump() {
 		fmt.Println("--------------------------------------------------")
 		fmt.Println(f)
 		fmt.Println("--------------------------------------------------")
-		fmt.Print(string(o.Data[f].Bytes()))
+		if blob, err := o.Data[f].Bytes(); err == nil {
+			fmt.Print(string(blob))
+		} else {
+			fmt.Printf("ERROR: %s\n", err)
+		}
 		fmt.Println("--------------------------------------------------")
 	}
 }
@@ -265,27 +329,20 @@ func (o *outputBuilder) finalize(includePBHeader bool) (map[string]Datum, error)
 			continue
 		}
 
-		msg := v.(*starlarkprotov2.Message)
-		blob, err := starlarkprotov2.ToTextPB(msg)
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO(vadimsh): Use MessageDatum instead when it exists.
-		buf := bytes.Buffer{}
+		md := &MessageDatum{Message: v.(*starlarkprotov2.Message)}
 		if includePBHeader {
+			buf := strings.Builder{}
 			buf.WriteString("# Auto-generated by lucicfg.\n")
 			buf.WriteString("# Do not modify manually.\n")
-			if msgName, docURL := protoMessageDoc(msg); docURL != "" {
+			if msgName, docURL := protoMessageDoc(md.Message); docURL != "" {
 				buf.WriteString("#\n")
 				fmt.Fprintf(&buf, "# For the schema of this file, see %s message:\n", msgName)
 				fmt.Fprintf(&buf, "#   %s\n", docURL)
 			}
 			buf.WriteString("\n")
+			md.Header = buf.String()
 		}
-		buf.Write(blob)
-
-		out[k.GoString()] = BlobDatum(buf.Bytes())
+		out[k.GoString()] = md
 	}
 
 	return out, nil

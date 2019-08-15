@@ -60,7 +60,7 @@ func TestOutput(t *testing.T) {
 					"dir/a": BlobDatum("222"),
 				},
 			}
-			changed, unchanged, err := out.Write(tmp)
+			changed, unchanged, err := out.Write(tmp, false)
 			So(changed, ShouldResemble, []string{"a", "dir/a"})
 			So(unchanged, ShouldHaveLength, 0)
 			So(err, ShouldBeNil)
@@ -69,7 +69,7 @@ func TestOutput(t *testing.T) {
 			So(read("dir/a"), ShouldResemble, []byte("222"))
 
 			out.Data["a"] = BlobDatum("333")
-			changed, unchanged, err = out.Write(tmp)
+			changed, unchanged, err = out.Write(tmp, false)
 			So(changed, ShouldResemble, []string{"a"})
 			So(unchanged, ShouldResemble, []string{"dir/a"})
 			So(err, ShouldBeNil)
@@ -137,16 +137,22 @@ func TestOutput(t *testing.T) {
 		// Same data, as raw bytes.
 		everything := map[string][]byte{}
 		for k, v := range out.Data {
-			everything[k] = v.Bytes()
+			everything[k], _ = v.Bytes()
+		}
+
+		configSets := func() []ConfigSet {
+			cs, err := out.ConfigSets()
+			So(err, ShouldBeNil)
+			return cs
 		}
 
 		Convey("No roots", func() {
-			So(out.ConfigSets(), ShouldHaveLength, 0)
+			So(configSets(), ShouldHaveLength, 0)
 		})
 
 		Convey("Empty set", func() {
 			out.Roots["set"] = "zzz"
-			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+			So(configSets(), ShouldResemble, []ConfigSet{
 				{
 					Name: "set",
 					Data: map[string][]byte{},
@@ -156,7 +162,7 @@ func TestOutput(t *testing.T) {
 
 		Convey("`.` root", func() {
 			out.Roots["set"] = "."
-			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+			So(configSets(), ShouldResemble, []ConfigSet{
 				{
 					Name: "set",
 					Data: everything,
@@ -166,7 +172,7 @@ func TestOutput(t *testing.T) {
 
 		Convey("Subdir root", func() {
 			out.Roots["set"] = "dir1/."
-			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+			So(configSets(), ShouldResemble, []ConfigSet{
 				{
 					Name: "set",
 					Data: map[string][]byte{
@@ -182,7 +188,7 @@ func TestOutput(t *testing.T) {
 			out.Roots["set1"] = "dir1"
 			out.Roots["set2"] = "dir2"
 			out.Roots["set3"] = "dir1/sub" // intersecting sets are OK
-			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+			So(configSets(), ShouldResemble, []ConfigSet{
 				{
 					Name: "set1",
 					Data: map[string][]byte{
