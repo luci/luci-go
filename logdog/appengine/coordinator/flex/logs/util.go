@@ -16,7 +16,7 @@ package logs
 
 import (
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 )
 
@@ -32,7 +32,6 @@ func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamSt
 		lss.Archive = &logdog.LogStreamState_ArchiveInfo{
 			IndexUrl:      lst.ArchiveIndexURL,
 			StreamUrl:     lst.ArchiveStreamURL,
-			DataUrl:       lst.ArchiveDataURL,
 			Complete:      ast == coordinator.ArchivedComplete,
 			LogEntryCount: lst.ArchiveLogEntryCount,
 		}

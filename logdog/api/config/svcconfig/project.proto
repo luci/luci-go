@@ -53,12 +53,8 @@ message ProjectConfig {
   // subdirectory in the global "archive_gs_base" location.
   string archive_gs_bucket = 10;
 
-  // If true, always create an additional data file that is the rendered content
-  // of the stream data. By default, only streams that explicitly register a
-  // binary file extension must be rendered.
-  //
-  // See Config's "always_create_binary" for more information.
-  bool render_all_streams = 11;
+  reserved "render_all_streams";
+  reserved 11;
 
   // Project-specific archive index configuration.
   //

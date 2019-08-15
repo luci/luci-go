@@ -58,8 +58,6 @@ func TestArchiveStream(t *testing.T) {
 			StreamSize:    10,
 			IndexUrl:      "gs://fake.index",
 			IndexSize:     20,
-			DataUrl:       "gs://fake.data",
-			DataSize:      30,
 		}
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
@@ -88,8 +86,6 @@ func TestArchiveStream(t *testing.T) {
 				So(tls.State.ArchiveStreamSize, ShouldEqual, 10)
 				So(tls.State.ArchiveIndexURL, ShouldEqual, "gs://fake.index")
 				So(tls.State.ArchiveIndexSize, ShouldEqual, 20)
-				So(tls.State.ArchiveDataURL, ShouldEqual, "gs://fake.data")
-				So(tls.State.ArchiveDataSize, ShouldEqual, 30)
 			})
 
 			Convey(`Will mark the stream as partially archived if not complete.`, func() {
@@ -112,8 +108,6 @@ func TestArchiveStream(t *testing.T) {
 				So(tls.State.ArchiveStreamSize, ShouldEqual, 10)
 				So(tls.State.ArchiveIndexURL, ShouldEqual, "gs://fake.index")
 				So(tls.State.ArchiveIndexSize, ShouldEqual, 20)
-				So(tls.State.ArchiveDataURL, ShouldEqual, "gs://fake.data")
-				So(tls.State.ArchiveDataSize, ShouldEqual, 30)
 			})
 
 			Convey(`Will refuse to process an invalid stream hash.`, func() {
