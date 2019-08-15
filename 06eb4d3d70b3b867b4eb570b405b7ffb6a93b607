@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b70f24c_5bf5511d",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T21:24:32Z",
+      "side": 1,
+      "message": "this can also be skipped if m.LogWriter \u003d\u003d nil\n\n(I have a feeling this entire function can be skipped. I will also not be surprised if m.LogWriter is never nil here).",
+      "range": {
+        "startLine": 85,
+        "startChar": 0,
+        "endLine": 96,
+        "endChar": 0
+      },
+      "revId": "06eb4d3d70b3b867b4eb570b405b7ffb6a93b607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
