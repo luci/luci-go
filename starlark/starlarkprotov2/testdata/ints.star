@@ -44,7 +44,7 @@ assert.fails(set_bad, 'got list, want int')
 # Setting to a message fails.
 def set_msg():
   m2.i64 = testprotos.SimpleFields()
-assert.fails(set_msg, 'got testprotos.SimpleFields, want int')
+assert.fails(set_msg, 'got proto.Message<testprotos.SimpleFields>, want int')
 
 # We don't support implicit conversions from float to int. Callers should use
 # int(...) cast explicitly.
