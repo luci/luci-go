@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "50f1b4c2_7eabc515",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T22:46:55Z",
+      "side": 1,
+      "message": "I was copying how starlark itself reports this, but fine.",
+      "parentUuid": "8adb610c_9bc8cc8b",
+      "range": {
+        "startLine": 233,
+        "startChar": 28,
+        "endLine": 233,
+        "endChar": 36
+      },
+      "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bec7bab0_c261a1fa",
         "filename": "starlark/starlarkprotov2/message.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "165f400a_b70d0226",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T22:46:55Z",
+      "side": 1,
+      "message": "No, Attr(...) errors already mention the key.",
+      "parentUuid": "bec7bab0_c261a1fa",
+      "range": {
+        "startLine": 249,
+        "startChar": 17,
+        "endLine": 249,
+        "endChar": 20
+      },
+      "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "370073ec_9a593939",
+        "filename": "starlark/typed/dict.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T22:46:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c1f699fc_95480475",
+      "range": {
+        "startLine": 161,
+        "startChar": 29,
+        "endLine": 161,
+        "endChar": 30
+      },
+      "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77ce04a4_0a542106",
         "filename": "starlark/typed/list.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d2a3474_56a98755",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T22:46:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77ce04a4_0a542106",
+      "range": {
+        "startLine": 241,
+        "startChar": 31,
+        "endLine": 241,
+        "endChar": 32
+      },
+      "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
