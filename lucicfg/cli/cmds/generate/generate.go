@@ -51,6 +51,7 @@ on disk, so they can be manually examined for reasons they are invalid.
 			gr := &generateRun{}
 			gr.Init(params)
 			gr.AddMetaFlags()
+			gr.Flags.BoolVar(&gr.force, "force", false, "Overwrite the files on disk even if they contain semantically same proto messages")
 			gr.Flags.BoolVar(&gr.validate, "validate", false, "Validate the generate configs by sending them to LUCI Config")
 			return gr
 		},
@@ -60,6 +61,7 @@ on disk, so they can be manually examined for reasons they are invalid.
 type generateRun struct {
 	base.Subcommand
 
+	force    bool
 	validate bool
 }
 
@@ -115,7 +117,7 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 			}
 		}
 		// Write the new output there.
-		result.Changed, result.Unchanged, err = output.Write(meta.ConfigDir)
+		result.Changed, result.Unchanged, err = output.Write(meta.ConfigDir, gr.force)
 		if err != nil {
 			return result, err
 		}
