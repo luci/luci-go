@@ -15,7 +15,6 @@
 package butler
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -274,8 +273,6 @@ func TestButler(t *testing.T) {
 
 	Convey(`A testing Butler instance`, t, func() {
 		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
-		teeStdout := bytes.Buffer{}
-		teeStderr := bytes.Buffer{}
 		to := testOutput{
 			maxSize: 1024,
 		}
@@ -286,8 +283,6 @@ func TestButler(t *testing.T) {
 			BufferLogs:    false,
 			Prefix:        "unit/test",
 			Project:       "test-project",
-			TeeStdout:     &teeStdout,
-			TeeStderr:     &teeStderr,
 		}
 
 		Convey(`Will error if an invalid Config is passed.`, func() {
@@ -358,58 +353,6 @@ func TestButler(t *testing.T) {
 
 				s1 := newTestStream(nil)
 				So(b.AddStream(s1, s1.properties), ShouldErrLike, "a stream has already been registered")
-			})
-
-			Convey(`Will not accept invalid tee configuration`, func() {
-				conf.TeeStdout = nil
-				conf.TeeStderr = nil
-
-				for _, tc := range []struct {
-					tee streamproto.TeeType
-					err string
-				}{
-					{streamproto.TeeStdout, "no STDOUT is configured"},
-					{streamproto.TeeStderr, "no STDERR is configured"},
-					{streamproto.TeeType(0xFFFFFFFF), "invalid tee value"},
-				} {
-					Convey(fmt.Sprintf(`Rejects stream with TeeType [%v], when no tee outputs are configured.`, tc.tee), func() {
-						b := mkb(c, conf)
-						s := newTestStream(func(p *streamproto.Properties) {
-							p.Tee = tc.tee
-						})
-						So(b.AddStream(s, s.properties), ShouldErrLike, tc.err)
-					})
-				}
-			})
-
-			Convey(`When adding a stream configured to tee through STDOUT/STDERR, tees.`, func() {
-				stdout := newTestStream(func(p *streamproto.Properties) {
-					p.Name = "stdout"
-					p.Tee = streamproto.TeeStdout
-				})
-
-				stderr := newTestStream(func(p *streamproto.Properties) {
-					p.Name = "stderr"
-					p.Tee = streamproto.TeeStderr
-				})
-
-				b := mkb(c, conf)
-				So(b.AddStream(stdout, stdout.properties), ShouldBeNil)
-				So(b.AddStream(stderr, stderr.properties), ShouldBeNil)
-
-				stdout.data([]byte("Hello, STDOUT"), io.EOF)
-				stderr.data([]byte("Hello, STDERR"), io.EOF)
-
-				b.Activate()
-				So(b.Wait(), ShouldBeNil)
-
-				So(teeStdout.String(), ShouldEqual, "Hello, STDOUT")
-				So(to.logs("stdout"), shouldHaveTextLogs, "Hello, STDOUT")
-				So(to.isTerminal("stdout"), ShouldBeTrue)
-
-				So(teeStderr.String(), ShouldEqual, "Hello, STDERR")
-				So(to.logs("stderr"), shouldHaveTextLogs, "Hello, STDERR")
-				So(to.isTerminal("stderr"), ShouldBeTrue)
 			})
 
 			Convey(`Can open in-memory datagram streams.`, func() {

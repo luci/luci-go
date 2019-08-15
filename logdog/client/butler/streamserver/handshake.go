@@ -46,7 +46,6 @@ const (
 func (p *handshakeProtocol) defaultFlags() *streamproto.Flags {
 	return &streamproto.Flags{
 		Type: streamproto.StreamType(logpb.StreamType_TEXT),
-		Tee:  streamproto.TeeNone,
 	}
 }
 
