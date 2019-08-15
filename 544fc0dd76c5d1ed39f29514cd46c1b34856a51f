@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8adb610c_9bc8cc8b",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-15T17:33:53Z",
+      "side": 1,
+      "message": "since we know m and y are the same type, maybe \"$op is not implemented for $type\"?",
+      "range": {
+        "startLine": 233,
+        "startChar": 28,
+        "endLine": 233,
+        "endChar": 36
+      },
+      "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bec7bab0_c261a1fa",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-15T17:33:53Z",
+      "side": 1,
+      "message": "do we need to annotate these with `key`?",
+      "range": {
+        "startLine": 249,
+        "startChar": 17,
+        "endLine": 249,
+        "endChar": 20
+      },
+      "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1f699fc_95480475",
+        "filename": "starlark/typed/dict.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-15T17:33:53Z",
+      "side": 1,
+      "message": "(if you update the other one, this one too)",
+      "range": {
+        "startLine": 161,
+        "startChar": 29,
+        "endLine": 161,
+        "endChar": 30
+      },
+      "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77ce04a4_0a542106",
+        "filename": "starlark/typed/list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-15T17:33:53Z",
+      "side": 1,
+      "message": "^",
+      "range": {
+        "startLine": 241,
+        "startChar": 31,
+        "endLine": 241,
+        "endChar": 32
+      },
+      "revId": "544fc0dd76c5d1ed39f29514cd46c1b34856a51f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
