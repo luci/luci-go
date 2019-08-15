@@ -39,6 +39,13 @@ func (s *RecorderServer) InsertInvocationFromSwarming(ctx context.Context, in *r
 	return nil, errors.New("unimplemented")
 }
 
+// UpdateInvocationFromSwarming updates an existing non-final invocation given swarming task ID (see
+// corresponding RPC).
+func (s *RecorderServer) UpdateInvocationFromSwarming(ctx context.Context, in *resultspb.UpdateInvocationFromSwarmingRequest) (*resultspb.Invocation, error) {
+	logging.Warningf(ctx, "UpdateInvocationFromSwarming called with ID %s", in.Task.Id)
+	return nil, errors.New("unimplemented")
+}
+
 // InsertInvocation creates a new invocation (see corresponding RPC).
 func (s *RecorderServer) InsertInvocation(ctx context.Context, in *resultspb.Invocation) (*resultspb.Invocation, error) {
 	logging.Warningf(ctx, "InsertInvocation called")
