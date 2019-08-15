@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -57,7 +58,16 @@ type clientImpl struct {
 //   - net.pipe:name describes a stream server listening on Windows named pipe
 //     "\\.\pipe\name".
 func New(path string, ns types.StreamName) (Client, error) {
-	return GetDefaultRegistry().NewClient(path, ns)
+	parts := strings.SplitN(path, ":", 2)
+	value := ""
+	if len(parts) == 2 {
+		value = parts[1]
+	}
+
+	if f, ok := protocolRegistry[parts[0]]; ok {
+		return f(value, ns)
+	}
+	return nil, fmt.Errorf("streamclient: no protocol registered for [%s]", parts[0])
 }
 
 func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
