@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -125,8 +124,6 @@ func (l *Server) Start(ctx context.Context) error {
 		MaxBufferAge:               butler.DefaultMaxBufferAge,
 		GlobalTags:                 l.GlobalTags,
 		StreamRegistrationCallback: l.StreamRegistrationCallback,
-		TeeStdout:                  os.Stdout,
-		TeeStderr:                  os.Stderr,
 	}
 
 	// Using testclock breaks stopping the butler.
