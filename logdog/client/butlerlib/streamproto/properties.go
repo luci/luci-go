@@ -71,12 +71,11 @@ func (p *Properties) Clone() *Properties {
 // Flags is a flag- and JSON-compatible collapse of Properties. It is used
 // for stream negotiation protocol and command-line interfaces.
 type Flags struct {
-	Name                StreamNameFlag `json:"name,omitempty"`
-	ContentType         string         `json:"contentType,omitempty"`
-	Type                StreamType     `json:"type,omitempty"`
-	Timestamp           clockflag.Time `json:"timestamp,omitempty"`
-	Tags                TagMap         `json:"tags,omitempty"`
-	BinaryFileExtension string         `json:"binaryFileExtension,omitempty"`
+	Name        StreamNameFlag `json:"name,omitempty"`
+	ContentType string         `json:"contentType,omitempty"`
+	Type        StreamType     `json:"type,omitempty"`
+	Timestamp   clockflag.Time `json:"timestamp,omitempty"`
+	Tags        TagMap         `json:"tags,omitempty"`
 
 	Tee      TeeType            `json:"tee,omitempty"`
 	Timeout  clockflag.Duration `json:"timeout,omitempty"`
@@ -94,12 +93,11 @@ func (f *Flags) Properties() *Properties {
 
 	p := &Properties{
 		LogStreamDescriptor: &logpb.LogStreamDescriptor{
-			Name:          string(f.Name),
-			ContentType:   string(contentType),
-			StreamType:    logpb.StreamType(f.Type),
-			Timestamp:     google.NewTimestamp(time.Time(f.Timestamp)),
-			BinaryFileExt: f.BinaryFileExtension,
-			Tags:          f.Tags,
+			Name:        string(f.Name),
+			ContentType: string(contentType),
+			StreamType:  logpb.StreamType(f.Type),
+			Timestamp:   google.NewTimestamp(time.Time(f.Timestamp)),
+			Tags:        f.Tags,
 		},
 		Tee:      f.Tee,
 		Timeout:  time.Duration(f.Timeout),

@@ -121,25 +121,6 @@ message Archivist {
   // is not specified.
   ArchiveIndexConfig archive_index_config = 10;
 
-  // If true, always render the log entries as a binary file during archival,
-  // regardless of whether a specific stream has a binary file extension.
-  //
-  // By default, a stream will only be rendered as a binary if its descriptor
-  // includes a non-empty binary file extension field.
-  //
-  // The binary stream consists of each log entry's data rendered back-to-back.
-  //   - For text streams, this produces a text document similar to the source
-  //     text.
-  //   - For binary streams and datagram streams, this reproduces the source
-  //     contiguous binary file.
-  //   - For datagram streams, the size-prefixed datagrams are written back-to-
-  //     back.
-  //
-  // Enabling this option will consume roughly twice the archival space, as each
-  // stream's data will be archived once as a series of log entries and once as
-  // a binary file.
-  //
-  // Streams without an explicit binary file extension will default to ".bin" if
-  // this is enabled.
-  bool render_all_streams = 13;
+  reserved "render_all_streams";
+  reserved 13;
 }

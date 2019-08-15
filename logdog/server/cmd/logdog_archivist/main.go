@@ -306,7 +306,6 @@ func (a *application) GetSettingsLoader(acfg *svcconfig.Archivist) archivist.Set
 			IndexStreamRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.StreamRange }),
 			IndexPrefixRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.PrefixRange }),
 			IndexByteRange:   indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.ByteRange }),
-			AlwaysRender:     (acfg.RenderAllStreams || pcfg.RenderAllStreams),
 		}
 
 		// Fold project settings into loaded ones.

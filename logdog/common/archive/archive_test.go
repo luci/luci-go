@@ -229,7 +229,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 
 func TestArchive(t *testing.T) {
 	Convey(`A Manifest connected to Buffer Writers`, t, func() {
-		var logB, indexB, dataB bytes.Buffer
+		var logB, indexB bytes.Buffer
 		desc := &logpb.LogStreamDescriptor{
 			Prefix: "test",
 			Name:   "foo",
@@ -241,7 +241,6 @@ func TestArchive(t *testing.T) {
 			Source:      &ts,
 			LogWriter:   &logB,
 			IndexWriter: &indexB,
-			DataWriter:  &dataB,
 		}
 
 		Convey(`A sequence of logs will build a complete index.`, func() {
@@ -255,7 +254,6 @@ func TestArchive(t *testing.T) {
 				LastStreamIndex: 6,
 				LogEntryCount:   7,
 			})
-			So(dataB.String(), ShouldEqual, "0\n1\n2\n3\n4\n5\n6\n")
 		})
 
 		Convey(`A sequence of non-contiguous logs will build a complete index.`, func() {
@@ -269,7 +267,6 @@ func TestArchive(t *testing.T) {
 				LastStreamIndex: 6,
 				LogEntryCount:   4,
 			})
-			So(dataB.String(), ShouldEqual, "0\n1\n3\n6\n")
 		})
 
 		Convey(`Out of order logs are ignored`, func() {
@@ -364,15 +361,9 @@ func TestArchive(t *testing.T) {
 				So(errors.SingleError(Archive(m)), ShouldErrLike, "test error")
 			})
 
-			Convey(`For data writer errors.`, func() {
-				m.DataWriter = &errWriter{m.DataWriter, errors.New("test error")}
-				So(errors.SingleError(Archive(m)), ShouldErrLike, "test error")
-			})
-
 			Convey(`When all Writers fail.`, func() {
 				m.LogWriter = &errWriter{m.LogWriter, errors.New("test error")}
 				m.IndexWriter = &errWriter{m.IndexWriter, errors.New("test error")}
-				m.DataWriter = &errWriter{m.DataWriter, errors.New("test error")}
 				So(Archive(m), ShouldNotBeNil)
 			})
 		})

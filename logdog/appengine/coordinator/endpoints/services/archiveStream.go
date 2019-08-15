@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 
 	"google.golang.org/grpc/codes"
@@ -110,8 +110,6 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 		lst.ArchiveStreamSize = req.StreamSize
 		lst.ArchiveIndexURL = req.IndexUrl
 		lst.ArchiveIndexSize = req.IndexSize
-		lst.ArchiveDataURL = req.DataUrl
-		lst.ArchiveDataSize = req.DataSize
 
 		// Update the log stream.
 		if err := ds.Put(c, lst); err != nil {

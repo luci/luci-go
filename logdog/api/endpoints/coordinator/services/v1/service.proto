@@ -142,10 +142,8 @@ message ArchiveStreamRequest {
   // The size of the log stream's index data.
   int64 index_size = 21;
 
-  // The archive URL of the log stream's binary data.
-  string data_url = 30;
-  // The size of the log stream's binary data.
-  int64 data_size = 31;
+  reserved "data_url", "data_size";
+  reserved 30, 31;
 }
 
 // BatchRequest is a batch of individual requests to make to the Coordinator.

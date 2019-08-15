@@ -41,7 +41,6 @@ import (
 const (
 	tsEntriesField = "entries"
 	tsIndexField   = "index"
-	tsDataField    = "data"
 )
 
 var (
@@ -115,11 +114,6 @@ type Settings struct {
 	// This must be unique to this archival project. In practice, it will be
 	// composed of the project's staging archival bucket and project ID.
 	GSStagingBase gs.Path
-
-	// AlwaysRender, if true, means that a binary should be archived
-	// regardless of whether a specific binary file extension has been supplied
-	// with the log stream.
-	AlwaysRender bool
 
 	// IndexStreamRange is the maximum number of stream indexes in between index
 	// entries. See archive.Manifest for more information.
@@ -295,7 +289,6 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 
 		staged.stream.addMetrics(c, tsEntriesField, streamType)
 		staged.index.addMetrics(c, tsIndexField, streamType)
-		staged.data.addMetrics(c, tsDataField, streamType)
 
 		tsLogEntries.Add(c, float64(staged.logEntryCount), streamType)
 		tsTotalLogEntries.Add(c, staged.logEntryCount, streamType)
@@ -304,7 +297,6 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 	log.Fields{
 		"streamURL":     ar.StreamUrl,
 		"indexURL":      ar.IndexUrl,
-		"dataURL":       ar.DataUrl,
 		"terminalIndex": ar.TerminalIndex,
 		"logEntryCount": ar.LogEntryCount,
 		"hadError":      ar.Error,
@@ -385,16 +377,6 @@ func (a *Archivist) makeStagedArchival(c context.Context, project types.ProjectN
 	sa.stream = sa.makeStagingPaths("logstream.entries", uid)
 	sa.index = sa.makeStagingPaths("logstream.index", uid)
 
-	// If we're emitting binary files, construct that too.
-	bext := sa.desc.BinaryFileExt
-	if bext != "" || sa.AlwaysRender {
-		// If no binary file extension was supplied, choose a default.
-		if bext == "" {
-			bext = "bin"
-		}
-
-		sa.data = sa.makeStagingPaths(fmt.Sprintf("data.%s", bext), uid)
-	}
 	return &sa, nil
 }
 
@@ -408,7 +390,6 @@ type stagedArchival struct {
 
 	stream stagingPaths
 	index  stagingPaths
-	data   stagingPaths
 
 	finalized     bool
 	terminalIndex types.MessageIndex
@@ -485,7 +466,6 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 	log.Fields{
 		"streamURL": sa.stream.staged,
 		"indexURL":  sa.index.staged,
-		"dataURL":   sa.data.staged,
 	}.Debugf(c, "Staging log stream...")
 
 	// Group any transient errors that occur during cleanup. If we aren't
@@ -533,7 +513,7 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		return w, nil
 	}
 
-	var streamWriter, indexWriter, dataWriter gs.Writer
+	var streamWriter, indexWriter gs.Writer
 	if streamWriter, err = createWriter(sa.stream.staged); err != nil {
 		return
 	}
@@ -543,14 +523,6 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		return err
 	}
 	defer closeWriter(indexWriter, sa.index.staged)
-
-	if sa.data.enabled() {
-		// Only emit a data stream if we are configured to do so.
-		if dataWriter, err = createWriter(sa.data.staged); err != nil {
-			return err
-		}
-		defer closeWriter(dataWriter, sa.data.staged)
-	}
 
 	// Read our log entries from intermediate storage.
 	ss := storageSource{
@@ -567,7 +539,6 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		Source:           &ss,
 		LogWriter:        streamWriter,
 		IndexWriter:      indexWriter,
-		DataWriter:       dataWriter,
 		StreamIndexRange: sa.IndexStreamRange,
 		PrefixIndexRange: sa.IndexPrefixRange,
 		ByteRange:        sa.IndexByteRange,
@@ -597,9 +568,6 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 	sa.logEntryCount = ss.logEntryCount
 	sa.stream.bytesWritten = streamWriter.Count()
 	sa.index.bytesWritten = indexWriter.Count()
-	if dataWriter != nil {
-		sa.data.bytesWritten = dataWriter.Count()
-	}
 	return
 }
 
@@ -654,10 +622,6 @@ func (sa *stagedArchival) finalize(c context.Context, ar *logdog.ArchiveStreamRe
 	ar.StreamSize = sa.stream.bytesWritten
 	ar.IndexUrl = string(sa.index.final)
 	ar.IndexSize = sa.index.bytesWritten
-	if sa.data.enabled() {
-		ar.DataUrl = string(sa.data.final)
-		ar.DataSize = sa.data.bytesWritten
-	}
 	return nil
 }
 
@@ -686,7 +650,6 @@ func (sa *stagedArchival) getStagingPaths() []*stagingPaths {
 	return []*stagingPaths{
 		&sa.stream,
 		&sa.index,
-		&sa.data,
 	}
 }
 
