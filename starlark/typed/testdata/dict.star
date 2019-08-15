@@ -74,6 +74,20 @@ def test_dict():
 test_dict()
 
 
+# '==' and '!=' operators.
+def test_equality_operators():
+  assert.true(typed({}) == typed({}))
+  assert.true(typed({0:1, 2:3}) == typed({0:1, 2:3}))
+  assert.true(typed({0:1, 2:3}) != typed({0:1}))
+  assert.true(typed({0:1, 2:3}) != typed({0:1, 9:3}))
+  assert.true(typed({0:1, 2:3}) != typed({0:1, 2:9}))
+  # Different key type.
+  assert.true(typed({0:1}) != typed_dict(lambda x: str(x), val_conv, {0:1}))
+  # Different value type.
+  assert.true(typed({0:1}) != typed_dict(key_conv, lambda x: str(x), {0:1}))
+test_equality_operators()
+
+
 # 'setdefault' method.
 def test_setdefault():
   a = typed({1: 2, 3: 4})

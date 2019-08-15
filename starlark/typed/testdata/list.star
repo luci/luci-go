@@ -113,11 +113,21 @@ def test_supported_operators():
 test_supported_operators()
 
 
+# '==' and '!=' operators.
+def test_equality_operators():
+  assert.true(typed([]) == typed([]))
+  assert.true(typed([0, 1, 2, 3]) == typed([0, 1, 2, 3]))
+  assert.true(typed([0, 1, 2, 3]) != typed([0, 1, 2]))
+  assert.true(typed([0, 1, 2, 3]) != typed([0, 1, 2, 4]))
+  assert.true(typed([]) != another_typed([]))
+test_equality_operators()
+
+
 # Unsupported operators.
 def test_unsupported_operators():
   a = typed([0, 1])
   assert.eq(a == ['0', '1'], False)  # there's no way to make this an error :(
-  assert.eq(a == typed([0, 1]), False)
+  assert.fails(lambda: a < typed([0, 1]), '"<" is not implemented for list<T>')
   assert.fails(lambda: a*a, 'unknown binary op: list<T> \* list<T>')
 test_unsupported_operators()
 
