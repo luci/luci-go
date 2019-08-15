@@ -47,6 +47,30 @@
       "revId": "a89c7ffa9b2bf08824e556819b2e780f18253124",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69a4c78b_fcf520c9",
+        "filename": "logdog/client/butlerlib/bootstrap/bootstrap_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T23:29:30Z",
+      "side": 0,
+      "message": "But now it would take 0.0695, profit!",
+      "parentUuid": "88d76078_483f6182",
+      "range": {
+        "startLine": 138,
+        "startChar": 1,
+        "endLine": 138,
+        "endChar": 13
+      },
+      "revId": "a89c7ffa9b2bf08824e556819b2e780f18253124",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
