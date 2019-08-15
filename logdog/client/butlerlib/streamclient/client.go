@@ -18,10 +18,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 )
+
+type clientFactory func(protocolSpecificAddress string, namespace types.StreamName) (Client, error)
+
+// This is populated via init() functions int this package.
+var protocolRegistry = map[string]clientFactory{}
 
 // Client is a client to a LogDog Butler StreamServer. A Client will connect
 // to a StreamServer, negotiate a stream configuration, and return an active
@@ -57,7 +63,16 @@ type clientImpl struct {
 //   - net.pipe:name describes a stream server listening on Windows named pipe
 //     "\\.\pipe\name".
 func New(path string, ns types.StreamName) (Client, error) {
-	return GetDefaultRegistry().NewClient(path, ns)
+	parts := strings.SplitN(path, ":", 2)
+	value := ""
+	if len(parts) == 2 {
+		value = parts[1]
+	}
+
+	if f, ok := protocolRegistry[parts[0]]; ok {
+		return f(value, ns)
+	}
+	return nil, fmt.Errorf("streamclient: no protocol registered for [%s]", parts[0])
 }
 
 func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {

@@ -43,23 +43,20 @@ func (ss *sentinelStream) Properties() *streamproto.Properties { return ss.props
 func (ss *sentinelStream) Close() error                        { return nil }
 
 func TestBootstrap(t *testing.T) {
-	t.Parallel()
-
 	Convey(`A test Environment`, t, func() {
-		reg := &streamclient.Registry{}
 		regSpec := ""
 		regErr := error(nil)
-		reg.Register("test", func(spec string, ns types.StreamName) (streamclient.Client, error) {
-			regSpec = spec
+		newClient := func(path string, ns types.StreamName) (streamclient.Client, error) {
+			regSpec = path
 			return &sentinelClient{}, regErr
-		})
+		}
 
 		env := environ.New([]string{
 			"IRRELEVANT=VALUE",
 		})
 
 		Convey(`With no Butler values will return ErrNotBootstrapped.`, func() {
-			_, err := getFromEnv(env, reg)
+			_, err := getFromEnv(env, newClient)
 			So(err, ShouldEqual, ErrNotBootstrapped)
 		})
 
@@ -68,7 +65,7 @@ func TestBootstrap(t *testing.T) {
 			env.Set(EnvStreamPrefix, "butler/prefix")
 
 			Convey(`Yields a Bootstrap with a Project, Prefix, and no Client.`, func() {
-				bs, err := getFromEnv(env, reg)
+				bs, err := getFromEnv(env, newClient)
 				So(err, ShouldBeNil)
 
 				So(bs, ShouldResemble, &Bootstrap{
@@ -83,7 +80,7 @@ func TestBootstrap(t *testing.T) {
 				env.Set(EnvNamespace, "some/namespace")
 
 				Convey(`Yields a fully-populated Bootstrap.`, func() {
-					bs, err := getFromEnv(env, reg)
+					bs, err := getFromEnv(env, newClient)
 					So(err, ShouldBeNil)
 
 					// Check that the client is populated, so we can test the remaining
@@ -97,37 +94,37 @@ func TestBootstrap(t *testing.T) {
 						Prefix:          "butler/prefix",
 						Namespace:       "some/namespace",
 					})
-					So(regSpec, ShouldEqual, "client:params")
+					So(regSpec, ShouldEqual, "test:client:params")
 				})
 
 				Convey(`If Client creation fails, will fail.`, func() {
 					regErr = errors.New("testing error")
-					_, err := getFromEnv(env, reg)
+					_, err := getFromEnv(env, newClient)
 					So(err, ShouldErrLike, "failed to create stream client")
 				})
 			})
 
 			Convey(`With an invalid Butler prefix, will fail.`, func() {
 				env.Set(EnvStreamPrefix, "_notavaildprefix")
-				_, err := getFromEnv(env, reg)
+				_, err := getFromEnv(env, newClient)
 				So(err, ShouldErrLike, "failed to validate prefix")
 			})
 
 			Convey(`With a missing Butler project, will fail.`, func() {
 				env.Remove(EnvStreamProject)
-				_, err := getFromEnv(env, reg)
+				_, err := getFromEnv(env, newClient)
 				So(err, ShouldErrLike, "failed to validate project")
 			})
 
 			Convey(`With an invalid Namespace, will fail.`, func() {
 				env.Set(EnvNamespace, "!!! invalid")
-				_, err := getFromEnv(env, reg)
+				_, err := getFromEnv(env, newClient)
 				So(err, ShouldErrLike, "failed to validate namespace")
 			})
 
 			Convey(`With an invalid Butler project, will fail.`, func() {
 				env.Set(EnvStreamProject, "_notavaildproject")
-				_, err := getFromEnv(env, reg)
+				_, err := getFromEnv(env, newClient)
 				So(err, ShouldErrLike, "failed to validate project")
 			})
 		})
@@ -178,12 +175,11 @@ func TestBootstrapURLGeneration(t *testing.T) {
 		})
 
 		Convey(`With a stream client configured`, func() {
-			reg := streamclient.Registry{}
-			reg.Register("test", func(spec string, ns types.StreamName) (streamclient.Client, error) {
+			newClient := func(path string, ns types.StreamName) (streamclient.Client, error) {
 				return &sentinelClient{}, nil
-			})
+			}
 
-			So(bs.initializeClient("test:", &reg), ShouldBeNil)
+			So(bs.initializeClient("test:", newClient), ShouldBeNil)
 			So(bs.Client, ShouldHaveSameTypeAs, &sentinelClient{})
 
 			Convey(`Can generate viewer URLs for streams.`, func() {
