@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "646ad3d7_ddfc4c98",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T23:01:27Z",
+      "side": 1,
+      "message": "Yes, but I can imagine a safer design (e.g. register types first in a registry, and reject duplicate names).\n\nThe problem is that starlark guts do equivalent of this:\n\nif v.Type() \u003d\u003d \"list\" {\n  v.(*List).Stuff()\n}\n\nThis is not type safe, it panics if \u0027v\u0027 lies about itself.",
+      "parentUuid": "89ed5883_8db86b85",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 42
+      },
+      "revId": "98e19ad6b0435de45d57e92f1cad270e3738111f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea73b9e0_4b30f2da",
         "filename": "starlark/starlarkprotov2/testdata/cmp.star",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "98e19ad6b0435de45d57e92f1cad270e3738111f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fa798ad_e552d573",
+        "filename": "starlark/starlarkprotov2/testdata/cmp.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T23:01:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea73b9e0_4b30f2da",
+      "range": {
+        "startLine": 74,
+        "startChar": 5,
+        "endLine": 74,
+        "endChar": 74
+      },
+      "revId": "98e19ad6b0435de45d57e92f1cad270e3738111f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
