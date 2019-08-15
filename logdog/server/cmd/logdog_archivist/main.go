@@ -108,7 +108,8 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 		if err := func() error {
 			cycleStartTime := clock.Now(c)
 			leaseTimeProto := ptypes.DurationProto(leaseTime)
-			nc, _ := context.WithTimeout(c, leaseTime)
+			nc, cancel := context.WithTimeout(c, leaseTime)
+			defer cancel()
 
 			tasks, err := client.LeaseArchiveTasks(c, &logdog.LeaseRequest{
 				MaxTasks:  batchSize,
