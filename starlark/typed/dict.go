@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 )
 
 // Dict is a Starlark value that looks like a regular dict, but implements type
@@ -27,11 +28,9 @@ import (
 // typed ones.
 //
 // Differences from regular dicts:
-//   * Not comparable by value, only by reference. go.starlark.net has no way to
-//     express that typed dicts should be comparable to typed dicts AND to
-//     regular dicts. And without this feature comparisons become very
-//     confusing. Callers can convert typed dicts to regular dicts first if they
-//     need to compare them.
+//   * Not comparable by value to regular dicts, only to other typed dicts.
+//     go.starlark.net has no way to express that typed dicts should be
+//     comparable to regular dicts.
 //   * update() doesn't support keyword arguments. Using keyword arguments
 //     implies string keys which make no sense in generic typed Dict interface,
 //     since generally strings are not valid keys. This also substantially
@@ -50,6 +49,7 @@ var (
 	_ starlark.IterableMapping = (*Dict)(nil)
 	_ starlark.HasAttrs        = (*Dict)(nil)
 	_ starlark.HasSetKey       = (*Dict)(nil)
+	_ starlark.Comparable      = (*Dict)(nil)
 )
 
 // NewDict returns a dict with give preallocated capacity.
@@ -148,6 +148,25 @@ func (d *Dict) Attr(name string) (starlark.Value, error) {
 	default:
 		return d.dict.Attr(name)
 	}
+}
+
+func (d *Dict) CompareSameType(op syntax.Token, y starlark.Value, depth int) (bool, error) {
+	switch op {
+	case syntax.EQL:
+		return dictsEqual(d, y.(*Dict), depth)
+	case syntax.NEQ:
+		eq, err := dictsEqual(d, y.(*Dict), depth)
+		return !eq, err
+	default:
+		return false, fmt.Errorf("%q is not implemented for %s", op, d.Type())
+	}
+}
+
+func dictsEqual(l, r *Dict, depth int) (bool, error) {
+	if l.keyT != r.keyT || l.valT != r.valT {
+		return false, nil
+	}
+	return l.dict.CompareSameType(syntax.EQL, r.dict, depth)
 }
 
 // starlark.Dict methods delegated without any modifications.

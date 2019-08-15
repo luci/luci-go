@@ -25,11 +25,10 @@ import (
 // checks and implicit conversions when assigning elements.
 //
 // Differences from regular lists:
-//   * Not comparable by value, only by reference. go.starlark.net has no way to
-//     express that typed lists should be comparable to typed lists AND to
-//     regular lists. And without this feature comparisons become very
-//     confusing. Callers can convert typed lists to regular lists first if they
-//     need to compare them.
+//   * Not comparable by value to regular lists, only to other typed lists.
+//     go.starlark.net has no way to express that typed lists should be
+//     comparable to regular lists.
+//   * Only == and != comparison operators are supported.
 //   * `l += ...` is same as `l = l + ...`, not `l.extend(...)`
 type List struct {
 	itemT Converter      // defines the type of elements
@@ -45,6 +44,7 @@ var (
 	_ starlark.HasBinary   = (*List)(nil)
 	_ starlark.HasAttrs    = (*List)(nil)
 	_ starlark.HasSetIndex = (*List)(nil)
+	_ starlark.Comparable  = (*List)(nil)
 )
 
 // NewList returns a list with given elements, converted to necessary type
@@ -228,6 +228,25 @@ func (l *List) Type() string {
 
 func (l *List) String() string {
 	return fmt.Sprintf("list<%s>(%s)", l.itemT.Type(), l.list.String())
+}
+
+func (l *List) CompareSameType(op syntax.Token, y starlark.Value, depth int) (bool, error) {
+	switch op {
+	case syntax.EQL:
+		return listsEqual(l, y.(*List), depth)
+	case syntax.NEQ:
+		eq, err := listsEqual(l, y.(*List), depth)
+		return !eq, err
+	default:
+		return false, fmt.Errorf("%q is not implemented for %s", op, l.Type())
+	}
+}
+
+func listsEqual(l, r *List, depth int) (bool, error) {
+	if l.itemT != r.itemT {
+		return false, nil
+	}
+	return l.list.CompareSameType(syntax.EQL, r.list, depth)
 }
 
 // starlark.List methods delegated without any modifications.

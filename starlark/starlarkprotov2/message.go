@@ -16,9 +16,9 @@ package starlarkprotov2
 
 import (
 	"fmt"
-	"sort"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -28,8 +28,8 @@ import (
 // Message is a Starlark value that implements a struct-like type structured
 // like a protobuf message.
 //
-// Implements starlark.Value, starlark.HasAttrs and starlark.HasSetField
-// interfaces.
+// Implements starlark.Value, starlark.HasAttrs, starlark.HasSetField and
+// starlark.Comparable interfaces.
 //
 // Can be instantiated through Loader as loader.MessageType(...).Message() or
 // loader.MessageType(...).MessageFromProto(p).
@@ -42,6 +42,13 @@ type Message struct {
 	fields starlark.StringDict // populated fields, keyed by proto field name
 	frozen bool                // true after Freeze()
 }
+
+var (
+	_ starlark.Value       = (*Message)(nil)
+	_ starlark.HasAttrs    = (*Message)(nil)
+	_ starlark.HasSetField = (*Message)(nil)
+	_ starlark.Comparable  = (*Message)(nil)
+)
 
 // Public API used by the hosting environment.
 
@@ -169,12 +176,7 @@ func (m *Message) Attr(name string) (starlark.Value, error) {
 
 // AttrNames lists available attributes.
 func (m *Message) AttrNames() []string {
-	out := make([]string, 0, len(m.typ.fields))
-	for k := range m.typ.fields {
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
+	return m.typ.keys
 }
 
 // SetField is called when a field is assigned to from Starlark code.
@@ -215,6 +217,46 @@ func (m *Message) SetField(name string, val starlark.Value) error {
 	}
 
 	return nil
+}
+
+// Comparable interface to implement '==' and '!='.
+
+// CompareSameType does 'm <op> y' comparison.
+func (m *Message) CompareSameType(op syntax.Token, y starlark.Value, depth int) (bool, error) {
+	switch op {
+	case syntax.EQL:
+		return messagesEqual(m, y.(*Message), depth)
+	case syntax.NEQ:
+		eq, err := messagesEqual(m, y.(*Message), depth)
+		return !eq, err
+	default:
+		return false, fmt.Errorf("%q is not implemented for %s", op, m.Type())
+	}
+}
+
+// messagesEqual compares two messages by value, recursively.
+func messagesEqual(l, r *Message, depth int) (bool, error) {
+	switch {
+	case l == r:
+		return true, nil // equal by identity
+	case l.typ != r.typ:
+		return false, nil // messages of different types are never equal
+	}
+	// We go through Attr(...) to correctly handle default values and oneof's.
+	for _, key := range l.typ.keys {
+		lv, err := l.Attr(key)
+		if err != nil {
+			return false, err
+		}
+		rv, err := r.Attr(key)
+		if err != nil {
+			return false, err
+		}
+		if eq, err := starlark.EqualDepth(lv, rv, depth-1); !eq || err != nil {
+			return false, err
+		}
+	}
+	return true, nil
 }
 
 // fieldDesc returns FieldDescriptor of the corresponding field or an error

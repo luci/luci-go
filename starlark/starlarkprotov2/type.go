@@ -42,6 +42,7 @@ type MessageType struct {
 	desc   protoreflect.MessageDescriptor          // original descriptor
 	attrs  starlark.StringDict                     // nested symbols, e.g. submessages and enums
 	fields map[string]protoreflect.FieldDescriptor // message fields (including oneof alternatives)
+	keys   []string                                // sorted keys of 'fields' map
 }
 
 var _ typed.Converter = (*MessageType)(nil)
@@ -52,9 +53,12 @@ var _ typed.Converter = (*MessageType)(nil)
 func (t *MessageType) initLocked() {
 	fields := t.desc.Fields() // note: this already includes oneof alternatives
 	t.fields = make(map[string]protoreflect.FieldDescriptor, fields.Len())
+	t.keys = make([]string, fields.Len())
 	for i := 0; i < fields.Len(); i++ {
 		fd := fields.Get(i)
-		t.fields[string(fd.Name())] = fd
+		key := string(fd.Name())
+		t.fields[key] = fd
+		t.keys[i] = key
 	}
 }
 
