@@ -41,9 +41,6 @@ type Manifest struct {
 	// IndexWriter, if not nil, is the Writer to which the log stream Index
 	// protobuf stream will be written.
 	IndexWriter io.Writer
-	// DataWriter, if not nil, is the Writer to which reconstructed LogEntry data
-	// will be written.
-	DataWriter io.Writer
 
 	// StreamIndexRange, if >0, is the maximum number of log entry stream indices
 	// in between successive index entries.
@@ -97,71 +94,46 @@ func Archive(m Manifest) error {
 		}
 	}
 
-	err := parallel.FanOutIn(func(taskC chan<- func() error) {
-		var logC chan *logpb.LogEntry
-		if m.LogWriter != nil {
-			logC = make(chan *logpb.LogEntry)
+	if m.LogWriter == nil {
+		return nil
+	}
 
-			taskC <- func() error {
-				if err := archiveLogs(m.LogWriter, m.Desc, logC, idx); err != nil {
-					return err
-				}
+	return parallel.FanOutIn(func(taskC chan<- func() error) {
+		logC := make(chan *logpb.LogEntry)
 
-				// If we're building an index, emit it now that the log stream has
-				// finished.
-				if idx != nil {
-					return idx.emit(m.IndexWriter)
-				}
-				return nil
+		taskC <- func() error {
+			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx); err != nil {
+				return err
 			}
-		}
 
-		var dataC chan *logpb.LogEntry
-		if m.DataWriter != nil {
-			dataC = make(chan *logpb.LogEntry)
-
-			taskC <- func() error {
-				return archiveData(m.DataWriter, dataC)
+			// If we're building an index, emit it now that the log stream has
+			// finished.
+			if idx != nil {
+				return idx.emit(m.IndexWriter)
 			}
+			return nil
 		}
 
 		// Iterate through all of our Source's logs and process them.
 		taskC <- func() error {
-			if logC != nil {
-				defer close(logC)
-			}
-			if dataC != nil {
-				defer close(dataC)
-			}
-
-			sendLog := func(le *logpb.LogEntry) {
-				if logC != nil {
-					logC <- le
-				}
-				if dataC != nil {
-					dataC <- le
-				}
-			}
+			defer close(logC)
 
 			for {
 				le, err := m.Source.NextLogEntry()
 				if le != nil {
-					sendLog(le)
+					logC <- le
 				}
 
-				if err != nil {
-					if err == io.EOF {
-						return nil
-					}
-
+				switch err {
+				case nil:
+				case io.EOF:
+					return nil
+				default:
 					return err
 				}
-
 			}
 		}
 	})
-
-	return err
 }
 
 func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder) error {

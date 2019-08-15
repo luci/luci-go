@@ -278,9 +278,7 @@ func TestHandleArchive(t *testing.T) {
 			},
 		}
 
-		stBase := Settings{
-			AlwaysRender: true,
-		}
+		stBase := Settings{}
 
 		ar := Archivist{
 			Service: &sc,
@@ -307,14 +305,12 @@ func TestHandleArchive(t *testing.T) {
 		hasStreams := func(log, index, data bool) bool {
 			So(archiveRequest, ShouldNotBeNil)
 			if (log && archiveRequest.StreamSize <= 0) ||
-				(index && archiveRequest.IndexSize <= 0) ||
-				(data && archiveRequest.DataSize <= 0) {
+				(index && archiveRequest.IndexSize <= 0) {
 				return false
 			}
 
 			archiveRequest.StreamSize = 0
 			archiveRequest.IndexSize = 0
-			archiveRequest.DataSize = 0
 			return true
 		}
 
@@ -366,7 +362,6 @@ func TestHandleArchive(t *testing.T) {
 
 					StreamUrl: gsURL(project, "logstream.entries"),
 					IndexUrl:  gsURL(project, "logstream.index"),
-					DataUrl:   gsURL(project, "data.bin"),
 				})
 			})
 
@@ -432,7 +427,6 @@ func TestHandleArchive(t *testing.T) {
 
 						StreamUrl: gsURL(project, "logstream.entries"),
 						IndexUrl:  gsURL(project, "logstream.index"),
-						DataUrl:   gsURL(project, "data.bin"),
 					})
 				})
 
@@ -450,7 +444,6 @@ func TestHandleArchive(t *testing.T) {
 
 						StreamUrl: gsURL(project, "logstream.entries"),
 						IndexUrl:  gsURL(project, "logstream.index"),
-						DataUrl:   gsURL(project, "data.bin"),
 					})
 				})
 			})
@@ -470,7 +463,6 @@ func TestHandleArchive(t *testing.T) {
 
 						StreamUrl: gsURL(project, "logstream.entries"),
 						IndexUrl:  gsURL(project, "logstream.index"),
-						DataUrl:   gsURL(project, "data.bin"),
 					})
 				})
 
@@ -488,49 +480,7 @@ func TestHandleArchive(t *testing.T) {
 
 						StreamUrl: gsURL(project, "logstream.entries"),
 						IndexUrl:  gsURL(project, "logstream.index"),
-						DataUrl:   gsURL(project, "data.bin"),
 					})
-				})
-			})
-		})
-
-		Convey(`When not configured to always render`, func() {
-			stBase.AlwaysRender = false
-
-			addTestEntry(project, 0, 1, 2, 3, 4)
-			stream.State.TerminalIndex = 4
-
-			Convey(`Will not emit a data stream if no binary file extension is specified.`, func() {
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-
-				So(hasStreams(true, true, false), ShouldBeTrue)
-				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
-					Project:       project,
-					Id:            task.Id,
-					LogEntryCount: 5,
-					TerminalIndex: 4,
-
-					StreamUrl: gsURL(project, "logstream.entries"),
-					IndexUrl:  gsURL(project, "logstream.index"),
-				})
-			})
-
-			Convey(`Will emit a data stream if a binary file extension is specified.`, func() {
-				desc.BinaryFileExt = "foobar"
-				reloadDesc()
-
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-
-				So(hasStreams(true, true, true), ShouldBeTrue)
-				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
-					Project:       project,
-					Id:            task.Id,
-					LogEntryCount: 5,
-					TerminalIndex: 4,
-
-					StreamUrl: gsURL(project, "logstream.entries"),
-					IndexUrl:  gsURL(project, "logstream.index"),
-					DataUrl:   gsURL(project, "data.foobar"),
 				})
 			})
 		})
@@ -552,7 +502,7 @@ func TestHandleArchive(t *testing.T) {
 			stream.State.TerminalIndex = 3
 			addTestEntry(project, 0, 1, 2, 3)
 
-			for _, failName := range []string{"/logstream.entries", "/logstream.index", "/data.bin"} {
+			for _, failName := range []string{"/logstream.entries", "/logstream.index"} {
 				for _, testCase := range []struct {
 					name  string
 					setup func()
