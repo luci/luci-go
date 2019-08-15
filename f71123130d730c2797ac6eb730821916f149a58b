@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bd7e0f04_0b204a86",
+        "filename": "logdog/common/archive/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T17:35:16Z",
+      "side": 0,
+      "message": "This can be simplified more by replacing \"low-level\" \u0027logC !\u003d nil\u0027 checks with single \"high-level\" \u0027m.LogWriter \u003d\u003d nil\u0027 check. E.g \u0027sendLog\u0027 can go away.\n\nMy approach to code deletion: the code after chunk of it is deleted should have NO traces of what was there before, i.e. it should look as if it was written like that from scratch. This chunk doesn\u0027t pass this test (why logC is checked a bunch of times?)",
+      "range": {
+        "startLine": 100,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 59
+      },
+      "revId": "f71123130d730c2797ac6eb730821916f149a58b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

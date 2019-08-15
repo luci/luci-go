@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "63b3d2b1_c5422a29",
+        "filename": "logdog/common/archive/data.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-15T17:35:16Z",
+      "side": 1,
+      "message": "err... can this file be deleted no?",
+      "revId": "364a4649a7da3b180ed6063f76ec1c9df1f02de3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
