@@ -1,0 +1,325 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1339add5_c5a7f9fc",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "rebase?",
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "848a034b_ec9e92d2",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "nit: unclear id of what: \"taskID\"",
+      "range": {
+        "startLine": 39,
+        "startChar": 48,
+        "endLine": 39,
+        "endChar": 50
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b949cb7d_fb6d4a5f",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "nit: unclear host of what: \"swarmingHost\"",
+      "range": {
+        "startLine": 39,
+        "startChar": 42,
+        "endLine": 39,
+        "endChar": 46
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ae30102_403994cd",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "the fact that we use bytes.Buffer inside the func is an impl detail, it shouldn\u0027t be a part of the API. Let\u0027s return []byte",
+      "range": {
+        "startLine": 39,
+        "startChar": 60,
+        "endLine": 39,
+        "endChar": 73
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e14b167d_83ee7b71",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "looks like we expect a swarming URL here, not the host? a host does not have URL scheme.\n\nlet\u0027s either rename host to swarmingURL, or accept additional parameter \"insecure bool\" (to switch between HTTP and  HTTPS)",
+      "range": {
+        "startLine": 45,
+        "startChar": 42,
+        "endLine": 45,
+        "endChar": 46
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f86fe1ff_307e8f82",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 59,
+        "startChar": 57,
+        "endLine": 59,
+        "endChar": 64
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e21137e6_89ad3972",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 66,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 4
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "301bc7a0_a5ba6993",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "errors should start with a lower case letter, because errors often get wrapped by higher level errors",
+      "range": {
+        "startLine": 74,
+        "startChar": 4,
+        "endLine": 74,
+        "endChar": 5
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76df35f5_9de0b477",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "i think this todo in a wrong place, since we won\u0027t do the conversion here (since responsibility of this function is to fetch file as bytes)\n\ntodos are good in places where the part is missing something, so that we don\u0027t forget. We cannot forget to do the conversion, since otherwise we won\u0027t get our primary job done",
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "054ddcb4_179301e0",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "strictly speaking, what we pass is a service, not a host",
+      "range": {
+        "startLine": 90,
+        "startChar": 81,
+        "endLine": 90,
+        "endChar": 98
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6129dd7_28e6e4a9",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "this does not look like a function that would be used outside of this go package, so perhaps this should be getOutputRefs.\n\nsame applies to FetchOutputJSON",
+      "range": {
+        "startLine": 91,
+        "startChar": 5,
+        "endLine": 91,
+        "endChar": 6
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a35eec4_4ba015d4",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "nit: could be simpler\n\n  taskResult, err :\u003d swarmSvc.Task.Result(id).Context(ctx).Do()",
+      "range": {
+        "startLine": 93,
+        "startChar": 0,
+        "endLine": 95,
+        "endChar": 35
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f3ed577_eee0fb24",
+        "filename": "results/recorder/chromium/swarming_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "do we still need this?",
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f2a5798_8705d13d",
+        "filename": "results/recorder/chromium/swarming_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "io.WriteString(w, resp)",
+      "range": {
+        "startLine": 79,
+        "startChar": 3,
+        "endLine": 79,
+        "endChar": 24
+      },
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53acd77e_dc4efa93",
+        "filename": "results/recorder/recorder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T23:38:53Z",
+      "side": 1,
+      "message": "rebase? it shouldn\u0027t be a part of this CL, right?",
+      "revId": "05ac44b3501359b1c94e3d84beace3d3c5e6c492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
