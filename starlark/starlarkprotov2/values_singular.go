@@ -204,7 +204,7 @@ func converter(l *Loader, fd protoreflect.FieldDescriptor) typed.Converter {
 		return &stringConverter
 
 	case protoreflect.MessageKind, protoreflect.GroupKind:
-		return l.MessageType(fd.Message())
+		return l.MessageType(fd.Message()).Converter()
 
 	default:
 		panic(fmt.Errorf("internal error: unexpected field kind %s", fd.Kind()))

@@ -90,7 +90,7 @@ def set_to_m2():
   msg.m1 = msg.m2
 assert.fails(set_to_m2,
     'can\'t assign dict<string,int32> to field "m1" in ' +
-    'testprotos.MapWithPrimitiveType: want dict<string,int64> or just dict')
+    'proto.Message<testprotos.MapWithPrimitiveType>: want dict<string,int64> or just dict')
 msg.m1 = dict(msg.m2)
 assert.eq(dict(msg.m1), {'k': 111})
 
@@ -100,7 +100,7 @@ def set_to_m3():
   msg.m1 = msg.m3
 assert.fails(set_to_m3,
     'can\'t assign dict<int64,int64> to field "m1" in ' +
-    'testprotos.MapWithPrimitiveType: want dict<string,int64> or just dict')
+    'proto.Message<testprotos.MapWithPrimitiveType>: want dict<string,int64> or just dict')
 
 # Ranges of ints within a map are checked.
 TWO_POW_63 = 9223372036854775808

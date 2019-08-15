@@ -63,4 +63,4 @@ def overwrite_global():
 assert.fails(overwrite_global, 'can\'t assign to .ENUM_DEFAULT field of module')
 def overwrite_nested():
   testprotos.Complex.UNKNOWN = 10
-assert.fails(overwrite_nested, 'can\'t assign to .UNKNOWN field of testprotos.Complex')
+assert.fails(overwrite_nested, 'can\'t assign to .UNKNOWN field of proto.MessageType')

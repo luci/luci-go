@@ -69,4 +69,4 @@ assert.true(msg(1) != msg(2))
 
 
 # Other comparison operators are not supported.
-assert.fails(lambda: msg(0) < msg(0), '"<" is not implemented for testprotos.Complex')
+assert.fails(lambda: msg(0) < msg(0), '"<" is not implemented for proto.Message<testprotos.Complex>')

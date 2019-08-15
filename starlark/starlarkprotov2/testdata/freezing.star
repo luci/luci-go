@@ -22,10 +22,10 @@ assert.eq(m1.i, 456)
 assert.eq(list(m1.many_i), [1, 2, 3])
 def change_m1_i_1():
   m1.i = 456
-assert.fails(change_m1_i_1, 'cannot modify frozen proto message testprotos.Simple')
+assert.fails(change_m1_i_1, 'cannot modify frozen proto.Message<testprotos.Simple>')
 def change_m1_i_2():
   m1.i = None
-assert.fails(change_m1_i_2, 'cannot modify frozen proto message testprotos.Simple')
+assert.fails(change_m1_i_2, 'cannot modify frozen proto.Message<testprotos.Simple>')
 
 # Freezes recursively.
 def change_m1_many_i():

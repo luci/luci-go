@@ -39,12 +39,13 @@ assert.eq(m.single.i, 0)
 # Setting wrong type is forbidden.
 def set_as_int():
   m.single = 123
-assert.fails(set_as_int, 'got int, want testprotos.Simple')
+assert.fails(set_as_int, 'got int, want proto.Message<testprotos.Simple>')
 
 # Setting to a message of a wrong type is also forbidden.
 def set_as_msg():
   m.single = testprotos.MessageFields()
-assert.fails(set_as_msg, 'got testprotos.MessageFields, want testprotos.Simple')
+assert.fails(set_as_msg,
+    'got proto.Message<testprotos.MessageFields>, want proto.Message<testprotos.Simple>')
 
 # Serialization works.
 text = proto.to_textpb(testprotos.MessageFields(single=testprotos.Simple(i=999)))

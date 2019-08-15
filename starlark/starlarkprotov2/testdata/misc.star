@@ -18,16 +18,16 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 m = testprotos.Simple()
 
 # type() works.
-assert.eq(type(m), "testprotos.Simple")
+assert.eq(type(m), 'proto.Message<testprotos.Simple>')
 
 # dir() works.
-assert.eq(dir(m), ["i", "many_i"])
+assert.eq(dir(m), ['i', 'many_i'])
 
 # All proto messages are truthy.
 assert.true(bool(m))
 
 # Stringification works.
-assert.eq(str(testprotos.Simple(i=123)), "i:123")
+assert.eq(str(testprotos.Simple(i=123)), 'i:123')
 
 # Assigning totally unsupported types to fields fails.
 def set_unrelated():
@@ -37,12 +37,12 @@ assert.fails(set_unrelated, 'got set, want int')
 # Grabbing unknown field fails.
 def get_unknown():
   print(m.zzz)
-assert.fails(get_unknown, 'proto message testprotos.Simple has no field "zzz"')
+assert.fails(get_unknown, 'proto.Message<testprotos.Simple> has no field "zzz"')
 
 # Setting unknown field fails.
 def set_unknown():
   m.zzz = 123
-assert.fails(set_unknown, 'proto message testprotos.Simple has no field "zzz"')
+assert.fails(set_unknown, 'proto.Message<testprotos.Simple> has no field "zzz"')
 
 # Proto messages are non-hashable currently.
 def use_as_key():
@@ -50,14 +50,14 @@ def use_as_key():
 assert.fails(use_as_key, 'not hashable')
 
 # dir(...) on a message namespace works.
-assert.eq(dir(testprotos.Complex), ["ENUM_VAL_1", "InnerMessage", "UNKNOWN"])
+assert.eq(dir(testprotos.Complex), ['ENUM_VAL_1', 'InnerMessage', 'UNKNOWN'])
 
 # Attempting to access undefined inner message type fails.
 def unknown_inner():
   testprotos.Complex.Blah()
-assert.fails(unknown_inner, 'testprotos.Complex has no .Blah field or method')
+assert.fails(unknown_inner, 'proto.MessageType has no .Blah field or method')
 
 # Attempting to replace inner message type fails.
 def replace_inner():
   testprotos.Complex.InnerMessage = None
-assert.fails(replace_inner, 'can\'t assign to .InnerMessage field of testprotos.Complex')
+assert.fails(replace_inner, 'can\'t assign to .InnerMessage field of proto.MessageType')

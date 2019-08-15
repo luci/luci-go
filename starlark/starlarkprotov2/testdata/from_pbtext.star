@@ -17,7 +17,7 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 
 # Works in general.
 m = proto.from_textpb(testprotos.Simple, 'i: 123')
-assert.eq(type(m), 'testprotos.Simple')
+assert.eq(type(m), 'proto.Message<testprotos.Simple>')
 assert.eq(m.i, 123)
 
 # Unrecognized fields are forbidden.
