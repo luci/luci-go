@@ -32,7 +32,6 @@ func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamSt
 		lss.Archive = &logdog.LogStreamState_ArchiveInfo{
 			IndexUrl:      lst.ArchiveIndexURL,
 			StreamUrl:     lst.ArchiveStreamURL,
-			DataUrl:       lst.ArchiveDataURL,
 			Complete:      ast == coordinator.ArchivedComplete,
 			LogEntryCount: lst.ArchiveLogEntryCount,
 		}

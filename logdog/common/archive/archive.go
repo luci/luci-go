@@ -41,9 +41,6 @@ type Manifest struct {
 	// IndexWriter, if not nil, is the Writer to which the log stream Index
 	// protobuf stream will be written.
 	IndexWriter io.Writer
-	// DataWriter, if not nil, is the Writer to which reconstructed LogEntry data
-	// will be written.
-	DataWriter io.Writer
 
 	// StreamIndexRange, if >0, is the maximum number of log entry stream indices
 	// in between successive index entries.
@@ -116,30 +113,15 @@ func Archive(m Manifest) error {
 			}
 		}
 
-		var dataC chan *logpb.LogEntry
-		if m.DataWriter != nil {
-			dataC = make(chan *logpb.LogEntry)
-
-			taskC <- func() error {
-				return archiveData(m.DataWriter, dataC)
-			}
-		}
-
 		// Iterate through all of our Source's logs and process them.
 		taskC <- func() error {
 			if logC != nil {
 				defer close(logC)
 			}
-			if dataC != nil {
-				defer close(dataC)
-			}
 
 			sendLog := func(le *logpb.LogEntry) {
 				if logC != nil {
 					logC <- le
-				}
-				if dataC != nil {
-					dataC <- le
 				}
 			}
 
