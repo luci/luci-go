@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a453e2a8_06796f55",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T17:44:33Z",
+      "side": 1,
+      "message": "i find this rather confusing. In the vast majority of cases, InsertInvocation is not going to be actively used to insert test results, but only to create a place where the client will insert test results using UpdateInvocation.\n\nAlso unlike InsertInvocation, InsertInvocationFromSwarming does not necessarily insert invocation",
+      "revId": "431179dbf8414004aae2f62d9da8da13fe8035a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bf80f4a_0ef8c391",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T17:44:33Z",
+      "side": 1,
+      "message": "it does not actually insert if it is already there, so this may be misleading. Consider \"DeriveInvocationFromSwarming\" since you already use term \"derive\" above.\n\nsame applies to the comment",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 12
+      },
+      "revId": "431179dbf8414004aae2f62d9da8da13fe8035a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "489b92a7_b88245a2",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T17:44:33Z",
+      "side": 1,
+      "message": "unused",
+      "range": {
+        "startLine": 118,
+        "startChar": 8,
+        "endLine": 118,
+        "endChar": 43
+      },
+      "revId": "431179dbf8414004aae2f62d9da8da13fe8035a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9353e4aa_f89e7676",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T17:44:33Z",
+      "side": 1,
+      "message": "this is unrealistic example",
+      "range": {
+        "startLine": 124,
+        "startChar": 20,
+        "endLine": 124,
+        "endChar": 28
+      },
+      "revId": "431179dbf8414004aae2f62d9da8da13fe8035a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "432b5fa9_78140b09",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T17:44:33Z",
+      "side": 1,
+      "message": "this example should include a GN label, e.g. \"gn/chrome/test:browser_tests/\"",
+      "range": {
+        "startLine": 124,
+        "startChar": 15,
+        "endLine": 124,
+        "endChar": 20
+      },
+      "revId": "431179dbf8414004aae2f62d9da8da13fe8035a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c9cccc3_2a2a3358",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T17:44:33Z",
+      "side": 1,
+      "message": "on the second thought, \"test_path_prefix\" is better than \"base_test_path\", since it is unclear whether base_test_path should include the separator or not (which is not defined)",
+      "range": {
+        "startLine": 130,
+        "startChar": 8,
+        "endLine": 130,
+        "endChar": 24
+      },
+      "revId": "431179dbf8414004aae2f62d9da8da13fe8035a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

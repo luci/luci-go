@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "b5e5cbcc_22c2efaa",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T17:44:33Z",
+      "side": 1,
+      "message": "Looks like there are python tests (Telemetry) that do not stem from GN, so I\u0027d prefer this to remain generic",
+      "parentUuid": "dccc82bb_2ccf39c7",
+      "range": {
+        "startLine": 132,
+        "startChar": 5,
+        "endLine": 132,
+        "endChar": 13
+      },
+      "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9ea697a3_b05bec34",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 6
@@ -160,6 +184,24 @@
       "side": 1,
       "message": "This was part of resolving your comment on following the order specified in https://cloud.google.com/apis/design/file_structure --- your comment only mentioned messages, but the link covers messages as well as imports, options, etc. Is there a particular reason for preferring it in a separate CL?",
       "parentUuid": "69fa1821_2fe56a5d",
+      "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f13f0dc0_81f3d05f",
+        "filename": "results/proto/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-15T17:44:33Z",
+      "side": 1,
+      "message": "yes, reasons are same as in go/small-cls. If this was in a separate CL, it would get an LGTM pretty much right away because it is small and changes one specific thing, and it would get landed by this time. That change did not land yet because it is blocked on other discussions happening in this CL. \n\nspecifically, for the future, in such situations I expect:\n1) another small CL that updates already-landed files. It gets LGTMed and landed fast, e.g. within 1h wall clock time.\n2) this CL is rebased on top of that and the new files are updated too, in this CL.",
+      "parentUuid": "85d7951a_27349eef",
       "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
