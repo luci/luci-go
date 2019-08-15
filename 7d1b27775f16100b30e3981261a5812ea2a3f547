@@ -46,6 +46,30 @@
       "revId": "7d1b27775f16100b30e3981261a5812ea2a3f547",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b689ba05_d4798157",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-15T22:19:51Z",
+      "side": 1,
+      "message": "OK, removed.",
+      "parentUuid": "b9e88b61_3eb720e0",
+      "range": {
+        "startLine": 57,
+        "startChar": 54,
+        "endLine": 57,
+        "endChar": 60
+      },
+      "revId": "7d1b27775f16100b30e3981261a5812ea2a3f547",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

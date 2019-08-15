@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2458e82f_abd9d833",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-15T22:19:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fbea7178_01fc8a54",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 25,
+        "endChar": 54
+      },
+      "revId": "0f766a4db409751efa8bf6d614754110a878cac2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1fad405_1dfabcae",
         "filename": "results/recorder/chromium/swarming.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "0f766a4db409751efa8bf6d614754110a878cac2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ab101cf_4a1d141f",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-15T22:19:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f1fad405_1dfabcae",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 19
+      },
+      "revId": "0f766a4db409751efa8bf6d614754110a878cac2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
