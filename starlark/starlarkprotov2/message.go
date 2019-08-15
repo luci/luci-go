@@ -108,7 +108,7 @@ func (m *Message) Type() string {
 	if m == nil {
 		return "proto.Message"
 	}
-	return m.typ.Type()
+	return fmt.Sprintf("proto.Message<%s>", m.typ.desc.FullName())
 }
 
 // Freeze makes this message immutable.
@@ -271,16 +271,16 @@ func (m *Message) fieldDesc(name string) (protoreflect.FieldDescriptor, error) {
 		// not really be happening since AddDescriptorSet(...) checks that all
 		// references are resolved. But handle this case anyway for a clearer error
 		// message if some unnoticed edge case pops up.
-		return nil, fmt.Errorf("internal error: descriptor of proto message %s is not available, can't use this type", m.Type())
+		return nil, fmt.Errorf("internal error: descriptor of %s is not available, can't use this type", m.Type())
 	default:
-		return nil, fmt.Errorf("proto message %s has no field %q", m.Type(), name)
+		return nil, fmt.Errorf("%s has no field %q", m.Type(), name)
 	}
 }
 
 // checkMutable returns an error if the message is frozen.
 func (m *Message) checkMutable() error {
 	if m.frozen {
-		return fmt.Errorf("cannot modify frozen proto message %s", m.Type())
+		return fmt.Errorf("cannot modify frozen %s", m.Type())
 	}
 	return nil
 }

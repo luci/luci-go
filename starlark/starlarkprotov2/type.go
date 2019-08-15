@@ -43,9 +43,8 @@ type MessageType struct {
 	attrs  starlark.StringDict                     // nested symbols, e.g. submessages and enums
 	fields map[string]protoreflect.FieldDescriptor // message fields (including oneof alternatives)
 	keys   []string                                // sorted keys of 'fields' map
+	conv   messageConverter                        // typed.Converter implementation
 }
-
-var _ typed.Converter = (*MessageType)(nil)
 
 // initLocked preprocesses message descriptor.
 //
@@ -60,6 +59,7 @@ func (t *MessageType) initLocked() {
 		t.fields[key] = fd
 		t.keys[i] = key
 	}
+	t.conv.typ = t
 }
 
 // Descriptor returns protobuf type information for this message type.
@@ -96,11 +96,24 @@ func (t *MessageType) MessageFromProto(p proto.Message) *Message {
 	return m
 }
 
+// Converter returns an object that can convert Starlark dicts and Nones to
+// values of this message type.
+//
+// Can be used by typed.List and typed.Dict.
+func (t *MessageType) Converter() typed.Converter {
+	// Note: it is important that the address of typed.Converter of 't' is stable,
+	// i.e. t.Converter() == t.Converter() at all times. Converters are compared
+	// by identity when checking type matches.
+	return &t.conv
+}
+
 // Starlark.Value interface.
 
-// Type returns full proto message name.
+// Type returns "proto.MessageType", it's the type of the message type itself.
+//
+// So sort of like a meta-type (e.g. like "type" in Python).
 func (t *MessageType) Type() string {
-	return string(t.desc.FullName())
+	return "proto.MessageType"
 }
 
 // Attr returns either a nested message or an enum value.
@@ -118,30 +131,41 @@ func (t *MessageType) AttrNames() []string {
 	return keys
 }
 
-// typed.Converter interface.
+// typed.Converter implementation.
 
-// Convert returns 'x' as is if it already has type 't', otherwise initializes
-// a new message of type 't' from 'x'. 'x' can be either None (in which case
-// an empty message is initialized) or an iterable mapping (e.g. a dict).
-func (t *MessageType) Convert(x starlark.Value) (starlark.Value, error) {
+type messageConverter struct {
+	typ *MessageType
+}
+
+// Convert returns 'x' as is if it already has type 'c.typ', otherwise it
+// initializes a new message of type 'c.typ' from 'x'.
+//
+// 'x' can be either None (in which case an empty message is initialized) or an
+// iterable mapping (e.g. a dict).
+func (c *messageConverter) Convert(x starlark.Value) (starlark.Value, error) {
 	if msg, ok := x.(*Message); ok {
-		if msg.typ == t {
+		if msg.typ == c.typ {
 			return msg, nil
 		}
-		return nil, fmt.Errorf("got %s, want %s", msg.Type(), t.Type())
+		return nil, fmt.Errorf("got %s, want %s", msg.Type(), c.Type())
 	}
 
 	if x == starlark.None {
-		return t.Message(), nil
+		return c.typ.Message(), nil
 	}
 
 	if d, ok := x.(starlark.IterableMapping); ok {
-		m := t.Message()
+		m := c.typ.Message()
 		if err := m.FromDict(d); err != nil {
 			return nil, err
 		}
 		return m, nil
 	}
 
-	return nil, fmt.Errorf("got %s, want %s", x.Type(), t.Type())
+	return nil, fmt.Errorf("got %s, want %s", x.Type(), c.Type())
+}
+
+// Type returns name of the type 'c' converts to.
+func (c *messageConverter) Type() string {
+	return fmt.Sprintf("proto.Message<%s>", c.typ.desc.FullName())
 }

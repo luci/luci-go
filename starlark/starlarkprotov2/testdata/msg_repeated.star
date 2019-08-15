@@ -21,7 +21,7 @@ testprotos = l.module('go.chromium.org/luci/starlark/starlarkprotov2/testprotos/
 m = testprotos.MessageFields()
 
 # Default value.
-assert.eq(type(m.rep), 'list<testprotos.Simple>')
+assert.eq(type(m.rep), 'list<proto.Message<testprotos.Simple>>')
 assert.eq(len(m.rep), 0)
 
 # Can append to it, it is just like a list.
@@ -43,15 +43,18 @@ assert.eq(m.rep[0].i, 999)
 # Does type checks when updating the list.
 def append_bad_value():
   m.rep.append(testprotos.MessageFields())
-assert.fails(append_bad_value, 'append: got testprotos.MessageFields, want testprotos.Simple')
+assert.fails(append_bad_value,
+    'append: got proto.Message<testprotos.MessageFields>, want proto.Message<testprotos.Simple>')
 def set_bad_value():
   m.rep[0] = testprotos.MessageFields()
-assert.fails(set_bad_value, 'item #0: got testprotos.MessageFields, want testprotos.Simple')
+assert.fails(set_bad_value,
+    'item #0: got proto.Message<testprotos.MessageFields>, want proto.Message<testprotos.Simple>')
 
 # Checks types of elements when constructing from a list.
 def copy_bad_list():
   m.rep = [testprotos.Simple(i=456), testprotos.MessageFields()]
-assert.fails(copy_bad_list, 'item #1: got testprotos.MessageFields, want testprotos.Simple')
+assert.fails(copy_bad_list,
+    'item #1: got proto.Message<testprotos.MessageFields>, want proto.Message<testprotos.Simple>')
 
 # Serialization to text proto works.
 text = proto.to_textpb(testprotos.MessageFields(
