@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 )
 
-func tcpProtocolClientFactory(netType string) ClientFactory {
+func tcpProtocolClientFactory(netType string) clientFactory {
 	return func(spec string, ns types.StreamName) (Client, error) {
 		raddr, err := net.ResolveTCPAddr(netType, spec)
 		if err != nil {
@@ -48,4 +48,9 @@ func tcpProtocolClientFactory(netType string) ClientFactory {
 			ns: ns,
 		}, nil
 	}
+}
+
+func init() {
+	protocolRegistry["tcp4"] = tcpProtocolClientFactory("tcp4")
+	protocolRegistry["tcp6"] = tcpProtocolClientFactory("tcp6")
 }
