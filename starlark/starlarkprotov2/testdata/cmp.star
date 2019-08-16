@@ -24,12 +24,25 @@ assert.true(m1 != testprotos.Simple())
 assert.true(m1 != testprotos.Complex(i64=123))
 assert.true(testprotos.Complex(enum_val=1) != testprotos.Complex(i64=123))
 
+# Comparison operation has no observable side effects (like appearance of
+# optional message-valued fields).
+assert.eq(str(m1), '')
+
+# Empty submessage and unset submessage are NOT the same thing.
+assert.true(testprotos.Complex(msg_val={}) != testprotos.Complex())
+
 # Singular fields are checked.
 assert.true(testprotos.Complex(i64=123) == testprotos.Complex(i64=123))
 assert.true(testprotos.Complex(i64=123) != testprotos.Complex(i64=456))
 
 # Assigning a field to its default value doesn't influence the comparison.
 m1.i64 = 0
+assert.true(m1 == testprotos.Complex())
+m1.i64_rep = []
+assert.true(m1 == testprotos.Complex())
+m1.msg_val_rep = []
+assert.true(m1 == testprotos.Complex())
+m1.mp = {}
 assert.true(m1 == testprotos.Complex())
 
 # Singular message fields are checked recursively.
@@ -43,6 +56,10 @@ assert.true(testprotos.Complex(i64_rep=[1]) != testprotos.Complex(i64_rep=[2]))
 # Repeated message fields are checked recursively.
 assert.true(testprotos.Complex(msg_val_rep=[{'i':1}]) == testprotos.Complex(msg_val_rep=[{'i':1}]))
 assert.true(testprotos.Complex(msg_val_rep=[{'i':1}]) != testprotos.Complex(msg_val_rep=[{'i':2}]))
+
+# Map fields are checked recursively.
+assert.true(testprotos.Complex(mp={'1':{'i':1}}) == testprotos.Complex(mp={'1':{'i':1}}))
+assert.true(testprotos.Complex(mp={'1':{'i':1}}) != testprotos.Complex(mp={'1':{'i':2}}))
 
 # Oneof fields are tested correctly.
 assert.true(testprotos.Complex(simple={}) == testprotos.Complex(simple={}))
@@ -58,9 +75,10 @@ assert.true(m2 == testprotos.Complex())
 # Visits all fields.
 def msg(x):
   return testprotos.Complex(
+      enum_val = 1,
       i64 = 123,
       i64_rep = [1, 2, 3],
-      enum_val = 1,
+      mp = {'1': {}, '2': {}},
       msg_val = {'i': 123},
       msg_val_rep = [{}, {}, {'i': x}, {}],
   )

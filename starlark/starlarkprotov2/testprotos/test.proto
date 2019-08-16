@@ -75,6 +75,8 @@ message Complex {
     Simple simple = 6;
     AnotherSimple another_simple = 7;
   }
+
+  map<string, Simple> mp = 8;
 }
 
 message RefsOtherProtos {

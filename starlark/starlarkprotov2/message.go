@@ -131,6 +131,20 @@ func (m *Message) Hash() (uint32, error) {
 
 // Attr is called when a field is read from Starlark code.
 func (m *Message) Attr(name string) (starlark.Value, error) {
+	return m.attrImpl(name, true)
+}
+
+// attrImpl is the actual implementation of Attr.
+//
+// 'mut' controls how attrImpl behaves if 'name' field is not set.
+//
+// If 'mut' is true, the field will be set to its default value and this value
+// is returned. This updates 'm' as a side effect.
+//
+// If 'mut' is false, and the field is not message-valued, its default value
+// is returned (but 'm' itself is not updated). This applies to repeated fields
+// and maps as well. But if the field is message-valued, None is returned.
+func (m *Message) attrImpl(name string, mut bool) (starlark.Value, error) {
 	// If the field was set through Starlark already, return its value right away.
 	val, ok := m.fields[name]
 	if ok {
@@ -151,6 +165,14 @@ func (m *Message) Attr(name string) (starlark.Value, error) {
 		return starlark.None, nil
 	}
 
+	// Don't auto-initialize message-valued fields if 'mut' is false. This case is
+	// special because 'm.msg = Msg{}' and 'm.msg = None' lead to observably
+	// different outcomes and we should account for that in 'messagesEqual'.
+	if !mut && !fd.IsList() && !fd.IsMap() &&
+		(fd.Kind() == protoreflect.MessageKind || fd.Kind() == protoreflect.GroupKind) {
+		return starlark.None, nil
+	}
+
 	// If this is not a oneof field, auto-initialize it to its default value. In
 	// particular this is important when chaining through fields `a.b.c.d`. We
 	// want intermediates to be silently auto-initialized.
@@ -167,10 +189,12 @@ func (m *Message) Attr(name string) (starlark.Value, error) {
 	// If this becomes important, we can force-initialize and freeze all default
 	// fields in Freeze(), but this is generally expensive.
 	def := toStarlark(m.typ.loader, fd, fd.Default())
-	if m.frozen {
-		def.Freeze()
+	if mut {
+		if m.frozen {
+			def.Freeze()
+		}
+		m.fields[name] = def
 	}
-	m.fields[name] = def
 	return def, nil
 }
 
@@ -242,13 +266,14 @@ func messagesEqual(l, r *Message, depth int) (bool, error) {
 	case l.typ != r.typ:
 		return false, nil // messages of different types are never equal
 	}
-	// We go through Attr(...) to correctly handle default values and oneof's.
+	// We go through attrImpl(...) to correctly handle default values and oneof's.
+	// We don't want to mutate messages though.
 	for _, key := range l.typ.keys {
-		lv, err := l.Attr(key)
+		lv, err := l.attrImpl(key, false)
 		if err != nil {
 			return false, err
 		}
-		rv, err := r.Attr(key)
+		rv, err := r.attrImpl(key, false)
 		if err != nil {
 			return false, err
 		}
