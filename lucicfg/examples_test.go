@@ -65,7 +65,7 @@ func runExample(script string) error {
 	}
 
 	if *regen {
-		_, _, err := state.Output.Write(output)
+		_, _, err := state.Output.Write(output, false)
 		return err
 	}
 
