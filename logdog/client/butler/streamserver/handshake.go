@@ -49,7 +49,7 @@ func (p *handshakeProtocol) defaultFlags() *streamproto.Flags {
 	}
 }
 
-func (p *handshakeProtocol) Handshake(ctx context.Context, r io.Reader) (*streamproto.Properties, error) {
+func (p *handshakeProtocol) Handshake(ctx context.Context, r io.Reader) (*logpb.LogStreamDescriptor, error) {
 	// Read the frame header magic number (version)
 	magic := make([]byte, len(streamproto.ProtocolFrameHeaderMagic))
 	if n, err := io.ReadFull(r, magic); (n != len(magic)) || (err != nil) {
@@ -73,15 +73,15 @@ func (p *handshakeProtocol) Handshake(ctx context.Context, r io.Reader) (*stream
 		return nil, err
 	}
 
-	props := flags.Properties()
-	if props.Timestamp == nil {
-		props.Timestamp = google.NewTimestamp(clock.Now(ctx))
+	desc := flags.Descriptor()
+	if desc.Timestamp == nil {
+		desc.Timestamp = google.NewTimestamp(clock.Now(ctx))
 	}
-	if err := props.Validate(); err != nil {
+	if err := desc.Validate(false); err != nil {
 		return nil, err
 	}
 
-	return props, nil
+	return desc, nil
 }
 
 func (p *handshakeProtocol) loadFlags(ctx context.Context, r io.Reader) (*streamproto.Flags, error) {

@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/cancelcond"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
@@ -112,20 +111,20 @@ func New(c Config) *Bundler {
 //
 // The Bundler takes ownership of the supplied Properties, and may modify them
 // as needed.
-func (b *Bundler) Register(p *streamproto.Properties) (Stream, error) {
+func (b *Bundler) Register(d *logpb.LogStreamDescriptor) (Stream, error) {
 	// Our Properties must validate.
-	if err := p.Validate(); err != nil {
+	if err := d.Validate(false); err != nil {
 		return nil, err
 	}
 
 	// Enforce that the log stream descriptor's Prefix is empty.
-	p.Prefix = ""
+	d.Prefix = ""
 
 	// Construct a parser for this stream.
 	c := streamConfig{
-		name: p.Name,
+		name: d.Name,
 		template: logpb.ButlerLogBundle_Entry{
-			Desc: p.LogStreamDescriptor,
+			Desc: d,
 		},
 		maximumBufferDuration: b.c.MaxBufferDelay,
 		maximumBufferedBytes:  b.c.MaxBufferedBytes,
@@ -136,11 +135,11 @@ func (b *Bundler) Register(p *streamproto.Properties) (Stream, error) {
 		},
 	}
 	if b.c.StreamRegistrationCallback != nil {
-		c.nextBundleEntryCallback = b.c.StreamRegistrationCallback(p.LogStreamDescriptor)
+		c.nextBundleEntryCallback = b.c.StreamRegistrationCallback(d)
 	}
 
 	err := error(nil)
-	c.parser, err = newParser(p, &b.prefixCounter)
+	c.parser, err = newParser(d, &b.prefixCounter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create stream parser: %s", err)
 	}
@@ -149,8 +148,8 @@ func (b *Bundler) Register(p *streamproto.Properties) (Stream, error) {
 	defer b.streamsLock.Unlock()
 
 	// Ensure that this is not a duplicate stream name.
-	if s := b.streams[p.Name]; s != nil {
-		return nil, fmt.Errorf("a Stream is already registered for %q", p.Name)
+	if s := b.streams[d.Name]; s != nil {
+		return nil, fmt.Errorf("a Stream is already registered for %q", d.Name)
 	}
 
 	// Create a new stream. This will kick off its processing goroutine, which

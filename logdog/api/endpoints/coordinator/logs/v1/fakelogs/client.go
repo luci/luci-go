@@ -180,7 +180,7 @@ func (c *Client) open(streamType logpb.StreamType, prefix, path logdog_types.Str
 	flg := prepFlags(streamType, path, flags)
 	start := clock.Now(c.ctx)
 	flg.Timestamp = clockflag.Time(start)
-	lsd := flg.Properties().LogStreamDescriptor
+	lsd := flg.Descriptor()
 	lsd.Prefix = string(prefix)
 	data, err := proto.Marshal(lsd)
 	if err != nil {

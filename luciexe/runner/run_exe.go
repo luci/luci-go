@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe/runner/runnerbutler"
 
@@ -136,12 +135,10 @@ func hookStdoutStderr(ctx context.Context, logdogServ *runnerbutler.Server, stdo
 	}
 
 	hook := func(rc io.ReadCloser, name string) error {
-		return logdogServ.AddStream(rc, &streamproto.Properties{
-			LogStreamDescriptor: &logpb.LogStreamDescriptor{
-				Name:        path.Join(streamNamePrefix, name),
-				ContentType: "text/plain",
-				Timestamp:   tsNow,
-			},
+		return logdogServ.AddStream(rc, &logpb.LogStreamDescriptor{
+			Name:        path.Join(streamNamePrefix, name),
+			ContentType: "text/plain",
+			Timestamp:   tsNow,
 		})
 	}
 

@@ -138,7 +138,7 @@ type testStream struct {
 	inC     chan *testStreamData
 	closedC chan struct{}
 
-	properties *streamproto.Properties
+	desc *logpb.LogStreamDescriptor
 }
 
 func (ts *testStream) data(d []byte, err error) {
@@ -204,7 +204,7 @@ func (tss *testStreamServer) Address() string { return "test" }
 
 func (tss *testStreamServer) Listen() error { return tss.err }
 
-func (tss *testStreamServer) Next() (io.ReadCloser, *streamproto.Properties) {
+func (tss *testStreamServer) Next() (io.ReadCloser, *logpb.LogStreamDescriptor) {
 	if tss.onNext != nil {
 		tss.onNext()
 	}
@@ -213,7 +213,7 @@ func (tss *testStreamServer) Next() (io.ReadCloser, *streamproto.Properties) {
 	if !ok {
 		return nil, nil
 	}
-	return ts, ts.properties
+	return ts, ts.desc
 }
 
 func (tss *testStreamServer) Close() {
@@ -317,51 +317,47 @@ func TestButler(t *testing.T) {
 		})
 
 		Convey(`Using a generic stream Properties`, func() {
-			newTestStream := func(setup func(p *streamproto.Properties)) *testStream {
-				props := streamproto.Properties{
-					LogStreamDescriptor: &logpb.LogStreamDescriptor{
-						Name:        "test",
-						StreamType:  logpb.StreamType_TEXT,
-						ContentType: string(types.ContentTypeText),
-					},
+			newTestStream := func(setup func(d *logpb.LogStreamDescriptor)) *testStream {
+				desc := &logpb.LogStreamDescriptor{
+					Name:        "test",
+					StreamType:  logpb.StreamType_TEXT,
+					ContentType: string(types.ContentTypeText),
 				}
 				if setup != nil {
-					setup(&props)
+					setup(desc)
 				}
 
 				return &testStream{
-					inC:        make(chan *testStreamData, 16),
-					closedC:    make(chan struct{}),
-					properties: &props,
+					inC:     make(chan *testStreamData, 16),
+					closedC: make(chan struct{}),
+					desc:    desc,
 				}
 			}
 
 			Convey(`Will not add a stream with an invalid configuration.`, func() {
 				// No content type.
-				s := newTestStream(func(p *streamproto.Properties) {
-					p.ContentType = ""
+				s := newTestStream(func(d *logpb.LogStreamDescriptor) {
+					d.ContentType = ""
 				})
 				b := mkb(c, conf)
-				So(b.AddStream(s, s.properties), ShouldNotBeNil)
+				So(b.AddStream(s, s.desc), ShouldNotBeNil)
 			})
 
 			Convey(`Will not add a stream with a duplicate stream name.`, func() {
 				b := mkb(c, conf)
 
 				s0 := newTestStream(nil)
-				So(b.AddStream(s0, s0.properties), ShouldBeNil)
+				So(b.AddStream(s0, s0.desc), ShouldBeNil)
 
 				s1 := newTestStream(nil)
-				So(b.AddStream(s1, s1.properties), ShouldErrLike, "a stream has already been registered")
+				So(b.AddStream(s1, s1.desc), ShouldErrLike, "a stream has already been registered")
 			})
 
 			Convey(`Can open in-memory datagram streams.`, func() {
 				b := mkb(c, conf)
-				mds, err := b.NewDatagramStream(&streamproto.Properties{
-					LogStreamDescriptor: &logpb.LogStreamDescriptor{
-						Name:        "datagrams",
-						ContentType: "test/datagram",
-					},
+				mds, err := b.NewDatagramStream(&logpb.LogStreamDescriptor{
+					Name:        "datagrams",
+					ContentType: "test/datagram",
 				})
 				So(err, ShouldBeNil)
 
@@ -384,12 +380,10 @@ func TestButler(t *testing.T) {
 					"foo": "bar",
 					"baz": "qux",
 				}
-				props := streamproto.Properties{
-					LogStreamDescriptor: &logpb.LogStreamDescriptor{
-						Name:        "stdout",
-						ContentType: "test/data",
-						Timestamp:   google.NewTimestamp(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
-					},
+				desc := &logpb.LogStreamDescriptor{
+					Name:        "stdout",
+					ContentType: "test/data",
+					Timestamp:   google.NewTimestamp(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
 				}
 
 				closeStreams := make(chan *testStreamData)
@@ -413,16 +407,16 @@ func TestButler(t *testing.T) {
 				}()
 
 				Convey(`Applies global tags, but allows the stream to override.`, func() {
-					props.Tags = map[string]string{
+					desc.Tags = map[string]string{
 						"baz": "override",
 					}
 
-					So(b.AddStream(newTestStream(), &props), ShouldBeNil)
+					So(b.AddStream(newTestStream(), desc), ShouldBeNil)
 					So(b.bundler.GetStreamDescs(), ShouldResemble, map[string]*logpb.LogStreamDescriptor{
 						"stdout": {
 							Name:        "stdout",
 							ContentType: "test/data",
-							Timestamp:   props.Timestamp,
+							Timestamp:   desc.Timestamp,
 							Tags: map[string]string{
 								"foo": "bar",
 								"baz": "override",
@@ -432,12 +426,12 @@ func TestButler(t *testing.T) {
 				})
 
 				Convey(`Will apply global tags if the stream has none (nil).`, func() {
-					So(b.AddStream(newTestStream(), &props), ShouldBeNil)
+					So(b.AddStream(newTestStream(), desc), ShouldBeNil)
 					So(b.bundler.GetStreamDescs(), ShouldResemble, map[string]*logpb.LogStreamDescriptor{
 						"stdout": {
 							Name:        "stdout",
 							ContentType: "test/data",
-							Timestamp:   props.Timestamp,
+							Timestamp:   desc.Timestamp,
 							Tags: map[string]string{
 								"foo": "bar",
 								"baz": "qux",
@@ -451,13 +445,13 @@ func TestButler(t *testing.T) {
 				b := mkb(c, conf)
 				streams := make([]*testStream, 256)
 				for i := range streams {
-					streams[i] = newTestStream(func(p *streamproto.Properties) {
-						p.Name = fmt.Sprintf("stream%d", i)
+					streams[i] = newTestStream(func(d *logpb.LogStreamDescriptor) {
+						d.Name = fmt.Sprintf("stream%d", i)
 					})
 				}
 
 				for _, s := range streams {
-					So(b.AddStream(s, s.properties), ShouldBeNil)
+					So(b.AddStream(s, s.desc), ShouldBeNil)
 					s.data([]byte("stream data 0!\n"), nil)
 					s.data([]byte("stream data 1!\n"), nil)
 				}
@@ -471,7 +465,7 @@ func TestButler(t *testing.T) {
 				So(b.Wait(), ShouldBeNil)
 
 				for _, s := range streams {
-					name := string(s.properties.Name)
+					name := string(s.desc.Name)
 
 					So(to.logs(name), shouldHaveTextLogs, "stream data 0!", "stream data 1!", "stream data 2!")
 					So(to.isTerminal(name), ShouldBeTrue)
@@ -482,13 +476,13 @@ func TestButler(t *testing.T) {
 				b := mkb(c, conf)
 				streams := make([]*testStream, 256)
 				for i := range streams {
-					streams[i] = newTestStream(func(p *streamproto.Properties) {
-						p.Name = fmt.Sprintf("stream%d", i)
+					streams[i] = newTestStream(func(d *logpb.LogStreamDescriptor) {
+						d.Name = fmt.Sprintf("stream%d", i)
 					})
 				}
 
 				for _, s := range streams {
-					So(b.AddStream(s, s.properties), ShouldBeNil)
+					So(b.AddStream(s, s.desc), ShouldBeNil)
 					s.data([]byte("stream data!\n"), nil)
 				}
 
@@ -496,10 +490,10 @@ func TestButler(t *testing.T) {
 				So(b.Wait(), ShouldErrLike, "test shutdown")
 
 				for _, s := range streams {
-					if len(to.logs(s.properties.Name)) > 0 {
-						So(to.isTerminal(string(s.properties.Name)), ShouldBeTrue)
+					if len(to.logs(s.desc.Name)) > 0 {
+						So(to.isTerminal(string(s.desc.Name)), ShouldBeTrue)
 					} else {
-						So(to.isTerminal(string(s.properties.Name)), ShouldBeFalse)
+						So(to.isTerminal(string(s.desc.Name)), ShouldBeFalse)
 					}
 				}
 			})
@@ -516,8 +510,8 @@ func TestButler(t *testing.T) {
 					for i, tss := range servers {
 						b.AddStreamServer(tss)
 
-						s := newTestStream(func(p *streamproto.Properties) {
-							p.Name = fmt.Sprintf("stream%d", i)
+						s := newTestStream(func(d *logpb.LogStreamDescriptor) {
+							d.Name = fmt.Sprintf("stream%d", i)
 						})
 						streams = append(streams, s)
 						s.data([]byte("test data"), io.EOF)
@@ -528,8 +522,8 @@ func TestButler(t *testing.T) {
 					So(b.Wait(), ShouldBeNil)
 
 					for _, s := range streams {
-						So(to.logs(s.properties.Name), shouldHaveTextLogs, "test data")
-						So(to.isTerminal(s.properties.Name), ShouldBeTrue)
+						So(to.logs(s.desc.Name), shouldHaveTextLogs, "test data")
+						So(to.isTerminal(s.desc.Name), ShouldBeTrue)
 					}
 				})
 
@@ -538,8 +532,8 @@ func TestButler(t *testing.T) {
 					for i, tss := range servers {
 						b.AddStreamServer(tss)
 
-						s := newTestStream(func(p *streamproto.Properties) {
-							p.Name = fmt.Sprintf("stream%d", i)
+						s := newTestStream(func(d *logpb.LogStreamDescriptor) {
+							d.Name = fmt.Sprintf("stream%d", i)
 						})
 						streams = append(streams, s)
 						s.data([]byte("test data"), io.EOF)
@@ -550,8 +544,8 @@ func TestButler(t *testing.T) {
 					So(b.Wait(), ShouldBeNil)
 
 					for _, s := range streams {
-						So(to.logs(s.properties.Name), shouldHaveTextLogs, "test data")
-						So(to.isTerminal(s.properties.Name), ShouldBeTrue)
+						So(to.logs(s.desc.Name), shouldHaveTextLogs, "test data")
+						So(to.isTerminal(s.desc.Name), ShouldBeTrue)
 					}
 				})
 			})
@@ -563,8 +557,8 @@ func TestButler(t *testing.T) {
 				sGood := newTestStream(nil)
 				sGood.data([]byte("good test data"), io.EOF)
 
-				sBad := newTestStream(func(p *streamproto.Properties) {
-					p.ContentType = ""
+				sBad := newTestStream(func(d *logpb.LogStreamDescriptor) {
+					d.ContentType = ""
 				})
 				sBad.data([]byte("bad test data"), io.EOF)
 

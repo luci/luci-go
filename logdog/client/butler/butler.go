@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	log "go.chromium.org/luci/common/logging"
@@ -417,21 +418,21 @@ func (mds *MemoryDatagramStream) Close() {
 // NewDatagramStream adds a datagram Stream to the Butler. This is
 // goroutine-safe.
 //
-// The `StreamType` property in `p` is ignored (it will always be
+// The `StreamType` property in `d` is ignored (it will always be
 // StreamType_DATAGRAM).
 //
 // Returns a MemoryDatagramStream.
-func (b *Butler) NewDatagramStream(p *streamproto.Properties) (*MemoryDatagramStream, error) {
+func (b *Butler) NewDatagramStream(d *logpb.LogStreamDescriptor) (*MemoryDatagramStream, error) {
 	pread, pwrite := io.Pipe()
 
-	var props *streamproto.Properties
-	if p == nil {
-		props = &streamproto.Properties{}
+	var desc *logpb.LogStreamDescriptor
+	if d == nil {
+		desc = &logpb.LogStreamDescriptor{}
 	} else {
-		props = &(*p)
+		desc = proto.Clone(d).(*logpb.LogStreamDescriptor)
 	}
-	props.StreamType = logpb.StreamType_DATAGRAM
-	err := b.AddStream(pread, props)
+	desc.StreamType = logpb.StreamType_DATAGRAM
+	err := b.AddStream(pread, desc)
 
 	return &MemoryDatagramStream{pwrite}, err
 }
@@ -443,49 +444,49 @@ func (b *Butler) NewDatagramStream(p *streamproto.Properties) (*MemoryDatagramSt
 //
 // If an error is occurred, the caller is still the owner of the stream and
 // is responsible for closing it.
-func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
-	p = p.Clone()
-	if p.Timestamp == nil || google.TimeFromProto(p.Timestamp).IsZero() {
-		p.Timestamp = google.NewTimestamp(clock.Now(b.ctx))
+func (b *Butler) AddStream(rc io.ReadCloser, d *logpb.LogStreamDescriptor) error {
+	d = proto.Clone(d).(*logpb.LogStreamDescriptor)
+	if d.Timestamp == nil || google.TimeFromProto(d.Timestamp).IsZero() {
+		d.Timestamp = google.NewTimestamp(clock.Now(b.ctx))
 	}
-	if err := p.Validate(); err != nil {
+	if err := d.Validate(false); err != nil {
 		return err
 	}
 
 	// Build per-stream tag map.
 	if l := len(b.c.GlobalTags); l > 0 {
-		if p.Tags == nil {
-			p.Tags = make(map[string]string, l)
+		if d.Tags == nil {
+			d.Tags = make(map[string]string, l)
 		}
 
 		for k, v := range b.c.GlobalTags {
 			// Add only global flags that aren't already present (overridden) in
 			// stream tags.
-			if _, ok := p.Tags[k]; !ok {
-				p.Tags[k] = v
+			if _, ok := d.Tags[k]; !ok {
+				d.Tags[k] = v
 			}
 		}
 	}
 
-	if err := b.registerStream(p.Name); err != nil {
+	if err := b.registerStream(d.Name); err != nil {
 		return err
 	}
 
 	// Build our stream struct.
-	streamCtx := log.SetField(b.ctx, "stream", p.Name)
+	streamCtx := log.SetField(b.ctx, "stream", d.Name)
 	s := stream{
 		Context: streamCtx,
 		r:       rc,
 		c:       rc,
 	}
 
-	// Register this stream with our Bundler. It will take ownership of "p", so
+	// Register this stream with our Bundler. It will take ownership of "d", so
 	// we should not use it after this point.
 	var err error
-	if s.bs, err = b.bundler.Register(p); err != nil {
+	if s.bs, err = b.bundler.Register(d); err != nil {
 		return err
 	}
-	p = nil
+	d = nil
 
 	b.streamC <- &s
 	return nil

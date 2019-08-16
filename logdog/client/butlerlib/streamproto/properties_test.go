@@ -15,52 +15,14 @@
 package streamproto
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
-	"time"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func TestProperties(t *testing.T) {
-	Convey(`A testing instance`, t, func() {
-		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
-		Convey(`A Properties instance with no ContentType`, func() {
-			p := Properties{
-				LogStreamDescriptor: &logpb.LogStreamDescriptor{},
-			}
-
-			Convey(`Returns the configured ContentType if one is set.`, func() {
-				p.ContentType = "foo/bar"
-				p.StreamType = logpb.StreamType_TEXT
-				So(p.ContentType, ShouldEqual, "foo/bar")
-			})
-
-			Convey(`Will fail to validate if a Prefix is set.`, func() {
-				p.Prefix = "some/prefix"
-				So(p.Validate(), ShouldNotBeNil)
-			})
-
-			Convey(`Will fail to validate if its LogStreamDescriptor is invalid.`, func() {
-				So(p.Validate(), ShouldNotBeNil)
-			})
-
-			Convey(`Will validate if valid.`, func() {
-				p.Name = "foo/bar"
-				p.ContentType = "some/mimetype"
-				p.Timestamp = google.NewTimestamp(clock.Now(ctx))
-				So(p.Validate(), ShouldBeNil)
-			})
-		})
-	})
-}
 
 func TestFlags(t *testing.T) {
 	Convey(`A Flags instance`, t, func() {
@@ -69,14 +31,11 @@ func TestFlags(t *testing.T) {
 			ContentType: "foo/bar",
 		}
 
-		Convey(`Converts to Properties.`, func() {
-			p := f.Properties()
-			So(p, ShouldResemble, &Properties{
-				LogStreamDescriptor: &logpb.LogStreamDescriptor{
-					Name:        "my/stream",
-					ContentType: "foo/bar",
-					StreamType:  logpb.StreamType_TEXT,
-				},
+		Convey(`Converts to LogStreamDescriptor.`, func() {
+			So(f.Descriptor(), ShouldResemble, &logpb.LogStreamDescriptor{
+				Name:        "my/stream",
+				ContentType: "foo/bar",
+				StreamType:  logpb.StreamType_TEXT,
 			})
 		})
 	})
@@ -89,12 +48,10 @@ func TestFlagsJSON(t *testing.T) {
 			t := `{"name": "my/stream", "contentType": "foo/bar", "type": "text"}`
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
-			So(f.Properties(), ShouldResemble, &Properties{
-				LogStreamDescriptor: &logpb.LogStreamDescriptor{
-					Name:        "my/stream",
-					ContentType: "foo/bar",
-					StreamType:  logpb.StreamType_TEXT,
-				},
+			So(f.Descriptor(), ShouldResemble, &logpb.LogStreamDescriptor{
+				Name:        "my/stream",
+				ContentType: "foo/bar",
+				StreamType:  logpb.StreamType_TEXT,
 			})
 		})
 
@@ -107,12 +64,10 @@ func TestFlagsJSON(t *testing.T) {
 			t := `{"name": "my/stream", "type": "binary"}`
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
-			So(f.Properties(), ShouldResemble, &Properties{
-				LogStreamDescriptor: &logpb.LogStreamDescriptor{
-					Name:        "my/stream",
-					StreamType:  logpb.StreamType_BINARY,
-					ContentType: string(types.ContentTypeBinary),
-				},
+			So(f.Descriptor(), ShouldResemble, &logpb.LogStreamDescriptor{
+				Name:        "my/stream",
+				StreamType:  logpb.StreamType_BINARY,
+				ContentType: string(types.ContentTypeBinary),
 			})
 		})
 
@@ -120,12 +75,10 @@ func TestFlagsJSON(t *testing.T) {
 			t := `{"name": "my/stream", "type": "datagram"}`
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
-			So(f.Properties(), ShouldResemble, &Properties{
-				LogStreamDescriptor: &logpb.LogStreamDescriptor{
-					Name:        "my/stream",
-					StreamType:  logpb.StreamType_DATAGRAM,
-					ContentType: string(types.ContentTypeLogdogDatagram),
-				},
+			So(f.Descriptor(), ShouldResemble, &logpb.LogStreamDescriptor{
+				Name:        "my/stream",
+				StreamType:  logpb.StreamType_DATAGRAM,
+				ContentType: string(types.ContentTypeLogdogDatagram),
 			})
 		})
 	})

@@ -78,9 +78,9 @@ func New(path string, ns types.StreamName) (Client, error) {
 func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
 	f.Name = streamproto.StreamNameFlag(c.ns.Concat(types.StreamName(f.Name)))
 
-	p := f.Properties()
-	if err := p.Validate(); err != nil {
-		return nil, fmt.Errorf("streamclient: invalid stream properties: %s", err)
+	d := f.Descriptor()
+	if err := d.Validate(false); err != nil {
+		return nil, fmt.Errorf("streamclient: invalid stream descriptor: %s", err)
 	}
 
 	client, err := c.factory()
@@ -103,7 +103,7 @@ func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
 	// Perform the handshake: magic + size(data) + data.
 	s := &BaseStream{
 		WriteCloser: client,
-		P:           p,
+		D:           d,
 	}
 	if _, err := s.writeRaw(streamproto.ProtocolFrameHeaderMagic); err != nil {
 		return nil, fmt.Errorf("failed to write magic number: %s", err)

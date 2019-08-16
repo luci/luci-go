@@ -133,7 +133,7 @@ func (bs *Bootstrap) GetViewerURLForStreams(streams ...streamclient.Stream) (str
 
 	paths := make([]types.StreamPath, len(streams))
 	for i, s := range streams {
-		paths[i] = bs.Prefix.Join(types.StreamName(s.Properties().Name))
+		paths[i] = bs.Prefix.Join(types.StreamName(s.Descriptor().Name))
 	}
 	return bs.GetViewerURL(paths...)
 }

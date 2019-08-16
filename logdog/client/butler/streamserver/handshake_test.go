@@ -119,13 +119,11 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 			So(err, ShouldBeNil)
 
 			Convey(`Should produce a valid stream configuration.`, func() {
-				So(props, ShouldResemble, &streamproto.Properties{
-					LogStreamDescriptor: &logpb.LogStreamDescriptor{
-						Name:        "test",
-						Timestamp:   google.NewTimestamp(tc.Now()),
-						StreamType:  logpb.StreamType_TEXT,
-						ContentType: string(types.ContentTypeText),
-					},
+				So(props, ShouldResemble, &logpb.LogStreamDescriptor{
+					Name:        "test",
+					Timestamp:   google.NewTimestamp(tc.Now()),
+					StreamType:  logpb.StreamType_TEXT,
+					ContentType: string(types.ContentTypeText),
 				})
 			})
 		})
@@ -140,15 +138,13 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 			So(err, ShouldBeNil)
 
 			Convey(`Should produce a specific configuration.`, func() {
-				So(props, ShouldResemble, &streamproto.Properties{
-					LogStreamDescriptor: &logpb.LogStreamDescriptor{
-						Name:        "test",
-						ContentType: "text/plain",
-						Timestamp:   google.NewTimestamp(time.Date(2015, 05, 07, 1, 29, 51, 0, time.UTC)),
-						Tags: map[string]string{
-							"baz": "qux",
-							"foo": "bar",
-						},
+				So(props, ShouldResemble, &logpb.LogStreamDescriptor{
+					Name:        "test",
+					ContentType: "text/plain",
+					Timestamp:   google.NewTimestamp(time.Date(2015, 05, 07, 1, 29, 51, 0, time.UTC)),
+					Tags: map[string]string{
+						"baz": "qux",
+						"foo": "bar",
 					},
 				})
 			})

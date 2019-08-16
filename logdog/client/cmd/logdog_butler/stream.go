@@ -45,10 +45,10 @@ func (s *streamConfig) addFlags(fs *flag.FlagSet) {
 }
 
 // Converts command-line parameters into a stream.Config.
-func (s streamConfig) properties() *streamproto.Properties {
+func (s streamConfig) properties() *logpb.LogStreamDescriptor {
 	if s.ContentType == "" {
 		// Choose content type based on format.
 		s.ContentType = string(s.Type.DefaultContentType())
 	}
-	return s.Properties()
+	return s.Descriptor()
 }

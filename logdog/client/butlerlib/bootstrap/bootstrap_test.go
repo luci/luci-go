@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -31,16 +32,16 @@ import (
 type sentinelClient struct{}
 
 func (sc *sentinelClient) NewStream(f streamproto.Flags) (streamclient.Stream, error) {
-	return &sentinelStream{props: f.Properties()}, nil
+	return &sentinelStream{desc: f.Descriptor()}, nil
 }
 
 type sentinelStream struct {
 	streamclient.Stream
-	props *streamproto.Properties
+	desc *logpb.LogStreamDescriptor
 }
 
-func (ss *sentinelStream) Properties() *streamproto.Properties { return ss.props }
-func (ss *sentinelStream) Close() error                        { return nil }
+func (ss *sentinelStream) Descriptor() *logpb.LogStreamDescriptor { return ss.desc }
+func (ss *sentinelStream) Close() error                           { return nil }
 
 func TestBootstrap(t *testing.T) {
 	Convey(`A test Environment`, t, func() {

@@ -21,7 +21,6 @@ import (
 	"go.chromium.org/luci/common/data/chunkstream"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
@@ -65,13 +64,13 @@ type parser interface {
 	firstChunkTime() (time.Time, bool)
 }
 
-func newParser(p *streamproto.Properties, c *counter) (parser, error) {
+func newParser(d *logpb.LogStreamDescriptor, c *counter) (parser, error) {
 	base := baseParser{
 		counter:  c,
-		timeBase: google.TimeFromProto(p.Timestamp),
+		timeBase: google.TimeFromProto(d.Timestamp),
 	}
 
-	switch p.StreamType {
+	switch d.StreamType {
 	case logpb.StreamType_TEXT:
 		return &textParser{
 			baseParser: base,
@@ -89,7 +88,7 @@ func newParser(p *streamproto.Properties, c *counter) (parser, error) {
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("unknown stream type: %v", p.StreamType)
+		return nil, fmt.Errorf("unknown stream type: %v", d.StreamType)
 	}
 }
 
