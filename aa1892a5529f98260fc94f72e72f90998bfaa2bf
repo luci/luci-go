@@ -16,6 +16,24 @@
       "revId": "aa1892a5529f98260fc94f72e72f90998bfaa2bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "022a6382_03f5b014",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-16T19:39:54Z",
+      "side": 1,
+      "message": "oh, ugh, you\u0027re right. I\u0027ll move the timeout context up to an appropriate place, or comment on why this can\u0027t be used.",
+      "parentUuid": "52f7232d_a656298b",
+      "revId": "aa1892a5529f98260fc94f72e72f90998bfaa2bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
