@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dcb53066_20d9d93c",
+        "filename": "lucicfg/cli/cmds/generate/generate.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-16T19:03:33Z",
+      "side": 1,
+      "message": "So this will have the effect of:\n  * We release a new lucicfg.\n  * User changes field X and file will have formatting diffs all over the file. User realizes there\u0027s a formatting change, and thinks \"ok, but that\u0027s done now\".\n  * User changes field Y, and a different file now has formatting diffs all over.\n  * In the meantime, every file is formatted a little differently.\n  * User is confused.\n\nIf it were my repo, I would probably enforce that all files were always generated in the latest format style (like gofmt).\n\nI wonder if it would be better to NOT have this option, and if users care about separating formatting from semantic changes, they just do a no-op run, commit that, then do their semantic change after? Otherwise the naive user will just have a trickle of formatting changes with every semantic change they make, indefinitely (and maybe they will complain about this without fixing it :p)",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 131
+      },
+      "revId": "8aa430c8d2f7692f014ddb97e8d80f456d0fc8c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63f14eb5_34f1789d",
+        "filename": "lucicfg/output.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-16T19:03:33Z",
+      "side": 1,
+      "message": "if md.Header was []string, you could avoid the extra buffer... but this is overkill",
+      "range": {
+        "startLine": 334,
+        "startChar": 3,
+        "endLine": 334,
+        "endChar": 6
+      },
+      "revId": "8aa430c8d2f7692f014ddb97e8d80f456d0fc8c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
