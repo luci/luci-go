@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e65fab12_a4fc1e29",
+        "filename": "logdog/client/butlerlib/streamproto/properties.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-16T01:18:49Z",
+      "side": 1,
+      "message": "consider getting rid of this struct in favor of using logpb.LogStreamDescriptor directly",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 22
+      },
+      "revId": "bcdf99b6c9f59ad0ae03b13fc31dad92d0be9e22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51c5780b_ab2cf776",
+        "filename": "logdog/client/butlerlib/streamproto/properties.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-16T01:18:49Z",
+      "side": 1,
+      "message": "return ...",
+      "range": {
+        "startLine": 43,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 11
+      },
+      "revId": "bcdf99b6c9f59ad0ae03b13fc31dad92d0be9e22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
