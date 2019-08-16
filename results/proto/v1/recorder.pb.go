@@ -27,6 +27,95 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+type SwarmingTask struct {
+	// ID of swarming task to process and insert.
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SwarmingTask) Reset()         { *m = SwarmingTask{} }
+func (m *SwarmingTask) String() string { return proto.CompactTextString(m) }
+func (*SwarmingTask) ProtoMessage()    {}
+func (*SwarmingTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{0}
+}
+
+func (m *SwarmingTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SwarmingTask.Unmarshal(m, b)
+}
+func (m *SwarmingTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SwarmingTask.Marshal(b, m, deterministic)
+}
+func (m *SwarmingTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SwarmingTask.Merge(m, src)
+}
+func (m *SwarmingTask) XXX_Size() int {
+	return xxx_messageInfo_SwarmingTask.Size(m)
+}
+func (m *SwarmingTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_SwarmingTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SwarmingTask proto.InternalMessageInfo
+
+func (m *SwarmingTask) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+type UpdateInvocationFromSwarmingRequest struct {
+	// Similarly to UpdateInvocationRequest below, identifies update for idempotency.
+	RequestId string `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	// Swarming task to use in update.
+	Task                 *SwarmingTask `protobuf:"bytes,2,opt,name=task,proto3" json:"task,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *UpdateInvocationFromSwarmingRequest) Reset()         { *m = UpdateInvocationFromSwarmingRequest{} }
+func (m *UpdateInvocationFromSwarmingRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateInvocationFromSwarmingRequest) ProtoMessage()    {}
+func (*UpdateInvocationFromSwarmingRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{1}
+}
+
+func (m *UpdateInvocationFromSwarmingRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateInvocationFromSwarmingRequest.Unmarshal(m, b)
+}
+func (m *UpdateInvocationFromSwarmingRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateInvocationFromSwarmingRequest.Marshal(b, m, deterministic)
+}
+func (m *UpdateInvocationFromSwarmingRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateInvocationFromSwarmingRequest.Merge(m, src)
+}
+func (m *UpdateInvocationFromSwarmingRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateInvocationFromSwarmingRequest.Size(m)
+}
+func (m *UpdateInvocationFromSwarmingRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateInvocationFromSwarmingRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateInvocationFromSwarmingRequest proto.InternalMessageInfo
+
+func (m *UpdateInvocationFromSwarmingRequest) GetRequestId() string {
+	if m != nil {
+		return m.RequestId
+	}
+	return ""
+}
+
+func (m *UpdateInvocationFromSwarmingRequest) GetTask() *SwarmingTask {
+	if m != nil {
+		return m.Task
+	}
+	return nil
+}
+
 type UpdateInvocationRequest struct {
 	// If a request with same (invocation.id, request_id) was processed successfully
 	// before, then this request is a noop.
@@ -67,7 +156,7 @@ func (m *UpdateInvocationRequest) Reset()         { *m = UpdateInvocationRequest
 func (m *UpdateInvocationRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateInvocationRequest) ProtoMessage()    {}
 func (*UpdateInvocationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7445f3675a5ef248, []int{0}
+	return fileDescriptor_7445f3675a5ef248, []int{2}
 }
 
 func (m *UpdateInvocationRequest) XXX_Unmarshal(b []byte) error {
@@ -102,137 +191,10 @@ func (m *UpdateInvocationRequest) GetInvocation() *Invocation {
 	return nil
 }
 
-type DeriveInvocationFromSwarmingRequest struct {
-	// Swarming task to use in update.
-	Task *DeriveInvocationFromSwarmingRequest_SwarmingTask `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
-	// Test path prefix.
-	//
-	// Examples: "gn/{label}", "py_unittest", "telemetry".
-	//
-	// Generated test path examples:
-	// * GTest: gn/{label}/{suite}/{case}
-	// * javatests: gn/{label}/{full_java_method_name}
-	// * web tests: gn/{label}/{file_name}
-	// * Python unittests: py_unittest/{package}.{class}.{method}
-	// * Telemtry: telemetry/{root_dir_path}:{test_suite}/{test_case}
-	TestPathPrefix string `protobuf:"bytes,2,opt,name=test_path_prefix,json=testPathPrefix,proto3" json:"test_path_prefix,omitempty"`
-	// Test variant base.
-	//
-	// For Chromium, expected keys in the def map are "bucket", "builder",
-	// and "test_suite".
-	//
-	// These get combined with the remainder of the test variant definition,
-	// including test parameters and other key/value pairs may be derived from
-	// the swarming task.
-	BaseTestVariant      *VariantDef `protobuf:"bytes,3,opt,name=base_test_variant,json=baseTestVariant,proto3" json:"base_test_variant,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
-	XXX_unrecognized     []byte      `json:"-"`
-	XXX_sizecache        int32       `json:"-"`
-}
-
-func (m *DeriveInvocationFromSwarmingRequest) Reset()         { *m = DeriveInvocationFromSwarmingRequest{} }
-func (m *DeriveInvocationFromSwarmingRequest) String() string { return proto.CompactTextString(m) }
-func (*DeriveInvocationFromSwarmingRequest) ProtoMessage()    {}
-func (*DeriveInvocationFromSwarmingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7445f3675a5ef248, []int{1}
-}
-
-func (m *DeriveInvocationFromSwarmingRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest.Unmarshal(m, b)
-}
-func (m *DeriveInvocationFromSwarmingRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest.Marshal(b, m, deterministic)
-}
-func (m *DeriveInvocationFromSwarmingRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeriveInvocationFromSwarmingRequest.Merge(m, src)
-}
-func (m *DeriveInvocationFromSwarmingRequest) XXX_Size() int {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest.Size(m)
-}
-func (m *DeriveInvocationFromSwarmingRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeriveInvocationFromSwarmingRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeriveInvocationFromSwarmingRequest proto.InternalMessageInfo
-
-func (m *DeriveInvocationFromSwarmingRequest) GetTask() *DeriveInvocationFromSwarmingRequest_SwarmingTask {
-	if m != nil {
-		return m.Task
-	}
-	return nil
-}
-
-func (m *DeriveInvocationFromSwarmingRequest) GetTestPathPrefix() string {
-	if m != nil {
-		return m.TestPathPrefix
-	}
-	return ""
-}
-
-func (m *DeriveInvocationFromSwarmingRequest) GetBaseTestVariant() *VariantDef {
-	if m != nil {
-		return m.BaseTestVariant
-	}
-	return nil
-}
-
-type DeriveInvocationFromSwarmingRequest_SwarmingTask struct {
-	// Swarming host of task.
-	Hostname string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
-	// ID of swarming task to process and insert.
-	Id                   string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) Reset() {
-	*m = DeriveInvocationFromSwarmingRequest_SwarmingTask{}
-}
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) String() string {
-	return proto.CompactTextString(m)
-}
-func (*DeriveInvocationFromSwarmingRequest_SwarmingTask) ProtoMessage() {}
-func (*DeriveInvocationFromSwarmingRequest_SwarmingTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7445f3675a5ef248, []int{1, 0}
-}
-
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.Unmarshal(m, b)
-}
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.Marshal(b, m, deterministic)
-}
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.Merge(m, src)
-}
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_Size() int {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.Size(m)
-}
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask proto.InternalMessageInfo
-
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) GetHostname() string {
-	if m != nil {
-		return m.Hostname
-	}
-	return ""
-}
-
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
 func init() {
+	proto.RegisterType((*SwarmingTask)(nil), "luci.resultsdb.SwarmingTask")
+	proto.RegisterType((*UpdateInvocationFromSwarmingRequest)(nil), "luci.resultsdb.UpdateInvocationFromSwarmingRequest")
 	proto.RegisterType((*UpdateInvocationRequest)(nil), "luci.resultsdb.UpdateInvocationRequest")
-	proto.RegisterType((*DeriveInvocationFromSwarmingRequest)(nil), "luci.resultsdb.DeriveInvocationFromSwarmingRequest")
-	proto.RegisterType((*DeriveInvocationFromSwarmingRequest_SwarmingTask)(nil), "luci.resultsdb.DeriveInvocationFromSwarmingRequest.SwarmingTask")
 }
 
 func init() {
@@ -240,34 +202,28 @@ func init() {
 }
 
 var fileDescriptor_7445f3675a5ef248 = []byte{
-	// 419 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0xc1, 0x8e, 0xd3, 0x30,
-	0x10, 0xdd, 0x06, 0x84, 0xb6, 0xb3, 0xa8, 0x14, 0x1f, 0xa0, 0x0a, 0x20, 0xad, 0xc2, 0x81, 0x9e,
-	0x1c, 0x6d, 0x16, 0x71, 0x58, 0x2e, 0x08, 0x95, 0x4a, 0x95, 0x38, 0x54, 0xa1, 0xe5, 0xc0, 0xa5,
-	0x72, 0x12, 0x37, 0xb1, 0x5a, 0xc7, 0xa9, 0xed, 0x04, 0xf8, 0x1d, 0x6e, 0xfc, 0x25, 0x4a, 0xe2,
-	0xb4, 0xa1, 0x82, 0x28, 0xda, 0x5b, 0xfc, 0xfc, 0xe6, 0xcd, 0x3c, 0xcf, 0x0b, 0xbc, 0x8d, 0x05,
-	0x0e, 0x13, 0x29, 0x38, 0xcb, 0x39, 0x16, 0x32, 0x76, 0xf7, 0x79, 0xc8, 0x5c, 0x49, 0x55, 0xbe,
-	0xd7, 0xca, 0xcd, 0xa4, 0xd0, 0xc2, 0x2d, 0x6e, 0x5c, 0x49, 0x43, 0x21, 0x23, 0x2a, 0x71, 0x85,
-	0xa0, 0x51, 0xc9, 0xc2, 0x86, 0x15, 0x05, 0xf6, 0x8b, 0x58, 0x88, 0x78, 0x4f, 0x6b, 0x7e, 0x90,
-	0x6f, 0x5d, 0xca, 0x33, 0xfd, 0xb3, 0x26, 0xdb, 0x5e, 0xbf, 0x16, 0xa1, 0xe0, 0x5c, 0xa4, 0xa6,
-	0xe6, 0x5d, 0xbf, 0x1a, 0x96, 0x16, 0x22, 0x24, 0x9a, 0x35, 0x75, 0x8e, 0x86, 0xe7, 0xeb, 0x2c,
-	0x22, 0x9a, 0x2e, 0x8e, 0x37, 0x3e, 0x3d, 0xe4, 0x54, 0x69, 0xf4, 0x0a, 0x40, 0xd6, 0x9f, 0x1b,
-	0x16, 0x4d, 0x06, 0xd7, 0x83, 0xe9, 0xd0, 0x1f, 0x1a, 0x64, 0x11, 0xa1, 0x3b, 0x80, 0x93, 0xda,
-	0xc4, 0xba, 0x1e, 0x4c, 0xaf, 0x3c, 0x1b, 0xff, 0xed, 0x13, 0xb7, 0x54, 0x5b, 0x6c, 0xe7, 0xb7,
-	0x05, 0xaf, 0x67, 0x54, 0xb2, 0xa2, 0xd5, 0x76, 0x2e, 0x05, 0xff, 0xf2, 0x9d, 0x48, 0xce, 0xd2,
-	0xb8, 0x19, 0x61, 0x05, 0x0f, 0x35, 0x51, 0xbb, 0xaa, 0xf9, 0x95, 0xf7, 0xe1, 0x5c, 0xbd, 0x87,
-	0x04, 0x6e, 0xce, 0x2b, 0xa2, 0x76, 0x7e, 0xa5, 0x86, 0xa6, 0x30, 0xd6, 0xa5, 0xab, 0x8c, 0xe8,
-	0x64, 0x93, 0x49, 0xba, 0x65, 0x3f, 0xaa, 0xf9, 0x87, 0xfe, 0xa8, 0xc4, 0x97, 0x44, 0x27, 0xcb,
-	0x0a, 0x45, 0x73, 0x78, 0x1a, 0x10, 0x45, 0x37, 0x15, 0xbd, 0x20, 0x92, 0x91, 0x54, 0x4f, 0x1e,
-	0xfc, 0xdb, 0xea, 0xd7, 0xfa, 0x7a, 0x46, 0xb7, 0xfe, 0x93, 0xb2, 0x68, 0x45, 0x95, 0x36, 0x98,
-	0x7d, 0x07, 0x8f, 0xdb, 0x73, 0x20, 0x1b, 0x2e, 0x13, 0xa1, 0x74, 0x4a, 0x38, 0x35, 0x0f, 0x7b,
-	0x3c, 0xa3, 0x11, 0x58, 0x2c, 0x32, 0xf3, 0x58, 0x2c, 0xf2, 0x7e, 0x59, 0x70, 0xe9, 0x9b, 0x34,
-	0xa1, 0xcf, 0x30, 0x5e, 0xa4, 0x8a, 0x4a, 0x7d, 0x32, 0x8d, 0x3a, 0x1e, 0xdd, 0xee, 0xb8, 0x73,
-	0x2e, 0xd0, 0x1a, 0xc6, 0xe7, 0xcb, 0x47, 0x6f, 0xce, 0x2b, 0xfe, 0x13, 0x0f, 0xfb, 0x19, 0xae,
-	0x33, 0x8c, 0x9b, 0x0c, 0xe3, 0x4f, 0x65, 0x86, 0x9d, 0x0b, 0x74, 0x80, 0x97, 0x5d, 0x9b, 0x41,
-	0xb7, 0xf7, 0xd8, 0x63, 0xb7, 0x93, 0x8f, 0x37, 0xdf, 0xdc, 0x5e, 0x3f, 0xc0, 0x7b, 0x03, 0x64,
-	0x41, 0xf0, 0xa8, 0xc2, 0x6e, 0xff, 0x04, 0x00, 0x00, 0xff, 0xff, 0xac, 0x1c, 0xf5, 0x83, 0xd1,
-	0x03, 0x00, 0x00,
+	// 335 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x52, 0xc1, 0x4f, 0xb3, 0x30,
+	0x1c, 0xdd, 0xc8, 0x97, 0x2f, 0xee, 0xa7, 0x59, 0x96, 0x1e, 0x74, 0xc1, 0x69, 0x16, 0x3c, 0xb8,
+	0x53, 0xeb, 0x36, 0xe3, 0x41, 0x6f, 0x26, 0x9a, 0x2c, 0xf1, 0x84, 0xee, 0xb2, 0x8b, 0x01, 0x5a,
+	0xb1, 0x19, 0x50, 0xd6, 0x16, 0x8c, 0xff, 0xbc, 0x31, 0x03, 0xb6, 0x21, 0x51, 0xc6, 0x8d, 0x3c,
+	0xde, 0xeb, 0x7b, 0xaf, 0xaf, 0x70, 0xed, 0x0b, 0xec, 0xbd, 0x4b, 0x11, 0xf2, 0x24, 0xc4, 0x42,
+	0xfa, 0x24, 0x48, 0x3c, 0x4e, 0x24, 0x53, 0x49, 0xa0, 0x15, 0x89, 0xa5, 0xd0, 0x82, 0xa4, 0x63,
+	0x22, 0x99, 0x27, 0x24, 0x65, 0x12, 0x67, 0x08, 0xea, 0xae, 0x59, 0xb8, 0x60, 0x51, 0xd7, 0x3c,
+	0xf5, 0x85, 0xf0, 0x03, 0x96, 0xf3, 0xdd, 0xe4, 0x8d, 0xb0, 0x30, 0xd6, 0x9f, 0x39, 0xd9, 0xbc,
+	0x69, 0x66, 0xc1, 0xa3, 0x54, 0x78, 0x8e, 0xe6, 0x22, 0xca, 0x75, 0xd6, 0x39, 0x1c, 0x3d, 0x7f,
+	0x38, 0x32, 0xe4, 0x91, 0xff, 0xe2, 0xa8, 0x25, 0xea, 0x82, 0xc1, 0x69, 0xbf, 0x3d, 0x6c, 0x8f,
+	0x3a, 0xb6, 0xc1, 0xa9, 0x95, 0xc2, 0xc5, 0x3c, 0xa6, 0x8e, 0x66, 0xb3, 0xad, 0xf2, 0x51, 0x8a,
+	0x70, 0xa3, 0xb1, 0xd9, 0x2a, 0x61, 0x4a, 0xa3, 0x33, 0x00, 0x99, 0x7f, 0xbe, 0x6e, 0xe5, 0x9d,
+	0x02, 0x99, 0x51, 0x74, 0x05, 0xff, 0xb4, 0xa3, 0x96, 0x7d, 0x63, 0xd8, 0x1e, 0x1d, 0x4e, 0x06,
+	0xf8, 0x67, 0x33, 0x5c, 0x4e, 0x60, 0x67, 0x4c, 0x4b, 0xc3, 0x49, 0xd5, 0xb7, 0xa1, 0xd7, 0x2d,
+	0xc0, 0xae, 0x65, 0xe1, 0x68, 0x56, 0x1d, 0x4b, 0xa7, 0x96, 0xd8, 0x93, 0x2f, 0x03, 0x0e, 0xec,
+	0x62, 0x05, 0xf4, 0x04, 0xbd, 0x59, 0xa4, 0x98, 0xd4, 0x3b, 0x32, 0xaa, 0x39, 0xc8, 0xac, 0xf9,
+	0x67, 0xb5, 0xd0, 0x1c, 0x7a, 0xd5, 0x42, 0xe8, 0xb2, 0xaa, 0xf8, 0xa3, 0xb2, 0x79, 0x8c, 0xf3,
+	0xed, 0xf1, 0x66, 0x7b, 0xfc, 0xb0, 0xde, 0xde, 0x6a, 0xa1, 0x05, 0x0c, 0xaa, 0x21, 0xcb, 0xfb,
+	0xa0, 0xda, 0xbb, 0xde, 0x13, 0x79, 0x05, 0x83, 0xba, 0xed, 0xd1, 0x74, 0x5f, 0xfc, 0x5f, 0x5e,
+	0x4a, 0xbd, 0xe5, 0xfd, 0x78, 0x41, 0x1a, 0x3d, 0xe4, 0xbb, 0x02, 0x88, 0x5d, 0xf7, 0x7f, 0x86,
+	0x4d, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0x28, 0x11, 0x08, 0xe5, 0x65, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -316,13 +272,22 @@ type RecorderClient interface {
 	// the rest of the payload. If request insertion fails, exits successfully.
 	// Request table cleanup will be performed out of band.
 	UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	// A request to derive an invocation given a swarming task and insert if not
-	// already present.
+	// A request to create an invocation given a swarming task.
+	//
+	// Similar to InsertInvocation but takes a swarming task.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
 	// tasks make RPCs directly.
-	DeriveInvocationFromSwarming(ctx context.Context, in *DeriveInvocationFromSwarmingRequest, opts ...grpc.CallOption) (*Invocation, error)
+	InsertInvocationFromSwarming(ctx context.Context, in *SwarmingTask, opts ...grpc.CallOption) (*Invocation, error)
+	// A request to update an invocation given a swarming task ID.
+	//
+	// Similar to UdpateInvocation but takes a swarming task.
+	//
+	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
+	// in which we derive invocations given swarming task IDs, rather than have
+	// tasks make RPCs directly.
+	UpdateInvocationFromSwarming(ctx context.Context, in *UpdateInvocationFromSwarmingRequest, opts ...grpc.CallOption) (*Invocation, error)
 }
 type recorderPRPCClient struct {
 	client *prpc.Client
@@ -350,9 +315,18 @@ func (c *recorderPRPCClient) UpdateInvocation(ctx context.Context, in *UpdateInv
 	return out, nil
 }
 
-func (c *recorderPRPCClient) DeriveInvocationFromSwarming(ctx context.Context, in *DeriveInvocationFromSwarmingRequest, opts ...grpc.CallOption) (*Invocation, error) {
+func (c *recorderPRPCClient) InsertInvocationFromSwarming(ctx context.Context, in *SwarmingTask, opts ...grpc.CallOption) (*Invocation, error) {
 	out := new(Invocation)
-	err := c.client.Call(ctx, "luci.resultsdb.Recorder", "DeriveInvocationFromSwarming", in, out, opts...)
+	err := c.client.Call(ctx, "luci.resultsdb.Recorder", "InsertInvocationFromSwarming", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) UpdateInvocationFromSwarming(ctx context.Context, in *UpdateInvocationFromSwarmingRequest, opts ...grpc.CallOption) (*Invocation, error) {
+	out := new(Invocation)
+	err := c.client.Call(ctx, "luci.resultsdb.Recorder", "UpdateInvocationFromSwarming", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -385,9 +359,18 @@ func (c *recorderClient) UpdateInvocation(ctx context.Context, in *UpdateInvocat
 	return out, nil
 }
 
-func (c *recorderClient) DeriveInvocationFromSwarming(ctx context.Context, in *DeriveInvocationFromSwarmingRequest, opts ...grpc.CallOption) (*Invocation, error) {
+func (c *recorderClient) InsertInvocationFromSwarming(ctx context.Context, in *SwarmingTask, opts ...grpc.CallOption) (*Invocation, error) {
 	out := new(Invocation)
-	err := c.cc.Invoke(ctx, "/luci.resultsdb.Recorder/DeriveInvocationFromSwarming", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/luci.resultsdb.Recorder/InsertInvocationFromSwarming", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) UpdateInvocationFromSwarming(ctx context.Context, in *UpdateInvocationFromSwarmingRequest, opts ...grpc.CallOption) (*Invocation, error) {
+	out := new(Invocation)
+	err := c.cc.Invoke(ctx, "/luci.resultsdb.Recorder/UpdateInvocationFromSwarming", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -430,13 +413,22 @@ type RecorderServer interface {
 	// the rest of the payload. If request insertion fails, exits successfully.
 	// Request table cleanup will be performed out of band.
 	UpdateInvocation(context.Context, *UpdateInvocationRequest) (*empty.Empty, error)
-	// A request to derive an invocation given a swarming task and insert if not
-	// already present.
+	// A request to create an invocation given a swarming task.
+	//
+	// Similar to InsertInvocation but takes a swarming task.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
 	// tasks make RPCs directly.
-	DeriveInvocationFromSwarming(context.Context, *DeriveInvocationFromSwarmingRequest) (*Invocation, error)
+	InsertInvocationFromSwarming(context.Context, *SwarmingTask) (*Invocation, error)
+	// A request to update an invocation given a swarming task ID.
+	//
+	// Similar to UdpateInvocation but takes a swarming task.
+	//
+	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
+	// in which we derive invocations given swarming task IDs, rather than have
+	// tasks make RPCs directly.
+	UpdateInvocationFromSwarming(context.Context, *UpdateInvocationFromSwarmingRequest) (*Invocation, error)
 }
 
 // UnimplementedRecorderServer can be embedded to have forward compatible implementations.
@@ -449,8 +441,11 @@ func (*UnimplementedRecorderServer) InsertInvocation(ctx context.Context, req *I
 func (*UnimplementedRecorderServer) UpdateInvocation(ctx context.Context, req *UpdateInvocationRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateInvocation not implemented")
 }
-func (*UnimplementedRecorderServer) DeriveInvocationFromSwarming(ctx context.Context, req *DeriveInvocationFromSwarmingRequest) (*Invocation, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeriveInvocationFromSwarming not implemented")
+func (*UnimplementedRecorderServer) InsertInvocationFromSwarming(ctx context.Context, req *SwarmingTask) (*Invocation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InsertInvocationFromSwarming not implemented")
+}
+func (*UnimplementedRecorderServer) UpdateInvocationFromSwarming(ctx context.Context, req *UpdateInvocationFromSwarmingRequest) (*Invocation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateInvocationFromSwarming not implemented")
 }
 
 func RegisterRecorderServer(s prpc.Registrar, srv RecorderServer) {
@@ -493,20 +488,38 @@ func _Recorder_UpdateInvocation_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Recorder_DeriveInvocationFromSwarming_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeriveInvocationFromSwarmingRequest)
+func _Recorder_InsertInvocationFromSwarming_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SwarmingTask)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RecorderServer).DeriveInvocationFromSwarming(ctx, in)
+		return srv.(RecorderServer).InsertInvocationFromSwarming(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/luci.resultsdb.Recorder/DeriveInvocationFromSwarming",
+		FullMethod: "/luci.resultsdb.Recorder/InsertInvocationFromSwarming",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecorderServer).DeriveInvocationFromSwarming(ctx, req.(*DeriveInvocationFromSwarmingRequest))
+		return srv.(RecorderServer).InsertInvocationFromSwarming(ctx, req.(*SwarmingTask))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_UpdateInvocationFromSwarming_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateInvocationFromSwarmingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).UpdateInvocationFromSwarming(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultsdb.Recorder/UpdateInvocationFromSwarming",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).UpdateInvocationFromSwarming(ctx, req.(*UpdateInvocationFromSwarmingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -524,8 +537,12 @@ var _Recorder_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Recorder_UpdateInvocation_Handler,
 		},
 		{
-			MethodName: "DeriveInvocationFromSwarming",
-			Handler:    _Recorder_DeriveInvocationFromSwarming_Handler,
+			MethodName: "InsertInvocationFromSwarming",
+			Handler:    _Recorder_InsertInvocationFromSwarming_Handler,
+		},
+		{
+			MethodName: "UpdateInvocationFromSwarming",
+			Handler:    _Recorder_UpdateInvocationFromSwarming_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
