@@ -247,6 +247,24 @@
       "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b4bbe1b_30a362ba",
+        "filename": "results/proto/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "by \"reordering\" you mean moving `option go_package \u003d...` line down? then yes, since this is what I am talking about from the beginning of this comment thread (how did you interpret it?)",
+      "parentUuid": "09293736_e4424bb3",
+      "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

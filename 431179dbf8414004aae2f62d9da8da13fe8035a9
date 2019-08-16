@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "cffcc107_af226b3e",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "lgtm",
+      "parentUuid": "123bfd2b_69f22d25",
+      "revId": "431179dbf8414004aae2f62d9da8da13fe8035a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5bf80f4a_0ef8c391",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 7

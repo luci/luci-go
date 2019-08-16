@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "86f254a9_e2d1ed3e",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "nit: from https://cloud.google.com/apis/design/documentation#method_description \n\n\u003e It usually starts with a third-person, present tense verb, i.e., a verb ending in \"s\".",
+      "range": {
+        "startLine": 66,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 24
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e157291_311972ba",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "+1 to putting it inside",
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "306f179c_c3aadb42",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "probably stale, there is no update anymore",
+      "range": {
+        "startLine": 117,
+        "startChar": 26,
+        "endLine": 117,
+        "endChar": 36
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aff15ba2_caccc012",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "nit: there should be a slash after }\n\nsame with others",
+      "range": {
+        "startLine": 122,
+        "startChar": 26,
+        "endLine": 122,
+        "endChar": 27
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71dbdd76_c1309757",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "do we run them on swarming? if not, let\u0027s remove these examples. The GN is a good example you have here.\ngo/chrome-test-id doc contains things which are not in scope yet (but will be)\n\nsame below",
+      "range": {
+        "startLine": 122,
+        "startChar": 30,
+        "endLine": 122,
+        "endChar": 56
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22a1c958_e74f30f1",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "use spaces",
+      "range": {
+        "startLine": 133,
+        "startChar": 0,
+        "endLine": 133,
+        "endChar": 1
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f81ecd39_8364380a",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "nit: this is not useful since it is the same words as the field name itself, i.e. it does not actually explain the field. Your last paragraph in this comment is the most valuable, let\u0027s move it here.",
+      "range": {
+        "startLine": 135,
+        "startChar": 2,
+        "endLine": 135,
+        "endChar": 23
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfd4a54b_6966aff6",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:02:26Z",
+      "side": 1,
+      "message": "+1",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 138,
+        "endChar": 22
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
