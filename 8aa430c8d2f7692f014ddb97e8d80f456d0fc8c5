@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "0a325b87_92b79b77",
+        "filename": "lucicfg/cli/cmds/generate/generate.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-16T22:00:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e07977c4_13b93afd",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 131
+      },
+      "revId": "8aa430c8d2f7692f014ddb97e8d80f456d0fc8c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63f14eb5_34f1789d",
         "filename": "lucicfg/output.go",
         "patchSetId": 7
