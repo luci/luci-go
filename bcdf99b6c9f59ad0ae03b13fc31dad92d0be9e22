@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7b6032e1_add451f9",
+        "filename": "logdog/client/butlerlib/streamproto/properties.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-16T01:19:18Z",
+      "side": 1,
+      "message": "oh, you did",
+      "parentUuid": "e65fab12_a4fc1e29",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 22
+      },
+      "revId": "bcdf99b6c9f59ad0ae03b13fc31dad92d0be9e22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51c5780b_ab2cf776",
         "filename": "logdog/client/butlerlib/streamproto/properties.go",
         "patchSetId": 2
