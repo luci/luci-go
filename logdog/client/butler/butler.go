@@ -78,13 +78,6 @@ type Config struct {
 	// DefaultMaxBufferAge will be used.
 	MaxBufferAge time.Duration
 
-	// TeeStdout, if not nil, is the Writer that will be used for streams
-	// requesting STDOUT tee.
-	TeeStdout io.Writer
-	// TeeStderr, if not nil, is the Writer that will be used for streams
-	// requesting STDERR tee.
-	TeeStderr io.Writer
-
 	// NoWrapStreamRegistrationCallback provides a way to opt-out of wrapping
 	// StreamRegistrationCallback to call on LogEntries without buffering them
 	// to guarantee full LogEntries.
@@ -491,28 +484,6 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 		}
 	}
 
-	// If this stream is configured to tee, set that up.
-	reader := io.Reader(rc)
-	switch p.Tee {
-	case streamproto.TeeNone:
-		break
-
-	case streamproto.TeeStdout:
-		if b.c.TeeStdout == nil {
-			return errors.New("butler: cannot tee through STDOUT; no STDOUT is configured")
-		}
-		reader = io.TeeReader(rc, b.c.TeeStdout)
-
-	case streamproto.TeeStderr:
-		if b.c.TeeStderr == nil {
-			return errors.New("butler: cannot tee through STDERR; no STDERR is configured")
-		}
-		reader = io.TeeReader(rc, b.c.TeeStderr)
-
-	default:
-		return fmt.Errorf("invalid tee value: %v", p.Tee)
-	}
-
 	if err := b.registerStream(p.Name); err != nil {
 		return err
 	}
@@ -521,7 +492,7 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 	streamCtx := log.SetField(b.ctx, "stream", p.Name)
 	s := stream{
 		Context: streamCtx,
-		r:       reader,
+		r:       rc,
 		c:       rc,
 	}
 

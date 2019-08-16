@@ -161,8 +161,6 @@ func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butl
 		BufferLogs:    !a.noBufferLogs,
 		Output:        out,
 		OutputWorkers: a.outputWorkers,
-		TeeStdout:     os.Stdout,
-		TeeStderr:     os.Stderr,
 	}
 	b, err := butler.New(a, butlerOpts)
 	if err != nil {

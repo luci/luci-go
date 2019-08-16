@@ -29,7 +29,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// Test the TeeType struct.
 func TestProperties(t *testing.T) {
 	Convey(`A testing instance`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
@@ -78,7 +77,6 @@ func TestFlags(t *testing.T) {
 					ContentType: "foo/bar",
 					StreamType:  logpb.StreamType_TEXT,
 				},
-				Tee: TeeNone,
 			})
 		})
 	})
@@ -97,7 +95,6 @@ func TestFlagsJSON(t *testing.T) {
 					ContentType: "foo/bar",
 					StreamType:  logpb.StreamType_TEXT,
 				},
-				Tee: TeeNone,
 			})
 		})
 
@@ -116,7 +113,6 @@ func TestFlagsJSON(t *testing.T) {
 					StreamType:  logpb.StreamType_BINARY,
 					ContentType: string(types.ContentTypeBinary),
 				},
-				Tee: TeeNone,
 			})
 		})
 
@@ -130,7 +126,6 @@ func TestFlagsJSON(t *testing.T) {
 					StreamType:  logpb.StreamType_DATAGRAM,
 					ContentType: string(types.ContentTypeLogdogDatagram),
 				},
-				Tee: TeeNone,
 			})
 		})
 	})

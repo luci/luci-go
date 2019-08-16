@@ -132,7 +132,7 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 
 		Convey(`Loading a fully-specified configuration`, func() {
 			data := `{
-				"name": "test", "tee": "stdout", "timestamp": "2015-05-07T01:29:51+00:00",
+				"name": "test", "timestamp": "2015-05-07T01:29:51+00:00",
 				"contentType": "text/plain",
 				"tags": {"foo": "bar", "baz": "qux"}
 			}`
@@ -150,7 +150,6 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 							"foo": "bar",
 						},
 					},
-					Tee: streamproto.TeeStdout,
 				})
 			})
 		})
@@ -187,22 +186,6 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 			So(err, ShouldNotBeNil)
 		})
 
-		for idx, v := range []string{"none", "stdout", "stderr", "clearly invalid"} {
-			Convey(fmt.Sprintf(`A protocol with a tee type of: %s`, v), func() {
-				ctx := context.Background()
-				data := fmt.Sprintf(`{"name": "test", "tee": "%s"}`, v)
-				_, err := p.Handshake(ctx, hb.reader(data, nil))
-				if idx <= 2 {
-					Convey(`Should successfully parse.`, func() {
-						So(err, ShouldBeNil)
-					})
-				} else {
-					Convey(`Should fail to parse.`, func() {
-						So(err, ShouldNotBeNil)
-					})
-				}
-			})
-		}
 	})
 }
 
