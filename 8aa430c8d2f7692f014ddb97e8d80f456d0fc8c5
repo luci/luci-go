@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "dbdfce82_ee5964ac",
+        "filename": "lucicfg/cli/cmds/generate/generate.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-16T19:11:33Z",
+      "side": 1,
+      "message": "The scenario I try to avoid is: \n\n1. We deploy a lucicfg change that introduces formatting difference.\n2. Now everyones PRESUBMIT.py complain that *.cfg files on disk are out-of-date, even if they didn\u0027t touch anything.\n\nI guess I can make `lucicfg generate` to always imply \"force\" and `lucicfg validate` to always imply \"non-force\". It will solve my concern, but it will introduce a quirk: `lucicfg validate` tells that all files are up-to-date, but `lucicfg generate` still produces non-empty (but semantically insignificant) diff.\n\nWhat do you think? At least it will guarantee that all files are formatted in a consistent style.",
+      "parentUuid": "dcb53066_20d9d93c",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 131
+      },
+      "revId": "8aa430c8d2f7692f014ddb97e8d80f456d0fc8c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "63f14eb5_34f1789d",
         "filename": "lucicfg/output.go",
         "patchSetId": 7
