@@ -222,7 +222,7 @@ func TestListenerStreamServer(t *testing.T) {
 				// Next must exit with nil.
 				bundle := <-streamC
 				So(bundle.rc, ShouldBeNil)
-				So(bundle.properties, ShouldBeNil)
+				So(bundle.descriptor, ShouldBeNil)
 			})
 
 			Convey(`Will refrain from outputting clients whose handshakes finish after the server is closed.`, func() {
@@ -297,10 +297,10 @@ func testClientServer(t *testing.T, svr StreamServer, client streamclient.Client
 		}
 	}()
 
-	rc, props := svr.Next()
+	rc, desc := svr.Next()
 	defer rc.Close()
 
-	So(props, ShouldResemble, flags.Properties())
+	So(desc, ShouldResemble, flags.Descriptor())
 
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(rc)
