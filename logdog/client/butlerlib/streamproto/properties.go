@@ -33,10 +33,6 @@ type Properties struct {
 	// Prefix.
 	*logpb.LogStreamDescriptor
 
-	// Tee is the tee configuration for this stream. If empty, the stream will
-	// not be tee'd.
-	Tee TeeType
-
 	// Timeout, if specified, is the stream timeout. If a read happens without
 	// filling the buffer, it will prematurely return after this period.
 	Timeout time.Duration
@@ -77,7 +73,6 @@ type Flags struct {
 	Timestamp   clockflag.Time `json:"timestamp,omitempty"`
 	Tags        TagMap         `json:"tags,omitempty"`
 
-	Tee      TeeType            `json:"tee,omitempty"`
 	Timeout  clockflag.Duration `json:"timeout,omitempty"`
 	Deadline clockflag.Duration `json:"deadline,omitempty"`
 }
@@ -99,7 +94,6 @@ func (f *Flags) Properties() *Properties {
 			Timestamp:   google.NewTimestamp(time.Time(f.Timestamp)),
 			Tags:        f.Tags,
 		},
-		Tee:      f.Tee,
 		Timeout:  time.Duration(f.Timeout),
 		Deadline: time.Duration(f.Deadline),
 	}

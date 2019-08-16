@@ -135,21 +135,20 @@ func hookStdoutStderr(ctx context.Context, logdogServ *runnerbutler.Server, stdo
 		return err
 	}
 
-	hook := func(rc io.ReadCloser, name string, tee streamproto.TeeType) error {
+	hook := func(rc io.ReadCloser, name string) error {
 		return logdogServ.AddStream(rc, &streamproto.Properties{
 			LogStreamDescriptor: &logpb.LogStreamDescriptor{
 				Name:        path.Join(streamNamePrefix, name),
 				ContentType: "text/plain",
 				Timestamp:   tsNow,
 			},
-			Tee: tee,
 		})
 	}
 
-	if err := hook(stdout, "stdout", streamproto.TeeStdout); err != nil {
+	if err := hook(stdout, "stdout"); err != nil {
 		return err
 	}
-	if err := hook(stderr, "stderr", streamproto.TeeStderr); err != nil {
+	if err := hook(stderr, "stderr"); err != nil {
 		return err
 	}
 	return nil

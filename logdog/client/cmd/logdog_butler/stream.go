@@ -34,7 +34,6 @@ func (s *streamConfig) addFlags(fs *flag.FlagSet) {
 		s.ContentType = string(types.ContentTypeText)
 	}
 	s.Type = streamproto.StreamType(logpb.StreamType_TEXT)
-	s.Tee = streamproto.TeeNone
 
 	fs.Var(&s.Name, "name", "The name of the stream")
 	fs.StringVar(&s.ContentType, "content-type", s.ContentType,
@@ -42,9 +41,6 @@ func (s *streamConfig) addFlags(fs *flag.FlagSet) {
 	fs.Var(&s.Type, "type",
 		fmt.Sprintf("Input stream type. Choices are: %s",
 			streamproto.StreamTypeFlagEnum.Choices()))
-	fs.Var(&s.Tee, "tee",
-		fmt.Sprintf("Tee the stream through the Butler's output. Options are: %s",
-			streamproto.TeeTypeFlagEnum.Choices()))
 	fs.Var(&s.Tags, "tag", "Add a key[=value] tag.")
 }
 
