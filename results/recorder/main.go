@@ -58,15 +58,16 @@ func main() {
 			},
 		},
 	})
-	InstallHandlers(srv.Routes)
+	// TODO: populate meaningful middleware.
+	InstallHandlers(srv.Routes, router.MiddlewareChain{})
 
 	if err := srv.ListenAndServe(); err != nil {
 		os.Exit(1)
 	}
 }
 
-// InstallHandlers installs the pRPC endpoint handlers.
-func InstallHandlers(r *router.Router) {
+// InstallHandlers installs the pRPC endpoint handlerss.
+func InstallHandlers(r *router.Router, mwBase router.MiddlewareChain) {
 	apiServer := prpc.Server{
 		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(grpcutil.NewUnaryServerPanicCatcher(nil)),
 	}
@@ -74,5 +75,5 @@ func InstallHandlers(r *router.Router) {
 	resultspb.RegisterRecorderServer(&apiServer, &RecorderServer{})
 
 	discovery.Enable(&apiServer)
-	apiServer.InstallHandlers(r, router.MiddlewareChain{})
+	apiServer.InstallHandlers(r, mwBase)
 }
