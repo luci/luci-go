@@ -49,14 +49,14 @@ func (c *localClient) NewStream(f streamproto.Flags) (s streamclient.Stream, err
 		}
 	}()
 
-	props := f.Properties()
+	desc := f.Descriptor()
 	stream := streamclient.BaseStream{
 		WriteCloser: pw,
-		P:           props,
+		D:           desc,
 	}
 
 	// Add the Stream to the Butler.
-	if err = c.AddStream(pr, props); err != nil {
+	if err = c.AddStream(pr, desc); err != nil {
 		return
 	}
 	return &stream, nil

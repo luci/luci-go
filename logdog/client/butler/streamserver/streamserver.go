@@ -17,7 +17,7 @@ package streamserver
 import (
 	"io"
 
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 // StreamServer is an interface to a background service that allows external
@@ -37,7 +37,7 @@ type StreamServer interface {
 
 	// Blocks, returning a new Stream when one is available. If the stream server
 	// has closed, this will return nil.
-	Next() (io.ReadCloser, *streamproto.Properties)
+	Next() (io.ReadCloser, *logpb.LogStreamDescriptor)
 
 	// Closes the stream server, cleaning up resources.
 	Close()

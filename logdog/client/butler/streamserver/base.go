@@ -24,7 +24,7 @@ import (
 
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 // streamParams are parameters representing a negotiated stream ready to
@@ -32,8 +32,8 @@ import (
 type streamParams struct {
 	// The stream's ReadCloser connection.
 	rc io.ReadCloser
-	// Negotiated stream properties.
-	properties *streamproto.Properties
+	// Negotiated stream descriptor.
+	descriptor *logpb.LogStreamDescriptor
 }
 
 // listenerStreamServer is the class for Listener-based stream server
@@ -98,9 +98,9 @@ func (s *listenerStreamServer) Listen() error {
 	return nil
 }
 
-func (s *listenerStreamServer) Next() (io.ReadCloser, *streamproto.Properties) {
+func (s *listenerStreamServer) Next() (io.ReadCloser, *logpb.LogStreamDescriptor) {
 	if streamParams, ok := <-s.streamParamsC; ok {
-		return streamParams.rc, streamParams.properties
+		return streamParams.rc, streamParams.descriptor
 	}
 	return nil, nil
 }
@@ -252,7 +252,7 @@ func (c *streamClient) handle() (*streamParams, error) {
 //
 // The client connection opens with a handshake protocol. Once complete, the
 // connection itself becomes the stream.
-func handshake(ctx context.Context, conn net.Conn) (*streamproto.Properties, error) {
+func handshake(ctx context.Context, conn net.Conn) (*logpb.LogStreamDescriptor, error) {
 	log.Infof(ctx, "Beginning handshake.")
 	hs := handshakeProtocol{}
 	return hs.Handshake(ctx, conn)

@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
@@ -27,7 +28,7 @@ import (
 
 // In-memory datastructure to hold a fake butler client.
 type memoryStream struct {
-	props *streamproto.Properties
+	desc *logpb.LogStreamDescriptor
 
 	closed     bool
 	buf        bytes.Buffer
@@ -38,8 +39,8 @@ func (s *memoryStream) ToLogDogStream() (*rawpresentation.Stream, error) {
 	result := &rawpresentation.Stream{
 		Closed:     s.closed,
 		IsDatagram: s.isDatagram,
-		Path:       s.props.Name,
-		Prefix:     s.props.Prefix,
+		Path:       s.desc.Name,
+		Prefix:     s.desc.Prefix,
 	}
 
 	if s.isDatagram {
@@ -72,24 +73,26 @@ func (s *memoryStream) WriteDatagram(b []byte) error {
 	return err
 }
 
-func (s *memoryStream) Properties() *streamproto.Properties { return s.props.Clone() }
+func (s *memoryStream) Descriptor() *logpb.LogStreamDescriptor {
+	return proto.Clone(s.desc).(*logpb.LogStreamDescriptor)
+}
 
 type memoryClient struct {
 	stream map[string]*memoryStream
 }
 
 func (c *memoryClient) NewStream(f streamproto.Flags) (streamclient.Stream, error) {
-	props := f.Properties()
-	if _, ok := c.stream[props.Name]; ok {
-		return nil, fmt.Errorf("duplicate stream, %q", props.Name)
+	desc := f.Descriptor()
+	if _, ok := c.stream[desc.Name]; ok {
+		return nil, fmt.Errorf("duplicate stream, %q", desc.Name)
 	}
 	s := memoryStream{
-		props: props,
+		desc: desc,
 	}
 	if c.stream == nil {
 		c.stream = map[string]*memoryStream{}
 	}
-	c.stream[s.props.Name] = &s
+	c.stream[s.desc.Name] = &s
 	return &s, nil
 }
 
