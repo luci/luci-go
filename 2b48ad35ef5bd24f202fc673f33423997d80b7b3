@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "deb91280_098f5230",
+        "filename": "logdog/client/cmd/logdog_butler/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-16T01:14:32Z",
+      "side": 0,
+      "message": "err... are you sure this functionally was unused? :)",
+      "range": {
+        "startLine": 164,
+        "startChar": 0,
+        "endLine": 165,
+        "endChar": 27
+      },
+      "revId": "2b48ad35ef5bd24f202fc673f33423997d80b7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

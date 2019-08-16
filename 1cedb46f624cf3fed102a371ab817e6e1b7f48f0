@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "75da9ac5_8fc86d9b",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 495,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-16T01:14:32Z",
+      "side": 1,
+      "message": "this is not necessary anymore",
+      "range": {
+        "startLine": 495,
+        "startChar": 11,
+        "endLine": 495,
+        "endChar": 21
+      },
+      "revId": "1cedb46f624cf3fed102a371ab817e6e1b7f48f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
