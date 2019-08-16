@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aed75f05_5a97efb8",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:06:14Z",
+      "side": 1,
+      "message": "f\n\nsee the other comment",
+      "range": {
+        "startLine": 39,
+        "startChar": 5,
+        "endLine": 39,
+        "endChar": 6
+      },
+      "revId": "5e27baca8896158eb6928f2ff52d5a69ea1fd79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f9972dd_75afc66b",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:06:14Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 9
+      },
+      "revId": "5e27baca8896158eb6928f2ff52d5a69ea1fd79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fe12bb2_e66efa2f",
+        "filename": "results/recorder/chromium/swarming_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-16T23:06:14Z",
+      "side": 1,
+      "message": "nit: dot imports should be the last import block, see other files in this repo",
+      "revId": "5e27baca8896158eb6928f2ff52d5a69ea1fd79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
