@@ -43,11 +43,13 @@ flag, it is required in this mode.
 
 If the first positional argument is a Starlark file, it is interpreted (as with
 'generate' subcommand) and the resulting generated configs are compared to
-what's already on disk in -config-dir directory. If they are different, the
-subcommand exits with non-zero exit code (indicating files on disk are stale).
-Otherwise the configs are sent to LUCI Config service for validation.
-Partitioning into config sets is specified in the Starlark code in this case,
--config-set flag is rejected if given.
+what's already on disk in -config-dir directory using semantic comparison (i.e.
+config files on disk are deserialized and compared to the generated files as
+objects rather than as byte blobs). If they are different, the subcommand exits
+with non-zero exit code (indicating the files on disk are stale). Otherwise the
+configs are sent to LUCI Config service for validation. Partitioning into config
+sets is specified in the Starlark code in this case, -config-set flag is
+rejected if given.
 
 When interpreting Starlark script, flags like -config-dir and -fail-on-warnings
 work as overrides for values declared in the script via lucicfg.config(...)
@@ -166,19 +168,30 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 				result.Stale = append(result.Stale, f)
 			}
 		}
-		// Find files that are newer in the output or do not exist on disk.
-		changed, _, err := output.Compare(meta.ConfigDir)
+
+		// Find files that are newer in the output or do not exist on disk. Do
+		// semantic comparison for protos.
+		changed, _, err := output.Compare(meta.ConfigDir, true)
 		if err != nil {
 			return result, err
 		}
 		result.Stale = append(result.Stale, changed...)
-	}
 
-	if len(result.Stale) != 0 {
-		return result, fmt.Errorf(
-			"following files on disk are out-of-date: %s.\n"+
-				"  Run `lucicfg generate %q` to update them",
-			strings.Join(result.Stale, ", "), path)
+		// Ask the user to regenerate files if they are semantically different.
+		if len(result.Stale) != 0 {
+			return result, fmt.Errorf(
+				"following files on disk are out-of-date: %s.\n"+
+					"  Run `lucicfg generate %q` to update them",
+				strings.Join(result.Stale, ", "), path)
+		}
+
+		// We want to make sure the *exact* files we have on disk pass the server
+		// validation (even if they are semantically identical to files in 'output',
+		// as we have just checked). Replace the generated output with what's on
+		// disk.
+		if err := output.Read(meta.ConfigDir); err != nil {
+			return result, err
+		}
 	}
 
 	// Validate via LUCI Config RPC. This silently skips configs not belonging to

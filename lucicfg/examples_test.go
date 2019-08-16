@@ -69,7 +69,9 @@ func runExample(script string) error {
 		return err
 	}
 
-	switch diff, _, err := state.Output.Compare(output); {
+	// We want examples in examples/... to be formatted using current "golden"
+	// style, so do byte-to-byte comparison (not a semantic one).
+	switch diff, _, err := state.Output.Compare(output, false); {
 	case err != nil:
 		return err
 	case len(diff) != 0:
