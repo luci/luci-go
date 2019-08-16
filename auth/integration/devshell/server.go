@@ -30,7 +30,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 
@@ -84,7 +83,7 @@ func (s *Server) serve(ctx context.Context, l net.Listener, wg *sync.WaitGroup) 
 		}
 
 		client := &client{
-			conn:   &iotools.DeadlineReader{conn, 0},
+			conn:   conn,
 			source: s.Source,
 			email:  s.Email,
 			ctx:    ctx,
