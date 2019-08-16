@@ -22,6 +22,30 @@
       "revId": "2b48ad35ef5bd24f202fc673f33423997d80b7b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2393aab9_6e77c73b",
+        "filename": "logdog/client/cmd/logdog_butler/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-16T03:48:23Z",
+      "side": 0,
+      "message": "yep, this is the logdog_butler command line tool which, afaik, I am the only person who knows it exists...",
+      "parentUuid": "deb91280_098f5230",
+      "range": {
+        "startLine": 164,
+        "startChar": 0,
+        "endLine": 165,
+        "endChar": 27
+      },
+      "revId": "2b48ad35ef5bd24f202fc673f33423997d80b7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
