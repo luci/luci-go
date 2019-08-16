@@ -32,17 +32,6 @@ type Properties struct {
 	// Note that the Prefix value, if filled, will be overridden by the Butler's
 	// Prefix.
 	*logpb.LogStreamDescriptor
-
-	// Timeout, if specified, is the stream timeout. If a read happens without
-	// filling the buffer, it will prematurely return after this period.
-	Timeout time.Duration
-
-	// Deadline, if set, specifies the maximum amount of time that data from this
-	// Stream can be buffered before being sent to its Output.
-	//
-	// Note that this value is best-effort, as it is subject to the constraints
-	// of the underlying transport medium.
-	Deadline time.Duration
 }
 
 // Validate validates that the configured Properties are valid and sufficient to
@@ -72,9 +61,6 @@ type Flags struct {
 	Type        StreamType     `json:"type,omitempty"`
 	Timestamp   clockflag.Time `json:"timestamp,omitempty"`
 	Tags        TagMap         `json:"tags,omitempty"`
-
-	Timeout  clockflag.Duration `json:"timeout,omitempty"`
-	Deadline clockflag.Duration `json:"deadline,omitempty"`
 }
 
 // Properties converts the Flags to a standard Properties structure.
@@ -94,8 +80,6 @@ func (f *Flags) Properties() *Properties {
 			Timestamp:   google.NewTimestamp(time.Time(f.Timestamp)),
 			Tags:        f.Tags,
 		},
-		Timeout:  time.Duration(f.Timeout),
-		Deadline: time.Duration(f.Deadline),
 	}
 	return p
 }

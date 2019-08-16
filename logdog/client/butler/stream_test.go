@@ -23,7 +23,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 )
 
@@ -171,16 +170,6 @@ func TestStream(t *testing.T) {
 			s.closeStream()
 			So(bs.closed, ShouldBeTrue)
 			So(bs.allReleased(), ShouldBeFalse)
-		})
-
-		Convey(`Will read data and ignore timeout errors.`, func() {
-			rc.data = []byte("foo")
-			rc.err = iotools.ErrTimeout
-			So(s.readChunk(), ShouldBeTrue)
-
-			s.closeStream()
-			So(bs.appended, ShouldResemble, []byte("foo"))
-			So(bs.closedAndReleased(), ShouldBeTrue)
 		})
 
 		Convey(`Will halt if a stream error is encountered.`, func() {

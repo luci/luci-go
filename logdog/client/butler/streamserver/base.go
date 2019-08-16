@@ -22,7 +22,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -150,7 +149,7 @@ func (s *listenerStreamServer) serve() {
 		client := &streamClient{
 			closedC: s.closedC,
 			id:      nextID,
-			conn:    &iotools.DeadlineReader{conn, 0},
+			conn:    conn,
 		}
 		client.Context = log.SetFields(s, log.Fields{
 			"id":     client.id,

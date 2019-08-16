@@ -19,7 +19,6 @@ import (
 	"io"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 )
@@ -62,9 +61,6 @@ func (s *stream) readChunk() bool {
 	}
 
 	switch err {
-	case iotools.ErrTimeout:
-		log.Debugf(s, "Encountered 'Read()' timeout; re-reading.")
-		fallthrough
 	case nil:
 		break
 

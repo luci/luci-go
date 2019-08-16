@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
@@ -465,22 +464,6 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 			if _, ok := p.Tags[k]; !ok {
 				p.Tags[k] = v
 			}
-		}
-	}
-
-	if p.Timeout > 0 {
-		if rts, ok := rc.(iotools.ReadTimeoutSetter); ok {
-			if err := rts.SetReadTimeout(p.Timeout); err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-					"timeout":    p.Timeout,
-				}.Warningf(b.ctx, "Failed to set stream timeout.")
-			}
-		} else {
-			log.Fields{
-				"connection":     rc,
-				"connectionType": fmt.Sprintf("%T", rc),
-			}.Warningf(b.ctx, "Don't know how to set timeout for type, so ignoring Timeout parameter.")
 		}
 	}
 

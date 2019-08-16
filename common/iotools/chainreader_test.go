@@ -40,7 +40,6 @@ func (e *errorReader) Read([]byte) (int, error) {
 	return 0, e.error
 }
 
-// Test the DeadlineReader.
 func TestChainReader(t *testing.T) {
 	Convey(`An empty ChainReader`, t, func() {
 		cr := ChainReader{}
