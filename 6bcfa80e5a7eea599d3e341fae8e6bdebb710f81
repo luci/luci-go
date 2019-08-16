@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2fb0df05_5f913482",
+        "filename": "starlark/starlarkprotov2/message.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-16T00:23:30Z",
+      "side": 1,
+      "message": "eh, this is incorrect, it sets optional message-valued fields, thus changing semantic meaning of the parent message. Will send a CL to fix.",
+      "range": {
+        "startLine": 247,
+        "startChar": 13,
+        "endLine": 247,
+        "endChar": 24
+      },
+      "revId": "6bcfa80e5a7eea599d3e341fae8e6bdebb710f81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
