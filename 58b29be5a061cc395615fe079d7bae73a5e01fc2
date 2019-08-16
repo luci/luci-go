@@ -111,6 +111,24 @@
       "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "098ecf21_c9825746",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-08-16T20:21:12Z",
+      "side": 1,
+      "message": "According to a blurb in this section:\n\nhttps://github.com/luci/recipes-py/blob/master/doc/user_guide.md#runsteps\n\nsummary_markdown doesn\u0027t get propagated on success. Is this still current?",
+      "parentUuid": "f75580d4_e4ec65c3",
+      "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
