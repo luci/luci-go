@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "52f7232d_a656298b",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-16T19:03:10Z",
+      "side": 1,
+      "message": "This will cause milo outage :) (it did cause it last time Andrii tried this).\n\n*swarming.Service client produced by this function would be immediately dysfunctional. The context setup should be moved outside of getSwarmingClient.",
+      "revId": "aa1892a5529f98260fc94f72e72f90998bfaa2bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
