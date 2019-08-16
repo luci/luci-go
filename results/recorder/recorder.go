@@ -33,9 +33,16 @@ import (
 type RecorderServer struct {
 }
 
-// DeriveInvocationFromSwarming derives an invocation given swarming task ID (see corresponding RPC).
-func (s *RecorderServer) DeriveInvocationFromSwarming(ctx context.Context, in *resultspb.DeriveInvocationFromSwarmingRequest) (*resultspb.Invocation, error) {
-	logging.Warningf(ctx, "InsertInvocationFromSwarming called with ID %s", in.Task)
+// InsertInvocationFromSwarming creates a new invocation given swarming task ID (see corresponding RPC).
+func (s *RecorderServer) InsertInvocationFromSwarming(ctx context.Context, in *resultspb.SwarmingTask) (*resultspb.Invocation, error) {
+	logging.Warningf(ctx, "InsertInvocationFromSwarming called with ID %s", in.Id)
+	return nil, errors.New("unimplemented")
+}
+
+// UpdateInvocationFromSwarming updates an existing non-final invocation given swarming task ID (see
+// corresponding RPC).
+func (s *RecorderServer) UpdateInvocationFromSwarming(ctx context.Context, in *resultspb.UpdateInvocationFromSwarmingRequest) (*resultspb.Invocation, error) {
+	logging.Warningf(ctx, "UpdateInvocationFromSwarming called with ID %s", in.Task.Id)
 	return nil, errors.New("unimplemented")
 }
 

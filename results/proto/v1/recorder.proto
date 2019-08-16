@@ -20,7 +20,6 @@ package luci.resultsdb;
 // Currently, these are for experimentation/iteration.
 
 import "google/protobuf/empty.proto";
-import "go.chromium.org/luci/results/proto/v1/common.proto";
 import "go.chromium.org/luci/results/proto/v1/invocation.proto";
 
 option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
@@ -63,13 +62,23 @@ service Recorder {
   // Request table cleanup will be performed out of band.
   rpc UpdateInvocation(UpdateInvocationRequest) returns (google.protobuf.Empty) {};
 
-  // A request to derive an invocation given a swarming task and insert if not
-  // already present.
+  // A request to create an invocation given a swarming task.
+  //
+  // Similar to InsertInvocation but takes a swarming task.
   //
   // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
   // in which we derive invocations given swarming task IDs, rather than have
   // tasks make RPCs directly.
-  rpc DeriveInvocationFromSwarming(DeriveInvocationFromSwarmingRequest) returns (Invocation) {};
+  rpc InsertInvocationFromSwarming(SwarmingTask) returns (Invocation) {};
+
+  // A request to update an invocation given a swarming task ID.
+  //
+  // Similar to UpdateInvocation but takes a swarming task.
+  //
+  // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
+  // in which we derive invocations given swarming task IDs, rather than have
+  // tasks make RPCs directly.
+  rpc UpdateInvocationFromSwarming(UpdateInvocationFromSwarmingRequest) returns (Invocation) {};
 }
 
 message UpdateInvocationRequest {
@@ -106,39 +115,18 @@ message UpdateInvocationRequest {
   Invocation invocation = 2;
 }
 
-message DeriveInvocationFromSwarmingRequest {
-  message SwarmingTask {
-    // Swarming host of task.
-    string hostname = 1;
+message SwarmingTask {
+  // Swarming host of task.
+  string hostname = 1;
 
-    // ID of swarming task to process and insert.
-    string id = 2;
-  }
+  // ID of swarming task to process and insert.
+  string id = 2;
+}
+
+message UpdateInvocationFromSwarmingRequest {
+  // Similarly to UpdateInvocationRequest below, identifies update for idempotency.
+  string request_id = 1;
+
   // Swarming task to use in update.
-  SwarmingTask task = 1;
-
-  // Test path prefix.
-  //
-  // Examples: "gn/{label}", "py_unittest", "telemetry".
-  //
-  // See https://gn.googlesource.com/gn/+/master/docs/reference.md#labels for
-  // label examples.
-  //
-  // Generated test path examples:
-  // * GTest: gn/{label}/{suite}/{case}
-  // * javatests: gn/{label}/{full_java_method_name}
-  // * web tests: gn/{label}/{file_name}
-  // * Python unittests: py_unittest/{package}.{class}.{method}
-  // * Telemtry: telemetry/{root_dir_path}:{test_suite}/{test_case}
-	string test_path_prefix = 2;
-
-  // Test variant base.
-  //
-  // For Chromium, expected keys in the def map are "bucket", "builder",
-  // and "test_suite".
-  //
-  // These get combined with the remainder of the test variant definition,
-  // including test parameters and other key/value pairs may be derived from
-  // the swarming task.
-  VariantDef base_test_variant = 3;
+  SwarmingTask task = 2;
 }
