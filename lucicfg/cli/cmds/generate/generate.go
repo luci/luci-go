@@ -60,6 +60,7 @@ on disk, so they can be manually examined for reasons they are invalid.
 type generateRun struct {
 	base.Subcommand
 
+	force    bool
 	validate bool
 }
 
