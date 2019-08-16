@@ -24,6 +24,13 @@ assert.true(m1 != testprotos.Simple())
 assert.true(m1 != testprotos.Complex(i64=123))
 assert.true(testprotos.Complex(enum_val=1) != testprotos.Complex(i64=123))
 
+# Comparison operation has no observable side effects (like appearance of
+# optional message-valued fields).
+assert.eq(str(m1), '')
+
+# Empty submessage and unset submessage are NOT the same thing.
+assert.true(testprotos.Complex(msg_val={}) != testprotos.Complex())
+
 # Singular fields are checked.
 assert.true(testprotos.Complex(i64=123) == testprotos.Complex(i64=123))
 assert.true(testprotos.Complex(i64=123) != testprotos.Complex(i64=456))
