@@ -38,10 +38,14 @@ func TestOutput(t *testing.T) {
 			return filepath.Join(tmp, filepath.FromSlash(p))
 		}
 
-		read := func(p string) []byte {
+		read := func(p string) string {
 			body, err := ioutil.ReadFile(path(p))
 			So(err, ShouldBeNil)
-			return body
+			return string(body)
+		}
+
+		write := func(p, body string) {
+			So(ioutil.WriteFile(path(p), []byte(body), 0600), ShouldBeNil)
 		}
 
 		original := map[string][]byte{
@@ -50,7 +54,7 @@ func TestOutput(t *testing.T) {
 		}
 		So(os.Mkdir(path("subdir"), 0700), ShouldBeNil)
 		for k, v := range original {
-			So(ioutil.WriteFile(path(k), v, 0600), ShouldBeNil)
+			write(k, string(v))
 		}
 
 		Convey("Writing", func() {
@@ -65,8 +69,8 @@ func TestOutput(t *testing.T) {
 			So(unchanged, ShouldHaveLength, 0)
 			So(err, ShouldBeNil)
 
-			So(read("a"), ShouldResemble, []byte("111"))
-			So(read("dir/a"), ShouldResemble, []byte("222"))
+			So(read("a"), ShouldResemble, "111")
+			So(read("dir/a"), ShouldResemble, "222")
 
 			out.Data["a"] = BlobDatum("333")
 			changed, unchanged, err = out.Write(tmp)
@@ -74,7 +78,7 @@ func TestOutput(t *testing.T) {
 			So(unchanged, ShouldResemble, []string{"dir/a"})
 			So(err, ShouldBeNil)
 
-			So(read("a"), ShouldResemble, []byte("333"))
+			So(read("a"), ShouldResemble, "333")
 		})
 
 		Convey("DiscardChangesToUntracked", func() {
@@ -120,6 +124,96 @@ func TestOutput(t *testing.T) {
 				So(out.Data, ShouldHaveLength, 0)
 			})
 		})
+
+		Convey("Reading", func() {
+			out := Output{
+				Data: map[string]Datum{
+					"m1": BlobDatum("111"),
+					"m2": BlobDatum("222"),
+				},
+			}
+
+			Convey("Success", func() {
+				write("m1", "new 1")
+				write("m2", "new 2")
+
+				So(out.Read(tmp), ShouldBeNil)
+				So(out.Data, ShouldResemble, map[string]Datum{
+					"m1": BlobDatum("new 1"),
+					"m2": BlobDatum("new 2"),
+				})
+			})
+
+			Convey("Missing file", func() {
+				write("m1", "new 1")
+				So(out.Read(tmp), ShouldNotBeNil)
+			})
+		})
+
+		Convey("Compares protos semantically", func() {
+			// Write the initial version.
+			out := Output{
+				Data: map[string]Datum{
+					"m1": &MessageDatum{Header: "", Message: testMessage(111)},
+					"m2": &MessageDatum{Header: "# Header\n", Message: testMessage(222)},
+				},
+			}
+			changed, unchanged, err := out.Write(tmp)
+			So(changed, ShouldResemble, []string{"m1", "m2"})
+			So(unchanged, ShouldHaveLength, 0)
+			So(err, ShouldBeNil)
+
+			So(read("m1"), ShouldResemble, "i: 111\n")
+			So(read("m2"), ShouldResemble, "# Header\ni: 222\n")
+
+			Convey("Ignores formatting", func() {
+				// Mutate m2 in insignificant way (strip the header).
+				write("m2", "i:     222")
+
+				// If using semantic comparison, recognizes nothing has changed.
+				changed, unchanged, err := out.Compare(tmp, true)
+				So(changed, ShouldHaveLength, 0)
+				So(unchanged, ShouldResemble, []string{"m1", "m2"})
+				So(err, ShouldBeNil)
+
+				// Byte-to-byte comparison recognizes the change.
+				changed, unchanged, err = out.Compare(tmp, false)
+				So(changed, ShouldResemble, []string{"m2"})
+				So(unchanged, ShouldResemble, []string{"m1"})
+				So(err, ShouldBeNil)
+
+				// Write always reformats the files.
+				changed, unchanged, err = out.Write(tmp)
+				So(changed, ShouldResemble, []string{"m2"})
+				So(unchanged, ShouldResemble, []string{"m1"})
+				So(err, ShouldBeNil)
+
+				// Overwrote it on disk.
+				So(read("m2"), ShouldResemble, "# Header\ni: 222\n")
+			})
+
+			Convey("Detects real changes", func() {
+				// Overwrite m2 with something semantically different.
+				write("m2", "i: 333")
+
+				// Detected it.
+				changed, unchanged, err := out.Compare(tmp, true)
+				So(changed, ShouldResemble, []string{"m2"})
+				So(unchanged, ShouldResemble, []string{"m1"})
+				So(err, ShouldBeNil)
+			})
+
+			Convey("Handles bad protos", func() {
+				// Overwrite m2 with some garbage.
+				write("m2", "not a text proto")
+
+				// Detected the file as changed.
+				changed, unchanged, err := out.Compare(tmp, true)
+				So(changed, ShouldResemble, []string{"m2"})
+				So(unchanged, ShouldResemble, []string{"m1"})
+				So(err, ShouldBeNil)
+			})
+		})
 	})
 
 	Convey("ConfigSets", t, func() {
@@ -137,16 +231,22 @@ func TestOutput(t *testing.T) {
 		// Same data, as raw bytes.
 		everything := map[string][]byte{}
 		for k, v := range out.Data {
-			everything[k] = v.Bytes()
+			everything[k], _ = v.Bytes()
+		}
+
+		configSets := func() []ConfigSet {
+			cs, err := out.ConfigSets()
+			So(err, ShouldBeNil)
+			return cs
 		}
 
 		Convey("No roots", func() {
-			So(out.ConfigSets(), ShouldHaveLength, 0)
+			So(configSets(), ShouldHaveLength, 0)
 		})
 
 		Convey("Empty set", func() {
 			out.Roots["set"] = "zzz"
-			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+			So(configSets(), ShouldResemble, []ConfigSet{
 				{
 					Name: "set",
 					Data: map[string][]byte{},
@@ -156,7 +256,7 @@ func TestOutput(t *testing.T) {
 
 		Convey("`.` root", func() {
 			out.Roots["set"] = "."
-			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+			So(configSets(), ShouldResemble, []ConfigSet{
 				{
 					Name: "set",
 					Data: everything,
@@ -166,7 +266,7 @@ func TestOutput(t *testing.T) {
 
 		Convey("Subdir root", func() {
 			out.Roots["set"] = "dir1/."
-			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+			So(configSets(), ShouldResemble, []ConfigSet{
 				{
 					Name: "set",
 					Data: map[string][]byte{
@@ -182,7 +282,7 @@ func TestOutput(t *testing.T) {
 			out.Roots["set1"] = "dir1"
 			out.Roots["set2"] = "dir2"
 			out.Roots["set3"] = "dir1/sub" // intersecting sets are OK
-			So(out.ConfigSets(), ShouldResemble, []ConfigSet{
+			So(configSets(), ShouldResemble, []ConfigSet{
 				{
 					Name: "set1",
 					Data: map[string][]byte{
