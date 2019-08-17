@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 
 	"go.chromium.org/luci/starlark/interpreter"
-	"go.chromium.org/luci/starlark/starlarkprotov2"
+	"go.chromium.org/luci/starlark/starlarkproto"
 
 	_ "github.com/golang/protobuf/ptypes/any"
 	_ "github.com/golang/protobuf/ptypes/duration"
@@ -349,7 +349,7 @@ var (
 // protoLoader returns a loader that is capable of loading publicProtos.
 func protoLoader() interpreter.Loader {
 	once.Do(func() {
-		ploader := starlarkprotov2.NewLoader()
+		ploader := starlarkproto.NewLoader()
 
 		// Populate protobuf v2 loader using protobuf v1 registry embedded into
 		// the binary. This visits imports in topological order, to make sure all
@@ -380,7 +380,7 @@ func protoLoader() interpreter.Loader {
 }
 
 // addWithDeps loads dependencies of 'path', and then 'path' itself.
-func addWithDeps(l *starlarkprotov2.Loader, path string, visited stringset.Set) error {
+func addWithDeps(l *starlarkproto.Loader, path string, visited stringset.Set) error {
 	if !visited.Add(path) {
 		return nil // visited it already
 	}
@@ -425,7 +425,7 @@ func rawFileDescriptor(name string) ([]byte, []string, error) {
 // protoMessageDoc returns the message name and a link to its schema doc.
 //
 // If there's no documentation, returns two empty strings.
-func protoMessageDoc(msg *starlarkprotov2.Message) (name, doc string) {
+func protoMessageDoc(msg *starlarkproto.Message) (name, doc string) {
 	fd := msg.MessageType().Descriptor().ParentFile()
 	if fd == nil {
 		return "", ""
