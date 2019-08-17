@@ -47,7 +47,7 @@ service Recorder {
   // primary key. If insertion fails with a conflict, returns ALREADY_EXISTS.
   rpc InsertInvocation(Invocation) returns (Invocation) {};
 
-  // A request to update an existing non-final invocation.
+  // UpdateInvocation updates an existing non-final invocation.
   //
   // Compared to ResultStoreUpload:
   // - In a sense, combines UpdateInvocation, FinishInvocation,
@@ -63,8 +63,8 @@ service Recorder {
   // Request table cleanup will be performed out of band.
   rpc UpdateInvocation(UpdateInvocationRequest) returns (google.protobuf.Empty) {};
 
-  // A request to derive an invocation given a swarming task and insert if not
-  // already present.
+  // DeriveInvocation derives an invocation given a swarming task and inserts if
+  // not already present.
   //
   // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
   // in which we derive invocations given swarming task IDs, rather than have
@@ -114,12 +114,12 @@ message DeriveInvocationFromSwarmingRequest {
     // ID of swarming task to process and insert.
     string id = 2;
   }
-  // Swarming task to use in update.
+  // Swarming task.
   SwarmingTask task = 1;
 
   // Test path prefix.
   //
-  // Examples: "gn/{label}", "py_unittest", "telemetry".
+  // Examples: "gn/{label}/".
   //
   // See https://gn.googlesource.com/gn/+/master/docs/reference.md#labels for
   // label examples.
@@ -128,14 +128,10 @@ message DeriveInvocationFromSwarmingRequest {
   // * GTest: gn/{label}/{suite}/{case}
   // * javatests: gn/{label}/{full_java_method_name}
   // * web tests: gn/{label}/{file_name}
-  // * Python unittests: py_unittest/{package}.{class}.{method}
-  // * Telemtry: telemetry/{root_dir_path}:{test_suite}/{test_case}
-	string test_path_prefix = 2;
+  string test_path_prefix = 2;
 
-  // Test variant base.
-  //
-  // For Chromium, expected keys in the def map are "bucket", "builder",
-  // and "test_suite".
+  // Test variant base: for Chromium, expected keys in the def map are "bucket",
+  // "builder", and "test_suite".
   //
   // These get combined with the remainder of the test variant definition,
   // including test parameters and other key/value pairs may be derived from

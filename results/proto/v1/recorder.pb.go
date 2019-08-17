@@ -103,23 +103,22 @@ func (m *UpdateInvocationRequest) GetInvocation() *Invocation {
 }
 
 type DeriveInvocationFromSwarmingRequest struct {
-	// Swarming task to use in update.
+	// Swarming task.
 	Task *DeriveInvocationFromSwarmingRequest_SwarmingTask `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
 	// Test path prefix.
 	//
-	// Examples: "gn/{label}", "py_unittest", "telemetry".
+	// Examples: "gn/{label}/".
+	//
+	// See https://gn.googlesource.com/gn/+/master/docs/reference.md#labels for
+	// label examples.
 	//
 	// Generated test path examples:
 	// * GTest: gn/{label}/{suite}/{case}
 	// * javatests: gn/{label}/{full_java_method_name}
 	// * web tests: gn/{label}/{file_name}
-	// * Python unittests: py_unittest/{package}.{class}.{method}
-	// * Telemtry: telemetry/{root_dir_path}:{test_suite}/{test_case}
 	TestPathPrefix string `protobuf:"bytes,2,opt,name=test_path_prefix,json=testPathPrefix,proto3" json:"test_path_prefix,omitempty"`
-	// Test variant base.
-	//
-	// For Chromium, expected keys in the def map are "bucket", "builder",
-	// and "test_suite".
+	// Test variant base: for Chromium, expected keys in the def map are "bucket",
+	// "builder", and "test_suite".
 	//
 	// These get combined with the remainder of the test variant definition,
 	// including test parameters and other key/value pairs may be derived from
@@ -301,7 +300,7 @@ type RecorderClient interface {
 	// Impl note: transactionally inserts a new spanner row with invocation id
 	// primary key. If insertion fails with a conflict, returns ALREADY_EXISTS.
 	InsertInvocation(ctx context.Context, in *Invocation, opts ...grpc.CallOption) (*Invocation, error)
-	// A request to update an existing non-final invocation.
+	// UpdateInvocation updates an existing non-final invocation.
 	//
 	// Compared to ResultStoreUpload:
 	// - In a sense, combines UpdateInvocation, FinishInvocation,
@@ -316,8 +315,8 @@ type RecorderClient interface {
 	// the rest of the payload. If request insertion fails, exits successfully.
 	// Request table cleanup will be performed out of band.
 	UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	// A request to derive an invocation given a swarming task and insert if not
-	// already present.
+	// DeriveInvocation derives an invocation given a swarming task and inserts if
+	// not already present.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
@@ -415,7 +414,7 @@ type RecorderServer interface {
 	// Impl note: transactionally inserts a new spanner row with invocation id
 	// primary key. If insertion fails with a conflict, returns ALREADY_EXISTS.
 	InsertInvocation(context.Context, *Invocation) (*Invocation, error)
-	// A request to update an existing non-final invocation.
+	// UpdateInvocation updates an existing non-final invocation.
 	//
 	// Compared to ResultStoreUpload:
 	// - In a sense, combines UpdateInvocation, FinishInvocation,
@@ -430,8 +429,8 @@ type RecorderServer interface {
 	// the rest of the payload. If request insertion fails, exits successfully.
 	// Request table cleanup will be performed out of band.
 	UpdateInvocation(context.Context, *UpdateInvocationRequest) (*empty.Empty, error)
-	// A request to derive an invocation given a swarming task and insert if not
-	// already present.
+	// DeriveInvocation derives an invocation given a swarming task and inserts if
+	// not already present.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
