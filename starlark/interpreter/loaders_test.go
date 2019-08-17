@@ -22,9 +22,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-
-	// Register proto types in the protobuf lib registry.
-	_ "go.chromium.org/luci/starlark/starlarkproto/testprotos"
 )
 
 // runs a script in an environment where 'custom' package uses the given loader.
@@ -97,36 +94,6 @@ func TestLoaders(t *testing.T) {
 
 			_, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
 			So(err, ShouldErrLike, "cannot load //a/b/c/2.star: no such module")
-		})
-	})
-
-	Convey("ProtoLoader", t, func() {
-		Convey("Works", func() {
-			l := ProtoLoader(map[string]string{
-				"test.proto": "go.chromium.org/luci/starlark/starlarkproto/testprotos/test.proto",
-			})
-			logs, err := runScriptWithLoader(`
-				load("@custom//test.proto", "testprotos")
-				print(testprotos.SimpleFields(i64=123))
-			`, l)
-			So(err, ShouldBeNil)
-			So(logs, ShouldResemble, []string{
-				"[@stdlib//builtins.star:3] i64:123 ",
-			})
-		})
-
-		Convey("Not allowed proto", func() {
-			l := ProtoLoader(nil) // empty whitelist of allowed protos
-			_, err := runScriptWithLoader(`load("@custom//nope.proto", "test")`, l)
-			So(err, ShouldErrLike, "cannot load @custom//nope.proto: no such module")
-		})
-
-		Convey("Unknown proto", func() {
-			l := ProtoLoader(map[string]string{
-				"unknown.proto": "not_in_the_registry.proto",
-			})
-			_, err := runScriptWithLoader(`load("@custom//unknown.proto", "test")`, l)
-			So(err, ShouldErrLike, "cannot load @custom//unknown.proto: no such proto file registered")
 		})
 	})
 }
