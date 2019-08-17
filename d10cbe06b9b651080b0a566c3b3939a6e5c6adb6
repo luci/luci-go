@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "08ecaad4_f831cf4f",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-17T01:21:40Z",
+      "side": 1,
+      "message": "It will tell the user to run `lucicfg generate some.star`, which is correct.",
+      "parentUuid": "e35fc4a5_67114519",
+      "range": {
+        "startLine": 184,
+        "startChar": 13,
+        "endLine": 184,
+        "endChar": 32
+      },
+      "revId": "d10cbe06b9b651080b0a566c3b3939a6e5c6adb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4e6b377e_e8443eb4",
         "filename": "lucicfg/cli/cmds/validate/validate.go",
         "patchSetId": 11
@@ -68,6 +92,30 @@
       "revId": "d10cbe06b9b651080b0a566c3b3939a6e5c6adb6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b27a5e7_13891499",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-17T01:21:40Z",
+      "side": 1,
+      "message": "No, this error can happen if files on disk disappeared in 100us between lines 174 and here. \u0027Read\u0027 just reads files on disk, validation happens below in ValidateOutput.",
+      "parentUuid": "4e6b377e_e8443eb4",
+      "range": {
+        "startLine": 193,
+        "startChar": 18,
+        "endLine": 193,
+        "endChar": 21
+      },
+      "revId": "d10cbe06b9b651080b0a566c3b3939a6e5c6adb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
