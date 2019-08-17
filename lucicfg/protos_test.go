@@ -19,7 +19,10 @@ import (
 	"fmt"
 	"testing"
 
+	"go.starlark.net/starlark"
+
 	"go.chromium.org/luci/starlark/interpreter"
+	"go.chromium.org/luci/starlark/starlarkprotov2"
 
 	_ "go.chromium.org/luci/lucicfg/testproto"
 
@@ -37,6 +40,24 @@ func init() {
 		"go.chromium.org/luci/lucicfg/testproto/test.proto",
 		"https://example.com/proto-doc",
 	}
+}
+
+// testMessage returns new testproto.Msg as a Starlark value to be used from
+// tests.
+func testMessage(i int) *starlarkprotov2.Message {
+	testproto, _, err := protoLoader()("test.proto")
+	if err != nil {
+		panic(err)
+	}
+	msgT, err := testproto["testproto"].(starlark.HasAttrs).Attr("Msg")
+	if err != nil {
+		panic(err)
+	}
+	msg := msgT.(*starlarkprotov2.MessageType).Message()
+	if err := msg.SetField("i", starlark.MakeInt(i)); err != nil {
+		panic(err)
+	}
+	return msg
 }
 
 func TestProtosAreImportable(t *testing.T) {
@@ -61,4 +82,14 @@ func TestProtosAreImportable(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 	}
+
+	// Note: testMessage() is used by other tests. This test verifies it works
+	// at all.
+	Convey("testMessage works", t, func() {
+		i, err := testMessage(123).Attr("i")
+		So(err, ShouldBeNil)
+		asInt, err := starlark.AsInt32(i)
+		So(err, ShouldBeNil)
+		So(asInt, ShouldEqual, 123)
+	})
 }

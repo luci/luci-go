@@ -124,7 +124,11 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 		}
 		for name, body := range output.Data {
 			if strings.HasSuffix(name, pair.name) {
-				pair.generated = body.Bytes()
+				var err error
+				if pair.generated, err = body.Bytes(); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to serialize generated %q: %s\n", name, err)
+					fail = true
+				}
 				break
 			}
 		}

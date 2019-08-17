@@ -44,9 +44,9 @@ type ConfigServiceFactory func(ctx context.Context, host string) (*config.Servic
 // Dumps validation errors to the logger. In addition to detailed validation
 // results, also returns a multi-error with all validation and RPC errors.
 func ValidateOutput(ctx context.Context, output lucicfg.Output, svc ConfigServiceFactory, host string, failOnWarns bool) ([]*lucicfg.ValidationResult, error) {
-	configSets := output.ConfigSets()
-	if len(configSets) == 0 {
-		return nil, nil // nothing to validate
+	configSets, err := output.ConfigSets()
+	if len(configSets) == 0 || err != nil {
+		return nil, err // nothing to validate or failed to serialize
 	}
 
 	// Log the warning only if there were some config sets we needed to validate.
