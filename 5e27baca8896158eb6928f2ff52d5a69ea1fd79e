@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "384df8d5_6d772783",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T01:44:21Z",
+      "side": 1,
+      "message": "Ah, sorry, missed this one",
+      "parentUuid": "aed75f05_5a97efb8",
+      "range": {
+        "startLine": 39,
+        "startChar": 5,
+        "endLine": 39,
+        "endChar": 6
+      },
+      "revId": "5e27baca8896158eb6928f2ff52d5a69ea1fd79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4f9972dd_75afc66b",
         "filename": "results/recorder/chromium/swarming.go",
         "patchSetId": 10
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "c4650ffb_ae9a60e1",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T01:44:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f9972dd_75afc66b",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 9
+      },
+      "revId": "5e27baca8896158eb6928f2ff52d5a69ea1fd79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8fe12bb2_e66efa2f",
         "filename": "results/recorder/chromium/swarming_test.go",
         "patchSetId": 10
@@ -62,6 +110,24 @@
       "revId": "5e27baca8896158eb6928f2ff52d5a69ea1fd79e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1179ccda_9cafa95b",
+        "filename": "results/recorder/chromium/swarming_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T01:44:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8fe12bb2_e66efa2f",
+      "revId": "5e27baca8896158eb6928f2ff52d5a69ea1fd79e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
