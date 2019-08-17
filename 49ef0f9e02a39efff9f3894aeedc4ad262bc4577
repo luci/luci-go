@@ -265,6 +265,24 @@
       "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2fb8ccc4_e059d619",
+        "filename": "results/proto/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T02:12:01Z",
+      "side": 1,
+      "message": "Oh, no, I meant the reordering of messages, which was the first thing you had noted. IOW, the question is whether you would have preferred all the reordering (in order to follow the order specified in  https://cloud.google.com/apis/design/file_structure, which notes not only message order but also imports, options, etc.) to be in a separate CL",
+      "parentUuid": "6b4bbe1b_30a362ba",
+      "revId": "49ef0f9e02a39efff9f3894aeedc4ad262bc4577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

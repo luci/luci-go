@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7930c765_0dec1290",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T02:12:01Z",
+      "side": 1,
+      "message": "I was trying to keep consistent with the message above, but it wasn\u0027t internally consistent with the message above either :) Updated both.",
+      "parentUuid": "86f254a9_e2d1ed3e",
+      "range": {
+        "startLine": 66,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 24
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e157291_311972ba",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 9
@@ -62,6 +86,30 @@
       "revId": "31ff469484e38db9e046483a41a162073c12ebab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6530f7e_3b0eb974",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T02:12:01Z",
+      "side": 1,
+      "message": "Yes, and \"swarming task\" should be self-explanatory from message name too",
+      "parentUuid": "306f179c_c3aadb42",
+      "range": {
+        "startLine": 117,
+        "startChar": 26,
+        "endLine": 117,
+        "endChar": 36
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +159,54 @@
     },
     {
       "key": {
+        "uuid": "927baa24_476f8815",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T02:12:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aff15ba2_caccc012",
+      "range": {
+        "startLine": 122,
+        "startChar": 26,
+        "endLine": 122,
+        "endChar": 27
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1a2c60ac_4993fc6f",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T02:12:01Z",
+      "side": 1,
+      "message": "I thought we do, no?\n\nJuan\u0027s example of https://test-results.appspot.com/dashboards/flakiness_dashboard.html#testType\u003dtelemetry_unittests\u0026builder\u003dchromium.linux%3ALinux%20Tests has telemetry/page/page_run_end_to_end_unittest/ActualPageRunEndToEndTests/testTrafficSettings as an example, which in turn in e.g. https://ci.chromium.org/p/chromium/builders/ci/Linux%20Tests/80871 is run within https://chromium-swarm.appspot.com/task?id\u003d46b5f5b49078f610 (shard #3 of telemetry_unittests) Maybe I misunderstand what you mean?\n\nRemoved for now though",
+      "parentUuid": "71dbdd76_c1309757",
+      "range": {
+        "startLine": 122,
+        "startChar": 30,
+        "endLine": 122,
+        "endChar": 56
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "22a1c958_e74f30f1",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 9
@@ -134,6 +230,30 @@
     },
     {
       "key": {
+        "uuid": "b4cc71e2_81e5da7d",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T02:12:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22a1c958_e74f30f1",
+      "range": {
+        "startLine": 133,
+        "startChar": 0,
+        "endLine": 133,
+        "endChar": 1
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f81ecd39_8364380a",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 9
@@ -154,6 +274,30 @@
       "revId": "31ff469484e38db9e046483a41a162073c12ebab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "764bb86f_8ddea603",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-17T02:12:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f81ecd39_8364380a",
+      "range": {
+        "startLine": 135,
+        "startChar": 2,
+        "endLine": 135,
+        "endChar": 23
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
