@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "04adf63b_f8d31cae",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-17T19:46:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f7d5d03e_f95dfbb9",
+      "range": {
+        "startLine": 46,
+        "startChar": 63,
+        "endLine": 46,
+        "endChar": 73
+      },
+      "revId": "d10cbe06b9b651080b0a566c3b3939a6e5c6adb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e35fc4a5_67114519",
         "filename": "lucicfg/cli/cmds/validate/validate.go",
         "patchSetId": 11
