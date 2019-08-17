@@ -23,9 +23,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-
-	// Register proto types in the protobuf lib registry.
-	_ "go.chromium.org/luci/starlark/starlarkproto/testprotos"
 )
 
 func TestMakeModuleKey(t *testing.T) {

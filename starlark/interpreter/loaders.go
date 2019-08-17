@@ -23,7 +23,6 @@ import (
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/starlark/starlarkproto"
 )
 
 // FileSystemLoader returns a loader that loads files from the file system.
@@ -60,36 +59,5 @@ func MemoryLoader(files map[string]string) Loader {
 			return nil, "", ErrNoModule
 		}
 		return nil, body, nil
-	}
-}
-
-// ProtoLoader returns a loader that is capable of loading protobuf modules.
-//
-// Takes a mapping from a starlark module name to a corresponding *.proto file,
-// as registered in the process's protobuf registry (look for
-// proto.RegisterFile(...) calls in *.pb.go).
-//
-// For example, passing {"service/api.proto": "go.chromium.org/.../api.proto"}
-// and using the resulting loader as @proto package, would allow to load API
-// protos via load("@proto//service/api.proto", ...).
-//
-// This decouples observable Starlark proto module layout from a layout of Go
-// packages in the interpreter.
-//
-// If a requested module is not found in 'modules', returns ErrNoModule. Thus
-// 'modules' also acts as a whitelist of what proto packages can be accessed
-// from Starlark.
-//
-// On success the returned dict has a single struct named after the proto
-// package. It has all message constructors defined inside. See 'starlarkproto'
-// package for more info.
-func ProtoLoader(modules map[string]string) Loader {
-	return func(path string) (dict starlark.StringDict, _ string, err error) {
-		p := modules[path]
-		if p == "" {
-			return nil, "", ErrNoModule
-		}
-		dict, err = starlarkproto.LoadProtoModule(p)
-		return
 	}
 }
