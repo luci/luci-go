@@ -22,7 +22,7 @@ import (
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/starlark/interpreter"
-	"go.chromium.org/luci/starlark/starlarkprotov2"
+	"go.chromium.org/luci/starlark/starlarkproto"
 
 	_ "go.chromium.org/luci/lucicfg/testproto"
 
@@ -44,7 +44,7 @@ func init() {
 
 // testMessage returns new testproto.Msg as a Starlark value to be used from
 // tests.
-func testMessage(i int) *starlarkprotov2.Message {
+func testMessage(i int) *starlarkproto.Message {
 	testproto, _, err := protoLoader()("test.proto")
 	if err != nil {
 		panic(err)
@@ -53,7 +53,7 @@ func testMessage(i int) *starlarkprotov2.Message {
 	if err != nil {
 		panic(err)
 	}
-	msg := msgT.(*starlarkprotov2.MessageType).Message()
+	msg := msgT.(*starlarkproto.MessageType).Message()
 	if err := msg.SetField("i", starlark.MakeInt(i)); err != nil {
 		panic(err)
 	}
