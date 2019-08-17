@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7d5d03e_f95dfbb9",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-17T01:15:45Z",
+      "side": 1,
+      "message": "you\u0027re gonna hate me, but, can we have a \u0027strict\u0027 mode too, so repos can opt-in to the stricter behavior (i.e. \"if I ran lucicfg generate it would produce no diffs\")?",
+      "range": {
+        "startLine": 46,
+        "startChar": 63,
+        "endLine": 46,
+        "endChar": 73
+      },
+      "revId": "d10cbe06b9b651080b0a566c3b3939a6e5c6adb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e35fc4a5_67114519",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-17T01:15:45Z",
+      "side": 1,
+      "message": "iiuc this format correctly, it will tell the user\n\n  Run `lucicfg generate \"thing, thing, thing\"`\n\nIs this syntax actually correct?",
+      "range": {
+        "startLine": 184,
+        "startChar": 13,
+        "endLine": 184,
+        "endChar": 32
+      },
+      "revId": "d10cbe06b9b651080b0a566c3b3939a6e5c6adb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e6b377e_e8443eb4",
+        "filename": "lucicfg/cli/cmds/validate/validate.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-17T01:15:45Z",
+      "side": 1,
+      "message": "may be worth annotating this error, since I think this means:\n\n* something semantically changed on the server side (i.e. it was fine before, but now it sucks). In this case they need to fix their shit, regenerating won\u0027t do anything.\n* a syntax error causes the server to reject them (which... not sure how, but, maybe?). In this case you may want to call out the fact that what we sent the server is different than what lucicfg would have generated, so regenerating might help.\n\nRight?",
+      "range": {
+        "startLine": 193,
+        "startChar": 18,
+        "endLine": 193,
+        "endChar": 21
+      },
+      "revId": "d10cbe06b9b651080b0a566c3b3939a6e5c6adb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
