@@ -1,0 +1,37 @@
+// Copyright 2018 The Swarming Authors. All rights reserved.
+// Use of this source code is governed by the Apache v2.0 license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package internal.testing;
+
+option go_package = "testingpb";
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+
+message Some {
+  int64 i = 1;
+}
+
+message Simple {
+  int64 id = 1;
+  Some some = 2;
+  google.protobuf.FieldMask fields = 100;
+}
+
+message Props {
+  google.protobuf.Struct properties = 6;
+  google.protobuf.FieldMask fields = 100;
+}
+
+message WithInner {
+  message Inner {
+    oneof msg {
+      Simple simple = 1;
+      Props props = 2;
+    }
+  }
+  repeated Inner msgs = 1;
+}

@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/proto/internal/testingpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -43,7 +43,7 @@ func TestFixFieldMasks(t *testing.T) {
 		}
 		Convey("No field masks", func() {
 			testFix(
-				buildbucketpb.GetBuildRequest{},
+				testingpb.Simple{},
 				`{
 					"id": 1
 				}`,
@@ -55,15 +55,15 @@ func TestFixFieldMasks(t *testing.T) {
 
 		Convey("Works", func() {
 			testFix(
-				buildbucketpb.GetBuildRequest{},
+				testingpb.Simple{},
 				`{
-					"fields": "id,createTime"
+					"fields": "id,someField"
 				}`,
 				`{
 					"fields": {
 						"paths": [
 							"id",
-							"create_time"
+							"some_field"
 						]
 					}
 				}`,
@@ -72,7 +72,7 @@ func TestFixFieldMasks(t *testing.T) {
 
 		Convey("Properties", func() {
 			testFix(
-				buildbucketpb.ScheduleBuildRequest{},
+				testingpb.Props{},
 				`{
 					"properties": {
 						"foo": "bar"
@@ -88,24 +88,24 @@ func TestFixFieldMasks(t *testing.T) {
 
 		Convey("Nested type", func() {
 			testFix(
-				buildbucketpb.BatchRequest{},
+				testingpb.WithInner{},
 				`{
-					"requests": [
+					"msgs": [
 						{
-							"getBuild": {
-								"fields": "id,createTime"
+							"simple": {
+								"fields": "id,someField"
 							}
 						}
 					]
 				}`,
 				`{
-					"requests": [
+					"msgs": [
 						{
-							"getBuild": {
+							"simple": {
 								"fields": {
 									"paths": [
 										"id",
-										"create_time"
+										"some_field"
 									]
 								}
 							}
@@ -119,16 +119,16 @@ func TestFixFieldMasks(t *testing.T) {
 			input := `{
 				"a": 1
 			}`
-			_, err := FixFieldMasks([]byte(input), reflect.TypeOf(buildbucketpb.GetBuildRequest{}))
+			_, err := FixFieldMasks([]byte(input), reflect.TypeOf(testingpb.Simple{}))
 			So(err, ShouldErrLike, `unexpected field path "a"`)
 		})
 
 		Convey("invalid field nested", func() {
 			input := `{
-				"builder": {"a": 1}
+				"some": {"a": 1}
 			}`
-			_, err := FixFieldMasks([]byte(input), reflect.TypeOf(buildbucketpb.GetBuildRequest{}))
-			So(err, ShouldErrLike, `unexpected field path "builder.a"`)
+			_, err := FixFieldMasks([]byte(input), reflect.TypeOf(testingpb.Simple{}))
+			So(err, ShouldErrLike, `unexpected field path "some.a"`)
 		})
 
 		Convey("quotes", func() {

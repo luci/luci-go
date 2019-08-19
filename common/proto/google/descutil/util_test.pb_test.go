@@ -10,6 +10,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -527,6 +529,14 @@ type S1Server interface {
 	R1(context.Context, *M1) (*M2, error)
 }
 
+// UnimplementedS1Server can be embedded to have forward compatible implementations.
+type UnimplementedS1Server struct {
+}
+
+func (*UnimplementedS1Server) R1(ctx context.Context, req *M1) (*M2, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method R1 not implemented")
+}
+
 func RegisterS1Server(s prpc.Registrar, srv S1Server) {
 	s.RegisterService(&_S1_serviceDesc, srv)
 }
@@ -629,6 +639,17 @@ type S2Server interface {
 	R1(context.Context, *M1) (*M2, error)
 	// R2
 	R2(context.Context, *M1) (*M2, error)
+}
+
+// UnimplementedS2Server can be embedded to have forward compatible implementations.
+type UnimplementedS2Server struct {
+}
+
+func (*UnimplementedS2Server) R1(ctx context.Context, req *M1) (*M2, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method R1 not implemented")
+}
+func (*UnimplementedS2Server) R2(ctx context.Context, req *M1) (*M2, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method R2 not implemented")
 }
 
 func RegisterS2Server(s prpc.Registrar, srv S2Server) {

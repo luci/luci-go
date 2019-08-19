@@ -12,6 +12,8 @@ import (
 	duration "github.com/golang/protobuf/ptypes/duration"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -557,6 +559,17 @@ type AccessServer interface {
 	// with the API.
 	// If the concepts returned by this RPC are internal, it should be restricted.
 	Description(context.Context, *empty.Empty) (*DescriptionResponse, error)
+}
+
+// UnimplementedAccessServer can be embedded to have forward compatible implementations.
+type UnimplementedAccessServer struct {
+}
+
+func (*UnimplementedAccessServer) PermittedActions(ctx context.Context, req *PermittedActionsRequest) (*PermittedActionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PermittedActions not implemented")
+}
+func (*UnimplementedAccessServer) Description(ctx context.Context, req *empty.Empty) (*DescriptionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Description not implemented")
 }
 
 func RegisterAccessServer(s prpc.Registrar, srv AccessServer) {
