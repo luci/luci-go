@@ -49,15 +49,16 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// SwarmingService is an interface that fetches data from Swarming.
+// swarmingService is an interface that fetches data from Swarming.
 //
 // In production, this is fetched from a Swarming host. For testing, this can
 // be replaced with a mock.
-type SwarmingService interface {
+type swarmingService interface {
 	GetHost() string
 	GetSwarmingResult(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error)
 	GetSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
 	GetTaskOutput(c context.Context, taskID string) (string, error)
+	Close()
 }
 
 // ErrNotMiloJob is returned if a Swarming task is fetched that does not self-
@@ -95,7 +96,6 @@ const (
 )
 
 func getSwarmingClient(c context.Context, host string) (*swarming.Service, error) {
-	c, _ = context.WithTimeout(c, 60*time.Second)
 	t, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		return nil, err
@@ -111,6 +111,7 @@ func getSwarmingClient(c context.Context, host string) (*swarming.Service, error
 type prodSwarmingService struct {
 	host   string
 	client *swarming.Service
+	cancel func()
 }
 
 func newProdService(c context.Context, host string) (*prodSwarmingService, error) {
@@ -119,13 +120,18 @@ func newProdService(c context.Context, host string) (*prodSwarmingService, error
 		return nil, err
 	}
 
+	c, cancel := context.WithTimeout(c, 60*time.Second)
+
 	client, err := getSwarmingClient(c, host)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
+
 	return &prodSwarmingService{
 		host:   host,
 		client: client,
+		cancel: cancel,
 	}, nil
 }
 
@@ -145,6 +151,10 @@ func (svc *prodSwarmingService) GetTaskOutput(c context.Context, taskID string) 
 
 func (svc *prodSwarmingService) GetSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
 	return svc.client.Task.Request(taskID).Context(c).Do()
+}
+
+func (svc *prodSwarmingService) Close() {
+	svc.cancel()
 }
 
 type swarmingFetchParams struct {
@@ -173,7 +183,7 @@ type swarmingFetchResult struct {
 // After fetching, an ACL check is performed to confirm that the user is
 // permitted to view the resulting data. If this check fails, get returns
 // errNotMiloJob.
-func swarmingFetch(c context.Context, svc SwarmingService, taskID string, req swarmingFetchParams) (
+func swarmingFetch(c context.Context, svc swarmingService, taskID string, req swarmingFetchParams) (
 	*swarmingFetchResult, error) {
 
 	// logErr is managed separately from other fetch errors, since in some
@@ -540,7 +550,7 @@ func failedToStart(c context.Context, build *ui.MiloBuildLegacy, res *swarming.S
 
 // swarmingFetchMaybeLogs fetches the swarming task result.  It also fetches
 // the log iff the task is not a logdog enabled task.
-func swarmingFetchMaybeLogs(c context.Context, svc SwarmingService, taskID string) (
+func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID string) (
 	*swarmingFetchResult, *types.StreamAddr, error) {
 	// Fetch the data from Swarming
 	var logDogStreamAddr *types.StreamAddr
@@ -629,7 +639,7 @@ func addFailureSummary(b *ui.MiloBuildLegacy) {
 
 // SwarmingBuildImpl fetches data from Swarming and LogDog and produces a resp.MiloBuildLegacy
 // representation of a build state given a Swarming TaskID.
-func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*ui.MiloBuildLegacy, error) {
+func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*ui.MiloBuildLegacy, error) {
 	// First, get the task result from swarming, and maybe the logs.
 	fr, logDogStreamAddr, err := swarmingFetchMaybeLogs(c, svc, taskID)
 	if err != nil {
@@ -845,6 +855,7 @@ func GetBuild(c context.Context, host, taskID string) (*ui.MiloBuildLegacy, erro
 	if err != nil {
 		return nil, err
 	}
+	defer sf.Close()
 
 	return SwarmingBuildImpl(c, sf, taskID)
 }
@@ -857,6 +868,7 @@ func BuildbucketBuildIDFromTask(c context.Context, host, taskID string) (int64, 
 	if err != nil {
 		return 0, err
 	}
+	defer sf.Close()
 
 	res, err := sf.client.Task.Request(taskID).Context(c).Do()
 	switch err := err.(type) {
@@ -901,6 +913,7 @@ func GetLog(c context.Context, host, taskID, logname string) (text string, close
 	if err != nil {
 		return
 	}
+	defer sf.Close()
 
 	return swarmingBuildLogImpl(c, sf, taskID, logname)
 }

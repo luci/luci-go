@@ -31,14 +31,14 @@ import (
 // In a production system, this will be completely defaults. For testing, the
 // various services and data sources may be substituted for testing stubs.
 type BuildInfoProvider struct {
-	// swarmingServiceFunc returns a SwarmingService instance for the supplied
+	// swarmingServiceFunc returns a swarmingService instance for the supplied
 	// parameters.
 	//
 	// If nil, a production fetcher will be generated.
-	swarmingServiceFunc func(c context.Context, host string) (SwarmingService, error)
+	swarmingServiceFunc func(c context.Context, host string) (swarmingService, error)
 }
 
-func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (SwarmingService, error) {
+func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (swarmingService, error) {
 	if p.swarmingServiceFunc == nil {
 		return newProdService(c, host)
 	}
@@ -55,6 +55,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 		logging.WithError(err).Errorf(c, "Failed to create Swarming fetcher.")
 		return nil, grpcutil.Internal
 	}
+	defer sf.Close()
 
 	// Use default Swarming host.
 	host := sf.GetHost()
