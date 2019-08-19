@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "440faa0c_e70effee",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-19T22:55:29Z",
+      "side": 1,
+      "message": "todo: add this method to common/proto (e.g. `proto.LUCIMetadata(msg)`)",
+      "range": {
+        "startLine": 446,
+        "startChar": 4,
+        "endLine": 446,
+        "endChar": 8
+      },
+      "revId": "fa873ce22774537a8c95f9045a7dae1c6dfed0ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
