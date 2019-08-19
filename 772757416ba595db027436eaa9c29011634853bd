@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "973535e4_a9213110",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-19T06:56:43Z",
+      "side": 1,
+      "message": "\"SwarmingTask task\" is actually pretty self-explanatory given the RPC message is \"DeriveInvocationFromSwarmingRequest\"",
+      "parentUuid": "dac0dc46_357f3e66",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 117,
+        "endChar": 19
+      },
+      "revId": "772757416ba595db027436eaa9c29011634853bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2da71944_b4dfd1e9",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 11
@@ -45,6 +69,30 @@
       "revId": "772757416ba595db027436eaa9c29011634853bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66a4236b_802abf74",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-19T06:56:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2da71944_b4dfd1e9",
+      "range": {
+        "startLine": 122,
+        "startChar": 18,
+        "endLine": 122,
+        "endChar": 19
+      },
+      "revId": "772757416ba595db027436eaa9c29011634853bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
