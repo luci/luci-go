@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+//go:generate cproto
 
-package testproto;
-
-import "go.chromium.org/luci/lucicfg/protos/options.proto";
-
-option (lucicfg.file_metadata) = {
-  doc_url: "https://example.com/proto-doc";
-};
-
-message Msg {
-  int64 i = 1;
-}
+// Package protos is utilities for proto messages.
+package protos
