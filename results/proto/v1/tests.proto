@@ -19,9 +19,9 @@ package luci.resultsdb;
 // TODO(jchinlee): Update protos and clarify documentation when finalized.
 // Currently, these are for experimentation/iteration.
 
-option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
-
 import "go.chromium.org/luci/results/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
 
 // Specifies search predicate on test variants of results to return.
 message TestVariantIDPredicate {
