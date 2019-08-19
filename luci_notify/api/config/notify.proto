@@ -13,8 +13,13 @@ package notify;
 
 option go_package = "config";
 
-import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import "go.chromium.org/luci/common/proto/options.proto";
+
+option (luci.file_metadata) = {
+  doc_url: "https://luci-config.appspot.com/schemas/projects:luci-notify.cfg";
+};
 
 // ProjectConfig is a luci-notify configuration for a particular project.
 message ProjectConfig {

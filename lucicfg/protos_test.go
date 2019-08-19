@@ -34,11 +34,9 @@ func init() {
 	publicProtos["test.proto"] = struct {
 		protoPkg string
 		goPath   string
-		docURL   string
 	}{
 		"testproto",
 		"go.chromium.org/luci/lucicfg/testproto/test.proto",
-		"https://example.com/should-be-ignored",
 	}
 }
 

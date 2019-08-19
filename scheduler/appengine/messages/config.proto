@@ -18,6 +18,12 @@ package scheduler.config;
 
 option go_package = "messages";
 
+import "go.chromium.org/luci/common/proto/options.proto";
+
+option (luci.file_metadata) = {
+  doc_url: "https://luci-config.appspot.com/schemas/projects:luci-scheduler.cfg";
+};
+
 
 // ProjectConfig defines a schema for a config file that describe jobs belonging
 // to some project.
