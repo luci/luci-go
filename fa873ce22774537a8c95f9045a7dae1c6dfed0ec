@@ -22,6 +22,30 @@
       "revId": "fa873ce22774537a8c95f9045a7dae1c6dfed0ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7680518_0d5bb2a2",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-19T23:09:41Z",
+      "side": 1,
+      "message": "Done, but I haven\u0027t really investigated how to access options using purely v1 API.",
+      "parentUuid": "440faa0c_e70effee",
+      "range": {
+        "startLine": 446,
+        "startChar": 4,
+        "endLine": 446,
+        "endChar": 8
+      },
+      "revId": "fa873ce22774537a8c95f9045a7dae1c6dfed0ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
