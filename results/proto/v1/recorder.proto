@@ -19,14 +19,15 @@ package luci.resultsdb;
 // TODO(jchinlee): Update protos and clarify documentation when finalized.
 // Currently, these are for experimentation/iteration.
 
-option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
-
 import "google/protobuf/empty.proto";
+import "go.chromium.org/luci/results/proto/v1/common.proto";
 import "go.chromium.org/luci/results/proto/v1/invocation.proto";
+
+option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
 
 // Service to record test results.
 service Recorder {
-  // InsertInvocation creates a new invocation.
+  // Creates a new invocation.
   //
   // If invocation with the given ID already exists, returns ALREADY_EXISTS
   // error code.
@@ -46,7 +47,7 @@ service Recorder {
   // primary key. If insertion fails with a conflict, returns ALREADY_EXISTS.
   rpc InsertInvocation(Invocation) returns (Invocation) {};
 
-  // A request to update an existing non-final invocation.
+  // Updates an existing non-final invocation.
   //
   // Compared to ResultStoreUpload:
   // - In a sense, combines UpdateInvocation, FinishInvocation,
@@ -61,6 +62,14 @@ service Recorder {
   // the rest of the payload. If request insertion fails, exits successfully.
   // Request table cleanup will be performed out of band.
   rpc UpdateInvocation(UpdateInvocationRequest) returns (google.protobuf.Empty) {};
+
+  // Derives an invocation given a swarming task and inserts if not already
+  // present.
+  //
+  // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
+  // in which we derive invocations given swarming task IDs, rather than have
+  // tasks make RPCs directly.
+  rpc DeriveInvocationFromSwarming(DeriveInvocationFromSwarmingRequest) returns (Invocation) {};
 }
 
 message UpdateInvocationRequest {
@@ -95,4 +104,37 @@ message UpdateInvocationRequest {
   // Invocation.update_token is required and must match the token
   // returned by CreateInvocation.
   Invocation invocation = 2;
+}
+
+message DeriveInvocationFromSwarmingRequest {
+  message SwarmingTask {
+    // Swarming host of task.
+    string hostname = 1;
+
+    // ID of swarming task to process and insert.
+    string id = 2;
+  }
+  // Swarming task from which to derive invocation.
+  SwarmingTask task = 1;
+
+  // Test path prefix.
+  //
+  // Examples: "gn://{label}/".
+  //
+  // See https://gn.googlesource.com/gn/+/master/docs/reference.md#labels for
+  // label examples.
+  //
+  // Generated test path examples:
+  // * GTest: gn/{label}/{suite}/{case}
+  // * javatests: gn/{label}/{full_java_method_name}
+  // * web tests: gn/{label}/{file_name}
+  string test_path_prefix = 2;
+
+  // Test variant base. These get combined with the remainder of the test
+  // variant definition, including test parameters and other key/value pairs
+  // that may be derived from the swarming task.
+  //
+  // For Chromium, expected keys in the def map are "bucket", "builder", and
+  // "test_suite".
+  VariantDef base_test_variant = 3;
 }

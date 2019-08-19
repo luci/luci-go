@@ -20,10 +20,18 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 
+	luciauth "go.chromium.org/luci/auth"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+
+	resultspb "go.chromium.org/luci/results/proto/v1"
 )
 
 func main() {
@@ -42,9 +50,29 @@ func main() {
 		c.Writer.Write([]byte("DEV Hello, world"))
 	})
 
-	// TODO: handle gRPC.
+	// Register pRPC endpoints.
+	prpc.RegisterDefaultAuth(&auth.Authenticator{
+		Methods: []auth.Method{
+			&auth.GoogleOAuth2Method{
+				Scopes: []string{luciauth.OAuthScopeEmail},
+			},
+		},
+	})
+	InstallHandlers(srv.Routes)
 
 	if err := srv.ListenAndServe(); err != nil {
 		os.Exit(1)
 	}
+}
+
+// InstallHandlers installs the pRPC endpoint handlers.
+func InstallHandlers(r *router.Router) {
+	apiServer := prpc.Server{
+		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(grpcutil.NewUnaryServerPanicCatcher(nil)),
+	}
+
+	resultspb.RegisterRecorderServer(&apiServer, &RecorderServer{})
+
+	discovery.Enable(&apiServer)
+	apiServer.InstallHandlers(r, router.MiddlewareChain{})
 }
