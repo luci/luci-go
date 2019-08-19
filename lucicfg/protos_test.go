@@ -38,7 +38,7 @@ func init() {
 	}{
 		"testproto",
 		"go.chromium.org/luci/lucicfg/testproto/test.proto",
-		"https://example.com/proto-doc",
+		"https://example.com/should-be-ignored",
 	}
 }
 
@@ -60,7 +60,7 @@ func testMessage(i int) *starlarkproto.Message {
 	return msg
 }
 
-func TestProtosAreImportable(t *testing.T) {
+func TestProtos(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -91,5 +91,11 @@ func TestProtosAreImportable(t *testing.T) {
 		asInt, err := starlark.AsInt32(i)
 		So(err, ShouldBeNil)
 		So(asInt, ShouldEqual, 123)
+	})
+
+	Convey("Doc URL works", t, func() {
+		name, doc := protoMessageDoc(testMessage(123))
+		So(name, ShouldEqual, "Msg")
+		So(doc, ShouldEqual, "https://example.com/proto-doc") // see testproto/test.proto
 	})
 }

@@ -32,8 +32,10 @@ import (
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/proto"
 
 	"go.chromium.org/luci/starlark/interpreter"
+	"go.chromium.org/luci/starlark/protohacks"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
 	_ "github.com/golang/protobuf/ptypes/any"
@@ -430,13 +432,40 @@ func protoMessageDoc(msg *starlarkproto.Message) (name, doc string) {
 	if fd == nil {
 		return "", ""
 	}
+	msgName := string(msg.MessageType().Descriptor().Name())
+
+	// Try to grab doc_url from `option (lucicfg.file_metadata) = {...}` embedded
+	// into the proto descriptor. Since we still use proto v1 as our *.go code
+	// generator, but proto v2 as our runtime API, there are some interoperability
+	// issues we solve by round-tripping descriptorpb.FileOptions message through
+	// proto serialization (we serialize it as v2 proto, and deserialize it as v1
+	// proto, which allows us to use code-generated proto extensions API).
+	//
+	// If something fails, just give up, it's not a crucial functionality. Note
+	// that unit tests verify the golden path.
+	if blob, _ := protohacks.FileOptions(fd); blob != nil {
+		// TODO(vadimsh): Move this to common/proto.
+		fileOpts := &descpb_v1.FileOptions{}
+		if err := proto_v1.Unmarshal(blob, fileOpts); err == nil {
+			exts, err := proto_v1.GetExtensions(fileOpts, []*proto_v1.ExtensionDesc{proto.E_FileMetadata})
+			if err == nil && exts[0] != nil {
+				if meta := exts[0].(*proto.Metadata); meta.GetDocUrl() != "" {
+					return msgName, meta.GetDocUrl()
+				}
+			}
+		}
+	}
+
+	// Fallback to hardcoded metadata about *.proto.
+	//
+	// TODO(vadimsh): Remove once all *.proto are annotated.
 	for _, info := range publicProtos {
 		// Find the exact same *.proto file within publicProtos struct.
 		if info.goPath == fd.Path() {
 			if info.docURL == "" {
 				return "", "" // no docs for it
 			}
-			return string(msg.MessageType().Descriptor().Name()), info.docURL
+			return msgName, info.docURL
 		}
 	}
 	return "", "" // not a public proto
