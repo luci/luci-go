@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "33f9fb18_a1d89bc5",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-19T02:22:04Z",
+      "side": 1,
+      "message": "thanks for making docs consistent\n\nstrictly speaking, this still does not conform to the guidelines, which imply that the sentence should start with \"Derives\"",
+      "parentUuid": "7930c765_0dec1290",
+      "range": {
+        "startLine": 66,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 24
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6e157291_311972ba",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 9
@@ -204,6 +228,30 @@
       "revId": "31ff469484e38db9e046483a41a162073c12ebab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e4bcd88_cefde367",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-19T02:22:04Z",
+      "side": 1,
+      "message": "ah right. py_unittest probably don\u0027t.",
+      "parentUuid": "1a2c60ac_4993fc6f",
+      "range": {
+        "startLine": 122,
+        "startChar": 30,
+        "endLine": 122,
+        "endChar": 56
+      },
+      "revId": "31ff469484e38db9e046483a41a162073c12ebab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

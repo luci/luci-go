@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dac0dc46_357f3e66",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-19T02:22:04Z",
+      "side": 1,
+      "message": "not a useful doc\nmeme 6390608073850880",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 117,
+        "endChar": 19
+      },
+      "revId": "772757416ba595db027436eaa9c29011634853bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2da71944_b4dfd1e9",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-19T02:22:04Z",
+      "side": 1,
+      "message": "Dirk and I decided that gn://{label}/ would be better. The doc is updated.",
+      "range": {
+        "startLine": 122,
+        "startChar": 18,
+        "endLine": 122,
+        "endChar": 19
+      },
+      "revId": "772757416ba595db027436eaa9c29011634853bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "995820c3_52d2ec19",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-19T02:22:04Z",
+      "side": 1,
+      "message": "this isn\u0027t the last paragraph (see my comment in ps9). The problem here, imo, is that we start with details, and then give high-level description. Doc that starts high level and goes to low level is easier to follow.",
+      "range": {
+        "startLine": 133,
+        "startChar": 21,
+        "endLine": 134,
+        "endChar": 33
+      },
+      "revId": "772757416ba595db027436eaa9c29011634853bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
