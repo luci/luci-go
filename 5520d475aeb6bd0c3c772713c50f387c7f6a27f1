@@ -47,6 +47,30 @@
       "revId": "5520d475aeb6bd0c3c772713c50f387c7f6a27f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9aeb1e3_df6226ac",
+        "filename": "milo/buildsource/swarming/buildinfo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-19T19:00:30Z",
+      "side": 1,
+      "message": "sigh...",
+      "parentUuid": "2952665a_33f948ab",
+      "range": {
+        "startLine": 53,
+        "startChar": 14,
+        "endLine": 53,
+        "endChar": 32
+      },
+      "revId": "5520d475aeb6bd0c3c772713c50f387c7f6a27f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
