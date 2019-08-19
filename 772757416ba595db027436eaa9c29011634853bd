@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "da35867e_445173e5",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-08-19T08:56:07Z",
+      "side": 1,
+      "message": "i agree. i meant it is better not to have any doc than a doc like this (it literally repeats the field name). what you have in ps12 lgtm",
+      "parentUuid": "973535e4_a9213110",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 117,
+        "endChar": 19
+      },
+      "revId": "772757416ba595db027436eaa9c29011634853bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2da71944_b4dfd1e9",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 11
