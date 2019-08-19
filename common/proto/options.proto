@@ -1,0 +1,40 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Defining extensions is supported in proto2 syntax only.
+syntax = "proto2";
+
+package luci;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "go.chromium.org/luci/common/proto";
+
+message Metadata {
+  // URL to a human-readable proto schema definition doc.
+  optional string doc_url = 1;
+}
+
+// Definition of file-level options understood by various LUCI tools.
+//
+// Usage:
+//
+//    import "go.chromium.org/luci/common/proto/options.proto";
+//
+//    option (luci.file_metadata) = {
+//      doc_url: "https://example.com/schema.md";
+//    };
+extend google.protobuf.FileOptions {
+  optional Metadata file_metadata = 73700;
+}
