@@ -94,7 +94,6 @@ func TestClient(t *testing.T) {
 
 				si := stream.(*BaseStream)
 				So(si.WriteCloser, ShouldHaveSameTypeAs, &testStreamWriteCloser{})
-				So(si.D.Name, ShouldEqual, "namespace/test")
 
 				tswc := si.WriteCloser.(*testStreamWriteCloser)
 
@@ -124,9 +123,6 @@ func TestClient(t *testing.T) {
 			stream, err := client.NewStream(flags)
 			So(err, ShouldBeNil)
 			So(stream, ShouldHaveSameTypeAs, &BaseStream{})
-
-			si := stream.(*BaseStream)
-			So(si.D.Name, ShouldEqual, "test")
 		})
 
 	})

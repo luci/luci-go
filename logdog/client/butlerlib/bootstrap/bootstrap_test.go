@@ -174,39 +174,5 @@ func TestBootstrapURLGeneration(t *testing.T) {
 			_, err := bs.GetViewerURL("bar")
 			So(err, ShouldErrLike, "no coordinator host is configured")
 		})
-
-		Convey(`With a stream client configured`, func() {
-			newClient := func(path string, ns types.StreamName) (streamclient.Client, error) {
-				return &sentinelClient{}, nil
-			}
-
-			So(bs.initializeClient("test:", newClient), ShouldBeNil)
-			So(bs.Client, ShouldHaveSameTypeAs, &sentinelClient{})
-
-			Convey(`Can generate viewer URLs for streams.`, func() {
-				barS, err := bs.Client.NewStream(streamproto.Flags{Name: "bar"})
-				So(err, ShouldBeNil)
-				defer barS.Close()
-
-				bazS, err := bs.Client.NewStream(streamproto.Flags{Name: "baz"})
-				So(err, ShouldBeNil)
-				defer bazS.Close()
-
-				url, err := bs.GetViewerURLForStreams(barS, bazS)
-				So(err, ShouldBeNil)
-				So(url, ShouldEqual, "https://example.appspot.com/v/?s=test%2Ffoo%2F%2B%2Fbar&s=test%2Ffoo%2F%2B%2Fbaz")
-			})
-
-			Convey(`Will not generate viewer URLs if a prefix is not defined.`, func() {
-				bs.Prefix = ""
-
-				barS, err := bs.Client.NewStream(streamproto.Flags{Name: "bar"})
-				So(err, ShouldBeNil)
-				defer barS.Close()
-
-				_, err = bs.GetViewerURLForStreams(barS)
-				So(err, ShouldErrLike, "no prefix is configured")
-			})
-		})
 	})
 }
