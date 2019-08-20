@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d48be1e_50f360e6",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-20T00:35:07Z",
+      "side": 1,
+      "message": "To get rid of this I need to land this CL, then update actual chromeos *.star configs.",
+      "range": {
+        "startLine": 113,
+        "startChar": 2,
+        "endLine": 113,
+        "endChar": 36
+      },
+      "revId": "5f59c1024689768df9177b2ce1e9fd129a0d3780",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3c8b1c77_ceef0f98",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-20T00:35:07Z",
+      "side": 1,
+      "message": "Similarly, to get rid of this I need to land this CL, then update actual *.star configs in infradata/config repo.",
+      "range": {
+        "startLine": 275,
+        "startChar": 2,
+        "endLine": 275,
+        "endChar": 26
+      },
+      "revId": "5f59c1024689768df9177b2ce1e9fd129a0d3780",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
