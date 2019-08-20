@@ -21,8 +21,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/data/recordio"
-	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
 func TestStreamImpl(t *testing.T) {
@@ -30,11 +28,10 @@ func TestStreamImpl(t *testing.T) {
 		buf := bytes.Buffer{}
 		si := BaseStream{
 			WriteCloser: &nopWriteCloser{Writer: &buf},
-			D:           (&streamproto.Flags{}).Descriptor(),
 		}
 
 		Convey(`TEXT`, func() {
-			si.D.StreamType = logpb.StreamType_TEXT
+			si.IsDatagramStream = false
 
 			Convey(`Will error if WriteDatagram is called.`, func() {
 				So(si.WriteDatagram([]byte(nil)), ShouldNotBeNil)
@@ -49,7 +46,7 @@ func TestStreamImpl(t *testing.T) {
 		})
 
 		Convey(`DATAGRAM`, func() {
-			si.D.StreamType = logpb.StreamType_DATAGRAM
+			si.IsDatagramStream = true
 
 			Convey(`Will error if Write is called.`, func() {
 				_, err := si.Write([]byte(nil))

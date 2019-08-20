@@ -120,20 +120,3 @@ func (bs *Bootstrap) GetViewerURL(paths ...types.StreamPath) (string, error) {
 	}
 	return viewer.GetURL(bs.CoordinatorHost, bs.Project, paths...), nil
 }
-
-// GetViewerURLForStreams returns a log stream viewer URL to the aggregate set
-// of supplied streams.
-//
-// If the any of the Prefix, Project, or CoordinatorHost values is not
-// populated, an error will be returned.
-func (bs *Bootstrap) GetViewerURLForStreams(streams ...streamclient.Stream) (string, error) {
-	if bs.Prefix == "" {
-		return "", errors.New("no prefix is configured")
-	}
-
-	paths := make([]types.StreamPath, len(streams))
-	for i, s := range streams {
-		paths[i] = bs.Prefix.Join(types.StreamName(s.Descriptor().Name))
-	}
-	return bs.GetViewerURL(paths...)
-}

@@ -18,9 +18,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/data/recordio"
-	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 // Stream is an individual LogDog Butler stream.
@@ -30,9 +28,6 @@ type Stream interface {
 	// WriteDatagram writes a LogDog Butler streaming datagram to the underlying
 	// Writer.
 	WriteDatagram([]byte) error
-
-	// Descriptor returns a copy of this Stream's descriptor.
-	Descriptor() *logpb.LogStreamDescriptor
 }
 
 // BaseStream is the standard implementation of the Stream interface.
@@ -40,19 +35,18 @@ type BaseStream struct {
 	// WriteCloser (required) is the stream's underlying io.WriteCloser.
 	io.WriteCloser
 
-	// D (required) is this stream's descriptor.
-	D *logpb.LogStreamDescriptor
-
 	// rioW is a recordio.Writer bound to the WriteCloser. This will be
 	// initialized on the first writeRecord invocation.
 	rioW recordio.Writer
+
+	IsDatagramStream bool
 }
 
 var _ Stream = (*BaseStream)(nil)
 
 // WriteDatagram implements StreamClient.
 func (s *BaseStream) WriteDatagram(dg []byte) error {
-	if !s.isDatagramStream() {
+	if !s.IsDatagramStream {
 		return errors.New("not a datagram stream")
 	}
 
@@ -61,7 +55,7 @@ func (s *BaseStream) WriteDatagram(dg []byte) error {
 
 // Write implements StreamClient.
 func (s *BaseStream) Write(data []byte) (int, error) {
-	if s.isDatagramStream() {
+	if s.IsDatagramStream {
 		return 0, errors.New("cannot use Write with datagram stream")
 	}
 
@@ -80,13 +74,4 @@ func (s *BaseStream) writeRecord(r []byte) error {
 		return err
 	}
 	return s.rioW.Flush()
-}
-
-func (s *BaseStream) isDatagramStream() bool {
-	return s.D.StreamType == logpb.StreamType_DATAGRAM
-}
-
-// Descriptor implements StreamClient.
-func (s *BaseStream) Descriptor() *logpb.LogStreamDescriptor {
-	return proto.Clone(s.D).(*logpb.LogStreamDescriptor)
 }
