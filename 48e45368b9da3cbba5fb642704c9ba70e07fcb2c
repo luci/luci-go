@@ -22,6 +22,30 @@
       "revId": "48e45368b9da3cbba5fb642704c9ba70e07fcb2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "af178f0b_a9103189",
+        "filename": "logdog/client/butlerlib/streamclient/stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-20T19:55:52Z",
+      "side": 0,
+      "message": "chatted offline; the whole BaseStream and Stream types will go away soon",
+      "parentUuid": "681f9723_fc14e704",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 15
+      },
+      "revId": "48e45368b9da3cbba5fb642704c9ba70e07fcb2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
