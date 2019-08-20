@@ -1,4 +1,4 @@
-load("@proto//luci/config/project_config.proto", config_pb="config")
+load('@stdlib//internal/luci/proto.star', 'config_pb')
 
 def gen(ctx):
   ctx.output['text.txt'] = 'Just text\n'
