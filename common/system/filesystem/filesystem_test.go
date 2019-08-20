@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"syscall"
 	"testing"
 	"time"
 
@@ -273,6 +274,31 @@ func TestRemoveAll(t *testing.T) {
 			Convey(`Will return nil if the target does not exist`, func() {
 				So(RemoveAll(filepath.Join(tdir, "dne")), ShouldBeNil)
 			})
+		})
+	})
+}
+
+func TestReadableCopy(t *testing.T) {
+	t.Parallel()
+
+	Convey("ReadableCopy", t, func() {
+		withTempDir(t, func(dir string) {
+			out := filepath.Join(dir, "out")
+			in := filepath.Join(dir, "in")
+			content := []byte("test")
+			So(ioutil.WriteFile(in, content, 0644), ShouldBeNil)
+			So(ReadableCopy(out, in), ShouldBeNil)
+
+			buf, err := ioutil.ReadFile(out)
+			So(err, ShouldBeNil)
+			So(buf, ShouldResemble, content)
+
+			ostat, err := os.Stat(out)
+			So(err, ShouldBeNil)
+			istat, err := os.Stat(in)
+			So(err, ShouldBeNil)
+
+			So(ostat.Mode(), ShouldEqual, istat.Mode()|syscall.S_IRUSR|syscall.S_IRGRP|syscall.S_IROTH)
 		})
 	})
 }
