@@ -8,6 +8,12 @@ package swarming.config;
 
 option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
 
+import "go.chromium.org/luci/common/proto/options.proto";
+
+option (luci.file_metadata) = {
+  doc_url: "https://luci-config.appspot.com/schemas/services/swarming:settings.cfg";
+};
+
 // Schema for settings.cfg service config file in luci-config.
 message SettingsCfg {
   reserved 7;   // used to be mp (machine provider settings)
