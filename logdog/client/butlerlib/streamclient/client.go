@@ -20,6 +20,7 @@ import (
 	"io"
 	"strings"
 
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -78,8 +79,7 @@ func New(path string, ns types.StreamName) (Client, error) {
 func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
 	f.Name = streamproto.StreamNameFlag(c.ns.Concat(types.StreamName(f.Name)))
 
-	d := f.Descriptor()
-	if err := d.Validate(false); err != nil {
+	if err := f.Descriptor().Validate(false); err != nil {
 		return nil, fmt.Errorf("streamclient: invalid stream descriptor: %s", err)
 	}
 
@@ -102,8 +102,8 @@ func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
 
 	// Perform the handshake: magic + size(data) + data.
 	s := &BaseStream{
-		WriteCloser: client,
-		D:           d,
+		WriteCloser:      client,
+		IsDatagramStream: logpb.StreamType(f.Type) == logpb.StreamType_DATAGRAM,
 	}
 	if _, err := s.writeRaw(streamproto.ProtocolFrameHeaderMagic); err != nil {
 		return nil, fmt.Errorf("failed to write magic number: %s", err)

@@ -17,6 +17,7 @@ package localclient
 import (
 	"io"
 
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -49,14 +50,13 @@ func (c *localClient) NewStream(f streamproto.Flags) (s streamclient.Stream, err
 		}
 	}()
 
-	desc := f.Descriptor()
 	stream := streamclient.BaseStream{
-		WriteCloser: pw,
-		D:           desc,
+		WriteCloser:      pw,
+		IsDatagramStream: logpb.StreamType(f.Type) == logpb.StreamType_DATAGRAM,
 	}
 
 	// Add the Stream to the Butler.
-	if err = c.AddStream(pr, desc); err != nil {
+	if err = c.AddStream(pr, f.Descriptor()); err != nil {
 		return
 	}
 	return &stream, nil
