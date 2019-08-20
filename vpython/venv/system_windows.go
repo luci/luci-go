@@ -38,3 +38,18 @@ func checkProcessRunning(pid int) error {
 	}
 	return nil
 }
+
+func currentUID() (string, error) {
+	t, err := syscall.OpenCurrentProcessToken()
+	if err != nil {
+		return "", err
+	}
+	defer t.Close()
+
+	u, err := t.GetTokenUser()
+	if err != nil {
+		return "", err
+	}
+
+	return u.User.Sid.String()
+}

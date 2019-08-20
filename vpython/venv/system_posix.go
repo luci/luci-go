@@ -19,6 +19,7 @@ package venv
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"syscall"
 
 	"go.chromium.org/luci/common/errors"
@@ -39,4 +40,8 @@ func checkProcessRunning(pid int) error {
 		return errors.Annotate(err, "failed to signal process").Err()
 	}
 	return nil
+}
+
+func currentUID() (string, error) {
+	return strconv.Itoa(os.Getuid()), nil
 }

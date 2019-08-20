@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/user"
 	"path/filepath"
 	"time"
 
@@ -215,8 +214,8 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 // describes.
 func (cfg *Config) envNameForSpec(c context.Context, s *vpython.Spec, rt *vpython.Runtime) string {
 	uid := "<unknown>"
-	if user, err := user.Current(); err == nil {
-		uid = user.Uid
+	if user, err := currentUID(); err == nil {
+		uid = user
 	} else {
 		logging.Warningf(c, "Unable to find current user ID: %s", err)
 	}
