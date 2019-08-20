@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "950e565d_661647c1",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-20T13:45:35Z",
+      "side": 1,
+      "message": "Do not run it in parallel, because of umask() call.",
+      "revId": "3a0dcb45f456ba404861562aab5a475dd7da94a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
