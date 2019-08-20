@@ -15,7 +15,7 @@
 """Scheduler related supporting structs and functions."""
 
 load('@stdlib//internal/validate.star', 'validate')
-load('@proto//luci/scheduler/project_config.proto', scheduler_pb='scheduler.config')
+load('@proto//go.chromium.org/luci/scheduler/appengine/messages/config.proto', scheduler_pb='scheduler.config')
 
 
 def _policy(

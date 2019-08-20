@@ -1,4 +1,4 @@
-load("@proto//luci/config/project_config.proto", config_pb="config")
+load("@proto//go.chromium.org/luci/common/proto/config/project_config.proto", config_pb="config")
 
 def gen(ctx):
   ctx.output['text.txt'] = 'Just text\n'
