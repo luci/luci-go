@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1cbe615f_f49dd63f",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-20T20:13:56Z",
+      "side": 1,
+      "message": "we probably only want this during testing though, right?\n\nmaybe a global var `testingMode bool`, conditionalize that, and then in a _test file have \n\n   func init() {\n     testingMode \u003d true\n   }\n\n?",
+      "range": {
+        "startLine": 42,
+        "startChar": 53,
+        "endLine": 42,
+        "endChar": 74
+      },
+      "revId": "571ca5678f02a91a45d6d05586112b8da7e375bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
