@@ -66,22 +66,29 @@ import (
 	_ "go.chromium.org/luci/swarming/proto/config"
 )
 
+var noaliasCounter = 0
+
+// Helper to generate unique keys for publicProtos.
+//
+// Eventually this whole map will be deleted, along with all these keys.
+func noalias() string {
+	noaliasCounter++
+	return fmt.Sprintf("should_not_be_seen_ever_%d.proto", noaliasCounter)
+}
+
 // Mapping from a proto module path on the Starlark side to its proto package
-// name, a path within GOPATH, and an optional link to schema docs.
+// name and a path in the protobuf registry.
 //
-// Go proto location can be changed without altering Starlark API. Proto package
-// name is still important and should not be changed. It is here mostly for the
-// documentation purpose.
-//
-// There's also a test that asserts real proto packages (per generated *.pb2.go)
-// match what's specified here.
+// TODO(vadimsh): Deprecated. Proto files should be referenced by their proto
+// names. Entries marked with noalias() indicate proto files that are already
+// imported using their proto names.
 var publicProtos = map[string]struct {
-	protoPkg string
-	goPath   string
+	protoPkg  string
+	protoPath string
 }{
 	// Buildbucket project config.
 	//
-	// load("@proto//luci/buildbucket/project_config.proto", buildbucket_pb="buildbucket")
+	// load("@stdlib//internal/luci/proto.star", "buildbucket_pb")
 	"luci/buildbucket/project_config.proto": {
 		"buildbucket",
 		"go.chromium.org/luci/buildbucket/proto/project_config.proto",
@@ -89,7 +96,7 @@ var publicProtos = map[string]struct {
 
 	// "LUCI Config" project config.
 	//
-	// load("@proto//luci/config/project_config.proto", config_pb="config")
+	// load("@stdlib//internal/luci/proto.star", "config_pb")
 	"luci/config/project_config.proto": {
 		"config",
 		"go.chromium.org/luci/common/proto/config/project_config.proto",
@@ -132,7 +139,6 @@ var publicProtos = map[string]struct {
 	// load(
 	//     "@proto//external/crosdevice/variant_id.proto",
 	//     variant_id_pb="device")
-
 	"external/crosdevice/brand_id.proto": {
 		"device",
 		"device/brand_id.proto",
@@ -222,7 +228,7 @@ var publicProtos = map[string]struct {
 
 	// LogDog project config.
 	//
-	// load("@proto//luci/logdog/project_config.proto", logdog_pb="svcconfig")
+	// load("@stdlib//internal/luci/proto.star", "logdog_pb")
 	"luci/logdog/project_config.proto": {
 		"svcconfig",
 		"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",
@@ -230,7 +236,7 @@ var publicProtos = map[string]struct {
 
 	// "LUCI Notify" project config.
 	//
-	// load("@proto//luci/notify/project_config.proto", notify_pb="notify")
+	// load("@stdlib//internal/luci/proto.star", "notify_pb")
 	"luci/notify/project_config.proto": {
 		"notify",
 		"go.chromium.org/luci/luci_notify/api/config/notify.proto",
@@ -238,7 +244,7 @@ var publicProtos = map[string]struct {
 
 	// Milo project config.
 	//
-	// load("@proto//luci/milo/project_config.proto", milo_pb="milo")
+	// load("@stdlib//internal/luci/proto.star", "milo_pb")
 	"luci/milo/project_config.proto": {
 		"milo",
 		"go.chromium.org/luci/milo/api/config/project.proto",
@@ -246,7 +252,7 @@ var publicProtos = map[string]struct {
 
 	// "LUCI Scheduler" project config.
 	//
-	// load("@proto//luci/scheduler/project_config.proto", scheduler_pb="scheduler.config")
+	// load("@stdlib//internal/luci/proto.star", "scheduler_pb")
 	"luci/scheduler/project_config.proto": {
 		"scheduler.config",
 		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
@@ -254,7 +260,7 @@ var publicProtos = map[string]struct {
 
 	// Commit Queue project configs (v2).
 	//
-	// load("@proto//luci/cq/project_config.proto", cq_pb="cq.config")
+	// load("@stdlib//internal/luci/proto.star", "cq_pb")
 	"luci/cq/project_config.proto": {
 		"cq.config",
 		"go.chromium.org/luci/cq/api/config/v2/cq.proto",
@@ -299,17 +305,17 @@ var publicProtos = map[string]struct {
 	// load("@proto//google/protobuf/struct.proto", struct_pb="google.protobuf")
 	// load("@proto//google/protobuf/timestamp.proto", timestamp_pb="google.protobuf")
 	// load("@proto//google/protobuf/wrappers.proto", wrappers_pb="google.protobuf")
-	"google/protobuf/any.proto":       {"google.protobuf", "google/protobuf/any.proto"},
-	"google/protobuf/duration.proto":  {"google.protobuf", "google/protobuf/duration.proto"},
-	"google/protobuf/empty.proto":     {"google.protobuf", "google/protobuf/empty.proto"},
-	"google/protobuf/struct.proto":    {"google.protobuf", "google/protobuf/struct.proto"},
-	"google/protobuf/timestamp.proto": {"google.protobuf", "google/protobuf/timestamp.proto"},
-	"google/protobuf/wrappers.proto":  {"google.protobuf", "google/protobuf/wrappers.proto"},
+	noalias(): {"google.protobuf", "google/protobuf/any.proto"},
+	noalias(): {"google.protobuf", "google/protobuf/duration.proto"},
+	noalias(): {"google.protobuf", "google/protobuf/empty.proto"},
+	noalias(): {"google.protobuf", "google/protobuf/struct.proto"},
+	noalias(): {"google.protobuf", "google/protobuf/timestamp.proto"},
+	noalias(): {"google.protobuf", "google/protobuf/wrappers.proto"},
 
 	// Extension proto types.
 	//
 	// load("@proto//google/type/dayofweek.proto", dayofweek_pb="google.type")
-	"google/type/dayofweek.proto": {"google.type", "google/type/dayofweek.proto"},
+	noalias(): {"google.type", "google/type/dayofweek.proto"},
 }
 
 // Note: we use sync.Once instead of init() to allow tests to add stuff to
@@ -331,18 +337,26 @@ func protoLoader() interpreter.Loader {
 		// tests).
 		visited := stringset.New(0)
 		for _, info := range publicProtos {
-			if err := addWithDeps(ploader, info.goPath, visited); err != nil {
-				panic(fmt.Errorf("%s: %s", info.goPath, err))
+			if err := addWithDeps(ploader, info.protoPath, visited); err != nil {
+				panic(fmt.Errorf("%s: %s", info.protoPath, err))
 			}
 		}
 
 		// Use this loader to resolve load("@proto://...") references.
 		loader = func(path string) (dict starlark.StringDict, _ string, err error) {
-			info, ok := publicProtos[path]
-			if !ok {
-				return nil, "", errors.New("no such proto file in lucicfg's internal proto registry")
+			// First try to load the proto using its real proto path. Otherwise
+			// assume 'path' as in alias in publicProtos map.
+			//
+			// TODO(vadimsh): Remove aliases once all scripts are migrated to use
+			// real proto paths.
+			mod, err := ploader.Module(path)
+			if err != nil {
+				info, ok := publicProtos[path]
+				if !ok {
+					return nil, "", errors.New("no such proto file in lucicfg's internal proto registry")
+				}
+				mod, err = ploader.Module(info.protoPath)
 			}
-			mod, err := ploader.Module(info.goPath)
 			if err != nil {
 				return nil, "", err
 			}
