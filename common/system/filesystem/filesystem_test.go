@@ -276,3 +276,28 @@ func TestRemoveAll(t *testing.T) {
 		})
 	})
 }
+
+func TestReadableCopy(t *testing.T) {
+	t.Parallel()
+
+	Convey("ReadableCopy", t, func() {
+		withTempDir(t, func(dir string) {
+			out := filepath.Join(dir, "out")
+			in := filepath.Join(dir, "in")
+			content := []byte("test")
+			So(ioutil.WriteFile(in, content, 0644), ShouldBeNil)
+			So(ReadableCopy(out, in), ShouldBeNil)
+
+			buf, err := ioutil.ReadFile(out)
+			So(err, ShouldBeNil)
+			So(buf, ShouldResemble, content)
+
+			ostat, err := os.Stat(out)
+			So(err, ShouldBeNil)
+			istat, err := os.Stat(in)
+			So(err, ShouldBeNil)
+
+			So(ostat.Mode(), ShouldEqual, addReadMode(istat.Mode()))
+		})
+	})
+}
