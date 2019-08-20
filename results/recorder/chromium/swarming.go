@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"golang.org/x/net/context"
+	"google.golang.org/api/option"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
@@ -38,7 +39,7 @@ const (
 // TODO: convert the bytes.Buffer to a resultspb.Invocation.
 func fetchOutputJSON(ctx context.Context, swarmingURL, taskID string) ([]byte, error) {
 	// Set up swarming service for getting task info.
-	swarmSvc, err := swarmingAPI.NewService(ctx)
+	swarmSvc, err := swarmingAPI.NewService(ctx, option.WithoutAuthentication())
 	if err != nil {
 		return nil, err
 	}
