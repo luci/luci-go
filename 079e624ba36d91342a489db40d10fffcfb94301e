@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09ac7206_dc4e7499",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-20T12:37:44Z",
+      "side": 1,
+      "message": "Please copy the mode at the same time, using in.Stat(), then os.OpenFile().\nThis will reduce the number of operations overall. It is important because in the creation of the mapped tree, this is very I/O and kernel calls intensive.",
+      "revId": "079e624ba36d91342a489db40d10fffcfb94301e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
