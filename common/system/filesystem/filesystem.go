@@ -231,3 +231,43 @@ func recursiveChmod(path string, filter func(string) bool, chmod func(mode os.Fi
 	}
 	return nil
 }
+
+func copyFile(outfile, infile string) error {
+	in, err := os.Open(infile)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(outfile)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	return err
+}
+
+func copyMode(outfile, infile string) error {
+	in, err := os.Stat(infile)
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(outfile, in.Mode())
+}
+
+// ReadableCopy makes a copy of the file that is readable by everyone.
+func ReadableCopy(outfile, infile string) error {
+	if err := copyFile(outfile, infile); err != nil {
+		return err
+	}
+
+	out, err := os.Stat(outfile)
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(outfile, addReadMode(out.Mode()))
+}
