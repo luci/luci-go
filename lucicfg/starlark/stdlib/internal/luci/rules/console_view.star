@@ -18,9 +18,8 @@ load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
+load('@stdlib//internal/luci/proto.star', 'milo_pb')
 load('@stdlib//internal/luci/rules/console_view_entry.star', 'console_view_entry')
-
-load('@proto//luci/milo/project_config.proto', milo_pb='milo')
 
 
 # TODO(vadimsh): Document how builders should be configured to be eligible for
