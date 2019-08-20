@@ -16,6 +16,24 @@
       "revId": "079e624ba36d91342a489db40d10fffcfb94301e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ba783b5_8298efaa",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-20T13:08:55Z",
+      "side": 1,
+      "message": "In corp linux, umask seems too restrict, so I decided to use Chmod instead.",
+      "parentUuid": "09ac7206_dc4e7499",
+      "revId": "079e624ba36d91342a489db40d10fffcfb94301e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
