@@ -22,6 +22,30 @@
       "revId": "571ca5678f02a91a45d6d05586112b8da7e375bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45d36a8a_21ac7566",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-20T20:17:39Z",
+      "side": 1,
+      "message": "As per https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1748882/3/results/recorder/chromium/swarming.go#57 there\u0027s a bunch of proper authentication expected to be set up later, but I\u0027m happy to add something like that here too",
+      "parentUuid": "1cbe615f_f49dd63f",
+      "range": {
+        "startLine": 42,
+        "startChar": 53,
+        "endLine": 42,
+        "endChar": 74
+      },
+      "revId": "571ca5678f02a91a45d6d05586112b8da7e375bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
