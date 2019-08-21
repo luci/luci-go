@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "493e22e5_27e8cccb",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-21T22:28:58Z",
+      "side": 1,
+      "message": "Just do it right now, it will simplify this CL:\n\n  func fetchOutputJSON(ctx context.Context, cl *http.Client, swarmingURL, taskID string)\n\nThen in tests just pass http.DefaultClient, and no need to link to luci/server/auth library at all here.",
+      "range": {
+        "startLine": 45,
+        "startChar": 4,
+        "endLine": 45,
+        "endChar": 42
+      },
+      "revId": "79058a9487fa66a28db4378fffeedd63aaafdbeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
