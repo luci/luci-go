@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94a4e243_1faec8a8",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-21T12:33:22Z",
+      "side": 1,
+      "message": "I don\u0027t think python references here are useful, I\u0027d remove this.",
+      "range": {
+        "startLine": 271,
+        "startChar": 50,
+        "endLine": 272,
+        "endChar": 20
+      },
+      "revId": "955e3be50cdaad3f9ccccd45065c8c7af6d9624c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f84224e_16889822",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-21T12:33:22Z",
+      "side": 1,
+      "message": "Add a comment:\n\n  // Resolves src so the last part of the path is not a symlink anymore.\n\n\nNote that if an inside part of src is symlink, the code you wrote doesn\u0027t work. For example /a/b/c, if /a/b is a symlink, it won\u0027t be resolved by this code since only /a/b/c is checked to be a symlink.",
+      "revId": "955e3be50cdaad3f9ccccd45065c8c7af6d9624c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dd8e009_1fb10f79",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-21T12:33:22Z",
+      "side": 1,
+      "message": "Fail if !stat.Mode().IsDir()\n\nIt could be a socket or whatever other weird stuff.",
+      "revId": "955e3be50cdaad3f9ccccd45065c8c7af6d9624c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
