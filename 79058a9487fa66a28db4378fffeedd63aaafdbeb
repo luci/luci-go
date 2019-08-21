@@ -22,6 +22,30 @@
       "revId": "79058a9487fa66a28db4378fffeedd63aaafdbeb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "296f903a_b9eee309",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-08-21T23:02:19Z",
+      "side": 1,
+      "message": "Done\n\nUsed for isoClient too",
+      "parentUuid": "493e22e5_27e8cccb",
+      "range": {
+        "startLine": 45,
+        "startChar": 4,
+        "endLine": 45,
+        "endChar": 42
+      },
+      "revId": "79058a9487fa66a28db4378fffeedd63aaafdbeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
