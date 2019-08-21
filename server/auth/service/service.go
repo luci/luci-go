@@ -81,6 +81,14 @@ type Snapshot struct {
 	Created        time.Time
 }
 
+// AuthDBAccess describes how an authorized reader can access the AuthDB.
+//
+// See RequestAccess.
+type AuthDBAccess struct {
+	NotificationTopic string // pubsub topic name "project/<project>/topics/<topic>"
+	StorageDumpPath   string // GCS storage path "<bucket>/<object>", may be empty
+}
+
 // AuthService represents API exposed by auth_service.
 //
 // It is a fairy low-level API, you must have good reasons for using it.
@@ -98,6 +106,35 @@ func (s *AuthService) pubSubURL(path string) string {
 		return s.pubSubURLRoot + path
 	}
 	return "https://pubsub.googleapis.com/v1/" + path
+}
+
+// RequestAccess asks Auth Service to grant the caller (us) access to the AuthDB
+// change notifications PubSub topic and AuthDB GCS dump.
+//
+// This works only if the caller is in "auth-trusted-services" group. As soon
+// as the caller is removed from this group, the access is revoked.
+func (s *AuthService) RequestAccess(c context.Context) (*AuthDBAccess, error) {
+	// See appengine/auth_service/handlers_frontend.py.
+	var response struct {
+		Topic string `json:"topic"`
+		GS    struct {
+			AuthDBGSPath string `json:"auth_db_gs_path"`
+		} `json:"gs"`
+	}
+	req := internal.Request{
+		Method: "POST",
+		URL:    s.URL + "/auth_service/api/v1/authdb/subscription/authorization",
+		Scopes: oauthScopes,
+		Body:   map[string]string{},
+		Out:    &response,
+	}
+	if err := req.Do(c); err != nil {
+		return nil, err
+	}
+	return &AuthDBAccess{
+		NotificationTopic: response.Topic,
+		StorageDumpPath:   response.GS.AuthDBGSPath, // may be ""
+	}, nil
 }
 
 // EnsureSubscription creates a new subscription to AuthDB change notifications
@@ -128,22 +165,11 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 
 	// Create a new subscription if existing is missing.
 	if err != nil {
-		// Make sure caller has access.
-		var response struct {
-			Topic string `json:"topic"`
-		}
-		req = internal.Request{
-			Method: "POST",
-			URL:    s.URL + "/auth_service/api/v1/authdb/subscription/authorization",
-			Scopes: oauthScopes,
-			Body:   map[string]string{},
-			Out:    &response,
-		}
-		if err = req.Do(c); err != nil {
+		// Make sure caller has access to the PubSub topic.
+		access, err := s.RequestAccess(c)
+		if err != nil {
 			return err
 		}
-		topic := response.Topic
-
 		// Create the subscription.
 		var config struct {
 			Topic      string `json:"topic"`
@@ -152,7 +178,7 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 			} `json:"pushConfig"`
 			AckDeadlineSeconds int `json:"ackDeadlineSeconds"`
 		}
-		config.Topic = topic
+		config.Topic = access.NotificationTopic
 		config.PushConfig.PushEndpoint = pushURL
 		config.AckDeadlineSeconds = 60
 		req = internal.Request{
