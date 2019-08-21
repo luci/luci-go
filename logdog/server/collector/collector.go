@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	tsmon_types "go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butlerproto"
+	"go.chromium.org/luci/logdog/client/pubsubprotocol"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/collector/coordinator"
@@ -117,7 +117,7 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 	tsBundles.Add(ctx, 1)
 	tsBundleSize.Add(ctx, float64(len(msg)))
 
-	pr := butlerproto.Reader{}
+	pr := pubsubprotocol.Reader{}
 	if err := pr.Read(bytes.NewReader(msg)); err != nil {
 		log.WithError(err).Errorf(ctx, "Failed to unpack message.")
 		return nil

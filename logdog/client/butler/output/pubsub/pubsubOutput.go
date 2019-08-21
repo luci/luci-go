@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/output"
-	"go.chromium.org/luci/logdog/client/butlerproto"
+	"go.chromium.org/luci/logdog/client/pubsubprotocol"
 	"go.chromium.org/luci/logdog/common/types"
 
 	"cloud.google.com/go/pubsub"
@@ -72,7 +72,7 @@ type buffer struct {
 	bytes.Buffer // Output buffer for published message data.
 
 	frameWriter recordio.Writer
-	protoWriter *butlerproto.Writer
+	protoWriter *pubsubprotocol.Writer
 }
 
 // Butler Output that sends messages into Google Cloud PubSub as compressed
@@ -177,9 +177,9 @@ func (o *pubSubOutput) Close() {
 // data.
 func (o *pubSubOutput) buildMessage(buf *buffer, bundle *logpb.ButlerLogBundle) (*pubsub.Message, error) {
 	if buf.protoWriter == nil {
-		buf.protoWriter = &butlerproto.Writer{
+		buf.protoWriter = &pubsubprotocol.Writer{
 			Compress:          o.Compress,
-			CompressThreshold: butlerproto.DefaultCompressThreshold,
+			CompressThreshold: pubsubprotocol.DefaultCompressThreshold,
 		}
 	}
 
