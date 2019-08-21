@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butlerproto"
+	"go.chromium.org/luci/logdog/client/pubsubprotocol"
 	"go.chromium.org/luci/logdog/common/storage/memory"
 	"go.chromium.org/luci/logdog/common/types"
 	cc "go.chromium.org/luci/logdog/server/collector/coordinator"
@@ -253,7 +253,7 @@ func testCollectorImpl(t *testing.T, caching bool) {
 
 		Convey(`Will drop bundles with unknown ProtoVersion string.`, func() {
 			buf := bytes.Buffer{}
-			w := butlerproto.Writer{ProtoVersion: "!!!invalid!!!"}
+			w := pubsubprotocol.Writer{ProtoVersion: "!!!invalid!!!"}
 			w.Write(&buf, &logpb.ButlerLogBundle{})
 
 			So(coll.Process(c, buf.Bytes()), ShouldBeNil)

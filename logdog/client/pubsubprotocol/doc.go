@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package butlerproto implements the LogDog Butler wire protocol. This protocol
-// wraps Butler messages that are published to Cloud Pub/Sub for LogDog
+// Package pubsubprotocol implements the LogDog pubsub wire protocol. This
+// protocol wraps messages that are published to Cloud Pub/Sub for LogDog
 // consumption.
 //
 // The protocol begins with a set of header bytes to identify and parameterize
@@ -36,4 +36,4 @@
 //
 // The data component is described by the header, and consists of all data in
 // the Pub/Sub message past the last header byte.
-package butlerproto
+package pubsubprotocol

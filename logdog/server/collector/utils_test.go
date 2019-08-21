@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butlerproto"
+	"go.chromium.org/luci/logdog/client/pubsubprotocol"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 	cc "go.chromium.org/luci/logdog/server/collector/coordinator"
@@ -232,7 +232,7 @@ func (b *bundleBuilder) logEntry(idx int) *logpb.LogEntry {
 
 func (b *bundleBuilder) bundle() []byte {
 	buf := bytes.Buffer{}
-	w := butlerproto.Writer{Compress: true}
+	w := pubsubprotocol.Writer{Compress: true}
 	if err := w.Write(&buf, b.genBase()); err != nil {
 		panic(err)
 	}
