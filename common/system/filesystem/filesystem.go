@@ -254,3 +254,71 @@ func ReadableCopy(outfile, infile string) error {
 	_, err = io.Copy(out, in)
 	return err
 }
+
+func hardlinkWithFallback(outfile, infile string) error {
+	if err := os.Link(infile, outfile); err == nil {
+		return nil
+	}
+
+	return ReadableCopy(outfile, infile)
+}
+
+// CopyRecursively efficiently copies a file or directory from src to dst.
+// `src` may be a file, directory, or a symlink to a file or directory.
+// All symlinks are replaced with their targets, so the resulting
+// directory structure in dst_dir will never have any symlinks.
+// To increase speed, copy_recursively hardlinks individual files into the
+// (newly created) directory structure if possible, unlike Python's
+// shutil.copytree().
+func CopyRecursively(src, dst string) error {
+	var stat os.FileInfo
+	for {
+		var err error
+		stat, err = os.Lstat(src)
+		if err != nil {
+			return err
+		}
+		if (stat.Mode() & os.ModeSymlink) == 0 {
+			break
+		}
+
+		link, err := os.Readlink(src)
+		if err != nil {
+			return err
+		}
+		src = filepath.Join(filepath.Dir(src), link)
+	}
+
+	if stat.Mode().IsRegular() {
+		return hardlinkWithFallback(dst, src)
+	}
+
+	if err := os.MkdirAll(dst, 0775); err != nil {
+		return err
+	}
+
+	file, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	for {
+		names, err := file.Readdirnames(100)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		for _, name := range names {
+			if err := CopyRecursively(filepath.Join(src, name), filepath.Join(dst, name)); err != nil {
+				return err
+			}
+
+		}
+	}
+
+	return nil
+}
