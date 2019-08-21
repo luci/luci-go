@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "275299d9_7c4e2531",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-21T12:42:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "daf6335b_b82cba2d",
+      "range": {
+        "startLine": 7,
+        "startChar": 5,
+        "endLine": 7,
+        "endChar": 16
+      },
+      "revId": "723a6f401393abc204ba8d37ddac847ed6e6c3b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
