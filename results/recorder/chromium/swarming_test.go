@@ -26,14 +26,20 @@ import (
 
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func init() {
+	testingMode = true
+}
+
 func TestFetchingOutputJson(t *testing.T) {
 	Convey(`Getting output JSON file`, t, func() {
 		ctx := context.Background()
+		ctx = authtest.MockAuthConfig(ctx)
 
 		// Set up fake isolatedserver.
 		isoFake := isolatedfake.New()

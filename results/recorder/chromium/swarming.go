@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"golang.org/x/net/context"
 
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
 )
 
 const (
@@ -33,12 +35,19 @@ const (
 	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
 )
 
+var testingMode = false
+
 // fetchOutputJSON fetches the output.json from the given task on the given host.
 //
 // TODO: convert the bytes.Buffer to a resultspb.Invocation.
 func fetchOutputJSON(ctx context.Context, swarmingURL, taskID string) ([]byte, error) {
 	// Set up swarming service for getting task info.
-	swarmSvc, err := swarmingAPI.NewService(ctx)
+	// TODO: pass in appropriate auth client.
+	authClient, err := getAuthClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	swarmSvc, err := swarmingAPI.New(authClient)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +61,7 @@ func fetchOutputJSON(ctx context.Context, swarmingURL, taskID string) ([]byte, e
 
 	// Get isolated client for getting isolated objects.
 	// TODO: pass in appropriate auth client.
-	isoClient := isolatedclient.New(nil, nil, ref.Isolatedserver, ref.Namespace, nil, nil)
+	isoClient := isolatedclient.New(nil, authClient, ref.Isolatedserver, ref.Namespace, nil, nil)
 
 	// Fetch the isolate.
 	logging.Infof(
@@ -99,4 +108,17 @@ func getOutputsRef(ctx context.Context, swarmSvc *swarmingAPI.Service, taskID st
 	}
 
 	return taskResult.OutputsRef, nil
+}
+
+// getAuthClient gets an auth client for talking to swarming and isolated.
+func getAuthClient(ctx context.Context) (*http.Client, error) {
+	if testingMode {
+		tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
+		if err != nil {
+			return nil, err
+		}
+		return &http.Client{Transport: tr}, nil
+	}
+
+	return nil, errors.Reason("Auth not implemented outside of tests").Err()
 }
