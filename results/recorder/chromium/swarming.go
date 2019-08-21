@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"golang.org/x/net/context"
 
@@ -33,12 +34,14 @@ const (
 	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
 )
 
+var testingMode = false
+
 // fetchOutputJSON fetches the output.json from the given task on the given host.
 //
 // TODO: convert the bytes.Buffer to a resultspb.Invocation.
-func fetchOutputJSON(ctx context.Context, swarmingURL, taskID string) ([]byte, error) {
+func fetchOutputJSON(ctx context.Context, cl *http.Client, swarmingURL, taskID string) ([]byte, error) {
 	// Set up swarming service for getting task info.
-	swarmSvc, err := swarmingAPI.NewService(ctx)
+	swarmSvc, err := swarmingAPI.New(cl)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +54,7 @@ func fetchOutputJSON(ctx context.Context, swarmingURL, taskID string) ([]byte, e
 	}
 
 	// Get isolated client for getting isolated objects.
-	// TODO: pass in appropriate auth client.
-	isoClient := isolatedclient.New(nil, nil, ref.Isolatedserver, ref.Namespace, nil, nil)
+	isoClient := isolatedclient.New(nil, cl, ref.Isolatedserver, ref.Namespace, nil, nil)
 
 	// Fetch the isolate.
 	logging.Infof(
