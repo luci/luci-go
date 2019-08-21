@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2cd8c24f_253cca8e",
+        "filename": "server/auth/service/service.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-21T20:27:47Z",
+      "side": 1,
+      "message": "Cute :)\n\nWe could get an intern to migrate it to protos one day.",
+      "revId": "f5c73615ad0f40a4847f68d51b0451b3407b1b76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
