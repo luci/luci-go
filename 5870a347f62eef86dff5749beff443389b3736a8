@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd8dc64e_8d1a297d",
+        "filename": "server/auth/service/protocol/replication.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T14:30:10Z",
+      "side": 1,
+      "message": "Can you add a note that it\u0027s stored in \"serialized form\" instead of the actual message so that the signing is deterministic? It\u0027s not necessarily obvious to readers, it took me a good 15 seconds to figure out.",
+      "revId": "5870a347f62eef86dff5749beff443389b3736a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "681ae6f2_ce0e0329",
+        "filename": "server/auth/service/protocol/replication.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T14:30:10Z",
+      "side": 1,
+      "message": "I\u0027m all ED25519 these days. (Don\u0027t do this though)\n\nOn the other hand, it\u0027d be nice to be able to slightly futureproof the algorithm selection here, either just by naming signature to signature_rs256 or something like that.",
+      "revId": "5870a347f62eef86dff5749beff443389b3736a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
