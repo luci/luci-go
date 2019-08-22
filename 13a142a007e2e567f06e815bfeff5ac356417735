@@ -23,6 +23,52 @@
       "revId": "13a142a007e2e567f06e815bfeff5ac356417735",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b06ee1c_f2216f2c",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-08-22T08:08:37Z",
+      "side": 1,
+      "message": "Join should not respect absolute, but os.path.join should.",
+      "range": {
+        "startLine": 289,
+        "startChar": 8,
+        "endLine": 289,
+        "endChar": 21
+      },
+      "revId": "13a142a007e2e567f06e815bfeff5ac356417735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5294d87f_81357f3a",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1107806
+      },
+      "writtenOn": "2019-08-22T08:08:37Z",
+      "side": 1,
+      "message": "nit but where this magic number come from?",
+      "range": {
+        "startLine": 311,
+        "startChar": 34,
+        "endLine": 311,
+        "endChar": 37
+      },
+      "revId": "13a142a007e2e567f06e815bfeff5ac356417735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
