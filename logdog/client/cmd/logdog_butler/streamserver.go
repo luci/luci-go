@@ -26,16 +26,8 @@ import (
 
 type streamServerURI string
 
-var commonStreamServerExamples = []string{
-	"tcp4:[addr_v4][:port]",
-	"tcp6:[addr_v6][:port]",
-}
-
 func exampleStreamServerURIs() string {
-	examples := make([]string, 0, len(commonStreamServerExamples)+len(platformStreamServerExamples))
-	for _, ex := range commonStreamServerExamples {
-		examples = append(examples, fmt.Sprintf(`"%s"`, ex))
-	}
+	examples := make([]string, 0, len(platformStreamServerExamples))
 	for _, ex := range platformStreamServerExamples {
 		examples = append(examples, fmt.Sprintf(`"%s"`, ex))
 	}
@@ -83,15 +75,5 @@ func (u streamServerURI) resolve(ctx context.Context) (streamserver.StreamServer
 		return s, nil
 	}
 
-	// Common implementations.
-	switch typ {
-	case "tcp4":
-		return streamserver.NewTCP4Server(ctx, spec)
-
-	case "tcp6":
-		return streamserver.NewTCP6Server(ctx, spec)
-
-	default:
-		return nil, errors.Reason("unknown stream server type: %q", typ).Err()
-	}
+	return nil, errors.Reason("unknown stream server type: %q", typ).Err()
 }
