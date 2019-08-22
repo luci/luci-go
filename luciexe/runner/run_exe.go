@@ -17,19 +17,15 @@ package runner
 import (
 	"bytes"
 	"context"
-	"io"
 	"os/exec"
-	"path"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/auth/authctx"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe/runner/runnerbutler"
 
@@ -89,26 +85,28 @@ func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, 
 	}
 	cmd.Stdin = bytes.NewReader(buildBytes)
 
-	// Prepare stdout/stderr pipes.
-	stdout, err := cmd.StdoutPipe()
+	stdout, err := logdogServ.Client.NewTextStream(
+		ctx, "stdout", streamclient.ForProcess())
 	if err != nil {
 		return
 	}
-	stderr, err := cmd.StderrPipe()
+	cmd.Stdout = stdout
+
+	stderr, err := logdogServ.Client.NewTextStream(
+		ctx, "stderr", streamclient.ForProcess())
 	if err != nil {
 		return
 	}
+	cmd.Stderr = stderr
 
 	// Start the user executable.
-	if err := cmd.Start(); err != nil {
+	err = cmd.Start()
+	stdout.Close()
+	stderr.Close()
+	if err != nil {
 		return errors.Annotate(err, "failed to start the user executable").Err()
 	}
 	logging.Infof(ctx, "Started user executable successfully")
-
-	// Send subprocess stdout/stderr to logdog.
-	if err := hookStdoutStderr(ctx, logdogServ, stdout, stderr, streamNamePrefix); err != nil {
-		return err
-	}
 
 	switch err := cmd.Wait().(type) {
 	case *exec.ExitError:
@@ -124,29 +122,4 @@ func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, 
 	default:
 		return errors.Annotate(err, "failed to wait for the user executable to exit").Err()
 	}
-}
-
-// hookStdoutStderr sends stdout/stderr to logdogServ and also tees to the
-// current process's stdout/stderr respectively.
-func hookStdoutStderr(ctx context.Context, logdogServ *runnerbutler.Server, stdout, stderr io.ReadCloser, streamNamePrefix string) error {
-	tsNow, err := ptypes.TimestampProto(clock.Now(ctx))
-	if err != nil {
-		return err
-	}
-
-	hook := func(rc io.ReadCloser, name string) error {
-		return logdogServ.AddStream(rc, &logpb.LogStreamDescriptor{
-			Name:        path.Join(streamNamePrefix, name),
-			ContentType: "text/plain",
-			Timestamp:   tsNow,
-		})
-	}
-
-	if err := hook(stdout, "stdout"); err != nil {
-		return err
-	}
-	if err := hook(stderr, "stderr"); err != nil {
-		return err
-	}
-	return nil
 }
