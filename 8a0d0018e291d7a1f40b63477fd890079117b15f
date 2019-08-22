@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "36f72da6_317a7dd4",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T13:49:32Z",
+      "side": 1,
+      "message": "Style note: I personally prefer an empty line between paragraphs, so in godoc it renders nicely. I personally generally confirm with my running godoc -http\u003d:6060 instance.",
+      "revId": "8a0d0018e291d7a1f40b63477fd890079117b15f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb5f718c_87186d3f",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T13:49:32Z",
+      "side": 1,
+      "message": "So you\u0027ll change the test in a follow up?",
+      "revId": "8a0d0018e291d7a1f40b63477fd890079117b15f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
