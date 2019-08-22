@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4f85db7e_d4e6d8c0",
+        "filename": "server/auth/service/protocol/replication.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:06:03Z",
+      "side": 1,
+      "message": "In particular \"we don\u0027t want to deserialize until the signature was verified\"",
+      "parentUuid": "fd8dc64e_8d1a297d",
+      "revId": "5870a347f62eef86dff5749beff443389b3736a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "681ae6f2_ce0e0329",
         "filename": "server/auth/service/protocol/replication.proto",
         "patchSetId": 1
