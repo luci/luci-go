@@ -303,3 +303,17 @@ func TestReadableCopy(t *testing.T) {
 		})
 	})
 }
+
+func TestEnableSymlink(t *testing.T) {
+	t.Parallel()
+	Convey("EnableSymlink", t, func() {
+		withTempDir(t, func(dir string) {
+			So(enableSymlink(), ShouldBeNil)
+			a := filepath.Join(dir, "a")
+			b := filepath.Join(dir, "b")
+			So(ioutil.WriteFile(a, []byte("a"), 0644), ShouldBeNil)
+
+			So(os.Symlink(a, b), ShouldBeNil)
+		})
+	})
+}

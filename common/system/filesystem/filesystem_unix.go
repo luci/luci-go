@@ -28,3 +28,7 @@ func umask(mask int) int {
 func addReadMode(mode os.FileMode) os.FileMode {
 	return mode | syscall.S_IRUSR | syscall.S_IRGRP | syscall.S_IROTH
 }
+
+func enableSymlink() error {
+	return nil
+}
