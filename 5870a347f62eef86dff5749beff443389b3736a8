@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "9ac17d20_595a59cc",
+        "filename": "server/auth/service/protocol/replication.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:06:05Z",
+      "side": 1,
+      "message": "Noted, but I won\u0027t do these changes here.\n\nThis is just a copy of file in luci-py, and not even at HEAD (the file at HEAD has some changes that I plan to revert). So even if I modify it in luci-py at HEAD, I won\u0027t be able to cleanly carry them over here.",
+      "parentUuid": "4f85db7e_d4e6d8c0",
+      "revId": "5870a347f62eef86dff5749beff443389b3736a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "681ae6f2_ce0e0329",
         "filename": "server/auth/service/protocol/replication.proto",
         "patchSetId": 1
@@ -48,6 +66,24 @@
       "writtenOn": "2019-08-22T14:30:10Z",
       "side": 1,
       "message": "I\u0027m all ED25519 these days. (Don\u0027t do this though)\n\nOn the other hand, it\u0027d be nice to be able to slightly futureproof the algorithm selection here, either just by naming signature to signature_rs256 or something like that.",
+      "revId": "5870a347f62eef86dff5749beff443389b3736a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b43ab404_e8b62b4b",
+        "filename": "server/auth/service/protocol/replication.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:06:05Z",
+      "side": 1,
+      "message": "Signing is done through Cloud APIs (signBlob), they support only RSA256. Name of the field doesn\u0027t matter for future proofing, if we add a new signing scheme, we can just rename \u0027signature\u0027 into something else and add a new field with new signature.",
+      "parentUuid": "681ae6f2_ce0e0329",
       "revId": "5870a347f62eef86dff5749beff443389b3736a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
