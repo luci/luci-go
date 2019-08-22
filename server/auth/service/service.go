@@ -95,6 +95,8 @@ type AuthDBAccess struct {
 type AuthService struct {
 	// URL is root URL (with protocol) of auth_service (e.g. "https://<host>").
 	URL string
+	// OAuthScopes is scopes to use for authentication (or nil for defaults).
+	OAuthScopes []string
 
 	// pubSubURLRoot is root URL of PubSub service. Mocked in tests.
 	pubSubURLRoot string
@@ -106,6 +108,14 @@ func (s *AuthService) pubSubURL(path string) string {
 		return s.pubSubURLRoot + path
 	}
 	return "https://pubsub.googleapis.com/v1/" + path
+}
+
+// oauthScopes returns a list of OAuth scopes to use for authentication.
+func (s *AuthService) oauthScopes() []string {
+	if s.OAuthScopes != nil {
+		return s.OAuthScopes
+	}
+	return oauthScopes
 }
 
 // RequestAccess asks Auth Service to grant the caller (us) access to the AuthDB
@@ -124,7 +134,7 @@ func (s *AuthService) RequestAccess(c context.Context) (*AuthDBAccess, error) {
 	req := internal.Request{
 		Method: "POST",
 		URL:    s.URL + "/auth_service/api/v1/authdb/subscription/authorization",
-		Scopes: oauthScopes,
+		Scopes: s.oauthScopes(),
 		Body:   map[string]string{},
 		Out:    &response,
 	}
@@ -155,7 +165,7 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 	req := internal.Request{
 		Method: "GET",
 		URL:    s.pubSubURL(subscription),
-		Scopes: oauthScopes,
+		Scopes: s.oauthScopes(),
 		Out:    &existing,
 	}
 	err := req.Do(c)
@@ -184,7 +194,7 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 		req = internal.Request{
 			Method: "PUT",
 			URL:    s.pubSubURL(subscription),
-			Scopes: oauthScopes,
+			Scopes: s.oauthScopes(),
 			Body:   &config,
 		}
 		return req.Do(c)
@@ -206,7 +216,7 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 	req = internal.Request{
 		Method: "POST",
 		URL:    s.pubSubURL(subscription + ":modifyPushConfig"),
-		Scopes: oauthScopes,
+		Scopes: s.oauthScopes(),
 		Body:   &request,
 	}
 	return req.Do(c)
@@ -222,7 +232,7 @@ func (s *AuthService) DeleteSubscription(c context.Context, subscription string)
 	req := internal.Request{
 		Method: "DELETE",
 		URL:    s.pubSubURL(subscription),
-		Scopes: oauthScopes,
+		Scopes: s.oauthScopes(),
 		Out:    &reply,
 	}
 	if err := req.Do(c); err != nil && reply.Error.Code != 404 {
@@ -248,7 +258,7 @@ func (s *AuthService) PullPubSub(c context.Context, subscription string) (*Notif
 	req := internal.Request{
 		Method: "POST",
 		URL:    s.pubSubURL(subscription + ":pull"),
-		Scopes: oauthScopes,
+		Scopes: s.oauthScopes(),
 		Body:   &request,
 		Out:    &response,
 	}
@@ -385,7 +395,7 @@ func (s *AuthService) ackMessages(c context.Context, subscription string, ackIDs
 	req := internal.Request{
 		Method: "POST",
 		URL:    s.pubSubURL(subscription + ":acknowledge"),
-		Scopes: oauthScopes,
+		Scopes: s.oauthScopes(),
 		Body:   &request,
 	}
 	return req.Do(c)
@@ -402,7 +412,7 @@ func (s *AuthService) GetLatestSnapshotRevision(c context.Context) (int64, error
 	req := internal.Request{
 		Method: "GET",
 		URL:    s.URL + "/auth_service/api/v1/authdb/revisions/latest?skip_body=1",
-		Scopes: oauthScopes,
+		Scopes: s.oauthScopes(),
 		Out:    &out,
 	}
 	if err := req.Do(c); err != nil {
@@ -426,7 +436,7 @@ func (s *AuthService) GetSnapshot(c context.Context, rev int64) (*Snapshot, erro
 	req := internal.Request{
 		Method: "GET",
 		URL:    fmt.Sprintf("%s/auth_service/api/v1/authdb/revisions/%d", s.URL, rev),
-		Scopes: oauthScopes,
+		Scopes: s.oauthScopes(),
 		Out:    &out,
 	}
 	if err := req.Do(c); err != nil {
