@@ -1,4 +1,4 @@
-// Copyright 2015 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,40 +15,43 @@
 package streamclient
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
 	"io"
 	"strings"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/clockflag"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
-type clientFactory func(protocolSpecificAddress string, namespace types.StreamName) (Client, error)
-
 // This is populated via init() functions int this package.
-var protocolRegistry = map[string]clientFactory{}
+var protocolRegistry = map[string]dialFactory{}
 
-// Client is a client to a LogDog Butler StreamServer. A Client will connect
-// to a StreamServer, negotiate a stream configuration, and return an active
-// stream object that can be written to.
-type Client interface {
-	// NewStream creates a new stream with the supplied stream properties.
-	NewStream(f streamproto.Flags) (Stream, error)
+// dialFactory takes an implementation-specific address (e.g. `localhost:1234`
+// or `/path/to/fifo`), and returns a `dialer` function which can be invoked to
+// open a new, raw, connection to the butler.
+type dialFactory func(addr string) (dialer, error)
+
+// dialer is called by Client for every new stream created, and is expected to
+// return an initialized, raw
+type dialer interface {
+	// if forProcess is true, this should try its best to return an *os.File, if
+	// the dialer supports it.
+	DialStream(forProcess bool, f streamproto.Flags) (io.WriteCloser, error)
+	DialDgramStream(f streamproto.Flags) (DatagramStream, error)
 }
 
-// streamFactory is a factory method to generate an io.WriteCloser stream for
-// the current clientImpl.
-type streamFactory func() (io.WriteCloser, error)
+// Client is a client to a local LogDog Butler.
+//
+// The methods here allow you to open a stream (text, binary or datagram) which
+// you can then use to stream data to LogDog.
+type Client struct {
+	dial dialer
 
-// clientImpl is an implementation of the Client interface using a net.Conn
-// factory to generate an individual stream.
-type clientImpl struct {
-	// network is the connection path to the stream server.
-	factory streamFactory
-
-	// namespace for all streams created in this client
 	ns types.StreamName
 }
 
@@ -56,62 +59,97 @@ type clientImpl struct {
 // from the supplied path string, which takes the form:
 //   <protocol>:<protocol-specific-spec>
 //
-// Supported protocols and their respective specs are:
-//   - unix:/path/to/socket describes a stream server listening on UNIX domain
-//     socket at "/path/to/socket".
+// Supported protocols
 //
-// Windows-only:
-//   - net.pipe:name describes a stream server listening on Windows named pipe
-//     "\\.\pipe\name".
-func New(path string, ns types.StreamName) (Client, error) {
+// Below is the list of all supported protocols:
+//
+//   unix:/path/to/socket (Posix only)
+//
+// Connects to a UNIX domain socket at "/path/to/socket".
+// This is the preferred protocol for Linux/Mac.
+//
+//   net.pipe:name (Windows only)
+//
+// Connects to a local Windows named pipe "\\.\pipe\name". This is the preferred
+// protocol for Windows.
+//
+//   null (All platforms)
+//
+// Sinks all connections and writes into a null data sink. Useful for tests, or
+// for running programs which use logdog but you don't care about their logdog
+// outputs.
+func New(path string, namespace types.StreamName) (*Client, error) {
 	parts := strings.SplitN(path, ":", 2)
-	value := ""
+	protocol, value := parts[0], ""
 	if len(parts) == 2 {
 		value = parts[1]
 	}
 
-	if f, ok := protocolRegistry[parts[0]]; ok {
-		return f(value, ns)
+	if f, ok := protocolRegistry[protocol]; ok {
+		dial, err := f(value)
+		if err != nil {
+			return nil, errors.Annotate(err, "opening path %q", path).Err()
+		}
+		return &Client{dial, namespace}, nil
 	}
-	return nil, fmt.Errorf("streamclient: no protocol registered for [%s]", parts[0])
+	return nil, errors.Reason("no protocol registered for [%s]", parts[0]).Err()
 }
 
-func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
-	f.Name = streamproto.StreamNameFlag(c.ns.Concat(types.StreamName(f.Name)))
-
-	if err := f.Descriptor().Validate(false); err != nil {
-		return nil, fmt.Errorf("streamclient: invalid stream descriptor: %s", err)
+func (c *Client) mkOptions(ctx context.Context, name types.StreamName, sType logpb.StreamType, opts []Option) (ret options, err error) {
+	ret.desc.Name = streamproto.StreamNameFlag(c.ns.Concat(types.StreamName(name)))
+	ret.desc.Type = streamproto.StreamType(sType)
+	for _, o := range opts {
+		o(&ret)
+	}
+	if time.Time(ret.desc.Timestamp).IsZero() {
+		ret.desc.Timestamp = clockflag.Time(clock.Now(ctx))
+	}
+	if ret.desc.ContentType == "" {
+		ret.desc.ContentType = string(ret.desc.Type.DefaultContentType())
 	}
 
-	client, err := c.factory()
+	if err = ret.desc.Descriptor().Validate(false); err != nil {
+		err = errors.Annotate(err, "invalid stream descriptor").Err()
+	}
+	return
+}
+
+// NewTextStream returns a new open text-based stream to the butler.
+//
+// Text streams look for newlines to delimit log sections.
+func (c *Client) NewTextStream(ctx context.Context, name types.StreamName, opts ...Option) (io.WriteCloser, error) {
+	fullOpts, err := c.mkOptions(ctx, name, logpb.StreamType_TEXT, opts)
 	if err != nil {
 		return nil, err
 	}
-	ownsClient := true
-	defer func() {
-		// If we haven't written out the connection, close.
-		if ownsClient {
-			client.Close()
-		}
-	}()
+	ret, err := c.dial.DialStream(fullOpts.forProcess, fullOpts.desc)
+	return ret, errors.Annotate(err, "attempting to connect text stream %q", name).Err()
+}
 
-	data, err := json.Marshal(f)
+// NewBinaryStream returns a new open binary stream to the butler.
+//
+// Binary streams use fixed size chunks to delimit log sections.
+func (c *Client) NewBinaryStream(ctx context.Context, name types.StreamName, opts ...Option) (io.WriteCloser, error) {
+	fullOpts, err := c.mkOptions(ctx, name, logpb.StreamType_BINARY, opts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal properties JSON: %s", err)
+		return nil, err
 	}
+	ret, err := c.dial.DialStream(fullOpts.forProcess, fullOpts.desc)
+	return ret, errors.Annotate(err, "attempting to connect binary stream %q", name).Err()
+}
 
-	// Perform the handshake: magic + size(data) + data.
-	s := &BaseStream{
-		WriteCloser:      client,
-		IsDatagramStream: logpb.StreamType(f.Type) == logpb.StreamType_DATAGRAM,
+// NewDatagramStream returns a new open binary stream to the butler.
+//
+// Datagram streams allow you to send messages without having to demark the
+// separation between messages.
+func (c *Client) NewDatagramStream(ctx context.Context, name types.StreamName, opts ...Option) (DatagramStream, error) {
+	fullOpts, err := c.mkOptions(ctx, name, logpb.StreamType_DATAGRAM, opts)
+	if err != nil {
+		return nil, err
 	}
-	if _, err := s.writeRaw(streamproto.ProtocolFrameHeaderMagic); err != nil {
-		return nil, fmt.Errorf("failed to write magic number: %s", err)
+	if fullOpts.forProcess {
+		return nil, errors.Reason("cannot specify ForProcess on a datagram stream").Err()
 	}
-	if err := s.writeRecord(data); err != nil {
-		return nil, fmt.Errorf("failed to write properties: %s", err)
-	}
-
-	ownsClient = false // Passing ownership to caller.
-	return s, nil
+	ret, err := c.dial.DialDgramStream(fullOpts.desc)
+	return ret, errors.Annotate(err, "attempting to connect datagram stream %q", name).Err()
 }
