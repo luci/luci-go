@@ -430,6 +430,30 @@
     },
     {
       "key": {
+        "uuid": "d7a69e83_01c2fb67",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T23:13:50Z",
+      "side": 1,
+      "message": "Does butler protocol have some IPC authorization mechanism or any process running on same Windows box can write to this pipe? (With unix sockets we have standard unix permissions).",
+      "parentUuid": "a15f1135_676ac0e4",
+      "range": {
+        "startLine": 71,
+        "startChar": 14,
+        "endLine": 71,
+        "endChar": 18
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7669f909_fd8325ec",
         "filename": "logdog/client/butlerlib/streamclient/client.go",
         "patchSetId": 4
