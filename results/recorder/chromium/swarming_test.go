@@ -80,18 +80,18 @@ func TestFetchingOutputJson(t *testing.T) {
 		defer swarmingFake.Close()
 
 		Convey(`successfully gets output file`, func() {
-			buf, err := fetchOutputJSON(ctx, swarmingFake.URL, "successful-task")
+			buf, err := fetchOutputJSON(ctx, http.DefaultClient, swarmingFake.URL, "successful-task")
 			So(err, ShouldBeNil)
 			So(buf, ShouldResemble, []byte("f00df00d"))
 		})
 
 		Convey(`errs if no outputs`, func() {
-			_, err := fetchOutputJSON(ctx, swarmingFake.URL, "no-outputs-task")
+			_, err := fetchOutputJSON(ctx, http.DefaultClient, swarmingFake.URL, "no-outputs-task")
 			So(err, ShouldErrLike, "had no isolated outputs")
 		})
 
 		Convey(`errs if no output file`, func() {
-			_, err := fetchOutputJSON(ctx, swarmingFake.URL, "no-output-file-task")
+			_, err := fetchOutputJSON(ctx, http.DefaultClient, swarmingFake.URL, "no-output-file-task")
 			So(err, ShouldErrLike, "missing expected output output.json in isolated outputs")
 		})
 	})
