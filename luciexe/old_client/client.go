@@ -18,6 +18,7 @@
 package old_client
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"time"
@@ -25,12 +26,9 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
-	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -78,7 +76,7 @@ type Client struct {
 	// Logdog.Client can be used to create new LogDog streams.
 	Logdog *bootstrap.Bootstrap
 
-	buildStream streamclient.Stream
+	buildStream streamclient.DatagramStream
 }
 
 // Init initializes the client. Populates c.InitBuild and c.Logdog.
@@ -97,17 +95,10 @@ func (c *Client) Init() error {
 		return err
 	}
 
-	buildTimestamp := c.BuildTimestamp
-	if buildTimestamp.IsZero() {
-		buildTimestamp = time.Now()
-	}
-
-	c.buildStream, err = c.Logdog.Client.NewStream(streamproto.Flags{
-		Name:        streamproto.StreamNameFlag(BuildStreamName),
-		Type:        streamproto.StreamType(logpb.StreamType_DATAGRAM),
-		ContentType: protoutil.BuildMediaType,
-		Timestamp:   clockflag.Time(buildTimestamp),
-	})
+	c.buildStream, err = c.Logdog.Client.NewDatagramStream(
+		context.Background(), BuildStreamName,
+		streamclient.WithContentType(protoutil.BuildMediaType),
+		streamclient.WithTimestamp(c.BuildTimestamp))
 	return err
 }
 
