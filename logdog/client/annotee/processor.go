@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/client/annotee/annotation"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
@@ -104,7 +103,7 @@ type Options struct {
 	LinkGenerator LinkGenerator
 
 	// Client is the LogDog Butler Client to use for stream creation.
-	Client streamclient.Client
+	Client *streamclient.Client
 
 	// Execution describes the current applicaton's execution parameters. This
 	// will be used to construct annotation state.
@@ -153,7 +152,7 @@ type Processor struct {
 	astate       *annotation.State
 	stepHandlers map[*annotation.Step]*stepHandler
 
-	annotationStream    streamclient.Stream
+	annotationStream    streamclient.DatagramStream
 	annotationC         chan annotationSignal
 	annotationFinishedC chan struct{}
 
@@ -198,7 +197,10 @@ func (p *Processor) initialize() (err error) {
 	annotationPath = p.astate.RootStep().BaseStream(annotationPath)
 
 	// Create our annotation stream.
-	if p.annotationStream, err = p.createStream(annotationPath, &metadataStreamArchetype); err != nil {
+	p.annotationStream, err = p.o.Client.NewDatagramStream(
+		p.ctx, annotationPath,
+		streamclient.WithContentType(milo.ContentTypeAnnotations))
+	if err != nil {
 		log.WithError(err).Errorf(p.ctx, "Failed to create annotation stream.")
 		return
 	}
@@ -496,10 +498,6 @@ func (p *Processor) finishStepHandler(h *stepHandler, closeSteps bool, closeTime
 	h.finished = true
 }
 
-func (p *Processor) createStream(name types.StreamName, archetype *streamproto.Flags) (streamclient.Stream, error) {
-	return p.o.Client.NewStream(streamFlagsFromArchetype(p.ctx, name, archetype))
-}
-
 func (p *Processor) annotationStateUpdated(ut annotation.UpdateType) {
 	// Serialize our annotation state immediately, as the Step's internal state
 	// may change in future annotation processing iterations.
@@ -513,7 +511,7 @@ func (p *Processor) annotationStateUpdated(ut annotation.UpdateType) {
 	p.annotationC <- annotationSignal{data, ut}
 }
 
-func (p *Processor) runAnnotationMeter(s streamclient.Stream, interval time.Duration) {
+func (p *Processor) runAnnotationMeter(s streamclient.DatagramStream, interval time.Duration) {
 	defer close(p.annotationFinishedC)
 
 	var latest []byte
@@ -593,7 +591,7 @@ func (c *annotationCallbacks) StepLogLine(step *annotation.Step, name types.Stre
 		return
 	}
 
-	s, created, err := h.getStream(name, &textStreamArchetype)
+	s, created, err := h.getTextStream(name)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -627,10 +625,10 @@ type stepHandler struct {
 	processor *Processor
 	step      *annotation.Step
 
-	client                  streamclient.Client
+	client                  *streamclient.Client
 	injectedAnnotations     []string
 	injectedTextStreamLines []string
-	streams                 map[types.StreamName]streamclient.Stream
+	streams                 map[types.StreamName]io.WriteCloser
 	finished                bool
 	allEmitted              bool
 	textStrippedNote        bool
@@ -643,7 +641,7 @@ func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
 		step:      step,
 
 		client:  p.o.Client,
-		streams: make(map[types.StreamName]streamclient.Stream),
+		streams: make(map[types.StreamName]io.WriteCloser),
 	}
 
 	// Send our initial annotation state.
@@ -658,7 +656,7 @@ func (h *stepHandler) String() string {
 
 func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
 	name := h.step.BaseStream(s.Name)
-	stream, created, err := h.getStream(name, &textStreamArchetype)
+	stream, created, err := h.getTextStream(name)
 	if err != nil {
 		return err
 	}
@@ -687,8 +685,7 @@ func (h *stepHandler) updated(ut annotation.UpdateType) {
 	}
 }
 
-func (h *stepHandler) getStream(name types.StreamName, archetype *streamproto.Flags) (
-	s streamclient.Stream, created bool, err error) {
+func (h *stepHandler) getTextStream(name types.StreamName) (s io.WriteCloser, created bool, err error) {
 	if h.finished {
 		err = fmt.Errorf("refusing to get stream %q for finished handler", name)
 		return
@@ -698,7 +695,7 @@ func (h *stepHandler) getStream(name types.StreamName, archetype *streamproto.Fl
 	}
 
 	// Create a new stream. Clone the properties archetype and customize.
-	s, err = h.processor.createStream(name, archetype)
+	s, err = h.client.NewTextStream(h.processor.ctx, name)
 	if err == nil {
 		created = true
 		h.streams[name] = s
@@ -718,10 +715,10 @@ func (h *stepHandler) closeAllStreams() {
 	for name, s := range h.streams {
 		h.closeStreamImpl(name, s)
 	}
-	h.streams = make(map[types.StreamName]streamclient.Stream)
+	h.streams = make(map[types.StreamName]io.WriteCloser)
 }
 
-func (h *stepHandler) closeStreamImpl(name types.StreamName, s streamclient.Stream) {
+func (h *stepHandler) closeStreamImpl(name types.StreamName, s io.WriteCloser) {
 	if err := s.Close(); err != nil {
 		log.Fields{
 			log.ErrorKey: err,

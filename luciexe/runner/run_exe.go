@@ -17,19 +17,15 @@ package runner
 import (
 	"bytes"
 	"context"
-	"io"
 	"os/exec"
-	"path"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/auth/authctx"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe/runner/runnerbutler"
 
@@ -71,12 +67,14 @@ func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, authC
 func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, authCtx *authctx.Context, logdogServ *runnerbutler.Server, logdogNamespace string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	logging.Infof(ctx, "prepping to run executable")
 
 	cmd := exec.CommandContext(ctx, args.ExecutablePath)
 
 	// Prepare user env.
 	env, err := setupUserEnv(ctx, args, wkDir, authCtx, logdogServ, logdogNamespace)
 	if err != nil {
+		logging.WithError(err).Errorf(ctx, "failed to setupUserEnv")
 		return err
 	}
 	cmd.Env = env.Sorted()
@@ -85,30 +83,35 @@ func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, 
 	// Pass initial build on stdin.
 	buildBytes, err := proto.Marshal(args.Build)
 	if err != nil {
+		logging.WithError(err).Errorf(ctx, "failed to marshal build")
 		return
 	}
 	cmd.Stdin = bytes.NewReader(buildBytes)
 
-	// Prepare stdout/stderr pipes.
-	stdout, err := cmd.StdoutPipe()
+	stdout, err := logdogServ.Client.NewTextStream(
+		ctx, "stdout", streamclient.ForProcess())
 	if err != nil {
+		logging.WithError(err).Errorf(ctx, "failed to get stdout")
 		return
 	}
-	stderr, err := cmd.StderrPipe()
+	defer stdout.Close()
+	cmd.Stdout = stdout
+
+	stderr, err := logdogServ.Client.NewTextStream(
+		ctx, "stderr", streamclient.ForProcess())
 	if err != nil {
+		logging.WithError(err).Errorf(ctx, "failed to get stderr")
 		return
 	}
+	defer stderr.Close()
+	cmd.Stderr = stderr
 
 	// Start the user executable.
-	if err := cmd.Start(); err != nil {
+	err = cmd.Start()
+	if err != nil {
 		return errors.Annotate(err, "failed to start the user executable").Err()
 	}
 	logging.Infof(ctx, "Started user executable successfully")
-
-	// Send subprocess stdout/stderr to logdog.
-	if err := hookStdoutStderr(ctx, logdogServ, stdout, stderr, streamNamePrefix); err != nil {
-		return err
-	}
 
 	switch err := cmd.Wait().(type) {
 	case *exec.ExitError:
@@ -122,31 +125,7 @@ func runUserExecutable(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, 
 		return nil
 
 	default:
+		logging.WithError(err).Errorf(ctx, "failed to wait")
 		return errors.Annotate(err, "failed to wait for the user executable to exit").Err()
 	}
-}
-
-// hookStdoutStderr sends stdout/stderr to logdogServ and also tees to the
-// current process's stdout/stderr respectively.
-func hookStdoutStderr(ctx context.Context, logdogServ *runnerbutler.Server, stdout, stderr io.ReadCloser, streamNamePrefix string) error {
-	tsNow, err := ptypes.TimestampProto(clock.Now(ctx))
-	if err != nil {
-		return err
-	}
-
-	hook := func(rc io.ReadCloser, name string) error {
-		return logdogServ.AddStream(rc, &logpb.LogStreamDescriptor{
-			Name:        path.Join(streamNamePrefix, name),
-			ContentType: "text/plain",
-			Timestamp:   tsNow,
-		})
-	}
-
-	if err := hook(stdout, "stdout"); err != nil {
-		return err
-	}
-	if err := hook(stderr, "stderr"); err != nil {
-		return err
-	}
-	return nil
 }
