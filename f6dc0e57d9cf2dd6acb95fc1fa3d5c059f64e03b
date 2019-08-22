@@ -1,0 +1,112 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8acf8335_4a0e2010",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:05:37Z",
+      "side": 1,
+      "message": "Is it really worth to be its own package?",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5193abb_0320a689",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:05:37Z",
+      "side": 1,
+      "message": "Style nit: I like consistently using ctx for the context variable. It makes the code easier to scan IMHO.\n\nAccording to an informal poll on internal chat, Robbie agrees with me. :D",
+      "range": {
+        "startLine": 68,
+        "startChar": 30,
+        "endLine": 68,
+        "endChar": 31
+      },
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4de82ab6_46f0eaec",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:05:37Z",
+      "side": 1,
+      "message": "What about forcing its creation at object instantiation instead of late creation?\n\nIn short, I think I\u0027d prefer a New() that a struct with public properties. I\u0027m fine with keeping a struct instead of an interface, but a constructor would remove the need for late checks.\n\nI don\u0027t mind that much though, you can ignore me.",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4e41979_f61559db",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:05:37Z",
+      "side": 1,
+      "message": "Maybe log a warning if we have a \"more recent\" version? It would be useful to debug weird inconsistencies?",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4230350_a70a3e6f",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:05:37Z",
+      "side": 1,
+      "message": "Should it still return the current revision if the new one is denied?\nI mean the system should continue to work with the current one as a partial failure mode?",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97e9947e_9e7008be",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:05:37Z",
+      "side": 1,
+      "message": "Same comment as in line 71",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
