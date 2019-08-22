@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "35bb51ef_3e2b61e4",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T13:45:44Z",
+      "side": 1,
+      "message": "Please add a note that this test case mutates the process state.\n\nAnother option is to implement disableSymlink(). Maybe not a bad idea, so that if other test cases use symlinks, they do not succeed and fails randomly depending on the order on which the test cases run.",
+      "revId": "89115ad81630387dbeda480715282427bf48307f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e072d8ff_8c662d65",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T13:45:44Z",
+      "side": 1,
+      "message": "Don\u0027t make it parallel, since it\u0027s changing the behavior of the process.",
+      "revId": "89115ad81630387dbeda480715282427bf48307f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7c74c6a_eb09de52",
+        "filename": "common/system/filesystem/filesystem_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T13:45:44Z",
+      "side": 1,
+      "message": "Can you add a comment describing what it does?\nIn addition a link to MSDN would be good, since people reading the code will likely not know about this at all.",
+      "revId": "89115ad81630387dbeda480715282427bf48307f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
