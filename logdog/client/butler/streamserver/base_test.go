@@ -19,16 +19,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 
+	"github.com/golang/protobuf/ptypes"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -268,11 +270,8 @@ func TestTCPServer(t *testing.T) {
 // server.
 //
 // svr must be in listening state when this is called.
-func testClientServer(t *testing.T, svr StreamServer, client streamclient.Client) {
-	flags := streamproto.Flags{
-		Name:      "foo/bar",
-		Timestamp: clockflag.Time(testclock.TestTimeLocal),
-	}
+func testClientServer(t *testing.T, svr StreamServer, client *streamclient.Client) {
+	ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 	data := []byte("ohaithere")
 
 	clientDoneC := make(chan error)
@@ -282,8 +281,8 @@ func testClientServer(t *testing.T, svr StreamServer, client streamclient.Client
 			clientDoneC <- err
 		}()
 
-		var stream streamclient.Stream
-		if stream, err = client.NewStream(flags); err != nil {
+		var stream io.WriteCloser
+		if stream, err = client.NewTextStream(ctx, "foo/bar"); err != nil {
 			return
 		}
 		defer func() {
@@ -300,10 +299,16 @@ func testClientServer(t *testing.T, svr StreamServer, client streamclient.Client
 	rc, desc := svr.Next()
 	defer rc.Close()
 
-	So(desc, ShouldResemble, flags.Descriptor())
+	stamp, err := ptypes.TimestampProto(testclock.TestTimeLocal)
+	So(err, ShouldBeNil)
+	So(desc, ShouldResemble, &logpb.LogStreamDescriptor{
+		Name:        "foo/bar",
+		ContentType: "text/plain",
+		Timestamp:   stamp,
+	})
 
 	var buf bytes.Buffer
-	_, err := buf.ReadFrom(rc)
+	_, err = buf.ReadFrom(rc)
 	So(err, ShouldBeNil)
 	So(buf.Bytes(), ShouldResemble, data)
 
