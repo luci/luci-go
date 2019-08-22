@@ -454,6 +454,30 @@
     },
     {
       "key": {
+        "uuid": "3fd50bc8_58d0c319",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-22T23:41:29Z",
+      "side": 1,
+      "message": "the butler implementation currently allows anyone on the machine to write to it. We could change this, but it involves grokking https://docs.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-definition-language",
+      "parentUuid": "d7a69e83_01c2fb67",
+      "range": {
+        "startLine": 71,
+        "startChar": 14,
+        "endLine": 71,
+        "endChar": 18
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7669f909_fd8325ec",
         "filename": "logdog/client/butlerlib/streamclient/client.go",
         "patchSetId": 4
