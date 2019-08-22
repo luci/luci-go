@@ -197,6 +197,43 @@ message AuthDBRevision {
 }
 
 
+// SignedAuthDB contains serialized and signed AuthDB proto.
+//
+// It is used to store AuthDB snapshots in Google Storage. Signing is used as
+// a defense against unauthorized writes to the storage bucket.
+message SignedAuthDB {
+  // Serialized ReplicationPushRequest message with actual data.
+  //
+  // Contains revision information and AuthDB itself.
+  bytes auth_db_blob = 1;
+
+  // Service account name whose key was used to sign the AuthDB blob.
+  string signer_id = 2;
+  // ID of the signing key.
+  string signing_key_id = 3;
+
+  // The signature of auth_db_blob field.
+  //
+  // It is RS256(SHA512(auth_db_blob)).
+  //
+  // Where:
+  //   * RS256 is RSASSA-PKCS1-v1_5 using SHA-256, see RS256 algo in RFC7518.
+  //   * SHA512 is a byte string (64 bytes) with SHA-512 digest of its input.
+  //
+  // Such peculiar structure is due to limitations of GAE signing infrastructure
+  // (RS256 function can accept at most 8KB of input).
+  //
+  // Consumers of SignedAuthDB are expected to do the following:
+  //   1. Check 'signer_id' is what they expect.
+  //   2. Use https://www.googleapis.com/service_accounts/v1/metadata/x509/...
+  //      endpoint to get the signer's public key with ID 'signing_key_id'.
+  //   3. Construct to-be-signed string as SHA512(auth_db_blob).
+  //   4. Verify 'signature' matches to-be-signed string using the public key
+  //      from step 2.
+  bytes signature = 4;
+}
+
+
 // Published by Primary into 'auth-db-changed' PubSub topic. The body of the
 // message is base64 encoded serialized ChangeNotification. Additional
 // attributes are:
@@ -209,10 +246,16 @@ message ChangeNotification {
 
 
 // Sent from Primary to Replica to update Replica's AuthDB.
+//
 // Primary signs the entire serialized message with its private key and appends
 // two headers to HTTP request that carries the blob:
 //  X-AuthDB-SigKey-v1: <id of a public key>
 //  X-AuthDB-SigVal-v1: <base64 encoded RSA-SHA256(SHA512(blob)) signature>
+//
+// Binary serialization of ReplicationPushRequest is sometimes misleadingly
+// called "AuthDB blob". It is stored in Datastore (as is) and in Google Storage
+// (as serialized SignedAuthDB) for consumers that do not use Primary -> Replica
+// protocol.
 message ReplicationPushRequest {
   // Revision that is being pushed.
   AuthDBRevision revision = 1;
