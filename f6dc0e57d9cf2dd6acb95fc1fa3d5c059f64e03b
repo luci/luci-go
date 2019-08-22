@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e2b4ba2e_1ddb1874",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:23:12Z",
+      "side": 1,
+      "message": "Unfortunately yes. I wanted to put it into authdb package, but this introduces dependency cycle between \u0027auth/authdb\u0027 and \u0027auth/service\u0027.",
+      "parentUuid": "8acf8335_4a0e2010",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5193abb_0320a689",
         "filename": "server/auth/authdb/dump/dump.go",
         "patchSetId": 2
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "357c9462_b10de37f",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:23:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5193abb_0320a689",
+      "range": {
+        "startLine": 68,
+        "startChar": 30,
+        "endLine": 68,
+        "endChar": 31
+      },
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4de82ab6_46f0eaec",
         "filename": "server/auth/authdb/dump/dump.go",
         "patchSetId": 2
@@ -56,6 +98,24 @@
       "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf4552d3_4bb36d20",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:23:12Z",
+      "side": 1,
+      "message": "This thing is bound to the context, so it is created here, where the context is available. (And embedding context into structs is considered bad practice).",
+      "parentUuid": "4de82ab6_46f0eaec",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -76,6 +136,24 @@
     },
     {
       "key": {
+        "uuid": "72302d4b_3fdcc5b9",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:23:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4e41979_f61559db",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4230350_a70a3e6f",
         "filename": "server/auth/authdb/dump/dump.go",
         "patchSetId": 2
@@ -93,6 +171,24 @@
     },
     {
       "key": {
+        "uuid": "1c69ad02_e0b4afef",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:23:12Z",
+      "side": 1,
+      "message": "Callers should deal with this explicitly (they have \u0027cur\u0027). Retuning both a result and non-nil error is a bit confusing.",
+      "parentUuid": "a4230350_a70a3e6f",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "97e9947e_9e7008be",
         "filename": "server/auth/authdb/dump/dump.go",
         "patchSetId": 2
@@ -107,6 +203,24 @@
       "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "581ca567_1e8df948",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:23:12Z",
+      "side": 1,
+      "message": "meh, not worth it",
+      "parentUuid": "97e9947e_9e7008be",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
