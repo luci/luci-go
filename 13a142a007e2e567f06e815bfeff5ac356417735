@@ -26,6 +26,30 @@
     },
     {
       "key": {
+        "uuid": "7b3888b9_c36328d2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-22T08:15:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f4220c1_fa17e835",
+      "range": {
+        "startLine": 7,
+        "startChar": 13,
+        "endLine": 7,
+        "endChar": 23
+      },
+      "revId": "13a142a007e2e567f06e815bfeff5ac356417735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6b06ee1c_f2216f2c",
         "filename": "common/system/filesystem/filesystem.go",
         "patchSetId": 5
@@ -49,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "71bf9568_47915f8a",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-22T08:15:07Z",
+      "side": 1,
+      "message": "This is not python.",
+      "parentUuid": "6b06ee1c_f2216f2c",
+      "range": {
+        "startLine": 289,
+        "startChar": 8,
+        "endLine": 289,
+        "endChar": 21
+      },
+      "revId": "13a142a007e2e567f06e815bfeff5ac356417735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5294d87f_81357f3a",
         "filename": "common/system/filesystem/filesystem.go",
         "patchSetId": 5
@@ -60,6 +108,30 @@
       "writtenOn": "2019-08-22T08:08:37Z",
       "side": 1,
       "message": "nit but where this magic number come from?",
+      "range": {
+        "startLine": 311,
+        "startChar": 34,
+        "endLine": 311,
+        "endChar": 37
+      },
+      "revId": "13a142a007e2e567f06e815bfeff5ac356417735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27495726_bdb36720",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-22T08:15:07Z",
+      "side": 1,
+      "message": "Took from\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/system/filesystem/filesystem.go?l\u003d144\u0026rcl\u003da0a6c015bf87df4621ef41d8036d2c5d5dea812b",
+      "parentUuid": "5294d87f_81357f3a",
       "range": {
         "startLine": 311,
         "startChar": 34,
