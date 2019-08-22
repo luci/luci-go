@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0b028f89_4d38b94b",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-22T15:24:14Z",
+      "side": 1,
+      "message": "I changed interface of enableSymlink instead, how do you think this?",
+      "parentUuid": "35bb51ef_3e2b61e4",
+      "revId": "89115ad81630387dbeda480715282427bf48307f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e072d8ff_8c662d65",
         "filename": "common/system/filesystem/filesystem_test.go",
         "patchSetId": 2
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "45da11a5_2b36f609",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-22T15:24:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e072d8ff_8c662d65",
+      "revId": "89115ad81630387dbeda480715282427bf48307f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a7c74c6a_eb09de52",
         "filename": "common/system/filesystem/filesystem_windows.go",
         "patchSetId": 2
@@ -50,6 +86,24 @@
       "revId": "89115ad81630387dbeda480715282427bf48307f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ea37496_15c5b641",
+        "filename": "common/system/filesystem/filesystem_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-22T15:24:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7c74c6a_eb09de52",
+      "revId": "89115ad81630387dbeda480715282427bf48307f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
