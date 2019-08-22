@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/client/annotee"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
@@ -495,7 +496,10 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 // streamsFromAnnotatedLog takes in an annotated log and returns a fully
 // populated set of logdog streams
 func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.Streams, error) {
-	c := &memoryClient{}
+	c, err := streamclient.New("fake", "")
+	if err != nil {
+		panic(errors.Annotate(err, "impossible"))
+	}
 	p := annotee.New(ctx, annotee.Options{
 		Client:                 c,
 		MetadataUpdateInterval: -1, // Neverrrrrr send incr updates.
@@ -514,7 +518,7 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 		return nil, err
 	}
 	p.Finish()
-	return c.ToLogDogStreams()
+	return parseAnnotations(c)
 }
 
 // failedToStart is called in the case where logdog-only mode is on but the
