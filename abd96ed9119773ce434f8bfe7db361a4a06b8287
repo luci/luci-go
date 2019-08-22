@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80f2d813_4154c315",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 923,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:07:48Z",
+      "side": 1,
+      "message": "What if they are both empty?",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0da11a1b_6da7a799",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 944,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:07:48Z",
+      "side": 1,
+      "message": "if you arrive here and s.opts.AuthDBSigner \u003d\u003d \"\", is it bad?",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f491a29_367af399",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 954,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:07:48Z",
+      "side": 1,
+      "message": "Or NewTicker so it\u0027s synchronized? I wonder if accounting for the sync delay is worth it or not.",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d14956f_6028b236",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 972,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:07:48Z",
+      "side": 1,
+      "message": "You are comparing pointers? Maybe worth adding a short comment here as to why it\u0027s fine.",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bf8295e_8b0aa3ca",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1009,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T15:07:48Z",
+      "side": 1,
+      "message": "AuthServiceHost is not validated to be a raw hostname, so people could pass -auth-service-host\" https://foo.appspot.com and would be surprised by a late failure.",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
