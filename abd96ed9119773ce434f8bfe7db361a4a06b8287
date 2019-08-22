@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b8e0da4f_25bb0471",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 923,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:40:50Z",
+      "side": 1,
+      "message": "This is allowed in development mode (when running locally). In production mode it\u0027s not. Added explicit check (there was a check already a bit later).",
+      "parentUuid": "80f2d813_4154c315",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0da11a1b_6da7a799",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f17e44c8_3924165f",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 944,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:40:50Z",
+      "side": 1,
+      "message": "If it is \"\" here, then AuthServiceHost is also \"\" (due to \"Fill in defaults\" above). And this is fine, since it\u0027s not used at all in this case.",
+      "parentUuid": "0da11a1b_6da7a799",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "e4ff7f47_216c401c",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 954,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:40:50Z",
+      "side": 1,
+      "message": "Strict timing doesn\u0027t matter. NewTicker causes more complication since we\u0027ll need to explicitly deal with context cancelation (it matters here, this is how the goroutine is notified that it should exit when the server is shutting down on SIGTERM).",
+      "parentUuid": "1f491a29_367af399",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d14956f_6028b236",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -70,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "689edf07_15ab11f5",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 972,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:40:50Z",
+      "side": 1,
+      "message": "Eh, it was a silly optimization to avoid atomic.Store once in 30 sec. Removed it since it causes questions.",
+      "parentUuid": "0d14956f_6028b236",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8bf8295e_8b0aa3ca",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -84,6 +156,24 @@
       "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c96f482_a91717bd",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1009,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T19:40:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8bf8295e_8b0aa3ca",
+      "revId": "abd96ed9119773ce434f8bfe7db361a4a06b8287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
