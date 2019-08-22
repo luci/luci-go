@@ -119,6 +119,24 @@
     },
     {
       "key": {
+        "uuid": "19622b4b_74a0a8c9",
+        "filename": "server/auth/authdb/dump/dump.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-22T19:26:29Z",
+      "side": 1,
+      "message": "Ah, the whole process is done as part of a context, so it\u0027s really single use. ok.",
+      "parentUuid": "cf4552d3_4bb36d20",
+      "revId": "f6dc0e57d9cf2dd6acb95fc1fa3d5c059f64e03b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b4e41979_f61559db",
         "filename": "server/auth/authdb/dump/dump.go",
         "patchSetId": 2
