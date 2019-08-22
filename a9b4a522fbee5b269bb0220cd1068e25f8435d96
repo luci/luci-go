@@ -1,0 +1,511 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1aa0c2e7_35bfa093",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "https://en.wikipedia.org/wiki/Roc_(mythology) (but sub)",
+      "range": {
+        "startLine": 7,
+        "startChar": 63,
+        "endLine": 7,
+        "endChar": 70
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d9ef91d_cab1aabb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "Does this mean you fixed the flaky test? :) (as in \"rewrote it?\")",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 57
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c175a758_89028881",
+        "filename": "logdog/client/butler/streamserver/base_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "nit: move it after stdlib imports, before luci imports",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 36
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c6dfbbc_1248fc43",
+        "filename": "logdog/client/butlerlib/bootstrap/bootstrap.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "is this still needed?",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 82
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adbcb6ea_874db2e0",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "in",
+      "range": {
+        "startLine": 31,
+        "startChar": 42,
+        "endLine": 31,
+        "endChar": 45
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6293873_f8946bb0",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "initialize, raw what?",
+      "range": {
+        "startLine": 40,
+        "startChar": 13,
+        "endLine": 40,
+        "endChar": 29
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ceb7a71a_5214665d",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "what happens if its not os.File? There\u0027ll be extra io.Copy goroutine?",
+      "range": {
+        "startLine": 42,
+        "startChar": 32,
+        "endLine": 43,
+        "endChar": 26
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc9dc5cf_b4632217",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "nit: send (just better English, \"open a stream ... to stream\" sounds repetitive). Very important, I know.",
+      "range": {
+        "startLine": 51,
+        "startChar": 23,
+        "endLine": 51,
+        "endChar": 29
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52ae0083_b5a2cc2d",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "POSIX",
+      "range": {
+        "startLine": 66,
+        "startChar": 27,
+        "endLine": 66,
+        "endChar": 32
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6197fbca_07f3ac07",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "I wonder, why \"net.\" prefix? (It\u0027s probably infeasible to change now, just curios)",
+      "range": {
+        "startLine": 71,
+        "startChar": 5,
+        "endLine": 71,
+        "endChar": 13
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a661b69_8104053c",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "does this allow \u0027\\\u0027? Is it system-global or user-specific namespace?",
+      "range": {
+        "startLine": 71,
+        "startChar": 14,
+        "endLine": 71,
+        "endChar": 18
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7669f909_fd8325ec",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "IMHO we should allow only localhost here. Without TLS using remote hosts is not great.\n\nAlso, is this used by anything at all?",
+      "range": {
+        "startLine": 76,
+        "startChar": 10,
+        "endLine": 76,
+        "endChar": 14
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08c3a343_942e00d2",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "it will be more reliable to mount Unix socket into the container. So the only use case is local VM.",
+      "range": {
+        "startLine": 89,
+        "startChar": 11,
+        "endLine": 89,
+        "endChar": 27
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7778fd65_d947894e",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "IMHO, let\u0027s kill it, considering caveats above that make it special.",
+      "range": {
+        "startLine": 89,
+        "startChar": 29,
+        "endLine": 89,
+        "endChar": 70
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cfeb8ca_53d7e99f",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "Should we expose it only in tests (e.g. via \u0027_\u0027 import)? Otherwise I can imagine it will be easy to OOM processes by setting \"fake\" in environ. (Though we probably don\u0027t care).\n\n   import (\n      // Registers fake butler sink for tests.\n      _ \".../streamclient/fake\"\n   )\n \nThis would also make tests slightly less mysterious (where do \"fake\" come from?)\n\nThe only downside is some acrobatics to avoid dependency cycles when implementing \u0027fake\u0027 package.",
+      "range": {
+        "startLine": 91,
+        "startChar": 4,
+        "endLine": 95,
+        "endChar": 58
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a523c31c_b6c49269",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 141,
+        "startChar": 80,
+        "endLine": 141,
+        "endChar": 89
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "474fcf73_77e174a9",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "no support for timeouts or cancelation here: another reason to kill TCP transport (which may dial slow hosts over the network)",
+      "range": {
+        "startLine": 146,
+        "startChar": 13,
+        "endLine": 146,
+        "endChar": 66
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73c8d044_8da9c0b5",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "how to set it? Does it matter to the caller what they are?",
+      "range": {
+        "startLine": 152,
+        "startChar": 22,
+        "endLine": 152,
+        "endChar": 32
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4723ca3e_1da957c2",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "datagram",
+      "range": {
+        "startLine": 162,
+        "startChar": 35,
+        "endLine": 162,
+        "endChar": 46
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c9e2520_c8f0b711",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "why? Also please document.",
+      "range": {
+        "startLine": 171,
+        "startChar": 1,
+        "endLine": 173,
+        "endChar": 2
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7181b780_a77a19e1",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "this can also go into \"fake\" package (and would be a nice thing IMHO, mixing testing and prod interfaces is a bit smelly)",
+      "range": {
+        "startLine": 178,
+        "startChar": 3,
+        "endLine": 178,
+        "endChar": 17
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f78e8fa_e1d37243",
+        "filename": "logdog/client/butlerlib/streamclient/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-22T18:48:38Z",
+      "side": 1,
+      "message": "\u003e \"retrive\" is a possible misspelling of \"retrieve\".\n\nPlease Fix",
+      "parentUuid": "81a5db9a_e067c7da",
+      "range": {
+        "startLine": 179,
+        "startChar": 28,
+        "endLine": 179,
+        "endChar": 35
+      },
+      "revId": "a9b4a522fbee5b269bb0220cd1068e25f8435d96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
