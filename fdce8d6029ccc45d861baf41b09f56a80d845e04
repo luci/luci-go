@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "60d81f6e_60881160",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 15
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-23T18:59:37Z",
+      "side": 1,
+      "message": "so... are we keeping rocs?",
+      "range": {
+        "startLine": 7,
+        "startChar": 63,
+        "endLine": 7,
+        "endChar": 70
+      },
+      "revId": "fdce8d6029ccc45d861baf41b09f56a80d845e04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26f48951_c19c7db1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 15
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-23T18:59:37Z",
+      "side": 1,
+      "message": "should probably be reformulated, since\u0027t its not a registered protocol handler anymore",
+      "range": {
+        "startLine": 14,
+        "startChar": 38,
+        "endLine": 14,
+        "endChar": 63
+      },
+      "revId": "fdce8d6029ccc45d861baf41b09f56a80d845e04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
