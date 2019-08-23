@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bffdc8d5_d319dd6e",
+        "filename": "common/testing/testfs/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T18:00:43Z",
+      "side": 1,
+      "message": "[]byte?\n\nBecause string assumes we\u0027re only testing with text files, and this may not be true. I agree it\u0027s a bit more convenient though.",
+      "range": {
+        "startLine": 72,
+        "startChar": 38,
+        "endLine": 72,
+        "endChar": 44
+      },
+      "revId": "f9a93ad8b84d7ff976b98841764913efcc3fbf6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98204f84_a0f35c79",
+        "filename": "common/testing/testfs/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T18:00:43Z",
+      "side": 1,
+      "message": "If depends if base ends with a trailing / or \\ or not.",
+      "revId": "f9a93ad8b84d7ff976b98841764913efcc3fbf6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62e30c94_8dc0e9c4",
+        "filename": "common/testing/testfs/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T18:00:43Z",
+      "side": 1,
+      "message": "It could be a symlink that points to a directory.\nIt\u0027s kind of useful knowledge in tests.",
+      "revId": "f9a93ad8b84d7ff976b98841764913efcc3fbf6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
