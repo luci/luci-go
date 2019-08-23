@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -48,14 +49,17 @@ func cmdSpawnTasks(defaultAuthOpts auth.Options) *subcommands.Command {
 
 type spawnTasksRun struct {
 	commonFlags
-	jsonInput  string
-	jsonOutput string
+	jsonInput        string
+	jsonOutput       string
+	cancelExtraTasks bool
 }
 
 func (c *spawnTasksRun) Init(defaultAuthOpts auth.Options) {
 	c.commonFlags.Init(defaultAuthOpts)
 	c.Flags.StringVar(&c.jsonInput, "json-input", "", "(required) Read Swarming task requests from this file.")
 	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Write details about the triggered task(s) to this file as json.")
+	// TODO(https://crbug.com/997221): Remove this option.
+	c.Flags.BoolVar(&c.cancelExtraTasks, "cancel-extra-tasks", false, "Cancel extra spawned tasks.")
 }
 
 func (c *spawnTasksRun) Parse(args []string) error {
@@ -96,7 +100,15 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 		return errors.Annotate(err, "failed to open tasks file").Err()
 	}
 	defer tasksFile.Close()
-	requests, err := processTasksStream(tasksFile)
+	toolInvocationUUID := ""
+	if c.cancelExtraTasks {
+		randomUUID, err := uuid.NewRandom()
+		if err != nil {
+			return errors.Annotate(err, "failed to generate UUID").Err()
+		}
+		toolInvocationUUID = "UUID:" + randomUUID.String()
+	}
+	requests, err := processTasksStream(tasksFile, toolInvocationUUID)
 	if err != nil {
 		return err
 	}
@@ -105,6 +117,12 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 		return err
 	}
 	results, merr := createNewTasks(ctx, service, requests)
+	if merr == nil && c.cancelExtraTasks {
+		err = cancelExtraTasks(ctx, service, toolInvocationUUID, results)
+		if err != nil {
+			return errors.Annotate(err, "failed to cancel extra tasks").Err()
+		}
+	}
 
 	var output io.Writer
 	if c.jsonOutput != "" {
@@ -136,7 +154,7 @@ type tasksInput struct {
 	Requests []*swarming.SwarmingRpcsNewTaskRequest `json:"requests"`
 }
 
-func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest, error) {
+func processTasksStream(tasks io.Reader, toolInvocationUUID string) ([]*swarming.SwarmingRpcsNewTaskRequest, error) {
 	dec := json.NewDecoder(tasks)
 	dec.DisallowUnknownFields()
 
@@ -156,8 +174,10 @@ func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest
 		if request.ParentTaskId == "" {
 			request.ParentTaskId = parentTaskID
 		}
+		if toolInvocationUUID != "" {
+			request.Tags = append(request.Tags, "UUID:"+toolInvocationUUID)
+		}
 	}
-
 	return requests.Requests, nil
 }
 
@@ -180,4 +200,39 @@ func createNewTasks(c context.Context, service swarmingService, requests []*swar
 		}
 	})
 	return results, err
+}
+
+func cancelExtraTasks(c context.Context, service swarmingService, toolInvocationUUID string, results []*swarming.SwarmingRpcsTaskRequestMetadata) error {
+	countResp, err := service.CountTasksByTag(c, toolInvocationUUID)
+	if err != nil {
+		return err
+	}
+	taskCount := countResp.Count
+	if taskCount <= int64(len(results)) {
+		return nil
+	}
+	tasksList, err := service.ListTasksByTag(c, toolInvocationUUID)
+	if err != nil {
+		return err
+	}
+	validTaskIDs := make(map[string]struct{}, len(results))
+	for _, result := range results {
+		validTaskIDs[result.TaskId] = struct{}{}
+	}
+	var invalidTaskIDs []string
+	for _, t := range tasksList.Items {
+		if _, ok := validTaskIDs[t.TaskId]; !ok {
+			invalidTaskIDs = append(invalidTaskIDs, t.TaskId)
+		}
+	}
+	return parallel.WorkPool(8, func(gen chan<- func() error) {
+		for _, t := range invalidTaskIDs {
+			t := t
+			gen <- func() error {
+				req := swarming.SwarmingRpcsTaskCancelRequest{KillRunning: true}
+				_, err := service.CancelTask(c, t, &req)
+				return err
+			}
+		}
+	})
 }
