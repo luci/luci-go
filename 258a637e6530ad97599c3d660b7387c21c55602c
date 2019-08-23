@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "d9b1b025_3ed3188f",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T20:55:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "529ff528_42878d55",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a2b92b5_3ecd6938",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 10
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "d57f58f8_c9823731",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T20:55:44Z",
+      "side": 1,
+      "message": "Done, I now have `toolInvocationUUID \u003d \"UUID:\" + randomUUID.String()` pass toolInvocationUUID everywhere.",
+      "parentUuid": "9a2b92b5_3ecd6938",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e34cd2c_b119f0af",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 10
@@ -50,6 +86,24 @@
       "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87910210_8a41225d",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T20:55:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e34cd2c_b119f0af",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -76,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "490a230f_26761b48",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T20:55:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7fcd45c_62226ed3",
+      "range": {
+        "startLine": 196,
+        "startChar": 47,
+        "endLine": 196,
+        "endChar": 62
+      },
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7942d411_f0405ea6",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 10
@@ -99,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "c00c7b90_f5c3c71b",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T20:55:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7942d411_f0405ea6",
+      "range": {
+        "startLine": 209,
+        "startChar": 45,
+        "endLine": 209,
+        "endChar": 60
+      },
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c7cc729_c02cb218",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 10
@@ -116,6 +218,24 @@
     },
     {
       "key": {
+        "uuid": "63173169_50920e28",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T20:55:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c7cc729_c02cb218",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9d671f3_a0fdc5f2",
         "filename": "client/cmd/swarming/spawn_tasks_test.go",
         "patchSetId": 10
@@ -127,6 +247,24 @@
       "writtenOn": "2019-08-23T19:49:21Z",
       "side": 1,
       "message": "You didn\u0027t validate the argument here, and the argument was incorrect.",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99791f5d_5601313a",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T20:55:44Z",
+      "side": 1,
+      "message": "Hmm... I\u0027m not sure how to validate `tag` in a non-contrived way -- any suggestions?",
+      "parentUuid": "e9d671f3_a0fdc5f2",
       "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
