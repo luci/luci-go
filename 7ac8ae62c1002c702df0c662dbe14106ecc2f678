@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5304f3db_10cbb2ce",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-08-23T07:14:51Z",
+      "side": 1,
+      "message": "why not unique directories to create?\nThe original code seems to list up all directories and create them one by one.\n\nWhy the original code did not use Python os.makedirs and do simply like what this cl do?   \u003e maruel",
+      "range": {
+        "startLine": 338,
+        "startChar": 67,
+        "endLine": 338,
+        "endChar": 68
+      },
+      "revId": "7ac8ae62c1002c702df0c662dbe14106ecc2f678",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b9b9e76_cb8e1213",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-08-23T07:14:51Z",
+      "side": 1,
+      "message": "why not return error here?",
+      "revId": "7ac8ae62c1002c702df0c662dbe14106ecc2f678",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
