@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aedf1d97_a2d2144e",
+        "filename": "common/api/gitiles/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-23T18:35:09Z",
+      "side": 1,
+      "message": "please simplify to \n\nif strings.Contains(...) {\n  ...\n}",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 2
+      },
+      "revId": "ac2e639b9b39ab13790358ba9835a32238e0e7f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
