@@ -128,6 +128,24 @@
     },
     {
       "key": {
+        "uuid": "399c7708_77b845a0",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T18:00:02Z",
+      "side": 1,
+      "message": "Ah, yes I didn\u0027t know of that proposal but that\u0027s essentially the same as what\u0027s described there, except the UUID is generated internally rather than passed by the client.",
+      "parentUuid": "8ff95942_4d0a517e",
+      "revId": "2033c425b379f5402f6d286392420dd639b32105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "01627569_45462d5a",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 5
