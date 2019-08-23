@@ -303,3 +303,37 @@ func TestReadableCopy(t *testing.T) {
 		})
 	})
 }
+
+func TestCopyRecursively(t *testing.T) {
+	t.Parallel()
+
+	checkFile := func(path, content string) {
+		buf, err := ioutil.ReadFile(path)
+		So(err, ShouldBeNil)
+		So(string(buf), ShouldResemble, content)
+	}
+
+	Convey("CopyRecursively", t, func() {
+		withTempDir(t, func(dir string) {
+			src1 := filepath.Join(dir, "src1")
+			src2 := filepath.Join(src1, "src2")
+			So(os.MkdirAll(src2, 0755), ShouldBeNil)
+
+			So(ioutil.WriteFile(filepath.Join(src1, "file1"), []byte("test1"), 0644), ShouldBeNil)
+			So(ioutil.WriteFile(filepath.Join(src2, "file2"), []byte("test2"), 0644), ShouldBeNil)
+
+			So(os.Symlink(filepath.Join("src2", "file2"), filepath.Join(src1, "link")), ShouldBeNil)
+
+			dst := filepath.Join(dir, "dst")
+			So(CopyRecursively(src1, dst), ShouldBeNil)
+
+			checkFile(filepath.Join(dst, "file1"), "test1")
+			checkFile(filepath.Join(dst, "src2", "file2"), "test2")
+			checkFile(filepath.Join(dst, "link"), "test2")
+
+			stat, err := os.Stat(filepath.Join(dst, "link"))
+			So(err, ShouldBeNil)
+			So(stat.Mode()&os.ModeSymlink, ShouldEqual, 0)
+		})
+	})
+}

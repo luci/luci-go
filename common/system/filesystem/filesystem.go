@@ -254,3 +254,82 @@ func ReadableCopy(outfile, infile string) error {
 	_, err = io.Copy(out, in)
 	return err
 }
+
+func hardlinkWithFallback(outfile, infile string) error {
+	if err := os.Link(infile, outfile); err == nil {
+		return nil
+	}
+
+	return ReadableCopy(outfile, infile)
+}
+
+// CopyRecursively efficiently copies a file or directory from src to dst.
+//
+// `src` may be a file, directory, or a symlink to a file or directory.
+// All symlinks are replaced with their targets, so the resulting
+// directory structure in `dst` will never have any symlinks.
+//
+// To increase speed, CopyRecursively hardlinks individual files into the
+// (newly created) directory structure if possible.
+func CopyRecursively(src, dst string) error {
+	var stat os.FileInfo
+	for {
+		// Resolves src so the last part of the path is not a symlink anymore.
+		var err error
+		stat, err = os.Lstat(src)
+		if err != nil {
+			return errors.Annotate(err, "failed to call Lstat for %s", src).Err()
+		}
+		if (stat.Mode() & os.ModeSymlink) == 0 {
+			break
+		}
+
+		link, err := os.Readlink(src)
+		if err != nil {
+			return errors.Annotate(err, "failed to call Readlink for %s", src).Err()
+		}
+
+		if filepath.IsAbs(link) {
+			src = link
+		} else {
+			src = filepath.Join(filepath.Dir(src), link)
+		}
+	}
+
+	if stat.Mode().IsRegular() {
+		return hardlinkWithFallback(dst, src)
+	}
+
+	if !stat.Mode().IsDir() {
+		return errors.Reason("%s is not a directory: %v", src, stat).Err()
+	}
+
+	if err := os.MkdirAll(dst, 0775); err != nil {
+		return errors.Annotate(err, "failed to call MkdirAll for %s", dst).Err()
+	}
+
+	file, err := os.Open(src)
+	if err != nil {
+		return errors.Annotate(err, "failed to Open %s", src).Err()
+	}
+	defer file.Close()
+
+	for {
+		names, err := file.Readdirnames(100)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return errors.Annotate(err, "failed to call Readdirnames for %s", src).Err()
+		}
+
+		for _, name := range names {
+			if err := CopyRecursively(filepath.Join(src, name), filepath.Join(dst, name)); err != nil {
+				return errors.Annotate(err, "failed to call CopyRecursively(%s, %s)", filepath.Join(src, name), filepath.Join(dst, name)).Err()
+			}
+
+		}
+	}
+
+	return nil
+}
