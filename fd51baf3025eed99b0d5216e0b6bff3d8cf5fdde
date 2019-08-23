@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "92d943ac_9ddf3ad0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T23:10:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "120c07ef_221095c4",
+      "revId": "fd51baf3025eed99b0d5216e0b6bff3d8cf5fdde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "76dda732_4175f29c",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 14
@@ -33,6 +51,24 @@
       "revId": "fd51baf3025eed99b0d5216e0b6bff3d8cf5fdde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46819f75_d70c6c38",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T23:10:32Z",
+      "side": 1,
+      "message": "Calling this \"invocationTag\" now.",
+      "parentUuid": "76dda732_4175f29c",
+      "revId": "fd51baf3025eed99b0d5216e0b6bff3d8cf5fdde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "920cc9dd_9742cd8a",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T23:10:32Z",
+      "side": 1,
+      "message": "Done, all requests will be tagged with the same InvocationUUID:\u003cgeneratedUUID\u003e.",
+      "parentUuid": "8f0f609d_f0828ef8",
+      "revId": "fd51baf3025eed99b0d5216e0b6bff3d8cf5fdde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "76b51c79_cad6f4d8",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 14
@@ -67,6 +121,24 @@
       "revId": "fd51baf3025eed99b0d5216e0b6bff3d8cf5fdde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e943ead_af35884f",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T23:10:32Z",
+      "side": 1,
+      "message": "Done, I\u0027ve added a helper function addRPCUUIDTags to generate a new one for every request.",
+      "parentUuid": "76b51c79_cad6f4d8",
+      "revId": "fd51baf3025eed99b0d5216e0b6bff3d8cf5fdde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
