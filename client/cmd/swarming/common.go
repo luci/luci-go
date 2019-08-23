@@ -53,6 +53,9 @@ var swarmingAPISuffix = "/_ah/api/swarming/v1/"
 // bindings for testing.
 type swarmingService interface {
 	NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
+	CountTasksByTag(ctx context.Context, tag string) (*swarming.SwarmingRpcsTasksCount, error)
+	ListTasksByTag(ctx context.Context, tag string) (*swarming.SwarmingRpcsTaskList, error)
+	CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
 	GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
 	GetTaskOutputs(ctx context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error)
@@ -68,6 +71,30 @@ type swarmingServiceImpl struct {
 func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
 	err = retryGoogleRPC(ctx, "NewTask", func() (ierr error) {
 		res, ierr = s.Service.Tasks.New(req).Context(ctx).Do()
+		return
+	})
+	return
+}
+
+func (s *swarmingServiceImpl) CountTasksByTag(ctx context.Context, tag string) (res *swarming.SwarmingRpcsTasksCount, err error) {
+	err = retryGoogleRPC(ctx, "CountTasksByTag", func() (ierr error) {
+		res, ierr = s.Service.Tasks.Count().Context(ctx).Tags(tag).Do()
+		return
+	})
+	return
+}
+
+func (s *swarmingServiceImpl) ListTasksByTag(ctx context.Context, tag string) (res *swarming.SwarmingRpcsTaskList, err error) {
+	err = retryGoogleRPC(ctx, "ListTasksByTag", func() (ierr error) {
+		res, ierr = s.Service.Tasks.List().Context(ctx).Tags(tag).Do()
+		return
+	})
+	return
+}
+
+func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (res *swarming.SwarmingRpcsCancelResponse, err error) {
+	err = retryGoogleRPC(ctx, "CancelTask", func() (ierr error) {
+		res, ierr = s.Service.Task.Cancel(taskID, req).Context(ctx).Do()
 		return
 	})
 	return
