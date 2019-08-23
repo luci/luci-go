@@ -14,8 +14,8 @@
 
 """CQ related supporting structs and functions."""
 
+load('@stdlib//internal/luci/proto.star', 'cq_pb')
 load('@stdlib//internal/validate.star', 'validate')
-load('@proto//luci/cq/project_config.proto', cq_pb='cq.config')
 
 
 # A struct returned by cq.refset(...).

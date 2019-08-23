@@ -31,9 +31,9 @@ import (
 
 // Register protos used exclusively from tests.
 func init() {
-	publicProtos["test.proto"] = struct {
-		protoPkg string
-		goPath   string
+	publicProtos["unimportant.proto"] = struct {
+		protoPkg  string
+		protoPath string
 	}{
 		"testproto",
 		"go.chromium.org/luci/lucicfg/testproto/test.proto",
@@ -43,7 +43,7 @@ func init() {
 // testMessage returns new testproto.Msg as a Starlark value to be used from
 // tests.
 func testMessage(i int) *starlarkproto.Message {
-	testproto, _, err := protoLoader()("test.proto")
+	testproto, _, err := protoLoader()("go.chromium.org/luci/lucicfg/testproto/test.proto")
 	if err != nil {
 		panic(err)
 	}
@@ -63,21 +63,31 @@ func TestProtos(t *testing.T) {
 
 	ctx := context.Background()
 
-	for path, proto := range publicProtos {
-		Convey(fmt.Sprintf("%q (aka %q) is importable", path, proto.goPath), t, func(c C) {
-			_, err := Generate(ctx, Inputs{
-				Code: interpreter.MemoryLoader(map[string]string{
-					"proto.star": fmt.Sprintf(`load("@proto//%s", "%s")`, path, proto.protoPkg),
-				}),
-				Entry: "proto.star",
+	for alias, proto := range publicProtos {
+		Convey(fmt.Sprintf("%q is importable", proto.protoPath), t, func(c C) {
+			// If assertions below fail, you either moved some *.proto files or
+			// changed their package names. Update publicProtos map and change
+			// load("@proto//...") in *.star accordingly.
+
+			Convey("Via proto path", func() {
+				_, err := Generate(ctx, Inputs{
+					Code: interpreter.MemoryLoader(map[string]string{
+						"proto.star": fmt.Sprintf(`load("@proto//%s", "%s")`, proto.protoPath, proto.protoPkg),
+					}),
+					Entry: "proto.star",
+				})
+				So(err, ShouldBeNil)
 			})
-			// If this assertion failed, you either:
-			//   1. Moved some *.proto files. This is fine, just update publicProtos
-			//      mapping in protos.go.
-			//   2. Renamed proto package to something else. This is not fine
-			//      currently. It is a breaking change to the Starlark API exposed by
-			//      the config generator.
-			So(err, ShouldBeNil)
+
+			Convey("Via alias", func() {
+				_, err := Generate(ctx, Inputs{
+					Code: interpreter.MemoryLoader(map[string]string{
+						"proto.star": fmt.Sprintf(`load("@proto//%s", "%s")`, alias, proto.protoPkg),
+					}),
+					Entry: "proto.star",
+				})
+				So(err, ShouldBeNil)
+			})
 		})
 	}
 

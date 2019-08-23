@@ -22,16 +22,18 @@ load('@stdlib//internal/time.star', 'time')
 load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'kinds', 'triggerer')
 load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
+load('@stdlib//internal/luci/proto.star',
+    'buildbucket_pb',
+    'config_pb',
+    'cq_pb',
+    'logdog_pb',
+    'milo_pb',
+    'notify_pb',
+    'scheduler_pb',
+)
+
 load('@proto//google/protobuf/duration.proto', duration_pb='google.protobuf')
 load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
-
-load('@proto//luci/buildbucket/project_config.proto', buildbucket_pb='buildbucket')
-load('@proto//luci/config/project_config.proto', config_pb='config')
-load('@proto//luci/cq/project_config.proto', cq_pb='cq.config')
-load('@proto//luci/logdog/project_config.proto', logdog_pb='svcconfig')
-load('@proto//luci/milo/project_config.proto', milo_pb='milo')
-load('@proto//luci/notify/project_config.proto', notify_pb='notify')
-load('@proto//luci/scheduler/project_config.proto', scheduler_pb='scheduler.config')
 
 
 def register():
