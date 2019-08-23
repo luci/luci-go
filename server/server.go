@@ -52,6 +52,7 @@ import (
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/authdb/dump"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/portal"
@@ -85,6 +86,9 @@ type Options struct {
 	ClientAuth       clientauth.Options // base settings for client auth options
 	TokenCacheDir    string             // where to cache auth tokens (optional)
 	AuthDBPath       string             // if set, load AuthDB from a file
+	AuthServiceHost  string             // hostname of an Auth Service to use
+	AuthDBDump       string             // Google Storage path to fetch AuthDB dumps from
+	AuthDBSigner     string             // service account that signs AuthDB dumps
 	CloudProject     string             // name of hosting Google Cloud Project
 	TsMonAccount     string             // service account to flush metrics as
 	TsMonServiceName string             // service name of tsmon target
@@ -133,7 +137,25 @@ func (o *Options) Register(f *flag.FlagSet) {
 		&o.AuthDBPath,
 		"auth-db-path",
 		o.AuthDBPath,
-		"If set, load AuthDB text proto from this file",
+		"If set, load AuthDB text proto from this file (incompatible with -auth-service-host)",
+	)
+	f.StringVar(
+		&o.AuthServiceHost,
+		"auth-service-host",
+		o.AuthServiceHost,
+		"Hostname of an Auth Service to use (incompatible with -auth-db-path)",
+	)
+	f.StringVar(
+		&o.AuthDBDump,
+		"auth-db-dump",
+		o.AuthDBDump,
+		"Google Storage path to fetch AuthDB dumps from. Default is gs://<auth-service-host>/auth-db",
+	)
+	f.StringVar(
+		&o.AuthDBSigner,
+		"auth-db-signer",
+		o.AuthDBSigner,
+		"Service account that signs AuthDB dumps. Default is derived from -auth-service-host if it is *.appspot.com",
 	)
 	f.StringVar(
 		&o.CloudProject,
@@ -247,9 +269,12 @@ func New(opts Options) *Server {
 	}
 
 	// Configure auth subsystem. The rest of the initialization happens in
-	// initAuth() later, when launching the server.
+	// initAuth() and initAuthDB() later, when launching the server.
 	srv.ctx = auth.Initialize(srv.ctx, &auth.Config{
-		DBProvider:          srv.authDBProvider,
+		DBProvider: func(context.Context) (authdb.DB, error) {
+			db, _ := srv.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
+			return db, nil
+		},
 		Signer:              nil, // TODO(vadimsh): Implement.
 		AccessTokenProvider: srv.getAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
@@ -813,19 +838,9 @@ func (s *Server) initAuth() error {
 
 	// Now initialize the AuthDB (a database with groups and auth config) and
 	// start a goroutine to periodically refresh it.
-	if err := s.refreshAuthDB(s.ctx); err != nil {
-		return errors.Annotate(err, "failed to load the initial AuthDB version").Err()
+	if err := s.initAuthDB(); err != nil {
+		return errors.Annotate(err, "failed to initialize AuthDB").Err()
 	}
-	s.runInBackground("luci.authdb", func(c context.Context) {
-		for {
-			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
-				return // the context is canceled
-			}
-			if err := s.refreshAuthDB(c); err != nil {
-				logging.WithError(err).Errorf(c, "Failed to reload AuthDB, using the cached one")
-			}
-		}
-	})
 
 	return nil
 }
@@ -901,18 +916,60 @@ func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
 	return au, nil
 }
 
-// authDBProvider is a callback used by the auth subsystem to grab a database
-// with groups.
-//
-// That database is periodically reloaded in background via refreshAuthDB.
-func (s *Server) authDBProvider(c context.Context) (authdb.DB, error) {
-	db, _ := s.authDB.Load().(authdb.DB)
-	return db, nil
+// initAuthDB interprets -auth-db-* flags and sets up fetching of AuthDB.
+func (s *Server) initAuthDB() error {
+	// Check flags are compatible.
+	switch {
+	case s.opts.AuthDBPath != "" && s.opts.AuthServiceHost != "":
+		return errors.Reason("-auth-db-path and -auth-service-host can't be used together").Err()
+	case s.opts.Prod && s.opts.testAuthDB == nil && s.opts.AuthDBPath == "" && s.opts.AuthServiceHost == "":
+		return errors.Reason("a source of AuthDB is not configured: pass either -auth-db-path or -auth-service-host flag").Err()
+	case s.opts.AuthServiceHost == "" && (s.opts.AuthDBDump != "" || s.opts.AuthDBSigner != ""):
+		return errors.Reason("-auth-db-dump and -auth-db-signer can be used only with -auth-service-host").Err()
+	case s.opts.AuthDBDump != "" && !strings.HasPrefix(s.opts.AuthDBDump, "gs://"):
+		return errors.Reason("-auth-db-dump value should start with gs://, got %q", s.opts.AuthDBDump).Err()
+	case strings.Contains(s.opts.AuthServiceHost, "/"):
+		return errors.Reason("-auth-service-host should be a plain hostname, got %q", s.opts.AuthServiceHost).Err()
+	}
+
+	// Fill in defaults.
+	if s.opts.AuthServiceHost != "" {
+		if s.opts.AuthDBDump == "" {
+			s.opts.AuthDBDump = fmt.Sprintf("gs://%s/auth-db", s.opts.AuthServiceHost)
+		}
+		if s.opts.AuthDBSigner == "" {
+			if !strings.HasSuffix(s.opts.AuthServiceHost, ".appspot.com") {
+				return errors.Reason("-auth-db-signer is required if -auth-service-host is not *.appspot.com").Err()
+			}
+			s.opts.AuthDBSigner = fmt.Sprintf("%s@appspot.gserviceaccount.com",
+				strings.TrimSuffix(s.opts.AuthServiceHost, ".appspot.com"))
+		}
+	}
+
+	// Fetch the initial copy of AuthDB. Note that this happens before we start
+	// the serving loop, to make sure incoming requests have some AuthDB to use.
+	if err := s.refreshAuthDB(s.ctx); err != nil {
+		return errors.Annotate(err, "failed to load the initial AuthDB version").Err()
+	}
+
+	// Periodically refresh it in the background.
+	s.runInBackground("luci.authdb", func(c context.Context) {
+		for {
+			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
+				return // the context is canceled
+			}
+			if err := s.refreshAuthDB(c); err != nil {
+				logging.WithError(err).Errorf(c, "Failed to reload AuthDB, using the cached one")
+			}
+		}
+	})
+	return nil
 }
 
 // refreshAuthDB reloads AuthDB from the source and stores it in memory.
 func (s *Server) refreshAuthDB(c context.Context) error {
-	db, err := s.fetchAuthDB(c)
+	cur, _ := s.authDB.Load().(authdb.DB)
+	db, err := s.fetchAuthDB(c, cur)
 	if err != nil {
 		return err
 	}
@@ -921,11 +978,17 @@ func (s *Server) refreshAuthDB(c context.Context) error {
 }
 
 // fetchAuthDB fetches the most recent copy of AuthDB from the external source.
-func (s *Server) fetchAuthDB(c context.Context) (authdb.DB, error) {
+//
+// 'cur' is the currently used AuthDB or nil if fetching it for the first time.
+// Returns 'cur' as is if it's already fresh.
+func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error) {
 	if s.opts.testAuthDB != nil {
 		return s.opts.testAuthDB, nil
 	}
 
+	// Loading from a local file.
+	//
+	// TODO(vadimsh): Get rid of this once -auth-service-host is deployed.
 	if s.opts.AuthDBPath != "" {
 		r, err := os.Open(s.opts.AuthDBPath)
 		if err != nil {
@@ -937,6 +1000,24 @@ func (s *Server) fetchAuthDB(c context.Context) (authdb.DB, error) {
 			return nil, errors.Annotate(err, "failed to load AuthDB file").Err()
 		}
 		return db, nil
+	}
+
+	// Loading from a GCS dump (s.opts.AuthDB* are validated here already).
+	if s.opts.AuthDBDump != "" {
+		c, cancel := clock.WithTimeout(c, 5*time.Minute)
+		defer cancel()
+		fetcher := dump.Fetcher{
+			StorageDumpPath:    s.opts.AuthDBDump[len("gs://"):],
+			AuthServiceURL:     "https://" + s.opts.AuthServiceHost,
+			AuthServiceAccount: s.opts.AuthDBSigner,
+			OAuthScopes:        DefaultOAuthScopes,
+		}
+		curSnap, _ := cur.(*authdb.SnapshotDB)
+		snap, err := fetcher.FetchAuthDB(c, curSnap)
+		if err != nil {
+			return nil, errors.Annotate(err, "fetching from GCS dump failed").Err()
+		}
+		return snap, nil
 	}
 
 	// In dev mode default to "allow everything".
