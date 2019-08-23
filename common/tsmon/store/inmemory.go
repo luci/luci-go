@@ -33,12 +33,17 @@ type inMemoryStore struct {
 	defaultTarget     types.Target
 	defaultTargetLock sync.RWMutex
 
-	data     map[string]*metricData
+	data     map[dataKey]*metricData
 	dataLock sync.RWMutex
 }
 
 type cellKey struct {
 	fieldValuesHash, targetHash uint64
+}
+
+type dataKey struct {
+	metricName string
+	targetType types.TargetType
 }
 
 type metricData struct {
@@ -80,13 +85,14 @@ func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time
 func NewInMemory(defaultTarget types.Target) Store {
 	return &inMemoryStore{
 		defaultTarget: defaultTarget,
-		data:          map[string]*metricData{},
+		data:          map[dataKey]*metricData{},
 	}
 }
 
 func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
+	dk := dataKey{m.Info().Name, m.Info().TargetType}
 	s.dataLock.RLock()
-	d, ok := s.data[m.Info().Name]
+	d, ok := s.data[dk]
 	s.dataLock.RUnlock()
 	if ok {
 		return d
@@ -96,7 +102,7 @@ func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 	defer s.dataLock.Unlock()
 
 	// Check again in case another goroutine got the lock before us.
-	if d, ok = s.data[m.Info().Name]; ok {
+	if d, ok = s.data[dk]; ok {
 		return d
 	}
 
@@ -105,7 +111,7 @@ func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 		cells:      map[cellKey][]*types.CellData{},
 	}
 
-	s.data[m.Info().Name] = d
+	s.data[dk] = d
 	return d
 }
 
@@ -133,7 +139,13 @@ func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	return m.get(fieldVals, target.Get(ctx), resetTime).Value
+	var t types.Target
+	if m.TargetType == target.NilType {
+		t = s.DefaultTarget()
+	} else {
+		t = target.Get(ctx, m.TargetType)
+	}
+	return m.get(fieldVals, t, resetTime).Value
 }
 
 func isLessThan(a, b interface{}) bool {
@@ -154,12 +166,16 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-	t := target.Get(ctx)
-
 	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	var t types.Target
+	if m.TargetType == target.NilType {
+		t = s.DefaultTarget()
+	} else {
+		t = target.Get(ctx, m.TargetType)
+	}
 	c := m.get(fieldVals, t, resetTime)
 
 	if m.ValueType.IsCumulative() && isLessThan(value, c.Value) {
@@ -177,12 +193,16 @@ func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-	t := target.Get(ctx)
-
 	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	var t types.Target
+	if m.TargetType == target.NilType {
+		t = s.DefaultTarget()
+	} else {
+		t = target.Get(ctx, m.TargetType)
+	}
 	c := m.get(fieldVals, t, resetTime)
 
 	switch m.ValueType {
@@ -222,17 +242,22 @@ func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
 	s.dataLock.Lock()
 	defer s.dataLock.Unlock()
 
-	defaultTarget := s.DefaultTarget()
-
 	ret := []types.Cell{}
 	for _, m := range s.data {
 		m.lock.Lock()
+
+		var t types.Target
+		if m.TargetType == target.NilType {
+			t = s.DefaultTarget()
+		} else {
+			t = target.Get(ctx, m.TargetType)
+		}
 		for _, cells := range m.cells {
 			for _, cell := range cells {
 				// Add the default target to the cell if it doesn't have one set.
 				cellCopy := *cell
 				if cellCopy.Target == nil {
-					cellCopy.Target = defaultTarget
+					cellCopy.Target = t
 				}
 				ret = append(ret, types.Cell{m.MetricInfo, m.MetricMetadata, cellCopy})
 			}

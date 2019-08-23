@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"hash/fnv"
 
+	"go.chromium.org/luci/common/tsmon/ts_mon_proto"
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
@@ -54,6 +55,10 @@ func (t *Task) Clone() types.Target {
 	return &clone
 }
 
+func (t *Task) Type() types.TargetType {
+	return types.TargetType{Name: "task", ID: int32(ts_mon_proto.Task_MESSAGE_TYPE_ID)}
+}
+
 // A NetworkDevice is a machine that has a hostname.
 type NetworkDevice struct {
 	Metro     string
@@ -77,6 +82,10 @@ func (t *NetworkDevice) Hash() uint64 {
 func (t *NetworkDevice) Clone() types.Target {
 	clone := *t
 	return &clone
+}
+
+func (t *NetworkDevice) Type() types.TargetType {
+	return types.TargetType{Name: "device", ID: int32(ts_mon_proto.NetworkDevice_MESSAGE_TYPE_ID)}
 }
 
 // NewFromFlags returns a Target configured from commandline flags.

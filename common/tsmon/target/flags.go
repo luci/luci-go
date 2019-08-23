@@ -30,7 +30,7 @@ type SysInfo struct {
 // Flags defines command line flags related to tsmon targets.  Use NewFlags()
 // to get a Flags struct with sensible default values.
 type Flags struct {
-	TargetType      Type
+	TargetType      string
 	DeviceHostname  string
 	DeviceRegion    string
 	DeviceRole      string
@@ -52,7 +52,7 @@ type Flags struct {
 // values later in SetDefaultsFromHostname.
 func NewFlags() Flags {
 	return Flags{
-		TargetType:      DeviceType,
+		TargetType:      DeviceType.Name,
 		DeviceHostname:  "",
 		DeviceRegion:    "",
 		DeviceRole:      "default",
@@ -99,7 +99,7 @@ func (fl *Flags) SetDefaultsFromHostname() {
 
 // Register adds tsmon target related flags to a FlagSet.
 func (fl *Flags) Register(f *flag.FlagSet) {
-	f.Var(&fl.TargetType, "ts-mon-target-type",
+	f.StringVar(&fl.TargetType, "ts-mon-target-type", fl.TargetType,
 		"the type of target that is being monitored ("+targetTypeEnum.Choices()+")")
 	f.StringVar(&fl.DeviceHostname, "ts-mon-device-hostname", fl.DeviceHostname,
 		"name of this device")
