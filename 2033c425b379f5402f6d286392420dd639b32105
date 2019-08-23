@@ -16,6 +16,121 @@
       "revId": "2033c425b379f5402f6d286392420dd639b32105",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "725d6505_2af4c9ff",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-08-23T02:05:03Z",
+      "side": 1,
+      "message": "Do we want to make this an option - or have this done by default so long as the bug persists?",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 17
+      },
+      "revId": "2033c425b379f5402f6d286392420dd639b32105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01627569_45462d5a",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-08-23T02:05:03Z",
+      "side": 1,
+      "message": "err",
+      "range": {
+        "startLine": 118,
+        "startChar": 10,
+        "endLine": 118,
+        "endChar": 14
+      },
+      "revId": "2033c425b379f5402f6d286392420dd639b32105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2a27048_d20d9a28",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-08-23T02:05:03Z",
+      "side": 1,
+      "message": "can remove and fall-through to line 208",
+      "range": {
+        "startLine": 203,
+        "startChar": 3,
+        "endLine": 205,
+        "endChar": 4
+      },
+      "revId": "2033c425b379f5402f6d286392420dd639b32105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3195a712_937cb5b8",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-08-23T02:05:03Z",
+      "side": 1,
+      "message": "can collapse into a single line",
+      "range": {
+        "startLine": 224,
+        "startChar": 4,
+        "endLine": 225,
+        "endChar": 11
+      },
+      "revId": "2033c425b379f5402f6d286392420dd639b32105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c03c3a6e_3567a7a3",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-08-23T02:05:03Z",
+      "side": 1,
+      "message": "return err",
+      "range": {
+        "startLine": 232,
+        "startChar": 4,
+        "endLine": 235,
+        "endChar": 14
+      },
+      "revId": "2033c425b379f5402f6d286392420dd639b32105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
