@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ddd66b8e_15fa66d0",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T23:14:09Z",
+      "side": 1,
+      "message": "I\u0027m doing addRPCUUIDTags unconditionally below.\nShould I call addInvocationUUIDTags unconditionally as well? I\u0027m wondering if these tags would be always helpful to have or not.",
+      "revId": "c352af1fd1e6f9d1d23d7d8f2afa60a6b8b6bc3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
