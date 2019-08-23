@@ -289,6 +289,24 @@
     },
     {
       "key": {
+        "uuid": "c5f601ed_40d73258",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T23:39:13Z",
+      "side": 1,
+      "message": "Done, I\u0027ve added a tests for helper functions addInvocationUUIDTags \u0026 addRPCUUIDTags, and added regexp validation to the count \u0026 list mock service calls.",
+      "parentUuid": "c38750fd_d8ab5c71",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6aea875b_ecb838b5",
         "filename": "client/cmd/swarming/spawn_tasks_test.go",
         "patchSetId": 10
@@ -309,6 +327,30 @@
       "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01d058a3_5afe559f",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-23T23:39:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6aea875b_ecb838b5",
+      "range": {
+        "startLine": 175,
+        "startChar": 42,
+        "endLine": 175,
+        "endChar": 45
+      },
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
