@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "675a4ed4_0cbe5603",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-23T15:04:40Z",
+      "side": 1,
+      "message": "not sure about that :(\nroll fails https://chromium-review.googlesource.com/c/infra/infra/+/1768076/1..2\ndue to https://logs.chromium.org/logs/infra/buildbucket/cr-buildbucket.appspot.com/8904326705159261312/+/steps/go_tests/0/stdout",
+      "range": {
+        "startLine": 7,
+        "startChar": 16,
+        "endLine": 7,
+        "endChar": 22
+      },
+      "revId": "a1560f70cfc101dd72b7b0f094ab93072c27658c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
