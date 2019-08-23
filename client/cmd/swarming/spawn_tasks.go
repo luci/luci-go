@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -48,14 +49,16 @@ func cmdSpawnTasks(defaultAuthOpts auth.Options) *subcommands.Command {
 
 type spawnTasksRun struct {
 	commonFlags
-	jsonInput  string
-	jsonOutput string
+	jsonInput        string
+	jsonOutput       string
+	cancelExtraTasks bool
 }
 
 func (c *spawnTasksRun) Init(defaultAuthOpts auth.Options) {
 	c.commonFlags.Init(defaultAuthOpts)
 	c.Flags.StringVar(&c.jsonInput, "json-input", "", "(required) Read Swarming task requests from this file.")
 	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Write details about the triggered task(s) to this file as json.")
+	c.Flags.BoolVar(&c.cancelExtraTasks, "cancel-extra-tasks", false, "Cancel extra spawned tasks.")
 }
 
 func (c *spawnTasksRun) Parse(args []string) error {
@@ -96,7 +99,15 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 		return errors.Annotate(err, "failed to open tasks file").Err()
 	}
 	defer tasksFile.Close()
-	requests, err := processTasksStream(tasksFile)
+	deduplicationID := ""
+	if c.cancelExtraTasks {
+		randomUUID, err := uuid.NewRandom()
+		if err != nil {
+			return err
+		}
+		deduplicationID = randomUUID.String()
+	}
+	requests, err := processTasksStream(tasksFile, deduplicationID)
 	if err != nil {
 		return err
 	}
@@ -104,7 +115,7 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 	if err != nil {
 		return err
 	}
-	results, merr := createNewTasks(ctx, service, requests)
+	results, merr := createNewTasks(ctx, service, requests, deduplicationID)
 
 	var output io.Writer
 	if c.jsonOutput != "" {
@@ -136,7 +147,7 @@ type tasksInput struct {
 	Requests []*swarming.SwarmingRpcsNewTaskRequest `json:"requests"`
 }
 
-func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest, error) {
+func processTasksStream(tasks io.Reader, deduplicationID string) ([]*swarming.SwarmingRpcsNewTaskRequest, error) {
 	dec := json.NewDecoder(tasks)
 	dec.DisallowUnknownFields()
 
@@ -156,14 +167,24 @@ func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest
 		if request.ParentTaskId == "" {
 			request.ParentTaskId = parentTaskID
 		}
+		if deduplicationID != "" {
+			request.Tags = append(request.Tags, deduplicationID)
+		}
 	}
-
 	return requests.Requests, nil
 }
 
-func createNewTasks(c context.Context, service swarmingService, requests []*swarming.SwarmingRpcsNewTaskRequest) ([]*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+func createNewTasks(c context.Context, service swarmingService, requests []*swarming.SwarmingRpcsNewTaskRequest, deduplicationID string) ([]*swarming.SwarmingRpcsTaskRequestMetadata, error) {
 	var mu sync.Mutex
 	results := make([]*swarming.SwarmingRpcsTaskRequestMetadata, 0, len(requests))
+	var count int64
+	if deduplicationID != "" {
+		countResp, err := service.CountTasksByTag(c, deduplicationID)
+		count = countResp.Count
+		if err != nil {
+			return results, err
+		}
+	}
 	err := parallel.WorkPool(8, func(gen chan<- func() error) {
 		for _, request := range requests {
 			request := request
@@ -179,5 +200,52 @@ func createNewTasks(c context.Context, service swarmingService, requests []*swar
 			}
 		}
 	})
+	if deduplicationID != "" {
+		countResp, err := service.CountTasksByTag(c, deduplicationID)
+		latestCount := countResp.Count
+		if err != nil {
+			return results, err
+		}
+		if latestCount > count+int64(len(results)) {
+			err := cancelExtraTasks(c, service, deduplicationID, results)
+			if err != nil {
+				return results, err
+			}
+		}
+	}
 	return results, err
+}
+
+func cancelExtraTasks(c context.Context, service swarmingService, deduplicationID string, results []*swarming.SwarmingRpcsTaskRequestMetadata) error {
+	validTaskIDs := make(map[string]bool)
+	for _, result := range results {
+		validTaskIDs[result.TaskId] = true
+	}
+	tasksList, err := service.ListTasksByTag(c, deduplicationID)
+	if err != nil {
+		return err
+	}
+	var mu sync.Mutex
+	err = parallel.WorkPool(8, func(gen chan<- func() error) {
+		for _, result := range tasksList.Items {
+			result := result
+			gen <- func() error {
+				_, ok := validTaskIDs[result.TaskId]
+				if ok {
+					return nil
+				}
+				req := &swarming.SwarmingRpcsTaskCancelRequest{
+					KillRunning: true,
+				}
+				_, err := service.CancelTask(c, result.TaskId, req)
+				if err != nil {
+					return err
+				}
+				mu.Lock()
+				defer mu.Unlock()
+				return nil
+			}
+		}
+	})
+	return err
 }
