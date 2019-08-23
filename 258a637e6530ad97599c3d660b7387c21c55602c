@@ -1,0 +1,135 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "529ff528_42878d55",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T19:49:21Z",
+      "side": 1,
+      "message": "Add a comment above:\n\n // TODO(https://crbug.com/997221): Remove this option.",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a2b92b5_3ecd6938",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T19:49:21Z",
+      "side": 1,
+      "message": "Use toolInvocationUUID here and below. deduplicationID could have multiple implied meanings.",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e34cd2c_b119f0af",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T19:49:21Z",
+      "side": 1,
+      "message": "I prefer this to be a separate function so that line 118 would look like:\n\n  results, merr :\u003d createNewTasks(ctx, service, requests)\n  if merr \u003d\u003d nil \u0026\u0026 c.cancelExtraTasks {\n    ...",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7fcd45c_62226ed3",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T19:49:21Z",
+      "side": 1,
+      "message": "That\u0027s incorrect, the tag is \"UUID:\"+toolInvocationUUID.",
+      "range": {
+        "startLine": 196,
+        "startChar": 47,
+        "endLine": 196,
+        "endChar": 62
+      },
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7942d411_f0405ea6",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T19:49:21Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 209,
+        "startChar": 45,
+        "endLine": 209,
+        "endChar": 60
+      },
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c7cc729_c02cb218",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T19:49:21Z",
+      "side": 1,
+      "message": "optional nit: Personally I would have written it this way, it creates less goroutines and the code is more linear:\n\nvalidTaskIDs :\u003d make(map[string]struct{}, 0, len(results))\nfor _, r :\u003d range results {\n  validTaskIDs[result.TaskId] \u003d struct{}{} \n}\nvar invalidTaskIDs []string\nfor _, t :\u003d range tasksList.Items {\n  if _, ok :\u003d validTaskIDs[t.TaskId]; !ok {\n    invalidTaskIDs \u003d append(invalidTaskIDs, t.TaskID)\n  }\n}\nreturn parallel.WorkPool(8, func(gen chan\u003c- func() error) {\n  for _, t :\u003d range invalidTaskIDs {\n    t :\u003d t\n    gen \u003c- func() error {\n     req :\u003d swarming.SwarmingRpcsTaskCancelRequest{KillRunning: true}\n     _, err :\u003d service.CancelTask(c, t, \u0026req)\n     return err\n    }\n  }\n})",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9d671f3_a0fdc5f2",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T19:49:21Z",
+      "side": 1,
+      "message": "You didn\u0027t validate the argument here, and the argument was incorrect.",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
