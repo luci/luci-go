@@ -17,7 +17,6 @@ package runnerbutler
 import (
 	"context"
 	"fmt"
-	"io"
 	"time"
 
 	"go.chromium.org/luci/auth"
@@ -35,6 +34,7 @@ import (
 	"go.chromium.org/luci/logdog/client/butler/output/file"
 	out "go.chromium.org/luci/logdog/client/butler/output/logdog"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
@@ -57,6 +57,8 @@ type Server struct {
 	serv   streamserver.StreamServer
 	output output.Output
 	butler *butler.Butler
+
+	Client *streamclient.Client
 }
 
 // Start starts the server.
@@ -139,6 +141,7 @@ func (l *Server) Start(ctx context.Context) error {
 	l.serv = serv
 	l.output = output
 	l.butler = butler
+	l.Client = streamclient.NewLoopback(butler, "")
 	return nil
 }
 
@@ -156,19 +159,6 @@ func (l *Server) SetInEnviron(env environ.Env) error {
 		StreamServerURI: l.serv.Address(),
 	}).Augment(env)
 	return nil
-}
-
-// AddStream adds a new stream.
-// If no error is returned, the logdogServ assumes ownership of the supplied
-// stream. The stream will be closed when processing is finished.
-func (l *Server) AddStream(rc io.ReadCloser, desc *logpb.LogStreamDescriptor) error {
-	return l.butler.AddStream(rc, desc)
-}
-
-// NewDatagramStream adds a new in-memory datagram stream with the given
-// properties.
-func (l *Server) NewDatagramStream(d *logpb.LogStreamDescriptor) (*butler.MemoryDatagramStream, error) {
-	return l.butler.NewDatagramStream(d)
 }
 
 // Stop stops the server.

@@ -15,7 +15,6 @@
 package swarming
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -26,77 +25,44 @@ import (
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 )
 
-// In-memory datastructure to hold a fake butler client.
-type memoryStream struct {
-	desc *logpb.LogStreamDescriptor
+func toLogDogStream(stream streamclient.FakeStreamData) (*rawpresentation.Stream, error) {
+	flags := stream.GetFlags()
 
-	closed     bool
-	buf        bytes.Buffer
-	isDatagram bool
-}
-
-func (s *memoryStream) ToLogDogStream() (*rawpresentation.Stream, error) {
 	result := &rawpresentation.Stream{
-		Closed:     s.closed,
-		IsDatagram: s.isDatagram,
-		Path:       s.desc.Name,
-		Prefix:     s.desc.Prefix,
+		Closed:     stream.IsClosed(),
+		IsDatagram: flags.Type == streamproto.StreamType(logpb.StreamType_DATAGRAM),
+		Path:       string(flags.Name),
 	}
 
-	if s.isDatagram {
+	if result.IsDatagram {
 		result.Data = &miloProto.Step{}
 		// Assume this is a miloProto.Step.
-		if err := proto.Unmarshal(s.buf.Bytes(), result.Data); err != nil {
+		if err := proto.Unmarshal([]byte(stream.GetStreamData()), result.Data); err != nil {
 			return nil, err
 		}
 	} else {
-		result.Text = s.buf.String()
+		result.Text = stream.GetStreamData()
 	}
 
 	return result, nil
 }
 
-func (s *memoryStream) Write(b []byte) (int, error) {
-	return s.buf.Write(b)
+type annotationParser struct {
+	stream map[string]streamclient.FakeStreamData
 }
 
-func (s *memoryStream) Close() error {
-	s.closed = true
-	return nil
-}
+func parseAnnotations(c streamclient.FakeClient) (*rawpresentation.Streams, error) {
+	fakeData := c.GetFakeData()
 
-func (s *memoryStream) WriteDatagram(b []byte) error {
-	s.isDatagram = true
-
-	s.buf.Reset()
-	_, err := s.buf.Write(b)
-	return err
-}
-
-func (s *memoryStream) Descriptor() *logpb.LogStreamDescriptor {
-	return proto.Clone(s.desc).(*logpb.LogStreamDescriptor)
-}
-
-type memoryClient struct {
-	stream map[string]*memoryStream
-}
-
-func (c *memoryClient) NewStream(f streamproto.Flags) (streamclient.Stream, error) {
-	desc := f.Descriptor()
-	if _, ok := c.stream[desc.Name]; ok {
-		return nil, fmt.Errorf("duplicate stream, %q", desc.Name)
+	var parser annotationParser
+	parser.stream = make(map[string]streamclient.FakeStreamData, len(fakeData))
+	for k, v := range fakeData {
+		parser.stream[string(k)] = v
 	}
-	s := memoryStream{
-		desc: desc,
-	}
-	if c.stream == nil {
-		c.stream = map[string]*memoryStream{}
-	}
-	c.stream[s.desc.Name] = &s
-	return &s, nil
+	return parser.ToLogDogStreams()
 }
 
-func (c *memoryClient) addLogDogTextStream(s *rawpresentation.Streams, ls *miloProto.LogdogStream) error {
+func (c annotationParser) addLogDogTextStream(s *rawpresentation.Streams, ls *miloProto.LogdogStream) error {
 	var keys []string
 	for k := range c.stream {
 		keys = append(keys, k)
@@ -105,7 +71,7 @@ func (c *memoryClient) addLogDogTextStream(s *rawpresentation.Streams, ls *miloP
 	if !ok {
 		return fmt.Errorf("Could not find text stream %q\n%s", ls.Name, keys)
 	}
-	lds, err := ms.ToLogDogStream()
+	lds, err := toLogDogStream(ms)
 	if err != nil {
 		return fmt.Errorf("Could not convert text stream %s\n%s\n%s", ls.Name, err, keys)
 	}
@@ -118,7 +84,7 @@ func (c *memoryClient) addLogDogTextStream(s *rawpresentation.Streams, ls *miloP
 
 // addToStreams adds the set of stream with a given base path to the logdog
 // stream map.  A base path is assumed to have a stream named "annotations".
-func (c *memoryClient) addToStreams(s *rawpresentation.Streams, anno *miloProto.Step) error {
+func (c annotationParser) addToStreams(s *rawpresentation.Streams, anno *miloProto.Step) error {
 	if lds := anno.StdoutStream; lds != nil {
 		if err := c.addLogDogTextStream(s, lds); err != nil {
 			return fmt.Errorf(
@@ -161,7 +127,7 @@ func (c *memoryClient) addToStreams(s *rawpresentation.Streams, anno *miloProto.
 	return nil
 }
 
-func (c *memoryClient) ToLogDogStreams() (*rawpresentation.Streams, error) {
+func (c annotationParser) ToLogDogStreams() (*rawpresentation.Streams, error) {
 	result := &rawpresentation.Streams{}
 	result.Streams = map[string]*rawpresentation.Stream{}
 
@@ -171,7 +137,7 @@ func (c *memoryClient) ToLogDogStreams() (*rawpresentation.Streams, error) {
 	if !ok {
 		return nil, fmt.Errorf("Could not find stream %s", annotationStreamName)
 	}
-	ls, err := ms.ToLogDogStream()
+	ls, err := toLogDogStream(ms)
 	if err != nil {
 		return nil, fmt.Errorf("Could not unmarshal stream %s\n%s", annotationStreamName, err)
 	}
