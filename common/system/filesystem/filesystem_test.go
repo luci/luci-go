@@ -337,3 +337,36 @@ func TestCopyRecursively(t *testing.T) {
 		})
 	})
 }
+
+func TestCreateDirectories(t *testing.T) {
+	t.Parallel()
+	Convey("CreateDirectories", t, func() {
+		withTempDir(t, func(dir string) {
+			So(CreateDirectories(dir, []string{}), ShouldBeNil)
+
+			var paths []string
+			correctFiles := func(path string, info os.FileInfo, err error) error {
+				paths = append(paths, path)
+				return nil
+			}
+
+			So(filepath.Walk(dir, correctFiles), ShouldBeNil)
+			So(paths, ShouldResemble, []string{dir})
+
+			So(CreateDirectories(dir, []string{
+				filepath.Join("a", "b"),
+				filepath.Join("c", "d", "e"),
+				filepath.Join("c", "f"),
+			}), ShouldBeNil)
+
+			paths = nil
+			So(filepath.Walk(dir, correctFiles), ShouldBeNil)
+			So(paths, ShouldResemble, []string{
+				dir,
+				filepath.Join(dir, "a"),
+				filepath.Join(dir, "c"),
+				filepath.Join(dir, "c", "d"),
+			})
+		})
+	})
+}
