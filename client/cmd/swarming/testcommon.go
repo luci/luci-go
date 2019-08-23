@@ -22,10 +22,13 @@ import (
 )
 
 type testService struct {
-	newTask        func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
-	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
-	getTaskOutput  func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
-	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	newTask          func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
+	countTasksByTags func(context.Context, ...string) (*swarming.SwarmingRpcsTasksCount, error)
+	listTasksByTags  func(context.Context, ...string) (*swarming.SwarmingRpcsTaskList, error)
+	cancelTask       func(context.Context, string, *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
+	getTaskResult    func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
+	getTaskOutput    func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
+	getTaskOutputs   func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
 }
 
 func (s testService) Client() *http.Client {
@@ -34,6 +37,18 @@ func (s testService) Client() *http.Client {
 
 func (s testService) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
 	return s.newTask(c, req)
+}
+
+func (s testService) CountTasksByTags(c context.Context, tags ...string) (*swarming.SwarmingRpcsTasksCount, error) {
+	return s.countTasksByTags(c, tags...)
+}
+
+func (s testService) ListTasksByTags(c context.Context, tags ...string) (*swarming.SwarmingRpcsTaskList, error) {
+	return s.listTasksByTags(c, tags...)
+}
+
+func (s testService) CancelTask(c context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+	return s.cancelTask(c, taskID, req)
 }
 
 func (s testService) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
