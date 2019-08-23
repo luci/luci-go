@@ -16,10 +16,12 @@ package testfs
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
@@ -62,4 +64,42 @@ func Build(base string, layout map[string]string) error {
 		}
 	}
 	return nil
+}
+
+// Collect constructs layout from a given directory.
+func Collect(base string) (map[string]string, error) {
+	layout := make(map[string]string)
+
+	if err := filepath.Walk(base, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if path == base {
+			return nil
+		}
+		path = path[len(base)+1:]
+
+		if info.IsDir() {
+			layout[filepath.ToSlash(path)+"/"] = ""
+			return nil
+		}
+
+		if !info.Mode().IsRegular() {
+			return errors.Reason("unknown file info is detected for %s: %v", path, info).Err()
+		}
+
+		buf, err := ioutil.ReadFile(filepath.Join(base, path))
+		if err != nil {
+			return errors.Annotate(err, "failed to read: %s", filepath.Join(base, path)).Err()
+		}
+
+		layout[filepath.ToSlash(path)] = string(buf)
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return layout, nil
 }
