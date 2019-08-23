@@ -75,7 +75,7 @@ func TestSpawnTasksParse_NoInput(t *testing.T) {
 func TestProcessTasksStream(t *testing.T) {
 	Convey(`Test disallow unknown fields`, t, func() {
 		r := bytes.NewReader([]byte(`{"requests": [{"thing": "does not exist"}]}`))
-		_, err := processTasksStream(r)
+		_, err := processTasksStream(r, "")
 		So(err, ShouldNotBeNil)
 	})
 
@@ -96,7 +96,7 @@ func TestProcessTasksStream(t *testing.T) {
 			"USER":             "test",
 			"SWARMING_TASK_ID": "293109284abc",
 		})()
-		result, err := processTasksStream(r)
+		result, err := processTasksStream(r, "")
 		So(err, ShouldBeNil)
 		So(result, ShouldHaveLength, 1)
 		So(result[0], ShouldResemble, &swarming.SwarmingRpcsNewTaskRequest{
@@ -124,7 +124,7 @@ func TestCreateNewTasks(t *testing.T) {
 				return nil, &googleapi.Error{Code: 404}
 			},
 		}
-		_, err := createNewTasks(c, service, []*swarming.SwarmingRpcsNewTaskRequest{req})
+		_, err := createNewTasks(c, service, []*swarming.SwarmingRpcsNewTaskRequest{req}, "")
 		So(err, ShouldErrLike, "404")
 	})
 
@@ -139,7 +139,7 @@ func TestCreateNewTasks(t *testing.T) {
 	}
 
 	Convey(`Test single success`, t, func() {
-		results, err := createNewTasks(c, goodService, []*swarming.SwarmingRpcsNewTaskRequest{req})
+		results, err := createNewTasks(c, goodService, []*swarming.SwarmingRpcsNewTaskRequest{req}, "")
 		So(err, ShouldBeNil)
 		So(results, ShouldHaveLength, 1)
 		So(results[0].Request, ShouldResemble, expectReq)
@@ -150,10 +150,56 @@ func TestCreateNewTasks(t *testing.T) {
 		for i := 0; i < 12; i++ {
 			reqs = append(reqs, req)
 		}
-		results, err := createNewTasks(c, goodService, reqs)
+		results, err := createNewTasks(c, goodService, reqs, "")
 		So(err, ShouldBeNil)
 		So(results, ShouldHaveLength, 12)
 		for i := 0; i < 12; i++ {
+			So(results[i].Request, ShouldResemble, expectReq)
+		}
+	})
+
+	duplicatingService := &testService{
+		newTask: func(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+			return &swarming.SwarmingRpcsTaskRequestMetadata{
+				Request: &swarming.SwarmingRpcsTaskRequest{
+					Name: req.Name,
+				},
+				TaskId: "taskID1",
+			}, nil
+		},
+		countTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTasksCount, error) {
+			return &swarming.SwarmingRpcsTasksCount{
+				Count: 2,
+			}, nil
+		},
+		listTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTaskList, error) {
+			return &swarming.SwarmingRpcsTaskList{
+				Items: []*swarming.SwarmingRpcsTaskResult{
+					{
+						TaskId: "taskID1",
+					},
+					{
+						TaskId: "taskID2",
+					},
+				},
+			}, nil
+		},
+		cancelTask: func(c context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+			return &swarming.SwarmingRpcsCancelResponse{
+				Ok: true,
+			}, nil
+		},
+	}
+
+	Convey(`Test deduplication`, t, func() {
+		reqs := make([]*swarming.SwarmingRpcsNewTaskRequest, 0, 1)
+		for i := 0; i < 1; i++ {
+			reqs = append(reqs, req)
+		}
+		results, err := createNewTasks(c, duplicatingService, reqs, "testID")
+		So(err, ShouldBeNil)
+		So(results, ShouldHaveLength, 1)
+		for i := 0; i < 1; i++ {
 			So(results[i].Request, ShouldResemble, expectReq)
 		}
 	})
