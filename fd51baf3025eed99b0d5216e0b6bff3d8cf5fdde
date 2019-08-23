@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76dda732_4175f29c",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T21:21:11Z",
+      "side": 1,
+      "message": "let\u0027s call it a tag, since that\u0027s how you formulated it.",
+      "revId": "fd51baf3025eed99b0d5216e0b6bff3d8cf5fdde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f0f609d_f0828ef8",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T21:21:11Z",
+      "side": 1,
+      "message": "Let\u0027s use \"InvocationUUID\". It\u0027s still super confusing but it\u0027ll enable using UUID for the RPC instead.\n\nIn fact you know what? Add one all the time. Add a command to clarify:\n\n  // The same InvocationUUID tag is used for all the tasks created here.",
+      "revId": "fd51baf3025eed99b0d5216e0b6bff3d8cf5fdde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76b51c79_cad6f4d8",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T21:21:11Z",
+      "side": 1,
+      "message": "Let\u0027s go further, and add a \"RPCUUID\" label too. So create one UUID per request. Then add the comment:\n\n  // RPCUUID is a unique tag for each request, to find if a task is ever run twice due to a transient RPC error.\n\nThe rationale is that it will give immediate data that will enable us to quantify the amount of duplication on all instances using the Go code via BigQuery.",
+      "revId": "fd51baf3025eed99b0d5216e0b6bff3d8cf5fdde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

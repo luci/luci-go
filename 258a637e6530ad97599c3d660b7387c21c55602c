@@ -268,6 +268,47 @@
       "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c38750fd_d8ab5c71",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T21:21:11Z",
+      "side": 1,
+      "message": "At the very least you know it fits a certain regexp so that would be enough to check.",
+      "parentUuid": "99791f5d_5601313a",
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6aea875b_ecb838b5",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T21:21:11Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 175,
+        "startChar": 42,
+        "endLine": 175,
+        "endChar": 45
+      },
+      "revId": "258a637e6530ad97599c3d660b7387c21c55602c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
