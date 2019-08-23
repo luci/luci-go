@@ -33,12 +33,17 @@ type inMemoryStore struct {
 	defaultTarget     types.Target
 	defaultTargetLock sync.RWMutex
 
-	data     map[string]*metricData
+	data     map[dataKey]*metricData
 	dataLock sync.RWMutex
 }
 
 type cellKey struct {
 	fieldValuesHash, targetHash uint64
+}
+
+type dataKey struct {
+	metricName string
+	targetType types.TargetType
 }
 
 type metricData struct {
@@ -47,6 +52,58 @@ type metricData struct {
 
 	cells map[cellKey][]*types.CellData
 	lock  sync.Mutex
+}
+
+// findTarget returns the target instance for the given metric.
+func (s *inMemoryStore) findTarget(ctx context.Context, m *metricData) types.Target {
+	dt := s.DefaultTarget()
+	ct := target.Get(ctx, dt.Type())
+	if ct != nil {
+		return ct
+	}
+
+	if m.TargetType == target.NilType {
+		/* If the target type of the metric is NilType, then check the context
+		   target first for the type of DefaultTarget(). This is to support
+		   applications that
+		   - create metrics without the target type, and
+		   - set a target context with the type of a Target object, assuming
+			 that the applications started with the type.
+
+		   e.g.,
+		   // create a metric without the target type.
+		   metric := NewInt(...)
+
+		   // set the target context, assuming that the default target is
+		   // a Task target.
+		   tctx := target.Set(ctx, target.Task(...))
+		   metric.set(tctx, ...)
+		*/
+		return dt
+	}
+
+	/* If there is no context target for the metric target type, then return
+	   the default target, as long as they are instances of the same TargetType
+	   to support applications with the following code.
+
+	   e.g.,
+	   // create a metric with the target type.
+	   metric := NewInt(..., target.TaskType)
+
+	   // assume that the application started with --target-type=Task, and
+	   // the default target has been created.
+	   // Therefore, use the metric without creating a target context.
+	   metric.set(ctx, ...)
+	*/
+	if dt.Type() != m.TargetType {
+		// It will cause a panic in monitoring.serializeCell(), if the target
+		// of a cell is nil, anyways.
+		panic(fmt.Sprintf(
+			"Missing target for Metric %s with TargetType %s",
+			m.Name, m.TargetType,
+		))
+	}
+	return dt
 }
 
 func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time.Time) *types.CellData {
@@ -80,13 +137,14 @@ func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time
 func NewInMemory(defaultTarget types.Target) Store {
 	return &inMemoryStore{
 		defaultTarget: defaultTarget,
-		data:          map[string]*metricData{},
+		data:          map[dataKey]*metricData{},
 	}
 }
 
 func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
+	dk := dataKey{m.Info().Name, m.Info().TargetType}
 	s.dataLock.RLock()
-	d, ok := s.data[m.Info().Name]
+	d, ok := s.data[dk]
 	s.dataLock.RUnlock()
 	if ok {
 		return d
@@ -96,7 +154,7 @@ func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 	defer s.dataLock.Unlock()
 
 	// Check again in case another goroutine got the lock before us.
-	if d, ok = s.data[m.Info().Name]; ok {
+	if d, ok = s.data[dk]; ok {
 		return d
 	}
 
@@ -105,7 +163,7 @@ func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 		cells:      map[cellKey][]*types.CellData{},
 	}
 
-	s.data[m.Info().Name] = d
+	s.data[dk] = d
 	return d
 }
 
@@ -133,7 +191,8 @@ func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	return m.get(fieldVals, target.Get(ctx), resetTime).Value
+	t := s.findTarget(ctx, m)
+	return m.get(fieldVals, t, resetTime).Value
 }
 
 func isLessThan(a, b interface{}) bool {
@@ -154,12 +213,14 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-	t := target.Get(ctx)
-
 	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	t := s.findTarget(ctx, m)
+	if t == nil {
+		panic("whty????")
+	}
 	c := m.get(fieldVals, t, resetTime)
 
 	if m.ValueType.IsCumulative() && isLessThan(value, c.Value) {
@@ -177,12 +238,14 @@ func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-	t := target.Get(ctx)
-
 	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	t := s.findTarget(ctx, m)
+	if t == nil {
+		panic("whty????")
+	}
 	c := m.get(fieldVals, t, resetTime)
 
 	switch m.ValueType {
@@ -222,17 +285,16 @@ func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
 	s.dataLock.Lock()
 	defer s.dataLock.Unlock()
 
-	defaultTarget := s.DefaultTarget()
-
 	ret := []types.Cell{}
 	for _, m := range s.data {
 		m.lock.Lock()
+		t := s.findTarget(ctx, m)
 		for _, cells := range m.cells {
 			for _, cell := range cells {
 				// Add the default target to the cell if it doesn't have one set.
 				cellCopy := *cell
 				if cellCopy.Target == nil {
-					cellCopy.Target = defaultTarget
+					cellCopy.Target = t
 				}
 				ret = append(ret, types.Cell{m.MetricInfo, m.MetricMetadata, cellCopy})
 			}
