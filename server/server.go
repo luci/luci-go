@@ -358,6 +358,7 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 //   * go.chromium.org/luci/server/secrets: Secrets.
 //   * go.chromium.org/luci/server/settings: Access to app settings.
 //   * go.chromium.org/luci/server/auth: Making authenticated calls.
+//   * go.chromium.org/gae: Datastore.
 //
 // The context passed to the callback is canceled when the server is shutting
 // down. It is expected the goroutine will exit soon after the context is
@@ -519,6 +520,9 @@ func (s *Server) serveLoop(srv *http.Server) error {
 // It is expected to exit soon after its context is canceled.
 func (s *Server) runInBackground(activity string, f func(context.Context)) {
 	ctx := logging.SetField(s.bgrCtx, "activity", activity)
+	ctx = s.initCloudContext(ctx, "")
+	ctx = cacheContext.Wrap(ctx)
+
 	s.bgrWg.Add(1)
 	go func() {
 		defer s.bgrWg.Done()
@@ -633,15 +637,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	}
 
 	ctx = caching.WithRequestCache(ctx)
-
-	// Initialize supported portions of 'go.chromium.org/gae' library.
-	ctx = (&cloud.ConfigLite{
-		IsDev:     !s.opts.Prod,
-		ProjectID: s.opts.CloudProject,
-		RequestID: traceID,
-		DS:        s.dsClient,
-	}).Use(ctx)
-
+	ctx = s.initCloudContext(ctx, traceID)
 	c.Context = cacheContext.Wrap(ctx)
 	next(c)
 }
@@ -1105,6 +1101,17 @@ func (s *Server) initDatastore() error {
 
 	s.dsClient = client
 	return nil
+}
+
+// initCloudContext makes the context compatible with the supported portion of
+// 'go.chromium.org/gae' library.
+func (s *Server) initCloudContext(ctx context.Context, traceID string) context.Context {
+	return (&cloud.ConfigLite{
+		IsDev:     !s.opts.Prod,
+		ProjectID: s.opts.CloudProject,
+		RequestID: traceID,
+		DS:        s.dsClient,
+	}).Use(ctx)
 }
 
 // getCloudTraceID extract Trace ID from X-Cloud-Trace-Context header.
