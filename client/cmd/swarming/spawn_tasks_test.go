@@ -75,7 +75,7 @@ func TestSpawnTasksParse_NoInput(t *testing.T) {
 func TestProcessTasksStream(t *testing.T) {
 	Convey(`Test disallow unknown fields`, t, func() {
 		r := bytes.NewReader([]byte(`{"requests": [{"thing": "does not exist"}]}`))
-		_, err := processTasksStream(r)
+		_, err := processTasksStream(r, "")
 		So(err, ShouldNotBeNil)
 	})
 
@@ -96,7 +96,7 @@ func TestProcessTasksStream(t *testing.T) {
 			"USER":             "test",
 			"SWARMING_TASK_ID": "293109284abc",
 		})()
-		result, err := processTasksStream(r)
+		result, err := processTasksStream(r, "")
 		So(err, ShouldBeNil)
 		So(result, ShouldHaveLength, 1)
 		So(result[0], ShouldResemble, &swarming.SwarmingRpcsNewTaskRequest{
@@ -157,4 +157,75 @@ func TestCreateNewTasks(t *testing.T) {
 			So(results[i].Request, ShouldResemble, expectReq)
 		}
 	})
+}
+
+func TestCancelExtraTasks(t *testing.T) {
+	toolInvocationUUID := "UUID:testID"
+	results := []*swarming.SwarmingRpcsTaskRequestMetadata{
+		{
+			Request: &swarming.SwarmingRpcsTaskRequest{
+				Name: "task1",
+				Tags: []string{toolInvocationUUID},
+			},
+		},
+	}
+	c := context.Background()
+
+	duplicatingService := &testService{
+		countTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTasksCount, error) {
+			return &swarming.SwarmingRpcsTasksCount{
+				Count: 2,
+			}, nil
+		},
+		listTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTaskList, error) {
+			return &swarming.SwarmingRpcsTaskList{
+				Items: []*swarming.SwarmingRpcsTaskResult{
+					{
+						TaskId: "taskID1",
+					},
+					{
+						TaskId: "taskID2",
+					},
+				},
+			}, nil
+		},
+		cancelTask: func(c context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+			return &swarming.SwarmingRpcsCancelResponse{
+				Ok: true,
+			}, nil
+		},
+	}
+
+	Convey(`Test success`, t, func() {
+		err := cancelExtraTasks(c, duplicatingService, toolInvocationUUID, results)
+		So(err, ShouldBeNil)
+	})
+
+	badCountService := &testService{
+		countTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTasksCount, error) {
+			return nil, &googleapi.Error{Code: 404}
+		},
+	}
+
+	Convey(`Test fatal count response`, t, func() {
+		err := cancelExtraTasks(c, badCountService, toolInvocationUUID, results)
+		So(err, ShouldErrLike, "404")
+	})
+
+	badListService := &testService{
+		countTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTasksCount, error) {
+			return &swarming.SwarmingRpcsTasksCount{
+				Count: 2,
+			}, nil
+		},
+		listTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTaskList, error) {
+			return nil, &googleapi.Error{Code: 404}
+		},
+	}
+
+	Convey(`Test fatal list response`, t, func() {
+		err := cancelExtraTasks(c, badListService, toolInvocationUUID, results)
+		So(err, ShouldErrLike, "404")
+	})
+
 }
