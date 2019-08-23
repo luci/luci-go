@@ -333,3 +333,20 @@ func CopyRecursively(src, dst string) error {
 
 	return nil
 }
+
+// CreateDirectories creates the directory structure needed by the given list of files.
+func CreateDirectories(baseDirectory string, files []string) error {
+	for _, file := range files {
+		if filepath.IsAbs(file) {
+			return errors.Reason("file should be relative path: %s", file).Err()
+		}
+
+		dir := filepath.Join(baseDirectory, filepath.Dir(file))
+
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return errors.Annotate(err, "failed to create directory for %s", dir).Err()
+		}
+	}
+
+	return nil
+}
