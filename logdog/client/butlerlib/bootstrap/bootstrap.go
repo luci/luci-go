@@ -50,12 +50,12 @@ type Bootstrap struct {
 
 	// Client is the streamclient for this instance, or nil if the Butler has no
 	// streamserver.
-	Client streamclient.Client
+	Client *streamclient.Client
 }
 
-type clientFn func(path string, ns types.StreamName) (streamclient.Client, error)
+type clientFn func(path string, ns types.StreamName) (*streamclient.Client, error)
 
-func getFromEnv(env environ.Env, cFn clientFn) (*Bootstrap, error) {
+func getFromEnv(env environ.Env) (*Bootstrap, error) {
 	// Detect Butler by looking for EnvStreamPrefix in the envrironent.
 	prefix, ok := env.Get(EnvStreamPrefix)
 	if !ok {
@@ -82,7 +82,7 @@ func getFromEnv(env environ.Env, cFn clientFn) (*Bootstrap, error) {
 
 	// If we have a stream server attached; instantiate a stream Client.
 	if p, ok := env.Get(EnvStreamServerPath); ok {
-		if err := bs.initializeClient(p, cFn); err != nil {
+		if err := bs.initializeClient(p); err != nil {
 			return nil, fmt.Errorf("bootstrap: failed to create stream client [%s]: %s", p, err)
 		}
 	}
@@ -90,8 +90,8 @@ func getFromEnv(env environ.Env, cFn clientFn) (*Bootstrap, error) {
 	return bs, nil
 }
 
-func (bs *Bootstrap) initializeClient(v string, cFn clientFn) error {
-	c, err := cFn(v, bs.Namespace)
+func (bs *Bootstrap) initializeClient(v string) error {
+	c, err := streamclient.New(v, bs.Namespace)
 	if err != nil {
 		return errors.Annotate(err, "bootstrap: failed to create stream client [%s]", v).Err()
 	}
@@ -103,7 +103,7 @@ func (bs *Bootstrap) initializeClient(v string, cFn clientFn) error {
 // if the bootstrap data is invalid, and will return ErrNotBootstrapped if the
 // current process is not bootstrapped.
 func Get() (*Bootstrap, error) {
-	return getFromEnv(environ.System(), streamclient.New)
+	return getFromEnv(environ.System())
 }
 
 // GetViewerURL returns a log stream viewer URL to the aggregate set of supplied

@@ -15,115 +15,55 @@
 package streamclient
 
 import (
-	"bytes"
-	"io"
+	"context"
 	"testing"
 
-	"go.chromium.org/luci/common/clock/clockflag"
-	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
-	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-type testStreamWriteCloser struct {
-	bytes.Buffer
-	addr string
+func TestClientGeneral(t *testing.T) {
+	t.Parallel()
 
-	err    error
-	closed bool
-}
+	Convey(`General Client checks`, t, func() {
+		ctx := context.Background()
 
-func (ts *testStreamWriteCloser) Write(d []byte) (int, error) {
-	if ts.err != nil {
-		return 0, ts.err
-	}
-	return ts.Buffer.Write(d)
-}
-
-func (ts *testStreamWriteCloser) Close() error {
-	ts.closed = true
-	return nil
-}
-
-// A list of all streams opened with the 'test' protocol.
-var testError error
-var testStreams = []*testStreamWriteCloser{}
-
-func init() {
-	protocolRegistry["test"] = func(addr string, ns types.StreamName) (Client, error) {
-		return &clientImpl{
-			factory: func() (io.WriteCloser, error) {
-				tswc := &testStreamWriteCloser{addr: addr, err: testError}
-				testStreams = append(testStreams, tswc)
-				return tswc, nil
-			},
-			ns: ns,
-		}, nil
-	}
-}
-
-func TestClient(t *testing.T) {
-	Convey(`A client registry with a test protocol`, t, func() {
-		// clear out test globals
-		testError = nil
-		testStreams = nil
-
-		flags := streamproto.Flags{
-			Name:      "test",
-			Timestamp: clockflag.Time(testclock.TestTimeUTC),
-		}
-
-		Convey(`Will fail to instantiate a Client with an invalid protocol.`, func() {
-			_, err := New("fake:foo", "")
-			So(err, ShouldNotBeNil)
+		Convey(`fails to instantiate a Client with an invalid protocol.`, func() {
+			_, err := New("notreal:foo", "")
+			So(err, ShouldErrLike, "no protocol registered for [notreal]")
 		})
 
-		Convey(`Can instantiate a new client.`, func() {
-			client, err := New("test:foo", "namespace")
-			So(err, ShouldBeNil)
-			So(client, ShouldHaveSameTypeAs, &clientImpl{})
+		Convey(`ForProcess used with datagram stream`, func() {
+			client := NewFake("")
 
-			Convey(`That can instantiate new Streams.`, func() {
-				stream, err := client.NewStream(flags)
-				So(err, ShouldBeNil)
-				So(stream, ShouldHaveSameTypeAs, &BaseStream{})
+			_, err := client.NewDatagramStream(ctx, "test", ForProcess())
+			So(err, ShouldErrLike, "cannot specify ForProcess on a datagram stream")
+		})
 
-				si := stream.(*BaseStream)
-				So(si.WriteCloser, ShouldHaveSameTypeAs, &testStreamWriteCloser{})
+		Convey(`bad options`, func() {
+			client := NewFake("")
 
-				tswc := si.WriteCloser.(*testStreamWriteCloser)
+			_, err := client.NewTextStream(ctx, "test", WithTags("bad+@!tag", "value"))
+			So(err, ShouldErrLike, `invalid tag "bad+@!tag"`)
 
-				Convey(`The stream should have the stream header written to it.`, func() {
-					So(tswc.Next(len(streamproto.ProtocolFrameHeaderMagic)), ShouldResemble,
-						streamproto.ProtocolFrameHeaderMagic)
+			// for coverage, whee.
+			_, err = client.NewBinaryStream(ctx, "test", WithTags("bad+@!tag", "value"))
+			So(err, ShouldErrLike, `invalid tag "bad+@!tag"`)
 
-					r := recordio.NewReader(tswc, -1)
-					f, err := r.ReadFrameAll()
-					So(err, ShouldBeNil)
-					So(string(f), ShouldResemble, `{"name":"namespace/test","timestamp":"0001-02-03T04:05:06.000000007Z"}`)
-				})
-			})
+			_, err = client.NewDatagramStream(ctx, "test", WithTags("bad+@!tag", "value"))
+			So(err, ShouldErrLike, `invalid tag "bad+@!tag"`)
+		})
 
-			Convey(`If the stream fails to write the handshake, it will be closed.`, func() {
-				testError = errors.New("test error")
-				_, err := client.NewStream(flags)
-				So(err, ShouldNotBeNil)
+		Convey(`simulated stream errors`, func() {
+			Convey(`connection error`, func() {
+				client := NewFake("")
+				client.SetFakeError(errors.New("bad juju"))
 
-				So(testStreams, ShouldHaveLength, 1)
-				So(testStreams[0].closed, ShouldBeTrue)
+				_, err := client.NewTextStream(ctx, "test")
+				So(err, ShouldErrLike, `text stream "test": bad juju`)
 			})
 		})
-
-		Convey(`Can instantiate a new client without namespace.`, func() {
-			client, err := New("test:foo", "")
-			stream, err := client.NewStream(flags)
-			So(err, ShouldBeNil)
-			So(stream, ShouldHaveSameTypeAs, &BaseStream{})
-		})
-
 	})
 }

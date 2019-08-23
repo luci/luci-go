@@ -25,3 +25,9 @@ var (
 	//     a switch to something other than recordio/JSON.
 	ProtocolFrameHeaderMagic = []byte("BTLR1\x1E")
 )
+
+// LocalNamedPipePath returns the path to a local Windows named pipe named
+// `base`. This is used with the 'net.pipe' butler protocol.
+func LocalNamedPipePath(base string) string {
+	return `\\.\pipe\` + base
+}

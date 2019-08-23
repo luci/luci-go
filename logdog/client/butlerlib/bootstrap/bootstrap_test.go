@@ -18,46 +18,21 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-type sentinelClient struct{}
-
-func (sc *sentinelClient) NewStream(f streamproto.Flags) (streamclient.Stream, error) {
-	return &sentinelStream{desc: f.Descriptor()}, nil
-}
-
-type sentinelStream struct {
-	streamclient.Stream
-	desc *logpb.LogStreamDescriptor
-}
-
-func (ss *sentinelStream) Descriptor() *logpb.LogStreamDescriptor { return ss.desc }
-func (ss *sentinelStream) Close() error                           { return nil }
-
 func TestBootstrap(t *testing.T) {
 	Convey(`A test Environment`, t, func() {
-		regSpec := ""
-		regErr := error(nil)
-		newClient := func(path string, ns types.StreamName) (streamclient.Client, error) {
-			regSpec = path
-			return &sentinelClient{}, regErr
-		}
-
 		env := environ.New([]string{
 			"IRRELEVANT=VALUE",
 		})
 
 		Convey(`With no Butler values will return ErrNotBootstrapped.`, func() {
-			_, err := getFromEnv(env, newClient)
+			_, err := getFromEnv(env)
 			So(err, ShouldEqual, ErrNotBootstrapped)
 		})
 
@@ -66,7 +41,7 @@ func TestBootstrap(t *testing.T) {
 			env.Set(EnvStreamPrefix, "butler/prefix")
 
 			Convey(`Yields a Bootstrap with a Project, Prefix, and no Client.`, func() {
-				bs, err := getFromEnv(env, newClient)
+				bs, err := getFromEnv(env)
 				So(err, ShouldBeNil)
 
 				So(bs, ShouldResemble, &Bootstrap{
@@ -76,17 +51,17 @@ func TestBootstrap(t *testing.T) {
 			})
 
 			Convey(`And the remaining environment parameters`, func() {
-				env.Set(EnvStreamServerPath, "test:client:params")
+				env.Set(EnvStreamServerPath, "null")
 				env.Set(EnvCoordinatorHost, "example.appspot.com")
 				env.Set(EnvNamespace, "some/namespace")
 
 				Convey(`Yields a fully-populated Bootstrap.`, func() {
-					bs, err := getFromEnv(env, newClient)
+					bs, err := getFromEnv(env)
 					So(err, ShouldBeNil)
 
 					// Check that the client is populated, so we can test the remaining
 					// fields without reconstructing it.
-					So(bs.Client, ShouldHaveSameTypeAs, &sentinelClient{})
+					So(bs.Client, ShouldNotBeNil)
 					bs.Client = nil
 
 					So(bs, ShouldResemble, &Bootstrap{
@@ -95,37 +70,30 @@ func TestBootstrap(t *testing.T) {
 						Prefix:          "butler/prefix",
 						Namespace:       "some/namespace",
 					})
-					So(regSpec, ShouldEqual, "test:client:params")
-				})
-
-				Convey(`If Client creation fails, will fail.`, func() {
-					regErr = errors.New("testing error")
-					_, err := getFromEnv(env, newClient)
-					So(err, ShouldErrLike, "failed to create stream client")
 				})
 			})
 
 			Convey(`With an invalid Butler prefix, will fail.`, func() {
 				env.Set(EnvStreamPrefix, "_notavaildprefix")
-				_, err := getFromEnv(env, newClient)
+				_, err := getFromEnv(env)
 				So(err, ShouldErrLike, "failed to validate prefix")
 			})
 
 			Convey(`With a missing Butler project, will fail.`, func() {
 				env.Remove(EnvStreamProject)
-				_, err := getFromEnv(env, newClient)
+				_, err := getFromEnv(env)
 				So(err, ShouldErrLike, "failed to validate project")
 			})
 
 			Convey(`With an invalid Namespace, will fail.`, func() {
 				env.Set(EnvNamespace, "!!! invalid")
-				_, err := getFromEnv(env, newClient)
+				_, err := getFromEnv(env)
 				So(err, ShouldErrLike, "failed to validate namespace")
 			})
 
 			Convey(`With an invalid Butler project, will fail.`, func() {
 				env.Set(EnvStreamProject, "_notavaildproject")
-				_, err := getFromEnv(env, newClient)
+				_, err := getFromEnv(env)
 				So(err, ShouldErrLike, "failed to validate project")
 			})
 		})

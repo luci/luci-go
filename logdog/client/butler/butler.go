@@ -16,7 +16,6 @@ package butler
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -385,56 +384,6 @@ func (b *Butler) AddStreamServer(streamServer streamserver.StreamServer) {
 		streamServer.Close()
 		<-streamServerFinishedC
 	}()
-}
-
-// MemoryDatagramStream is an in-memory datagram stream; it's returned from
-// NewDatagramStream and useful for sending message-based data to logdog from
-// inside the same process as the butler service.
-type MemoryDatagramStream struct {
-	pipe *io.PipeWriter
-}
-
-// Send transmits a single datagram (`data`) to the butler.
-func (mds *MemoryDatagramStream) Send(data []byte) error {
-	sizeBuf := make([]byte, binary.MaxVarintLen64)
-	_, err := mds.pipe.Write(sizeBuf[:binary.PutUvarint(sizeBuf, uint64(len(data)))])
-	if err == nil {
-		_, err = mds.pipe.Write(data)
-	}
-	return err
-}
-
-// SendString transmits a single string datagram (`data`) to the butler.
-func (mds *MemoryDatagramStream) SendString(data string) error {
-	return mds.Send([]byte(data))
-}
-
-// Close terminates the datagram stream; the butler will know to flush the
-// stream and no more messages can be written.
-func (mds *MemoryDatagramStream) Close() {
-	mds.pipe.Close()
-}
-
-// NewDatagramStream adds a datagram Stream to the Butler. This is
-// goroutine-safe.
-//
-// The `StreamType` property in `d` is ignored (it will always be
-// StreamType_DATAGRAM).
-//
-// Returns a MemoryDatagramStream.
-func (b *Butler) NewDatagramStream(d *logpb.LogStreamDescriptor) (*MemoryDatagramStream, error) {
-	pread, pwrite := io.Pipe()
-
-	var desc *logpb.LogStreamDescriptor
-	if d == nil {
-		desc = &logpb.LogStreamDescriptor{}
-	} else {
-		desc = proto.Clone(d).(*logpb.LogStreamDescriptor)
-	}
-	desc.StreamType = logpb.StreamType_DATAGRAM
-	err := b.AddStream(pread, desc)
-
-	return &MemoryDatagramStream{pwrite}, err
 }
 
 // AddStream adds a Stream to the Butler. This is goroutine-safe.

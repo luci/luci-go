@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
-	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe/runner/runnerbutler"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -124,13 +124,9 @@ func mkBuildbucketBuffer(ctx context.Context, rawCB updateBuildCB) (dispatcher.C
 	return ret, finalErr
 }
 
-func mkLogdogBuffer(ctx context.Context, butler *runnerbutler.Server) (dispatcher.Channel, func()) {
-	dgs, err := butler.NewDatagramStream(&logpb.LogStreamDescriptor{
-		Prefix:      string(butler.Prefix),
-		Name:        "build.proto",
-		StreamType:  logpb.StreamType_DATAGRAM,
-		ContentType: protoutil.BuildMediaType,
-	})
+func mkLogdogBuffer(ctx context.Context, butler *runnerbutler.Server) (dispatcher.Channel, func() error) {
+	dgs, err := butler.Client.NewDatagramStream(
+		ctx, "build.proto", streamclient.WithContentType(protoutil.BuildMediaType))
 	if err != nil {
 		panic(err)
 	}
@@ -161,7 +157,7 @@ func mkLogdogBuffer(ctx context.Context, butler *runnerbutler.Server) (dispatche
 		} else {
 			bytes = data.Meta.([]byte)
 		}
-		return transient.Tag.Apply(dgs.Send(bytes))
+		return transient.Tag.Apply(dgs.WriteDatagram(bytes))
 	})
 	if err != nil {
 		panic(errors.Annotate(err, "impossible, bad options").Err())
