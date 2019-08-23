@@ -15,6 +15,8 @@
 package types
 
 import (
+	"fmt"
+
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )
 
@@ -23,4 +25,19 @@ type Target interface {
 	PopulateProto(d *pb.MetricsCollection)
 	Hash() uint64
 	Clone() Target
+	Type() TargetType
+}
+
+// TargetType represents the type of a Target, which identifies a metric
+// with the name.
+//
+// A metric is identified by (metric.info.name, metric.info.target_type).
+type TargetType struct {
+	Name string
+	// ID is the unique identifier of a given TargetType.
+	ID int32
+}
+
+func (tt TargetType) String() string {
+	return fmt.Sprintf("%s:%d", tt.Name, tt.ID)
 }
