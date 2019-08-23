@@ -40,7 +40,8 @@ def PreCommitGo(input_api, output_api, pcg_mode):
     return [
       error_type(
         'pre-commit-go executable (pcg) could not be found in PATH. All Go '
-        'checks are skipped. See https://github.com/maruel/pre-commit-go.')
+        'checks are skipped. See https://github.com/maruel/pre-commit-go.'
+        ' Or run `go get github.com/maruel/pre-commit-go/cmd/...`.')
     ]
 
   cpus = max(1, input_api.cpu_count/2)
