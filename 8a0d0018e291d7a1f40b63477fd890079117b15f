@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "379a099e_379bf245",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-23T05:24:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "36f72da6_317a7dd4",
+      "revId": "8a0d0018e291d7a1f40b63477fd890079117b15f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fb5f718c_87186d3f",
         "filename": "common/system/filesystem/filesystem_test.go",
         "patchSetId": 7
@@ -33,6 +51,24 @@
       "revId": "8a0d0018e291d7a1f40b63477fd890079117b15f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58e1ad55_8e5dc3fc",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-23T05:24:37Z",
+      "side": 1,
+      "message": "removed.",
+      "parentUuid": "fb5f718c_87186d3f",
+      "revId": "8a0d0018e291d7a1f40b63477fd890079117b15f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
