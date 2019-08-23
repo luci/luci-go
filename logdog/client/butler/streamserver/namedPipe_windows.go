@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 
 	"github.com/Microsoft/go-winio"
 )
@@ -43,7 +43,7 @@ func NewNamedPipeServer(ctx context.Context, name string) (StreamServer, error) 
 		Context: ctx,
 		gen: func() (net.Listener, string, error) {
 			address := "net.pipe:" + name
-			pipePath := streamclient.LocalNamedPipePath(name)
+			pipePath := streamproto.LocalNamedPipePath(name)
 			log.Fields{
 				"addr":     address,
 				"pipePath": pipePath,
