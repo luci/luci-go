@@ -111,6 +111,23 @@
     },
     {
       "key": {
+        "uuid": "8ff95942_4d0a517e",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-23T17:41:25Z",
+      "side": 1,
+      "message": "To clarify, you are going with the \"tool invocation unicity\" as described at https://crbug.com/997221.\n\nWhile this has the advantage of being a quick workaround, I\u0027m not confortable in adding it in the Go client here. Let me think about it a bit, and let\u0027s wait to know what Takuto-san has to say about this.",
+      "revId": "2033c425b379f5402f6d286392420dd639b32105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "01627569_45462d5a",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 5
