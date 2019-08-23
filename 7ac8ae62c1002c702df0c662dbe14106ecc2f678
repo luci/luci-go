@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a0949642_1ae13799",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-23T07:27:32Z",
+      "side": 1,
+      "message": "Hmm, I failed to find the review for original implementation.\nhttps://chromium.googlesource.com/infra/luci/luci-py/+/9c72d4e7130cbd5c95f05a1107d5d836d68e59a9/run_swarm_step.py#811",
+      "parentUuid": "5304f3db_10cbb2ce",
+      "range": {
+        "startLine": 338,
+        "startChar": 67,
+        "endLine": 338,
+        "endChar": 68
+      },
+      "revId": "7ac8ae62c1002c702df0c662dbe14106ecc2f678",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1b9b9e76_cb8e1213",
         "filename": "common/system/filesystem/filesystem.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "7ac8ae62c1002c702df0c662dbe14106ecc2f678",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc29a48c_81d0455f",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-23T07:27:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b9b9e76_cb8e1213",
+      "revId": "7ac8ae62c1002c702df0c662dbe14106ecc2f678",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
