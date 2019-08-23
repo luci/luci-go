@@ -55,8 +55,6 @@ func NewRESTClient(httpClient *http.Client, host string, auth bool) (gitiles.Git
 	switch {
 	case strings.Contains(host, "/"):
 		return nil, errors.Reason("invalid host %q", host).Err()
-	case !strings.HasSuffix(host, ".googlesource.com"):
-		return nil, errors.New("only .googlesource.com hosts are supported")
 	}
 
 	baseURL := "https://" + host
