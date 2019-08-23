@@ -65,6 +65,30 @@
     },
     {
       "key": {
+        "uuid": "a0751bf5_e0cf8d43",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2019-08-23T02:07:28Z",
+      "side": 1,
+      "message": "Ah, pardon me. Never mind.",
+      "parentUuid": "01627569_45462d5a",
+      "range": {
+        "startLine": 118,
+        "startChar": 10,
+        "endLine": 118,
+        "endChar": 14
+      },
+      "revId": "2033c425b379f5402f6d286392420dd639b32105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2a27048_d20d9a28",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 5
