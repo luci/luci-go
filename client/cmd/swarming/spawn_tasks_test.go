@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"regexp"
 	"testing"
 
 	googleapi "google.golang.org/api/googleapi"
@@ -157,4 +158,116 @@ func TestCreateNewTasks(t *testing.T) {
 			So(results[i].Request, ShouldResemble, expectReq)
 		}
 	})
+}
+
+func TestAddInvocationUUIDTags(t *testing.T) {
+	requests := []*swarming.SwarmingRpcsNewTaskRequest{
+		{
+			Name: "foo",
+		},
+		{
+			Name: "bar",
+		},
+	}
+	Convey(`Test success`, t, func() {
+		requests, invocationTag, err := addInvocationUUIDTags(requests)
+		So(err, ShouldBeNil)
+		re := regexp.MustCompile(`^InvocationUUID:[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$`)
+		So(re.MatchString(invocationTag), ShouldResemble, true)
+		So(requests[0].Tags[0], ShouldResemble, invocationTag)
+		So(requests[1].Tags[0], ShouldResemble, invocationTag)
+	})
+}
+
+func TestAddRPCUUIDTags(t *testing.T) {
+	requests := []*swarming.SwarmingRpcsNewTaskRequest{
+		{
+			Name: "foo",
+		},
+		{
+			Name: "bar",
+		},
+	}
+	Convey(`Test success`, t, func() {
+		requests, rpcTags, err := addRPCUUIDTags(requests)
+		So(err, ShouldBeNil)
+		re := regexp.MustCompile(`^RPCUUID:[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$`)
+		So(re.MatchString(rpcTags[0]), ShouldResemble, true)
+		So(re.MatchString(rpcTags[1]), ShouldResemble, true)
+		So(requests[0].Tags[0], ShouldResemble, rpcTags[0])
+		So(requests[1].Tags[0], ShouldResemble, rpcTags[1])
+		So(requests[0].Tags[0], ShouldNotResemble, requests[1].Tags[0])
+	})
+}
+
+func TestCancelExtraTasks(t *testing.T) {
+	invocationTag := "InvocationUUID:testInvocationUUID"
+	rpcTag := "RPCUUID:testRPCUUID"
+	results := []*swarming.SwarmingRpcsTaskRequestMetadata{
+		{
+			Request: &swarming.SwarmingRpcsTaskRequest{
+				Name: "task1",
+				Tags: []string{invocationTag, rpcTag},
+			},
+		},
+	}
+	c := context.Background()
+
+	duplicatingService := &testService{
+		countTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTasksCount, error) {
+			return &swarming.SwarmingRpcsTasksCount{
+				Count: 2,
+			}, nil
+		},
+		listTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTaskList, error) {
+			return &swarming.SwarmingRpcsTaskList{
+				Items: []*swarming.SwarmingRpcsTaskResult{
+					{
+						TaskId: "taskID1",
+					},
+					{
+						TaskId: "taskID2",
+					},
+				},
+			}, nil
+		},
+		cancelTask: func(c context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+			return &swarming.SwarmingRpcsCancelResponse{
+				Ok: true,
+			}, nil
+		},
+	}
+
+	Convey(`Test success`, t, func() {
+		err := cancelExtraTasks(c, duplicatingService, invocationTag, results)
+		So(err, ShouldBeNil)
+	})
+
+	badCountService := &testService{
+		countTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTasksCount, error) {
+			return nil, &googleapi.Error{Code: 404}
+		},
+	}
+
+	Convey(`Test fatal count response`, t, func() {
+		err := cancelExtraTasks(c, badCountService, invocationTag, results)
+		So(err, ShouldErrLike, "404")
+	})
+
+	badListService := &testService{
+		countTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTasksCount, error) {
+			return &swarming.SwarmingRpcsTasksCount{
+				Count: 2,
+			}, nil
+		},
+		listTasksByTag: func(c context.Context, tag string) (*swarming.SwarmingRpcsTaskList, error) {
+			return nil, &googleapi.Error{Code: 404}
+		},
+	}
+
+	Convey(`Test fatal list response`, t, func() {
+		err := cancelExtraTasks(c, badListService, invocationTag, results)
+		So(err, ShouldErrLike, "404")
+	})
+
 }
