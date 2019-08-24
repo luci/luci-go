@@ -21,6 +21,8 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"runtime/debug"
+	"time"
 
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -86,6 +88,27 @@ func init() {
 	if data != "" {
 		fmt.Print(data)
 		os.Exit(0)
+	}
+
+	// When the test crashes (e.g. due to timebomb), dump all goroutines.
+	debug.SetTraceback("all")
+}
+
+// use like `defer timebomb()()`
+func timebomb() func() {
+	diffuseTimebomb := make(chan struct{})
+	timebombDiffused := make(chan struct{})
+	go func() {
+		defer close(timebombDiffused)
+		select {
+		case <-time.After(timebombFuse):
+			panic("runWireProtocolTest took too long.")
+		case <-diffuseTimebomb:
+		}
+	}()
+	return func() {
+		close(diffuseTimebomb)
+		<-timebombDiffused // explicitly sync with the completion of the goroutine.
 	}
 }
 
