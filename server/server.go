@@ -48,6 +48,11 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/tsmon/target"
 
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
+
 	clientauth "go.chromium.org/luci/auth"
 
 	"go.chromium.org/luci/server/auth"
@@ -189,6 +194,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 // TLS.
 type Server struct {
 	Routes *router.Router // HTTP routes exposed via opts.HTTPAddr
+	PRPC   *prpc.Server   // pRPC server with APIs exposed via opts.HTTPAddr
 
 	ctx  context.Context // the root server context, holds all global state
 	opts Options         // options passed to New
@@ -291,6 +297,20 @@ func New(opts Options) *Server {
 	srv.Routes.GET(healthEndpoint, router.MiddlewareChain{}, func(c *router.Context) {
 		c.Writer.Write([]byte("OK"))
 	})
+
+	// Expose public pRPC endpoints.
+	srv.PRPC = &prpc.Server{
+		Authenticator: &auth.Authenticator{
+			Methods: []auth.Method{
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{clientauth.OAuthScopeEmail},
+				},
+			},
+		},
+		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(grpcutil.NewUnaryServerPanicCatcher(nil)),
+	}
+	discovery.Enable(srv.PRPC)
+	srv.PRPC.InstallHandlers(srv.Routes, router.MiddlewareChain{})
 
 	// Install endpoints accessible through admin port.
 	admin := srv.RegisterHTTP(opts.AdminAddr)
