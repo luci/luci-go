@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f94ef0e0_8ea72ebf",
+        "filename": "server/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-24T03:37:13Z",
+      "side": 1,
+      "message": "I\u0027m sorry by c.So(...) stuff is magical and flaky and doesn\u0027t work very well when asserts are actually failing in background goroutines. So I deal with errors in regular go way instead. Using errors.RenderStack(...) actually makes them more helpful than convey stuff.",
+      "range": {
+        "startLine": 84,
+        "startChar": 45,
+        "endLine": 84,
+        "endChar": 69
+      },
+      "revId": "80e551288fdc6198d70c8fa70dd051a818c816bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
