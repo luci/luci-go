@@ -34,6 +34,7 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"time"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/flag/fixflagpos"
@@ -57,7 +58,7 @@ var funcMap = template.FuncMap{
 // assetsGenGoTmpl is template for generated assets.gen.go file. Result of
 // the execution will also be passed through gofmt.
 var assetsGenGoTmpl = template.Must(template.New("tmpl").Funcs(funcMap).Parse(strings.TrimSpace(`
-// Copyright 2015 The LUCI Authors.
+// Copyright {{.Year}} The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -121,7 +122,7 @@ var fileSha256s = map[string][]byte{
 
 // assetsTestTmpl is template to assets_test.go file.
 var assetsTestTmpl = template.Must(template.New("tmpl").Funcs(funcMap).Parse(strings.TrimSpace(`
-// Copyright 2015 The LUCI Authors.
+// Copyright {{.Year}} The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -181,6 +182,7 @@ func TestAssets(t *testing.T) {
 
 // templateData is passed to tmpl when rendering it.
 type templateData struct {
+	Year        int
 	Patterns    []string
 	PackageName string
 	Assets      []asset
@@ -200,11 +202,18 @@ func (a asset) SHA256() []byte {
 type assetMap map[string]asset
 
 func main() {
+	destPkg := ""
+	flag.StringVar(&destPkg, "dest-pkg", "",
+		`Path to a package to write assets.gen.go to (default is the same as input dir). `+
+			`If it's different from the input dir, no *_test.go will be written, since `+
+			`it wouldn't know how to discover the original files.`)
+
 	exts := stringlistflag.Flag{}
 	flag.Var(&exts, "ext", fmt.Sprintf(
 		`(repeatable) Additional extensions to pack up. `+
 			`Should be in the form of a glob (e.g. '*.foo'). `+
 			`By default this recognizes %q.`, defaultExts.ToSlice()))
+
 	flag.CommandLine.Parse(fixflagpos.Fix(os.Args[1:]))
 
 	var dir string
@@ -218,38 +227,58 @@ func main() {
 		os.Exit(2)
 	}
 
-	if err := run(dir, exts); err != nil {
+	if destPkg == "" {
+		destPkg = dir
+	}
+
+	if err := run(dir, destPkg, exts); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 }
 
 // run generates assets.gen.go file with all assets discovered in the directory.
-func run(dir string, extraExts []string) error {
+func run(inDir, destPkg string, extraExts []string) error {
 	exts := defaultExts.Union(stringset.NewFromSlice(extraExts...)).ToSlice()
 	sort.Strings(exts)
 
-	pkg, err := build.ImportDir(dir, build.ImportComment)
+	assets, err := findAssets(inDir, exts)
 	if err != nil {
-		return fmt.Errorf("can't import dir %q - %s", dir, err)
+		return fmt.Errorf("can't find assets in %s - %s", inDir, err)
 	}
 
-	assets, err := findAssets(pkg.Dir, exts)
+	pkg, err := build.ImportDir(destPkg, build.ImportComment)
 	if err != nil {
-		return fmt.Errorf("can't find assets in %s - %s", pkg.Dir, err)
+		return fmt.Errorf("can't find destination package %q - %s", destPkg, err)
 	}
 
-	err = generate(assetsGenGoTmpl, pkg, assets, exts, filepath.Join(pkg.Dir, "assets.gen.go"))
+	err = generate(assetsGenGoTmpl, pkg.Name, assets, exts, filepath.Join(pkg.Dir, "assets.gen.go"))
 	if err != nil {
 		return fmt.Errorf("can't generate assets.gen.go - %s", err)
 	}
 
-	err = generate(assetsTestTmpl, pkg, assets, exts, filepath.Join(pkg.Dir, "assets_test.go"))
-	if err != nil {
-		return fmt.Errorf("can't generate assets_test.go - %s", err)
+	if samePaths(inDir, pkg.Dir) {
+		err = generate(assetsTestTmpl, pkg.Name, assets, exts, filepath.Join(pkg.Dir, "assets_test.go"))
+		if err != nil {
+			return fmt.Errorf("can't generate assets_test.go - %s", err)
+		}
 	}
 
 	return nil
+}
+
+// samePaths is true if two paths are identical when converted to absolutes.
+//
+// Panics if some path can't be converted to absolute.
+func samePaths(a, b string) bool {
+	var err error
+	if a, err = filepath.Abs(a); err != nil {
+		panic(err)
+	}
+	if b, err = filepath.Abs(b); err != nil {
+		panic(err)
+	}
+	return a == b
 }
 
 // findAssets recursively scans pkgDir for asset files.
@@ -294,7 +323,7 @@ func isAssetFile(path string, assetExts []string) (ok bool) {
 }
 
 // generate executes the template, runs output through gofmt and dumps it to disk.
-func generate(t *template.Template, pkg *build.Package, assets assetMap, assetExts []string, path string) error {
+func generate(t *template.Template, pkgName string, assets assetMap, assetExts []string, path string) error {
 	keys := make([]string, 0, len(assets))
 	for k := range assets {
 		keys = append(keys, k)
@@ -302,8 +331,9 @@ func generate(t *template.Template, pkg *build.Package, assets assetMap, assetEx
 	sort.Strings(keys)
 
 	data := templateData{
+		Year:        time.Now().Year(),
 		Patterns:    assetExts,
-		PackageName: pkg.Name,
+		PackageName: pkgName,
 	}
 	for _, key := range keys {
 		data.Assets = append(data.Assets, assets[key])
