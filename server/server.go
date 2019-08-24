@@ -94,12 +94,13 @@ type Options struct {
 	TsMonServiceName string             // service name of tsmon target
 	TsMonJobName     string             // job name of tsmon target
 
-	testCtx       context.Context          // base context for tests
-	testSeed      int64                    // used to seed rng in tests
-	testStdout    gkelogger.LogEntryWriter // mocks stdout in tests
-	testStderr    gkelogger.LogEntryWriter // mocks stderr in tests
-	testListeners map[string]net.Listener  // addr => net.Listener, for tests
-	testAuthDB    authdb.DB                // AuthDB to use in tests
+	testCtx       context.Context                       // base context for tests
+	testSeed      int64                                 // used to seed rng in tests
+	testStdout    gkelogger.LogEntryWriter              // mocks stdout in tests
+	testStderr    gkelogger.LogEntryWriter              // mocks stderr in tests
+	testListeners map[string]net.Listener               // addr => net.Listener, for tests
+	testCloudCtx  func(context.Context) context.Context // mock for initCloudContext
+	testAuthDB    authdb.DB                             // AuthDB to use in tests
 }
 
 // Register registers the command line flags.
@@ -208,7 +209,7 @@ type Server struct {
 
 	bgrCtx    context.Context    // root context for background work, canceled in Shutdown
 	bgrCancel context.CancelFunc // cancels bgrCtx
-	bgrWg     sync.WaitGroup     // waits for runInBackground goroutines to stop
+	bgrWg     sync.WaitGroup     // waits for RunInBackground goroutines to stop
 
 	cleanupM sync.Mutex // protects 'cleanup' and actual cleanup critical section
 	cleanup  []func()
@@ -364,15 +365,22 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 // down. It is expected the goroutine will exit soon after the context is
 // canceled.
 func (s *Server) RunInBackground(activity string, f func(context.Context)) {
-	s.runInBackground(activity, func(c context.Context) {
-		// Block until the server is ready or shutdown.
+	s.bgrWg.Add(1)
+	go func() {
+		defer s.bgrWg.Done()
+
 		select {
 		case <-s.ready:
-			f(c)
+			// Construct the context after the server is fully initialized.
+			ctx := logging.SetField(s.bgrCtx, "activity", activity)
+			ctx = s.initCloudContext(ctx, "")
+			ctx = cacheContext.Wrap(ctx)
+			f(ctx)
+
 		case <-s.bgrCtx.Done():
 			// the server is closed, no need to run f() anymore
 		}
-	})
+	}()
 }
 
 // ListenAndServe launches the serving loop.
@@ -414,7 +422,7 @@ func (s *Server) ListenAndServe() error {
 
 	// Periodically flush metrics.
 	if s.tsmon != nil {
-		s.runInBackground("luci.tsmon", s.tsmon.FlushPeriodically)
+		s.RunInBackground("luci.tsmon", s.tsmon.FlushPeriodically)
 	}
 
 	// Catch SIGTERM while inside this function.
@@ -468,7 +476,7 @@ func (s *Server) Shutdown() {
 
 	logging.Infof(s.ctx, "Shutting down the server...")
 
-	// Tell all runInBackground goroutines to stop.
+	// Tell all RunInBackground goroutines to stop.
 	s.bgrCancel()
 
 	// Stop all http.Servers in parallel. Each Shutdown call blocks until the
@@ -513,21 +521,6 @@ func (s *Server) serveLoop(srv *http.Server) error {
 		return srv.Serve(l)
 	}
 	return errors.Reason("test listener is not set").Err()
-}
-
-// runInBackground starts a goroutine that does some background work.
-//
-// It is expected to exit soon after its context is canceled.
-func (s *Server) runInBackground(activity string, f func(context.Context)) {
-	ctx := logging.SetField(s.bgrCtx, "activity", activity)
-	ctx = s.initCloudContext(ctx, "")
-	ctx = cacheContext.Wrap(ctx)
-
-	s.bgrWg.Add(1)
-	go func() {
-		defer s.bgrWg.Done()
-		f(ctx)
-	}()
 }
 
 // registerCleanup registers a callback that is run in ListenAndServe after the
@@ -705,7 +698,7 @@ func (s *Server) initSecrets() error {
 		return err
 	}
 	s.secrets.SetRoot(secret)
-	s.runInBackground("luci.secrets", func(c context.Context) {
+	s.RunInBackground("luci.secrets", func(c context.Context) {
 		for {
 			if r := <-clock.After(c, time.Minute); r.Err != nil {
 				return // the context is canceled
@@ -762,7 +755,7 @@ func (s *Server) initSettings() error {
 	if err := s.loadSettings(s.ctx); err != nil {
 		return err
 	}
-	s.runInBackground("luci.settings", func(c context.Context) {
+	s.RunInBackground("luci.settings", func(c context.Context) {
 		for {
 			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
 				return // the context is canceled
@@ -949,7 +942,7 @@ func (s *Server) initAuthDB() error {
 	}
 
 	// Periodically refresh it in the background.
-	s.runInBackground("luci.authdb", func(c context.Context) {
+	s.RunInBackground("luci.authdb", func(c context.Context) {
 		for {
 			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
 				return // the context is canceled
@@ -1106,6 +1099,9 @@ func (s *Server) initDatastore() error {
 // initCloudContext makes the context compatible with the supported portion of
 // 'go.chromium.org/gae' library.
 func (s *Server) initCloudContext(ctx context.Context, traceID string) context.Context {
+	if s.opts.testCloudCtx != nil {
+		return s.opts.testCloudCtx(ctx)
+	}
 	return (&cloud.ConfigLite{
 		IsDev:     !s.opts.Prod,
 		ProjectID: s.opts.CloudProject,
