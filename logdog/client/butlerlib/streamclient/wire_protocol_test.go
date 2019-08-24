@@ -21,6 +21,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"time"
 
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -87,6 +88,20 @@ func init() {
 		fmt.Print(data)
 		os.Exit(0)
 	}
+}
+
+// use like `defer timebomb(time.Second)()`
+func timebomb(duration time.Duration) func() {
+	// These tests can deadlock on Windows (don't know why)
+	diffuseTimebomb := make(chan struct{})
+	go func() {
+		select {
+		case <-time.After(time.Second * 1):
+			panic("runWireProtocolTest took too long.")
+		case <-diffuseTimebomb:
+		}
+	}()
+	return func() { close(diffuseTimebomb) }
 }
 
 // runWireProtocolTest is used by all 'socket-like' implementations to test their

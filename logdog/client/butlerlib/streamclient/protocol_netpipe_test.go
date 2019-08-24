@@ -19,6 +19,7 @@ package streamclient
 import (
 	"net"
 	"testing"
+	"time"
 
 	"github.com/Microsoft/go-winio"
 
@@ -31,6 +32,8 @@ func TestNamedPipe(t *testing.T) {
 	t.Parallel()
 
 	Convey(`test windows NamedPipe`, t, func() {
+		defer timebomb(time.Second)()
+
 		ctx, cancel := mkTestCtx()
 		defer cancel()
 
