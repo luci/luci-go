@@ -24,14 +24,18 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/datastore"
+
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gkelogger"
 
@@ -69,14 +73,6 @@ func TestServer(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer srv.cleanup()
 
-		// Run one activity before starting the serving loop to verify this code
-		// path works. See also "RunInBackground" convey below.
-		activities := make(chan string, 2)
-		srv.RunInBackground("background 1", func(context.Context) {
-			activities <- "background 1"
-		})
-
-		srv.ServeInBackground()
 		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
 
 		Convey("Logging", func() {
@@ -88,6 +84,7 @@ func TestServer(t *testing.T) {
 				c.Writer.Write([]byte("Hello, world"))
 			})
 
+			srv.ServeInBackground()
 			resp, err := srv.Get("/test", map[string]string{
 				"User-Agent":            "Test-user-agent",
 				"X-Cloud-Trace-Context": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/00001;trace=TRUE",
@@ -137,54 +134,50 @@ func TestServer(t *testing.T) {
 			})
 		})
 
-		Convey("Secrets", func() {
-			srv.Routes.GET("/secret", router.MiddlewareChain{}, func(c *router.Context) {
-				s, err := secrets.GetSecret(c.Context, "secret_name")
-				if err != nil {
+		Convey("Context features in requests", func() {
+			srv.Routes.GET("/request", router.MiddlewareChain{}, func(c *router.Context) {
+				if err := testContextFeatures(c.Context); err != nil {
 					http.Error(c.Writer, err.Error(), 500)
-				} else {
-					c.Writer.Write([]byte(s.Current))
 				}
 			})
-			resp, err := srv.Get("/secret", nil)
+			srv.ServeInBackground()
+			_, err := srv.Get("/request", nil)
 			So(err, ShouldBeNil)
-			So(resp, ShouldNotBeEmpty)
-		})
-
-		Convey("Settings", func() {
-			srv.Routes.GET("/settings", router.MiddlewareChain{}, func(c *router.Context) {
-				var val struct{ Val string }
-				if err := settings.Get(c.Context, "settings-key", &val); err != nil {
-					http.Error(c.Writer, err.Error(), 500)
-				} else {
-					c.Writer.Write([]byte(val.Val))
-				}
-			})
-			resp, err := srv.Get("/settings", nil)
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, "settings-value")
 		})
 
 		Convey("RunInBackground", func() {
-			// Run one more activity after starting the serving loop.
-			srv.RunInBackground("background 2", func(context.Context) {
-				activities <- "background 2"
+			// Queue one activity before starting the serving loop to verify this code
+			// path works.
+			type nameErrPair struct {
+				name string
+				err  error
+			}
+			activities := make(chan nameErrPair, 2)
+			srv.RunInBackground("background 1", func(ctx context.Context) {
+				activities <- nameErrPair{"background 1", testContextFeatures(ctx)}
 			})
 
-			s := stringset.New(2)
+			srv.ServeInBackground()
+
+			// Run one more activity after starting the serving loop.
+			srv.RunInBackground("background 2", func(ctx context.Context) {
+				activities <- nameErrPair{"background 2", testContextFeatures(ctx)}
+			})
+
 			wait := func() {
 				select {
-				case name := <-activities:
-					s.Add(name)
+				case pair := <-activities:
+					if pair.err != nil {
+						t.Errorf("Activity %q:\n%s", pair.name, strings.Join(errors.RenderStack(pair.err), "\n"))
+					}
 				case <-time.After(10 * time.Second):
 					panic("timeout")
 				}
 			}
 
-			// Verify both activities have started (this hangs otherwise).
+			// Verify both activities have successfully ran.
 			wait()
 			wait()
-			So(s.Len(), ShouldEqual, 2)
 		})
 
 		Convey("Client auth", func() {
@@ -216,6 +209,8 @@ func TestServer(t *testing.T) {
 				return resp
 			}
 
+			srv.ServeInBackground()
+
 			So(call("A B"), ShouldEqual, "fake_token_1")
 			So(call("B C"), ShouldEqual, "fake_token_2")
 			So(call("A B"), ShouldEqual, "fake_token_1") // reused the cached token
@@ -245,12 +240,75 @@ func TestServer(t *testing.T) {
 				c.So(err, ShouldBeNil)
 				c.So(yes, ShouldBeTrue)
 			})
+			srv.ServeInBackground()
 			_, err := srv.Get("/auth-state", map[string]string{
 				"X-Forwarded-For": "1.1.1.1,2.2.2.2,3.3.3.3",
 			})
 			So(err, ShouldBeNil)
 		})
 	})
+}
+
+// testContextFeatures check that the context has all subsystems enabled.
+func testContextFeatures(ctx context.Context) (err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = errors.Reason("Panic: %s", p).Err()
+		}
+	}()
+
+	// Secrets work.
+	switch s, err := secrets.GetSecret(ctx, "secret_name"); {
+	case err != nil:
+		return errors.Annotate(err, "secrets").Err()
+	case len(s.Current) == 0:
+		return errors.Reason("unexpectedly got empty secret").Err()
+	}
+
+	// Settings work.
+	var val struct{ Val string }
+	switch err := settings.Get(ctx, "settings-key", &val); {
+	case err != nil:
+		return errors.Annotate(err, "settings").Err()
+	case val.Val != "settings-value":
+		return errors.Reason("unexpectedly got wrong value %q", val.Val).Err()
+	}
+
+	// Client auth works (a test for advanced features is in TestServer).
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes("A", "B"))
+	if err != nil {
+		return errors.Annotate(err, "token source").Err()
+	}
+	switch tok, err := ts.Token(); {
+	case err != nil:
+		return errors.Annotate(err, "token").Err()
+	case tok.AccessToken != "fake_token_1":
+		// Refuse to log tokens that appear like a real ones (in case the test is
+		// totally failing and picking up real credentials).
+		if strings.HasPrefix(tok.AccessToken, "fake_token_") {
+			return errors.Reason("unexpected token %q", tok.AccessToken).Err()
+		}
+		return errors.Reason("unexpected token that looks like a real one").Err()
+	}
+
+	// AuthDB is available (a test for advanced features is in TestServer).
+	switch state := auth.GetState(ctx); {
+	case state == nil:
+		return errors.Reason("auth.State unexpectedly nil").Err()
+	case !reflect.DeepEqual(state.DB(), fakeAuthDB): // these are maps
+		return errors.Reason("unexpected auth.DB %v", state.DB()).Err()
+	}
+
+	// Datastore is available.
+	type testEntity struct {
+		ID   int64 `gae:"$id"`
+		Body string
+	}
+	if err := datastore.Put(ctx, &testEntity{ID: 123, Body: "Hi"}); err != nil {
+		return errors.Annotate(err, "datastore").Err()
+	}
+
+	return nil
 }
 
 func TestOptions(t *testing.T) {
@@ -415,6 +473,14 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.testSeed = 1
 	opts.testStdout = &srv.stdout
 	opts.testStderr = &srv.stderr
+
+	// TODO(vadimsh): This really should be memory.UseDS (which doesn't exist),
+	// since only Datastore is implemented outside of GAE. It doesn't matter
+	// for this particular test though.
+	opts.testCloudCtx = func(ctx context.Context) context.Context {
+		// memory.Use overrides our mocked logger, but we need it. Bring it back.
+		return logging.SetFactory(memory.Use(ctx), logging.GetFactory(ctx))
+	}
 
 	if opts.AuthDBPath == "" {
 		opts.testAuthDB = fakeAuthDB
