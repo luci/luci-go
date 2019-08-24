@@ -18,9 +18,9 @@ as an example.
 
 ```shell
 cd web
-./web.py gulp rpcexplorer clean  # this is optional
+./web.py gulp-app rpcexplorer clean  # this is optional
 ./web.py build rpcexplorer
-ls -R dist/rpcexplorer           # the built app is here
+ls -R dist/rpcexplorer               # the built app is here
 ```
 
 `dist/rpcexplorer` then can be deployed as is to a server.
