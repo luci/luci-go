@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1f1ef9c8_18386f72",
+        "filename": "logdog/client/butlerlib/streamclient/wire_protocol_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-24T20:05:12Z",
+      "side": 1,
+      "message": "Eh, just make it a minute. If it hangs, it hangs forever. 1 sec will flake on bots, they run a lot of stuff in parallel.",
+      "range": {
+        "startLine": 104,
+        "startChar": 20,
+        "endLine": 104,
+        "endChar": 32
+      },
+      "revId": "0c716c569e4877cefcf880d49aa522cf9d21c5a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
