@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "74538601_0a167360",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T00:59:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec642818_643a3924",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1aecef8a_4d47e6e1",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 18
@@ -33,6 +51,24 @@
       "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "702c0367_36a1947f",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T00:59:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1aecef8a_4d47e6e1",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "87e77aa8_dd0f6cf5",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T00:59:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24164d1a_ba0e853f",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "62af4efd_1d1c8518",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 18
@@ -67,6 +121,24 @@
       "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "808a099c_bdbce646",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T00:59:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62af4efd_1d1c8518",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
