@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ec642818_643a3924",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-24T00:40:21Z",
+      "side": 1,
+      "message": "style nit: merge into next line",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1aecef8a_4d47e6e1",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-24T00:40:21Z",
+      "side": 1,
+      "message": "Make it a proper doc:\n\n// addInvocationUUIDTags adds a \"InvocationUUID\" tag with the same UUID\n// for all requests. This enables determining all tasks that were created\n// as a single invocation.\n\nor something like that.",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24164d1a_ba0e853f",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-24T00:40:21Z",
+      "side": 1,
+      "message": "// addRPCUUIDTags adds a \"RPCUUID\" unique tag per task request.\n// Each task will have a unique tag, permitting to discover if Swarming\n// triggered the same task twice by accident.",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62af4efd_1d1c8518",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-24T00:40:21Z",
+      "side": 1,
+      "message": "Or move this in the doc string, that\u0027s more useful at the function description than inside.",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
