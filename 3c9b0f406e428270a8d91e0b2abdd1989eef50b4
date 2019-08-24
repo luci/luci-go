@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c351b721_569be6f8",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73459b4d_8d8e6d91",
+      "range": {
+        "startLine": 79,
+        "startChar": 67,
+        "endLine": 79,
+        "endChar": 77
+      },
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e54ec364_7d302ee5",
         "filename": "client/cmd/swarming/common.go",
         "patchSetId": 18
@@ -45,6 +69,30 @@
       "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e10593ab_cb35852f",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e54ec364_7d302ee5",
+      "range": {
+        "startLine": 87,
+        "startChar": 66,
+        "endLine": 87,
+        "endChar": 76
+      },
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -153,6 +201,24 @@
     },
     {
       "key": {
+        "uuid": "3333aefc_7528ca7c",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "274c68d5_5db002fa",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "24164d1a_ba0e853f",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 18
@@ -246,6 +312,30 @@
     },
     {
       "key": {
+        "uuid": "9a40b191_cb856a8a",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ebd18bb8_709ca12a",
+      "range": {
+        "startLine": 208,
+        "startChar": 8,
+        "endLine": 208,
+        "endChar": 16
+      },
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "71cb1603_108b0e77",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 18
@@ -334,6 +424,24 @@
     },
     {
       "key": {
+        "uuid": "17635e88_29021ba8",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5da446f_c10db23e",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53df9a3a_e3b35b17",
         "filename": "client/cmd/swarming/spawn_tasks_test.go",
         "patchSetId": 18
@@ -351,6 +459,24 @@
     },
     {
       "key": {
+        "uuid": "7b8f4f1d_3cf7db6c",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53df9a3a_e3b35b17",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0428692b_803bfba0",
         "filename": "client/cmd/swarming/spawn_tasks_test.go",
         "patchSetId": 18
@@ -365,6 +491,24 @@
       "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8328bf93_c96045e1",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0428692b_803bfba0",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -391,6 +535,30 @@
     },
     {
       "key": {
+        "uuid": "0f206729_2cd0626f",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f7dddf0_7574efca",
+      "range": {
+        "startLine": 214,
+        "startChar": 9,
+        "endLine": 214,
+        "endChar": 43
+      },
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b256b8c5_4e4f57c4",
         "filename": "client/cmd/swarming/spawn_tasks_test.go",
         "patchSetId": 18
@@ -414,6 +582,30 @@
     },
     {
       "key": {
+        "uuid": "3bafdbb3_f15aac13",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b256b8c5_4e4f57c4",
+      "range": {
+        "startLine": 223,
+        "startChar": 9,
+        "endLine": 223,
+        "endChar": 41
+      },
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb458c33_237d842a",
         "filename": "client/cmd/swarming/spawn_tasks_test.go",
         "patchSetId": 18
@@ -434,6 +626,30 @@
       "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e59d2527_55655351",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-24T20:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb458c33_237d842a",
+      "range": {
+        "startLine": 250,
+        "startChar": 23,
+        "endLine": 250,
+        "endChar": 24
+      },
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
