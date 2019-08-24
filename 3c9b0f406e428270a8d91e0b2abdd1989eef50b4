@@ -135,6 +135,24 @@
     },
     {
       "key": {
+        "uuid": "274c68d5_5db002fa",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-24T01:09:44Z",
+      "side": 1,
+      "message": "That\u0027s a good point. :)",
+      "parentUuid": "ce8acada_95e0d1a1",
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "24164d1a_ba0e853f",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 18
@@ -239,6 +257,30 @@
       "writtenOn": "2019-08-24T01:00:01Z",
       "side": 1,
       "message": "can be bool?",
+      "range": {
+        "startLine": 245,
+        "startChar": 33,
+        "endLine": 245,
+        "endChar": 41
+      },
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8ae86e5_ae46fc7b",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-24T01:09:44Z",
+      "side": 1,
+      "message": "struct{} is more efficient.",
+      "parentUuid": "71cb1603_108b0e77",
       "range": {
         "startLine": 245,
         "startChar": 33,
