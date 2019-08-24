@@ -293,6 +293,30 @@
     },
     {
       "key": {
+        "uuid": "1df0e08b_e95ae67f",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-24T01:11:48Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b8ae86e5_ae46fc7b",
+      "range": {
+        "startLine": 245,
+        "startChar": 33,
+        "endLine": 245,
+        "endChar": 41
+      },
+      "revId": "3c9b0f406e428270a8d91e0b2abdd1989eef50b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5da446f_c10db23e",
         "filename": "client/cmd/swarming/spawn_tasks_test.go",
         "patchSetId": 18
