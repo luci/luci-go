@@ -21,6 +21,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -29,6 +30,8 @@ func TestUnixClient(t *testing.T) {
 	t.Parallel()
 
 	Convey(`test unix`, t, func() {
+		defer timebomb(time.Second)()
+
 		ctx, cancel := mkTestCtx()
 		defer cancel()
 

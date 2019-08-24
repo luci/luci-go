@@ -21,6 +21,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"time"
 
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -86,6 +87,24 @@ func init() {
 	if data != "" {
 		fmt.Print(data)
 		os.Exit(0)
+	}
+}
+
+// use like `defer timebomb(time.Second)()`
+func timebomb(duration time.Duration) func() {
+	diffuseTimebomb := make(chan struct{})
+	timebombDiffused := make(chan struct{})
+	go func() {
+		defer close(timebombDiffused)
+		select {
+		case <-time.After(time.Second * 1):
+			panic("runWireProtocolTest took too long.")
+		case <-diffuseTimebomb:
+		}
+	}()
+	return func() {
+		close(diffuseTimebomb)
+		<-timebombDiffused // explicitly sync with the completion of the goroutine.
 	}
 }
 
