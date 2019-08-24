@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8e51e5d_898f08eb",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-24T01:05:13Z",
+      "side": 1,
+      "message": "I think better to drop this if this is used only in test.",
+      "range": {
+        "startLine": 198,
+        "startChar": 110,
+        "endLine": 198,
+        "endChar": 118
+      },
+      "revId": "c86ae297f4c7580fe517155b8d8ca087ffea846b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
