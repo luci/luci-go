@@ -31,6 +31,8 @@ func TestNamedPipe(t *testing.T) {
 	t.Parallel()
 
 	Convey(`test windows NamedPipe`, t, func() {
+		defer timebomb()()
+
 		ctx, cancel := mkTestCtx()
 		defer cancel()
 

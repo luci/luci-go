@@ -29,6 +29,8 @@ func TestUnixClient(t *testing.T) {
 	t.Parallel()
 
 	Convey(`test unix`, t, func() {
+		defer timebomb()()
+
 		ctx, cancel := mkTestCtx()
 		defer cancel()
 
