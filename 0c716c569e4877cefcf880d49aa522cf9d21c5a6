@@ -22,6 +22,30 @@
       "revId": "0c716c569e4877cefcf880d49aa522cf9d21c5a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35b1ad21_cd251339",
+        "filename": "logdog/client/butlerlib/streamclient/wire_protocol_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-25T22:18:18Z",
+      "side": 1,
+      "message": "It\u0027s already 2 orders of magnitude higher than it actually should ever be... I don\u0027t think adding another order of magnitude will improve anything?",
+      "parentUuid": "1f1ef9c8_18386f72",
+      "range": {
+        "startLine": 104,
+        "startChar": 20,
+        "endLine": 104,
+        "endChar": 32
+      },
+      "revId": "0c716c569e4877cefcf880d49aa522cf9d21c5a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
