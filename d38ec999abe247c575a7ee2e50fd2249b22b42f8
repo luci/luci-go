@@ -46,6 +46,103 @@
       "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "696b9ddb_c0fe75e5",
+        "filename": "client/cmd/swarming/common_test.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-25T23:50:16Z",
+      "side": 1,
+      "message": "2019?",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ab027a5_0554a972",
+        "filename": "client/cmd/swarming/common_test.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-25T23:50:16Z",
+      "side": 1,
+      "message": "you don\u0027t need to use init?",
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53b2135a_fedb3610",
+        "filename": "client/cmd/swarming/common_test.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-25T23:50:16Z",
+      "side": 1,
+      "message": "I prefer to use time.Now().Unix() here",
+      "range": {
+        "startLine": 114,
+        "startChar": 24,
+        "endLine": 114,
+        "endChar": 34
+      },
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "942c2275_cd672a02",
+        "filename": "client/cmd/swarming/common_test.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-25T23:50:16Z",
+      "side": 1,
+      "message": "remove?",
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9df60cbd_e50dc223",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-25T23:50:16Z",
+      "side": 1,
+      "message": "show invocationTag ?",
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
