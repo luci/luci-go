@@ -22,6 +22,30 @@
       "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10816b0f_392a5d9e",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-25T23:48:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f03e28b3_c153521d",
+      "range": {
+        "startLine": 308,
+        "startChar": 117,
+        "endLine": 308,
+        "endChar": 120
+      },
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
