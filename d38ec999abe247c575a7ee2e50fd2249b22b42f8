@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "10fe318b_c79c17c0",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-25T23:55:27Z",
+      "side": 1,
+      "message": "I realized afterward that it was to make the code in trigger.go to be nicer. I don\u0027t have any opinion on the preferred style here.",
+      "parentUuid": "10816b0f_392a5d9e",
+      "range": {
+        "startLine": 308,
+        "startChar": 117,
+        "endLine": 308,
+        "endChar": 120
+      },
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "696b9ddb_c0fe75e5",
         "filename": "client/cmd/swarming/common_test.go",
         "patchSetId": 25
