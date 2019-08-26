@@ -94,13 +94,12 @@ type Options struct {
 	TsMonServiceName string             // service name of tsmon target
 	TsMonJobName     string             // job name of tsmon target
 
-	testCtx       context.Context                       // base context for tests
-	testSeed      int64                                 // used to seed rng in tests
-	testStdout    gkelogger.LogEntryWriter              // mocks stdout in tests
-	testStderr    gkelogger.LogEntryWriter              // mocks stderr in tests
-	testListeners map[string]net.Listener               // addr => net.Listener, for tests
-	testCloudCtx  func(context.Context) context.Context // mock for initCloudContext
-	testAuthDB    authdb.DB                             // AuthDB to use in tests
+	testCtx       context.Context          // base context for tests
+	testSeed      int64                    // used to seed rng in tests
+	testStdout    gkelogger.LogEntryWriter // mocks stdout in tests
+	testStderr    gkelogger.LogEntryWriter // mocks stderr in tests
+	testListeners map[string]net.Listener  // addr => net.Listener, for tests
+	testAuthDB    authdb.DB                // AuthDB to use in tests
 }
 
 // Register registers the command line flags.
@@ -189,10 +188,18 @@ func (o *Options) Register(f *flag.FlagSet) {
 // Doesn't do TLS. Should be sitting behind a load balancer that terminates
 // TLS.
 type Server struct {
-	Routes *router.Router // HTTP routes exposed via opts.HTTPAddr
+	// Context is the root context used by all requests and background activities.
+	//
+	// Can be replaced (by a derived context) before ListenAndServe call, for
+	// example to inject values accessible to all request handlers.
+	Context context.Context
 
-	ctx  context.Context // the root server context, holds all global state
-	opts Options         // options passed to New
+	// Routes is HTTP routes exposed via HTTPAddr port.
+	//
+	// Should be populated before ListenAndServe call.
+	Routes *router.Router
+
+	opts Options // options passed to New
 
 	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
 	stderr gkelogger.LogEntryWriter // for logging to stderr, nil in dev mode
@@ -248,7 +255,7 @@ func New(opts Options) (srv *Server, err error) {
 	}
 
 	srv = &Server{
-		ctx:          context.Background(),
+		Context:      context.Background(),
 		opts:         opts,
 		ready:        make(chan struct{}),
 		done:         make(chan struct{}),
@@ -257,7 +264,7 @@ func New(opts Options) (srv *Server, err error) {
 		authPerScope: map[string]scopedAuth{},
 	}
 	if opts.testCtx != nil {
-		srv.ctx = opts.testCtx
+		srv.Context = opts.testCtx
 	}
 
 	// Cleanup what we can on failures.
@@ -270,7 +277,7 @@ func New(opts Options) (srv *Server, err error) {
 	// Configure base server subsystems by injecting them into the root context
 	// inherited later by all requests.
 	srv.initLogging()
-	srv.ctx = caching.WithProcessCacheData(srv.ctx, caching.NewProcessCacheData())
+	srv.Context = caching.WithProcessCacheData(srv.Context, caching.NewProcessCacheData())
 	if err := srv.initSecrets(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize secrets store").Err()
 	}
@@ -283,8 +290,11 @@ func New(opts Options) (srv *Server, err error) {
 	if err := srv.initTSMon(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tsmon").Err()
 	}
-	if err := srv.initDatastore(); err != nil {
+	if err := srv.initDatastoreClient(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize Datastore client").Err()
+	}
+	if err := srv.initCloudContext(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize cloud context").Err()
 	}
 
 	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
@@ -370,9 +380,8 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 		case <-s.ready:
 			// Construct the context after the server is fully initialized. Cancel it
 			// as soon as bgrDone is signaled.
-			ctx, cancel := context.WithCancel(s.ctx)
+			ctx, cancel := context.WithCancel(s.Context)
 			ctx = logging.SetField(ctx, "activity", activity)
-			ctx = s.initCloudContext(ctx, "")
 			ctx = cacheContext.Wrap(ctx)
 			defer cancel()
 			go func() {
@@ -422,13 +431,13 @@ func (s *Server) ListenAndServe() error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(httpSrv))
 	for i, srv := range httpSrv {
-		logging.Infof(s.ctx, "Serving http://%s", srv.Addr)
+		logging.Infof(s.Context, "Serving http://%s", srv.Addr)
 		i := i
 		srv := srv
 		go func() {
 			defer wg.Done()
 			if err := s.serveLoop(srv); err != http.ErrServerClosed {
-				logging.WithError(err).Errorf(s.ctx, "Server at %s failed", srv.Addr)
+				logging.WithError(err).Errorf(s.Context, "Server at %s failed", srv.Addr)
 				errs[i] = err
 				s.Shutdown() // close all other servers
 			}
@@ -439,9 +448,9 @@ func (s *Server) ListenAndServe() error {
 	// Per http.Server docs, we end up here *immediately* after Shutdown call was
 	// initiated. Some requests can still be in-flight. We block until they are
 	// done (as indicated by Shutdown call itself exiting).
-	logging.Infof(s.ctx, "Waiting for the server to stop...")
+	logging.Infof(s.Context, "Waiting for the server to stop...")
 	<-s.done
-	logging.Infof(s.ctx, "The server has stopped")
+	logging.Infof(s.Context, "The server has stopped")
 
 	if errs.First() != nil {
 		return errs
@@ -459,7 +468,7 @@ func (s *Server) Shutdown() {
 		return
 	}
 
-	logging.Infof(s.ctx, "Shutting down the server...")
+	logging.Infof(s.Context, "Shutting down the server...")
 
 	// Tell all RunInBackground goroutines to stop.
 	close(s.bgrDone)
@@ -472,7 +481,7 @@ func (s *Server) Shutdown() {
 		srv := srv
 		go func() {
 			defer wg.Done()
-			srv.Shutdown(s.ctx)
+			srv.Shutdown(s.Context)
 		}()
 	}
 	wg.Wait()
@@ -489,7 +498,7 @@ func (s *Server) Shutdown() {
 //
 // No cleanup is performed. Deferred statements are not run. Not recoverable.
 func (s *Server) Fatal(err error) {
-	errors.Log(s.ctx, err)
+	errors.Log(s.Context, err)
 	os.Exit(3)
 }
 
@@ -563,9 +572,9 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	// Log the overall request information when the request finishes. Use TraceID
 	// to correlate this log entry with entries emitted by the request handler
 	// below.
-	started := clock.Now(s.ctx)
+	started := clock.Now(s.Context)
 	defer func() {
-		now := clock.Now(s.ctx)
+		now := clock.Now(s.Context)
 		latency := now.Sub(started)
 		if isHealthCheckRequest(c.Request) {
 			// Do not log fast health check calls AT ALL, they just spam logs.
@@ -594,7 +603,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		if s.opts.Prod {
 			s.stderr.Write(&entry)
 		} else {
-			logging.Infof(s.ctx, "%d %s %q (%s)",
+			logging.Infof(s.Context, "%d %s %q (%s)",
 				entry.RequestInfo.Status,
 				entry.RequestInfo.Method,
 				entry.RequestInfo.URL,
@@ -603,7 +612,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		}
 	}()
 
-	ctx, cancel := context.WithTimeout(s.ctx, time.Minute)
+	ctx, cancel := context.WithTimeout(s.Context, time.Minute)
 	defer cancel()
 
 	// Make the request logger emit log entries with same TraceID.
@@ -615,7 +624,6 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	}
 
 	ctx = caching.WithRequestCache(ctx)
-	ctx = s.initCloudContext(ctx, traceID)
 	c.Context = cacheContext.Wrap(ctx)
 	next(c)
 }
@@ -644,8 +652,8 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 // In non-production mode use the human-friendly format and a single log stream.
 func (s *Server) initLogging() {
 	if !s.opts.Prod {
-		s.ctx = gologger.StdConfig.Use(s.ctx)
-		s.ctx = logging.SetLevel(s.ctx, logging.Debug)
+		s.Context = gologger.StdConfig.Use(s.Context)
+		s.Context = logging.SetLevel(s.Context, logging.Debug)
 		return
 	}
 
@@ -661,14 +669,14 @@ func (s *Server) initLogging() {
 		s.stderr = &gkelogger.Sink{Out: os.Stderr}
 	}
 
-	s.ctx = logging.SetFactory(s.ctx,
+	s.Context = logging.SetFactory(s.Context,
 		gkelogger.Factory(s.stderr, gkelogger.LogEntry{
 			Operation: &gkelogger.Operation{
 				ID: s.genUniqueID(32), // correlate all global server logs together
 			},
 		}),
 	)
-	s.ctx = logging.SetLevel(s.ctx, logging.Debug)
+	s.Context = logging.SetLevel(s.Context, logging.Debug)
 }
 
 // initSecrets reads the initial root secret and launches a job to periodically
@@ -683,7 +691,7 @@ func (s *Server) initSecrets() error {
 		return err
 	}
 	s.secrets = secrets.NewDerivedStore(secret)
-	s.ctx = secrets.Set(s.ctx, s.secrets)
+	s.Context = secrets.Set(s.Context, s.secrets)
 
 	s.RunInBackground("luci.secrets", func(c context.Context) {
 		for {
@@ -735,17 +743,17 @@ func (s *Server) readRootSecret() (secrets.Secret, error) {
 func (s *Server) initSettings() error {
 	if !s.opts.Prod && s.opts.SettingsPath == "" {
 		// In dev mode use settings backed by memory.
-		s.ctx = settings.Use(s.ctx, settings.New(&settings.MemoryStorage{}))
+		s.Context = settings.Use(s.Context, settings.New(&settings.MemoryStorage{}))
 	} else {
 		// In prod mode use setting backed by a file (if any).
 		s.settings = &settings.ExternalStorage{}
-		s.ctx = settings.Use(s.ctx, settings.New(s.settings))
+		s.Context = settings.Use(s.Context, settings.New(s.settings))
 	}
 
 	if s.opts.SettingsPath == "" {
 		return nil
 	}
-	if err := s.loadSettings(s.ctx); err != nil {
+	if err := s.loadSettings(s.Context); err != nil {
 		return err
 	}
 
@@ -777,7 +785,7 @@ func (s *Server) loadSettings(c context.Context) error {
 // are valid).
 func (s *Server) initAuth() error {
 	// Initialize the state in the context.
-	s.ctx = auth.Initialize(s.ctx, &auth.Config{
+	s.Context = auth.Initialize(s.Context, &auth.Config{
 		DBProvider: func(context.Context) (authdb.DB, error) {
 			db, _ := s.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
 			return db, nil
@@ -823,9 +831,9 @@ func (s *Server) initAuth() error {
 	// Report who we are running as. Useful when debugging access issues.
 	switch email, err := au.authen.GetEmail(); {
 	case err == nil:
-		logging.Infof(s.ctx, "Running as %s", email)
+		logging.Infof(s.Context, "Running as %s", email)
 	case err == clientauth.ErrNoEmail:
-		logging.Warningf(s.ctx, "Running as <unknown>, cautiously proceeding...")
+		logging.Warningf(s.Context, "Running as <unknown>, cautiously proceeding...")
 	case err != nil:
 		return errors.Annotate(err, "failed to check the service account email").Err()
 	}
@@ -885,7 +893,7 @@ func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
 	// Note: we are using the root context here (not request-scoped context passed
 	// to getAccessToken) because the authenticator *outlives* the request (by
 	// being cached), thus it needs a long-living context.
-	ctx := logging.SetField(s.ctx, "activity", "luci.auth")
+	ctx := logging.SetField(s.Context, "activity", "luci.auth")
 	au.authen = clientauth.NewAuthenticator(ctx, clientauth.SilentLogin, opts)
 	var err error
 	au.source, err = au.authen.TokenSource()
@@ -899,9 +907,9 @@ func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
 				// ActAsServiceAccount feature.
 				scopes = []string{clientauth.OAuthScopeIAM}
 			}
-			logging.Errorf(s.ctx, "Looks like you run the server locally and it doesn't have credentials for some OAuth scopes")
-			logging.Errorf(s.ctx, "Run the following command to set them up: ")
-			logging.Errorf(s.ctx, "  $ luci-auth login -scopes %q", strings.Join(scopes, " "))
+			logging.Errorf(s.Context, "Looks like you run the server locally and it doesn't have credentials for some OAuth scopes")
+			logging.Errorf(s.Context, "Run the following command to set them up: ")
+			logging.Errorf(s.Context, "  $ luci-auth login -scopes %q", strings.Join(scopes, " "))
 		}
 		return scopedAuth{}, err
 	}
@@ -942,7 +950,7 @@ func (s *Server) initAuthDB() error {
 
 	// Fetch the initial copy of AuthDB. Note that this happens before we start
 	// the serving loop, to make sure incoming requests have some AuthDB to use.
-	if err := s.refreshAuthDB(s.ctx); err != nil {
+	if err := s.refreshAuthDB(s.Context); err != nil {
 		return errors.Annotate(err, "failed to load the initial AuthDB version").Err()
 	}
 
@@ -1031,13 +1039,13 @@ func (s *Server) initTSMon() error {
 
 	switch {
 	case s.opts.TsMonAccount == "":
-		logging.Infof(s.ctx, "Disabling tsmon, -ts-mon-account is not set")
+		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-account is not set")
 		return nil
 	case s.opts.TsMonServiceName == "":
-		logging.Infof(s.ctx, "Disabling tsmon, -ts-mon-service-name is not set")
+		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-service-name is not set")
 		return nil
 	case s.opts.TsMonJobName == "":
-		logging.Infof(s.ctx, "Disabling tsmon, -ts-mon-job-name is not set")
+		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-job-name is not set")
 		return nil
 	}
 
@@ -1069,13 +1077,13 @@ func (s *Server) initTSMon() error {
 	return nil
 }
 
-// initDatastore initializes Cloud Datastore client, if enabled.
-func (s *Server) initDatastore() error {
+// initDatastoreClient initializes Cloud Datastore client, if enabled.
+func (s *Server) initDatastoreClient() error {
 	if s.opts.CloudProject == "" {
 		return nil
 	}
 
-	logging.Infof(s.ctx, "Setting up datastore client for project %q", s.opts.CloudProject)
+	logging.Infof(s.Context, "Setting up datastore client for project %q", s.opts.CloudProject)
 
 	// Enable auth only when using the real datastore.
 	var opts []option.ClientOption
@@ -1087,14 +1095,14 @@ func (s *Server) initDatastore() error {
 		opts = []option.ClientOption{option.WithTokenSource(auth.source)}
 	}
 
-	client, err := datastore.NewClient(s.ctx, s.opts.CloudProject, opts...)
+	client, err := datastore.NewClient(s.Context, s.opts.CloudProject, opts...)
 	if err != nil {
 		return errors.Annotate(err, "failed to instantiate the client").Err()
 	}
 
 	s.registerCleanup(func() {
 		if err := client.Close(); err != nil {
-			logging.Warningf(s.ctx, "Failed to close datastore client - %s", err)
+			logging.Warningf(s.Context, "Failed to close datastore client - %s", err)
 		}
 	})
 
@@ -1104,16 +1112,13 @@ func (s *Server) initDatastore() error {
 
 // initCloudContext makes the context compatible with the supported portion of
 // 'go.chromium.org/gae' library.
-func (s *Server) initCloudContext(ctx context.Context, traceID string) context.Context {
-	if s.opts.testCloudCtx != nil {
-		return s.opts.testCloudCtx(ctx)
-	}
-	return (&cloud.ConfigLite{
+func (s *Server) initCloudContext() error {
+	s.Context = (&cloud.ConfigLite{
 		IsDev:     !s.opts.Prod,
 		ProjectID: s.opts.CloudProject,
-		RequestID: traceID,
 		DS:        s.dsClient,
-	}).Use(ctx)
+	}).Use(s.Context)
+	return nil
 }
 
 // getCloudTraceID extract Trace ID from X-Cloud-Trace-Context header.
