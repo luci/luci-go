@@ -23,6 +23,9 @@ import (
 
 type testService struct {
 	newTask        func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
+	countTasks     func(context.Context, float64, ...string) (*swarming.SwarmingRpcsTasksCount, error)
+	listTasks      func(context.Context, float64, ...string) (*swarming.SwarmingRpcsTaskList, error)
+	cancelTask     func(context.Context, string, *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
 	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
 	getTaskOutput  func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
 	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
@@ -34,6 +37,18 @@ func (s testService) Client() *http.Client {
 
 func (s testService) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
 	return s.newTask(c, req)
+}
+
+func (s testService) CountTasks(c context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTasksCount, error) {
+	return s.countTasks(c, start, tags...)
+}
+
+func (s testService) ListTasks(c context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTaskList, error) {
+	return s.listTasks(c, start, tags...)
+}
+
+func (s testService) CancelTask(c context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+	return s.cancelTask(c, taskID, req)
 }
 
 func (s testService) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {

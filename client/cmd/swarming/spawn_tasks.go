@@ -48,14 +48,17 @@ func cmdSpawnTasks(defaultAuthOpts auth.Options) *subcommands.Command {
 
 type spawnTasksRun struct {
 	commonFlags
-	jsonInput  string
-	jsonOutput string
+	jsonInput        string
+	jsonOutput       string
+	cancelExtraTasks bool
 }
 
 func (c *spawnTasksRun) Init(defaultAuthOpts auth.Options) {
 	c.commonFlags.Init(defaultAuthOpts)
 	c.Flags.StringVar(&c.jsonInput, "json-input", "", "(required) Read Swarming task requests from this file.")
 	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Write details about the triggered task(s) to this file as json.")
+	// TODO(https://crbug.com/997221): Remove this option.
+	c.Flags.BoolVar(&c.cancelExtraTasks, "cancel-extra-tasks", false, "Cancel extra spawned tasks.")
 }
 
 func (c *spawnTasksRun) Parse(args []string) error {
@@ -100,11 +103,27 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 	if err != nil {
 		return err
 	}
+
+	invocationTag, err := addInvocationUUIDTags(requests...)
+	if err != nil {
+		return errors.Annotate(err, "failed to add InvocationUUID tags to requests").Err()
+	}
+	_, err = addRPCUUIDTags(requests...)
+	if err != nil {
+		return errors.Annotate(err, "failed to add RPCUUID tags to requests").Err()
+	}
+
 	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
+	createStart := float64(time.Now().Unix())
 	results, merr := createNewTasks(ctx, service, requests)
+	if merr == nil && c.cancelExtraTasks {
+		if err = cancelExtraTasks(ctx, service, createStart, invocationTag, results); err != nil {
+			return errors.Annotate(err, "failed to cancel extra tasks for invocation %s", invocationTag).Err()
+		}
+	}
 
 	var output io.Writer
 	if c.jsonOutput != "" {
@@ -157,7 +176,6 @@ func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest
 			request.ParentTaskId = parentTaskID
 		}
 	}
-
 	return requests.Requests, nil
 }
 
