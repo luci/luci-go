@@ -23,42 +23,6 @@ import re
 import sys
 
 
-def PreCommitGo(input_api, output_api, pcg_mode):
-  """Run go-specific checks via pre-commit-go (pcg) if it's in PATH."""
-  if input_api.is_committing:
-    error_type = output_api.PresubmitError
-  else:
-    error_type = output_api.PresubmitPromptWarning
-
-  exe = 'pcg.exe' if sys.platform == 'win32' else 'pcg'
-  pcg = None
-  for p in os.environ['PATH'].split(os.pathsep):
-    pcg = os.path.join(p, exe)
-    if os.access(pcg, os.X_OK):
-      break
-  else:
-    return [
-      error_type(
-        'pre-commit-go executable (pcg) could not be found in PATH. All Go '
-        'checks are skipped. See https://github.com/maruel/pre-commit-go.')
-    ]
-
-  cmd = [pcg, 'run', '-m', ','.join(pcg_mode)]
-  if input_api.verbose:
-    cmd.append('-v')
-  # pcg can figure out what files to check on its own based on upstream ref,
-  # but on PRESUBMIT try builder upsteram isn't set, and it's just 1 commit.
-  if os.getenv('PRESUBMIT_BUILDER', ''):
-    cmd.extend(['-r', 'HEAD~1'])
-  return input_api.RunTests([
-    input_api.Command(
-      name='pre-commit-go: %s' % ', '.join(pcg_mode),
-      cmd=cmd,
-      kwargs={},
-      message=error_type),
-  ])
-
-
 COPYRIGHT_TEMPLATE = """
 Copyright YEARPATTERN The LUCI Authors.
 
@@ -114,9 +78,7 @@ def CommonChecks(input_api, output_api):
 
 
 def CheckChangeOnUpload(input_api, output_api):
-  results = CommonChecks(input_api, output_api)
-  results.extend(PreCommitGo(input_api, output_api, ['lint', 'pre-commit']))
-  return results
+  return CommonChecks(input_api, output_api)
 
 
 def CheckChangeOnCommit(input_api, output_api):
@@ -127,6 +89,4 @@ def CheckChangeOnCommit(input_api, output_api):
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckDoNotSubmitInFiles(
       input_api, output_api))
-  results.extend(PreCommitGo(
-      input_api, output_api, ['lint', 'pre-commit', 'pre-push']))
   return results
