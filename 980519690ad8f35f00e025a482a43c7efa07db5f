@@ -34,6 +34,24 @@
       "revId": "980519690ad8f35f00e025a482a43c7efa07db5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a7caa95_3c88bcbc",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 27
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-26T00:32:04Z",
+      "side": 1,
+      "message": "And thus will be returned in the count/list response, as I understand it.",
+      "parentUuid": "8fd88791_e5758291",
+      "revId": "980519690ad8f35f00e025a482a43c7efa07db5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
