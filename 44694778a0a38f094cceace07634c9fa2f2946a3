@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2248366_ae84fa28",
+        "filename": "grpc/discovery/discovery.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-26T00:04:49Z",
+      "side": 1,
+      "message": "maybe give an example of what a serviceName might be (I assume \"proto.namespace.ServiceDescription\"?)",
+      "range": {
+        "startLine": 35,
+        "startChar": 3,
+        "endLine": 35,
+        "endChar": 6
+      },
+      "revId": "44694778a0a38f094cceace07634c9fa2f2946a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ab89514_53d67424",
+        "filename": "grpc/discovery/discovery.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-26T00:04:49Z",
+      "side": 1,
+      "message": "fwiw, reflect.DeepEqual would probably be an OK choice instead of listsEqual",
+      "range": {
+        "startLine": 80,
+        "startChar": 5,
+        "endLine": 80,
+        "endChar": 15
+      },
+      "revId": "44694778a0a38f094cceace07634c9fa2f2946a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
