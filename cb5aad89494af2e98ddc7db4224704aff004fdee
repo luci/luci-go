@@ -22,6 +22,30 @@
       "revId": "cb5aad89494af2e98ddc7db4224704aff004fdee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df2ec3f1_cd9886a4",
+        "filename": "server/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-26T21:36:40Z",
+      "side": 1,
+      "message": "err... no, it is used by a lot of other packages. This comment means server.Server{...} code itself should not start growing dependencies on chromeinfra.* (only Main can, since it is supposedly simply reproducible boilerplate).",
+      "parentUuid": "3f0563bd_f33ab36c",
+      "range": {
+        "startLine": 82,
+        "startChar": 49,
+        "endLine": 82,
+        "endChar": 78
+      },
+      "revId": "cb5aad89494af2e98ddc7db4224704aff004fdee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
