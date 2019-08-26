@@ -39,12 +39,11 @@ var _ = CalcServer(nil)
 func TestDiscovery(t *testing.T) {
 	Convey("Discovery", t, func() {
 
-		server, err := discovery.New(
+		server := discovery.New(
 			"discovery.Discovery",
 			"testservices.Greeter",
 			"testservices.Calc",
 		)
-		So(err, ShouldBeNil)
 
 		c := context.Background()
 		res, err := server.Describe(c, nil)
