@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f0563bd_f33ab36c",
+        "filename": "server/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-26T19:37:04Z",
+      "side": 1,
+      "message": "can we move this to \u0027internal\u0027 under server at this point?",
+      "range": {
+        "startLine": 82,
+        "startChar": 49,
+        "endLine": 82,
+        "endChar": 78
+      },
+      "revId": "cb5aad89494af2e98ddc7db4224704aff004fdee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
