@@ -13,6 +13,36 @@
 // limitations under the License.
 
 // Package server implements an environment for running LUCI servers.
+//
+// It interprets command line flags and initializes the serving environment with
+// following services available via context.Context:
+//   * go.chromium.org/luci/common/logging: Logging.
+//   * go.chromium.org/luci/server/caching: Process cache.
+//   * go.chromium.org/luci/server/secrets: Secrets.
+//   * go.chromium.org/luci/server/settings: Access to app settings.
+//   * go.chromium.org/luci/server/auth: Making authenticated calls.
+//   * go.chromium.org/gae: Datastore.
+//
+// Usage example:
+//
+//   func main() {
+//     server.Main(nil, func(srv *server.Server) error {
+//       // Initialize global state, change root context.
+//       if err := initializeGlobalStuff(srv.Context); err != nil {
+//         return err
+//       }
+//       srv.Context = injectGlobalStuff(srv.Context)
+//
+//       // Install regular HTTP routes.
+//       srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+//         // ...
+//       })
+//
+//       // Install pRPC services.
+//       servicepb.RegisterSomeServer(srv.PRPC, &SomeServer{})
+//       return nil
+//     })
+//   }
 package server
 
 import (
@@ -40,6 +70,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
@@ -47,6 +78,8 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/tsmon/target"
+
+	"go.chromium.org/luci/hardcoded/chromeinfra" // should be used ONLY in Main()
 
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -82,6 +115,33 @@ const (
 	// Log a warning if health check is slower than this.
 	healthTimeLogThreshold = 50 * time.Millisecond
 )
+
+// Main initializes the server and runs its serving loop until SIGTERM.
+//
+// Registers all options in the default flag set and uses `flag.Parse` to parse
+// them. If 'opts' is nil, the default options will be used.
+//
+// On errors, logs them and aborts the process with non-zero exit code.
+func Main(opts *Options, init func(srv *Server) error) {
+	mathrand.SeedRandomly()
+	if opts == nil {
+		opts = &Options{
+			ClientAuth: chromeinfra.DefaultAuthOptions(),
+		}
+	}
+	opts.Register(flag.CommandLine)
+	flag.Parse()
+	srv, err := New(*opts)
+	if err != nil {
+		srv.Fatal(err)
+	}
+	if err = init(srv); err != nil {
+		srv.Fatal(err)
+	}
+	if err = srv.ListenAndServe(); err != nil {
+		srv.Fatal(err)
+	}
+}
 
 // Options are exposed as command line flags.
 type Options struct {
@@ -211,7 +271,8 @@ type Server struct {
 	// Should be populated before ListenAndServe call.
 	PRPC *prpc.Server
 
-	opts Options // options passed to New
+	// Options is a copy of options passed to New.
+	Options Options
 
 	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
 	stderr gkelogger.LogEntryWriter // for logging to stderr, nil in dev mode
@@ -268,7 +329,7 @@ func New(opts Options) (srv *Server, err error) {
 
 	srv = &Server{
 		Context:      context.Background(),
-		opts:         opts,
+		Options:      opts,
 		ready:        make(chan struct{}),
 		done:         make(chan struct{}),
 		rnd:          rand.New(rand.NewSource(seed)),
@@ -388,14 +449,6 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 // All logs lines emitted by the callback are annotated with "activity" field
 // which can be arbitrary, but by convention has format "<namespace>.<name>",
 // where "luci" namespace is reserved for internal activities.
-//
-// The callback receives a context with following services available:
-//   * go.chromium.org/luci/common/logging: Logging.
-//   * go.chromium.org/luci/server/caching: Process cache.
-//   * go.chromium.org/luci/server/secrets: Secrets.
-//   * go.chromium.org/luci/server/settings: Access to app settings.
-//   * go.chromium.org/luci/server/auth: Making authenticated calls.
-//   * go.chromium.org/gae: Datastore.
 //
 // The context passed to the callback is canceled when the server is shutting
 // down. It is expected the goroutine will exit soon after the context is
@@ -536,11 +589,11 @@ func (s *Server) Fatal(err error) {
 // Basically srv.ListenAndServe with some testing helpers.
 func (s *Server) serveLoop(srv *http.Server) error {
 	// If not running tests, let http.Server bind the socket as usual.
-	if s.opts.testListeners == nil {
+	if s.Options.testListeners == nil {
 		return srv.ListenAndServe()
 	}
 	// In test mode the listener MUST be prepared already.
-	if l, _ := s.opts.testListeners[srv.Addr]; l != nil {
+	if l, _ := s.Options.testListeners[srv.Addr]; l != nil {
 		return srv.Serve(l)
 	}
 	return errors.Reason("test listener is not set").Err()
@@ -629,7 +682,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 				Latency:      fmt.Sprintf("%fs", latency.Seconds()),
 			},
 		}
-		if s.opts.Prod {
+		if s.Options.Prod {
 			s.stderr.Write(&entry)
 		} else {
 			logging.Infof(s.Context, "%d %s %q (%s)",
@@ -645,7 +698,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	defer cancel()
 
 	// Make the request logger emit log entries with same TraceID.
-	if s.opts.Prod {
+	if s.Options.Prod {
 		ctx = logging.SetFactory(ctx, gkelogger.Factory(&severityTracker, gkelogger.LogEntry{
 			TraceID:   traceID,
 			Operation: &gkelogger.Operation{ID: s.genUniqueID(32)},
@@ -680,20 +733,20 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 //
 // In non-production mode use the human-friendly format and a single log stream.
 func (s *Server) initLogging() {
-	if !s.opts.Prod {
+	if !s.Options.Prod {
 		s.Context = gologger.StdConfig.Use(s.Context)
 		s.Context = logging.SetLevel(s.Context, logging.Debug)
 		return
 	}
 
-	if s.opts.testStdout != nil {
-		s.stdout = s.opts.testStdout
+	if s.Options.testStdout != nil {
+		s.stdout = s.Options.testStdout
 	} else {
 		s.stdout = &gkelogger.Sink{Out: os.Stdout}
 	}
 
-	if s.opts.testStderr != nil {
-		s.stderr = s.opts.testStderr
+	if s.Options.testStderr != nil {
+		s.stderr = s.Options.testStderr
 	} else {
 		s.stderr = &gkelogger.Sink{Out: os.Stderr}
 	}
@@ -740,14 +793,14 @@ func (s *Server) initSecrets() error {
 
 // readRootSecret reads the secret from a path specified via -root-secret-path.
 func (s *Server) readRootSecret() (secrets.Secret, error) {
-	if s.opts.RootSecretPath == "" {
-		if !s.opts.Prod {
+	if s.Options.RootSecretPath == "" {
+		if !s.Options.Prod {
 			return secrets.Secret{Current: []byte("dev-non-secret")}, nil
 		}
 		return secrets.Secret{}, errors.Reason("-root-secret-path is required when running in prod mode").Err()
 	}
 
-	f, err := os.Open(s.opts.RootSecretPath)
+	f, err := os.Open(s.Options.RootSecretPath)
 	if err != nil {
 		return secrets.Secret{}, err
 	}
@@ -770,7 +823,7 @@ func (s *Server) readRootSecret() (secrets.Secret, error) {
 // -settings-path is set, it must point to a structurally valid JSON file or
 // the server will fail to start.
 func (s *Server) initSettings() error {
-	if !s.opts.Prod && s.opts.SettingsPath == "" {
+	if !s.Options.Prod && s.Options.SettingsPath == "" {
 		// In dev mode use settings backed by memory.
 		s.Context = settings.Use(s.Context, settings.New(&settings.MemoryStorage{}))
 	} else {
@@ -779,7 +832,7 @@ func (s *Server) initSettings() error {
 		s.Context = settings.Use(s.Context, settings.New(s.settings))
 	}
 
-	if s.opts.SettingsPath == "" {
+	if s.Options.SettingsPath == "" {
 		return nil
 	}
 	if err := s.loadSettings(s.Context); err != nil {
@@ -801,7 +854,7 @@ func (s *Server) initSettings() error {
 
 // loadSettings loads settings from a path specified via -settings-path.
 func (s *Server) loadSettings(c context.Context) error {
-	f, err := os.Open(s.opts.SettingsPath)
+	f, err := os.Open(s.Options.SettingsPath)
 	if err != nil {
 		return errors.Annotate(err, "failed to open settings file").Err()
 	}
@@ -823,7 +876,7 @@ func (s *Server) initAuth() error {
 		AccessTokenProvider: s.getAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
 		EndUserIP:           getRemoteIP,
-		IsDevMode:           !s.opts.Prod,
+		IsDevMode:           !s.Options.Prod,
 	})
 
 	// The default value for ClientAuth.SecretsDir is usually hardcoded to point
@@ -838,8 +891,8 @@ func (s *Server) initAuth() error {
 	// If -token-cache-dir was explicitly set, always use it (even in dev mode).
 	// This is useful when running containers locally: developer's credentials
 	// on the host machine can be mounted inside the container.
-	if s.opts.Prod || s.opts.TokenCacheDir != "" {
-		s.opts.ClientAuth.SecretsDir = s.opts.TokenCacheDir
+	if s.Options.Prod || s.Options.TokenCacheDir != "" {
+		s.Options.ClientAuth.SecretsDir = s.Options.TokenCacheDir
 	}
 
 	// Note: we initialize a token source for one arbitrary set of scopes here. In
@@ -916,7 +969,7 @@ func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
 
 	// Use ClientAuth as a base template for options, so users of Server{...} have
 	// ability to customize various aspects of token generation.
-	opts := s.opts.ClientAuth
+	opts := s.Options.ClientAuth
 	opts.Scopes = scopes
 
 	// Note: we are using the root context here (not request-scoped context passed
@@ -930,7 +983,7 @@ func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
 	if err != nil {
 		// ErrLoginRequired may happen only when running the server locally using
 		// developer's credentials. Let them know how the problem can be fixed.
-		if !s.opts.Prod && err == clientauth.ErrLoginRequired {
+		if !s.Options.Prod && err == clientauth.ErrLoginRequired {
 			if opts.ActAsServiceAccount != "" {
 				// Per clientauth.Options doc, IAM is the scope required to use
 				// ActAsServiceAccount feature.
@@ -951,29 +1004,29 @@ func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
 func (s *Server) initAuthDB() error {
 	// Check flags are compatible.
 	switch {
-	case s.opts.AuthDBPath != "" && s.opts.AuthServiceHost != "":
+	case s.Options.AuthDBPath != "" && s.Options.AuthServiceHost != "":
 		return errors.Reason("-auth-db-path and -auth-service-host can't be used together").Err()
-	case s.opts.Prod && s.opts.testAuthDB == nil && s.opts.AuthDBPath == "" && s.opts.AuthServiceHost == "":
+	case s.Options.Prod && s.Options.testAuthDB == nil && s.Options.AuthDBPath == "" && s.Options.AuthServiceHost == "":
 		return errors.Reason("a source of AuthDB is not configured: pass either -auth-db-path or -auth-service-host flag").Err()
-	case s.opts.AuthServiceHost == "" && (s.opts.AuthDBDump != "" || s.opts.AuthDBSigner != ""):
+	case s.Options.AuthServiceHost == "" && (s.Options.AuthDBDump != "" || s.Options.AuthDBSigner != ""):
 		return errors.Reason("-auth-db-dump and -auth-db-signer can be used only with -auth-service-host").Err()
-	case s.opts.AuthDBDump != "" && !strings.HasPrefix(s.opts.AuthDBDump, "gs://"):
-		return errors.Reason("-auth-db-dump value should start with gs://, got %q", s.opts.AuthDBDump).Err()
-	case strings.Contains(s.opts.AuthServiceHost, "/"):
-		return errors.Reason("-auth-service-host should be a plain hostname, got %q", s.opts.AuthServiceHost).Err()
+	case s.Options.AuthDBDump != "" && !strings.HasPrefix(s.Options.AuthDBDump, "gs://"):
+		return errors.Reason("-auth-db-dump value should start with gs://, got %q", s.Options.AuthDBDump).Err()
+	case strings.Contains(s.Options.AuthServiceHost, "/"):
+		return errors.Reason("-auth-service-host should be a plain hostname, got %q", s.Options.AuthServiceHost).Err()
 	}
 
 	// Fill in defaults.
-	if s.opts.AuthServiceHost != "" {
-		if s.opts.AuthDBDump == "" {
-			s.opts.AuthDBDump = fmt.Sprintf("gs://%s/auth-db", s.opts.AuthServiceHost)
+	if s.Options.AuthServiceHost != "" {
+		if s.Options.AuthDBDump == "" {
+			s.Options.AuthDBDump = fmt.Sprintf("gs://%s/auth-db", s.Options.AuthServiceHost)
 		}
-		if s.opts.AuthDBSigner == "" {
-			if !strings.HasSuffix(s.opts.AuthServiceHost, ".appspot.com") {
+		if s.Options.AuthDBSigner == "" {
+			if !strings.HasSuffix(s.Options.AuthServiceHost, ".appspot.com") {
 				return errors.Reason("-auth-db-signer is required if -auth-service-host is not *.appspot.com").Err()
 			}
-			s.opts.AuthDBSigner = fmt.Sprintf("%s@appspot.gserviceaccount.com",
-				strings.TrimSuffix(s.opts.AuthServiceHost, ".appspot.com"))
+			s.Options.AuthDBSigner = fmt.Sprintf("%s@appspot.gserviceaccount.com",
+				strings.TrimSuffix(s.Options.AuthServiceHost, ".appspot.com"))
 		}
 	}
 
@@ -1013,15 +1066,15 @@ func (s *Server) refreshAuthDB(c context.Context) error {
 // 'cur' is the currently used AuthDB or nil if fetching it for the first time.
 // Returns 'cur' as is if it's already fresh.
 func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error) {
-	if s.opts.testAuthDB != nil {
-		return s.opts.testAuthDB, nil
+	if s.Options.testAuthDB != nil {
+		return s.Options.testAuthDB, nil
 	}
 
 	// Loading from a local file.
 	//
 	// TODO(vadimsh): Get rid of this once -auth-service-host is deployed.
-	if s.opts.AuthDBPath != "" {
-		r, err := os.Open(s.opts.AuthDBPath)
+	if s.Options.AuthDBPath != "" {
+		r, err := os.Open(s.Options.AuthDBPath)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to open AuthDB file").Err()
 		}
@@ -1033,14 +1086,14 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 		return db, nil
 	}
 
-	// Loading from a GCS dump (s.opts.AuthDB* are validated here already).
-	if s.opts.AuthDBDump != "" {
+	// Loading from a GCS dump (s.Options.AuthDB* are validated here already).
+	if s.Options.AuthDBDump != "" {
 		c, cancel := clock.WithTimeout(c, 5*time.Minute)
 		defer cancel()
 		fetcher := dump.Fetcher{
-			StorageDumpPath:    s.opts.AuthDBDump[len("gs://"):],
-			AuthServiceURL:     "https://" + s.opts.AuthServiceHost,
-			AuthServiceAccount: s.opts.AuthDBSigner,
+			StorageDumpPath:    s.Options.AuthDBDump[len("gs://"):],
+			AuthServiceURL:     "https://" + s.Options.AuthServiceHost,
+			AuthServiceAccount: s.Options.AuthDBSigner,
 			OAuthScopes:        DefaultOAuthScopes,
 		}
 		curSnap, _ := cur.(*authdb.SnapshotDB)
@@ -1052,7 +1105,7 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 	}
 
 	// In dev mode default to "allow everything".
-	if !s.opts.Prod {
+	if !s.Options.Prod {
 		return authdb.DevServerDB{}, nil
 	}
 
@@ -1067,22 +1120,22 @@ func (s *Server) initTSMon() error {
 	}
 
 	switch {
-	case s.opts.TsMonAccount == "":
+	case s.Options.TsMonAccount == "":
 		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-account is not set")
 		return nil
-	case s.opts.TsMonServiceName == "":
+	case s.Options.TsMonServiceName == "":
 		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-service-name is not set")
 		return nil
-	case s.opts.TsMonJobName == "":
+	case s.Options.TsMonJobName == "":
 		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-job-name is not set")
 		return nil
 	}
 
 	s.tsmon = &tsmon.State{
-		IsDevMode: !s.opts.Prod,
+		IsDevMode: !s.Options.Prod,
 		Settings: &tsmon.Settings{
 			Enabled:            true,
-			ProdXAccount:       s.opts.TsMonAccount,
+			ProdXAccount:       s.Options.TsMonAccount,
 			FlushIntervalSec:   60,
 			ReportRuntimeStats: true,
 		},
@@ -1094,8 +1147,8 @@ func (s *Server) initTSMon() error {
 			// chaotic for deployments with large number of pods.
 			return target.Task{
 				DataCenter:  "appengine",
-				ServiceName: s.opts.TsMonServiceName,
-				JobName:     s.opts.TsMonJobName,
+				ServiceName: s.Options.TsMonServiceName,
+				JobName:     s.Options.TsMonJobName,
 				HostName:    hostname,
 			}
 		},
@@ -1108,11 +1161,11 @@ func (s *Server) initTSMon() error {
 
 // initDatastoreClient initializes Cloud Datastore client, if enabled.
 func (s *Server) initDatastoreClient() error {
-	if s.opts.CloudProject == "" {
+	if s.Options.CloudProject == "" {
 		return nil
 	}
 
-	logging.Infof(s.Context, "Setting up datastore client for project %q", s.opts.CloudProject)
+	logging.Infof(s.Context, "Setting up datastore client for project %q", s.Options.CloudProject)
 
 	// Enable auth only when using the real datastore.
 	var opts []option.ClientOption
@@ -1124,7 +1177,7 @@ func (s *Server) initDatastoreClient() error {
 		opts = []option.ClientOption{option.WithTokenSource(auth.source)}
 	}
 
-	client, err := datastore.NewClient(s.Context, s.opts.CloudProject, opts...)
+	client, err := datastore.NewClient(s.Context, s.Options.CloudProject, opts...)
 	if err != nil {
 		return errors.Annotate(err, "failed to instantiate the client").Err()
 	}
@@ -1143,8 +1196,8 @@ func (s *Server) initDatastoreClient() error {
 // 'go.chromium.org/gae' library.
 func (s *Server) initCloudContext() error {
 	s.Context = (&cloud.ConfigLite{
-		IsDev:     !s.opts.Prod,
-		ProjectID: s.opts.CloudProject,
+		IsDev:     !s.Options.Prod,
+		ProjectID: s.Options.CloudProject,
 		DS:        s.dsClient,
 	}).Use(s.Context)
 	return nil
