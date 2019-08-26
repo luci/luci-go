@@ -496,7 +496,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	// logger, but we need it. Bring it back.
 	srv.Context = logging.SetFactory(memory.Use(srv.Context), logging.GetFactory(srv.Context))
 
-	mainPort := srv.opts.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
+	mainPort := srv.Options.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
 	srv.mainAddr = fmt.Sprintf("http://127.0.0.1:%d", mainPort)
 
 	return srv, nil
