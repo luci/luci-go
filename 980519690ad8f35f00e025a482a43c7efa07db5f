@@ -52,6 +52,24 @@
       "revId": "980519690ad8f35f00e025a482a43c7efa07db5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47efb09e_6480a17d",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 27
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T01:39:11Z",
+      "side": 1,
+      "message": "Ah, I see.",
+      "parentUuid": "9a7caa95_3c88bcbc",
+      "revId": "980519690ad8f35f00e025a482a43c7efa07db5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
