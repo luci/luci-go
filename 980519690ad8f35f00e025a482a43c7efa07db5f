@@ -16,6 +16,24 @@
       "revId": "980519690ad8f35f00e025a482a43c7efa07db5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fd88791_e5758291",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 27
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-26T00:31:25Z",
+      "side": 1,
+      "message": "It\u0027s intended to be a time which is \u003c\u003d time of first swarming task request made.",
+      "parentUuid": "982bb2b2_6ce61708",
+      "revId": "980519690ad8f35f00e025a482a43c7efa07db5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
