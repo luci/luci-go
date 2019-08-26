@@ -20,7 +20,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/Microsoft/go-winio"
+	"github.com/microsoft/go-winio"
 
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 
