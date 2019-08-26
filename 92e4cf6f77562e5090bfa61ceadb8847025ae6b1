@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4108d5d_1d47c97d",
+        "filename": "common/testing/testfs/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-08-26T05:30:24Z",
+      "side": 1,
+      "message": "Will you mention that empty directory will be represented as \"\"?\n\nTo tell the truth, I prefer to make the value of this map to be a pair of contents and file stat like boolean is_dir or is_sym or so.\n\nHowever, I also understand it can be overkill for the cases you actually needs, and it might be ok to leave this as-is.",
+      "range": {
+        "startLine": 71,
+        "startChar": 38,
+        "endLine": 71,
+        "endChar": 39
+      },
+      "revId": "92e4cf6f77562e5090bfa61ceadb8847025ae6b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
