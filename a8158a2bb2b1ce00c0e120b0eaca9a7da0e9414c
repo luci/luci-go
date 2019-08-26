@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4629a78c_de83d790",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T13:42:38Z",
+      "side": 1,
+      "message": "I think we use outputs intentionally here because subdir may contain other files which we don\u0027t want to upload?",
+      "parentUuid": "343837c7_c0f0935a",
+      "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6cf6f3a4_bbf08d00",
         "filename": "cmdrunner/command.go",
         "patchSetId": 5
@@ -33,6 +51,24 @@
       "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33ad2a9d_531d1c30",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T13:42:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6cf6f3a4_bbf08d00",
+      "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
