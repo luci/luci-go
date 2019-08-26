@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b49cb6a1_ff51bbe7",
+        "filename": "cmdrunner/command_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T12:42:18Z",
+      "side": 1,
+      "message": "check outdir",
+      "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
