@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "268b14eb_fa15238d",
+        "filename": "common/testing/testfs/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-26T13:48:48Z",
+      "side": 1,
+      "message": "Please document what happens with symlinks.",
+      "revId": "9f3807f4068750d5a658e8686e80ad403bf0fbdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7db907f5_50008c6b",
+        "filename": "common/testing/testfs/testfs_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-26T13:48:48Z",
+      "side": 1,
+      "message": "there\u0027s no example of an empty directory.",
+      "revId": "9f3807f4068750d5a658e8686e80ad403bf0fbdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
