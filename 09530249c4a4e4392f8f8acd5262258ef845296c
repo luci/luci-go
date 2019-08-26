@@ -46,6 +46,30 @@
       "revId": "09530249c4a4e4392f8f8acd5262258ef845296c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9bb128c_5c6e4c45",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-26T13:19:57Z",
+      "side": 1,
+      "message": "Oh you do!\n\nThat\u0027s bad, it means that for:\n\nfiles :\u003d []string{\"foo/a\", \"foo/b\", \"foo/c\"}\n\nyou\u0027d call os.MkdirAll() three times...",
+      "parentUuid": "1332e3cb_e11b5eaf",
+      "range": {
+        "startLine": 338,
+        "startChar": 45,
+        "endLine": 338,
+        "endChar": 50
+      },
+      "revId": "09530249c4a4e4392f8f8acd5262258ef845296c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
