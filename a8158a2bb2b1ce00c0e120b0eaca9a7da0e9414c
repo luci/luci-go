@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "c776edf4_60209067",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-26T13:51:44Z",
+      "side": 1,
+      "message": "The point is to map files/directories (outputs) from runDir into outDir. It is true that outDir may contain other files, as a matter of fact let\u0027s take the case where a user requests \"out/\" to be archived, but also used ${ISOLATED_OUTDIR} and created files in there. I\u0027m fine with having this situation broken; the user should choose one or the other, not both, at least until we see a need for it.",
+      "parentUuid": "4629a78c_de83d790",
+      "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6cf6f3a4_bbf08d00",
         "filename": "cmdrunner/command.go",
         "patchSetId": 5
