@@ -16,7 +16,6 @@ package main
 
 import (
 	"flag"
-	"os"
 
 	"go.chromium.org/luci/common/logging"
 
@@ -33,7 +32,10 @@ func main() {
 	opts.Register(flag.CommandLine)
 	flag.Parse()
 
-	srv := server.New(opts)
+	srv, err := server.New(opts)
+	if err != nil {
+		srv.Fatal(err)
+	}
 
 	srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		logging.Debugf(c.Context, "Hello debug world")
@@ -43,6 +45,6 @@ func main() {
 	})
 
 	if err := srv.ListenAndServe(); err != nil {
-		os.Exit(1)
+		srv.Fatal(err)
 	}
 }
