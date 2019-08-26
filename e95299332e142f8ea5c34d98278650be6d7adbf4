@@ -140,6 +140,30 @@
       "revId": "e95299332e142f8ea5c34d98278650be6d7adbf4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a31f8b6_1c071828",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-26T19:42:35Z",
+      "side": 1,
+      "message": "yeah this makes sense having read the rest of the CL chain.",
+      "parentUuid": "abc78f9b_84b5ed71",
+      "range": {
+        "startLine": 465,
+        "startChar": 9,
+        "endLine": 465,
+        "endChar": 16
+      },
+      "revId": "e95299332e142f8ea5c34d98278650be6d7adbf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
