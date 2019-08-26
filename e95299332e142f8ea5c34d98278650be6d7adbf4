@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a9813d22_abe07870",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-26T19:29:44Z",
+      "side": 1,
+      "message": "I really wish go had generics :/. This \"channel to drain, channel to wait for drain to complete\" is (imo) nonobvious to go newbies, but completely essential. I have a strong suspicion that misunderstanding of this pattern is what causes most of the flake in the butler code :/. I think this is a good example of why copypasta of \"simple\" code in go is a source of bugs, not \"simplicity\"\n\n(not telling you to change anything, just ranting)",
+      "range": {
+        "startLine": 210,
+        "startChar": 1,
+        "endLine": 211,
+        "endChar": 6
+      },
+      "revId": "e95299332e142f8ea5c34d98278650be6d7adbf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "171a3845_ba9940f1",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-26T19:29:44Z",
+      "side": 1,
+      "message": "why not report the error internally and then panic? Do we expect the caller to implement some boilerplate in order for their program to be correct?",
+      "range": {
+        "startLine": 238,
+        "startChar": 68,
+        "endLine": 241,
+        "endChar": 12
+      },
+      "revId": "e95299332e142f8ea5c34d98278650be6d7adbf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3b0b21f_b2809e89",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-26T19:29:44Z",
+      "side": 1,
+      "message": "hm... in this usage, why not just save the cancel function of the cancelable context? I think you could avoid the extra goroutine in this case?",
+      "range": {
+        "startLine": 465,
+        "startChar": 9,
+        "endLine": 465,
+        "endChar": 16
+      },
+      "revId": "e95299332e142f8ea5c34d98278650be6d7adbf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
