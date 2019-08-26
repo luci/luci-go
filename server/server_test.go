@@ -492,7 +492,9 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 		"admin_addr": setupListener(),
 	}
 
-	srv.Server = New(opts)
+	if srv.Server, err = New(opts); err != nil {
+		return nil, err
+	}
 
 	mainPort := srv.opts.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
 	srv.mainAddr = fmt.Sprintf("http://127.0.0.1:%d", mainPort)

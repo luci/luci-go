@@ -207,9 +207,8 @@ type Server struct {
 	rndM sync.Mutex // protects rnd
 	rnd  *rand.Rand // used to generate trace and operation IDs
 
-	bgrCtx    context.Context    // root context for background work, canceled in Shutdown
-	bgrCancel context.CancelFunc // cancels bgrCtx
-	bgrWg     sync.WaitGroup     // waits for RunInBackground goroutines to stop
+	bgrDone chan struct{}  // closed to stop background activities
+	bgrWg   sync.WaitGroup // waits for RunInBackground goroutines to stop
 
 	cleanupM sync.Mutex // protects 'cleanup' and actual cleanup critical section
 	cleanup  []func()
@@ -235,7 +234,12 @@ type scopedAuth struct {
 //
 // It hosts one or more HTTP servers and starts and stops them in unison. It is
 // also responsible for preparing contexts for incoming requests.
-func New(opts Options) *Server {
+//
+// On errors returns partially initialized server (always non-nil). At least
+// its logging will be configured and can be used to report the error. Trying
+// to use such partially initialized server for anything else is undefined
+// behavior.
+func New(opts Options) (srv *Server, err error) {
 	seed := opts.testSeed
 	if seed == 0 {
 		if err := binary.Read(cryptorand.Reader, binary.BigEndian, &seed); err != nil {
@@ -243,48 +247,45 @@ func New(opts Options) *Server {
 		}
 	}
 
-	// Configure base server subsystems by injecting them into the root context
-	// inherited later by all requests.
-	srv := &Server{
+	srv = &Server{
 		ctx:          context.Background(),
 		opts:         opts,
 		ready:        make(chan struct{}),
 		done:         make(chan struct{}),
 		rnd:          rand.New(rand.NewSource(seed)),
-		secrets:      secrets.NewDerivedStore(secrets.Secret{}),
-		settings:     &settings.ExternalStorage{},
+		bgrDone:      make(chan struct{}),
 		authPerScope: map[string]scopedAuth{},
 	}
 	if opts.testCtx != nil {
 		srv.ctx = opts.testCtx
 	}
+
+	// Cleanup what we can on failures.
+	defer func() {
+		if err != nil {
+			srv.runCleanup()
+		}
+	}()
+
+	// Configure base server subsystems by injecting them into the root context
+	// inherited later by all requests.
 	srv.initLogging()
 	srv.ctx = caching.WithProcessCacheData(srv.ctx, caching.NewProcessCacheData())
-	srv.ctx = secrets.Set(srv.ctx, srv.secrets)
-	if !opts.Prod && opts.SettingsPath == "" {
-		// In dev mode use settings backed by memory.
-		srv.ctx = settings.Use(srv.ctx, settings.New(&settings.MemoryStorage{}))
-	} else {
-		// In prod mode use setting backed by a file, see also initSettings().
-		srv.ctx = settings.Use(srv.ctx, settings.New(srv.settings))
+	if err := srv.initSecrets(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize secrets store").Err()
 	}
-
-	// Configure auth subsystem. The rest of the initialization happens in
-	// initAuth() and initAuthDB() later, when launching the server.
-	srv.ctx = auth.Initialize(srv.ctx, &auth.Config{
-		DBProvider: func(context.Context) (authdb.DB, error) {
-			db, _ := srv.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
-			return db, nil
-		},
-		Signer:              nil, // TODO(vadimsh): Implement.
-		AccessTokenProvider: srv.getAccessToken,
-		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
-		EndUserIP:           getRemoteIP,
-		IsDevMode:           !srv.opts.Prod,
-	})
-
-	// Configure tsmon, we need it early to instrument routes.
-	srv.initTSMon()
+	if err := srv.initSettings(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize settings").Err()
+	}
+	if err := srv.initAuth(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize auth").Err()
+	}
+	if err := srv.initTSMon(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize tsmon").Err()
+	}
+	if err := srv.initDatastore(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize Datastore client").Err()
+	}
 
 	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
 
@@ -300,11 +301,7 @@ func New(opts Options) *Server {
 	})
 	portal.InstallHandlers(admin, router.MiddlewareChain{}, portal.AssumeTrustedPort)
 
-	// Prepare the context used for background work. It is canceled as soon as we
-	// enter the shutdown sequence.
-	srv.bgrCtx, srv.bgrCancel = context.WithCancel(srv.ctx)
-
-	return srv
+	return srv, nil
 }
 
 // RegisterHTTP prepares an additional HTTP server.
@@ -371,13 +368,23 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 
 		select {
 		case <-s.ready:
-			// Construct the context after the server is fully initialized.
-			ctx := logging.SetField(s.bgrCtx, "activity", activity)
+			// Construct the context after the server is fully initialized. Cancel it
+			// as soon as bgrDone is signaled.
+			ctx, cancel := context.WithCancel(s.ctx)
+			ctx = logging.SetField(ctx, "activity", activity)
 			ctx = s.initCloudContext(ctx, "")
 			ctx = cacheContext.Wrap(ctx)
+			defer cancel()
+			go func() {
+				select {
+				case <-s.bgrDone:
+					cancel()
+				case <-ctx.Done():
+				}
+			}()
 			f(ctx)
 
-		case <-s.bgrCtx.Done():
+		case <-s.bgrDone:
 			// the server is closed, no need to run f() anymore
 		}
 	}()
@@ -402,28 +409,6 @@ func (s *Server) ListenAndServe() error {
 	}
 
 	defer s.runCleanup()
-
-	if err := s.initSecrets(); err != nil {
-		logging.WithError(err).Errorf(s.ctx, "Failed to initialize secrets store")
-		return errors.Annotate(err, "failed to initialize secrets store").Err()
-	}
-	if err := s.initSettings(); err != nil {
-		logging.WithError(err).Errorf(s.ctx, "Failed to initialize settings")
-		return errors.Annotate(err, "failed to initialize settings").Err()
-	}
-	if err := s.initAuth(); err != nil {
-		logging.WithError(err).Errorf(s.ctx, "Failed to initialize auth")
-		return errors.Annotate(err, "failed to initialize auth").Err()
-	}
-	if err := s.initDatastore(); err != nil {
-		logging.WithError(err).Errorf(s.ctx, "Failed to initialize Datastore client")
-		return errors.Annotate(err, "failed to initialize Datastore client").Err()
-	}
-
-	// Periodically flush metrics.
-	if s.tsmon != nil {
-		s.RunInBackground("luci.tsmon", s.tsmon.FlushPeriodically)
-	}
 
 	// Catch SIGTERM while inside this function.
 	stop := signals.HandleInterrupt(s.Shutdown)
@@ -477,7 +462,7 @@ func (s *Server) Shutdown() {
 	logging.Infof(s.ctx, "Shutting down the server...")
 
 	// Tell all RunInBackground goroutines to stop.
-	s.bgrCancel()
+	close(s.bgrDone)
 
 	// Stop all http.Servers in parallel. Each Shutdown call blocks until the
 	// corresponding server is stopped.
@@ -697,7 +682,9 @@ func (s *Server) initSecrets() error {
 	if err != nil {
 		return err
 	}
-	s.secrets.SetRoot(secret)
+	s.secrets = secrets.NewDerivedStore(secret)
+	s.ctx = secrets.Set(s.ctx, s.secrets)
+
 	s.RunInBackground("luci.secrets", func(c context.Context) {
 		for {
 			if r := <-clock.After(c, time.Minute); r.Err != nil {
@@ -746,15 +733,22 @@ func (s *Server) readRootSecret() (secrets.Secret, error) {
 // -settings-path is set, it must point to a structurally valid JSON file or
 // the server will fail to start.
 func (s *Server) initSettings() error {
+	if !s.opts.Prod && s.opts.SettingsPath == "" {
+		// In dev mode use settings backed by memory.
+		s.ctx = settings.Use(s.ctx, settings.New(&settings.MemoryStorage{}))
+	} else {
+		// In prod mode use setting backed by a file (if any).
+		s.settings = &settings.ExternalStorage{}
+		s.ctx = settings.Use(s.ctx, settings.New(s.settings))
+	}
+
 	if s.opts.SettingsPath == "" {
-		if s.opts.Prod {
-			logging.Infof(s.ctx, "Not using settings, -settings-path is not set")
-		}
 		return nil
 	}
 	if err := s.loadSettings(s.ctx); err != nil {
 		return err
 	}
+
 	s.RunInBackground("luci.settings", func(c context.Context) {
 		for {
 			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
@@ -778,12 +772,23 @@ func (s *Server) loadSettings(c context.Context) error {
 	return s.settings.Load(c, f)
 }
 
-// initAuth finishes auth system initialization by pre-warming caches and
-// verifying auth tokens can actually be minted (i.e. supplied credentials are
-// valid).
-//
-// If this fails, the server refuses to start.
+// initAuth initializes auth system by preparing the context, pre-warming caches
+// and verifying auth tokens can actually be minted (i.e. supplied credentials
+// are valid).
 func (s *Server) initAuth() error {
+	// Initialize the state in the context.
+	s.ctx = auth.Initialize(s.ctx, &auth.Config{
+		DBProvider: func(context.Context) (authdb.DB, error) {
+			db, _ := s.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
+			return db, nil
+		},
+		Signer:              nil, // TODO(vadimsh): Implement.
+		AccessTokenProvider: s.getAccessToken,
+		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
+		EndUserIP:           getRemoteIP,
+		IsDevMode:           !s.opts.Prod,
+	})
+
 	// The default value for ClientAuth.SecretsDir is usually hardcoded to point
 	// to where the token cache is located on developer machines (~/.config/...).
 	// This location often doesn't exist when running from inside a container.
@@ -1017,26 +1022,23 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 	return nil, errors.Reason("a source of AuthDB is not configured").Err()
 }
 
-// initTSMon initializes time series monitoring state it tsmon is enabled.
-//
-// Panics if we can't get our own hostname for some reason. This should not
-// be happening.
-func (s *Server) initTSMon() {
+// initTSMon initializes time series monitoring state if tsmon is enabled.
+func (s *Server) initTSMon() error {
 	hostname, err := os.Hostname()
 	if err != nil {
-		panic(err)
+		return errors.Annotate(err, "failed to get own hostname").Err()
 	}
 
 	switch {
 	case s.opts.TsMonAccount == "":
 		logging.Infof(s.ctx, "Disabling tsmon, -ts-mon-account is not set")
-		return
+		return nil
 	case s.opts.TsMonServiceName == "":
 		logging.Infof(s.ctx, "Disabling tsmon, -ts-mon-service-name is not set")
-		return
+		return nil
 	case s.opts.TsMonJobName == "":
 		logging.Infof(s.ctx, "Disabling tsmon, -ts-mon-job-name is not set")
-		return
+		return nil
 	}
 
 	s.tsmon = &tsmon.State{
@@ -1061,6 +1063,10 @@ func (s *Server) initTSMon() {
 			}
 		},
 	}
+
+	// Periodically flush metrics.
+	s.RunInBackground("luci.tsmon", s.tsmon.FlushPeriodically)
+	return nil
 }
 
 // initDatastore initializes Cloud Datastore client, if enabled.
