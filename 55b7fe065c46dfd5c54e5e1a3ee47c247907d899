@@ -22,6 +22,30 @@
       "revId": "55b7fe065c46dfd5c54e5e1a3ee47c247907d899",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0ca9990_d4a7c0c7",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T14:00:35Z",
+      "side": 1,
+      "message": "That depends on whether we assume baseDirectory exists or not. We should do that?",
+      "parentUuid": "95217066_fa136c43",
+      "range": {
+        "startLine": 351,
+        "startChar": 19,
+        "endLine": 351,
+        "endChar": 20
+      },
+      "revId": "55b7fe065c46dfd5c54e5e1a3ee47c247907d899",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
