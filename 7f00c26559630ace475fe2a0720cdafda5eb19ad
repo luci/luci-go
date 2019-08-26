@@ -22,6 +22,30 @@
       "revId": "7f00c26559630ace475fe2a0720cdafda5eb19ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce5af957_1b688176",
+        "filename": "common/testing/testfs/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T05:17:00Z",
+      "side": 1,
+      "message": "I changed this function does exactly reverse of Build.\nI just didn\u0027t come up good way to keep empty directories only.",
+      "parentUuid": "9aced8b9_76b77596",
+      "range": {
+        "startLine": 71,
+        "startChar": 40,
+        "endLine": 71,
+        "endChar": 79
+      },
+      "revId": "7f00c26559630ace475fe2a0720cdafda5eb19ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
