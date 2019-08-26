@@ -357,6 +357,7 @@ func TestCreateDirectories(t *testing.T) {
 				filepath.Join("a", "b"),
 				filepath.Join("c", "d", "e"),
 				filepath.Join("c", "f"),
+				filepath.Join("g"),
 			}), ShouldBeNil)
 
 			paths = nil

@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"syscall"
 	"time"
 
@@ -336,12 +337,24 @@ func CopyRecursively(src, dst string) error {
 
 // CreateDirectories creates the directory structure needed by the given list of files.
 func CreateDirectories(baseDirectory string, files []string) error {
-	for _, file := range files {
+	dirs := make([]string, len(files))
+	for i, file := range files {
 		if filepath.IsAbs(file) {
 			return errors.Reason("file should be relative path: %s", file).Err()
 		}
+		dirs[i] = filepath.Dir(file)
+	}
 
-		dir := filepath.Join(baseDirectory, filepath.Dir(file))
+	sort.Strings(dirs)
+
+	for i, dir := range dirs {
+		if dir == "" {
+			continue
+		}
+		if i+1 < len(dirs) && filepath.HasPrefix(dirs[i+1], dir) {
+			continue
+		}
+		dir = filepath.Join(baseDirectory, dir)
 
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return errors.Annotate(err, "failed to create directory for %s", dir).Err()
