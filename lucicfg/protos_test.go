@@ -15,13 +15,11 @@
 package lucicfg
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"go.starlark.net/starlark"
 
-	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
 	_ "go.chromium.org/luci/lucicfg/testproto"
@@ -31,13 +29,7 @@ import (
 
 // Register protos used exclusively from tests.
 func init() {
-	publicProtos["unimportant.proto"] = struct {
-		protoPkg  string
-		protoPath string
-	}{
-		"testproto",
-		"go.chromium.org/luci/lucicfg/testproto/test.proto",
-	}
+	publicProtos = append(publicProtos, "go.chromium.org/luci/lucicfg/testproto/test.proto")
 }
 
 // testMessage returns new testproto.Msg as a Starlark value to be used from
@@ -61,33 +53,13 @@ func testMessage(i int) *starlarkproto.Message {
 func TestProtos(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	loader := protoLoader()
 
-	for alias, proto := range publicProtos {
-		Convey(fmt.Sprintf("%q is importable", proto.protoPath), t, func(c C) {
-			// If assertions below fail, you either moved some *.proto files or
-			// changed their package names. Update publicProtos map and change
-			// load("@proto//...") in *.star accordingly.
-
-			Convey("Via proto path", func() {
-				_, err := Generate(ctx, Inputs{
-					Code: interpreter.MemoryLoader(map[string]string{
-						"proto.star": fmt.Sprintf(`load("@proto//%s", "%s")`, proto.protoPath, proto.protoPkg),
-					}),
-					Entry: "proto.star",
-				})
-				So(err, ShouldBeNil)
-			})
-
-			Convey("Via alias", func() {
-				_, err := Generate(ctx, Inputs{
-					Code: interpreter.MemoryLoader(map[string]string{
-						"proto.star": fmt.Sprintf(`load("@proto//%s", "%s")`, alias, proto.protoPkg),
-					}),
-					Entry: "proto.star",
-				})
-				So(err, ShouldBeNil)
-			})
+	for _, path := range publicProtos {
+		Convey(fmt.Sprintf("%q is importable", path), t, func(c C) {
+			dict, _, err := loader(path)
+			So(err, ShouldBeNil)
+			So(len(dict), ShouldEqual, 1)
 		})
 	}
 
