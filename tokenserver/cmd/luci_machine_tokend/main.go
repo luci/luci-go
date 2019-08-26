@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/target"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -110,7 +111,7 @@ func realMain() int {
 	opts.registerFlags(flag.CommandLine)
 
 	tsmonFlags := tsmon.NewFlags()
-	tsmonFlags.Target.TargetType = "task"
+	tsmonFlags.Target.TargetType = target.TaskType
 	tsmonFlags.Target.TaskServiceName = "luci_machine_tokend"
 	tsmonFlags.Target.TaskJobName = "default"
 	tsmonFlags.Flush = "manual"
