@@ -22,6 +22,30 @@
       "revId": "d9450e7e724a03304db8055f467637c8c0cde225",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87556820_8d6ad67d",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-26T19:40:51Z",
+      "side": 0,
+      "message": "It is true and it is still configured early. It\u0027s just everything else is configured \"early\" now, so there\u0027 no difference and this comment is no longer relevant.",
+      "parentUuid": "e52b2291_21275968",
+      "range": {
+        "startLine": 286,
+        "startChar": 0,
+        "endLine": 286,
+        "endChar": 59
+      },
+      "revId": "d9450e7e724a03304db8055f467637c8c0cde225",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

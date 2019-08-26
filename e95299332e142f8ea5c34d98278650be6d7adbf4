@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bd4f0523_c42931d0",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-26T19:40:51Z",
+      "side": 1,
+      "message": "🤷‍♂️",
+      "parentUuid": "a9813d22_abe07870",
+      "range": {
+        "startLine": 210,
+        "startChar": 1,
+        "endLine": 211,
+        "endChar": 6
+      },
+      "revId": "e95299332e142f8ea5c34d98278650be6d7adbf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "171a3845_ba9940f1",
         "filename": "server/server.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "8343885c_ad6aafab",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-26T19:40:51Z",
+      "side": 1,
+      "message": "There\u0027ll be a helper that does that in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1771012\n\nI decided returning half-baked object in New(...) is cleaner than panicing.",
+      "parentUuid": "171a3845_ba9940f1",
+      "range": {
+        "startLine": 238,
+        "startChar": 68,
+        "endLine": 241,
+        "endChar": 12
+      },
+      "revId": "e95299332e142f8ea5c34d98278650be6d7adbf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a3b0b21f_b2809e89",
         "filename": "server/server.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "e95299332e142f8ea5c34d98278650be6d7adbf4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abc78f9b_84b5ed71",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-26T19:40:51Z",
+      "side": 1,
+      "message": "This is in preparation for the next CL that allows users to inject stuff into srv.Context. RunInBackground goroutines should pick up such changes. Thus they should inherit from srv.Context. Note that I don\u0027t want to make srv.Context itself cancellable, since it can be used by cleanups.\n\n(Note that what you propose is how it worked before).",
+      "parentUuid": "a3b0b21f_b2809e89",
+      "range": {
+        "startLine": 465,
+        "startChar": 9,
+        "endLine": 465,
+        "endChar": 16
+      },
+      "revId": "e95299332e142f8ea5c34d98278650be6d7adbf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
