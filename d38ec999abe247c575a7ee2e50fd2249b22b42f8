@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "834c994e_132841ca",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-26T00:13:45Z",
+      "side": 1,
+      "message": "I\u0027ll keep it as it is now (slice).",
+      "parentUuid": "10fe318b_c79c17c0",
+      "range": {
+        "startLine": 308,
+        "startChar": 117,
+        "endLine": 308,
+        "endChar": 120
+      },
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "696b9ddb_c0fe75e5",
         "filename": "client/cmd/swarming/common_test.go",
         "patchSetId": 25
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "904508da_6e5226f0",
+        "filename": "client/cmd/swarming/common_test.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-26T00:13:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "696b9ddb_c0fe75e5",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ab027a5_0554a972",
         "filename": "client/cmd/swarming/common_test.go",
         "patchSetId": 25
@@ -110,6 +158,24 @@
       "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ff95559_6ee5c0e6",
+        "filename": "client/cmd/swarming/common_test.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-26T00:13:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ab027a5_0554a972",
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -136,6 +202,30 @@
     },
     {
       "key": {
+        "uuid": "7d99f006_7729d466",
+        "filename": "client/cmd/swarming/common_test.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-26T00:13:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53b2135a_fedb3610",
+      "range": {
+        "startLine": 114,
+        "startChar": 24,
+        "endLine": 114,
+        "endChar": 34
+      },
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "942c2275_cd672a02",
         "filename": "client/cmd/swarming/common_test.go",
         "patchSetId": 25
@@ -153,6 +243,24 @@
     },
     {
       "key": {
+        "uuid": "a792eed0_3ea7b8b4",
+        "filename": "client/cmd/swarming/common_test.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-26T00:13:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "942c2275_cd672a02",
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9df60cbd_e50dc223",
         "filename": "client/cmd/swarming/trigger.go",
         "patchSetId": 25
@@ -167,6 +275,24 @@
       "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03e50e49_a0885fee",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-08-26T00:13:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9df60cbd_e50dc223",
+      "revId": "d38ec999abe247c575a7ee2e50fd2249b22b42f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
