@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"hash/fnv"
 
+	"go.chromium.org/luci/common/tsmon/ts_mon_proto"
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
@@ -54,6 +55,11 @@ func (t *Task) Clone() types.Target {
 	return &clone
 }
 
+// Type returns the TargetType of Task.
+func (t *Task) Type() types.TargetType {
+	return types.TargetType{Name: "task", MessageTypeID: int32(ts_mon_proto.Task_MESSAGE_TYPE_ID)}
+}
+
 // A NetworkDevice is a machine that has a hostname.
 type NetworkDevice struct {
 	Metro     string
@@ -79,9 +85,14 @@ func (t *NetworkDevice) Clone() types.Target {
 	return &clone
 }
 
+// Type returns the TargetType of NetworkDevice.
+func (t *NetworkDevice) Type() types.TargetType {
+	return types.TargetType{Name: "device", MessageTypeID: int32(ts_mon_proto.NetworkDevice_MESSAGE_TYPE_ID)}
+}
+
 // NewFromFlags returns a Target configured from commandline flags.
 func NewFromFlags(fl *Flags) (types.Target, error) {
-	if fl.TargetType == "task" {
+	if fl.TargetType == TaskType {
 		if fl.TaskServiceName == "" {
 			return nil, errors.New(
 				"--ts-mon-task-service-name must be provided when using --ts-mon-target-type=task")
@@ -98,7 +109,7 @@ func NewFromFlags(fl *Flags) (types.Target, error) {
 			HostName:    fl.TaskHostname,
 			TaskNum:     int32(fl.TaskNumber),
 		}, nil
-	} else if fl.TargetType == "device" {
+	} else if fl.TargetType == DeviceType {
 		return &NetworkDevice{
 			Metro:     fl.DeviceRegion,
 			Role:      fl.DeviceRole,
