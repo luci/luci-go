@@ -13,6 +13,36 @@
 // limitations under the License.
 
 // Package server implements an environment for running LUCI servers.
+//
+// It interprets command line flags and initializes the serving environment with
+// following services available via context.Context:
+//   * go.chromium.org/luci/common/logging: Logging.
+//   * go.chromium.org/luci/server/caching: Process cache.
+//   * go.chromium.org/luci/server/secrets: Secrets.
+//   * go.chromium.org/luci/server/settings: Access to app settings.
+//   * go.chromium.org/luci/server/auth: Making authenticated calls.
+//   * go.chromium.org/gae: Datastore.
+//
+// Usage example:
+//
+//   func main() {
+//     server.Main(nil, func(srv *server.Server) error {
+//       // Initialize global state, change root context.
+//       if err := initializeGlobalStuff(srv.Context); err != nil {
+//         return err
+//       }
+//       srv.Context = injectGlobalStuff(srv.Context)
+//
+//       // Install regular HTTP routes.
+//       srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+//         // ...
+//       })
+//
+//       // Install pRPC services.
+//       servicepb.RegisterSomeServer(srv.PRPC, &SomeServer{})
+//       return nil
+//     })
+//   }
 package server
 
 import (
@@ -40,6 +70,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
@@ -47,6 +78,8 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/tsmon/target"
+
+	"go.chromium.org/luci/hardcoded/chromeinfra" // should be used ONLY in Main()
 
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -82,6 +115,33 @@ const (
 	// Log a warning if health check is slower than this.
 	healthTimeLogThreshold = 50 * time.Millisecond
 )
+
+// Main initializes the server and runs its serving loop until SIGTERM.
+//
+// Registers all options in the default flag set and uses `flag.Parse` to parse
+// them. If 'opts' is nil, the default options will be used.
+//
+// On errors, logs them and aborts the process with non-zero exit code.
+func Main(opts *Options, init func(srv *Server) error) {
+	mathrand.SeedRandomly()
+	if opts == nil {
+		opts = &Options{
+			ClientAuth: chromeinfra.DefaultAuthOptions(),
+		}
+	}
+	opts.Register(flag.CommandLine)
+	flag.Parse()
+	srv, err := New(*opts)
+	if err != nil {
+		srv.Fatal(err)
+	}
+	if err = init(srv); err != nil {
+		srv.Fatal(err)
+	}
+	if err = srv.ListenAndServe(); err != nil {
+		srv.Fatal(err)
+	}
+}
 
 // Options are exposed as command line flags.
 type Options struct {
@@ -388,14 +448,6 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 // All logs lines emitted by the callback are annotated with "activity" field
 // which can be arbitrary, but by convention has format "<namespace>.<name>",
 // where "luci" namespace is reserved for internal activities.
-//
-// The callback receives a context with following services available:
-//   * go.chromium.org/luci/common/logging: Logging.
-//   * go.chromium.org/luci/server/caching: Process cache.
-//   * go.chromium.org/luci/server/secrets: Secrets.
-//   * go.chromium.org/luci/server/settings: Access to app settings.
-//   * go.chromium.org/luci/server/auth: Making authenticated calls.
-//   * go.chromium.org/gae: Datastore.
 //
 // The context passed to the callback is canceled when the server is shutting
 // down. It is expected the goroutine will exit soon after the context is
