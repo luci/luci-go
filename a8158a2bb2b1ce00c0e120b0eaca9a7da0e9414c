@@ -2,6 +2,57 @@
   "comments": [
     {
       "key": {
+        "uuid": "343837c7_c0f0935a",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-26T13:11:36Z",
+      "side": 1,
+      "message": "Can you add a small doc? I wrote this in python and even for me it was confusing, something like*:\n\n// linkRelPathsToDest links the subdirs based on basedir into outdir.\nfunc linkRelPathsToDest(basedir, subdirs []string, outdir string) error {\n\n\n* Also proposing an alternate name. I prefer the function name to convey what it does versus why it exists. Note that the code you are porting over is quite  old, I got better at naming things over the years. :)\n\nwdyt?",
+      "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cf6f3a4_bbf08d00",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-26T13:11:36Z",
+      "side": 1,
+      "message": "It\u0027s fine to skip this, as the CreateDirectories() is a no-op when outputs is empty, and the loop below will be a no-op too.",
+      "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70ad1613_eac44dd5",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-26T13:11:36Z",
+      "side": 1,
+      "message": "That\u0027s surprising, I thought just doing a symlink would be sufficient. So basically:\n\n- CreateDirectories but with the filepath.Dir(subdir) part.\n- Do a symlink (with fallback) for the actual mapping.",
+      "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b49cb6a1_ff51bbe7",
         "filename": "cmdrunner/command_test.go",
         "patchSetId": 5
