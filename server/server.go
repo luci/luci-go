@@ -48,6 +48,13 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/tsmon/target"
 
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
+
+	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
+
 	clientauth "go.chromium.org/luci/auth"
 
 	"go.chromium.org/luci/server/auth"
@@ -199,6 +206,11 @@ type Server struct {
 	// Should be populated before ListenAndServe call.
 	Routes *router.Router
 
+	// PRPC is pRPC service with APIs exposed via HTTPAddr port.
+	//
+	// Should be populated before ListenAndServe call.
+	PRPC *prpc.Server
+
 	opts Options // options passed to New
 
 	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
@@ -303,6 +315,23 @@ func New(opts Options) (srv *Server, err error) {
 	srv.Routes.GET(healthEndpoint, router.MiddlewareChain{}, func(c *router.Context) {
 		c.Writer.Write([]byte("OK"))
 	})
+
+	// Expose public pRPC endpoints.
+	srv.PRPC = &prpc.Server{
+		Authenticator: &auth.Authenticator{
+			Methods: []auth.Method{
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{clientauth.OAuthScopeEmail},
+				},
+			},
+		},
+		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(grpcutil.NewUnaryServerPanicCatcher(nil)),
+	}
+	discovery.Enable(srv.PRPC)
+	srv.PRPC.InstallHandlers(srv.Routes, router.MiddlewareChain{})
+
+	// Install RPCExplorer web app at "/rpcexplorer/".
+	rpcexplorer.Install(srv.Routes)
 
 	// Install endpoints accessible through admin port.
 	admin := srv.RegisterHTTP(opts.AdminAddr)
