@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84b7fb10_ed87a89c",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-26T13:05:59Z",
+      "side": 1,
+      "message": "Ah then it should be subdirs, not files, otherwise that\u0027s confusing.",
+      "range": {
+        "startLine": 338,
+        "startChar": 45,
+        "endLine": 338,
+        "endChar": 50
+      },
+      "revId": "09530249c4a4e4392f8f8acd5262258ef845296c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
