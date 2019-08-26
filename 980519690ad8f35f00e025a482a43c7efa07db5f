@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "982bb2b2_6ce61708",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 27
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T00:29:25Z",
+      "side": 1,
+      "message": "declare createStart after L238?",
+      "revId": "980519690ad8f35f00e025a482a43c7efa07db5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
