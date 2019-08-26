@@ -66,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "0bcedc20_0f4c6354",
+        "filename": "common/testing/testfs/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T04:34:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98204f84_a0f35c79",
+      "revId": "f9a93ad8b84d7ff976b98841764913efcc3fbf6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "62e30c94_8dc0e9c4",
         "filename": "common/testing/testfs/build.go",
         "patchSetId": 6
@@ -77,6 +95,24 @@
       "writtenOn": "2019-08-23T18:00:43Z",
       "side": 1,
       "message": "It could be a symlink that points to a directory.\nIt\u0027s kind of useful knowledge in tests.",
+      "revId": "f9a93ad8b84d7ff976b98841764913efcc3fbf6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daeb7ac5_b75ef6fd",
+        "filename": "common/testing/testfs/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T04:34:27Z",
+      "side": 1,
+      "message": "Yes, but I\u0027d like this function keep simple like Build.\nI think checking whether entry is symlink or not in caller is fine.",
+      "parentUuid": "62e30c94_8dc0e9c4",
       "revId": "f9a93ad8b84d7ff976b98841764913efcc3fbf6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
