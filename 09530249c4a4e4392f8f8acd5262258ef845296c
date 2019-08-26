@@ -22,6 +22,30 @@
       "revId": "09530249c4a4e4392f8f8acd5262258ef845296c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1332e3cb_e11b5eaf",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-26T13:13:41Z",
+      "side": 1,
+      "message": "I think we actually pass files here.\nTaking directory in L344?",
+      "parentUuid": "84b7fb10_ed87a89c",
+      "range": {
+        "startLine": 338,
+        "startChar": 45,
+        "endLine": 338,
+        "endChar": 50
+      },
+      "revId": "09530249c4a4e4392f8f8acd5262258ef845296c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
