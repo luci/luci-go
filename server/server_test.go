@@ -134,7 +134,8 @@ func TestServer(t *testing.T) {
 			})
 		})
 
-		Convey("Context features in requests", func() {
+		Convey("Context features", func() {
+			So(testContextFeatures(srv.Context), ShouldBeNil)
 			srv.Routes.GET("/request", router.MiddlewareChain{}, func(c *router.Context) {
 				if err := testContextFeatures(c.Context); err != nil {
 					http.Error(c.Writer, err.Error(), 500)
@@ -401,6 +402,7 @@ type testServer struct {
 	mainAddr string
 	cleanup  func()
 	serveErr errorEvent
+	serving  int32
 }
 
 func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error) {
@@ -474,14 +476,6 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.testStdout = &srv.stdout
 	opts.testStderr = &srv.stderr
 
-	// TODO(vadimsh): This really should be memory.UseDS (which doesn't exist),
-	// since only Datastore is implemented outside of GAE. It doesn't matter
-	// for this particular test though.
-	opts.testCloudCtx = func(ctx context.Context) context.Context {
-		// memory.Use overrides our mocked logger, but we need it. Bring it back.
-		return logging.SetFactory(memory.Use(ctx), logging.GetFactory(ctx))
-	}
-
 	if opts.AuthDBPath == "" {
 		opts.testAuthDB = fakeAuthDB
 	}
@@ -496,6 +490,12 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 		return nil, err
 	}
 
+	// TODO(vadimsh): This really should be memory.UseDS (which doesn't exist),
+	// since only Datastore is implemented outside of GAE. It doesn't matter
+	// for this particular test though. Note that memory.Use overrides our mocked
+	// logger, but we need it. Bring it back.
+	srv.Context = logging.SetFactory(memory.Use(srv.Context), logging.GetFactory(srv.Context))
+
 	mainPort := srv.opts.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
 	srv.mainAddr = fmt.Sprintf("http://127.0.0.1:%d", mainPort)
 
@@ -507,11 +507,15 @@ func (s *testServer) ServeInBackground() {
 	if _, err := s.Get(healthEndpoint, nil); err != nil {
 		panic(err)
 	}
+	atomic.StoreInt32(&s.serving, 1)
 }
 
 func (s *testServer) StopBackgroundServing() error {
-	s.Shutdown()
-	return s.serveErr.Get()
+	if atomic.LoadInt32(&s.serving) == 1 {
+		s.Shutdown()
+		return s.serveErr.Get()
+	}
+	return nil
 }
 
 // Get makes a blocking request, aborting it if the server dies.
