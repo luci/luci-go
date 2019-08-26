@@ -26,23 +26,34 @@ import (
 )
 
 var (
-	registry = map[string]types.Metric{}
+	registry = map[metricRegistryKey]types.Metric{}
 	lock     = sync.RWMutex{}
 )
+
+type metricRegistryKey struct {
+	MetricName string
+	TargetType types.TargetType
+}
 
 // Add adds a metric to the metric registry.
 //
 // Panics if a metric with such name is already defined.
 func Add(m types.Metric) {
-	name := m.Info().Name
+	key := metricRegistryKey{
+		MetricName: m.Info().Name,
+		TargetType: m.Info().TargetType,
+	}
 
 	lock.Lock()
 	defer lock.Unlock()
 
-	if _, ok := registry[name]; ok {
-		panic(fmt.Sprintf("A metric with the name %q was already registered", name))
+	if _, ok := registry[key]; ok {
+		panic(fmt.Sprintf(
+			"A metric with %q and %q was already registered",
+			m.Info().Name, m.Info().TargetType,
+		))
 	}
-	registry[name] = m
+	registry[key] = m
 }
 
 // Iter calls a callback for each registered metric.
