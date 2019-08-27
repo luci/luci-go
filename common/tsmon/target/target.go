@@ -25,6 +25,9 @@ import (
 	"hash/fnv"
 	"reflect"
 
+	"github.com/golang/protobuf/proto"
+
+	"go.chromium.org/luci/common/tsmon/ts_mon_proto"
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
@@ -118,5 +121,34 @@ func NewFromFlags(fl *Flags) (types.Target, error) {
 		}, nil
 	} else {
 		return nil, fmt.Errorf("unknown --ts-mon-target-type '%s'", fl.TargetType)
+	}
+}
+
+type DummyProject ts_mon_proto.DummyProject
+
+// Hash returns a uint64 hash of this target.
+func (t *DummyProject) Hash() uint64 {
+	h := fnv.New64a()
+	bytes, err := proto.Marshal((*ts_mon_proto.DummyProject)(t))
+	if err != nil {
+		// bad code.
+		panic(err)
+	}
+	h.Write(bytes)
+	return h.Sum64()
+}
+
+// Clone returns a copy of this object.
+func (t *DummyProject) Clone() types.Target {
+	clone := *t
+	return &clone
+}
+
+// Type returns the TargetType of DummyProject.
+func (t *DummyProject) Type() types.TargetType {
+	return types.TargetType{
+		// ts_mon.proto.DummyProject
+		Name: proto.MessageName((*ts_mon_proto.DummyProject)(t)),
+		Type: reflect.TypeOf(t),
 	}
 }
