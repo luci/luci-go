@@ -103,6 +103,11 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 	if err := os.Mkdir(dir, os.ModePerm); err != nil {
 		return nil, err
 	}
+
+	if ref == nil {
+		return []string{}, nil
+	}
+
 	isolatedClient := isolatedclient.New(nil, s.Client, ref.Isolatedserver, ref.Namespace, nil, nil)
 
 	var filesMu sync.Mutex
