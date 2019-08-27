@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "651f5646_5a1fc9ee",
+        "filename": "client/isolated/archive_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-27T09:16:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "927f7d0f_bdc1a028",
+      "range": {
+        "startLine": 183,
+        "startChar": 7,
+        "endLine": 183,
+        "endChar": 16
+      },
+      "revId": "fbc2aac9615be335fbb5aaf9f77973ba6be2f992",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
