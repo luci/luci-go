@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -148,6 +149,60 @@ func TestArchive(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestArchiveFiles(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	Convey("ArchiveFiles", t, testfs.MustWithTempDir(t, "", func(dir string) {
+		server := isolatedfake.New()
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+
+		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+
+		So(testfs.Build(dir, map[string]string{
+			"a":   "a",
+			"b/c": "bc",
+			"b/d": "bd",
+		}), ShouldBeNil)
+
+		items, err := ArchiveFiles(ctx, a, dir, []string{"a", "b"}, nil)
+		So(err, ShouldBeNil)
+		So(len(items), ShouldEqual, 2)
+		items[0].WaitForHashed()
+		items[1].WaitForHashed()
+		So(a.Close(), ShouldBeNil)
+
+		contents := server.Contents()
+		So(len(contents), ShouldEqual, 1)
+
+		for nc, src := range contents {
+			So(nc, ShouldEqual, isolatedclient.DefaultNamespace)
+			So(src, ShouldResemble, map[isolated.HexDigest][]byte{
+				// refrenced items.
+				"71e9c1fb445b691be2fcbf977f63f16af34a4e6f": []byte(`{"algo":"sha-1","includes":["9103cfafaff03d407e027525820e1b11f8f06571"],"version":"1.4"}
+`),
+
+				"bb7127355035cd95e9902deadc142d9d4b588757": []byte(`{"algo":"sha-1","files":{"a":{"h":"86f7e437faa5a7fce15d1ddcb9eaeaea377667b8","m":416,"s":1}},"version":"1.4"}
+`),
+
+				// directory structure.
+				"9103cfafaff03d407e027525820e1b11f8f06571": []byte(`{"algo":"sha-1","files":{"b/c":{"h":"5b2505039ac5af9e197f5dad04113906a9cf9a2a","m":416,"s":2},"b/d":{"h":"e3f284cae2097a55ddbaf92f45b91ea8506b49bf","m":416,"s":2}},"version":"1.4"}
+`),
+
+				// file contents.
+				"86f7e437faa5a7fce15d1ddcb9eaeaea377667b8": []byte(`a`),
+				"5b2505039ac5af9e197f5dad04113906a9cf9a2a": []byte(`bc`),
+				"e3f284cae2097a55ddbaf92f45b91ea8506b49bf": []byte(`bd`),
+			})
+		}
+
+		So(items[0].DisplayName, ShouldEqual, "")
+		So(items[0].Digest(), ShouldEqual, "bb7127355035cd95e9902deadc142d9d4b588757")
+		So(items[1].DisplayName, ShouldEqual, "")
+		So(items[1].Digest(), ShouldEqual, "71e9c1fb445b691be2fcbf977f63f16af34a4e6f")
+	}))
 }
 
 func TestArchiveFail(t *testing.T) {
