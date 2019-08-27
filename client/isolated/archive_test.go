@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -148,6 +149,63 @@ func TestArchive(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestArchiveFiles(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	Convey("ArchiveFiles", t, testfs.MustWithTempDir(t, "", func(dir string) {
+		server := isolatedfake.New()
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+
+		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+
+		So(testfs.Build(dir, map[string]string{
+			"a":   "a",
+			"b/c": "bc",
+			"b/d": "bd",
+		}), ShouldBeNil)
+
+		items, err := ArchiveFiles(ctx, a, dir, []string{"a", "b"}, nil)
+		So(err, ShouldBeNil)
+		So(items, ShouldHaveLength, 2)
+		items[0].WaitForHashed()
+		items[1].WaitForHashed()
+		So(a.Close(), ShouldBeNil)
+
+		contents := server.Contents()
+		So(contents, ShouldHaveLength, 1)
+		src, ok := contents[isolatedclient.DefaultNamespace]
+		So(ok, ShouldBeTrue)
+
+		uploaded := make(map[isolated.HexDigest]string)
+		for hash, data := range src {
+			uploaded[hash] = string(data)
+		}
+
+		h := isolated.GetHash(isolatedclient.DefaultNamespace)
+		dataFileA := filesArchiveExpect(h, dir, "a")
+		dataDirB := filesArchiveExpect(h, dir, filepath.Join("b", "c"), filepath.Join("b", "d"))
+
+		isolatedDirB := isolated.New(h)
+		isolatedDirB.Includes = isolated.HexDigests{dataDirB.Hash}
+
+		isolatedDirBData := newArchiveExpectData(h, isolatedDirB)
+
+		So(uploaded, ShouldResemble, map[isolated.HexDigest]string{
+			dataFileA.Hash:        dataFileA.String,
+			isolatedDirBData.Hash: isolatedDirBData.String,
+
+			dataDirB.Hash: dataDirB.String,
+
+			isolated.HashBytes(h, []byte("a")):  "a",
+			isolated.HashBytes(h, []byte("bc")): "bc",
+			isolated.HashBytes(h, []byte("bd")): "bd",
+		})
+
+		So(server.Error(), ShouldBeNil)
+	}))
 }
 
 func TestArchiveFail(t *testing.T) {
