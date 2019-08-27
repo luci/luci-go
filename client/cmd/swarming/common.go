@@ -132,6 +132,16 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 	if err := os.Mkdir(dir, os.ModePerm); err != nil {
 		return nil, err
 	}
+
+	// If there is no file reference, then we short-circuit, as there are no
+	// outputs to return. We do as after having created the directory for
+	// uniform behavior, so that there is an ID-namespaced directory for each
+	// task's outputs, with an empty directory signifying there having been no
+	// outputs.
+	if ref == nil {
+		return nil, nil
+	}
+
 	isolatedClient := isolatedclient.New(nil, s.Client, ref.Isolatedserver, ref.Namespace, nil, nil)
 
 	var filesMu sync.Mutex

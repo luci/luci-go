@@ -244,7 +244,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		}
 
 		// Download the result isolated if available and if we have a place to put it.
-		if c.outputDir != "" && result.OutputsRef != nil {
+		if c.outputDir != "" {
 			outputs, err = service.GetTaskOutputs(ctx, taskID, c.outputDir, result.OutputsRef)
 			if err != nil {
 				return tagTransientGoogleAPIError(err)
