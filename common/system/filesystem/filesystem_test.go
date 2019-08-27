@@ -304,7 +304,7 @@ func TestReadableCopy(t *testing.T) {
 	})
 }
 
-func TestCopyRecursively(t *testing.T) {
+func TestHardlinkRecursively(t *testing.T) {
 	t.Parallel()
 
 	checkFile := func(path, content string) {
@@ -313,7 +313,7 @@ func TestCopyRecursively(t *testing.T) {
 		So(string(buf), ShouldResemble, content)
 	}
 
-	Convey("CopyRecursively", t, func() {
+	Convey("HardlinkRecursively", t, func() {
 		withTempDir(t, func(dir string) {
 			src1 := filepath.Join(dir, "src1")
 			src2 := filepath.Join(src1, "src2")
@@ -325,7 +325,7 @@ func TestCopyRecursively(t *testing.T) {
 			So(os.Symlink(filepath.Join("src2", "file2"), filepath.Join(src1, "link")), ShouldBeNil)
 
 			dst := filepath.Join(dir, "dst")
-			So(CopyRecursively(src1, dst), ShouldBeNil)
+			So(HardlinkRecursively(src1, dst), ShouldBeNil)
 
 			checkFile(filepath.Join(dst, "file1"), "test1")
 			checkFile(filepath.Join(dst, "src2", "file2"), "test2")

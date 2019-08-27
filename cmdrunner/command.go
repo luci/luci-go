@@ -237,7 +237,7 @@ func linkOutputsToOutdir(runDir, outDir string, outputs []string) error {
 	for _, output := range outputs {
 		src := filepath.Join(runDir, output)
 		dst := filepath.Join(outDir, output)
-		if err := filesystem.CopyRecursively(src, dst); err != nil {
+		if err := filesystem.HardlinkRecursively(src, dst); err != nil {
 			return errors.Annotate(err, "failed to copy output from %s to %s", src, dst).Err()
 		}
 	}
