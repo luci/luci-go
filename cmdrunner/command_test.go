@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -168,4 +169,32 @@ func TestRun(t *testing.T) {
 
 		// TODO(tikuta): have test for error cases.
 	})
+}
+
+func TestLinkOutputsToOutdir(t *testing.T) {
+	t.Parallel()
+
+	Convey("LinkOutputsToOutdir", t, testfs.MustWithTempDir(t, "", func(dir string) {
+		rundir := filepath.Join(dir, "rundir")
+
+		So(testfs.Build(rundir, map[string]string{
+			"a/b":   "ab",
+			"a/c/d": "acd",
+			"e":     "e",
+		}), ShouldBeNil)
+
+		outdir := filepath.Join(dir, "outdir")
+		So(linkOutputsToOutdir(rundir, outdir, []string{
+			filepath.Join("a", "b"),
+			"e",
+			// do not link a/c/d here.
+		}), ShouldBeNil)
+
+		layout, err := testfs.Collect(outdir)
+		So(err, ShouldBeNil)
+		So(layout, ShouldResemble, map[string]string{
+			"a/b": "ab",
+			"e":   "e",
+		})
+	}))
 }

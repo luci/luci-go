@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exec2"
+	"go.chromium.org/luci/common/system/filesystem"
 )
 
 const (
@@ -226,4 +227,20 @@ func Run(ctx context.Context, command []string, cwd string, env environ.Env, har
 	// Process didn't exit in time after a nudge, try to kill it.
 	cmd.Kill()
 	return 1, ErrHardTimeout
+}
+
+func linkOutputsToOutdir(runDir, outDir string, outputs []string) error {
+	if err := filesystem.CreateDirectories(outDir, outputs); err != nil {
+		return errors.Annotate(err, "failed to create directory").Err()
+	}
+
+	for _, output := range outputs {
+		src := filepath.Join(runDir, output)
+		dst := filepath.Join(outDir, output)
+		if err := filesystem.CopyRecursively(src, dst); err != nil {
+			return errors.Annotate(err, "failed to copy output from %s to %s", src, dst).Err()
+		}
+	}
+
+	return nil
 }
