@@ -16,6 +16,46 @@
       "revId": "a65d3bf40a12017af14178be60b91c80c2521308",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "175aa3ee_a6a07464",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-27T02:34:29Z",
+      "side": 1,
+      "message": "could you left comment?",
+      "revId": "a65d3bf40a12017af14178be60b91c80c2521308",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "210c48cf_eb96315e",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-27T02:34:29Z",
+      "side": 1,
+      "message": "nil?",
+      "range": {
+        "startLine": 108,
+        "startChar": 9,
+        "endLine": 108,
+        "endChar": 19
+      },
+      "revId": "a65d3bf40a12017af14178be60b91c80c2521308",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
