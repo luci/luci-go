@@ -72,6 +72,45 @@ func Archive(ctx context.Context, arch *archiver.Archiver, opts *ArchiveOptions)
 	return item
 }
 
+// ArchiveFiles uploads given files using given archiver.
+//
+// This is thin wrapper of Archive.
+func ArchiveFiles(ctx context.Context, arch *archiver.Archiver, baseDir string, files []string, blacklist []string) ([]*archiver.PendingItem, error) {
+	items := make([]*archiver.PendingItem, len(files))
+
+	for i, file := range files {
+		fi, err := os.Stat(filepath.Join(baseDir, file))
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get stat for %s", file).Err()
+		}
+
+		fg := ScatterGather{}
+		dg := ScatterGather{}
+
+		if fi.IsDir() {
+			if err := dg.Add(baseDir, file); err != nil {
+				return nil, errors.Annotate(err, "failed to add directory %s", file).Err()
+			}
+		} else if fi.Mode().IsRegular() {
+			if err := fg.Add(baseDir, file); err != nil {
+				return nil, errors.Annotate(err, "failed to add file %s", file).Err()
+			}
+		} else {
+			return nil, errors.Annotate(err, "unsupported file type for %s: %s", file, fi).Err()
+		}
+
+		opts := ArchiveOptions{
+			Files:     fg,
+			Dirs:      dg,
+			Blacklist: blacklist,
+		}
+
+		items[i] = Archive(ctx, arch, &opts)
+	}
+
+	return items, nil
+}
+
 // Convenience type to track pending items and their corresponding filepaths.
 type itemToPathMap map[*archiver.PendingItem]string
 
