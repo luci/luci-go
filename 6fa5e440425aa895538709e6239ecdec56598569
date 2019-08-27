@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "18ac010a_e23b3850",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-27T13:29:20Z",
+      "side": 1,
+      "message": "FYI,\n\nI made an alias \"git sed\" so you can \n  git sed \u0027s/CopyRecursively/HardlinkRecursively/g\u0027\n\nand it magically works. It\u0027s really just similar to what you just did.\nhttps://github.com/maruel/bin_pub/blob/master/configs/.gitconfig#L13",
+      "revId": "6fa5e440425aa895538709e6239ecdec56598569",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
