@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-l = proto.new_loader(read('./testprotos/all.pb'))
+l = proto.new_loader(proto.new_descriptor_set(blob=read('./testprotos/all.pb')))
 testprotos = l.module('go.chromium.org/luci/starlark/starlarkproto/testprotos/test.proto')
 
 outer = testprotos.Complex()
