@@ -264,15 +264,15 @@ func hardlinkWithFallback(outfile, infile string) error {
 	return ReadableCopy(outfile, infile)
 }
 
-// CopyRecursively efficiently copies a file or directory from src to dst.
+// HardlinkRecursively efficiently copies a file or directory from src to dst.
 //
 // `src` may be a file, directory, or a symlink to a file or directory.
 // All symlinks are replaced with their targets, so the resulting
 // directory structure in `dst` will never have any symlinks.
 //
-// To increase speed, CopyRecursively hardlinks individual files into the
+// To increase speed, HardlinkRecursively hardlinks individual files into the
 // (newly created) directory structure if possible.
-func CopyRecursively(src, dst string) error {
+func HardlinkRecursively(src, dst string) error {
 	var stat os.FileInfo
 	for {
 		// Resolves src so the last part of the path is not a symlink anymore.
@@ -325,8 +325,8 @@ func CopyRecursively(src, dst string) error {
 		}
 
 		for _, name := range names {
-			if err := CopyRecursively(filepath.Join(src, name), filepath.Join(dst, name)); err != nil {
-				return errors.Annotate(err, "failed to call CopyRecursively(%s, %s)", filepath.Join(src, name), filepath.Join(dst, name)).Err()
+			if err := HardlinkRecursively(filepath.Join(src, name), filepath.Join(dst, name)); err != nil {
+				return errors.Annotate(err, "failed to call HardlinkRecursively(%s, %s)", filepath.Join(src, name), filepath.Join(dst, name)).Err()
 			}
 
 		}
