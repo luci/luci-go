@@ -1,0 +1,395 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8b64d4aa_44ff772b",
+        "filename": "luciexe/build_proto.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "does parent directory exist?",
+      "range": {
+        "startLine": 30,
+        "startChar": 33,
+        "endLine": 30,
+        "endChar": 38
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f256fa5_97c9c815",
+        "filename": "luciexe/build_proto.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "is this configurability necessary? It means each and every luciexe (well, two of them) will need to implement the switch and multiple serializers.",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 0
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "196659a1_3a2d759b",
+        "filename": "luciexe/invoke/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "did you mean u|x|y|z? Otherwise I don\u0027t understand why | and / are used interchangably... If it is indeed \u0027/\u0027 please leave a not explaining that LOGDOG_NAMESPACE uses \u0027/\u0027 instead of \u0027|\u0027 as a separator (also, is there escaping?)",
+      "range": {
+        "startLine": 54,
+        "startChar": 17,
+        "endLine": 54,
+        "endChar": 24
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cf887fd_de677701",
+        "filename": "luciexe/invoke/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "who closes them?",
+      "range": {
+        "startLine": 132,
+        "startChar": 1,
+        "endLine": 133,
+        "endChar": 22
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "babf31b0_151a2432",
+        "filename": "luciexe/invoke/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "I have a feeling you need to split it on a namespace separator (\"/\"?), otherwise MakeStreamName() will convert this into a single chunk.",
+      "range": {
+        "startLine": 147,
+        "startChar": 22,
+        "endLine": 147,
+        "endChar": 40
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7cedc78b_123075e8",
+        "filename": "luciexe/invoke/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "fyi, I spent way too much time figuring out what this smart function does. It\u0027s a sign that it\u0027s not a very readable code. Readable !\u003d shorter. Often longer and dumber is more readable. (Considering it\u0027s in the guts and unlikely to be read often, not a big deal though).",
+      "range": {
+        "startLine": 291,
+        "startChar": 0,
+        "endLine": 296,
+        "endChar": 2
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ae87f8d_66f300d8",
+        "filename": "luciexe/invoke/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "nit: what\u0027s wrong with returning this as a return value?",
+      "range": {
+        "startLine": 320,
+        "startChar": 2,
+        "endLine": 320,
+        "endChar": 7
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e0b0c98_3944cbb2",
+        "filename": "luciexe/invoke/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "nit:\n\nif o.Env !\u003d nil {\n  ret.env \u003d o.Env.Clone()\n} else {\n  ret.env \u003d environ.System()\n}\n\nThis will read simpler since the reader will not have to guess when o.Env.Clone() returns nil.",
+      "range": {
+        "startLine": 341,
+        "startChar": 1,
+        "endLine": 344,
+        "endChar": 2
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdf3c5a8_547a2b41",
+        "filename": "luciexe/invoke/options_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "please make it u/a/b/c and see what happens :) I bet 10$ it will result in \"u_a_b_c/sub\" or something like that.",
+      "range": {
+        "startLine": 172,
+        "startChar": 38,
+        "endLine": 172,
+        "endChar": 39
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "766e4d22_fdc2df40",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "invokes as in \"launches in background and returns\" or \"launches and waits for completion\"?",
+      "range": {
+        "startLine": 38,
+        "startChar": 9,
+        "endLine": 38,
+        "endChar": 16
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17cab863_62bf5de6",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "👍 \n\nContext mafia approves.",
+      "range": {
+        "startLine": 41,
+        "startChar": 6,
+        "endLine": 41,
+        "endChar": 72
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8b4d84ea_1d60f4f1",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "when? After Start() returns or after the process completes?",
+      "range": {
+        "startLine": 49,
+        "startChar": 3,
+        "endLine": 49,
+        "endChar": 41
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5ecd05a_0be7a4f9",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "what is this? can we kill it?",
+      "range": {
+        "startLine": 58,
+        "startChar": 13,
+        "endLine": 58,
+        "endChar": 14
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dda3645_f8d83bb0",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "is this default? Please mention if so (since the advised more of operation is to pass nil Options).",
+      "range": {
+        "startLine": 83,
+        "startChar": 6,
+        "endLine": 83,
+        "endChar": 27
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07eaaaa4_5091c389",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "We should probably check an error here. Is stdout/stderr are backed by real files, an error here may be significant. If you are sure it can be ignored, please leave a comment why.",
+      "range": {
+        "startLine": 91,
+        "startChar": 3,
+        "endLine": 91,
+        "endChar": 17
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48c5c7fc_d05caf19",
+        "filename": "luciexe/invoke/subprocess_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "I see you learned the trick :)",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 44
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "64dce01b_0a892a3a",
+        "filename": "luciexe/invoke/subprocess_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-27T01:11:43Z",
+      "side": 1,
+      "message": "would it be possible to add a test for context cancelation?",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 19
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
