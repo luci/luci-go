@@ -47,6 +47,7 @@ import (
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/settings"
@@ -300,6 +301,11 @@ func testContextFeatures(ctx context.Context) (err error) {
 		return errors.Reason("unexpected auth.DB %v", state.DB()).Err()
 	}
 
+	// Redis pool is available.
+	if p := redisconn.GetPool(ctx); p == nil {
+		return errors.Reason("redis is not available").Err()
+	}
+
 	// Datastore is available.
 	type testEntity struct {
 		ID   int64 `gae:"$id"`
@@ -470,6 +476,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.RootSecretPath = tmpSecret.Name()
 	opts.SettingsPath = tmpSettings.Name()
 	opts.ClientAuth = clientauth.Options{Method: clientauth.LUCIContextMethod}
+	opts.RedisAddr = "localhost:99999999" // doesn't matter, we won't actually dial it
 
 	opts.testCtx = ctx
 	opts.testSeed = 1
