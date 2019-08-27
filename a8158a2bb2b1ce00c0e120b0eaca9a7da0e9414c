@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "a28a4c37_1f95e714",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-27T03:46:27Z",
+      "side": 1,
+      "message": "It is not still clear to me why passing subdirs works.\nI think will be used to isolate only specified ouputs in\nhttps://cs.chromium.org/chromium/infra/luci/client/run_isolated.py?l\u003d783\u0026rcl\u003d9f4ccecdd7564371d941fe46ed8221227b886c4e\n\nBut in that case, user may not use ${ISOLATED_OUTDIR}?",
+      "parentUuid": "c776edf4_60209067",
+      "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6cf6f3a4_bbf08d00",
         "filename": "cmdrunner/command.go",
         "patchSetId": 5
