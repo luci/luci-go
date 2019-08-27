@@ -23,6 +23,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"golang.org/x/sync/errgroup"
+
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -70,6 +72,55 @@ func Archive(ctx context.Context, arch *archiver.Archiver, opts *ArchiveOptions)
 		return i
 	}
 	return item
+}
+
+// ArchiveFiles uploads given files using given archiver.
+//
+// This is thin wrapper of Archive.
+// Note that this function may have large number of concurrent RPCs to isolate server.
+func ArchiveFiles(ctx context.Context, arch *archiver.Archiver, baseDir string, files []string, blacklist []string) ([]*archiver.PendingItem, error) {
+	items := make([]*archiver.PendingItem, len(files))
+
+	var g errgroup.Group
+	for i, file := range files {
+		i, file := i, file
+		g.Go(func() error {
+			fi, err := os.Stat(filepath.Join(baseDir, file))
+			if err != nil {
+				return errors.Annotate(err, "failed to get stat for %s", file).Err()
+			}
+
+			fg := ScatterGather{}
+			dg := ScatterGather{}
+
+			if fi.IsDir() {
+				if err := dg.Add(baseDir, file); err != nil {
+					return errors.Annotate(err, "failed to add directory %s", file).Err()
+				}
+			} else if fi.Mode().IsRegular() {
+				if err := fg.Add(baseDir, file); err != nil {
+					return errors.Annotate(err, "failed to add file %s", file).Err()
+				}
+			} else {
+				return errors.Annotate(err, "unsupported file type for %s: %s", file, fi).Err()
+			}
+
+			opts := ArchiveOptions{
+				Files:     fg,
+				Dirs:      dg,
+				Blacklist: blacklist,
+			}
+
+			items[i] = Archive(ctx, arch, &opts)
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return items, nil
 }
 
 // Convenience type to track pending items and their corresponding filepaths.
