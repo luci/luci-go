@@ -110,8 +110,8 @@ func TestArchive(t *testing.T) {
 				}
 
 				h := isolated.GetHash(namespace)
-				baseData := oneFileArchiveExpect(h, filepath.Join("base", "bar"), mode, barData)
-				secondData := oneFileArchiveExpect(h, filepath.Join("second", "boz"), mode, bozData)
+				baseData := filesArchiveExpect(h, tmpDir, filepath.Join("base", "bar"))
+				secondData := filesArchiveExpect(h, tmpDir, filepath.Join("second", "boz"))
 				topIsolated := isolated.New(h)
 				topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
 				if !isWindows() {
@@ -238,9 +238,19 @@ type archiveExpectData struct {
 	Hash   isolated.HexDigest
 }
 
-func oneFileArchiveExpect(h crypto.Hash, file string, mode int, data []byte) *archiveExpectData {
+func filesArchiveExpect(h crypto.Hash, dir string, files ...string) *archiveExpectData {
 	i := isolated.New(h)
-	i.Files[file] = isolated.BasicFile(isolated.HashBytes(h, data), mode, int64(len(data)))
+
+	for _, file := range files {
+		path := filepath.Join(dir, file)
+		fi, err := os.Stat(path)
+		So(err, ShouldBeNil)
+		data, err := ioutil.ReadFile(path)
+		So(err, ShouldBeNil)
+		mode := int(fi.Mode() & os.ModePerm)
+		i.Files[file] = isolated.BasicFile(isolated.HashBytes(h, data), mode, int64(len(data)))
+	}
+
 	return newArchiveExpectData(h, i)
 }
 
