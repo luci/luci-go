@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "cd7965ef_0498aabd",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-27T12:38:21Z",
+      "side": 1,
+      "message": "Ok I was mistaken.\n\nFor the Go implementation https://godoc.org/go.chromium.org/luci/common/system/filesystem#CopyRecursively you did reimplement it has a copy of hardlinks.\n\nI guess my problem is that in the python code I didn\u0027t use a good name. It\u0027s not copy_recursively(), it\u0027s hardlink_recursively(). The Copy part of the function name is misleading, that\u0027s my fault.\n\nSo the code here is fine, maybe just rename the function CopyRecursively() in a follow up.",
+      "parentUuid": "a28a4c37_1f95e714",
+      "revId": "a8158a2bb2b1ce00c0e120b0eaca9a7da0e9414c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6cf6f3a4_bbf08d00",
         "filename": "cmdrunner/command.go",
         "patchSetId": 5
