@@ -15,18 +15,20 @@
 // Package metric is the API for defining metrics and updating their values.
 //
 // When you define a metric you must also define the names and types of any
-// fields on that metric. It is an error to define two metrics with the same
-// name (this will cause a panic).
+// fields on that metric. Additionally, you can specify the target type of
+// the metric. It is an error to define two metrics with the same and
+// target type. It will cause a panic if there are duplicated metrics.
 //
 // When setting metric values, you must pass correct number of fields, with
 // correct types, or the setter function will panic.
 //
 // Example:
 //   var (
-//     requests = metric.NewCounter("myapp/requests",
+//     requests = metric.NewCounterWithTargetType("myapp/requests",
 //       "Number of requests",
 //       nil,
-//       field.String("status"))
+//       field.String("status"),
+//       types.TaskType),
 //   )
 //   ...
 //   func handleRequest() {
@@ -46,6 +48,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/registry"
+	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
@@ -112,6 +115,11 @@ type CumulativeDistribution interface {
 
 // NewInt returns a new non-cumulative integer gauge metric.
 func NewInt(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Int {
+	return NewIntWithTargetType(name, target.NilType, description, metadata, fields...)
+}
+
+// NewIntWithTargetType returns a new non-cumulative integer gauge metric with a given TargetType.
+func NewIntWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) Int {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -121,6 +129,7 @@ func NewInt(name string, description string, metadata *types.MetricMetadata, fie
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.NonCumulativeIntType,
+			TargetType:  targetType,
 		},
 		MetricMetadata: *metadata,
 	}}
@@ -130,6 +139,11 @@ func NewInt(name string, description string, metadata *types.MetricMetadata, fie
 
 // NewCounter returns a new cumulative integer metric.
 func NewCounter(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Counter {
+	return NewCounterWithTargetType(name, target.NilType, description, metadata, fields...)
+}
+
+// NewCounterWithTargetType returns a new cumulative integer metric with a given TargetType.
+func NewCounterWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) Counter {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -139,6 +153,7 @@ func NewCounter(name string, description string, metadata *types.MetricMetadata,
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.CumulativeIntType,
+			TargetType:  targetType,
 		},
 		MetricMetadata: *metadata,
 	}}}
@@ -148,6 +163,11 @@ func NewCounter(name string, description string, metadata *types.MetricMetadata,
 
 // NewFloat returns a new non-cumulative floating-point gauge metric.
 func NewFloat(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Float {
+	return NewFloatWithTargetType(name, target.NilType, description, metadata, fields...)
+}
+
+// NewFloatWithTargetType returns a new non-cumulative floating-point gauge metric with a given TargetType.
+func NewFloatWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) Float {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -157,6 +177,7 @@ func NewFloat(name string, description string, metadata *types.MetricMetadata, f
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.NonCumulativeFloatType,
+			TargetType:  targetType,
 		},
 		MetricMetadata: *metadata,
 	}}
@@ -166,6 +187,11 @@ func NewFloat(name string, description string, metadata *types.MetricMetadata, f
 
 // NewFloatCounter returns a new cumulative floating-point metric.
 func NewFloatCounter(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) FloatCounter {
+	return NewFloatCounterWithTargetType(name, target.NilType, description, metadata, fields...)
+}
+
+// NewFloatCounterWithTargetType returns a new cumulative floating-point metric with a given TargetType.
+func NewFloatCounterWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) FloatCounter {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -175,6 +201,7 @@ func NewFloatCounter(name string, description string, metadata *types.MetricMeta
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.CumulativeFloatType,
+			TargetType:  targetType,
 		},
 		MetricMetadata: *metadata,
 	}}}
@@ -184,6 +211,11 @@ func NewFloatCounter(name string, description string, metadata *types.MetricMeta
 
 // NewString returns a new string-valued metric.
 func NewString(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) String {
+	return NewStringWithTargetType(name, target.NilType, description, metadata, fields...)
+}
+
+// NewStringWithTargetType returns a new string-valued metric with a given TargetType
+func NewStringWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) String {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -193,6 +225,7 @@ func NewString(name string, description string, metadata *types.MetricMetadata, 
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.StringType,
+			TargetType:  targetType,
 		},
 		MetricMetadata: *metadata,
 	}}
@@ -202,6 +235,11 @@ func NewString(name string, description string, metadata *types.MetricMetadata, 
 
 // NewBool returns a new bool-valued metric.
 func NewBool(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Bool {
+	return NewBoolWithTargetType(name, target.NilType, description, metadata, fields...)
+}
+
+// NewBoolWithTargetType returns a new bool-valued metric with a given TargetType.
+func NewBoolWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) Bool {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -211,6 +249,7 @@ func NewBool(name string, description string, metadata *types.MetricMetadata, fi
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.BoolType,
+			TargetType:  targetType,
 		},
 		MetricMetadata: *metadata,
 	}}
@@ -221,6 +260,12 @@ func NewBool(name string, description string, metadata *types.MetricMetadata, fi
 // NewCumulativeDistribution returns a new cumulative-distribution-valued
 // metric.
 func NewCumulativeDistribution(name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
+	return NewCumulativeDistributionWithTargetType(name, target.NilType, description, metadata, bucketer, fields...)
+}
+
+// NewCumulativeDistributionWithTargetType returns a new cumulative-distribution-valued
+// metric with a given TargetType
+func NewCumulativeDistributionWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -232,6 +277,7 @@ func NewCumulativeDistribution(name string, description string, metadata *types.
 					Description: description,
 					Fields:      fields,
 					ValueType:   types.CumulativeDistributionType,
+					TargetType:  targetType,
 				},
 				MetricMetadata: *metadata,
 			},
@@ -245,6 +291,12 @@ func NewCumulativeDistribution(name string, description string, metadata *types.
 // NewNonCumulativeDistribution returns a new non-cumulative-distribution-valued
 // metric.
 func NewNonCumulativeDistribution(name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
+	return NewNonCumulativeDistributionWithTargetType(name, target.NilType, description, metadata, bucketer, fields...)
+}
+
+// NewNonCumulativeDistributionWithTargetType returns a new non-cumulative-distribution-valued
+// metric with a given TargetType.
+func NewNonCumulativeDistributionWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -255,6 +307,7 @@ func NewNonCumulativeDistribution(name string, description string, metadata *typ
 				Description: description,
 				Fields:      fields,
 				ValueType:   types.NonCumulativeDistributionType,
+				TargetType:  targetType,
 			},
 			MetricMetadata: *metadata,
 		},
