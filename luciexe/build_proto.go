@@ -14,9 +14,15 @@
 
 package luciexe
 
+import "go.chromium.org/luci/buildbucket/protoutil"
+
 const (
 	// BuildProtoLogName is the Build.Step.Log.Name for sub-lucictx programs.
 	BuildProtoLogName = "$build.proto"
+
+	// BuildProtoContentType is the ContentType of the build.proto LogDog datagram
+	// stream.
+	BuildProtoContentType = protoutil.BuildMediaType
 
 	// BuildProtoStreamSuffix is the logdog stream name suffix for sub-lucictx
 	// programs to output their build.proto stream to.
