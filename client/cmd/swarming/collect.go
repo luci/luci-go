@@ -28,13 +28,13 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 type taskOutputOption int64
@@ -365,7 +365,8 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 
 func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 	// Set up swarming service.
-	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err

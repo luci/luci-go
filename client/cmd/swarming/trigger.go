@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
 	"go.chromium.org/luci/common/flag/stringmapflag"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 func cmdTrigger(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -211,7 +213,8 @@ func (c *triggerRun) Run(a subcommands.Application, args []string, env subcomman
 
 func (c *triggerRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
 	start := time.Now()
-	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 
 	request := c.processTriggerOptions(args, env)
 

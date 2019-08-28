@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -25,10 +26,10 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/downloader"
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 func cmdDownload(authOpts auth.Options) *subcommands.Command {
@@ -72,7 +73,8 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 
 func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	// Prepare isolated client.
-	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 	authClient, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err

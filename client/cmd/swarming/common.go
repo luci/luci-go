@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 // triggerResults is a set of results from using the trigger subcommand,
@@ -146,7 +147,8 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 
 	var filesMu sync.Mutex
 	var files []string
-	ctx = common.CancelOnCtrlC(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	signals.HandleInterrupt(cancel)
 	opts := &downloader.Options{
 		MaxConcurrentJobs: s.worker,
 		FileCallback: func(name string, _ *isolated.File) {

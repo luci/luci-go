@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -25,10 +26,10 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 func cmdBots(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -78,7 +79,8 @@ func (b *botsRun) Parse() error {
 }
 
 func (b *botsRun) main(a subcommands.Application) error {
-	ctx := common.CancelOnCtrlC(b.defaultFlags.MakeLoggingContext(os.Stderr))
+	ctx, cancel := context.WithCancel(b.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 	client, err := b.createAuthClient(ctx)
 	if err != nil {
 		return err

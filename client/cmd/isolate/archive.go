@@ -28,11 +28,11 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/archiver"
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 const (
@@ -90,7 +90,8 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
-	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 	authCl, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err

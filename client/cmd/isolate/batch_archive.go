@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 func cmdBatchArchive(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -146,7 +147,8 @@ func convertPyToGoArchiveCMDArgs(args []string) []string {
 
 func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
-	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 
 	authClient, err := c.createAuthClient(ctx)
 	if err != nil {
