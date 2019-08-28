@@ -22,6 +22,30 @@
       "revId": "4c6056f9b0c31be35d7305320528efffeff3edfd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a862f0a_aea3ac69",
+        "filename": "logdog/client/butler/output/logdog/pubsubOutput.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-28T19:56:39Z",
+      "side": 1,
+      "message": "Yeah, the types.Stuff things are next on my hitlist.",
+      "parentUuid": "caadafb4_86f1b774",
+      "range": {
+        "startLine": 57,
+        "startChar": 9,
+        "endLine": 57,
+        "endChar": 15
+      },
+      "revId": "4c6056f9b0c31be35d7305320528efffeff3edfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
