@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "44ea09af_1f9b41e0",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-08-28T07:17:05Z",
+      "side": 1,
+      "message": "\u003e\u003e Now that DefaultTarget is called A LOT more often, it would be better to get rid of defaultTargetLock and .Clone() and instead use atomic.Value and clone in \u0027SetDefaultTarget\u0027\nActually, defaultTargetLock is sync.RWMutex, and DefaultTarget() only acquires the read lock.\n\nhttps://golang.org/pkg/sync/#RWMutex\n\u003e\u003e The lock can be held by an arbitrary number of readers or a single writer.\n\nAll the concurrent goroutines, invoking DefaultTarget(), will be blocked by the read-lock, only during the execution of SetDefaultTarget(). However, I don\u0027t think that applications invoke SetDefaultTarget() in parallel to running a number of goroutines, each may invoke metric.Set()/Get()/Incr().\n\nIf an application needs to iterate through all of the existing business objects and report a metric data for each of the business object, then the target context should be used instead of SetDefaultTarget().\n\ne.g.,\n```\nfor _, bot :\u003d model.SwarmingBots {\n  tctx :\u003d target.Set(ctx, ToNetworkDevice(bot))\n  bot_status_metric.Set(tctx, bot.Status)\n}\n```\n\nIndeed, in the existing semantics, SetDefaultTarget() cannot be used instead of target.Set() in the above example. Whichever target object passed onto the last invocation of s.SetDefaultTarget() will be used for all the metrics.\n\nIdeally, I\u0027d love to remove SetDefaultTarget(), and DefaultTarget returns an immutable target object that can be set only via the construct of Store objects.\n: e.g., store :\u003d NewInMemory(defaultTarget)\n\nThe only use case that I can think of use SetDefaultTarget() is to change the tasknum of the default target object for acquisitions.Task target. The tasknum assigner will be my first target to deprecate and kill, if I could with migrating all the existing metrics from acqusitions.Task to something like, chops.Http or prpc.Task.\n\n----------------------------------------------------------\n\nIf it\u0027s a still concern that DefaultTarget() acquires the read-lock, then please let me know. I will make the change, as you proposed.",
+      "parentUuid": "b401005d_b4ebfe74",
+      "range": {
+        "startLine": 174,
+        "startChar": 24,
+        "endLine": 174,
+        "endChar": 40
+      },
+      "revId": "e52ffaaf9c8683d5bc54b005b08d5dcd0a2627c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6f64311f_236bcc58",
         "filename": "common/tsmon/store/inmemory.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "9fbf84a8_8d451b96",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-08-28T07:17:05Z",
+      "side": 1,
+      "message": "Good point. Updated all of Get(), Set(), and Incr()",
+      "parentUuid": "6f64311f_236bcc58",
+      "range": {
+        "startLine": 191,
+        "startChar": 1,
+        "endLine": 191,
+        "endChar": 26
+      },
+      "revId": "e52ffaaf9c8683d5bc54b005b08d5dcd0a2627c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d791af0a_d354d886",
         "filename": "common/tsmon/target/context.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "e52ffaaf9c8683d5bc54b005b08d5dcd0a2627c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bc55b35_a6c4280a",
+        "filename": "common/tsmon/target/context.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-08-28T07:17:05Z",
+      "side": 1,
+      "message": "Removed GetWithDefault().  I don\u0027t find the value of keeping GetWithDefault(), either. As I mentioned in another comment, I\u0027d love to remove SetDefaultTarget() to get rid of the possibility, where the type of the default target can change dynamically.\n\n\n```\n// The default target is a Task\ns.SetDefaultTarget(Task{...})\n\n// Increase the value of the metric from 0 to 1.\n// Is the value for the Task target?\nm.Incr(1)\n\n// The default target is now a Device.\ns.SetDefaultTarget(Device{...})\n\n// Increase the value of the metric again.\n// As a result, the value increases from 1 to 2.\n// Wait, isn\u0027t this the first time of metric.Incr()\n// after a new Target object set via SetDefaultTarget()?\n// Shouldn\u0027t the value from 0 to 1???\nm.Incr(1)\n\n// Set the default Target back to a Task\ns.SetDefaultTarget(Task{...})\n\n// Flush() will report a SINGLE cell, not TWO.\n// Because the cells are given nil for the target,\n// if there is no target in the context, and all the metric data\n// with nil in Tsrget are considered as the same, single cell.\ninterface.state.Flush()\n\n// Of course, target.Set() has a very different semantic.\n```",
+      "parentUuid": "d791af0a_d354d886",
+      "range": {
+        "startLine": 40,
+        "startChar": 41,
+        "endLine": 40,
+        "endChar": 62
+      },
+      "revId": "e52ffaaf9c8683d5bc54b005b08d5dcd0a2627c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
