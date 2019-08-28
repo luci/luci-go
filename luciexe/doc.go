@@ -62,6 +62,11 @@
 //     build.proto stream.
 //   * Set up a local LUCI ambient authentication service which luciexe's can
 //     use to mint auth tokens.
+//   * Prepare an empty temporary directory which will house tempdirs and
+//     workdirs for all luciexe invocations. The host application MAY clean
+//     this directory up, but it may be useful to leak it for debugging.
+//     It's permissible for the host application to defer this cleanup to an
+//     external process (e.g. buildbucket's agent may defer this to swarming).
 //
 // The host application MAY hook additional streams for debugging/logging; it is
 // frequently convenient to hook the stderr/stdout streams from the top level
@@ -96,11 +101,9 @@
 // must:
 //
 //   * Start the luciexe with an empty current working directory (CWD).
-//     This directory MUST be removed in between invocations of luciexe's.
 //
-//   * Set $TEMPDIR, $TMPDIR, $TEMP, $TMP and $MAC_CHROMIUM_TMPDIR all point to
-//     the same, empty directory.
-//     This directory MUST be removed in between invocations of luciexe's.
+//   * Set $TEMPDIR, $TMPDIR, $TEMP, $TMP and $MAC_CHROMIUM_TMPDIR to all point
+//     to the same, empty directory.
 //     This directory MUST be located on the same file system as CWD.
 //     This directory MUST NOT be the same as CWD.
 //
@@ -112,9 +115,15 @@
 //   * Set the $LOGDOG_NAMESPACE to a prefix which namespaces all logdog streams
 //     generated from the luciexe.
 //
+// The tempdir and workdir paths SHOULD NOT be cleaned up by the invoking
+// process. Instead, the invoking process should defer to the host application
+// to provide this cleanup, since the host application may be configured to leak
+// these for debugging purposes.
+//
 // The invoker MUST attach the stdout/stderr to the logdog butler as text
-// streams. Typical luciexe implementations will use these for debug logging and
-// output, but are not required to do so.
+// streams. These MUST be located at `$LOGDOG_NAMESPACE/std{out,err}`.
+// Typical luciexe implementations will use these for debug logging and output,
+// but are not required to do so.
 //
 // The invoker MUST write a binary-encoded buildbucket.v2.Build to the stdin of
 // the luciexe which contains all the input parameters that the luciexe needs to
@@ -179,7 +188,6 @@
 // message to this file in the correct format. If `--output` is specified,
 // but no Build message (or an invalid/improperly formatted Build message)
 // is written, the caller MUST interpret this as an INFRA_FAILURE status.
-//
 //
 // LUCI Executables MAY invoke other LUCI Executables as sub-steps and have the
 // Steps from the child luciexe show in the parent's Build updates. This is one

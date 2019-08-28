@@ -55,7 +55,11 @@ type Bootstrap struct {
 
 type clientFn func(path string, ns types.StreamName) (*streamclient.Client, error)
 
-func getFromEnv(env environ.Env) (*Bootstrap, error) {
+// GetFromEnv loads a Bootstrap instance from the given environment.
+//
+// It will return an error if the bootstrap data is invalid, and will return
+// ErrNotBootstrapped if the current process is not bootstrapped.
+func GetFromEnv(env environ.Env) (*Bootstrap, error) {
 	// Detect Butler by looking for EnvStreamPrefix in the envrironent.
 	prefix, ok := env.Get(EnvStreamPrefix)
 	if !ok {
@@ -99,11 +103,9 @@ func (bs *Bootstrap) initializeClient(v string) error {
 	return nil
 }
 
-// Get loads a Bootstrap instance from the environment. It will return an error
-// if the bootstrap data is invalid, and will return ErrNotBootstrapped if the
-// current process is not bootstrapped.
+// Get is shorthand for `GetFromEnv(environ.System())`.
 func Get() (*Bootstrap, error) {
-	return getFromEnv(environ.System())
+	return GetFromEnv(environ.System())
 }
 
 // GetViewerURL returns a log stream viewer URL to the aggregate set of supplied
