@@ -57,6 +57,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"strings"
 	"sync"
@@ -416,6 +417,26 @@ func New(opts Options) (srv *Server, err error) {
 		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
 	})
 	portal.InstallHandlers(admin, router.MiddlewareChain{}, portal.AssumeTrustedPort)
+
+	// Install pprof endpoints on the admin port. Note that they must not be
+	// exposed via the main serving port, since they do no authentication and
+	// may leak internal information. Also note that pprof handlers rely on
+	// routing structure not supported by our router, so we do a bit of manual
+	// routing.
+	admin.GET("/debug/pprof/*path", router.MiddlewareChain{}, func(c *router.Context) {
+		switch c.Params.ByName("path") {
+		case "cmdline":
+			pprof.Cmdline(c.Writer, c.Request)
+		case "profile":
+			pprof.Profile(c.Writer, c.Request)
+		case "symbol":
+			pprof.Symbol(c.Writer, c.Request)
+		case "trace":
+			pprof.Trace(c.Writer, c.Request)
+		default:
+			pprof.Index(c.Writer, c.Request)
+		}
+	})
 
 	return srv, nil
 }
