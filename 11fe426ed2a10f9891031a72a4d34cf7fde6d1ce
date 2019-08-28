@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1fb5ebda_a486d27b",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-28T22:27:07Z",
+      "side": 1,
+      "message": "ctx?",
+      "range": {
+        "startLine": 150,
+        "startChar": 35,
+        "endLine": 150,
+        "endChar": 55
+      },
+      "revId": "11fe426ed2a10f9891031a72a4d34cf7fde6d1ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
