@@ -118,8 +118,6 @@ func (l *Server) Start(ctx context.Context) error {
 	// Create a Butler.
 	cfg := butler.Config{
 		Output:                     output,
-		Project:                    l.Project,
-		Prefix:                     l.Prefix,
 		BufferLogs:                 true,
 		MaxBufferAge:               butler.DefaultMaxBufferAge,
 		GlobalTags:                 l.GlobalTags,

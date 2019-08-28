@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pubsub
+package logdog
 
 import (
 	"bytes"
@@ -133,10 +133,10 @@ func TestOutput(t *testing.T) {
 		tt := &testTopic{
 			msgC: make(chan *pubsub.Message),
 		}
-		conf := Config{
+		conf := pubsubConfig{
 			Topic: tt,
 		}
-		o := New(ctx, conf).(*pubSubOutput)
+		o := newPubsub(ctx, conf).(*pubSubOutput)
 		So(o, ShouldNotBeNil)
 		defer o.Close()
 

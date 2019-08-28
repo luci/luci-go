@@ -59,11 +59,6 @@ type Config struct {
 	// to output Butler log data. If zero, DefaultOutputWorkers will be used.
 	OutputWorkers int
 
-	// Project is the project that the log stream will be bound to.
-	Project types.ProjectName
-	// Prefix is the log stream common prefix value.
-	Prefix types.StreamName
-
 	// GlobalTags are a set of global log stream tags to apply to individual
 	// streams on registration. Individual stream tags will override tags with
 	// the same key.
@@ -115,12 +110,6 @@ type Config struct {
 func (c *Config) Validate() error {
 	if c.Output == nil {
 		return errors.New("butler: an Output must be supplied")
-	}
-	if err := c.Project.Validate(); err != nil {
-		return fmt.Errorf("invalid project: %v", err)
-	}
-	if err := c.Prefix.Validate(); err != nil {
-		return fmt.Errorf("invalid prefix: %v", err)
 	}
 	return nil
 }
@@ -183,8 +172,6 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 
 	bc := bundler.Config{
 		Clock:            clock.Get(ctx),
-		Project:          config.Project,
-		Prefix:           config.Prefix,
 		MaxBufferedBytes: streamBufferSize,
 		MaxBundleSize:    config.Output.MaxSize(),
 	}

@@ -232,9 +232,7 @@ func TestConfig(t *testing.T) {
 			maxSize: 1024,
 		}
 		conf := Config{
-			Output:  &to,
-			Prefix:  "unit/test",
-			Project: "test-project",
+			Output: &to,
 		}
 
 		Convey(`Will validate.`, func() {
@@ -244,16 +242,6 @@ func TestConfig(t *testing.T) {
 		Convey(`Will not validate with a nil Output.`, func() {
 			conf.Output = nil
 			So(conf.Validate(), ShouldErrLike, "an Output must be supplied")
-		})
-
-		Convey(`Will not validate with an invalid Prefix.`, func() {
-			conf.Prefix = "!!!!invalid!!!!"
-			So(conf.Validate(), ShouldErrLike, "invalid prefix")
-		})
-
-		Convey(`Will not validate with an invalid Project.`, func() {
-			conf.Project = "!!!!invalid!!!!"
-			So(conf.Validate(), ShouldErrLike, "invalid project")
 		})
 	})
 }
@@ -281,8 +269,6 @@ func TestButler(t *testing.T) {
 			Output:        &to,
 			OutputWorkers: 1,
 			BufferLogs:    false,
-			Prefix:        "unit/test",
-			Project:       "test-project",
 		}
 
 		Convey(`Will error if an invalid Config is passed.`, func() {

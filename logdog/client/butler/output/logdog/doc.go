@@ -12,9 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package pubsub implements the "pubsub" Output.
-//
-// The "pubsub" (Google Cloud Pub/Sub) Output publishes ButlerLogBundle
-// protobufs to a Google Cloud Pub/Sub topic using the protocol defined in:
-//   go.chromium.org/luci/common/logdog/butlerproto
-package pubsub
+// Package logdog implements output to a Logdog server via PubSub.
+package logdog

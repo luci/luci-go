@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/cancelcond"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/common/types"
 )
 
 // Config is the Bundler configuration.
@@ -33,11 +32,6 @@ type Config struct {
 	// Clock is the clock instance that will be used for Bundler and stream
 	// timing.
 	Clock clock.Clock
-
-	// Project is the project to use.
-	Project types.ProjectName
-	// Prefix is the common prefix for this set of streams.
-	Prefix types.StreamName
 
 	// MaxBufferedBytes is the maximum number of bytes to buffer in memory per
 	// stream.
@@ -229,8 +223,6 @@ func (b *Bundler) makeBundles() {
 			size: b.c.MaxBundleSize,
 			template: logpb.ButlerLogBundle{
 				Timestamp: google.NewTimestamp(b.getClock().Now()),
-				Project:   string(b.c.Project),
-				Prefix:    string(b.c.Prefix),
 			},
 		}
 		var oldestContentTime time.Time
