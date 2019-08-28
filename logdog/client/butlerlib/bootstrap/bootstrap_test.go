@@ -32,7 +32,7 @@ func TestBootstrap(t *testing.T) {
 		})
 
 		Convey(`With no Butler values will return ErrNotBootstrapped.`, func() {
-			_, err := getFromEnv(env)
+			_, err := GetFromEnv(env)
 			So(err, ShouldEqual, ErrNotBootstrapped)
 		})
 
@@ -41,7 +41,7 @@ func TestBootstrap(t *testing.T) {
 			env.Set(EnvStreamPrefix, "butler/prefix")
 
 			Convey(`Yields a Bootstrap with a Project, Prefix, and no Client.`, func() {
-				bs, err := getFromEnv(env)
+				bs, err := GetFromEnv(env)
 				So(err, ShouldBeNil)
 
 				So(bs, ShouldResemble, &Bootstrap{
@@ -56,7 +56,7 @@ func TestBootstrap(t *testing.T) {
 				env.Set(EnvNamespace, "some/namespace")
 
 				Convey(`Yields a fully-populated Bootstrap.`, func() {
-					bs, err := getFromEnv(env)
+					bs, err := GetFromEnv(env)
 					So(err, ShouldBeNil)
 
 					// Check that the client is populated, so we can test the remaining
@@ -75,25 +75,25 @@ func TestBootstrap(t *testing.T) {
 
 			Convey(`With an invalid Butler prefix, will fail.`, func() {
 				env.Set(EnvStreamPrefix, "_notavaildprefix")
-				_, err := getFromEnv(env)
+				_, err := GetFromEnv(env)
 				So(err, ShouldErrLike, "failed to validate prefix")
 			})
 
 			Convey(`With a missing Butler project, will fail.`, func() {
 				env.Remove(EnvStreamProject)
-				_, err := getFromEnv(env)
+				_, err := GetFromEnv(env)
 				So(err, ShouldErrLike, "failed to validate project")
 			})
 
 			Convey(`With an invalid Namespace, will fail.`, func() {
 				env.Set(EnvNamespace, "!!! invalid")
-				_, err := getFromEnv(env)
+				_, err := GetFromEnv(env)
 				So(err, ShouldErrLike, "failed to validate namespace")
 			})
 
 			Convey(`With an invalid Butler project, will fail.`, func() {
 				env.Set(EnvStreamProject, "_notavaildproject")
-				_, err := getFromEnv(env)
+				_, err := GetFromEnv(env)
 				So(err, ShouldErrLike, "failed to validate project")
 			})
 		})
