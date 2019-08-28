@@ -19,6 +19,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
 // SysInfo overrides system's hostname and region for tests.
@@ -30,7 +32,7 @@ type SysInfo struct {
 // Flags defines command line flags related to tsmon targets.  Use NewFlags()
 // to get a Flags struct with sensible default values.
 type Flags struct {
-	TargetType      Type
+	TargetType      types.TargetType
 	DeviceHostname  string
 	DeviceRegion    string
 	DeviceRole      string
@@ -99,7 +101,7 @@ func (fl *Flags) SetDefaultsFromHostname() {
 
 // Register adds tsmon target related flags to a FlagSet.
 func (fl *Flags) Register(f *flag.FlagSet) {
-	f.Var(&fl.TargetType, "ts-mon-target-type",
+	f.Var(&targetTypeFlag{fl}, "ts-mon-target-type",
 		"the type of target that is being monitored ("+targetTypeEnum.Choices()+")")
 	f.StringVar(&fl.DeviceHostname, "ts-mon-device-hostname", fl.DeviceHostname,
 		"name of this device")
