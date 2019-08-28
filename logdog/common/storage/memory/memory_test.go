@@ -64,7 +64,7 @@ func TestBigTable(t *testing.T) {
 		st := Storage{}
 		defer st.Close()
 
-		project := types.ProjectName("test-project")
+		project := "test-project"
 		path := types.StreamPath("testing/+/foo/bar")
 
 		Convey(`Can Put() log stream records {0..5, 7, 8, 10}.`, func() {

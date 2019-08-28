@@ -23,7 +23,6 @@ import (
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/logdog/common/types"
 
 	"google.golang.org/grpc/codes"
 )
@@ -44,7 +43,7 @@ func New() logdog.RegistrationServer {
 			if ok {
 				// Enter the requested project namespace. This validates that the
 				// current user has READ access.
-				project := types.ProjectName(pbm.GetMessageProject())
+				project := pbm.GetMessageProject()
 				if project == "" {
 					return nil, grpcutil.Errf(codes.InvalidArgument, "project is required")
 				}

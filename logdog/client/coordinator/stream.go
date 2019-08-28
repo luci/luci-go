@@ -64,7 +64,7 @@ type StreamState struct {
 // LogStream is returned metadata about a log stream.
 type LogStream struct {
 	// Project is the log stream's project.
-	Project types.ProjectName
+	Project string
 	// Path is the path of the log stream.
 	Path types.StreamPath
 
@@ -77,7 +77,7 @@ type LogStream struct {
 
 func loadLogStream(proj string, path types.StreamPath, s *logdog.LogStreamState, d *logpb.LogStreamDescriptor) *LogStream {
 	ls := LogStream{
-		Project: types.ProjectName(proj),
+		Project: proj,
 		Path:    path,
 	}
 	if d != nil {
@@ -107,7 +107,7 @@ type Stream struct {
 	c *Client
 
 	// project is this stream's project.
-	project types.ProjectName
+	project string
 	// path is the log stream's prefix.
 	path types.StreamPath
 }

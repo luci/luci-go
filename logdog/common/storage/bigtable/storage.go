@@ -264,7 +264,7 @@ func (s *Storage) Get(c context.Context, r storage.GetRequest, cb storage.GetCal
 }
 
 // Tail implements storage.Storage.
-func (s *Storage) Tail(c context.Context, project types.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+func (s *Storage) Tail(c context.Context, project string, path types.StreamPath) (*storage.Entry, error) {
 	c = prepareContext(c)
 	c = log.SetFields(c, log.Fields{
 		"project": project,
@@ -281,7 +281,7 @@ func (s *Storage) Tail(c context.Context, project types.ProjectName, path types.
 	// Iterate through all log keys in the stream. Record the latest contiguous
 	// one.
 	var (
-		rk        = newRowKey(string(project), string(path), startIdx, 0)
+		rk        = newRowKey(project, string(path), startIdx, 0)
 		latest    *rowKey
 		nextIndex = startIdx
 	)
@@ -370,7 +370,7 @@ func (w *rowWriter) append(d []byte) (appended bool) {
 }
 
 func (w *rowWriter) flush(c context.Context, iface btIface, index types.MessageIndex,
-	project types.ProjectName, path types.StreamPath) (int, error) {
+	project string, path types.StreamPath) (int, error) {
 
 	flushCount := w.count
 	if flushCount == 0 {

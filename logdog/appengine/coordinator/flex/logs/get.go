@@ -197,7 +197,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	return nil
 }
 
-func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage, project types.ProjectName,
+func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage, project string,
 	path types.StreamPath, byteLimit int) ([]*logpb.LogEntry, error) {
 
 	log.Fields{
@@ -282,7 +282,7 @@ func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningSt
 	}
 }
 
-func getTail(c context.Context, st coordinator.SigningStorage, project types.ProjectName, path types.StreamPath) (
+func getTail(c context.Context, st coordinator.SigningStorage, project string, path types.StreamPath) (
 	[]*logpb.LogEntry, error) {
 
 	log.Fields{

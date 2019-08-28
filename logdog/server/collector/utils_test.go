@@ -303,7 +303,7 @@ func shouldHaveStoredStream(actual interface{}, expected ...interface{}) string 
 
 	// Load all entries for this stream.
 	req := storage.GetRequest{
-		Project: types.ProjectName(project),
+		Project: project,
 		Path:    types.StreamPath(name),
 	}
 

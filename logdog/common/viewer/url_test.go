@@ -29,7 +29,7 @@ func TestGetURL(t *testing.T) {
 	Convey(`Testing viewer URL generation`, t, func() {
 		for _, tc := range []struct {
 			host    string
-			project types.ProjectName
+			project string
 			paths   []types.StreamPath
 			url     string
 		}{

@@ -30,7 +30,7 @@ type storageSource struct {
 	context.Context
 
 	st            storage.Storage    // the storage instance to read from
-	project       types.ProjectName  // the path of the log stream
+	project       string             // the project of the log stream
 	path          types.StreamPath   // the path of the log stream
 	terminalIndex types.MessageIndex // if >= 0, discard logs beyond this
 

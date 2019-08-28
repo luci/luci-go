@@ -75,11 +75,11 @@ func TestQuery(t *testing.T) {
 		var svrBase server
 		svr := newService(&svrBase)
 
-		const project = types.ProjectName("proj-foo")
+		const project = "proj-foo"
 
 		// Stock query request, will be modified by each test.
 		req := logdog.QueryRequest{
-			Project: string(project),
+			Project: project,
 			Tags:    map[string]string{},
 		}
 

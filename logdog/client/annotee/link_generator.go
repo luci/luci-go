@@ -30,7 +30,7 @@ type LinkGenerator interface {
 // CoordinatorLinkGenerator is a LinkGenerator implementation
 type CoordinatorLinkGenerator struct {
 	Host    string
-	Project types.ProjectName
+	Project string
 	Prefix  types.StreamName
 }
 

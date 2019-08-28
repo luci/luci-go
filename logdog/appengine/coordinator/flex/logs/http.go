@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -171,7 +172,7 @@ const (
 // userOptions encapsulate the entirety of input parameters to the log viewer.
 type userOptions struct {
 	// project is the name of the requested logdog project.
-	project types.ProjectName
+	project string
 	// path is the full path (prefix + name) of the requested log stream.
 	path types.StreamPath
 	// wildcard indicates that the name contains wildcards ("*" or "**").
@@ -255,8 +256,8 @@ func resolveOptions(request *http.Request, pathStr string) (options userOptions,
 		// Validate name, if it is a fully resolved path.
 		return
 	}
-	options.project = types.ProjectName(parts[0])
-	err = options.project.Validate()
+	options.project = parts[0]
+	err = config.ValidateProjectName(options.project)
 	return
 }
 
@@ -328,7 +329,7 @@ func resolveStreams(c context.Context, options userOptions) ([]*coordinator.LogS
 }
 
 // initParams generates a set of params for each LogStream given.
-func initParams(c context.Context, streams []*coordinator.LogStream, project types.ProjectName) ([]fetchParams, error) {
+func initParams(c context.Context, streams []*coordinator.LogStream, project string) ([]fetchParams, error) {
 	states := make([]*coordinator.LogStreamState, len(streams))
 	for i, stream := range streams {
 		states[i] = stream.State(c)
@@ -557,7 +558,7 @@ func writeHTMLHeader(ctx *router.Context, data logData) {
 		logoutURL = "#ERROR"
 	}
 	user := auth.CurrentUser(ctx.Context) // This will not return nil, so it's safe to access.
-	project := data.options.project.String()
+	project := data.options.project
 	path := data.options.path
 	title := "error" // If the data is not filled in, this was probably an error.
 	if project != "" && path != "" {

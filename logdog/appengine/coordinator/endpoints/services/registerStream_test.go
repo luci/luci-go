@@ -315,7 +315,7 @@ func BenchmarkRegisterStream(b *testing.B) {
 
 	const (
 		prefix  = types.StreamName("testing")
-		project = types.ProjectName("proj-foo")
+		project = "proj-foo"
 	)
 
 	tls := ct.MakeStream(c, project, prefix.Join(types.StreamName(fmt.Sprintf("foo/bar"))))

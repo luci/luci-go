@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	tsmon_types "go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/config"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/archive"
@@ -127,7 +128,7 @@ type Settings struct {
 }
 
 // SettingsLoader returns archival Settings for a given project.
-type SettingsLoader func(context.Context, types.ProjectName) (*Settings, error)
+type SettingsLoader func(ctx context.Context, project string) (*Settings, error)
 
 // Archivist is a stateless configuration capable of archiving individual log
 // streams.
@@ -143,7 +144,7 @@ type Archivist struct {
 	Storage storage.Storage
 
 	// GSClientFactory obtains a Google Storage client for archive generation.
-	GSClientFactory func(context.Context, types.ProjectName) (gs.Client, error)
+	GSClientFactory func(ctx context.Context, project string) (gs.Client, error)
 }
 
 // storageBufferSize is the size, in bytes, of the LogEntry buffer that is used
@@ -182,7 +183,7 @@ func (a *Archivist) ArchiveTask(c context.Context, task *logdog.ArchiveTask) err
 // status error.
 func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask) error {
 	// Validate the project name.
-	if err := types.ProjectName(task.Project).Validate(); err != nil {
+	if err := config.ValidateProjectName(task.Project); err != nil {
 		log.WithError(err).Errorf(c, "invalid project name %q: %s", task.Project)
 		return nil
 	}
@@ -224,7 +225,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 	}
 
 	// Load archival settings for this project.
-	settings, err := a.loadSettings(c, types.ProjectName(task.Project))
+	settings, err := a.loadSettings(c, task.Project)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -241,7 +242,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 
 	// Build our staged archival plan. This doesn't actually do any archiving.
 	uid := fmt.Sprintf("%d", mathrand.Int63(c))
-	staged, err := a.makeStagedArchival(c, types.ProjectName(task.Project), settings, ls, uid)
+	staged, err := a.makeStagedArchival(c, task.Project, settings, ls, uid)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
 		return err
@@ -312,7 +313,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 }
 
 // loadSettings loads and validates archival settings.
-func (a *Archivist) loadSettings(c context.Context, project types.ProjectName) (*Settings, error) {
+func (a *Archivist) loadSettings(c context.Context, project string) (*Settings, error) {
 	if a.SettingsLoader == nil {
 		panic("no settings loader configured")
 	}
@@ -341,7 +342,7 @@ func (a *Archivist) loadSettings(c context.Context, project types.ProjectName) (
 	}
 }
 
-func (a *Archivist) makeStagedArchival(c context.Context, project types.ProjectName,
+func (a *Archivist) makeStagedArchival(c context.Context, project string,
 	st *Settings, ls *logdog.LoadStreamResponse, uid string) (*stagedArchival, error) {
 
 	gsClient, err := a.GSClientFactory(c, project)
@@ -384,7 +385,7 @@ type stagedArchival struct {
 	*Archivist
 	*Settings
 
-	project types.ProjectName
+	project string
 	path    types.StreamPath
 	desc    logpb.LogStreamDescriptor
 
@@ -402,14 +403,12 @@ type stagedArchival struct {
 // file name. It incorporates a unique ID into the staging name to differentiate
 // it from other staging paths for the same path/name.
 func (sa *stagedArchival) makeStagingPaths(name, uid string) stagingPaths {
-	proj := string(sa.project)
-
 	// Either of these paths may be shared between projects. To enforce
 	// an absence of conflicts, we will insert the project name as part of the
 	// path.
 	return stagingPaths{
-		staged: sa.GSStagingBase.Concat(proj, string(sa.path), uid, name),
-		final:  sa.GSBase.Concat(proj, string(sa.path), name),
+		staged: sa.GSStagingBase.Concat(sa.project, string(sa.path), uid, name),
+		final:  sa.GSBase.Concat(sa.project, string(sa.path), name),
 	}
 }
 

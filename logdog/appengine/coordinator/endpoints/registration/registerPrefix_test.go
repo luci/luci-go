@@ -57,9 +57,9 @@ func TestRegisterPrefix(t *testing.T) {
 
 		svr := New()
 
-		const project = types.ProjectName("proj-foo")
+		const project = "proj-foo"
 		req := logdog.RegisterPrefixRequest{
-			Project:    string(project),
+			Project:    project,
 			Prefix:     "testing/prefix",
 			SourceInfo: []string{"unit test"},
 			OpNonce:    nonce,

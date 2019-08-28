@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/renderer"
-	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -59,7 +58,7 @@ func srcmanCheckout(c context.Context, build *Build) (Checkout, error) {
 	qo := coordinator.QueryOptions{
 		ContentType: srcman.ContentTypeSourceManifest,
 	}
-	logProject := types.ProjectName(build.Infra.Logdog.Project)
+	logProject := build.Infra.Logdog.Project
 	logPath := path.Join(build.Infra.Logdog.Prefix, "**")
 
 	// Perform the query, capturing exactly one log stream and erroring otherwise.

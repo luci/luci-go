@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -40,7 +41,7 @@ type Coordinator interface {
 // operate and update.
 type LogStreamState struct {
 	// Project is the log stream project.
-	Project types.ProjectName
+	Project string
 	// Path is the log stream path.
 	Path types.StreamPath
 
@@ -66,8 +67,8 @@ type LogStreamState struct {
 // TerminateRequest is a local representation of a Coordinator stream
 // termination request.
 type TerminateRequest struct {
-	Project types.ProjectName // Project name.
-	Path    types.StreamPath  // Stream path. Needed for cache lookup.
+	Project string           // Project name.
+	Path    types.StreamPath // Stream path. Needed for cache lookup.
 
 	// ID is the stream's Coordinator ID, as indicated by the Coordinator.
 	ID string
@@ -92,7 +93,7 @@ func NewCoordinator(s logdog.ServicesClient) Coordinator {
 
 func (c *coordinatorImpl) RegisterStream(ctx context.Context, s *LogStreamState, desc []byte) (*LogStreamState, error) {
 	// Client-side validate our parameters.
-	if err := s.Project.Validate(); err != nil {
+	if err := config.ValidateProjectName(s.Project); err != nil {
 		return nil, fmt.Errorf("failed to validate project: %s", err)
 	}
 	if err := s.Path.Validate(); err != nil {
@@ -132,7 +133,7 @@ func (c *coordinatorImpl) RegisterStream(ctx context.Context, s *LogStreamState,
 
 func (c *coordinatorImpl) TerminateStream(ctx context.Context, r *TerminateRequest) error {
 	// Client-side validate our parameters.
-	if err := r.Project.Validate(); err != nil {
+	if err := config.ValidateProjectName(r.Project); err != nil {
 		return fmt.Errorf("failed to validate project: %s", err)
 	}
 	if r.ID == "" {

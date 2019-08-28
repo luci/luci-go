@@ -191,7 +191,7 @@ func TestHandleArchive(t *testing.T) {
 
 		st := memory.Storage{}
 		gsc := testGSClient{}
-		gscFactory := func(context.Context, types.ProjectName) (gs.Client, error) {
+		gscFactory := func(context.Context, string) (gs.Client, error) {
 			return &gsc, nil
 		}
 
@@ -224,7 +224,7 @@ func TestHandleArchive(t *testing.T) {
 				}
 
 				err = st.Put(c, storage.PutRequest{
-					Project: types.ProjectName(p),
+					Project: p,
 					Path:    desc.Path(),
 					Index:   types.MessageIndex(v),
 					Values:  [][]byte{d},
@@ -282,11 +282,11 @@ func TestHandleArchive(t *testing.T) {
 
 		ar := Archivist{
 			Service: &sc,
-			SettingsLoader: func(c context.Context, proj types.ProjectName) (*Settings, error) {
+			SettingsLoader: func(c context.Context, project string) (*Settings, error) {
 				// Extra slashes to test concatenation,.
 				st := stBase
-				st.GSBase = gs.Path(fmt.Sprintf("gs://archival/%s/path/to/archive/", proj))
-				st.GSStagingBase = gs.Path(fmt.Sprintf("gs://archival-staging/%s/path/to/archive/", proj))
+				st.GSBase = gs.Path(fmt.Sprintf("gs://archival/%s/path/to/archive/", project))
+				st.GSStagingBase = gs.Path(fmt.Sprintf("gs://archival-staging/%s/path/to/archive/", project))
 				return &st, nil
 			},
 			Storage:         &st,

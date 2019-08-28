@@ -47,7 +47,7 @@ func TestStorage(t *testing.T) {
 		s := NewMemoryInstance(&cache)
 		defer s.Close()
 
-		project := types.ProjectName("test-project")
+		project := "test-project"
 		get := func(path string, index int, limit int, keysOnly bool) ([]string, error) {
 			req := storage.GetRequest{
 				Project:  project,
@@ -83,7 +83,7 @@ func TestStorage(t *testing.T) {
 		}
 
 		ekey := func(path string, v, c int64) string {
-			return newRowKey(string(project), path, v, c).encode()
+			return newRowKey(project, path, v, c).encode()
 		}
 		records := func(s ...string) []byte {
 			buf := bytes.Buffer{}

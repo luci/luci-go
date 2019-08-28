@@ -131,7 +131,7 @@ func (c *cache) TerminateStream(ctx context.Context, r *TerminateRequest) error 
 
 // cacheEntryKey is the LRU key for a cacheEntry.
 type cacheEntryKey struct {
-	project types.ProjectName
+	project string
 	path    types.StreamPath
 }
 

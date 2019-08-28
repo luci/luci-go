@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
-	"go.chromium.org/luci/logdog/common/types"
 )
 
 // Services is a testing stub for a coordinator.Services instance that allows
@@ -59,7 +58,7 @@ func (s *Services) Config(c context.Context) (*config.Config, error) {
 }
 
 // ProjectConfig implements coordinator.Services.
-func (s *Services) ProjectConfig(c context.Context, project types.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *Services) ProjectConfig(c context.Context, project string) (*svcconfig.ProjectConfig, error) {
 	if s.PC != nil {
 		return s.PC()
 	}
@@ -67,7 +66,7 @@ func (s *Services) ProjectConfig(c context.Context, project types.ProjectName) (
 }
 
 // StorageForStream implements coordinator.Services.
-func (s *Services) StorageForStream(c context.Context, lst *coordinator.LogStreamState, project types.ProjectName) (coordinator.SigningStorage, error) {
+func (s *Services) StorageForStream(c context.Context, lst *coordinator.LogStreamState, project string) (coordinator.SigningStorage, error) {
 	if s.ST != nil {
 		return s.ST(lst)
 	}

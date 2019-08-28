@@ -91,7 +91,7 @@ func testGetImpl(t *testing.T, archived bool) {
 		svr := New()
 
 		// di is a datastore bound to the test project namespace.
-		const project = types.ProjectName("proj-foo")
+		const project = "proj-foo"
 
 		// Generate our test stream.
 		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
@@ -157,7 +157,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 		Convey(`Testing Get requests (no logs)`, func() {
 			req := logdog.GetRequest{
-				Project: string(project),
+				Project: project,
 				Path:    string(tls.Path),
 			}
 
