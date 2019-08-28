@@ -15,20 +15,52 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
+
+	"github.com/gomodule/redigo/redis"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 )
 
 func main() {
 	server.Main(nil, func(srv *server.Server) error {
+		// Logging example.
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			logging.Debugf(c.Context, "Hello debug world")
 			logging.Infof(c.Context, "Hello info world")
 			logging.Warningf(c.Context, "Hello warning world")
 			c.Writer.Write([]byte("Hello, world"))
 		})
+
+		// Redis example.
+		//
+		// To run Redis for tests locally (in particular on OSX):
+		//   docker run --name redis -p 6379:6379 --restart always --detach redis
+		//
+		// Then launch the example with "... -redis-addr :6379".
+		//
+		// Note that it makes Redis port available on 0.0.0.0. This is a necessity
+		// when using Docker-for-Mac. Don't put any sensitive stuff there (or make
+		// sure your firewall is configured to block external connections).
+		srv.Routes.GET("/redis", router.MiddlewareChain{}, func(c *router.Context) {
+			conn, err := redisconn.Get(c.Context)
+			if err != nil {
+				http.Error(c.Writer, err.Error(), 500)
+				return
+			}
+			defer conn.Close()
+			n, err := redis.Int(conn.Do("INCR", "testKey"))
+			if err != nil {
+				http.Error(c.Writer, err.Error(), 500)
+				return
+			}
+			fmt.Fprintf(c.Writer, "%d", n)
+		})
+
 		return nil
 	})
 }

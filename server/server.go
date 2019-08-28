@@ -21,6 +21,7 @@
 //   * go.chromium.org/luci/server/secrets: Secrets.
 //   * go.chromium.org/luci/server/settings: Access to app settings.
 //   * go.chromium.org/luci/server/auth: Making authenticated calls.
+//   * go.chromium.org/luci/server/redisconn: Redis connection pool.
 //   * go.chromium.org/gae: Datastore.
 //
 // Usage example:
@@ -63,6 +64,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gomodule/redigo/redis"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 
@@ -77,6 +79,7 @@ import (
 	"go.chromium.org/luci/common/logging/gkelogger"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
+	tsmoncommon "go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra" // should be used ONLY in Main()
@@ -96,6 +99,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/portal"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/settings"
@@ -156,6 +160,7 @@ type Options struct {
 	AuthServiceHost  string             // hostname of an Auth Service to use
 	AuthDBDump       string             // Google Storage path to fetch AuthDB dumps from
 	AuthDBSigner     string             // service account that signs AuthDB dumps
+	RedisAddr        string             // Redis server to connect to as "host:port" (optional)
 	CloudProject     string             // name of hosting Google Cloud Project
 	TsMonAccount     string             // service account to flush metrics as
 	TsMonServiceName string             // service name of tsmon target
@@ -223,6 +228,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"auth-db-signer",
 		o.AuthDBSigner,
 		"Service account that signs AuthDB dumps. Default is derived from -auth-service-host if it is *.appspot.com",
+	)
+	f.StringVar(
+		&o.RedisAddr,
+		"redis-addr",
+		o.RedisAddr,
+		"Redis server to connect to as \"host:port\" (optional)",
 	)
 	f.StringVar(
 		&o.CloudProject,
@@ -301,7 +312,8 @@ type Server struct {
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
 	authDB       atomic.Value          // last known good authdb.DB instance
 
-	dsClient *datastore.Client // nil if datastore is not used
+	redisPool *redis.Pool       // nil if redis is not used
+	dsClient  *datastore.Client // nil if datastore is not used
 }
 
 // scopedAuth holds TokenSource and Authenticator that produced it.
@@ -362,6 +374,9 @@ func New(opts Options) (srv *Server, err error) {
 	}
 	if err := srv.initTSMon(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tsmon").Err()
+	}
+	if err := srv.initRedis(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize Redis pool").Err()
 	}
 	if err := srv.initDatastoreClient(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize Datastore client").Err()
@@ -1156,6 +1171,33 @@ func (s *Server) initTSMon() error {
 
 	// Periodically flush metrics.
 	s.RunInBackground("luci.tsmon", s.tsmon.FlushPeriodically)
+	return nil
+}
+
+// initRedis sets up Redis connection pool, if enabled.
+//
+// Does nothing is RedisAddr options is unset. In this case redisconn.Get will
+// return ErrNotConfigured.
+func (s *Server) initRedis() error {
+	if s.Options.RedisAddr == "" {
+		return nil
+	}
+
+	s.redisPool = redisconn.NewPool(s.Options.RedisAddr)
+	s.Context = redisconn.UsePool(s.Context, s.redisPool)
+
+	// Close all connections when exiting gracefully.
+	s.registerCleanup(func() {
+		if err := s.redisPool.Close(); err != nil {
+			logging.Warningf(s.Context, "Failed to close Redis pool - %s", err)
+		}
+	})
+
+	// Populate pool metrics on tsmon flush.
+	tsmoncommon.RegisterCallbackIn(s.Context, func(ctx context.Context) {
+		redisconn.ReportStats(ctx, s.redisPool, "default")
+	})
+
 	return nil
 }
 
