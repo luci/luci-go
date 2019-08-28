@@ -42,5 +42,5 @@ type TargetType struct {
 }
 
 func (tt TargetType) String() string {
-	return fmt.Sprintf("%s:%d", tt.Name, tt.Type)
+	return fmt.Sprintf("%s:%s", tt.Name, tt.Type)
 }

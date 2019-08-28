@@ -101,7 +101,7 @@ func (fl *Flags) SetDefaultsFromHostname() {
 
 // Register adds tsmon target related flags to a FlagSet.
 func (fl *Flags) Register(f *flag.FlagSet) {
-	f.Var(&targetTypeFlag{&fl}, "ts-mon-target-type",
+	f.Var(&targetTypeFlag{fl}, "ts-mon-target-type",
 		"the type of target that is being monitored ("+targetTypeEnum.Choices()+")")
 	f.StringVar(&fl.DeviceHostname, "ts-mon-device-hostname", fl.DeviceHostname,
 		"name of this device")

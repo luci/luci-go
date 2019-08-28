@@ -16,6 +16,7 @@ package target
 
 import (
 	"flag"
+	"fmt"
 
 	"go.chromium.org/luci/common/flag/flagenum"
 	"go.chromium.org/luci/common/tsmon/types"
@@ -29,6 +30,7 @@ var (
 
 	DeviceType = (*NetworkDevice)(nil).Type()
 	TaskType = (*Task)(nil).Type()
+	DummyProjectType = (*DummyProject)(nil).Type()
 )
 
 var targetTypeEnum = flagenum.Enum{
@@ -37,15 +39,18 @@ var targetTypeEnum = flagenum.Enum{
 }
 
 type targetTypeFlag struct {
-	flags **Flags
+	flags *Flags
 }
 
 func (ttf *targetTypeFlag) String() string {
-	return (*ttf.flags).TargetType.Name
+	return ttf.flags.TargetType.Name
 }
 
 func (ttf *targetTypeFlag) Set(v string) error {
-	targetType, _ := targetTypeEnum[v]
-	(*ttf.flags).TargetType = targetType.(types.TargetType)
+	targetType, ok := targetTypeEnum[v]
+	if !ok {
+		return fmt.Errorf("unknown --ts-mon-target-type '%s'", v)
+	}
+	ttf.flags.TargetType = targetType.(types.TargetType)
 	return nil
 }
