@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3b9c988a_30823701",
+        "filename": "common/tsmon/metric/metric.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-28T03:20:11Z",
+      "side": 1,
+      "message": "can we use actual nil instead and get rid of target.NilType? If not, what happens if nil is passed to NewIntWithTargetType?",
+      "range": {
+        "startLine": 118,
+        "startChar": 35,
+        "endLine": 118,
+        "endChar": 49
+      },
+      "revId": "67c33c53ed052a947308715818699d9d1d026767",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
