@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4fd99218_0ac2fcda",
+        "filename": "common/tsmon/target/target_type.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-08-28T05:42:31Z",
+      "side": 1,
+      "message": "Changed to a single *. There is nothing wrong with *. :D",
+      "parentUuid": "102444f6_96e5ceef",
+      "range": {
+        "startLine": 40,
+        "startChar": 7,
+        "endLine": 40,
+        "endChar": 9
+      },
+      "revId": "728d512a1c303753fd5e35c644b586ec424e81b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "459cd5b2_70040fb8",
         "filename": "common/tsmon/target/target_type.go",
         "patchSetId": 12
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "4697d426_9e828d97",
+        "filename": "common/tsmon/target/target_type.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-08-28T05:42:31Z",
+      "side": 1,
+      "message": "Fixed",
+      "parentUuid": "459cd5b2_70040fb8",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 56
+      },
+      "revId": "728d512a1c303753fd5e35c644b586ec424e81b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1a496169_8862903a",
         "filename": "common/tsmon/types/target.go",
         "patchSetId": 12
@@ -68,6 +116,30 @@
       "revId": "728d512a1c303753fd5e35c644b586ec424e81b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68f2f230_4e4437a8",
+        "filename": "common/tsmon/types/target.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-08-28T05:42:31Z",
+      "side": 1,
+      "message": "Ah, thanks for catching this. Initially, I modeled the field with a numeric ID, but later changed to reflect.Type, and forgot to update this function.",
+      "parentUuid": "1a496169_8862903a",
+      "range": {
+        "startLine": 45,
+        "startChar": 24,
+        "endLine": 45,
+        "endChar": 26
+      },
+      "revId": "728d512a1c303753fd5e35c644b586ec424e81b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
