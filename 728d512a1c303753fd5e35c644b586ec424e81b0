@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "102444f6_96e5ceef",
+        "filename": "common/tsmon/target/target_type.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-28T03:12:50Z",
+      "side": 1,
+      "message": "why **? What\u0027s wrong with * and then just using ttf.flags.TargetType?",
+      "range": {
+        "startLine": 40,
+        "startChar": 7,
+        "endLine": 40,
+        "endChar": 9
+      },
+      "revId": "728d512a1c303753fd5e35c644b586ec424e81b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "459cd5b2_70040fb8",
+        "filename": "common/tsmon/target/target_type.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-28T03:12:50Z",
+      "side": 1,
+      "message": "I think this will panic if \u0027v\u0027 is not one of recognized types (\u0027task\u0027 or \u0027device\u0027). It should return an error instead.",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 56
+      },
+      "revId": "728d512a1c303753fd5e35c644b586ec424e81b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a496169_8862903a",
+        "filename": "common/tsmon/types/target.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-28T03:12:50Z",
+      "side": 1,
+      "message": "err... can reflect.Type convert itself to a number?",
+      "range": {
+        "startLine": 45,
+        "startChar": 24,
+        "endLine": 45,
+        "endChar": 26
+      },
+      "revId": "728d512a1c303753fd5e35c644b586ec424e81b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
