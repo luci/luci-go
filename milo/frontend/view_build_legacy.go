@@ -99,7 +99,7 @@ func handleRawPresentationBuild(c *router.Context) error {
 	build, err := rawpresentation.GetBuild(
 		c.Context,
 		c.Params.ByName("logdog_host"),
-		types.ProjectName(c.Params.ByName("project")),
+		c.Params.ByName("project"),
 		types.StreamPath(strings.Trim(c.Params.ByName("path"), "/")))
 	return renderBuildLegacy(c, build, false, err)
 }

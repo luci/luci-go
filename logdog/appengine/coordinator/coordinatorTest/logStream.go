@@ -39,7 +39,7 @@ func TestSecret() types.PrefixSecret {
 // TestStream returns a testing stream.
 type TestStream struct {
 	// Project is the project name for this stream.
-	Project types.ProjectName
+	Project string
 	// Path is the path of this stream.
 	Path types.StreamPath
 
@@ -55,7 +55,7 @@ type TestStream struct {
 }
 
 // MakeStream builds a new TestStream with the supplied parameters.
-func MakeStream(c context.Context, project types.ProjectName, path types.StreamPath) *TestStream {
+func MakeStream(c context.Context, project string, path types.StreamPath) *TestStream {
 	prefix, name := path.Split()
 
 	now := clock.Now(c).UTC()

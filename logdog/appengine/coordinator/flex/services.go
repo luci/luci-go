@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
-	"go.chromium.org/luci/logdog/common/types"
 
 	gcbt "cloud.google.com/go/bigtable"
 	gcst "cloud.google.com/go/storage"
@@ -59,7 +58,7 @@ type Services interface {
 	// Storage returns a Storage instance for the supplied log stream.
 	//
 	// The caller must close the returned instance if successful.
-	StorageForStream(context.Context, *coordinator.LogStreamState, types.ProjectName) (coordinator.SigningStorage, error)
+	StorageForStream(ctx context.Context, state *coordinator.LogStreamState, project string) (coordinator.SigningStorage, error)
 }
 
 // GlobalServices is an application singleton that stores cross-request service
@@ -77,7 +76,7 @@ type GlobalServices struct {
 	btStorage *bigtable.Storage
 
 	// gsClientFactory is the application-global creator of Google Storage clients.
-	gsClientFactory func(context.Context, types.ProjectName) (gs.Client, error)
+	gsClientFactory func(ctx context.Context, project string) (gs.Client, error)
 
 	// storageCache is the process-wide cache used for storing Storage data.
 	storageCache *StorageCache
@@ -170,7 +169,7 @@ func (gsvc *GlobalServices) connectBigTableClient(c context.Context, cfg *config
 }
 
 func (gsvc *GlobalServices) createGoogleStorageClientFactory(c context.Context, cfg *config.Config) error {
-	gsvc.gsClientFactory = func(c context.Context, project types.ProjectName) (client gs.Client, e error) {
+	gsvc.gsClientFactory = func(c context.Context, project string) (client gs.Client, e error) {
 		// TODO(vadimsh): Switch to AsProject + WithProject(project.String()) once
 		// we are ready to roll out project scoped service accounts in Logdog.
 		transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gs.ReadOnlyScopes...))
@@ -211,7 +210,7 @@ type flexServicesInst struct {
 	*GlobalServices
 }
 
-func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.LogStreamState, project types.ProjectName) (
+func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.LogStreamState, project string) (
 	coordinator.SigningStorage, error) {
 
 	if !lst.ArchivalState().Archived() {

@@ -240,7 +240,7 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 
 		var innerErr error
 		err = stClient.Get(c, storage.GetRequest{
-			Project: types.ProjectName(cmd.project),
+			Project: cmd.project,
 			Path:    types.StreamPath(cmd.path),
 			Index:   types.MessageIndex(cmd.index),
 			Limit:   cmd.limit,
@@ -323,7 +323,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 
 	for round := 0; round < cmd.rounds; round++ {
 		log.Infof(c, "Tail round %d.", round+1)
-		e, err := stClient.Tail(c, types.ProjectName(cmd.project), types.StreamPath(cmd.path))
+		e, err := stClient.Tail(c, cmd.project, types.StreamPath(cmd.path))
 		if err != nil {
 			renderErr(c, errors.Annotate(err, "failed to tail log entries").Err())
 			return 1

@@ -134,9 +134,9 @@ type QueryCallback func(r *LogStream) bool
 //     first value is "foo" and whose name is "baz".
 //   - foo/bar will return all streams whose name is "foo/bar".
 //   - */* will return all streams with two-component names.
-func (c *Client) Query(ctx context.Context, project types.ProjectName, path string, o QueryOptions, cb QueryCallback) error {
+func (c *Client) Query(ctx context.Context, project string, path string, o QueryOptions, cb QueryCallback) error {
 	req := logdog.QueryRequest{
-		Project:     string(project),
+		Project:     project,
 		Path:        path,
 		ContentType: o.ContentType,
 		Older:       google.NewTimestamp(o.Before),

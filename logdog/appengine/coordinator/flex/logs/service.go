@@ -22,7 +22,6 @@ import (
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/logdog/common/types"
 
 	"github.com/golang/protobuf/proto"
 
@@ -55,7 +54,7 @@ func newService(svr *server) logdog.LogsServer {
 			if ok {
 				// Enter the requested project namespace. This validates that the
 				// current user has READ access.
-				project := types.ProjectName(pbm.GetMessageProject())
+				project := pbm.GetMessageProject()
 				if project == "" {
 					return nil, grpcutil.Errf(codes.InvalidArgument, "project is required")
 				}

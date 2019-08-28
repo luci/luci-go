@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/archivist"
 	"go.chromium.org/luci/logdog/server/bundleServicesClient"
 	"go.chromium.org/luci/logdog/server/service"
@@ -222,8 +221,8 @@ func (a *application) runArchivist(c context.Context) error {
 	defer st.Close()
 
 	// Defines our Google Storage client project scoped factory.
-	gsClientFactory := func(ctx context.Context, proj types.ProjectName) (gs.Client, error) {
-		gsClient, err := a.GSClient(ctx, proj)
+	gsClientFactory := func(ctx context.Context, project string) (gs.Client, error) {
+		gsClient, err := a.GSClient(ctx, project)
 		if err != nil {
 			log.WithError(err).Errorf(c, "Failed to get Google Storage client.")
 			return nil, err
@@ -267,13 +266,13 @@ func (a *application) runArchivist(c context.Context) error {
 func (a *application) GetSettingsLoader(acfg *svcconfig.Archivist) archivist.SettingsLoader {
 	serviceID := a.ServiceID()
 
-	return func(c context.Context, proj types.ProjectName) (*archivist.Settings, error) {
+	return func(c context.Context, project string) (*archivist.Settings, error) {
 		// Fold in our project-specific configuration, if valid.
-		pcfg, err := a.ProjectConfig(c, proj)
+		pcfg, err := a.ProjectConfig(c, project)
 		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,
-				"project":    proj,
+				"project":    project,
 			}.Errorf(c, "Failed to fetch project configuration.")
 			return nil, err
 		}

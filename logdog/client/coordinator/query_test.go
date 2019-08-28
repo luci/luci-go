@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -97,7 +96,7 @@ func TestClientQuery(t *testing.T) {
 		}
 
 		Convey(`When making a query request`, func() {
-			const project = types.ProjectName("myproj")
+			const project = "myproj"
 			const path = "**/+/**"
 			q := QueryOptions{
 				Tags: map[string]string{

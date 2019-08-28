@@ -68,7 +68,7 @@ func makeButler(ctx context.Context, args *pb.RunnerArgs, logdogDir string, syst
 		WorkDir:         logdogDir,
 		Authenticator:   systemAuth,
 		CoordinatorHost: coordinatorHost,
-		Project:         types.ProjectName(args.Build.Builder.Project),
+		Project:         args.Build.Builder.Project,
 		Prefix:          types.StreamName(fmt.Sprintf("buildbucket/%s/%d", args.BuildbucketHost, args.Build.Id)),
 		LocalFile:       localFile,
 		GlobalTags:      globalLogTags,

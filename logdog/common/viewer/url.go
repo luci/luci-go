@@ -25,7 +25,7 @@ import (
 
 // GetURL generates a LogDog app viewer URL for the specified streams.
 // Uses the plain-text endpoint for single stream paths, and the client-side endpoint for multi-stream paths.
-func GetURL(host string, project types.ProjectName, paths ...types.StreamPath) string {
+func GetURL(host string, project string, paths ...types.StreamPath) string {
 	values := make([]string, len(paths))
 	for i, p := range paths {
 		values[i] = fmt.Sprintf("%s/%s", project, p)

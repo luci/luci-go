@@ -25,7 +25,6 @@ import (
 	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
-	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -35,14 +34,15 @@ import (
 
 type testConfigProvider struct {
 	configErr error
-	configs   map[types.ProjectName]*svcconfig.ProjectConfig
+	// project -> *ProjectConfig
+	configs map[string]*svcconfig.ProjectConfig
 }
 
-func (s *testConfigProvider) Config(c context.Context) (*config.Config, error) {
+func (s *testConfigProvider) Config(ctx context.Context) (*config.Config, error) {
 	panic("not implemented")
 }
 
-func (s *testConfigProvider) ProjectConfig(c context.Context, project types.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *testConfigProvider) ProjectConfig(ctx context.Context, project string) (*svcconfig.ProjectConfig, error) {
 	if err := s.configErr; err != nil {
 		return nil, err
 	}
@@ -64,18 +64,18 @@ func TestWithProjectNamespace(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A testing environment`, t, func() {
-		c := context.Background()
-		c = memory.Use(c)
+		ctx := context.Background()
+		ctx = memory.Use(ctx)
 
 		// Fake authentication state.
 		as := authtest.FakeState{
 			IdentityGroups: []string{"all"},
 		}
-		c = auth.WithState(c, &as)
+		ctx = auth.WithState(ctx, &as)
 
 		// Fake service with fake project configs.
 		cp := testConfigProvider{
-			configs: map[types.ProjectName]*svcconfig.ProjectConfig{
+			configs: map[string]*svcconfig.ProjectConfig{
 				"all-access": {
 					ReaderAuthGroups: []string{"all"},
 					WriterAuthGroups: []string{"all"},
@@ -86,32 +86,32 @@ func TestWithProjectNamespace(t *testing.T) {
 				},
 			},
 		}
-		c = WithConfigProvider(c, &cp)
+		ctx = WithConfigProvider(ctx, &cp)
 
 		Convey(`When using NamespaceAccessNoAuth with anonymous identity`, func() {
-			So(auth.CurrentIdentity(c).Kind(), ShouldEqual, identity.Anonymous)
+			So(auth.CurrentIdentity(ctx).Kind(), ShouldEqual, identity.Anonymous)
 
 			Convey(`Can enter exclusive namespace`, func() {
-				So(WithProjectNamespace(&c, "exclusive-access", NamespaceAccessNoAuth), ShouldBeNil)
-				So(CurrentProject(c), ShouldEqual, "exclusive-access")
+				So(WithProjectNamespace(&ctx, "exclusive-access", NamespaceAccessNoAuth), ShouldBeNil)
+				So(CurrentProject(ctx), ShouldEqual, "exclusive-access")
 			})
 
 			Convey(`Will fail to enter a namespace for a non-existent project with Unauthenticated.`, func() {
-				So(WithProjectNamespace(&c, "does-not-exist", NamespaceAccessNoAuth), ShouldBeRPCUnauthenticated)
+				So(WithProjectNamespace(&ctx, "does-not-exist", NamespaceAccessNoAuth), ShouldBeRPCUnauthenticated)
 			})
 		})
 
 		Convey(`When using NamespaceAccessAllTesting with anonymous identity`, func() {
-			So(auth.CurrentIdentity(c).Kind(), ShouldEqual, identity.Anonymous)
+			So(auth.CurrentIdentity(ctx).Kind(), ShouldEqual, identity.Anonymous)
 
 			Convey(`Can enter exclusive namespace`, func() {
-				So(WithProjectNamespace(&c, "exclusive-access", NamespaceAccessAllTesting), ShouldBeNil)
-				So(CurrentProject(c), ShouldEqual, "exclusive-access")
+				So(WithProjectNamespace(&ctx, "exclusive-access", NamespaceAccessAllTesting), ShouldBeNil)
+				So(CurrentProject(ctx), ShouldEqual, "exclusive-access")
 			})
 
 			Convey(`Will fail to enter a namespace for a non-existent project.`, func() {
-				So(WithProjectNamespace(&c, "does-not-exist", NamespaceAccessAllTesting), ShouldBeNil)
-				So(CurrentProject(c), ShouldEqual, "does-not-exist")
+				So(WithProjectNamespace(&ctx, "does-not-exist", NamespaceAccessAllTesting), ShouldBeNil)
+				So(CurrentProject(ctx), ShouldEqual, "does-not-exist")
 			})
 		})
 
@@ -132,49 +132,49 @@ func TestWithProjectNamespace(t *testing.T) {
 					as.Identity = id
 
 					Convey(`Will successfully access public project.`, func() {
-						So(WithProjectNamespace(&c, "all-access", tc.access), ShouldBeNil)
+						So(WithProjectNamespace(&ctx, "all-access", tc.access), ShouldBeNil)
 					})
 
 					Convey(`When user is a member of exclusive group`, func() {
 						as.IdentityGroups = append(as.IdentityGroups, "auth")
 
 						Convey(`Can access exclusive namespace.`, func() {
-							So(WithProjectNamespace(&c, "exclusive-access", tc.access), ShouldBeNil)
-							So(CurrentProject(c), ShouldEqual, "exclusive-access")
+							So(WithProjectNamespace(&ctx, "exclusive-access", tc.access), ShouldBeNil)
+							So(CurrentProject(ctx), ShouldEqual, "exclusive-access")
 						})
 
 						Convey(`Will fail to access non-existent project with PermissionDenied.`, func() {
-							So(WithProjectNamespace(&c, "does-not-exist", tc.access), ShouldBeRPCPermissionDenied)
+							So(WithProjectNamespace(&ctx, "does-not-exist", tc.access), ShouldBeRPCPermissionDenied)
 						})
 					})
 
 					Convey(`Will fail to access exclusive project with PermissionDenied.`, func() {
-						So(WithProjectNamespace(&c, "exclusive-access", tc.access), ShouldBeRPCPermissionDenied)
+						So(WithProjectNamespace(&ctx, "exclusive-access", tc.access), ShouldBeRPCPermissionDenied)
 					})
 
 					Convey(`Will fail to access non-existent project with PermissionDenied.`, func() {
-						So(WithProjectNamespace(&c, "does-not-exist", tc.access), ShouldBeRPCPermissionDenied)
+						So(WithProjectNamespace(&ctx, "does-not-exist", tc.access), ShouldBeRPCPermissionDenied)
 					})
 				})
 
 				Convey(`Will successfully access public project.`, func() {
-					So(WithProjectNamespace(&c, "all-access", tc.access), ShouldBeNil)
+					So(WithProjectNamespace(&ctx, "all-access", tc.access), ShouldBeNil)
 				})
 
 				Convey(`Will fail to access exclusive project with Unauthenticated.`, func() {
-					So(WithProjectNamespace(&c, "exclusive-access", tc.access), ShouldBeRPCUnauthenticated)
+					So(WithProjectNamespace(&ctx, "exclusive-access", tc.access), ShouldBeRPCUnauthenticated)
 				})
 
 				Convey(`Will fail to access non-existent project with Unauthenticated.`, func() {
-					So(WithProjectNamespace(&c, "does-not-exist", tc.access), ShouldBeRPCUnauthenticated)
+					So(WithProjectNamespace(&ctx, "does-not-exist", tc.access), ShouldBeRPCUnauthenticated)
 				})
 
 				Convey(`When config service returns an unexpected error`, func() {
 					cp.configErr = errors.New("misc")
 
-					for _, proj := range []types.ProjectName{"all-access", "exclusive-access", "does-not-exist"} {
+					for _, proj := range []string{"all-access", "exclusive-access", "does-not-exist"} {
 						Convey(fmt.Sprintf(`Will fail to access %q with Internal.`, proj), func() {
-							So(WithProjectNamespace(&c, "all-access", tc.access), ShouldBeRPCInternal)
+							So(WithProjectNamespace(&ctx, "all-access", tc.access), ShouldBeRPCInternal)
 						})
 					}
 				})

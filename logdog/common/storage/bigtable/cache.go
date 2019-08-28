@@ -39,7 +39,7 @@ const lastTailIndexCacheDuration = 1 * time.Hour
 //
 // If there was an error, or if the item was not cached, 0 (first index) will be
 // returned.
-func getLastTailIndex(c context.Context, cache storage.Cache, project types.ProjectName, path types.StreamPath) int64 {
+func getLastTailIndex(c context.Context, cache storage.Cache, project string, path types.StreamPath) int64 {
 	data, ok := cache.Get(c, mkLastTailKey(project, path))
 	if !ok {
 		return 0
@@ -61,17 +61,17 @@ func getLastTailIndex(c context.Context, cache storage.Cache, project types.Proj
 	return v
 }
 
-func putLastTailIndex(c context.Context, cache storage.Cache, project types.ProjectName, path types.StreamPath, v int64) {
+func putLastTailIndex(c context.Context, cache storage.Cache, project string, path types.StreamPath, v int64) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	buf = buf[:binary.PutVarint(buf, v)]
 
 	cache.Put(c, mkLastTailKey(project, path), buf, lastTailIndexCacheDuration)
 }
 
-func mkLastTailKey(project types.ProjectName, path types.StreamPath) storage.CacheKey {
+func mkLastTailKey(project string, path types.StreamPath) storage.CacheKey {
 	return storage.CacheKey{
 		Schema: cacheSchema,
 		Type:   "bt_tail_idx",
-		Key:    storage.HashKey(string(project), string(path)),
+		Key:    storage.HashKey(project, string(path)),
 	}
 }

@@ -330,7 +330,7 @@ func TestStreamStateCache(t *testing.T) {
 			})
 
 			Convey(`Different projects with the same stream name will not conflict.`, func() {
-				var projects = []types.ProjectName{"", "foo", "bar"}
+				var projects = []string{"", "foo", "bar"}
 
 				for i, p := range projects {
 					st.Project = p

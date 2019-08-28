@@ -28,6 +28,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	api "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
@@ -59,7 +60,7 @@ type Config struct {
 	Host string
 
 	// Project is the project that this stream belongs to.
-	Project types.ProjectName
+	Project string
 	// Prefix is the stream prefix to register.
 	Prefix types.StreamName
 	// PrefixExpiration is the prefix expiration to use when registering.
@@ -97,7 +98,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	case cfg.Host == "":
 		return nil, errors.New("no host supplied")
 	}
-	if err := cfg.Project.Validate(); err != nil {
+	if err := config.ValidateProjectName(cfg.Project); err != nil {
 		return nil, errors.Annotate(err, "failed to validate project").
 			InternalReason("project(%v)", cfg.Project).Err()
 	}

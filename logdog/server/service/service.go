@@ -55,7 +55,6 @@ import (
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
-	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/service/config"
 	serverAuth "go.chromium.org/luci/server/auth"
 	serverCaching "go.chromium.org/luci/server/caching"
@@ -482,14 +481,14 @@ func (s *Service) ServiceConfigPath() (cfglib.Set, string) {
 func (s *Service) ServiceConfig() *svcconfig.Config { return &s.serviceConfig }
 
 // ProjectConfigPath returns the ConfigSet and path to the current service's
-// project configuration for proj.
-func (s *Service) ProjectConfigPath(proj types.ProjectName) (cfglib.Set, string) {
-	return cfglib.ProjectSet(string(proj)), svcconfig.ProjectConfigPath(s.serviceID)
+// project configuration for project.
+func (s *Service) ProjectConfigPath(project string) (cfglib.Set, string) {
+	return cfglib.ProjectSet(project), svcconfig.ProjectConfigPath(s.serviceID)
 }
 
-// ProjectConfig returns the current service's project configuration for proj.
-func (s *Service) ProjectConfig(c context.Context, proj types.ProjectName) (*svcconfig.ProjectConfig, error) {
-	cset, path := s.ProjectConfigPath(proj)
+// ProjectConfig returns the current service's project configuration for project.
+func (s *Service) ProjectConfig(c context.Context, project string) (*svcconfig.ProjectConfig, error) {
+	cset, path := s.ProjectConfigPath(project)
 
 	var pcfg svcconfig.ProjectConfig
 	msg, err := s.configCache.Get(c, cset, path, &pcfg)
@@ -570,8 +569,8 @@ func (s *Service) IntermediateStorage(c context.Context, rw bool) (storage.Stora
 }
 
 // GSClient returns an authenticated Google Storage client instance.
-func (s *Service) GSClient(c context.Context, proj types.ProjectName) (gs.Client, error) {
-	// TODO(vadimsh): Switch to AsProject + WithProject(string(proj)) once
+func (s *Service) GSClient(c context.Context, project string) (gs.Client, error) {
+	// TODO(vadimsh): Switch to AsProject + WithProject(project) once
 	// we are ready to roll out project scoped service accounts in Logdog.
 	transport, err := serverAuth.GetRPCTransport(c, serverAuth.AsSelf, serverAuth.WithScopes(gs.ReadWriteScopes...))
 	if err != nil {

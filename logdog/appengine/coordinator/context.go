@@ -83,7 +83,7 @@ func GetConfigProvider(c context.Context) ConfigProvider {
 // This returns the stream metadata, and a new context tied to the project.
 // The new context can be used to fetch the LogStreamState from the datastore.
 // The returned error is a gRPC error, parsable with grpcutil.
-func WithStream(c context.Context, project types.ProjectName, path types.StreamPath, at NamespaceAccessType) (context.Context, *LogStream, error) {
+func WithStream(c context.Context, project string, path types.StreamPath, at NamespaceAccessType) (context.Context, *LogStream, error) {
 	nc := c
 	// Do the project namespace check.  If successful, the namespace is installed
 	// into the resulting context.
@@ -121,10 +121,10 @@ func WithStream(c context.Context, project types.ProjectName, path types.StreamP
 //	  - PermissionDenied if the user does not have the requested access.
 //	- PermissionDenied if the project doesn't exist.
 //	- Internal if an internal error occurred.
-func WithProjectNamespace(c *context.Context, project types.ProjectName, at NamespaceAccessType) error {
+func WithProjectNamespace(c *context.Context, project string, at NamespaceAccessType) error {
 	ctx := *c
 
-	if err := project.Validate(); err != nil {
+	if err := cfglib.ValidateProjectName(project); err != nil {
 		log.WithError(err).Errorf(ctx, "Project name is invalid.")
 		return grpcutil.Errf(codes.InvalidArgument, "Project name is invalid: %s", err)
 	}
@@ -234,7 +234,7 @@ func WithProjectNamespace(c *context.Context, project types.ProjectName, at Name
 // This function is called with the expectation that the Context is in a
 // namespace conforming to ProjectNamespace. If this is not the case, this
 // method will panic.
-func Project(c context.Context) types.ProjectName {
+func Project(c context.Context) string {
 	ns := info.GetNamespace(c)
 	project := ProjectFromNamespace(ns)
 	if project != "" {

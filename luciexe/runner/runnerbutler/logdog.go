@@ -43,7 +43,7 @@ type Server struct {
 	WorkDir         string
 	Authenticator   *auth.Authenticator
 	CoordinatorHost string
-	Project         types.ProjectName
+	Project         string
 	Prefix          types.StreamName
 	GlobalTags      map[string]string
 

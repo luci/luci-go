@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/common/types"
 )
 
 const (
@@ -31,8 +30,8 @@ const (
 
 // ProjectNamespace returns the AppEngine namespace for a given luci-config
 // project name.
-func ProjectNamespace(project types.ProjectName) string {
-	return ProjectNamespacePrefix + string(project)
+func ProjectNamespace(project string) string {
+	return ProjectNamespacePrefix + project
 }
 
 // ProjectFromNamespace returns the current project installed in the supplied
@@ -40,11 +39,11 @@ func ProjectNamespace(project types.ProjectName) string {
 //
 // If the namespace does not have a project namespace prefix, this function
 // will return an empty string.
-func ProjectFromNamespace(ns string) types.ProjectName {
+func ProjectFromNamespace(ns string) string {
 	if !strings.HasPrefix(ns, ProjectNamespacePrefix) {
 		return ""
 	}
-	return types.ProjectName(ns[len(ProjectNamespacePrefix):])
+	return ns[len(ProjectNamespacePrefix):]
 }
 
 // CurrentProject returns the current project based on the currently-loaded
@@ -52,8 +51,8 @@ func ProjectFromNamespace(ns string) types.ProjectName {
 //
 // If there is no current namespace, or if the current namespace is not a valid
 // project namespace, an empty string will be returned.
-func CurrentProject(c context.Context) types.ProjectName {
-	if ns := info.GetNamespace(c); ns != "" {
+func CurrentProject(ctx context.Context) string {
+	if ns := info.GetNamespace(ctx); ns != "" {
 		return ProjectFromNamespace(ns)
 	}
 	return ""
@@ -64,6 +63,6 @@ func CurrentProject(c context.Context) types.ProjectName {
 //
 // If there is no current project namespace, or if the current project has no
 // configuration, config.ErrInvalidConfig will be returned.
-func CurrentProjectConfig(c context.Context) (*svcconfig.ProjectConfig, error) {
-	return GetConfigProvider(c).ProjectConfig(c, CurrentProject(c))
+func CurrentProjectConfig(ctx context.Context) (*svcconfig.ProjectConfig, error) {
+	return GetConfigProvider(ctx).ProjectConfig(ctx, CurrentProject(ctx))
 }

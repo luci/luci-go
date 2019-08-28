@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/pubsubprotocol"
 	"go.chromium.org/luci/logdog/common/storage/memory"
@@ -212,7 +213,7 @@ func testCollectorImpl(t *testing.T, caching bool) {
 		Convey(`Will drop streams with invalid project names.`, func() {
 			b := bb.genBase()
 			b.Project = "!!!invalid name!!!"
-			So(types.ProjectName(b.Project).Validate(), ShouldNotBeNil)
+			So(config.ValidateProjectName(b.Project), ShouldNotBeNil)
 
 			err := coll.Process(c, bb.bundle())
 			So(err, ShouldErrLike, "invalid bundle project name")

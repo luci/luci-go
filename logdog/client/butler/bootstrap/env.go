@@ -29,7 +29,7 @@ type Environment struct {
 
 	// Project is the project name. If not empty, this will be exported to
 	// subprocesses.
-	Project types.ProjectName
+	Project string
 	// Prefix is the prefix name. If not empty, this will be exported to
 	// subprocesses.
 	Prefix types.StreamName
@@ -49,6 +49,6 @@ func (e *Environment) Augment(base environ.Env) {
 
 	exportIf(bootstrap.EnvCoordinatorHost, e.CoordinatorHost)
 	exportIf(bootstrap.EnvStreamPrefix, string(e.Prefix))
-	exportIf(bootstrap.EnvStreamProject, string(e.Project))
+	exportIf(bootstrap.EnvStreamProject, e.Project)
 	exportIf(bootstrap.EnvStreamServerPath, e.StreamServerURI)
 }

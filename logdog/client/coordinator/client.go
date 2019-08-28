@@ -48,7 +48,7 @@ func NewClient(c *prpc.Client) *Client {
 }
 
 // Stream returns a Stream instance for the named stream.
-func (c *Client) Stream(project types.ProjectName, path types.StreamPath) *Stream {
+func (c *Client) Stream(project string, path types.StreamPath) *Stream {
 	return &Stream{
 		c:       c,
 		project: project,

@@ -231,7 +231,7 @@ func (s *storageImpl) getLogEntriesIter(c context.Context, st *getStrategy, cb s
 	}
 }
 
-func (s *storageImpl) Tail(c context.Context, project types.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+func (s *storageImpl) Tail(c context.Context, project string, path types.StreamPath) (*storage.Entry, error) {
 	idx, err := s.getIndex(c)
 	if err != nil {
 		return nil, err

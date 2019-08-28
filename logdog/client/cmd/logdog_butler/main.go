@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/runtime/profiling"
 	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/config"
 	grpcLogging "go.chromium.org/luci/grpc/logging"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/output"
@@ -69,7 +70,7 @@ type application struct {
 	cli.Application
 	context.Context
 
-	project         types.ProjectName
+	project         string
 	prefix          types.StreamName
 	coordinatorHost string
 	outputWorkers   int
@@ -104,7 +105,7 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 
 	a.maxBufferAge = clockflag.Duration(butler.DefaultMaxBufferAge)
 
-	fs.Var(&a.project, "project",
+	fs.StringVar(&a.project, "project", "",
 		"The log prefix's project name (required).")
 	fs.Var(&a.prefix, "prefix",
 		"Prefix to apply to all stream names.")
@@ -276,7 +277,7 @@ func mainImpl(ctx context.Context, defaultAuthOpts auth.Options, argv []string) 
 		grpcLogging.Install(logger, grpcLogging.Suppress)
 	}
 
-	if err := a.project.Validate(); err != nil {
+	if err := config.ValidateProjectName(a.project); err != nil {
 		log.WithError(err).Errorf(a, "Invalid project (-project).")
 		return configErrorReturnCode
 	}
