@@ -649,6 +649,30 @@
     },
     {
       "key": {
+        "uuid": "fe18c430_d3eb449f",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-28T01:41:14Z",
+      "side": 1,
+      "message": "Dunno, doesn\u0027t matter. Just wasn\u0027t clear what happens if \u0027nil\u0027 is used as options. Now it is clearer.",
+      "parentUuid": "844d7d42_4e8772bc",
+      "range": {
+        "startLine": 83,
+        "startChar": 6,
+        "endLine": 83,
+        "endChar": 27
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "07eaaaa4_5091c389",
         "filename": "luciexe/invoke/subprocess.go",
         "patchSetId": 4
@@ -731,6 +755,30 @@
       "writtenOn": "2019-08-27T01:11:43Z",
       "side": 1,
       "message": "would it be possible to add a test for context cancelation?",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 19
+      },
+      "revId": "f723e89dc6745ae89596546ce168bdb0d430429b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5cd46113_e580bbbd",
+        "filename": "luciexe/invoke/subprocess_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-28T01:41:14Z",
+      "side": 1,
+      "message": "ping?..",
+      "parentUuid": "64dce01b_0a892a3a",
       "range": {
         "startLine": 61,
         "startChar": 5,
