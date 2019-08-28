@@ -15,6 +15,9 @@
 package types
 
 import (
+	"fmt"
+	"reflect"
+
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )
 
@@ -23,4 +26,21 @@ type Target interface {
 	PopulateProto(d *pb.MetricsCollection)
 	Hash() uint64
 	Clone() Target
+	Type() TargetType
+}
+
+// TargetType represents the type of a Target, which identifies a metric
+// with the name.
+//
+// A metric is identified by (metric.info.name, metric.info.target_type).
+type TargetType struct {
+	// Name is the name of the TargeType that can be given to --target-type
+	// command line option.
+	Name string
+	// Type is the reflect.Type of the Target struct.
+	Type reflect.Type
+}
+
+func (tt TargetType) String() string {
+	return fmt.Sprintf("%s:%s", tt.Name, tt.Type)
 }
