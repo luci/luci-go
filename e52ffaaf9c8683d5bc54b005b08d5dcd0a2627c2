@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b401005d_b4ebfe74",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-28T04:06:38Z",
+      "side": 1,
+      "message": "Now that DefaultTarget is called A LOT more often, it would be better to get rid of defaultTargetLock and .Clone() and instead use atomic.Value and clone in \u0027SetDefaultTarget\u0027. Roughly:\n\nfunc (s ...) SetDefaultTarget(t ...) {\n  s.defaultTarget.Store(t.Clone())\n}\n\nfunc (s ...) DefaultTarget() ... {\n  return s.defaultTarget().Clone()\n}\n\n// Return value of defaultTarget MUST not be mutated.\nfunc (s ...) defaultTarget() types.Target {\n  return s.defaultTarget.Load().(types.Target)\n}\n\nfunc (s ...) findTarget(...) types.Target {\n  dt :\u003d s.defaultTarget()\n\n  ...\n}",
+      "range": {
+        "startLine": 174,
+        "startChar": 24,
+        "endLine": 174,
+        "endChar": 40
+      },
+      "revId": "e52ffaaf9c8683d5bc54b005b08d5dcd0a2627c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f64311f_236bcc58",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-28T04:06:38Z",
+      "side": 1,
+      "message": "do it outside m.lock. No need to hold the global lock while we deal with local parameters.",
+      "range": {
+        "startLine": 191,
+        "startChar": 1,
+        "endLine": 191,
+        "endChar": 26
+      },
+      "revId": "e52ffaaf9c8683d5bc54b005b08d5dcd0a2627c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d791af0a_d354d886",
+        "filename": "common/tsmon/target/context.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-28T04:06:38Z",
+      "side": 1,
+      "message": "Can this be derived from def (i.e. \u0027def.Type()\u0027). If you prefer to pass \u0027tt\u0027 explicitly, then please check def.Type() \u003d\u003d tt and panic otherwise.\n\nThe best solution would be to get rid of GetWithDefault completely. It doesn\u0027t seem like a worthy API addition, considering Get() already returns nil if \u0027tt\u0027 is unset.",
+      "range": {
+        "startLine": 40,
+        "startChar": 41,
+        "endLine": 40,
+        "endChar": 62
+      },
+      "revId": "e52ffaaf9c8683d5bc54b005b08d5dcd0a2627c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
