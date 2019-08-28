@@ -16,10 +16,14 @@ package metric
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/registry"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -31,11 +35,16 @@ func makeContext() context.Context {
 
 func TestMetrics(t *testing.T) {
 	t.Parallel()
+	tt := target.TaskType
 
 	Convey("Int", t, func() {
 		c := makeContext()
-		m := NewInt("int", "description", nil)
-		So(func() { NewInt("int", "description", nil) }, ShouldPanic)
+		m := NewIntWithTargetType("int", tt, "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewIntWithTargetType("int", tt, "description", nil) },
+			ShouldPanic,
+		)
 
 		So(m.Get(c), ShouldEqual, 0)
 		m.Set(c, 42)
@@ -47,8 +56,12 @@ func TestMetrics(t *testing.T) {
 
 	Convey("Counter", t, func() {
 		c := makeContext()
-		m := NewCounter("counter", "description", nil)
-		So(func() { NewCounter("counter", "description", nil) }, ShouldPanic)
+		m := NewCounterWithTargetType("counter", tt, "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewCounterWithTargetType("counter", tt, "description", nil) },
+			ShouldPanic,
+		)
 
 		So(m.Get(c), ShouldEqual, 0)
 
@@ -61,8 +74,12 @@ func TestMetrics(t *testing.T) {
 
 	Convey("Float", t, func() {
 		c := makeContext()
-		m := NewFloat("float", "description", nil)
-		So(func() { NewFloat("float", "description", nil) }, ShouldPanic)
+		m := NewFloatWithTargetType("float", tt, "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewFloatWithTargetType("float", tt, "description", nil) },
+			ShouldPanic,
+		)
 
 		So(m.Get(c), ShouldAlmostEqual, 0.0)
 
@@ -75,8 +92,12 @@ func TestMetrics(t *testing.T) {
 
 	Convey("FloatCounter", t, func() {
 		c := makeContext()
-		m := NewFloatCounter("float_counter", "description", nil)
-		So(func() { NewFloatCounter("float_counter", "description", nil) }, ShouldPanic)
+		m := NewFloatCounterWithTargetType("float_counter", tt, "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewFloatCounterWithTargetType("float_counter", tt, "description", nil) },
+			ShouldPanic,
+		)
 
 		So(m.Get(c), ShouldAlmostEqual, 0.0)
 
@@ -89,8 +110,9 @@ func TestMetrics(t *testing.T) {
 
 	Convey("String", t, func() {
 		c := makeContext()
-		m := NewString("string", "description", nil)
-		So(func() { NewString("string", "description", nil) }, ShouldPanic)
+		m := NewStringWithTargetType("string", tt, "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(func() { NewStringWithTargetType("string", tt, "description", nil) }, ShouldPanic)
 
 		So(m.Get(c), ShouldEqual, "")
 
@@ -103,8 +125,12 @@ func TestMetrics(t *testing.T) {
 
 	Convey("Bool", t, func() {
 		c := makeContext()
-		m := NewBool("bool", "description", nil)
-		So(func() { NewBool("bool", "description", nil) }, ShouldPanic)
+		m := NewBoolWithTargetType("bool", tt, "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewBoolWithTargetType("bool", tt, "description", nil) },
+			ShouldPanic,
+		)
 
 		So(m.Get(c), ShouldEqual, false)
 
@@ -117,8 +143,9 @@ func TestMetrics(t *testing.T) {
 
 	Convey("CumulativeDistribution", t, func() {
 		c := makeContext()
-		m := NewCumulativeDistribution("cumul_dist", "description", nil, distribution.FixedWidthBucketer(10, 20))
-		So(func() { NewCumulativeDistribution("cumul_dist", "description", nil, m.Bucketer()) }, ShouldPanic)
+		m := NewCumulativeDistributionWithTargetType("cumul_dist", tt, "description", nil, distribution.FixedWidthBucketer(10, 20))
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(func() { NewCumulativeDistributionWithTargetType("cumul_dist", tt, "description", nil, m.Bucketer()) }, ShouldPanic)
 
 		So(m.Bucketer().GrowthFactor(), ShouldEqual, 0)
 		So(m.Bucketer().Width(), ShouldEqual, 10)
@@ -141,8 +168,11 @@ func TestMetrics(t *testing.T) {
 
 	Convey("NonCumulativeDistribution", t, func() {
 		c := makeContext()
-		m := NewNonCumulativeDistribution("noncumul_dist", "description", nil, distribution.FixedWidthBucketer(10, 20))
-		So(func() { NewNonCumulativeDistribution("noncumul_dist", "description", nil, m.Bucketer()) }, ShouldPanic)
+		m := NewNonCumulativeDistributionWithTargetType("noncumul_dist", tt, "description", nil, distribution.FixedWidthBucketer(10, 20))
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(func() {
+			NewNonCumulativeDistributionWithTargetType("noncumul_dist", tt, "description", nil, m.Bucketer())
+		}, ShouldPanic)
 
 		So(m.Bucketer().GrowthFactor(), ShouldEqual, 0)
 		So(m.Bucketer().Width(), ShouldEqual, 10)
@@ -163,5 +193,138 @@ func TestMetrics(t *testing.T) {
 
 		So(func() { m.Set(c, d, "field") }, ShouldPanic)
 		So(func() { m.Get(c, "field") }, ShouldPanic)
+	})
+}
+
+func TestMetricsDefaultTargetType(t *testing.T) {
+	t.Parallel()
+
+	// These tests ensure that metrics are given target.NilType, if created
+	// without a target type specified.
+	tt := target.NilType
+
+	Convey("Int", t, func() {
+		m := NewInt("int", "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewIntWithTargetType("int", tt, "description", nil) },
+			ShouldPanic,
+		)
+	})
+
+	Convey("Counter", t, func() {
+		m := NewCounter("counter", "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewCounterWithTargetType("counter", tt, "description", nil) },
+			ShouldPanic,
+		)
+	})
+
+	Convey("Float", t, func() {
+		m := NewFloat("float", "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewFloatWithTargetType("float", tt, "description", nil) },
+			ShouldPanic,
+		)
+	})
+
+	Convey("FloatCounter", t, func() {
+		m := NewFloatCounter("float_counter", "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewFloatCounterWithTargetType("float_counter", tt, "description", nil) },
+			ShouldPanic,
+		)
+	})
+
+	Convey("String", t, func() {
+		m := NewString("string", "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(func() { NewStringWithTargetType("string", tt, "description", nil) }, ShouldPanic)
+	})
+
+	Convey("Bool", t, func() {
+		m := NewBool("bool", "description", nil)
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(
+			func() { NewBoolWithTargetType("bool", tt, "description", nil) },
+			ShouldPanic,
+		)
+	})
+
+	Convey("CumulativeDistribution", t, func() {
+		m := NewCumulativeDistribution("cumul_dist", "description", nil, distribution.FixedWidthBucketer(10, 20))
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(func() { NewCumulativeDistributionWithTargetType("cumul_dist", tt, "description", nil, m.Bucketer()) }, ShouldPanic)
+
+	})
+
+	Convey("NonCumulativeDistribution", t, func() {
+		m := NewNonCumulativeDistribution("noncumul_dist", "description", nil, distribution.FixedWidthBucketer(10, 20))
+		So(m.Info().TargetType, ShouldResemble, tt)
+		So(func() {
+			NewNonCumulativeDistributionWithTargetType("noncumul_dist", tt, "description", nil, m.Bucketer())
+		}, ShouldPanic)
+	})
+}
+
+// To avoid import cycle, unit tests for Registry with metrics are implemented
+// here.
+func TestMetricWithRegistry(t *testing.T) {
+	t.Parallel()
+
+	Convey("A single metric", t, func() {
+		Convey("with TargetType", func() {
+			metric := NewIntWithTargetType("registry/test/1", target.TaskType, "desc", nil)
+			var registered types.Metric
+			registry.Iter(func(m types.Metric) {
+				if reflect.DeepEqual(m.Info(), metric.Info()) {
+					registered = m
+				}
+			})
+			So(registered, ShouldNotBeNil)
+		})
+		Convey("without TargetType", func() {
+			metric := NewInt("registry/test/1", "desc", nil)
+			var registered types.Metric
+			registry.Iter(func(m types.Metric) {
+				if reflect.DeepEqual(m.Info(), metric.Info()) {
+					registered = m
+				}
+			})
+			So(registered, ShouldNotBeNil)
+		})
+	})
+
+	Convey("Multiple metrics", t, func() {
+		Convey("with the same metric name and targe type", func() {
+			NewIntWithTargetType("registry/test/2", target.TaskType, "desc", nil)
+			So(func(){
+				NewIntWithTargetType("registry/test/2", target.TaskType, "desc", nil)
+			}, ShouldPanic)
+		})
+
+		Convey("with the same metric name, but different target type", func() {
+			mTask := NewIntWithTargetType("registry/test/3", target.TaskType, "desc", nil)
+			mDevice := NewIntWithTargetType("registry/test/3", target.DeviceType, "desc", nil)
+			mNil := NewInt("registry/test/3", "desc", nil)
+
+			var rTask, rDevice, rNil types.Metric
+			registry.Iter(func(m types.Metric) {
+				if reflect.DeepEqual(m.Info(), mTask.Info()) {
+					rTask = m
+				} else if reflect.DeepEqual(m.Info(), mDevice.Info()) {
+					rDevice = m
+				} else if reflect.DeepEqual(m.Info(), mNil.Info()) {
+					rNil = m
+				}
+			})
+
+			So(rTask, ShouldNotBeNil)
+			So(rDevice, ShouldNotBeNil)
+			So(rNil, ShouldNotBeNil)
+		})
 	})
 }
