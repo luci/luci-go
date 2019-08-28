@@ -97,6 +97,7 @@ import (
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authdb/dump"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/internal"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/redisconn"
@@ -1185,6 +1186,11 @@ func (s *Server) initRedis() error {
 
 	s.redisPool = redisconn.NewPool(s.Options.RedisAddr)
 	s.Context = redisconn.UsePool(s.Context, s.redisPool)
+
+	// Use Redis as caching.BlobCache provider.
+	s.Context = caching.WithGlobalCache(s.Context, func(namespace string) caching.BlobCache {
+		return &internal.RedisBlobCache{Prefix: fmt.Sprintf("luci.blobcache.%s:", namespace)}
+	})
 
 	// Close all connections when exiting gracefully.
 	s.registerCleanup(func() {
