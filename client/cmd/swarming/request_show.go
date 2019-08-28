@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -22,9 +23,9 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 func cmdRequestShow(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -55,7 +56,8 @@ func (c *requestShowRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
-	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 	client, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err

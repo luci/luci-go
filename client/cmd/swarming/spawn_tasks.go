@@ -26,11 +26,11 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 func cmdSpawnTasks(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -92,7 +92,8 @@ func (c *spawnTasksRun) Run(a subcommands.Application, args []string, env subcom
 
 func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
 	start := time.Now()
-	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 
 	tasksFile, err := os.Open(c.jsonInput)
 	if err != nil {

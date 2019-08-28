@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -86,7 +88,8 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 func (c *archiveRun) main(a subcommands.Application, args []string) (err error) {
 	start := time.Now()
 	out := os.Stdout
-	ctx := common.CancelOnCtrlC(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 
 	var authClient *http.Client
 	authClient, err = c.createAuthClient(ctx)
