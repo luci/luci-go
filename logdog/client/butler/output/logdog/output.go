@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	api "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/client/butler/output"
-	out "go.chromium.org/luci/logdog/client/butler/output/pubsub"
 	"go.chromium.org/luci/logdog/common/types"
 
 	"cloud.google.com/go/pubsub"
@@ -216,8 +215,10 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	// Successfully return our Output instance.
 	//
 	// Note that we use our publishing context here.
-	return out.New(pctx, out.Config{
+	return newPubsub(pctx, pubsubConfig{
 		Topic:      pubSubTopicWrapper{psTopic},
+		Project:    string(cfg.Project),
+		Prefix:     string(cfg.Prefix),
 		Secret:     resp.Secret,
 		Compress:   true,
 		Track:      cfg.Track,

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pubsub
+package logdog
 
 import (
 	"bytes"
@@ -37,10 +37,10 @@ import (
 	"cloud.google.com/go/pubsub"
 )
 
-// Topic is an interface for a Pub/Sub topic.
+// pubsubTopic is an interface for a Pub/Sub topic.
 //
 // pubsub.Topic implements Topic.
-type Topic interface {
+type pubsubTopic interface {
 	// String returns the name of the topic.
 	String() string
 
@@ -48,13 +48,15 @@ type Topic interface {
 	Publish(context.Context, *pubsub.Message) (string, error)
 }
 
-// Config is a configuration structure for Pub/Sub output.
-type Config struct {
+// pubsubConfig is a configuration structure for Pub/Sub output.
+type pubsubConfig struct {
 	// Topic is the Pub/Sub topic to publish to.
-	Topic Topic
+	Topic pubsubTopic
 
-	// Secret, if not nil, is the prefix secret to attach to each outgoing bundle.
-	Secret types.PrefixSecret
+	// Project/Prefix/Secret to inject into each published bundle.
+	Project string
+	Prefix  string
+	Secret  types.PrefixSecret
 
 	// Compress, if true, enables zlib compression.
 	Compress bool
@@ -78,7 +80,7 @@ type buffer struct {
 // Butler Output that sends messages into Google Cloud PubSub as compressed
 // protocol buffer blobs.
 type pubSubOutput struct {
-	*Config
+	*pubsubConfig
 	context.Context
 
 	bufferPool sync.Pool // Pool of reusable buffer instances.
@@ -89,10 +91,10 @@ type pubSubOutput struct {
 	et *output.EntryTracker
 }
 
-// New instantiates a new GCPS output.
-func New(ctx context.Context, c Config) output.Output {
+// newPubsub instantiates a new GCPS output.
+func newPubsub(ctx context.Context, c pubsubConfig) output.Output {
 	o := pubSubOutput{
-		Config: &c,
+		pubsubConfig: &c,
 	}
 	o.bufferPool.New = func() interface{} { return &buffer{} }
 
@@ -115,6 +117,8 @@ func (o *pubSubOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 	b := o.bufferPool.Get().(*buffer)
 	defer o.bufferPool.Put(b)
 
+	bundle.Project = o.Project
+	bundle.Prefix = o.Prefix
 	bundle.Secret = []byte(o.Secret)
 	message, err := o.buildMessage(b, bundle)
 	if err != nil {

@@ -154,8 +154,6 @@ func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butl
 
 	// Instantiate our Butler.
 	butlerOpts := butler.Config{
-		Project:       a.project,
-		Prefix:        a.prefix,
 		GlobalTags:    a.globalTags,
 		MaxBufferAge:  time.Duration(a.maxBufferAge),
 		BufferLogs:    !a.noBufferLogs,
