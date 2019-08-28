@@ -17,8 +17,6 @@ package common
 import (
 	"container/heap"
 	"context"
-	"os"
-	"os/signal"
 	"sync"
 )
 
@@ -62,23 +60,6 @@ func (s semaphore) wait(ctx context.Context) error {
 // signal adds 1 to the semaphore.
 func (s semaphore) signal() {
 	s <- true
-}
-
-// CancelOnCtrlC returns a new Context that is canceled on Ctrl-C
-// (os.Interrupt).
-func CancelOnCtrlC(ctx context.Context) context.Context {
-	ctx2, cancel := context.WithCancel(ctx)
-	interrupted := make(chan os.Signal, 1)
-	signal.Notify(interrupted, os.Interrupt)
-	go func() {
-		select {
-		case <-interrupted:
-			cancel()
-		case <-ctx2.Done():
-		}
-		signal.Stop(interrupted)
-	}()
-	return ctx2
 }
 
 // NewGoroutinePool creates a new GoroutinePool running at most

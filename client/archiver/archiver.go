@@ -124,7 +124,7 @@ func (s *Stats) deepCopy() *Stats {
 // ctx will be used for logging.
 func New(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver {
 	// TODO(maruel): Cache hashes and server cache presence.
-	ctx2, cancel := context.WithCancel(common.CancelOnCtrlC(ctx))
+	ctx2, cancel := context.WithCancel(ctx)
 	a := &Archiver{
 		ctx:      ctx2,
 		cancel:   cancel,
