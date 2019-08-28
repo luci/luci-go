@@ -129,13 +129,19 @@ func TestBuffer(t *testing.T) {
 				}
 			}
 
-			// Start with two buffered tasks to fill our work channels so our buffer
+			// Start with 3 buffered tasks to fill our work channels so our buffer
 			// empty order is deterministic.
+			// TODO(tandrii): I don't fully understand why 3 is required for this test
+			// to work as expected. However, with just 2 items, I can reproduce
+			// racy failure whereby item #0 gets executed first after which order
+			// is correct 9,8,7,...,1 -- see https://crbug.com/998933.
 			startC0 := b.RunOne(func() error { return nil })
 			startC1 := b.RunOne(func() error { return nil })
+			startC2 := b.RunOne(func() error { return nil })
 			release := func() {
 				<-startC0
 				<-startC1
+				<-startC2
 			}
 
 			Convey(`Is FIFO by default.`, func() {
