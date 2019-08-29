@@ -33,8 +33,6 @@ func init() {
 type logdogOutputFactory struct {
 	service          string
 	prefixExpiration clockflag.Duration
-
-	track bool
 }
 
 var _ outputFactory = (*logdogOutputFactory)(nil)
@@ -48,10 +46,6 @@ func (f *logdogOutputFactory) option() multiflag.Option {
 	flags.Var(&f.prefixExpiration, "prefix-expiration",
 		"Amount of time after registration that the prefix will be active. If omitted, the service "+
 			"default will be used. This should exceed the expected lifetime of the job by a fair margin.")
-
-	// TODO(dnj): Default to false when mandatory debugging is finished.
-	flags.BoolVar(&f.track, "track", true,
-		"Track each sent message and dump at the end. This adds CPU/memory overhead.")
 
 	return opt
 }
@@ -81,7 +75,6 @@ func (f *logdogOutputFactory) configOutput(a *application) (output.Output, error
 		},
 		PublishContext: a.ncCtx,
 		RPCTimeout:     30 * time.Second,
-		Track:          f.track,
 	}
 	return cfg.Register(a)
 }

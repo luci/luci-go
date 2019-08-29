@@ -31,8 +31,6 @@ import (
 type Options struct {
 	// Path is the output file path.
 	Path string
-	// Track, if true, causes log entry output to be tracked.
-	Track bool
 }
 
 // New creates a new file Output from the specified Options.
@@ -41,9 +39,6 @@ func (opt Options) New(c context.Context) output.Output {
 		Context: c,
 		Options: &opt,
 		streams: map[types.StreamPath]*stream{},
-	}
-	if opt.Track {
-		o.et = &output.EntryTracker{}
 	}
 	return &o
 }
@@ -63,8 +58,6 @@ type fileOutput struct {
 	streams map[types.StreamPath]*stream
 	// stats is the streaming stats for this instance.
 	stats output.StatsBase
-	// et is the singleton EntryTracker.
-	et *output.EntryTracker
 }
 
 func (o *fileOutput) SendBundle(b *logpb.ButlerLogBundle) error {
@@ -87,9 +80,6 @@ func (o *fileOutput) SendBundle(b *logpb.ButlerLogBundle) error {
 		s.ingestBundleEntry(be)
 	}
 
-	if o.et != nil {
-		o.et.Track(b)
-	}
 	return nil
 }
 
@@ -106,16 +96,6 @@ func (o *fileOutput) Stats() output.Stats {
 		out.Merge(&st.stats)
 	}
 	return &out
-}
-
-func (o *fileOutput) Record() *output.EntryRecord {
-	o.Lock()
-	defer o.Unlock()
-
-	if o.et == nil {
-		return nil
-	}
-	return o.et.Record()
 }
 
 func (o *fileOutput) Close() {

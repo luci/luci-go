@@ -35,8 +35,6 @@ func (f *fileOutputFactory) option() multiflag.Option {
 
 	flags := opt.Flags()
 	flags.StringVar(&f.Path, "path", "", "Stream output text protobuf path.")
-	flags.BoolVar(&f.Track, "track", false,
-		"Track each sent message and dump at the end. This adds CPU/memory overhead.")
 
 	return opt
 }

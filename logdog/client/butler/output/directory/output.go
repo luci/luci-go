@@ -108,6 +108,5 @@ func (o *dirOutput) Close() {
 	o.streams = nil
 }
 
-func (o *dirOutput) MaxSize() int                { return 1024 * 1024 * 1024 }
-func (o *dirOutput) Stats() output.Stats         { return nil }
-func (o *dirOutput) Record() *output.EntryRecord { return nil }
+func (o *dirOutput) MaxSize() int        { return 1024 * 1024 * 1024 }
+func (o *dirOutput) Stats() output.Stats { return nil }

@@ -38,7 +38,6 @@ type logOutput struct {
 	bundleSize int
 
 	stats output.StatsBase
-	et    output.EntryTracker
 }
 
 // logOutput implements output.Output.
@@ -59,8 +58,6 @@ func New(ctx context.Context, bundleSize int) output.Output {
 func (o *logOutput) String() string { return "log" }
 
 func (o *logOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
-	o.et.Track(bundle)
-
 	o.Lock()
 	defer o.Unlock()
 
@@ -114,10 +111,6 @@ func (o *logOutput) Stats() output.Stats {
 
 	st := o.stats
 	return &st
-}
-
-func (o *logOutput) Record() *output.EntryRecord {
-	return o.et.Record()
 }
 
 func (o *logOutput) Close() {}
