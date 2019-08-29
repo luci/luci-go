@@ -16,9 +16,11 @@
 
 package streamclient
 
-import "time"
+import (
+	"time"
+)
 
 // In `race` mode, we multiply the timeout for the timeout by 10.
 //
 // Race mode is slow :).
-const timebombFuse = time.Second * 10
+var timebombFuse = time.Second * 10
