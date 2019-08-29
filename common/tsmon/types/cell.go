@@ -36,6 +36,7 @@ type MetricInfo struct {
 	Description string
 	Fields      []field.Field
 	ValueType   ValueType
+	TargetType  TargetType
 }
 
 // MetricMetadata contains user-provided metadata for a metric.

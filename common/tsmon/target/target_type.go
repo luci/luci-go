@@ -16,32 +16,40 @@ package target
 
 import (
 	"flag"
+	"fmt"
 
 	"go.chromium.org/luci/common/flag/flagenum"
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
-// Type is a target type enumeration.
-type Type string
+var _ flag.Value = (*targetTypeFlag)(nil)
 
-var _ flag.Value = (*Type)(nil)
+var (
+	// NilType is given if a metric was created without the TargetType specified.
+	NilType = types.TargetType{}
 
-const (
-	// DeviceType is a device target type.
-	DeviceType = Type("device")
-	// TaskType represents a task target type.
-	TaskType = Type("task")
+	DeviceType = (*NetworkDevice)(nil).Type()
+	TaskType = (*Task)(nil).Type()
 )
 
 var targetTypeEnum = flagenum.Enum{
-	"device": DeviceType,
-	"task":   TaskType,
+	DeviceType.Name: DeviceType,
+	TaskType.Name:   TaskType,
 }
 
-func (tt *Type) String() string {
-	return targetTypeEnum.FlagString(tt)
+type targetTypeFlag struct {
+	flags *Flags
 }
 
-// Set implements flag.Value.
-func (tt *Type) Set(v string) error {
-	return targetTypeEnum.FlagSet(tt, v)
+func (ttf *targetTypeFlag) String() string {
+	return ttf.flags.TargetType.Name
+}
+
+func (ttf *targetTypeFlag) Set(v string) error {
+	targetType, ok := targetTypeEnum[v]
+	if !ok {
+		return fmt.Errorf("unknown --ts-mon-target-type '%s'", v)
+	}
+	ttf.flags.TargetType = targetType.(types.TargetType)
+	return nil
 }
