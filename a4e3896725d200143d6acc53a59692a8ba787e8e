@@ -16,6 +16,24 @@
       "revId": "a4e3896725d200143d6acc53a59692a8ba787e8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d2c9c850_139b3878",
+        "filename": "common/system/filesystem/filepath_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-29T13:48:37Z",
+      "side": 1,
+      "message": "\u003e There\u0027s another more complex example. For a tree like:\n\u003e \n\u003e /\n\u003e   a/\n\u003e     b\n\u003e   b\n\u003e   c/\n\u003e     c1 symlink to \"../a\"\n\u003e \n\u003e And you archive \"c/b\", the symlink resolve won\u0027t trigger.\n\u003e \n\nDid you really mean to say \"c/b\"? Seems not exist in the tree?",
+      "parentUuid": "ce171b31_fc6db22b",
+      "revId": "a4e3896725d200143d6acc53a59692a8ba787e8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
