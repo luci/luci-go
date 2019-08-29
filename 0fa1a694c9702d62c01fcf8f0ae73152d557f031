@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b996d2a4_7d055bab",
+        "filename": "client/internal/common/concurrent_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-29T17:49:12Z",
+      "side": 1,
+      "message": "still want?",
+      "range": {
+        "startLine": 216,
+        "startChar": 0,
+        "endLine": 216,
+        "endChar": 28
+      },
+      "revId": "0fa1a694c9702d62c01fcf8f0ae73152d557f031",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
