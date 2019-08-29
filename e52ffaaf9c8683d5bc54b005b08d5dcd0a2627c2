@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "0eac16e2_6d44dc09",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-08-29T04:44:43Z",
+      "side": 1,
+      "message": "\u003e\u003e .. I wanted to express my strong opinion on not making low-level shared code slower for no good reason.\n\nI appreciate your opinion. I 100%-agree with you.\nI made a patch to replace defaultTargetLock with atomic.Value. Please take a final look.",
+      "parentUuid": "034328b7_389cbbc0",
+      "range": {
+        "startLine": 174,
+        "startChar": 24,
+        "endLine": 174,
+        "endChar": 40
+      },
+      "revId": "e52ffaaf9c8683d5bc54b005b08d5dcd0a2627c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6f64311f_236bcc58",
         "filename": "common/tsmon/store/inmemory.go",
         "patchSetId": 3
