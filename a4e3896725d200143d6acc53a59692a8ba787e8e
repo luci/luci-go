@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd4a2696_5d088f0e",
+        "filename": "logdog/client/cmd/logdog_butler/output_logdog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T18:39:22Z",
+      "side": 0,
+      "message": "are you sure it was unused? :)",
+      "range": {
+        "startLine": 53,
+        "startChar": 34,
+        "endLine": 53,
+        "endChar": 38
+      },
+      "revId": "a4e3896725d200143d6acc53a59692a8ba787e8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
