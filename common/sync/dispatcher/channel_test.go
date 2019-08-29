@@ -331,7 +331,7 @@ func TestImplicitDrops(t *testing.T) {
 		sentBatches := []int{}
 		sendBlocker := make(chan struct{})
 
-		limiter := rate.NewLimiter(rate.Every(10*time.Millisecond), 1)
+		limiter := rate.NewLimiter(rate.Every(100*time.Millisecond), 1)
 		ch, err := NewChannel(ctx, &Options{
 			QPSLimit: limiter,
 			Buffer: buffer.Options{
@@ -348,9 +348,9 @@ func TestImplicitDrops(t *testing.T) {
 		// Grab the first token; channel can't send until it recharges.
 		limiter.Reserve()
 
-		// Stuff a bunch of crap into the channel. We have 10ms to do this until the
-		// channel is able to send something. Should be plenty of time (running this
-		// on my laptop shows we have 6-7ms to spare with verbose logs).
+		// Stuff a bunch of crap into the channel. We have 100ms to do this until
+		// the channel is able to send something. Should be plenty of time (running
+		// this on my laptop takes 3-4ms with verbose logs).
 		for i := 0; i < 20; i++ {
 			ch.C <- i
 		}
