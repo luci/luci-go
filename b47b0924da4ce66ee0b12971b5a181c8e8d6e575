@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "998dc0f8_a405f9f7",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T23:05:20Z",
+      "side": 1,
+      "message": "Yes, also this will be gone in few next commits. Native code will only expose wellKnownDescSet, googTypesDescSet, luciTypesDescSet as variables and registration will be happening in the guts of stdlib (in a *.star file).",
+      "parentUuid": "11db9459_595367dc",
+      "range": {
+        "startLine": 273,
+        "startChar": 46,
+        "endLine": 273,
+        "endChar": 49
+      },
+      "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13f041f2_d17a0f66",
         "filename": "starlark/starlarkproto/descriptor_set.go",
         "patchSetId": 1
@@ -68,6 +92,30 @@
       "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41701f61_9b6208cf",
+        "filename": "starlark/starlarkproto/descriptor_set.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T23:05:20Z",
+      "side": 1,
+      "message": "The use case I have in mind is people giving up trying to understand how this stuff works, and using `protoc --include_imports` to generate self-contained descriptor sets for their hairy protos. Such descriptor sets generally can not be registered in the default loader, because it will cause double-registration of popular protos like google/protobuf/empty.proto (one copy comes with lucicfg, another comes inside the descriptor set generated via protoc --include_imports).\n\nCustom loaders allow such desperate people to get a clean loader and register their protos there. Protos produces through such loaders will not be inter-operable with protos produced through the default loader, but they still can be serialized etc and this is what users usually want.\n\nNote that Go lib solved this problem differently (and they have hopeless TODO to fix this solution): double registration of proto files and proto messages is simply ignored. The first file wins, even if it is totally different from the second file. I decided this is not a good solution, and it\u0027s better to ensure consistency, even if it means desperate people will have to learn more APIs (either API of using descriptor set dependencies + default loader, or using a custom loader and --include_imports sets).\n\nAnother use case for custom loaders is when users have protos that clash in names with some built-in protos. Custom loaders will allow to work around this.\n\nNote that custom loaders is \"advanced  API\", which exists only to provide solution to otherwise unsolvable situations.",
+      "parentUuid": "13f041f2_d17a0f66",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 33
+      },
+      "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "4d5b732d_88bdccc3",
+        "filename": "starlark/starlarkproto/descriptor_set.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T23:05:20Z",
+      "side": 1,
+      "message": "Replied already.",
+      "parentUuid": "87106cd1_d9f2f0ed",
+      "range": {
+        "startLine": 43,
+        "startChar": 25,
+        "endLine": 43,
+        "endChar": 31
+      },
+      "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2cbd2e9_b24053ce",
         "filename": "starlark/starlarkproto/descriptor_set.go",
         "patchSetId": 1
@@ -114,6 +186,30 @@
       "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "455240c5_a6664603",
+        "filename": "starlark/starlarkproto/descriptor_set.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T23:05:20Z",
+      "side": 1,
+      "message": "Will be in the next CL.",
+      "parentUuid": "c2cbd2e9_b24053ce",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 159,
+        "endChar": 45
+      },
+      "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
