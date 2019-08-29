@@ -270,6 +270,57 @@ func TestMetricsDefaultTargetType(t *testing.T) {
 	})
 }
 
+func TestMetricsWithMultipleTargets(t *testing.T) {
+	t.Parallel()
+	testTaskTargets := []target.Task{{TaskNum: 0}, {TaskNum: 1}}
+	testDeviceTargets := []target.NetworkDevice{{Hostname: "a"}}
+
+	Convey("with a single TargetType", t, func() {
+		c := makeContext()
+
+		Convey("with a single target in context", func() {
+			m := NewIntWithTargetType("m_with_s_s", target.TaskType, "desc", nil)
+			tctx := target.Set(c, &testTaskTargets[0])
+			So(m.Get(tctx), ShouldEqual, 0)
+			m.Set(tctx, 42)
+			So(m.Get(tctx), ShouldEqual, 42)
+		})
+
+		Convey("with multiple targets in context", func() {
+			m := NewIntWithTargetType("m_with_s_m", target.TaskType, "desc", nil)
+			tctx0 := target.Set(c, &testTaskTargets[0])
+			tctx1 := target.Set(tctx0, &testTaskTargets[1])
+			So(m.Get(tctx0), ShouldEqual, 0)
+			So(m.Get(tctx1), ShouldEqual, 0)
+			m.Set(tctx0, 41)
+			m.Set(tctx1, 42)
+			So(m.Get(tctx0), ShouldEqual, 41)
+			So(m.Get(tctx1), ShouldEqual, 42)
+		})
+	})
+
+	Convey("with multiple TargetTypes", t, func() {
+		c := makeContext()
+
+		Convey("with a single target in context for each type", func() {
+			tctx := target.Set(
+				target.Set(c, &testTaskTargets[0]), &testDeviceTargets[0],
+			)
+
+			// two metrics with the same name, but different types.
+			mDevice := NewIntWithTargetType("m_with_m_s", target.DeviceType, "desc", nil)
+			mTask := NewIntWithTargetType("m_with_m_s", target.TaskType, "desc", nil)
+
+			So(mTask.Get(tctx), ShouldEqual, 0)
+			So(mDevice.Get(tctx), ShouldEqual, 0)
+			mTask.Set(tctx, 41)
+			mDevice.Set(tctx, 42)
+			So(mTask.Get(tctx), ShouldEqual, 41)
+			So(mDevice.Get(tctx), ShouldEqual, 42)
+		})
+	})
+}
+
 // To avoid import cycle, unit tests for Registry with metrics are implemented
 // here.
 func TestMetricWithRegistry(t *testing.T) {

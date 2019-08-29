@@ -15,6 +15,7 @@
 package target
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -66,6 +67,77 @@ func TestCreateTargetFromHostname(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(target, ShouldHaveSameTypeAs, (*Task)(nil))
 			So(target.(*Task).HostName, ShouldEqual, "test-c4")
+		})
+	})
+}
+
+func TestTargetContext(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	deviceTarget := NetworkDevice{
+		Metro:     "test-metro",
+		Role:      "test-role",
+		Hostname:  "test-hostname",
+		Hostgroup: "test-hostgroup",
+	}
+	taskTarget := Task{
+		ServiceName: "test-service",
+		JobName:     "test-job",
+		DataCenter:  "test-datacenter",
+		HostName:    "test-hostname",
+		TaskNum:     0,
+	}
+
+	Convey("Without a target context", t, func() {
+		Convey("Get returns nil", func() {
+			So(Get(ctx, taskTarget.Type()), ShouldBeNil)
+		})
+	})
+	Convey("With a single target context", t, func() {
+		tctx := Set(ctx, &taskTarget)
+		Convey("Get returns the target if the type matches", func() {
+			So(Get(tctx, taskTarget.Type()), ShouldEqual, &taskTarget)
+		})
+		Convey("Get returns nil if the type doesn't match", func() {
+			So(Get(tctx, deviceTarget.Type()), ShouldBeNil)
+		})
+
+		Convey("Get returns the same target object for the same Type", func() {
+			clone := (&taskTarget).Clone().(*Task)
+			clone.TaskNum += 1
+
+			// Get should return the same target object, whichever target object
+			// the type was extracted from, as long as they all are the same type
+			// of target instances.
+			So(Get(tctx, taskTarget.Type()), ShouldEqual, &taskTarget)
+			So(Get(tctx, clone.Type()), ShouldEqual, &taskTarget)
+			So(Get(tctx, (*Task)(nil).Type()), ShouldEqual, &taskTarget)
+		})
+	})
+
+	Convey("With stacked target contexts", t, func() {
+		tctx := Set(ctx, &taskTarget)
+		tdctx := Set(tctx, &deviceTarget)
+
+		Convey("Child doesn't override the target for different types", func() {
+			So(Get(tdctx, taskTarget.Type()), ShouldEqual, &taskTarget)
+			So(Get(tdctx, deviceTarget.Type()), ShouldEqual, &deviceTarget)
+		})
+
+		Convey("Child overrides the target for the same type", func() {
+			clone := (&taskTarget).Clone().(*Task)
+			clone.TaskNum += 1
+
+			uptctx := Set(tdctx, clone)
+			// The target object for DeviceType should remain the same.
+			So(Get(uptctx, deviceTarget.Type()), ShouldEqual, &deviceTarget)
+			// but the object for TaskType should have been updated.
+			So(Get(uptctx, taskTarget.Type()), ShouldEqual, clone)
+			So(Get(uptctx, taskTarget.Type()), ShouldNotEqual, &taskTarget)
+
+			// the parent context should remain the same
+			So(Get(tdctx, taskTarget.Type()), ShouldEqual, &taskTarget)
+			So(Get(tdctx, deviceTarget.Type()), ShouldEqual, &deviceTarget)
 		})
 	})
 }

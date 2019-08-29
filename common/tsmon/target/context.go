@@ -20,30 +20,17 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
-type key int
-
-const targetKey key = iota
-
 // Set returns a new context with the given target set.  If this context is
 // passed to metric Set, Get or Incr methods the metrics for that target will be
 // affected.  A nil target means to use the default target.
 func Set(ctx context.Context, t types.Target) context.Context {
-	return context.WithValue(ctx, targetKey, t)
+	return context.WithValue(ctx, t.Type(), t)
 }
 
 // Get returns the target set in this context.
-func Get(ctx context.Context) types.Target {
-	if t, ok := ctx.Value(targetKey).(types.Target); ok {
+func Get(ctx context.Context, tt types.TargetType) types.Target {
+	if t, ok := ctx.Value(tt).(types.Target); ok {
 		return t
 	}
 	return nil
-}
-
-// GetWithDefault is like Get, except it returns the given default value if
-// there is no target set in the context.
-func GetWithDefault(ctx context.Context, def types.Target) types.Target {
-	if t := Get(ctx); t != nil {
-		return t
-	}
-	return def
 }
