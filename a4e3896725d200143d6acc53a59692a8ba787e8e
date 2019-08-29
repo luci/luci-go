@@ -52,6 +52,24 @@
       "revId": "a4e3896725d200143d6acc53a59692a8ba787e8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5fc645e5_100ea84e",
+        "filename": "common/system/filesystem/filepath_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-29T13:56:29Z",
+      "side": 1,
+      "message": "I got it.\nBut let me leave as-is now. If I found we use such symlinks, I will chnage behavior of this function. Or I will change implementation of caller side not to use many stats.",
+      "parentUuid": "42c71b7a_d48c0fb0",
+      "revId": "a4e3896725d200143d6acc53a59692a8ba787e8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
