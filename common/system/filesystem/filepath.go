@@ -22,6 +22,7 @@ import (
 	"runtime"
 	"syscall"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -103,4 +104,33 @@ func MakeTreeWritable(ctx context.Context, root string) error {
 		}
 		return nil
 	})
+}
+
+// ResolveSymlink recursively resolves simlink and returns absolute path that is
+// not symlink with stat.
+func ResolveSymlink(path string) (string, os.FileInfo, error) {
+	var stat os.FileInfo
+	for {
+		var err error
+		stat, err = os.Lstat(path)
+		if err != nil {
+			return "", stat, errors.Annotate(err, "failed to call Lstat(%s)", path).Err()
+		}
+		if (stat.Mode() & os.ModeSymlink) == 0 {
+			break
+		}
+
+		link, err := os.Readlink(path)
+		if err != nil {
+			return "", stat, errors.Annotate(err, "failed to call Readlink(%s)", path).Err()
+		}
+
+		if filepath.IsAbs(link) {
+			path = link
+		} else {
+			path = filepath.Join(filepath.Dir(path), link)
+		}
+	}
+
+	return path, stat, nil
 }
