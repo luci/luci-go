@@ -170,6 +170,30 @@
     },
     {
       "key": {
+        "uuid": "20d2d8b7_51023e2f",
+        "filename": "buildbucket/cmd/run_annotations/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-29T18:56:58Z",
+      "side": 1,
+      "message": "run_annotations is a tool that isn\u0027t currently used and never had tests. I\u0027m very tempted to delete it, but I believe I\u0027ll need to fix it, add tests and then use it for running sub annotation steps in the recipe engine soon",
+      "parentUuid": "99b3bb59_e58714c2",
+      "range": {
+        "startLine": 67,
+        "startChar": 34,
+        "endLine": 67,
+        "endChar": 54
+      },
+      "revId": "d987726094f43482f772d1873ac72fa8c59eb9e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7573b19b_5b8d4fcf",
         "filename": "buildbucket/cmd/run_annotations/main.go",
         "patchSetId": 2
