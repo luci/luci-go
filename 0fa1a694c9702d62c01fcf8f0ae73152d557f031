@@ -22,6 +22,30 @@
       "revId": "0fa1a694c9702d62c01fcf8f0ae73152d557f031",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a19471ca_b2f3fa42",
+        "filename": "client/internal/common/concurrent_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-29T19:07:01Z",
+      "side": 1,
+      "message": "nope. Also, I didn\u0027t properly test PS#1 -- it actually doesn\u0027t solve any problem. Please, see PS#2.",
+      "parentUuid": "b996d2a4_7d055bab",
+      "range": {
+        "startLine": 216,
+        "startChar": 0,
+        "endLine": 216,
+        "endChar": 28
+      },
+      "revId": "0fa1a694c9702d62c01fcf8f0ae73152d557f031",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
