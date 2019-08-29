@@ -689,7 +689,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 		})
 	})
 
-	Convey("Different targets", t, func() {
+	Convey("Multiple targets with the same TargetType", t, func() {
 		Convey("Gets from context", func() {
 			s := opts.Factory()
 			m := &FakeMetric{
@@ -719,6 +719,45 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			} else {
 				So(all[0].Target, ShouldResemble, &t)
 				So(all[1].Target, ShouldResemble, s.DefaultTarget())
+			}
+		})
+	})
+
+	Convey("Multiple targets with multiple TargetTypes", t, func() {
+		Convey("Gets from context", func() {
+			s := opts.Factory()
+			// Two metrics with the same metric name, but different types.
+			mTask := &FakeMetric{
+				types.MetricInfo{"m", "", []field.Field{}, types.NonCumulativeIntType, target.TaskType},
+				types.MetricMetadata{}}
+			mDevice := &FakeMetric{
+				types.MetricInfo{"m", "", []field.Field{}, types.NonCumulativeIntType, target.DeviceType},
+				types.MetricMetadata{}}
+			opts.RegistrationFinished(s)
+
+			taskTarget := target.Task{ServiceName: "foo"}
+			deviceTarget := target.NetworkDevice{Hostname: "bar"}
+			ctxWithTarget := target.Set(target.Set(ctx, &taskTarget), &deviceTarget)
+
+			s.Set(ctxWithTarget, mTask, time.Time{}, []interface{}{}, int64(42))
+			s.Set(ctxWithTarget, mDevice, time.Time{}, []interface{}{}, int64(43))
+
+			val := s.Get(ctxWithTarget, mTask, time.Time{}, []interface{}{})
+			So(val, ShouldEqual, 42)
+
+			val = s.Get(ctxWithTarget, mDevice, time.Time{}, []interface{}{})
+			So(val, ShouldEqual, 43)
+
+			all := s.GetAll(ctx)
+			So(len(all), ShouldEqual, 2)
+
+			// The order is undefined.
+			if all[0].Value.(int64) == 42 {
+				So(all[0].Target, ShouldResemble, &taskTarget)
+				So(all[1].Target, ShouldResemble, &deviceTarget)
+			} else {
+				So(all[0].Target, ShouldResemble, &deviceTarget)
+				So(all[1].Target, ShouldResemble, &taskTarget)
 			}
 		})
 	})
