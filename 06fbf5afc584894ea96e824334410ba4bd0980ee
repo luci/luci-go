@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88a0457c_f73943bc",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T22:23:38Z",
+      "side": 1,
+      "message": "https://m.media-amazon.com/images/I/816SBe7f4PL._SR500,500_.png",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 8
+      },
+      "revId": "06fbf5afc584894ea96e824334410ba4bd0980ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
