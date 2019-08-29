@@ -273,28 +273,9 @@ func hardlinkWithFallback(outfile, infile string) error {
 // To increase speed, HardlinkRecursively hardlinks individual files into the
 // (newly created) directory structure if possible.
 func HardlinkRecursively(src, dst string) error {
-	var stat os.FileInfo
-	for {
-		// Resolves src so the last part of the path is not a symlink anymore.
-		var err error
-		stat, err = os.Lstat(src)
-		if err != nil {
-			return errors.Annotate(err, "failed to call Lstat for %s", src).Err()
-		}
-		if (stat.Mode() & os.ModeSymlink) == 0 {
-			break
-		}
-
-		link, err := os.Readlink(src)
-		if err != nil {
-			return errors.Annotate(err, "failed to call Readlink for %s", src).Err()
-		}
-
-		if filepath.IsAbs(link) {
-			src = link
-		} else {
-			src = filepath.Join(filepath.Dir(src), link)
-		}
+	src, stat, err := ResolveSymlink(src)
+	if err != nil {
+		return errors.Annotate(err, "failed to call ResolveSymlink(%s)", src).Err()
 	}
 
 	if stat.Mode().IsRegular() {
