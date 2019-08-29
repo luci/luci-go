@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "52475eab_7c0c4611",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-29T18:14:08Z",
+      "side": 1,
+      "message": "very orderly 👍",
+      "range": {
+        "startLine": 187,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 46
+      },
+      "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11db9459_595367dc",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-29T18:14:08Z",
+      "side": 1,
+      "message": "all_builtin? b/c new stuff added by users won\u0027t go into this, right?",
+      "range": {
+        "startLine": 273,
+        "startChar": 46,
+        "endLine": 273,
+        "endChar": 49
+      },
+      "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13f041f2_d17a0f66",
+        "filename": "starlark/starlarkproto/descriptor_set.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-29T18:14:08Z",
+      "side": 1,
+      "message": "why is the separate register call needed? Why doesn\u0027t `proto.new_descriptor_set` do this by having `loader\u003dl`? Or is this so that users can have a private descriptor set?\n\nI\u0027m not sure there\u0027s a lot of value in having \u0027private\u0027 protos; At best you\u0027re the only one using them, and at worst folks just load them multiple times into multiple private sets.\n\nUnless I\u0027m misunderstanding?",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 33
+      },
+      "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87106cd1_d9f2f0ed",
+        "filename": "starlark/starlarkproto/descriptor_set.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-29T18:14:08Z",
+      "side": 1,
+      "message": "what\u0027s the use case for allowing multiple loaders?",
+      "range": {
+        "startLine": 43,
+        "startChar": 25,
+        "endLine": 43,
+        "endChar": 31
+      },
+      "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2cbd2e9_b24053ce",
+        "filename": "starlark/starlarkproto/descriptor_set.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-29T18:14:08Z",
+      "side": 1,
+      "message": "ah",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 159,
+        "endChar": 45
+      },
+      "revId": "b47b0924da4ce66ee0b12971b5a181c8e8d6e575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
