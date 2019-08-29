@@ -146,6 +146,30 @@
     },
     {
       "key": {
+        "uuid": "99b3bb59_e58714c2",
+        "filename": "buildbucket/cmd/run_annotations/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T18:33:01Z",
+      "side": 1,
+      "message": "I\u0027m worried this wasn\u0027t caught by any test :)",
+      "parentUuid": "b1d29303_2e0ca754",
+      "range": {
+        "startLine": 67,
+        "startChar": 34,
+        "endLine": 67,
+        "endChar": 54
+      },
+      "revId": "d987726094f43482f772d1873ac72fa8c59eb9e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7573b19b_5b8d4fcf",
         "filename": "buildbucket/cmd/run_annotations/main.go",
         "patchSetId": 2
@@ -641,6 +665,30 @@
       "revId": "d987726094f43482f772d1873ac72fa8c59eb9e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a371019_9c479c8e",
+        "filename": "luciexe/exe/props.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T18:33:01Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "bca45864_810a21ed",
+      "range": {
+        "startLine": 124,
+        "startChar": 28,
+        "endLine": 124,
+        "endChar": 42
+      },
+      "revId": "d987726094f43482f772d1873ac72fa8c59eb9e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

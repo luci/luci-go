@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4042d117_93673fbd",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T18:33:01Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 176,
+        "startChar": 3,
+        "endLine": 179,
+        "endChar": 68
+      },
+      "revId": "bb659e73e85bf56e30699920c9e7c8b494f7fd01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6782294b_1f65cf81",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T18:33:01Z",
+      "side": 1,
+      "message": "nestiness in this function is bananas, please convert some anonymous functions into top-level non-anonymous ones, e.g. one level of nestiness can be trivially removed by moving osExit(...) call to Run(). I think this will also allow to get rid of osExit mock.",
+      "revId": "bb659e73e85bf56e30699920c9e7c8b494f7fd01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a616a1b_96b43c5d",
+        "filename": "luciexe/exe/props_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T18:33:01Z",
+      "side": 1,
+      "message": "Please add a test for \u0027nil\u0027 value (e.g. what happens if one of values in WriteProperties is nil?). Same when reading NullValue from struct.",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 19
+      },
+      "revId": "bb659e73e85bf56e30699920c9e7c8b494f7fd01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
