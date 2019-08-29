@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e8a42f86_16102d22",
+        "filename": "logdog/client/butlerlib/streamclient/timebomb_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-29T19:28:11Z",
+      "side": 1,
+      "message": "// timebomb forcibly kill a test after timebombFuse time.\n//\n// Use with: `defer timebomb()()`",
+      "revId": "c88f26143cbebbe45e46f7bca24dd11776e70d5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
