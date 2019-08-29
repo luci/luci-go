@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "034328b7_389cbbc0",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-29T03:45:03Z",
+      "side": 1,
+      "message": "I\u0027m asking because RWMutex and cloning is totally an overkill here, since atomic.Value would do same job in less amount of code and will run ~40x faster (per https://gist.github.com/vadimsht/0c4a93ceb5beb1b64fdbef04de7c1a6e). It will also produce less garbage for GC to collect.\n\nI acknowledge that in the overall performance profile this will be far from the bottleneck, but metric.Set and metric.Incr are very hot code, they are called dozens of times per EVERY request, in EVERY service. Even small improvements like this eventually add up to noticeable reduction of CPUs-per-hour bill. In theory. In practice it will probably save us like $10 bucks, but I\u0027m advocating the general principle of making low-lever shared code fast, especially if it doesn\u0027t require much effort.\n\nI\u0027m asking to make this change now in particular, because before your CL DefaultTarget() wasn\u0027t in the hot code path (IIUC, it was used only when flushing metrics, once per minute). Now it is. Performance of tsmon library is already crap, making it even slower doesn\u0027t seem like a good plan, considering there\u0027s an easy way of avoiding this particular slowdown.\n\nGenerally I agree DefaultTarget()/SetDefaultTarget() should disappear. I believe the only non-test caller of SetDefaultTarget is https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/server/tsmon/middleware.go?q\u003dSetDefaultTarget\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d381 and I know how to get rid of it (but only after your CL stack lands). So maybe the whole discussion is moot. But I wanted to express my strong opinion on not making low-level shared code slower for no good reason.",
+      "parentUuid": "44ea09af_1f9b41e0",
+      "range": {
+        "startLine": 174,
+        "startChar": 24,
+        "endLine": 174,
+        "endChar": 40
+      },
+      "revId": "e52ffaaf9c8683d5bc54b005b08d5dcd0a2627c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6f64311f_236bcc58",
         "filename": "common/tsmon/store/inmemory.go",
         "patchSetId": 3
