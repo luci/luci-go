@@ -184,40 +184,36 @@ func TestGoroutinePoolCancelFuncCalled(t *testing.T) {
 
 func testGoroutinePoolCancelFuncCalled(t *testing.T, newPool newPoolFunc) {
 	t.Parallel()
+
 	Convey(`A goroutine pool should handle an onCancel call.`, t, func() {
 		// Simulate deterministically when the semaphore returns immediately
 		// because of cancellation, as opposed to actually having a resource.
-		pipe := make(chan string, 2)
+		pipe := make(chan string) // must be unbuffered.
 		logs := make(chan string, 3)
 		slow := func() {
-			// Get 2 item to make sure GoroutinePool can't schedule new job.
-			item := <-pipe
+			item := <-pipe // block here until the main Goroutine pushes into pipe.
 			logs <- item
+			item = <-pipe // block here until the main Goroutine pushes 2nd time.
 		}
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		pool := newPool(ctx, 1)
 		pool.Schedule(slow, slow)
-		// This job would have to wait for slow to finish,
-		// but slow is waiting for channel to have something.
-		// This is sort of a deadlock.
-		pool.Schedule(func() { pipe <- "job" }, func() { pipe <- "onCancel" })
+		pipe <- "ensure slow actually started s.t. new job can't *yet* acquire semaphore"
+		pool.Schedule(func() { logs <- "job executed" }, func() { logs <- "job cancelled" })
 		cancel()
 		// Canceling should result in onCancel of last job.
 		// In case it's a bug, don't wait forever for slow, but unblock slow().
-		pipe <- "unblock"
+		pipe <- "let slow job finish *after* ctx is cancelled"
 		So(pool.Wait(), ShouldResemble, context.Canceled)
 		close(pipe)
-		if pipeItem, ok := <-pipe; ok {
-			logs <- pipeItem
-		}
 		close(logs)
 		for l := range logs {
-			if l == "onCancel" {
+			if l == "job cancelled" {
 				return
 			}
 		}
-		t.Fatalf("onCancel wasn't called.")
+		t.Fatalf("job wasn't cancelled.")
 	})
 }
 

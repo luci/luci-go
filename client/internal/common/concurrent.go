@@ -44,15 +44,13 @@ func (s semaphore) wait(ctx context.Context) error {
 		// Err() is guaranteed to be non-nil.
 		return ctx.Err()
 	case <-s:
-		/*
-			// Do a last check, just in case. It makes things slightly slower but
-			// reduces the chance of race condition with having a spurious item running
-			// after cancellation.
-			if err := ctx.Err(); err != nil {
-				s.signal()
-				return err
-			}
-		*/
+		// Do a last check, just in case. It makes things slightly slower but
+		// reduces the chance of race condition with having a spurious item running
+		// after cancellation.
+		if err := ctx.Err(); err != nil {
+			s.signal()
+			return err
+		}
 		return nil
 	}
 }
