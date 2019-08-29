@@ -12,12 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !race
-
 package streamclient
 
 import (
+	"runtime"
 	"time"
 )
 
-var timebombFuse = time.Second
+func init() {
+	if runtime.GOOS == "windows" {
+		timebombFuse *= 2
+	}
+}
+
+// use like `defer timebomb()()`
+func timebomb() func() {
+	diffuseTimebomb := make(chan struct{})
+	timebombDiffused := make(chan struct{})
+	go func() {
+		defer close(timebombDiffused)
+		select {
+		case <-time.After(timebombFuse):
+			panic("runWireProtocolTest took too long.")
+		case <-diffuseTimebomb:
+		}
+	}()
+	return func() {
+		close(diffuseTimebomb)
+		<-timebombDiffused // explicitly sync with the completion of the goroutine.
+	}
+}
