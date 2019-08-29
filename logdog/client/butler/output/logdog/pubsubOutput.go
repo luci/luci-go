@@ -61,10 +61,6 @@ type pubsubConfig struct {
 	// Compress, if true, enables zlib compression.
 	Compress bool
 
-	// Track, if true, tracks all log entries that have been successfully
-	// submitted.
-	Track bool
-
 	// RPCTimeout is the timeout to apply to an individual RPC.
 	RPCTimeout time.Duration
 }
@@ -87,8 +83,6 @@ type pubSubOutput struct {
 
 	statsMu sync.Mutex
 	stats   output.StatsBase
-
-	et *output.EntryTracker
 }
 
 // newPubsub instantiates a new GCPS output.
@@ -97,10 +91,6 @@ func newPubsub(ctx context.Context, c pubsubConfig) output.Output {
 		pubsubConfig: &c,
 	}
 	o.bufferPool.New = func() interface{} { return &buffer{} }
-
-	if c.Track {
-		o.et = &output.EntryTracker{}
-	}
 
 	o.Context = log.SetField(ctx, "pubsub", &o)
 	return &o
@@ -142,10 +132,6 @@ func (o *pubSubOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 		return err
 	}
 
-	if o.et != nil {
-		o.et.Track(bundle)
-	}
-
 	st.F.SentBytes += int64(len(message.Data))
 	st.F.SentMessages++
 	return nil
@@ -161,13 +147,6 @@ func (o *pubSubOutput) Stats() output.Stats {
 
 	statsCopy := o.stats
 	return &statsCopy
-}
-
-func (o *pubSubOutput) Record() *output.EntryRecord {
-	if o.et == nil {
-		return nil
-	}
-	return o.et.Record()
 }
 
 func (o *pubSubOutput) Close() {

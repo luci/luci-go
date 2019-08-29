@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sort"
 	"strings"
 	"time"
 
@@ -168,35 +167,15 @@ func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butl
 
 	// Log the Butler's emitted streams.
 	defer func() {
-		if r := out.Record(); r != nil {
-			// Log detail stream record.
-			streams := make([]string, 0, len(r.Streams))
-			for k := range r.Streams {
-				streams = append(streams, string(k))
-			}
-			sort.Strings(streams)
-
-			for i, stream := range streams {
-				rec := r.Streams[types.StreamPath(stream)]
-
-				ranges := make([]string, len(rec.Ranges))
-				for i, rng := range rec.Ranges {
-					ranges[i] = rng.String()
-				}
-				log.Infof(a, "%d) Stream [%s]: %s", i, stream, strings.Join(ranges, " "))
-			}
-		} else {
-			// No record; display stream overview.
-			s := b.Streams()
-			paths := make([]types.StreamPath, len(s))
-			for i, sn := range s {
-				paths[i] = a.prefix.Join(sn)
-			}
-			log.Fields{
-				"count":   len(paths),
-				"streams": paths,
-			}.Infof(a, "Butler emitted %d stream(s).", len(paths))
+		s := b.Streams()
+		paths := make([]types.StreamPath, len(s))
+		for i, sn := range s {
+			paths[i] = a.prefix.Join(sn)
 		}
+		log.Fields{
+			"count":   len(paths),
+			"streams": paths,
+		}.Infof(a, "Butler emitted %d stream(s).", len(paths))
 	}()
 
 	// Execute our Butler run function with the instantiated Butler.

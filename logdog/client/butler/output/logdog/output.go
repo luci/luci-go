@@ -82,10 +82,6 @@ type Config struct {
 
 	// RPCTimeout, if > 0, is the timeout to apply to an individual RPC.
 	RPCTimeout time.Duration
-
-	// Track, if true, instructs this Output instance to track all log entries
-	// that have been sent in-memory. This is useful for debugging.
-	Track bool
 }
 
 // Register registers the supplied Prefix with the Coordinator. Upon success,
@@ -222,7 +218,6 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		Prefix:     string(cfg.Prefix),
 		Secret:     resp.Secret,
 		Compress:   true,
-		Track:      cfg.Track,
 		RPCTimeout: cfg.RPCTimeout,
 	}), nil
 }
