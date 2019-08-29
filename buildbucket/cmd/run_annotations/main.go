@@ -30,119 +30,104 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/milo"
-	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/logdog/client/annotee"
 	"go.chromium.org/luci/logdog/client/annotee/annotation"
-	"go.chromium.org/luci/luciexe/old_client"
+	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
+	"go.chromium.org/luci/luciexe/exe"
 )
 
-var (
-	client  old_client.Client
-	build   *pb.Build
-	buildMU sync.Mutex
-)
-
-// check marks the build as INFRA_FAILURE and exits with code 1 if err is not nil.
 func check(err error) {
-	if err == nil {
-		return
-	}
-
-	buildMU.Lock()
-	defer buildMU.Unlock()
-	build.Status = pb.Status_INFRA_FAILURE
-	build.SummaryMarkdown = fmt.Sprintf("run_annotations failure: `%s`", err)
-	client.WriteBuild(build)
-	fmt.Fprintln(os.Stderr, err)
-	os.Exit(1)
-}
-
-// sendAnnotations parses steps and properties from ann, updates build and sends
-// to the caller.
-func sendAnnotations(ctx context.Context, ann *milo.Step) error {
-	fullPrefix := fmt.Sprintf("%s/%s", client.Logdog.Prefix, client.Logdog.Namespace)
-	steps, err := deprecated.ConvertBuildSteps(ctx, ann.Substep, client.Logdog.CoordinatorHost, fullPrefix)
 	if err != nil {
-		return errors.Annotate(err, "failed to extra steps from annotations").Err()
+		panic(err)
 	}
-
-	props, err := milo.ExtractProperties(ann)
-	if err != nil {
-		return errors.Annotate(err, "failed to extract properties from annotations").Err()
-	}
-
-	buildMU.Lock()
-	defer buildMU.Unlock()
-	build.Steps = steps
-	build.Output.Properties = props
-	return errors.Annotate(client.WriteBuild(build), "failed to write build message").Err()
 }
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	signals.HandleInterrupt(cancel)
+	exe.Run(func(ctx context.Context, build *pb.Build, sendBuild exe.BuildSender) error {
+		opts := struct {
+			Args []string `json:"args"`
+		}{}
+		err := exe.ParseProperties(build.Input.Properties, map[string]interface{}{
+			"run_annotations": &opts,
+		})
+		check(err)
 
-	args := os.Args[1:]
-	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: run_annotations ./my_program.sh args for my program")
-		os.Exit(1)
-	}
+		args := opts.Args
+		if len(args) == 0 {
+			return errors.New("No arguments were provided")
+		}
 
-	if err := client.Init(); err != nil {
-		fmt.Fprintln(os.Stderr, "failed to initialize LUCI Executable client")
-		os.Exit(1)
-	}
+		cwd, err := os.Getwd()
+		check(err)
 
-	cwd, err := os.Getwd()
-	check(err)
+		// Start the subprocess.
+		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+		stdout, err := cmd.StdoutPipe()
+		check(err)
+		stderr, err := cmd.StderrPipe()
+		check(err)
+		err = cmd.Start()
+		check(errors.Annotate(err, "failed to start subprocess").Err())
 
-	// Start the subprocess.
-	cmd := exec.CommandContext(ctx, args[1], args[2:]...)
-	stdout, err := cmd.StdoutPipe()
-	check(err)
-	stderr, err := cmd.StderrPipe()
-	check(err)
-	err = cmd.Start()
-	check(errors.Annotate(err, "failed to start subprocess").Err())
+		ldBootstrap, err := bootstrap.Get()
+		check(err)
 
-	// Run STDOUT/STDERR streams through the processor.
-	// Run the process' output streams through Annotee. This will block until
-	// they are all consumed.
-	processor := annotee.New(ctx, annotee.Options{
-		Client:                 client.Logdog.Client,
-		Execution:              annotation.ProbeExecution(os.Args, os.Environ(), cwd),
-		MetadataUpdateInterval: 30 * time.Second,
-		Offline:                false,
-		CloseSteps:             true,
-		AnnotationUpdated: func(annBytes []byte) {
-			ann := &milo.Step{}
-			check(errors.Annotate(proto.Unmarshal(annBytes, ann), "failed to parse annotation proto").Err())
-			check(sendAnnotations(ctx, ann))
-		},
+		var buildMU sync.Mutex
+		sendAnnotations := func(ann *milo.Step) {
+			fullPrefix := fmt.Sprintf("%s/%s", ldBootstrap.Prefix, ldBootstrap.Namespace)
+			steps, err := deprecated.ConvertBuildSteps(ctx, ann.Substep, ldBootstrap.CoordinatorHost, fullPrefix)
+			check(errors.Annotate(err, "failed to extract steps from annotations").Err())
+
+			props, err := milo.ExtractProperties(ann)
+			check(errors.Annotate(err, "failed to extract properties from annotations").Err())
+
+			buildMU.Lock()
+			defer buildMU.Unlock()
+			build.Steps = steps
+			build.Output.Properties = props
+			sendBuild()
+		}
+
+		// Run STDOUT/STDERR streams through the processor.
+		// Run the process' output streams through Annotee. This will block until
+		// they are all consumed.
+		processor := annotee.New(ctx, annotee.Options{
+			Client:                 ldBootstrap.Client,
+			Execution:              annotation.ProbeExecution(os.Args, os.Environ(), cwd),
+			MetadataUpdateInterval: 30 * time.Second,
+			Offline:                false,
+			CloseSteps:             true,
+			AnnotationUpdated: func(annBytes []byte) {
+				ann := &milo.Step{}
+				check(errors.Annotate(proto.Unmarshal(annBytes, ann), "failed to parse annotation proto").Err())
+				sendAnnotations(ann)
+			},
+		})
+		streams := []*annotee.Stream{
+			{
+				Reader:   stdout,
+				Name:     annotee.STDOUT,
+				Annotate: true,
+			},
+			{
+				Reader:   stderr,
+				Name:     annotee.STDERR,
+				Annotate: true,
+			},
+		}
+		err = processor.RunStreams(streams)
+		check(errors.Annotate(err, "failed to process annotations").Err())
+
+		// Wait for the subprocess to exit.
+		switch err := cmd.Wait().(type) {
+		case *exec.ExitError:
+		case nil:
+		default:
+			check(errors.Annotate(err, "failed to wait for the subprocess to exit").Err())
+		}
+
+		// Send the final state.
+		sendAnnotations(processor.Finish().RootStep().Proto())
+		return nil
 	})
-	streams := []*annotee.Stream{
-		{
-			Reader:   stdout,
-			Name:     annotee.STDOUT,
-			Annotate: true,
-		},
-		{
-			Reader:   stderr,
-			Name:     annotee.STDERR,
-			Annotate: true,
-		},
-	}
-	err = processor.RunStreams(streams)
-	check(errors.Annotate(err, "failed to process annotations").Err())
-
-	// Wait for the subprocess to exist.
-	switch err := cmd.Wait().(type) {
-	case *exec.ExitError:
-	case nil:
-	default:
-		check(errors.Annotate(err, "failed to wait for the subprocess to exit").Err())
-	}
-
-	// Send the final state.
-	check(sendAnnotations(ctx, processor.Finish().RootStep().Proto()))
 }

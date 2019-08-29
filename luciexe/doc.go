@@ -189,6 +189,13 @@
 // but no Build message (or an invalid/improperly formatted Build message)
 // is written, the caller MUST interpret this as an INFRA_FAILURE status.
 //
+//   NOTE: JSON outputs SHOULD be written with the original proto field names,
+//   not the lowerCamelCase names; downstream users may not be using jsonpb
+//   unmarshallers to interpret the JSON data.
+//
+//   This may need to be revised in a subsequent version of this API
+//   specification.
+//
 // LUCI Executables MAY invoke other LUCI Executables as sub-steps and have the
 // Steps from the child luciexe show in the parent's Build updates. This is one
 // of the responsibilities of the host application.
