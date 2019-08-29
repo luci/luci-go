@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ce171b31_fc6db22b",
+        "filename": "common/system/filesystem/filepath_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-29T13:11:24Z",
+      "side": 1,
+      "message": "There\u0027s another more complex example. For a tree like:\n\n/\n  a/\n    b\n  b\n  c/\n    c1 symlink to \"../a\"\n\nAnd you archive \"c/b\", the symlink resolve won\u0027t trigger.\n\nWhat the python code is to try to resolve symlinks in any path component rooted at the base directory, then send this. It\u0027s like os.realpath(), but with only resolving symlinks based on the root archival directory .\n\nBut thinking about this more, your code is probably sufficient after all, depending on how inputs are specified.",
+      "revId": "a4e3896725d200143d6acc53a59692a8ba787e8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
