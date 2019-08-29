@@ -143,3 +143,22 @@ func TestMakeTreeWritable(t *testing.T) {
 		})
 	})
 }
+
+func TestResolveSymlink(t *testing.T) {
+	t.Parallel()
+	Convey("ResolveSymlink", t, func() {
+		withTempDir(t, func(dir string) {
+			regular, err := os.Create(filepath.Join(dir, "regular"))
+			So(err, ShouldBeNil)
+			So(regular.Close(), ShouldBeNil)
+
+			So(os.Symlink("regular", filepath.Join(dir, "symlink1")), ShouldBeNil)
+			So(os.Symlink("symlink1", filepath.Join(dir, "symlink2")), ShouldBeNil)
+			So(os.Symlink("symlink2", filepath.Join(dir, "symlink3")), ShouldBeNil)
+
+			path, _, err := ResolveSymlink(filepath.Join(dir, "symlink3"))
+			So(err, ShouldBeNil)
+			So(path, ShouldEqual, filepath.Join(dir, "regular"))
+		})
+	})
+}
