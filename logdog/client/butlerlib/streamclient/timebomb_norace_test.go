@@ -16,6 +16,8 @@
 
 package streamclient
 
-import "time"
+import (
+	"time"
+)
 
-const timebombFuse = time.Second
+var timebombFuse = time.Second

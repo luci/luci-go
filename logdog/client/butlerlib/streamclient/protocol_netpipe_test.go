@@ -17,7 +17,9 @@
 package streamclient
 
 import (
+	"fmt"
 	"net"
+	"os"
 	"testing"
 
 	"github.com/microsoft/go-winio"
@@ -30,13 +32,16 @@ import (
 func TestNamedPipe(t *testing.T) {
 	t.Parallel()
 
+	counter := 0
+
 	Convey(`test windows NamedPipe`, t, func() {
 		defer timebomb()()
 
 		ctx, cancel := mkTestCtx()
 		defer cancel()
 
-		name := `streamclient.test`
+		name := fmt.Sprintf(`streamclient.test.%d.%d`, os.Getpid(), counter)
+		counter++
 
 		dataChan, _, closer := acceptOn(ctx, func() (net.Listener, error) {
 			return winio.ListenPipe(streamproto.LocalNamedPipePath(name), nil)
