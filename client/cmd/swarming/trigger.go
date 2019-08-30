@@ -109,6 +109,7 @@ type triggerRun struct {
 	isolated                  string
 	dimensions                stringmapflag.Value
 	env                       stringmapflag.Value
+	envPrefix                 stringmapflag.Value
 	idempotent                bool
 	lowerPriority             bool
 	containmentType           containmentType
@@ -141,6 +142,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
 	c.Flags.Var(&c.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	c.Flags.Var(&c.env, "env", "Environment variables to set.")
+	c.Flags.Var(&c.envPrefix, "env-prefix", "Prepend task-relative local path to the task's environment variable using os-appropriate pathsep character. Can be specified multiple times for the same VAR to add multiple paths.")
 	c.Flags.BoolVar(&c.idempotent, "idempotent", false, "When set, the server will actively try to find a previous task with the same parameter and return this result instead if possible.")
 	c.Flags.BoolVar(&c.lowerPriority, "lower-priority", false, "When set, the task will run with a lower process priority.")
 	c.containmentType = "NONE"
@@ -307,6 +309,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) *
 		Command:              commands,
 		Dimensions:           mapToArray(c.dimensions),
 		Env:                  mapToArray(c.env),
+		EnvPrefixes:          mapToArray(c.envPrefix),
 		ExecutionTimeoutSecs: c.hardTimeout,
 		ExtraArgs:            extraArgs,
 		GracePeriodSecs:      30,
