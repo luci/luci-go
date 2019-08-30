@@ -111,6 +111,42 @@ func TestBuffer(t *testing.T) {
 			// no data races.
 			b.Maximum = 1
 
+			worker_started := make(chan int, iters+3) // tasks push here; buffered to avoid the need to drain.
+			wait := make(chan struct{})               // first task will wait until it is closed.
+			gen := func(taskC chan<- func() error) {
+				// Start with 2 buffered tasks to fill our work channels so our buffer
+				// empty order is deterministic.
+				for i := -2; i < 0; i++ {
+					i := i
+					taskC <- func() error {
+						worker_started <- i
+						<-wait
+						return nil
+					}
+				}
+				// Ensure 1 task has actually started execution. Note that the task is
+				// still running because it's blocked on `wait` channel.
+				<-worker_started
+				// Add `iters` tasks which should be executed in the right order.
+				for i := 0; i < iters; i++ {
+					i := i
+					taskC <- func() error {
+						worker_started <- i
+						return numberError(i)
+					}
+				}
+				// Finally, add 1 more "sentinel" task ...
+				taskC <- func() error {
+					worker_started <- -3
+					<-wait
+					return nil
+				}
+				// ... at this point since taskC is unbuffered channel,
+				// we are certain Buffer has accepted all `iters` tasks.
+				// Unblock the first 2 tasks.
+				close(wait)
+			}
+
 			account := func(errC <-chan error) []int {
 				var order []int
 				for err := range errC {
@@ -120,37 +156,14 @@ func TestBuffer(t *testing.T) {
 				}
 				return order
 			}
-			gen := func(taskC chan<- func() error) {
-				for i := 0; i < iters; i++ {
-					i := i
-					taskC <- func() error {
-						return numberError(i)
-					}
-				}
-			}
-
-			// Start with 3 buffered tasks to fill our work channels so our buffer
-			// empty order is deterministic.
-			// TODO(tandrii): I don't fully understand why 3 is required for this test
-			// to work as expected. However, with just 2 items, I can reproduce
-			// racy failure whereby item #0 gets executed first after which order
-			// is correct 9,8,7,...,1 -- see https://crbug.com/998933.
-			startC0 := b.RunOne(func() error { return nil })
-			startC1 := b.RunOne(func() error { return nil })
-			startC2 := b.RunOne(func() error { return nil })
-			release := func() {
-				<-startC0
-				<-startC1
-				<-startC2
-			}
 
 			Convey(`Is FIFO by default.`, func() {
-				So(account(b.runThen(gen, release)), ShouldResemble, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+				So(account(b.Run(gen)), ShouldResemble, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 			})
 
 			Convey(`Will be LIFO if LIFO is set.`, func() {
 				b.SetFIFO(false)
-				So(account(b.runThen(gen, release)), ShouldResemble, []int{9, 8, 7, 6, 5, 4, 3, 2, 1, 0})
+				So(account(b.Run(gen)), ShouldResemble, []int{9, 8, 7, 6, 5, 4, 3, 2, 1, 0})
 			})
 		})
 
