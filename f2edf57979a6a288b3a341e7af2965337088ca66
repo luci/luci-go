@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9a1c37f_5832202d",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-08-30T08:54:39Z",
+      "side": 1,
+      "message": "why not log on error?\nOr, is it expected to show error for mot cases?",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 33
+      },
+      "revId": "f2edf57979a6a288b3a341e7af2965337088ca66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
