@@ -46,6 +46,30 @@
       "revId": "76d8b1155b886f0da71046feb73f67af2d65bb4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dc67534d_8811aa81",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-30T22:37:02Z",
+      "side": 1,
+      "message": "IMO it shouldn\u0027t be required to set python_version in a spec; If you run vpython3 you should never EVER run python2.",
+      "parentUuid": "14960a02_a3aa1d55",
+      "range": {
+        "startLine": 136,
+        "startChar": 24,
+        "endLine": 136,
+        "endChar": 28
+      },
+      "revId": "76d8b1155b886f0da71046feb73f67af2d65bb4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
