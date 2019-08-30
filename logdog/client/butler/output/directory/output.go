@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -93,6 +94,13 @@ func (o *dirOutput) SendBundle(b *logpb.ButlerLogBundle) error {
 	}
 
 	return nil
+}
+
+func (o *dirOutput) URLConstructionEnv() bootstrap.Environment {
+	return bootstrap.Environment{
+		// See HACK in bootstrap.Environment
+		CoordinatorHost: "file://" + o.Path,
+	}
 }
 
 func (o *dirOutput) Close() {

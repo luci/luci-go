@@ -18,13 +18,23 @@ package bootstrap
 import (
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
-	"go.chromium.org/luci/logdog/common/types"
 )
 
 // Environment is the set of configuration parameters for the bootstrap.
+//
+// NOTE: This is an awful encapsulation violation. We should change the butler
+// protocol so that opening a new stream has the butler immediately reply with
+// the externally-visible URL to the stream and stop exporting these envvars
+// (with the exception of StreamServerURI) entirely.
+//
+// NOTE: This should use LUCI_CONTEXT instead of bare envvars.
 type Environment struct {
 	// CoordinatorHost is the coordinator host name, or empty string if we are
 	// not outputting to a Coordinator.
+	//
+	// HACK: If this starts with file:// clients will treat it as a local
+	// filesystem prefix instead of trying to construct an https URL. If this
+	// starts with file://, Project and Prefix should be empty.
 	CoordinatorHost string
 
 	// Project is the project name. If not empty, this will be exported to
@@ -32,7 +42,7 @@ type Environment struct {
 	Project string
 	// Prefix is the prefix name. If not empty, this will be exported to
 	// subprocesses.
-	Prefix types.StreamName
+	Prefix string
 	// StreamServerURI is the streamserver URI. If not empty, this will be
 	// exported to subprocesses.
 	StreamServerURI string
@@ -48,7 +58,7 @@ func (e *Environment) Augment(base environ.Env) {
 	}
 
 	exportIf(bootstrap.EnvCoordinatorHost, e.CoordinatorHost)
-	exportIf(bootstrap.EnvStreamPrefix, string(e.Prefix))
+	exportIf(bootstrap.EnvStreamPrefix, e.Prefix)
 	exportIf(bootstrap.EnvStreamProject, e.Project)
 	exportIf(bootstrap.EnvStreamServerPath, e.StreamServerURI)
 }

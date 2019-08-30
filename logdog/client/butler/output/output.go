@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 )
 
 // Output is a sink endpoint for groups of messages.
@@ -33,6 +34,22 @@ type Output interface {
 	// If there is a data error or a message type is not supported by the
 	// Output, it should log the error and return nil.
 	SendBundle(*logpb.ButlerLogBundle) error
+
+	// URLConstructionEnv should return a bootstrap.Environment containing
+	// any fields necessary for clients to construct a URL pointing to where this
+	// Output is sending its data.
+	//
+	// Returning an empty Environment means that clients will not be able to
+	// construct URLs to this data (which may be accurate, depending on the
+	// Output implementation).
+	//
+	// StreamServerURI is ignored and should not be specified.
+	//
+	// NOTE: This is an awful encapsulation violation. We should change the butler
+	// protocol so that opening a new stream has the butler immediately reply with
+	// the externally-visible URL to the stream and stop exporting these envvars
+	// entirely.
+	URLConstructionEnv() bootstrap.Environment
 
 	// MaxSize returns the maximum number of bytes that this Output can process
 	// with a single send. A return value <=0 indicates that there is no fixed

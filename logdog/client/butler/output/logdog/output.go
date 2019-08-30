@@ -214,7 +214,8 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	// Note that we use our publishing context here.
 	return newPubsub(pctx, pubsubConfig{
 		Topic:      pubSubTopicWrapper{psTopic},
-		Project:    string(cfg.Project),
+		Host:       cfg.Host,
+		Project:    cfg.Project,
 		Prefix:     string(cfg.Prefix),
 		Secret:     resp.Secret,
 		Compress:   true,

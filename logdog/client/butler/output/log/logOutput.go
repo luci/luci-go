@@ -24,6 +24,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -111,6 +112,10 @@ func (o *logOutput) Stats() output.Stats {
 
 	st := o.stats
 	return &st
+}
+
+func (o *logOutput) URLConstructionEnv() bootstrap.Environment {
+	return bootstrap.Environment{}
 }
 
 func (o *logOutput) Close() {}

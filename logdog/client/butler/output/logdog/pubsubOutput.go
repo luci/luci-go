@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/pubsubprotocol"
 	"go.chromium.org/luci/logdog/common/types"
@@ -52,6 +53,9 @@ type pubsubTopic interface {
 type pubsubConfig struct {
 	// Topic is the Pub/Sub topic to publish to.
 	Topic pubsubTopic
+
+	// The coordinator host which is managing the published data.
+	Host string
 
 	// Project/Prefix/Secret to inject into each published bundle.
 	Project string
@@ -147,6 +151,14 @@ func (o *pubSubOutput) Stats() output.Stats {
 
 	statsCopy := o.stats
 	return &statsCopy
+}
+
+func (o *pubSubOutput) URLConstructionEnv() bootstrap.Environment {
+	return bootstrap.Environment{
+		CoordinatorHost: o.Host,
+		Project:         o.Project,
+		Prefix:          o.Prefix,
+	}
 }
 
 func (o *pubSubOutput) Close() {

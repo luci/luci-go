@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/logdog/client/bootstrapResult"
 	"go.chromium.org/luci/logdog/client/butler"
-	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 
 	"github.com/maruel/subcommands"
@@ -176,19 +175,21 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 		cwd, _ = os.Getwd()
 	}
 
-	// Get our output factory.
+	// Get our output.
 	of, err := a.getOutputFactory()
 	if err != nil {
 		log.WithError(err).Errorf(a, "Failed to get output factory instance.")
 		return runtimeErrorReturnCode
 	}
+	output, err := of.configOutput(a)
+	if err != nil {
+		log.WithError(err).Errorf(a, "Failed to create output instance.")
+		return runtimeErrorReturnCode
+	}
+	defer output.Close()
 
 	// Update our environment for the child process to inherit
-	bsEnv := bootstrap.Environment{
-		Project:         a.project,
-		Prefix:          a.prefix,
-		CoordinatorHost: a.coordinatorHost,
-	}
+	bsEnv := output.URLConstructionEnv()
 
 	// Configure stream server
 	streamServerOwned := true
@@ -285,16 +286,6 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 			log.Debugf(a, "Environment variable: %s", entry)
 		}
 	}
-
-	// We're about ready to execute our command. Initialize our Output instance.
-	// We want to do this before we execute our subprocess so that if this fails,
-	// we don't have to interrupt an already-running process.
-	output, err := of.configOutput(a)
-	if err != nil {
-		log.WithError(err).Errorf(a, "Failed to create output instance.")
-		return runtimeErrorReturnCode
-	}
-	defer output.Close()
 
 	// Attach and run our Butler instance.
 	var (
