@@ -36,6 +36,10 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
+func testFunc() {
+
+}
+
 func cmdTrigger(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "trigger <options>",
