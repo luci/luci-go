@@ -98,11 +98,9 @@ func RemoveAll(path string) error {
 	var err error
 	if isWin {
 		// On Windows, the file must not be read-only and have valid ownership.
-		err = MakePathUserWritable(path, nil)
+		MakePathUserWritable(path, nil)
 	}
-	if err == nil {
-		err = os.Remove(path)
-	}
+	err = os.Remove(path)
 	if err == nil || IsNotExist(err) {
 		return nil
 	}
