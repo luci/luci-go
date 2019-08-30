@@ -22,6 +22,30 @@
       "revId": "8549552379f37e3a899f872bc33cf54fb4971843",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e322f989_030589eb",
+        "filename": "lucicfg/generator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-30T21:44:20Z",
+      "side": 1,
+      "message": "The error here happens if some *.proto in miscTypesDescSet is already registered in the loader. It can happen only if *.star code registered some custom descriptors. But if so, it should have registered them all, and this fallback shouldn\u0027t have been triggered at all. Thus it registered not all of them.\n\nI plan to delete this fallback (and this error along with it) very soon, so not bothering to be very user friendly here.",
+      "parentUuid": "2d34db83_0faa27f4",
+      "range": {
+        "startLine": 108,
+        "startChar": 90,
+        "endLine": 108,
+        "endChar": 100
+      },
+      "revId": "8549552379f37e3a899f872bc33cf54fb4971843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
