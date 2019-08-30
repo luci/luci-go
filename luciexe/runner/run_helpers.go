@@ -18,15 +18,12 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"path/filepath"
-	"strings"
 
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe/runner/runnerbutler"
@@ -54,23 +51,12 @@ func makeButler(ctx context.Context, args *pb.RunnerArgs, logdogDir string, syst
 		globalLogTags["swarming.bot_id"] = v
 	}
 
-	coordinatorHost, localFile := args.LogdogHost, ""
-	if strings.HasPrefix(coordinatorHost, "file://") {
-		localFile = coordinatorHost[len("file://"):]
-		coordinatorHost = ""
-		if !filepath.IsAbs(localFile) {
-			return nil, errors.Reason(
-				"logdog_host is file:// scheme, but not absolute: %q", args.LogdogHost).Err()
-		}
-	}
-
 	return &runnerbutler.Server{
 		WorkDir:         logdogDir,
 		Authenticator:   systemAuth,
-		CoordinatorHost: coordinatorHost,
+		CoordinatorHost: args.LogdogHost,
 		Project:         args.Build.Builder.Project,
 		Prefix:          types.StreamName(fmt.Sprintf("buildbucket/%s/%d", args.BuildbucketHost, args.Build.Id)),
-		LocalFile:       localFile,
 		GlobalTags:      globalLogTags,
 	}, nil
 }
