@@ -23,17 +23,13 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io/ioutil"
-	"sync"
 
 	proto_v1 "github.com/golang/protobuf/proto"
 	descpb_v1 "github.com/golang/protobuf/protoc-gen-go/descriptor"
 
-	"go.starlark.net/starlark"
-
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/proto"
 
-	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/protohacks"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
@@ -174,40 +170,25 @@ var miscProtos = []string{
 	"go.chromium.org/luci/gce/api/projects/v1/config.proto",
 }
 
-// Note: we use sync.Once instead of init() to allow tests to add stuff to
-// miscProtos in their own init().
+// Collection of built-in descriptor sets built from protobuf v1 registry.
 var (
-	once   sync.Once
-	loader interpreter.Loader
-
-	// Collection of descriptor sets built from protobuf v1 registry.
-	//
-	// TODO(vadimsh): Expose them to Starlark side via __native__.
-
 	wellKnownDescSet *starlarkproto.DescriptorSet
 	googTypesDescSet *starlarkproto.DescriptorSet
 	luciTypesDescSet *starlarkproto.DescriptorSet
 	miscTypesDescSet *starlarkproto.DescriptorSet // TODO(vadimsh): Delete.
 )
 
-// initBuiltinDescriptorSets initializes DescSet global vars.
+// init initializes DescSet global vars.
 //
 // Uses protobuf v1 registry embedded into the binary. It visits imports in
 // topological order, to make sure all cross-file references are correctly
 // resolved. We assume there are no circular dependencies (if there are, they'll
 // be caught by hanging unit tests).
-func initBuiltinDescriptorSets() (err error) {
+func init() {
 	visited := stringset.New(0)
 
-	// Various well-known proto types.
-	//
-	// load("@proto//google/protobuf/any.proto", any_pb="google.protobuf")
-	// load("@proto//google/protobuf/duration.proto", duration_pb="google.protobuf")
-	// load("@proto//google/protobuf/empty.proto", empty_pb="google.protobuf")
-	// load("@proto//google/protobuf/struct.proto", struct_pb="google.protobuf")
-	// load("@proto//google/protobuf/timestamp.proto", timestamp_pb="google.protobuf")
-	// load("@proto//google/protobuf/wrappers.proto", wrappers_pb="google.protobuf")
-	wellKnownDescSet, err = builtinDescriptorSet("google/protobuf", []string{
+	// Various well-known proto types (see also starlark/internal/descpb.star).
+	wellKnownDescSet = builtinDescriptorSet("google/protobuf", []string{
 		"google/protobuf/any.proto",
 		"google/protobuf/duration.proto",
 		"google/protobuf/empty.proto",
@@ -215,31 +196,15 @@ func initBuiltinDescriptorSets() (err error) {
 		"google/protobuf/timestamp.proto",
 		"google/protobuf/wrappers.proto",
 	}, visited)
-	if err != nil {
-		return
-	}
 
-	// Google API types.
-	//
-	// load("@proto//google/type/dayofweek.proto", dayofweek_pb="google.type")
-	googTypesDescSet, err = builtinDescriptorSet("google/type", []string{
+	// Google API types (see also starlark/internal/descpb.star).
+	googTypesDescSet = builtinDescriptorSet("google/type", []string{
 		"google/type/dayofweek.proto",
 		// TODO(vadimsh): Add more.
 	}, visited, wellKnownDescSet)
-	if err != nil {
-		return
-	}
 
-	// LUCI protos used by lucicfg stdlib.
-	//
-	// load("@stdlib//internal/luci/proto.star", "buildbucket_pb")
-	// load("@stdlib//internal/luci/proto.star", "config_pb")
-	// load("@stdlib//internal/luci/proto.star", "cq_pb")
-	// load("@stdlib//internal/luci/proto.star", "logdog_pb")
-	// load("@stdlib//internal/luci/proto.star", "milo_pb")
-	// load("@stdlib//internal/luci/proto.star", "notify_pb")
-	// load("@stdlib//internal/luci/proto.star", "scheduler_pb")
-	luciTypesDescSet, err = builtinDescriptorSet("lucicfg/stdlib", []string{
+	// LUCI protos used by stdlib (see also starlark/internal/luci/descpb.star).
+	luciTypesDescSet = builtinDescriptorSet("lucicfg/stdlib", []string{
 		"go.chromium.org/luci/buildbucket/proto/project_config.proto",
 		"go.chromium.org/luci/common/proto/config/project_config.proto",
 		"go.chromium.org/luci/cq/api/config/v2/cq.proto",
@@ -248,52 +213,13 @@ func initBuiltinDescriptorSets() (err error) {
 		"go.chromium.org/luci/luci_notify/api/config/notify.proto",
 		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
 	}, visited, wellKnownDescSet, googTypesDescSet)
-	if err != nil {
-		return
-	}
 
 	// Everything else.
 	//
 	// TODO(vadimsh): Get rid of this by moving them to externally loaded
 	// descriptors.
-	miscTypesDescSet, err = builtinDescriptorSet("lucicfg/misc", miscProtos,
+	miscTypesDescSet = builtinDescriptorSet("lucicfg/misc", miscProtos,
 		visited, wellKnownDescSet, googTypesDescSet, luciTypesDescSet)
-	return
-}
-
-// protoLoader returns a loader that is capable of loading built-in protos.
-func protoLoader() interpreter.Loader {
-	once.Do(func() {
-		// Populate protobuf v2 loader using protobuf v1 registry.
-		//
-		// TODO(vadimsh): Move this construction to Starlark side.
-		if err := initBuiltinDescriptorSets(); err != nil {
-			panic(err)
-		}
-		all, err := starlarkproto.NewDescriptorSet("builtin", nil, []*starlarkproto.DescriptorSet{
-			wellKnownDescSet,
-			googTypesDescSet,
-			luciTypesDescSet,
-			miscTypesDescSet,
-		})
-		if err != nil {
-			panic(err)
-		}
-		ploader := starlarkproto.NewLoader()
-		if err := ploader.AddDescriptorSet(all); err != nil {
-			panic(err)
-		}
-
-		// Use this loader to resolve load("@proto//...") references.
-		loader = func(path string) (dict starlark.StringDict, _ string, err error) {
-			mod, err := ploader.Module(path)
-			if err != nil {
-				return nil, "", err
-			}
-			return starlark.StringDict{mod.Name: mod}, "", nil
-		}
-	})
-	return loader
 }
 
 // builtinDescriptorSet assembles a *DescriptorSet from descriptors embedded
@@ -304,14 +230,20 @@ func protoLoader() interpreter.Loader {
 // 'visited' along the way.
 //
 // 'name' and 'deps' are passed verbatim to NewDescriptorSet(...).
-func builtinDescriptorSet(name string, files []string, visited stringset.Set, deps ...*starlarkproto.DescriptorSet) (*starlarkproto.DescriptorSet, error) {
+//
+// Panics on errors. Built-in descriptors can't be invalid.
+func builtinDescriptorSet(name string, files []string, visited stringset.Set, deps ...*starlarkproto.DescriptorSet) *starlarkproto.DescriptorSet {
 	list := protohacks.FileDescriptorsList{}
 	for _, f := range files {
 		if err := visitRegistry(&list, f, visited); err != nil {
-			return nil, fmt.Errorf("%s: %s", f, err)
+			panic(fmt.Errorf("%s: %s", f, err))
 		}
 	}
-	return starlarkproto.NewDescriptorSet(name, list.Descriptors, deps)
+	ds, err := starlarkproto.NewDescriptorSet(name, list.Descriptors, deps)
+	if err != nil {
+		panic(err)
+	}
+	return ds
 }
 
 // visitRegistry visits dependencies of 'path', and then 'path' itself.
