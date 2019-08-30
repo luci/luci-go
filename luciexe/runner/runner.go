@@ -114,6 +114,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, rawCB updateBu
 	if lastBuild == nil {
 		return errors.Reason("user executable did not send a build").Err()
 	}
+	lastBuild = proto.Clone(lastBuild).(*pb.Build)
 	processFinalBuild(ctx, lastBuild)
 
 	logging.Infof(ctx, "final build state: %s", indentedJSONPB(lastBuild))

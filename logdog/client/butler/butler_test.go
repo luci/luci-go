@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -73,6 +74,10 @@ func (to *testOutput) MaxSize() int {
 
 func (to *testOutput) Stats() output.Stats {
 	return &output.StatsBase{}
+}
+
+func (to *testOutput) URLConstructionEnv() bootstrap.Environment {
+	return bootstrap.Environment{}
 }
 
 func (to *testOutput) Close() {

@@ -28,7 +28,6 @@ import (
 
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler"
-	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	out "go.chromium.org/luci/logdog/client/butler/output/logdog"
@@ -145,13 +144,9 @@ func (l *Server) SetInEnviron(env environ.Env) error {
 	if l.serv == nil {
 		return fmt.Errorf("not started")
 	}
-
-	(&bootstrap.Environment{
-		CoordinatorHost: l.CoordinatorHost,
-		Project:         l.Project,
-		Prefix:          l.Prefix,
-		StreamServerURI: l.serv.Address(),
-	}).Augment(env)
+	ret := l.output.URLConstructionEnv()
+	ret.StreamServerURI = l.serv.Address()
+	ret.Augment(env)
 	return nil
 }
 
