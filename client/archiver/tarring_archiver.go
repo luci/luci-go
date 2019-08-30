@@ -19,11 +19,14 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	humanize "github.com/dustin/go-humanize"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/system/filesystem"
 )
 
 // TarringArchiver archives the files specified by an isolate file to the server,
@@ -133,6 +136,24 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 		RelPath: relPath,
 		Mode:    info.Mode(),
 		Size:    info.Size(),
+	}
+
+	if item.Mode&os.ModeSymlink == os.ModeSymlink {
+		absPath, stat, err := filesystem.ResolveSymlink(path)
+		if err != nil {
+			return errors.Annotate(err, "failed to call ResolveSymlink(%s)", path).Err()
+		}
+
+		relPath, err := pw.fsView.RelativePath(absPath)
+		if err != nil {
+			return errors.Annotate(err, "failed to call RelativePath(%s)", absPath).Err()
+		}
+		if strings.HasPrefix(relPath, "..") {
+			// symlink points to file in out of tree. need to treat as regular file.
+			item.Path = absPath
+			item.Mode = stat.Mode()
+			item.Size = stat.Size()
+		}
 	}
 
 	switch {
