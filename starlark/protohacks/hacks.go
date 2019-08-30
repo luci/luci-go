@@ -43,6 +43,12 @@ func UnmarshalFileDescriptorProto(m []byte) (*descriptorpb.FileDescriptorProto, 
 	return fd, proto.Unmarshal(m, fd)
 }
 
+// UnmarshalFileDescriptorSet unmarshals FileDescriptorSet.
+func UnmarshalFileDescriptorSet(m []byte) (*descriptorpb.FileDescriptorSet, error) {
+	ds := &descriptorpb.FileDescriptorSet{}
+	return ds, proto.Unmarshal(m, ds)
+}
+
 // FileDescriptorsList is a wrapper over []*descriptorpb.FileDescriptorProto.
 //
 // Allows to manipulate []*descriptorpb.FileDescriptorProto without explicitly

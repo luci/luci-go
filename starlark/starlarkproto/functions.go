@@ -96,6 +96,9 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 //    def new_loader(*descriptor_sets):
 //      """Returns a new proto loader."""
 //
+//    def default_loader():
+//      """Returns a loader used by default when registering descriptor sets."""
+//
 //    def to_textpb(msg):
 //      """Serializes a protobuf message to text proto.
 //
@@ -156,6 +159,7 @@ func ProtoLib() starlark.StringDict {
 		"proto": starlarkstruct.FromStringDict(starlark.String("proto"), starlark.StringDict{
 			"new_descriptor_set": starlark.NewBuiltin("new_descriptor_set", newDescriptorSet),
 			"new_loader":         starlark.NewBuiltin("new_loader", newLoader),
+			"default_loader":     starlark.NewBuiltin("default_loader", defaultLoader),
 			"to_textpb":          marshallerBuiltin("to_textpb", ToTextPB),
 			"to_jsonpb":          marshallerBuiltin("to_jsonpb", ToJSONPB),
 			"from_textpb":        unmarshallerBuiltin("from_textpb", FromTextPB),
@@ -240,6 +244,17 @@ func newLoader(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kw
 		}
 	}
 	return l, nil
+}
+
+// defaultLoader returns *Loader installed in the thread via SetDefaultLoader.
+func defaultLoader(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	if err := starlark.UnpackArgs("default_loader", args, kwargs); err != nil {
+		return nil, err
+	}
+	if l := DefaultLoader(th); l != nil {
+		return l, nil
+	}
+	return starlark.None, nil
 }
 
 // marshallerBuiltin implements Starlark shim for To*PB() functions.

@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+// Package testdata contains support files for unit tests.
+package testdata
 
-// Package testproto contains proto messages used exclusively in unit tests.
-package testproto
+// Generate descriptor set with the test proto.
+//
+// It is used by both Go and Starlark tests. '../../../../' is actually GOPATH,
+// to resolve import of "go.chromium.org/luci/common/proto/options.proto".
+//
+//go:generate protoc -I . -I ../../../../  -o misc/support/test_descpb.bin misc/support/test.proto

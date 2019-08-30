@@ -19,6 +19,9 @@ paths may change in a backward incompatible way. Using this module gives more
 stability.
 """
 
+load('@stdlib//internal/luci/descpb.star', 'lucitypes_descpb')
+lucitypes_descpb.register()
+
 load('@proto//go.chromium.org/luci/buildbucket/proto/project_config.proto', _buildbucket_pb='buildbucket')
 load('@proto//go.chromium.org/luci/common/proto/config/project_config.proto', _config_pb='config')
 load('@proto//go.chromium.org/luci/cq/api/config/v2/cq.proto', _cq_pb='cq.config')

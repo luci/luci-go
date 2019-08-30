@@ -1,4 +1,4 @@
-load('@proto//go.chromium.org/luci/lucicfg/testproto/test.proto', 'testproto')
+load('//testdata/misc/support/test_pb.star', 'testproto')
 
 def test_read_proto_ok():
   def check(path, encoding=None):
