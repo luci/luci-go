@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe/runner/runnerbutler"
@@ -39,7 +40,7 @@ func setupUserEnv(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, authC
 	if err := logdogServ.SetInEnviron(env); err != nil {
 		return nil, err
 	}
-	env.Set("LOGDOG_NAMESPACE", logdogNamespace)
+	env.Set(bootstrap.EnvNamespace, logdogNamespace)
 
 	// Prepare user LUCI context.
 	ctx, err := lucictx.Set(ctx, "luci_executable", map[string]string{
