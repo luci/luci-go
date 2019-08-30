@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "b286da62_f5d53cc5",
+        "filename": "logdog/client/butler/output/null/null.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-30T06:08:51Z",
+      "side": 1,
+      "message": "copyright header",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 12
+      },
+      "revId": "6ed1993c2eb901e84519491f886d0a05172e70a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "104e3f54_2a66f642",
+        "filename": "logdog/client/butler/output/null/null.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-30T06:08:51Z",
+      "side": 1,
+      "message": "\\n",
+      "revId": "6ed1993c2eb901e84519491f886d0a05172e70a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bb7ba1f_bf6e6fd7",
+        "filename": "logdog/client/butler/output/null/null.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-30T06:08:51Z",
+      "side": 1,
+      "message": "is it ok to now have any locking here?",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 30,
+        "endChar": 1
+      },
+      "revId": "6ed1993c2eb901e84519491f886d0a05172e70a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f794d490_6434379a",
         "filename": "logdog/client/butler/output/null/null.go",
         "patchSetId": 2
@@ -13,6 +76,30 @@
       "writtenOn": "2019-08-30T02:19:12Z",
       "side": 1,
       "message": "lol.",
+      "range": {
+        "startLine": 37,
+        "startChar": 41,
+        "endLine": 37,
+        "endChar": 71
+      },
+      "revId": "6ed1993c2eb901e84519491f886d0a05172e70a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2d2d02ee_7c650256",
+        "filename": "logdog/client/butler/output/null/null.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-30T06:08:51Z",
+      "side": 1,
+      "message": "What MaxSize is supposed to mean?",
+      "parentUuid": "f794d490_6434379a",
       "range": {
         "startLine": 37,
         "startChar": 41,
