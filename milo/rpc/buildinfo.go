@@ -33,10 +33,7 @@ import (
 )
 
 // BuildInfoService is a BuildInfoServer implementation.
-type BuildInfoService struct {
-	// Swarming is the BuildInfoProvider for the Swarming service.
-	Swarming swarming.BuildInfoProvider
-}
+type BuildInfoService struct{}
 
 var _ milo.BuildInfoServer = (*BuildInfoService)(nil)
 
@@ -79,7 +76,7 @@ func (svc *BuildInfoService) getFromContextURI(c context.Context, id int64, proj
 				Host: url.Host,
 				Task: comp[2],
 			}
-			return svc.Swarming.GetBuildInfo(c, req, projectHint)
+			return swarming.GetBuildInfo(c, req, projectHint)
 		}
 	}
 	logging.Debugf(c, "valid buildbot or swarming context not found in %s", bs.ContextURI)
@@ -100,7 +97,7 @@ func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) 
 		return buildbot.GetBuildInfo(c, req.GetBuildbot(), projectHint)
 
 	case req.GetSwarming() != nil:
-		return svc.Swarming.GetBuildInfo(c, req.GetSwarming(), projectHint)
+		return swarming.GetBuildInfo(c, req.GetSwarming(), projectHint)
 
 	case req.GetBuildbucket() != nil:
 		switch resp, err := svc.getFromContextURI(c, req.GetBuildbucket().GetId(), projectHint); err {
@@ -122,7 +119,7 @@ func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) 
 			Host: host,
 			Task: taskID,
 		}
-		return svc.Swarming.GetBuildInfo(c, sReq, projectHint)
+		return swarming.GetBuildInfo(c, sReq, projectHint)
 
 	default:
 		return nil, grpcutil.Errf(codes.InvalidArgument, "must supply a build")

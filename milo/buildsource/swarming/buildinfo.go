@@ -26,35 +26,17 @@ import (
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 )
 
-// BuildInfoProvider provides build information.
-//
-// In a production system, this will be completely defaults. For testing, the
-// various services and data sources may be substituted for testing stubs.
-type BuildInfoProvider struct {
-	// swarmingServiceFunc returns a SwarmingService instance for the supplied
-	// parameters.
-	//
-	// If nil, a production fetcher will be generated.
-	swarmingServiceFunc func(c context.Context, host string) (SwarmingService, error)
-}
-
-func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (SwarmingService, error) {
-	if p.swarmingServiceFunc == nil {
-		return newProdService(c, host)
-	}
-	return p.swarmingServiceFunc(c, host)
-}
-
 // GetBuildInfo resolves a Milo protobuf Step for a given Swarming task.
-func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_Swarming,
+func GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_Swarming,
 	projectHint string) (*milo.BuildInfoResponse, error) {
 
 	// Load the Swarming task (no log content).
-	sf, err := p.newSwarmingService(c, req.Host)
+	sf, err := newProdService(c, req.Host)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to create Swarming fetcher.")
 		return nil, grpcutil.Internal
 	}
+	defer sf.Close()
 
 	// Use default Swarming host.
 	host := sf.GetHost()

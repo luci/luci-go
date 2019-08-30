@@ -27,7 +27,7 @@ import (
 // swarmingBuildLogImpl is the implementation for getting a log name from
 // a swarming build via annotee.  It returns the full text of the specific log,
 // and whether or not it has been closed.
-func swarmingBuildLogImpl(c context.Context, svc SwarmingService, taskID, logname string) (string, bool, error) {
+func swarmingBuildLogImpl(c context.Context, svc swarmingService, taskID, logname string) (string, bool, error) {
 	server := svc.GetHost()
 	cached, err := mc.GetKey(c, path.Join("swarmingLog", server, taskID, logname))
 	switch {
