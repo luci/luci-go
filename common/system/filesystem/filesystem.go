@@ -100,7 +100,8 @@ func RemoveAll(path string) error {
 		// On Windows, the file must not be read-only and have valid ownership.
 		err = MakePathUserWritable(path, nil)
 	}
-	if err == nil {
+	if err == nil || IsNotExist(err) {
+		// On Windows, invalid symlink is treated as not exist error, but need to remove that.
 		err = os.Remove(path)
 	}
 	if err == nil || IsNotExist(err) {
