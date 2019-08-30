@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22c97206_f146f9f9",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-30T22:15:44Z",
+      "side": 1,
+      "message": "does it need to be a whole Spec? Could it just be a version?",
+      "range": {
+        "startLine": 136,
+        "startChar": 24,
+        "endLine": 136,
+        "endChar": 28
+      },
+      "revId": "76d8b1155b886f0da71046feb73f67af2d65bb4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
