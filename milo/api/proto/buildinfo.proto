@@ -8,6 +8,8 @@ package milo;
 
 import "go.chromium.org/luci/common/proto/milo/annotations.proto";
 
+// DEPRECATED. Do not start using this API.
+//
 // The BuildInfo service definition.
 //
 // BuildInfo offers a one-stop shop for users to query Milo about a specific
@@ -15,6 +17,7 @@ import "go.chromium.org/luci/common/proto/milo/annotations.proto";
 // (mostly LogDog annotation protobufs) and metadata. It acts as an entry point
 // for services that wish to learn about builds or view their logs.
 service BuildInfo {
+  // DEPRECATED. Do not start using this API.
   rpc Get(BuildInfoRequest) returns (BuildInfoResponse);
 }
 
