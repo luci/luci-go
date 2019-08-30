@@ -69,6 +69,27 @@ func NewLoader() *Loader {
 	}
 }
 
+// Key of the default *Loader in starlark.Thread local store.
+const threadLoaderKey = "starlarkproto.Loader"
+
+// DefaultLoader returns a loader installed in the thread via SetDefaultLoader.
+//
+// Returns nil if there's no default loader.
+func DefaultLoader(th *starlark.Thread) *Loader {
+	l, _ := th.Local(threadLoaderKey).(*Loader)
+	return l
+}
+
+// SetDefaultLoader installs the given loader as default in the thread.
+//
+// It can be obtained via DefaultLoader or proto.default_loader() from Starlark.
+// Note that Starlark code has no way of changing the default loader. It's
+// responsibility of the hosting environment to prepare the default loader
+// (just like it prepares starlark.Thread itself).
+func SetDefaultLoader(th *starlark.Thread, l *Loader) {
+	th.SetLocal(threadLoaderKey, l)
+}
+
 // AddDescriptorSet makes all *.proto files defined in the given descriptor set
 // and all its dependencies available for use from Starlark.
 //

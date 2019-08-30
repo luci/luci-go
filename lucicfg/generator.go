@@ -25,9 +25,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarkproto"
@@ -55,7 +57,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	state := &State{Inputs: in}
 	ctx = withState(ctx, state)
 
-	// All available functions implemented in go.
+	// All available symbols implemented in go.
 	predeclared := starlark.StringDict{
 		// Part of public API of the generator.
 		"fail":       builtins.Fail,
@@ -67,21 +69,52 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		// '__native__' is NOT public API. It should be used only through public
 		// @stdlib functions.
 		"__native__": native(starlark.StringDict{
-			"ctor":          builtins.Ctor,
-			"genstruct":     builtins.GenStruct,
-			"re_submatches": builtins.RegexpMatcher("submatches"),
+			"ctor":             builtins.Ctor,
+			"genstruct":        builtins.GenStruct,
+			"re_submatches":    builtins.RegexpMatcher("submatches"),
+			"wellknown_descpb": wellKnownDescSet,
+			"googtypes_descpb": googTypesDescSet,
+			"lucitypes_descpb": luciTypesDescSet,
 		}),
 	}
 	for k, v := range in.testPredeclared {
 		predeclared[k] = v
 	}
 
-	// Expose @stdlib, @proto and __main__ package. All have no externally
-	// observable state of their own, but they call low-level __native__.*
-	// functions that manipulate 'state' by getting it through the context.
+	// Expose @stdlib and __main__ package. They have no externally observable
+	// state of their own, but they call low-level __native__.* functions that
+	// manipulate 'state' by getting it through the context.
 	pkgs := embeddedPackages()
 	pkgs[interpreter.MainPkg] = in.Code
-	pkgs["proto"] = protoLoader() // see protos.go
+
+	// Create a proto loader, hook up load("@proto//<path>", ...) to load proto
+	// modules through it. See ThreadModifier below where it is set as default in
+	// the thread. This exposes it to Starlark code, so it can register descriptor
+	// sets in it.
+	ploader := starlarkproto.NewLoader()
+	registerMisc := sync.Once{}
+	pkgs["proto"] = func(path string) (dict starlark.StringDict, _ string, err error) {
+		mod, err := ploader.Module(path)
+		if err != nil {
+			// Maybe 'path' is one of the misc protos and their descriptor is not
+			// provided yet by user-supplied *.star. If so, fallback to the built-in
+			// descriptor sets.
+			//
+			// TODO(vadimsh): Get rid of this once all users provide descriptors.
+			registerMisc.Do(func() {
+				logging.Warningf(ctx, "Falling back to embedded proto descriptors to load %q", path)
+				if err := ploader.AddDescriptorSet(miscTypesDescSet); err != nil {
+					logging.Errorf(ctx, "Failed to register embedded proto descriptors: %s", err)
+					logging.Errorf(ctx, "Most likely the descriptor set you registered in your *.star is incomplete")
+				}
+			})
+			mod, err = ploader.Module(path)
+			if err != nil {
+				return nil, "", err // completely unknown proto file
+			}
+		}
+		return starlark.StringDict{mod.Name: mod}, "", nil
+	}
 
 	// Capture details of fail(...) calls happening inside Starlark code.
 	failures := builtins.FailureCollector{}
@@ -96,6 +129,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		PostExec: func(th *starlark.Thread, pkg, mod string) { state.vars.CloseScope(th) },
 
 		ThreadModifier: func(th *starlark.Thread) {
+			starlarkproto.SetDefaultLoader(th, ploader)
 			if !in.testDisableFailureCollector {
 				failures.Install(th)
 			}

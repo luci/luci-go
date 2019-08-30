@@ -40,8 +40,11 @@ import (
 //     )
 //     myprotos_descpb.register()
 //
-// Note that ds.register(loader=l) is a sugar for l.add_descriptor_set(ds) which
-// simplifies the common case of using the default loader.
+// By default register() registers the descriptor set in the default loader,
+// i.e. ds.register() is same as ds.register(loader=proto.default_loader()).
+// Also note that ds.register(loader=l) is a sugar for l.add_descriptor_set(ds),
+// so ds.register() is same as proto.default_loader().add_descriptor_set(ds),
+// just much shorter.
 type DescriptorSet struct {
 	name string // for debug messages and errors, can be anything
 	hash uint32 // unique (within the process) value, used by Hash()
@@ -150,14 +153,16 @@ func (ds *DescriptorSet) Attr(name string) (starlark.Value, error) {
 
 // Implementation of DescriptorSet Starlark methods.
 
-var dsRegisterBuiltin = starlark.NewBuiltin("register", func(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+var dsRegisterBuiltin = starlark.NewBuiltin("register", func(th *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var loader starlark.Value
 	if err := starlark.UnpackArgs("register", args, kwargs, "loader?", &loader); err != nil {
 		return nil, err
 	}
 	if loader == nil || loader == starlark.None {
-		// TODO(vadimsh): Implement default loader.
-		return nil, fmt.Errorf("register: loader may not be None yet")
+		loader = DefaultLoader(th)
+		if loader == nil {
+			return nil, fmt.Errorf("register: loader is None and there's no default loader")
+		}
 	}
 	l, ok := loader.(*Loader)
 	if !ok {
