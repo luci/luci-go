@@ -22,6 +22,30 @@
       "revId": "df4244c3f16afd6c9a94bd3d04460bdc874390fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac2e8881_9a52432c",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-30T09:20:46Z",
+      "side": 1,
+      "message": "Hmm, that is true, but I\u0027d like to keep as-is here.\nI will ask users to change symlink in such case first.",
+      "parentUuid": "04b37685_4fbe8ae6",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 39
+      },
+      "revId": "df4244c3f16afd6c9a94bd3d04460bdc874390fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
