@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d34db83_0faa27f4",
+        "filename": "lucicfg/generator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-30T19:20:35Z",
+      "side": 1,
+      "message": "wdym? like a.proto relying on b.proto, but only a.proto being provided?",
+      "range": {
+        "startLine": 108,
+        "startChar": 90,
+        "endLine": 108,
+        "endChar": 100
+      },
+      "revId": "8549552379f37e3a899f872bc33cf54fb4971843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
