@@ -36,3 +36,23 @@ func FileOptions(d protoreflect.FileDescriptor) ([]byte, error) {
 	}
 	return proto.Marshal(opts)
 }
+
+// UnmarshalFileDescriptorProto unmarshals FileDescriptorProto.
+func UnmarshalFileDescriptorProto(m []byte) (*descriptorpb.FileDescriptorProto, error) {
+	fd := &descriptorpb.FileDescriptorProto{}
+	return fd, proto.Unmarshal(m, fd)
+}
+
+// FileDescriptorsList is a wrapper over []*descriptorpb.FileDescriptorProto.
+//
+// Allows to manipulate []*descriptorpb.FileDescriptorProto without explicitly
+// mentioning its type name anywhere (which may not be importable due to
+// vendoring rules).
+type FileDescriptorsList struct {
+	Descriptors []*descriptorpb.FileDescriptorProto
+}
+
+// Adds appends a descriptor to the list.
+func (fds *FileDescriptorsList) Add(fd *descriptorpb.FileDescriptorProto) {
+	fds.Descriptors = append(fds.Descriptors, fd)
+}
