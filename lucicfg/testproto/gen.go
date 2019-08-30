@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+//go:generate ./gen.sh
 
 // Package testproto contains proto messages used exclusively in unit tests.
 package testproto

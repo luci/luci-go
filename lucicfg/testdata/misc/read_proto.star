@@ -1,3 +1,5 @@
+load('//testdata/misc/support/test_descpb.star', 'test_descpb')
+test_descpb.register()
 load('@proto//go.chromium.org/luci/lucicfg/testproto/test.proto', 'testproto')
 
 def test_read_proto_ok():

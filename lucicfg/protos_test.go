@@ -20,6 +20,7 @@ import (
 
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
 	_ "go.chromium.org/luci/lucicfg/testproto"
@@ -27,19 +28,28 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// Register protos used exclusively from tests.
-func init() {
-	miscProtos = append(miscProtos, "go.chromium.org/luci/lucicfg/testproto/test.proto")
-}
+// testProtoLoader is a proto.Loader populated with testproto/test.proto
+// descriptor and its dependencies (and nothing else). Used by testMessage().
+var testProtoLoader *starlarkproto.Loader
 
-// testMessage returns new testproto.Msg as a Starlark value to be used from
-// tests.
-func testMessage(i int) *starlarkproto.Message {
-	testproto, _, err := protoLoader()("go.chromium.org/luci/lucicfg/testproto/test.proto")
+func init() {
+	testProtoLoader = starlarkproto.NewLoader()
+	err := testProtoLoader.AddDescriptorSet(builtinDescriptorSet("testing", []string{
+		"go.chromium.org/luci/lucicfg/testproto/test.proto",
+	}, stringset.New(0)))
 	if err != nil {
 		panic(err)
 	}
-	msgT, err := testproto["testproto"].(starlark.HasAttrs).Attr("Msg")
+}
+
+// testMessage returns new testproto.Msg as a Starlark value to be used from
+// tests (grabs it via testProtoLoader).
+func testMessage(i int) *starlarkproto.Message {
+	testproto, err := testProtoLoader.Module("go.chromium.org/luci/lucicfg/testproto/test.proto")
+	if err != nil {
+		panic(err)
+	}
+	msgT, err := testproto.Attr("Msg")
 	if err != nil {
 		panic(err)
 	}
@@ -53,16 +63,18 @@ func testMessage(i int) *starlarkproto.Message {
 func TestProtos(t *testing.T) {
 	t.Parallel()
 
-	loader := protoLoader()
+	loader := starlarkproto.NewLoader()
+	if err := loader.AddDescriptorSet(miscTypesDescSet); err != nil {
+		panic(err)
+	}
 
 	// Note: imports of standard and LUCI protos are tested by more high-level
 	// lucicfg tests that actually generate configs. Misc protos are not involved
 	// in them, so we test they can be imported separately here.
 	for _, path := range miscProtos {
 		Convey(fmt.Sprintf("%q is importable", path), t, func(c C) {
-			dict, _, err := loader(path)
+			_, err := loader.Module(path)
 			So(err, ShouldBeNil)
-			So(len(dict), ShouldEqual, 1)
 		})
 	}
 
