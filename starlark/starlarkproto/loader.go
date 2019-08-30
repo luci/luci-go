@@ -23,7 +23,6 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -32,14 +31,12 @@ import (
 
 // Loader can instantiate Starlark values that correspond to proto messages.
 //
-// Holds a pool of descriptors that describe all available proto types.
-//
-// Use AddDescriptor or AddDescriptorSet to seed it. Once seeded, use Module to
-// get a Starlark module with symbols defined in some registered `*.proto` file.
+// Holds a pool of descriptors that describe all available proto types. Use
+// AddDescriptorSet to seed it. Once seeded, use Module to get a Starlark module
+// with symbols defined in some registered `*.proto` file.
 //
 // Loader is also a Starlark value itself, with the following methods:
-//   * add_descriptor(bytes) - see AddDescriptor.
-//   * add_descriptor_set(bytes) - see AddDescriptorSet.
+//   * add_descriptor_set(ds) - see AddDescriptorSet.
 //   * module(path) - see Module.
 //
 // Can be used concurrently. Non-freezable.
@@ -49,6 +46,7 @@ type Loader struct {
 	files *protoregistry.Files
 	types *protoregistry.Types
 
+	dsets   map[*DescriptorSet]struct{}
 	mtypes  map[protoreflect.MessageDescriptor]*MessageType
 	modules map[string]*starlarkstruct.Module // *.proto file => its top-level symbols
 
@@ -64,55 +62,41 @@ func NewLoader() *Loader {
 	return &Loader{
 		files:   protoregistry.NewFiles(),
 		types:   protoregistry.NewTypes(),
+		dsets:   make(map[*DescriptorSet]struct{}, 0),
 		mtypes:  make(map[protoreflect.MessageDescriptor]*MessageType, 0),
 		modules: make(map[string]*starlarkstruct.Module, 0),
 		hash:    atomic.AddUint32(&loaderHash, 1),
 	}
 }
 
-// AddDescriptor ingests a single serialized FileDescriptor.
+// AddDescriptorSet makes all *.proto files defined in the given descriptor set
+// and all its dependencies available for use from Starlark.
 //
-// There should be no unresolvable imports there: all referenced descriptors
-// should be registered in the loader already. Returns an error otherwise.
-//
-// Additionally there should be no redeclarations. Returns an error if some
-// *.proto file or some type described by `raw` was already declared.
-func (l *Loader) AddDescriptor(raw []byte) error {
-	fd := &descriptorpb.FileDescriptorProto{}
-	if err := proto.Unmarshal(raw, fd); err != nil {
-		return fmt.Errorf("unmarshaling FileDescriptor: %s", err)
-	}
-
+// AddDescriptorSet is idempotent in a sense that calling AddDescriptorSet(ds)
+// multiple times with the exact same 'ds' is not an error. But trying to
+// register a proto file through multiple different descriptor sets is an error.
+func (l *Loader) AddDescriptorSet(ds *DescriptorSet) error {
 	l.m.Lock()
 	defer l.m.Unlock()
-
-	return l.addDescriptorLocked(fd)
+	return l.addDescriptorSetLocked(ds)
 }
 
-// AddDescriptorSet ingests all descriptors from a serialized FileDescriptorSet.
-//
-// This set is the result of running "protoc --descriptor_set_out ...".
-//
-// There should be no unresolvable imports there: all referenced descriptors
-// should be registered in the loader already. Returns an error otherwise.
-//
-// Additionally there should be no redeclarations. Returns an error if some
-// *.proto file or some type described by `raw` was already declared.
-func (l *Loader) AddDescriptorSet(raw []byte) error {
-	fds := &descriptorpb.FileDescriptorSet{}
-	if err := proto.Unmarshal(raw, fds); err != nil {
-		return fmt.Errorf("unmarshaling FileDescriptorSet: %s", err)
+// addDescriptorSetLocked implements AddDescriptorSet.
+func (l *Loader) addDescriptorSetLocked(ds *DescriptorSet) error {
+	if _, ok := l.dsets[ds]; ok {
+		return nil
 	}
-
-	l.m.Lock()
-	defer l.m.Unlock()
-
-	for _, fd := range fds.File {
-		if err := l.addDescriptorLocked(fd); err != nil {
-			return err
+	for _, dep := range ds.deps {
+		if err := l.addDescriptorSetLocked(dep); err != nil {
+			return fmt.Errorf("%q: %s", ds.name, err)
 		}
 	}
-
+	for _, fd := range ds.fdps {
+		if err := l.addDescriptorLocked(fd); err != nil {
+			return fmt.Errorf("%q: %s", ds.name, err)
+		}
+	}
+	l.dsets[ds] = struct{}{}
 	return nil
 }
 
@@ -176,10 +160,10 @@ func (r *resolver) FindDescriptorByName(n protoreflect.FullName) (protoreflect.D
 // Module returns a module with top-level definitions from some *.proto file.
 //
 // The descriptor of this proto file should be registered already via
-// AddDescriptor or AddDescriptorSet. 'path' here is matched to what's in the
-// descriptor, which is a path to *.proto EXACTLY as it was given to 'protoc'.
+// AddDescriptorSet. 'path' here is matched to what's in the descriptor, which
+// is a path to *.proto EXACTLY as it was given to 'protoc'.
 //
-// The name of the module matches the proto package name (per 'package ...''
+// The name of the module matches the proto package name (per 'package ...'
 // statement in the proto file).
 func (l *Loader) Module(path string) (*starlarkstruct.Module, error) {
 	// Lookup in the cache under the reader lock.
@@ -295,12 +279,12 @@ func (l *Loader) injectEnumValuesLocked(d starlark.StringDict, enums protoreflec
 
 // String returns str(...) representation of the loader.
 func (l *Loader) String() string {
-	return fmt.Sprintf("proto.loader(0x%x)", l.hash)
+	return fmt.Sprintf("proto.Loader(0x%x)", l.hash)
 }
 
-// Type returns "proto.loader".
+// Type returns "proto.Loader".
 func (l *Loader) Type() string {
-	return "proto.loader"
+	return "proto.Loader"
 }
 
 // Freeze is noop for now.
@@ -315,7 +299,6 @@ func (l *Loader) Hash() (uint32, error) { return l.hash, nil }
 // AtrrNames lists available attributes.
 func (l *Loader) AttrNames() []string {
 	return []string{
-		"add_descriptor",
 		"add_descriptor_set",
 		"module",
 	}
@@ -324,8 +307,6 @@ func (l *Loader) AttrNames() []string {
 // Attr returns an attribute given its name (or nil if not present).
 func (l *Loader) Attr(name string) (starlark.Value, error) {
 	switch name {
-	case "add_descriptor":
-		return addDescBuiltin.BindReceiver(l), nil
 	case "add_descriptor_set":
 		return addDescSetBuiltin.BindReceiver(l), nil
 	case "module":
@@ -337,20 +318,12 @@ func (l *Loader) Attr(name string) (starlark.Value, error) {
 
 // Shims for calling Loader methods from Starlark.
 
-var addDescBuiltin = starlark.NewBuiltin("add_descriptor", func(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	var raw string
-	if err := starlark.UnpackPositionalArgs("add_descriptor", args, kwargs, 1, &raw); err != nil {
-		return nil, err
-	}
-	return starlark.None, b.Receiver().(*Loader).AddDescriptor([]byte(raw))
-})
-
 var addDescSetBuiltin = starlark.NewBuiltin("add_descriptor_set", func(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	var raw string
-	if err := starlark.UnpackPositionalArgs("add_descriptor_set", args, kwargs, 1, &raw); err != nil {
+	var ds *DescriptorSet
+	if err := starlark.UnpackPositionalArgs("add_descriptor_set", args, kwargs, 1, &ds); err != nil {
 		return nil, err
 	}
-	return starlark.None, b.Receiver().(*Loader).AddDescriptorSet([]byte(raw))
+	return starlark.None, b.Receiver().(*Loader).AddDescriptorSet(ds)
 })
 
 var moduleBuiltin = starlark.NewBuiltin("module", func(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {

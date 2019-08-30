@@ -29,7 +29,7 @@ import (
 
 // Register protos used exclusively from tests.
 func init() {
-	publicProtos = append(publicProtos, "go.chromium.org/luci/lucicfg/testproto/test.proto")
+	miscProtos = append(miscProtos, "go.chromium.org/luci/lucicfg/testproto/test.proto")
 }
 
 // testMessage returns new testproto.Msg as a Starlark value to be used from
@@ -55,7 +55,10 @@ func TestProtos(t *testing.T) {
 
 	loader := protoLoader()
 
-	for _, path := range publicProtos {
+	// Note: imports of standard and LUCI protos are tested by more high-level
+	// lucicfg tests that actually generate configs. Misc protos are not involved
+	// in them, so we test they can be imported separately here.
+	for _, path := range miscProtos {
 		Convey(fmt.Sprintf("%q is importable", path), t, func(c C) {
 			dict, _, err := loader(path)
 			So(err, ShouldBeNil)

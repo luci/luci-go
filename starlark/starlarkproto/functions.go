@@ -24,6 +24,8 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -79,7 +81,19 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 //
 // Exported functions:
 //
-//    def new_loader(*raw_descriptor_sets):
+//    def new_descriptor_set(name=None, blob=None, deps=None):
+//      """Returns a new DescriptorSet.
+//
+//      Args:
+//        name: name of this set for debug and error messages, default is '???'.
+//        blob: raw serialized FileDescriptorSet, if any.
+//        deps: an iterable of DescriptorSet's with dependencies, if any.
+//
+//      Returns:
+//        New DescriptorSet.
+//      """
+//
+//    def new_loader(*descriptor_sets):
 //      """Returns a new proto loader."""
 //
 //    def to_textpb(msg):
@@ -140,14 +154,70 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 func ProtoLib() starlark.StringDict {
 	return starlark.StringDict{
 		"proto": starlarkstruct.FromStringDict(starlark.String("proto"), starlark.StringDict{
-			"new_loader":       starlark.NewBuiltin("new_loader", newLoader),
-			"to_textpb":        marshallerBuiltin("to_textpb", ToTextPB),
-			"to_jsonpb":        marshallerBuiltin("to_jsonpb", ToJSONPB),
-			"from_textpb":      unmarshallerBuiltin("from_textpb", FromTextPB),
-			"from_jsonpb":      unmarshallerBuiltin("from_jsonpb", FromJSONPB),
-			"struct_to_textpb": starlark.NewBuiltin("struct_to_textpb", structToTextPb),
+			"new_descriptor_set": starlark.NewBuiltin("new_descriptor_set", newDescriptorSet),
+			"new_loader":         starlark.NewBuiltin("new_loader", newLoader),
+			"to_textpb":          marshallerBuiltin("to_textpb", ToTextPB),
+			"to_jsonpb":          marshallerBuiltin("to_jsonpb", ToJSONPB),
+			"from_textpb":        unmarshallerBuiltin("from_textpb", FromTextPB),
+			"from_jsonpb":        unmarshallerBuiltin("from_jsonpb", FromJSONPB),
+			"struct_to_textpb":   starlark.NewBuiltin("struct_to_textpb", structToTextPb),
 		}),
 	}
+}
+
+// newDescriptorSet constructs *DescriptorSet.
+func newDescriptorSet(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var name string
+	var blob string
+	var deps starlark.Value
+	err := starlark.UnpackArgs("new_descriptor_set", args, kwargs,
+		"name?", &name,
+		"blob?", &blob,
+		"deps?", &deps,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Name is optional.
+	if name == "" {
+		name = "???"
+	}
+
+	// Blob is also optional. If given, it is a serialized FileDescriptorSet.
+	var fdps []*descriptorpb.FileDescriptorProto
+	if blob != "" {
+		fds := &descriptorpb.FileDescriptorSet{}
+		if err := proto.Unmarshal([]byte(blob), fds); err != nil {
+			return nil, fmt.Errorf("new_descriptor_set: for parameter \"blob\": %s", err)
+		}
+		fdps = fds.GetFile()
+	}
+
+	// Collect []*DescriptorSet from 'deps'.
+	var sets []*DescriptorSet
+	if deps != nil && deps != starlark.None {
+		iter := starlark.Iterate(deps)
+		if iter == nil {
+			return nil, fmt.Errorf("new_descriptor_set: for parameter \"deps\": got %s, want an iterable", deps.Type())
+		}
+		defer iter.Done()
+		var x starlark.Value
+		for iter.Next(&x) {
+			ds, ok := x.(*DescriptorSet)
+			if !ok {
+				return nil, fmt.Errorf("new_descriptor_set: for parameter \"deps\" #%d: got %s, want proto.DescriptorSet", len(sets), x.Type())
+			}
+			sets = append(sets, ds)
+		}
+	}
+
+	// Checks all imports can be resolved.
+	ds, err := NewDescriptorSet(name, fdps, sets)
+	if err != nil {
+		return nil, fmt.Errorf("new_descriptor_set: %s", err)
+	}
+	return ds, nil
 }
 
 // newLoader constructs *Loader and populates it with given descriptor sets.
@@ -155,18 +225,18 @@ func newLoader(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kw
 	if len(kwargs) > 0 {
 		return nil, errors.New("new_loader: unexpected keyword arguments")
 	}
-	raw := make([]string, len(args))
+	sets := make([]*DescriptorSet, len(args))
 	for i, v := range args {
-		s, ok := v.(starlark.String)
+		ds, ok := v.(*DescriptorSet)
 		if !ok {
-			return nil, fmt.Errorf("new_loader: for parameter %d: got %s, want string", i+1, v.Type())
+			return nil, fmt.Errorf("new_loader: for parameter %d: got %s, want proto.DescriptorSet", i+1, v.Type())
 		}
-		raw[i] = s.GoString()
+		sets[i] = ds
 	}
 	l := NewLoader()
-	for i, r := range raw {
-		if err := l.AddDescriptorSet([]byte(r)); err != nil {
-			return nil, fmt.Errorf("new_loader: for parameter %d: %s", i+1, err)
+	for _, ds := range sets {
+		if err := l.AddDescriptorSet(ds); err != nil {
+			return nil, fmt.Errorf("new_loader: %s", err)
 		}
 	}
 	return l, nil
