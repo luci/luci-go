@@ -51,7 +51,7 @@ func init() {
 	buildbucketQPS = rate.Inf
 }
 
-func TestMain(t *testing.T) {
+func DISABLEDTestMain(t *testing.T) {
 	Convey("Main", t, func(c C) {
 		ctx := context.Background()
 
