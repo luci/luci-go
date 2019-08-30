@@ -16,6 +16,7 @@ package filesystem
 
 import (
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -93,16 +94,15 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 // Copied from
 // https://go.googlesource.com/go/+/b86e76681366447798c94abb959bb60875bcc856/src/os/path.go#63
 func RemoveAll(path string) error {
+	log.Print(path)
 	const isWin = runtime.GOOS == "windows"
 	// Simple case: try removing as if it was a file or empty directory.
 	var err error
 	if isWin {
 		// On Windows, the file must not be read-only and have valid ownership.
-		err = MakePathUserWritable(path, nil)
+		MakePathUserWritable(path, nil)
 	}
-	if err == nil {
-		err = os.Remove(path)
-	}
+	err = os.Remove(path)
 	if err == nil || IsNotExist(err) {
 		return nil
 	}
@@ -164,6 +164,7 @@ func RemoveAll(path string) error {
 	fd.Close()
 	// Remove directory.
 	err1 := os.Remove(path)
+	log.Print("err1 ", path, " ", err1)
 	if err1 == nil || IsNotExist(err1) {
 		return nil
 	}
