@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "354408a4_5a41ed7a",
+        "filename": "logdog/client/butler/output/logdog/output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-08-30T06:14:09Z",
+      "side": 1,
+      "message": "still needed?",
+      "range": {
+        "startLine": 219,
+        "startChar": 14,
+        "endLine": 219,
+        "endChar": 21
+      },
+      "revId": "13fb7beda8d68b43a805fbe27f41e0f78dff3647",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2ddc1e99_22ea6840",
         "filename": "logdog/client/cmd/logdog_butler/subcommand_run.go",
         "patchSetId": 1
