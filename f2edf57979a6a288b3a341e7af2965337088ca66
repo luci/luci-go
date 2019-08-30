@@ -22,6 +22,30 @@
       "revId": "f2edf57979a6a288b3a341e7af2965337088ca66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "226e6d5e_ccaf6018",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-30T09:06:47Z",
+      "side": 1,
+      "message": "\u003e why not log on error?\n\nI think we don\u0027t want to log inside library package.\n\n\u003e Or, is it expected to show error for mot cases?\n\nI think showing error here is not big deal, but changed to keep err when it is unexpected.",
+      "parentUuid": "e9a1c37f_5832202d",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 33
+      },
+      "revId": "f2edf57979a6a288b3a341e7af2965337088ca66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
