@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "bef4e587_ad5a9bd3",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-08-30T13:49:51Z",
+      "side": 1,
+      "message": "Hmm, but if I removed this line, test failed in\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/73d9e3b3c61620d04847ade0b6105bd04c7213e5/common/system/filesystem/filesystem_test.go#261\nwith\n```\n  * C:/Users/tikuta/go/src/go.chromium.org/luci/common/system/filesystem/filesystem_test.go\n  Line 266:\n  Expected: nil\n  Actual:   \u0027remove C:\\src\\temp\\vpython-filesystem515229232\\sub\\foo: Access is denied.\u0027\n```",
+      "parentUuid": "1db638c2_b63db649",
+      "revId": "4a233678c10b79d8af8ab5ab9d1709117866a455",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "87784729_803eff9e",
         "filename": "common/system/filesystem/filesystem_test.go",
         "patchSetId": 5
