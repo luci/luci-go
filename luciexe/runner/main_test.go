@@ -34,10 +34,11 @@ import (
 	"go.chromium.org/luci/auth/integration/authtest"
 	"go.chromium.org/luci/auth/integration/localauth"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/lucictx"
-	"go.chromium.org/luci/luciexe/old_client"
+	"go.chromium.org/luci/luciexe/exe"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -185,28 +186,6 @@ func TestMain(t *testing.T) {
 	})
 }
 
-func TestSubprocessDispatcher(t *testing.T) {
-	subtest := os.Getenv("LUCI_EXE_SUBTEST_NAME")
-	if subtest == "" {
-		// Note: this code path is executed when running "go test ." normally. We
-		// silently do nothing.
-		return
-	}
-
-	st := subtests[subtest]
-	if st == nil {
-		t.Fatalf("no such subtest %q", subtest)
-	}
-
-	if err := client.Init(); err != nil {
-		panic(err)
-	}
-	st(t)
-	if err := client.Close(); err != nil {
-		panic(err)
-	}
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // These test* routines are individual subtests launched in a separate process.
 //
@@ -222,25 +201,33 @@ func init() {
 	os.Args = append(os.Args, "-test.run=TestSubprocessDispatcher")
 }
 
-var subtests = map[string]func(t *testing.T){
+func TestSubprocessDispatcher(t *testing.T) {
+	subtest := os.Getenv("LUCI_EXE_SUBTEST_NAME")
+	if subtest == "" {
+		// Note: this code path is executed when running "go test ." normally. We
+		// silently do nothing.
+		return
+	}
+
+	st := subtests[subtest]
+	if st == nil {
+		t.Fatalf("no such subtest %q", subtest)
+	}
+
+	exe.Run(func(ctx context.Context, build *pb.Build, sendBuild exe.BuildSender) error {
+		return st(t, build)
+	})
+}
+
+var subtests = map[string]func(t *testing.T, build *pb.Build) error{
 	"testAuthContext":  testAuthContext,
 	"testInfraFailure": testInfraFailure,
 	"testPendingStep":  testPendingStep,
 	"testSuccess":      testSuccess,
 }
 
-var client = old_client.Client{
-	BuildTimestamp: testclock.TestRecentTimeUTC,
-}
-
-func writeBuild(build *pb.Build) {
-	if err := client.WriteBuild(build); err != nil {
-		panic(err)
-	}
-}
-
 // Verifies auth context is setup correctly.
-func testAuthContext(t *testing.T) {
+func testAuthContext(t *testing.T, build *pb.Build) error {
 	checkContextAuth := func(ctx context.Context, expectedEmail, expectedToken string) {
 		a := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
 			Method: auth.LUCIContextMethod,
@@ -288,42 +275,27 @@ func testAuthContext(t *testing.T) {
 		So(tok.AccessToken == "task_token_1", ShouldBeTrue)
 	})
 
-	// Report the test result through Build proto.
-	build := client.InitBuild
 	if t.Failed() {
-		build.Status = pb.Status_FAILURE
-	} else {
-		build.Status = pb.Status_SUCCESS
+		return errors.New("test failed")
 	}
-	writeBuild(build)
+	return nil
 }
 
 // Marks the build as INFRA_FAILURE and exits.
-func testInfraFailure(t *testing.T) {
-	build := client.InitBuild
-
-	// Final build must have a terminal status.
-	build.Status = pb.Status_INFRA_FAILURE
-	writeBuild(build)
+func testInfraFailure(t *testing.T, build *pb.Build) error {
+	return exe.InfraErrorTag.Apply(errors.New("infra failure of some kind"))
 }
 
 // Emits a successful build with an incomplete step.
-func testPendingStep(t *testing.T) {
-	build := client.InitBuild
-
-	// Final build must have a terminal status.
-	build.Status = pb.Status_INFRA_FAILURE
+func testPendingStep(t *testing.T, build *pb.Build) error {
 	build.Steps = append(build.Steps, &pb.Step{
 		Name: "pending step",
 	})
-	writeBuild(build)
+	return exe.InfraErrorTag.Apply(errors.New("infra failure of some kind"))
 }
 
 // Marks the build as SUCCESS and exits.
-func testSuccess(t *testing.T) {
-	build := client.InitBuild
-
-	// Final build must have a terminal status.
-	build.Status = pb.Status_SUCCESS
-	writeBuild(build)
+func testSuccess(t *testing.T, build *pb.Build) error {
+	// Default behavior on no-error is success
+	return nil
 }
