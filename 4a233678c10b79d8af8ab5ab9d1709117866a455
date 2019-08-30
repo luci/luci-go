@@ -16,6 +16,23 @@
       "revId": "4a233678c10b79d8af8ab5ab9d1709117866a455",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87784729_803eff9e",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-30T13:42:29Z",
+      "side": 1,
+      "message": "The test case is great idea, so it\u0027s definitely keeping it.",
+      "revId": "4a233678c10b79d8af8ab5ab9d1709117866a455",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
