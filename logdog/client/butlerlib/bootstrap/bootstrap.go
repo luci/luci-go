@@ -61,34 +61,37 @@ type clientFn func(path string, ns types.StreamName) (*streamclient.Client, erro
 // It will return an error if the bootstrap data is invalid, and will return
 // ErrNotBootstrapped if the current process is not bootstrapped.
 func GetFromEnv(env environ.Env) (*Bootstrap, error) {
-	// Detect Butler by looking for EnvStreamPrefix in the envrironent.
-	prefix, ok := env.Get(EnvStreamPrefix)
+	// Detect Butler by looking for EnvStreamServerPath in the envrironent. This
+	// is the only environment variable which matters for constructing a Butler
+	// Client; all the rest are just needed to assemble viewer URLs.
+	butlerSocket, ok := env.Get(EnvStreamServerPath)
 	if !ok {
 		return nil, ErrNotBootstrapped
 	}
 
 	bs := &Bootstrap{
 		CoordinatorHost: env.GetEmpty(EnvCoordinatorHost),
-		Prefix:          types.StreamName(prefix),
+		Prefix:          types.StreamName(env.GetEmpty(EnvStreamPrefix)),
 		Namespace:       types.StreamName(env.GetEmpty(EnvNamespace)),
 		Project:         env.GetEmpty(EnvStreamProject),
 	}
-	if err := bs.Prefix.Validate(); err != nil {
-		return nil, fmt.Errorf("bootstrap: failed to validate prefix %q: %s", prefix, err)
+	if err := bs.initializeClient(butlerSocket); err != nil {
+		return nil, fmt.Errorf("bootstrap: failed to create stream client [%s]: %s", butlerSocket, err)
 	}
-	if err := config.ValidateProjectName(bs.Project); err != nil {
-		return nil, fmt.Errorf("bootstrap: failed to validate project %q: %s", bs.Project, err)
+
+	if len(bs.Prefix) > 0 {
+		if err := bs.Prefix.Validate(); err != nil {
+			return nil, fmt.Errorf("bootstrap: failed to validate prefix %q: %s", bs.Prefix, err)
+		}
+	}
+	if len(bs.Project) > 0 {
+		if err := config.ValidateProjectName(bs.Project); err != nil {
+			return nil, fmt.Errorf("bootstrap: failed to validate project %q: %s", bs.Project, err)
+		}
 	}
 	if len(bs.Namespace) > 0 {
 		if err := bs.Namespace.Validate(); err != nil {
 			return nil, fmt.Errorf("bootstrap: failed to validate namespace %q: %s", bs.Namespace, err)
-		}
-	}
-
-	// If we have a stream server attached; instantiate a stream Client.
-	if p, ok := env.Get(EnvStreamServerPath); ok {
-		if err := bs.initializeClient(p); err != nil {
-			return nil, fmt.Errorf("bootstrap: failed to create stream client [%s]: %s", p, err)
 		}
 	}
 

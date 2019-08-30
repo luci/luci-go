@@ -36,22 +36,21 @@ func TestBootstrap(t *testing.T) {
 			So(err, ShouldEqual, ErrNotBootstrapped)
 		})
 
-		Convey(`With a Butler project and prefix`, func() {
-			env.Set(EnvStreamProject, "test-project")
-			env.Set(EnvStreamPrefix, "butler/prefix")
+		Convey(`With a Butler stream server path`, func() {
+			env.Set(EnvStreamServerPath, "null")
 
-			Convey(`Yields a Bootstrap with a Project, Prefix, and no Client.`, func() {
+			Convey(`Yields a Bootstrap with a Client, but nothing else`, func() {
 				bs, err := GetFromEnv(env)
 				So(err, ShouldBeNil)
 
-				So(bs, ShouldResemble, &Bootstrap{
-					Project: "test-project",
-					Prefix:  "butler/prefix",
-				})
+				So(bs.Client, ShouldNotBeNil)
+				bs.Client = nil
+				So(bs, ShouldResemble, &Bootstrap{})
 			})
 
 			Convey(`And the remaining environment parameters`, func() {
-				env.Set(EnvStreamServerPath, "null")
+				env.Set(EnvStreamPrefix, "butler/prefix")
+				env.Set(EnvStreamProject, "test-project")
 				env.Set(EnvCoordinatorHost, "example.appspot.com")
 				env.Set(EnvNamespace, "some/namespace")
 
@@ -77,12 +76,6 @@ func TestBootstrap(t *testing.T) {
 				env.Set(EnvStreamPrefix, "_notavaildprefix")
 				_, err := GetFromEnv(env)
 				So(err, ShouldErrLike, "failed to validate prefix")
-			})
-
-			Convey(`With a missing Butler project, will fail.`, func() {
-				env.Remove(EnvStreamProject)
-				_, err := GetFromEnv(env)
-				So(err, ShouldErrLike, "failed to validate project")
 			})
 
 			Convey(`With an invalid Namespace, will fail.`, func() {
