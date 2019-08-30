@@ -131,6 +131,9 @@ type Config struct {
 	// An individual specification can override this by specifying its own
 	// verification tag set.
 	DefaultVerificationTags []*vpythonAPI.PEP425Tag
+
+	// DefaultSpec is the default spec to use when one is not otherwise found.
+	DefaultSpec vpythonAPI.Spec
 }
 
 type application struct {
@@ -383,6 +386,7 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 			WaitForEnv: true,
 			SpecLoader: cfg.SpecLoader,
 			Environ:    env,
+			DefaultSpec: cfg.DefaultSpec,
 		},
 		logConfig: logging.Config{
 			Level: defaultLogLevel,
