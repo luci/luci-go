@@ -405,7 +405,7 @@ func TestOptionsStdio(t *testing.T) {
 
 		Convey(`errors`, func() {
 			Convey(`bad bootstrap (missing)`, func() {
-				o.Env.Remove(bootstrap.EnvStreamPrefix)
+				o.Env.Remove(bootstrap.EnvStreamServerPath)
 				_, _, err := o.rationalize(ctx)
 				So(err, ShouldErrLike, "Logdog Butler environment required")
 			})
