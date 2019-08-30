@@ -31,8 +31,8 @@ import (
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
-	"go.chromium.org/luci/logdog/client/butler/output/file"
 	out "go.chromium.org/luci/logdog/client/butler/output/logdog"
+	"go.chromium.org/luci/logdog/client/butler/output/null"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/common/types"
@@ -40,16 +40,14 @@ import (
 
 // Server is a LogDog local server (aka butler).
 type Server struct {
-	WorkDir         string
-	Authenticator   *auth.Authenticator
+	WorkDir       string
+	Authenticator *auth.Authenticator
+
+	// If CoordinatorHost is "null", this provides a null sink for butler.
 	CoordinatorHost string
 	Project         string
 	Prefix          types.StreamName
 	GlobalTags      map[string]string
-
-	// Write logs to a local file at this path instead of sending to cloud.
-	// Overrides Auth, Host, Project and Prefix.
-	LocalFile string
 
 	// value for butler.Config.StreamRegistrationCallback. See its docs.
 	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
@@ -90,10 +88,8 @@ func (l *Server) Start(ctx context.Context) error {
 
 	// Create a butler output.
 	var output output.Output
-	if l.LocalFile != "" {
-		// Debug: Use a file output.
-		outCfg := file.Options{Path: l.LocalFile}
-		output = outCfg.New(ctx)
+	if l.CoordinatorHost == "null" {
+		output = &null.Output{}
 	} else {
 		outCfg := out.Config{
 			Auth:           l.Authenticator,
