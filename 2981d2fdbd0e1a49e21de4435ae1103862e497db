@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb64e5d8_dcade7d8",
+        "filename": "common/sync/parallel/buffer_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-30T17:14:26Z",
+      "side": 1,
+      "message": "comment why buffered channel?",
+      "range": {
+        "startLine": 114,
+        "startChar": 42,
+        "endLine": 114,
+        "endChar": 43
+      },
+      "revId": "2981d2fdbd0e1a49e21de4435ae1103862e497db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4b6e2ef_f0e44d8b",
+        "filename": "common/sync/parallel/buffer_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-30T17:14:26Z",
+      "side": 1,
+      "message": "why int and not struct{}? less typing?",
+      "range": {
+        "startLine": 115,
+        "startChar": 21,
+        "endLine": 115,
+        "endChar": 24
+      },
+      "revId": "2981d2fdbd0e1a49e21de4435ae1103862e497db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86a5b457_fbfa51c5",
+        "filename": "common/sync/parallel/buffer_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-30T17:14:26Z",
+      "side": 1,
+      "message": "actually started execution?",
+      "range": {
+        "startLine": 127,
+        "startChar": 34,
+        "endLine": 127,
+        "endChar": 43
+      },
+      "revId": "2981d2fdbd0e1a49e21de4435ae1103862e497db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
