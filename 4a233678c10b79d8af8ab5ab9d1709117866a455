@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1db638c2_b63db649",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-30T13:41:26Z",
+      "side": 1,
+      "message": "Oh, I just realized. With recent Go version, this is not needed anymore, since it\u0027s now trying to delete, then if it fails it removes the READONLY bit, and try again.\n\nSo the code here is redundant.\nhttps://go.googlesource.com/go/+blame/go1.13rc2/src/os/file_windows.go#295\nI contributed this in 2016. :)",
+      "revId": "4a233678c10b79d8af8ab5ab9d1709117866a455",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
