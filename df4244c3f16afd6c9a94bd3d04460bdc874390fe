@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04b37685_4fbe8ae6",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-08-30T08:57:08Z",
+      "side": 1,
+      "message": "I guess the check not sufficient because there can be a case:\nroot\u003d/abc\n/abc/def -\u003e /x\n/x-\u003e /abc/ghi\n\nThen, the logic won\u0027t work due to existence of \"/x\"?",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 39
+      },
+      "revId": "df4244c3f16afd6c9a94bd3d04460bdc874390fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
