@@ -2,6 +2,40 @@
   "comments": [
     {
       "key": {
+        "uuid": "ab2d21d2_77ca604e",
+        "filename": "client/archiver/partitioning_walker_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-30T14:03:33Z",
+      "side": 1,
+      "message": "Can you make a comment above with the structure? It\u0027d be helpful, something like:\n\n// rooDir/\n//   patha\n//   pathb\n//   pathc\n//   inregular\n//   insymlink -\u003e inregular\n//   outsymlink -\u003e ../outregular\n//   asymlink -\u003e inregular\n// outregular\n\nThis makes it much easier to glance than trying to understand the end state from reading the code. Note that none of the symlinks point to a directory. I think it\u0027s a good test case.",
+      "revId": "df4244c3f16afd6c9a94bd3d04460bdc874390fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc2004b9_7ce70374",
+        "filename": "client/archiver/partitioning_walker_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-08-30T14:03:33Z",
+      "side": 1,
+      "message": "Windows?",
+      "revId": "df4244c3f16afd6c9a94bd3d04460bdc874390fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04b37685_4fbe8ae6",
         "filename": "client/archiver/tarring_archiver.go",
         "patchSetId": 4
