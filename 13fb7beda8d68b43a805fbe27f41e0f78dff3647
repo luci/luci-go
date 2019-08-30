@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2ddc1e99_22ea6840",
+        "filename": "logdog/client/cmd/logdog_butler/subcommand_run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-30T02:17:02Z",
+      "side": 1,
+      "message": "omg, this is a looong func.",
+      "revId": "13fb7beda8d68b43a805fbe27f41e0f78dff3647",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "490e19e9_99166b74",
+        "filename": "luciexe/runner/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-30T02:17:02Z",
+      "side": 1,
+      "message": "intriguing!",
+      "range": {
+        "startLine": 66,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 4
+      },
+      "revId": "13fb7beda8d68b43a805fbe27f41e0f78dff3647",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5e585047_32484aee",
+        "filename": "luciexe/runner/runner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-30T02:17:02Z",
+      "side": 1,
+      "message": "intentional?",
+      "revId": "13fb7beda8d68b43a805fbe27f41e0f78dff3647",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
