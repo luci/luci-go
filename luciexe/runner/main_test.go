@@ -90,7 +90,7 @@ func TestMain(t *testing.T) {
 			args := &pb.RunnerArgs{}
 			err := proto.UnmarshalText(argsText, args)
 			So(err, ShouldBeNil)
-			args.LogdogHost = "file://" + filepath.Join(tempDir, "logs")
+			args.LogdogHost = "null"
 
 			// We spawn ourselves, see https://npf.io/2015/06/testing-exec-command/
 			args.ExecutablePath = os.Args[0]
