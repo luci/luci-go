@@ -101,7 +101,7 @@ func New(path string, namespace types.StreamName) (*Client, error) {
 }
 
 func (c *Client) mkOptions(ctx context.Context, name types.StreamName, sType logpb.StreamType, opts []Option) (ret options, err error) {
-	ret.desc.Name = streamproto.StreamNameFlag(c.ns.Concat(types.StreamName(name)))
+	ret.desc.Name = streamproto.StreamNameFlag(c.ns.Concat(name))
 	ret.desc.Type = streamproto.StreamType(sType)
 	for _, o := range opts {
 		o(&ret)

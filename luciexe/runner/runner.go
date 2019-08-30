@@ -78,6 +78,7 @@ func run(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, rawCB updateBu
 		defer close(spyDone)
 
 		for spyData := range spy.C {
+			logging.Infof(ctx, "GET", spyData)
 			if spyData.Err != nil {
 				logging.Errorf(ctx, "%s", err)
 				logging.Warningf(ctx, "canceling the user subprocess")
