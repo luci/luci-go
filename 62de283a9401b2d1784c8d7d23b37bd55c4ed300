@@ -141,6 +141,30 @@
     },
     {
       "key": {
+        "uuid": "0bc71b71_96ce8288",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-08-31T01:32:25Z",
+      "side": 1,
+      "message": "read the doc on the package above this for context",
+      "parentUuid": "b9332e3f_cb29bdf6",
+      "range": {
+        "startLine": 93,
+        "startChar": 3,
+        "endLine": 93,
+        "endChar": 63
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "88f4d884_7309e6e3",
         "filename": "luciexe/host/host.go",
         "patchSetId": 1
