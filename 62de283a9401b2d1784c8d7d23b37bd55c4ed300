@@ -1,0 +1,143 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "18981bc5_689d97b9",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-31T01:25:54Z",
+      "side": 1,
+      "message": "\u003e \"typicaly\" is a possible misspelling of \"typically\".\n\nPlease Fix",
+      "parentUuid": "1d715e65_16a2e4e5",
+      "range": {
+        "startLine": 34,
+        "startChar": 12,
+        "endLine": 34,
+        "endChar": 20
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b77a9e71_37c8e401",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-31T01:25:54Z",
+      "side": 1,
+      "message": "what does this mean?",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 31
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35fb870e_729436ec",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-31T01:25:54Z",
+      "side": 1,
+      "message": "does this mean actually deleting contents if provided dir isn\u0027t empty? Perhaps state so explicitly?",
+      "range": {
+        "startLine": 53,
+        "startChar": 15,
+        "endLine": 53,
+        "endChar": 59
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f525866_a5f372a0",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-31T01:25:54Z",
+      "side": 1,
+      "message": "Vadim, do we actually need to keep these as options? Can we just enable this everywhere?",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 24
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9332e3f_cb29bdf6",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-31T01:25:54Z",
+      "side": 1,
+      "message": "for my own understanding: collected via LogDog (butler)?\nupdate: re-read package doc and realized this is indeed the case.\nStill, maybe worth duplicating that package doc part into Run\u0027s doc assuming Run is pretty much the only public func?",
+      "range": {
+        "startLine": 93,
+        "startChar": 3,
+        "endLine": 93,
+        "endChar": 63
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88f4d884_7309e6e3",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-31T01:25:54Z",
+      "side": 1,
+      "message": "nit: lowercase after ;",
+      "range": {
+        "startLine": 96,
+        "startChar": 73,
+        "endLine": 96,
+        "endChar": 74
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
