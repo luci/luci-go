@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44a5cf65_57aa9725",
+        "filename": "lucicfg/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-08-31T01:32:59Z",
+      "side": 1,
+      "message": "feels like 1.9 to me :)",
+      "range": {
+        "startLine": 27,
+        "startChar": 11,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "a3efc6a45f30cbfeb5b799c95d29a23395df1e24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
