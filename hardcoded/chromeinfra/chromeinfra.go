@@ -78,6 +78,17 @@ func DefaultAuthOptions() auth.Options {
 	}
 }
 
+// SetDefaultAuthOptions sets the chromeinfra defaults on `opts`, returning the
+// updated Options.
+func SetDefaultAuthOptions(opts auth.Options) auth.Options {
+	dflts := DefaultAuthOptions()
+	ret := opts
+	ret.ClientID = dflts.ClientID
+	ret.ClientSecret = dflts.ClientSecret
+	ret.SecretsDir = dflts.SecretsDir
+	return ret
+}
+
 var secrets struct {
 	once sync.Once
 	val  string
