@@ -118,6 +118,30 @@
     },
     {
       "key": {
+        "uuid": "2b1ec513_2a899854",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-03T17:57:15Z",
+      "side": 1,
+      "message": "I was copypasting from the previous incarnation, which I didn\u0027t fully understand; I looked at it over the weekend, and I think you\u0027re right. It seems the previous author(s) also didn\u0027t fully understand it either :).\n\nI originally thought about putting authctx.Context at the top level, but it\u0027s \"Options\" field (particularly the Scopes subfield) seems ripe for misconfiguration. For example, you can set Options.Scopes to [\"https://www.googleapis.com/auth/cloud-platform\"], but also set EnableFirebaseAuth to true, and you don\u0027t get an error for this until runtime. I was hoping to prevent these sorts of bugs by not exposing the whole thing.\n\nHowever, I guess this is really a bug in authctx\u0027s API and papering over it here isn\u0027t helpful.",
+      "parentUuid": "51b1b046_ccebbfba",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 27
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5f525866_a5f372a0",
         "filename": "luciexe/host/host.go",
         "patchSetId": 1
@@ -162,6 +186,30 @@
       "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c8f66c4_c51b6970",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-03T17:57:15Z",
+      "side": 1,
+      "message": "This all goes away; I\u0027ll have a default authctx.Context object with all of these set.",
+      "parentUuid": "a3fceb0c_acd0f860",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 24
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
