@@ -14,10 +14,6 @@
 
 package lucicfg
 
-// Import all protos which we want to be available from the Starlark side.
-// Starlark code relies on the protobuf registry in the interpreter process for
-// type information.
-
 import (
 	"bytes"
 	"compress/gzip"
@@ -40,8 +36,6 @@ import (
 	_ "github.com/golang/protobuf/ptypes/timestamp"
 	_ "github.com/golang/protobuf/ptypes/wrappers"
 
-	_ "github.com/golang/protobuf/protoc-gen-go/descriptor"
-
 	_ "google.golang.org/genproto/googleapis/type/calendarperiod"
 	_ "google.golang.org/genproto/googleapis/type/color"
 	_ "google.golang.org/genproto/googleapis/type/date"
@@ -54,140 +48,20 @@ import (
 	_ "google.golang.org/genproto/googleapis/type/quaternion"
 	_ "google.golang.org/genproto/googleapis/type/timeofday"
 
-	_ "go.chromium.org/chromiumos/infra/proto/go/chromiumos"
-	_ "go.chromium.org/chromiumos/infra/proto/go/device"
-	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform"
-	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform/config"
-	_ "go.chromium.org/chromiumos/infra/proto/go/test_platform/migration/scheduler"
-	_ "go.chromium.org/chromiumos/infra/proto/go/testplans"
-
 	_ "go.chromium.org/luci/buildbucket/proto"
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/cq/api/config/v2"
-	_ "go.chromium.org/luci/gce/api/config/v1"
-	_ "go.chromium.org/luci/gce/api/projects/v1"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
 	_ "go.chromium.org/luci/milo/api/config"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
-	_ "go.chromium.org/luci/swarming/proto/config"
 )
-
-// List of "non-standard" proto files in the proto registry we want to make
-// importable from Starlark. All their dependencies will become importable too.
-//
-// TODO(vadimsh): Get rid of this by moving them to externally loaded
-// descriptors.
-var miscProtos = []string{
-	// CrOS builder config.
-	//
-	// load(
-	//     "@proto//chromiumos/builder_config.proto",
-	//     builder_config_pb="chromiumos")
-	// load(
-	//     "@proto//chromiumos/common.proto",
-	//     common_pb="chromiumos")
-	"chromiumos/builder_config.proto",
-	"chromiumos/common.proto",
-
-	// CrOS device config.
-	//
-	// load(
-	//     "@proto//device/brand_id.proto",
-	//     brand_id_pb="device")
-	// load(
-	//     "@proto//device/config_id.proto",
-	//     config_id_pb="device")
-	// load(
-	//     "@proto//device/config.proto",
-	//     config_pb="device")
-	// load(
-	//     "@proto//device/model_id.proto",
-	//     model_id_pb="device")
-	// load(
-	//     "@proto//device/platform_id.proto",
-	//     platform_id_pb="device")
-	// load(
-	//     "@proto//device/variant_id.proto",
-	//     variant_id_pb="device")
-	"device/brand_id.proto",
-	"device/config_id.proto",
-	"device/config.proto",
-	"device/model_id.proto",
-	"device/platform_id.proto",
-	"device/variant_id.proto",
-
-	// CrOS testing project config.
-	//
-	// load(
-	//     "@proto//testplans/build_irrelevance_config.proto",
-	//     build_irrelevance_config_pb="testplans")
-	// load(
-	//     "@proto//testplans/common.proto",
-	//     common_pb="testplans")
-	// load(
-	//     "@proto//testplans/source_tree_test_config.proto",
-	//     source_tree_test_config_pb="testplans")
-	// load(
-	//     "@proto//testplans/target_test_requirements_config.proto",
-	//     target_test_requirements_config_pb="testplans")
-	// load(
-	//     "@proto//testplans/test_level_tweak.proto",
-	//     test_level_tweak_pb="testplans")
-	"testplans/build_irrelevance_config.proto",
-	"testplans/common.proto",
-	"testplans/source_tree_test_config.proto",
-	"testplans/target_test_requirements_config.proto",
-	"testplans/test_level_tweak.proto",
-
-	// CrOS test platform configuration.
-	//
-	// load(
-	//     "@proto//test_platform/request.proto",
-	//     request_pb="test_platform")
-	// load(
-	//     "@proto//test_platform/config/config.proto",
-	//     config_pb = "test_platform.config")
-	// load(
-	//     "@proto//test_platform/migration/scheduler/traffic_split.proto",
-	//     migration_pb="test_platform.migration.scheduler")
-	"test_platform/request.proto",
-	"test_platform/config/config.proto",
-	"test_platform/migration/scheduler/traffic_split.proto",
-
-	// Swarming service configs.
-	//
-	// load(
-	//     "@proto//go.chromium.org/luci/swarming/proto/config/bots.proto",
-	//     bots_pb="swarming.config")
-	// load(
-	//     "@proto//go.chromium.org/luci/swarming/proto/config/config.proto",
-	//     config_pb="swarming.config")
-	// load(
-	//     "@proto//go.chromium.org/luci/swarming/proto/config/pools.proto",
-	//     pools_pb="swarming.config")
-	"go.chromium.org/luci/swarming/proto/config/bots.proto",
-	"go.chromium.org/luci/swarming/proto/config/config.proto",
-	"go.chromium.org/luci/swarming/proto/config/pools.proto",
-
-	// GCE Provider service configs.
-	//
-	// load(
-	//     "@proto//go.chromium.org/luci/gce/api/config/v1/config.proto",
-	//     config_pb="config")
-	// load(
-	//     "@proto//go.chromium.org/luci/gce/api/projects/v1/config.proto",
-	//     projects_pb="projects")
-	"go.chromium.org/luci/gce/api/config/v1/config.proto",
-	"go.chromium.org/luci/gce/api/projects/v1/config.proto",
-}
 
 // Collection of built-in descriptor sets built from protobuf v1 registry.
 var (
 	wellKnownDescSet *starlarkproto.DescriptorSet
 	googTypesDescSet *starlarkproto.DescriptorSet
 	luciTypesDescSet *starlarkproto.DescriptorSet
-	miscTypesDescSet *starlarkproto.DescriptorSet // TODO(vadimsh): Delete.
 )
 
 // init initializes DescSet global vars.
@@ -236,13 +110,6 @@ func init() {
 		"go.chromium.org/luci/luci_notify/api/config/notify.proto",
 		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
 	}, visited, wellKnownDescSet, googTypesDescSet)
-
-	// Everything else.
-	//
-	// TODO(vadimsh): Get rid of this by moving them to externally loaded
-	// descriptors.
-	miscTypesDescSet = builtinDescriptorSet("lucicfg/misc", miscProtos,
-		visited, wellKnownDescSet, googTypesDescSet, luciTypesDescSet)
 }
 
 // builtinDescriptorSet assembles a *DescriptorSet from descriptors embedded
