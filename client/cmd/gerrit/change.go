@@ -271,6 +271,40 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-
 	}
 }
 
+func cmdChangesSubmittedTogether(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		opts, _ := input.QueryInput.(*gerrit.ChangeDetailsParams)
+		changes, err := client.ChangesSubmittedTogether(ctx, input.ChangeID, *opts)
+		if err != nil {
+			return nil, err
+		}
+		return changes, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "changes-submitted-together <options>",
+		ShortDesc: "lists Gerrit changes which are submitted together when Submit is called for a change",
+		LongDesc: `Lists Gerrit changes which are submitted together when Submit is called for a change.
+
+Input should contain a change ID and optionally query parameters, e.g.
+{
+  "change-id": <change-id>,
+  "params": <query parameters as JSON>
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+For more information on valid query parameters, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID:   true,
+				queryInput: &gerrit.ChangeDetailsParams{},
+			}, runner)
+		},
+	}
+}
+
 func cmdSetReview(authOpts auth.Options) *subcommands.Command {
 	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
 		ri, _ := input.JSONInput.(*gerrit.ReviewInput)
