@@ -98,6 +98,30 @@
     },
     {
       "key": {
+        "uuid": "83f3567d_bd74deb6",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-03T23:49:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca9b0062_4f68eab7",
+      "range": {
+        "startLine": 104,
+        "startChar": 1,
+        "endLine": 106,
+        "endChar": 18
+      },
+      "revId": "fd0f996155508a1c87c4c0678bc53394d9eb7b64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a172318b_bc83b8e9",
         "filename": "luciexe/host/options.go",
         "patchSetId": 2
