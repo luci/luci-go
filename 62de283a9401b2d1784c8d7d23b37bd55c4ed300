@@ -95,6 +95,29 @@
     },
     {
       "key": {
+        "uuid": "51b1b046_ccebbfba",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T16:54:05Z",
+      "side": 1,
+      "message": "I don\u0027t understand usefulness of this. In Buildbucket mode, there can be only one meaninful order, in led mode there\u0027s no \"LUCI Auth Identities\" at all. Also I don\u0027t like introduction of \"LUCI Auth Identity\" term, things are already confusing... Note that \u0027task\u0027 and \u0027system\u0027 are called \"logical accounts\" elsewhere.\n\nNote that there are two authentication contexts here: one is for \"Host Application\" (to call Logdog, Buildbucket, etc), another is for luciexe.\n\nHost application doesn\u0027t need any fancy shit produced by authctx.Context. This fancy shit is only for luciexe.\n\nMaybe I\u0027m biased, but the most natural way to arrange auth options in my opinion is:\n\ntype Options struct {\n   LogdogOutput ldOutput.Output\n   ...\n   HostAuth *auth.Authenticator\n   ExeAuth *authctx.Context\n}\n\nAnd let the caller construct them however it wishes. Both these structs are pretty high level and pretty well documented. Wrapping them in additional layer of options won\u0027t make them any easier to understand.\n\nIn Buildbucket mode HostAuth will be constructed via LUCIContextMethod, with \u0027system\u0027 logical account. And ExeAuth will be constructed also with LUCIContextMethod, but with \u0027task\u0027 logical account.\n\nIn Led mode, ExeAuth will be constructed with AutoSelectMethod and some hardcoded set of scopes. And HostAuth will be just ExeAuth.Authenticator() (i.e. same creds, there\u0027s only one set of creds when running stuff locally). Another option is to construct ExeAuth using ActAsServiceAccount (passed via a flag) or via ServiceAccountMethod. Then led can grab any tokens it wants locally too.\n\nAlso note that if LogdogOutput is the only way \"Host Application\" communicates with err.... host host application, then \u0027HostAuth\u0027 isn\u0027t even needed. Then your AuthOpts become almost a copy of authctx.Context options, just less documented.",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 27
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5f525866_a5f372a0",
         "filename": "luciexe/host/host.go",
         "patchSetId": 1
@@ -106,6 +129,30 @@
       "writtenOn": "2019-08-31T01:25:54Z",
       "side": 1,
       "message": "Vadim, do we actually need to keep these as options? Can we just enable this everywhere?",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 24
+      },
+      "revId": "62de283a9401b2d1784c8d7d23b37bd55c4ed300",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3fceb0c_acd0f860",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T16:54:05Z",
+      "side": 1,
+      "message": "I don\u0027t know. \n\nGCE Emulation is in experimental stage yet (enabled only on a bunch of builders). There were reports it doesn\u0027t work with some version of gsutils. Need to investigate before enabling it everywhere.\n\nGit auth was explicitly disabled on CrOS bots some time ago. But looks like no more? Need to confirm is it enabled everywhere, then we can make it default.\n\nDocker: some recipes use \"docker login\" step. I don\u0027t know how it behaves when docker auth daemon is enabled.\n\nFirebase should be safe to enable everywhere. At worst it\u0027ll break few exotic recipes that use firebase in a weird way.",
+      "parentUuid": "5f525866_a5f372a0",
       "range": {
         "startLine": 73,
         "startChar": 0,
