@@ -149,6 +149,29 @@ func TestChangeDetails(t *testing.T) {
 
 }
 
+func TestChangesSubmittedTogether(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("SubmittedTogether", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n[%s,%s]\n", fakeCL1Str, fakeCL6Str)
+		})
+		defer srv.Close()
+
+		Convey("WithOptions", func() {
+			options := ChangeDetailsParams{Options: []string{"CURRENT_REVISION"}}
+			cls, err := c.ChangesSubmittedTogether(ctx, "627036", options)
+			So(err, ShouldBeNil)
+			So(cls[0].CurrentRevision, ShouldEqual, "eb2388b592a9")
+			So(cls[1].CurrentRevision, ShouldEqual, "d6375c2ea5b0")
+		})
+
+	})
+}
+
 func TestChangeLabels(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -528,6 +551,7 @@ var (
 	    "change_id": "I4c01b6686740f15844dc86aab73ee4ce00b90fe3",
 	    "subject": "gitiles: Implement forward log.",
 	    "status": "NEW",
+	    "current_revision": "eb2388b592a9",
 	    "created": "2017-08-22 18:46:58.000000000",
 	    "updated": "2017-08-23 22:33:34.000000000",
 	    "submit_type": "REBASE_ALWAYS",
@@ -693,6 +717,45 @@ var (
 				"+2": "Looks good to me, approved"
 			}
 		}
+	    }
+	}`
+	fakeCL6Str = `{
+	    "id": "infra%2Fluci%2Fluci-go~master~Id37e51c3b84bfc41bc88fa237ddf722f934f4fa4",
+	    "project": "infra/luci/luci-go",
+	    "branch": "master",
+	    "hashtags": [],
+	    "change_id": "Id37e51c3b84bfc41bc88fa237ddf722f934f4fa4",
+	    "subject": "[vpython]: Re-add deprecated \"-spec\" flag.",
+	    "status": "NEW",
+	    "current_revision": "d6375c2ea5b0",
+	    "created": "2017-08-21 18:46:58.000000000",
+	    "updated": "2017-08-22 22:33:34.000000000",
+	    "submit_type": "REBASE_ALWAYS",
+	    "mergeable": true,
+	    "insertions": 6,
+	    "deletions": 0,
+	    "unresolved_comment_count": 0,
+	    "has_review_started": true,
+	    "_number": 646267,
+	    "owner": {
+		"_account_id": 1118104
+	    },
+	    "reviewers": {
+		    "CC": [
+			    {"_account_id": 1118110},
+			    {"_account_id": 1118111},
+			    {"_account_id": 1118112}
+		    ],
+		    "REVIEWER": [
+			    {"_account_id": 1118120},
+			    {"_account_id": 1118121},
+			    {"_account_id": 1118122}
+		    ],
+		    "REMOVED": [
+			    {"_account_id": 1118130},
+			    {"_account_id": 1118131},
+			    {"_account_id": 1118132}
+		    ]
 	    }
 	}`
 )

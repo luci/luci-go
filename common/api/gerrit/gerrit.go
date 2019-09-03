@@ -402,6 +402,32 @@ func (c *Client) ChangeDetails(ctx context.Context, changeID string, options Cha
 	return &resp, nil
 }
 
+// ChangesSubmittedTogether returns a list of Gerrit changes which are submitted
+// when Submit is called for the given change, including the current change itself.
+// As a special case, the list is empty if this change would be submitted by itself
+// (without other changes).
+//
+// Returns a slice of Change and an error.
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submitted-together
+//
+// options is a list of strings like {"CURRENT_REVISION"} which tells Gerrit
+// to return non-default properties for each Change. The supported strings for
+// options are listed in Gerrit's api documentation at the link below:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
+func (c *Client) ChangesSubmittedTogether(ctx context.Context, changeID string, options ChangeDetailsParams) ([]*Change, error) {
+	var resp []*Change
+	path := fmt.Sprintf("a/changes/%s/submitted_together", url.PathEscape(changeID))
+	if _, err := c.get(ctx, path, options.queryString(), &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 // ChangeInput contains the parameters necessary for creating a change in
 // Gerrit.
 //
