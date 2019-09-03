@@ -24,6 +24,121 @@
       "revId": "342989a58627cf6f2889c6675f562ae4c6100071",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b144bebe_d5594ae9",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T18:29:36Z",
+      "side": 1,
+      "message": "to a copy of ...",
+      "range": {
+        "startLine": 47,
+        "startChar": 21,
+        "endLine": 47,
+        "endChar": 38
+      },
+      "revId": "342989a58627cf6f2889c6675f562ae4c6100071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e6c6d12_b79993e1",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T18:29:36Z",
+      "side": 1,
+      "message": "this is actually a stateful object, making it a global var is not great... Strictly speaking, after it has started, it is no longer copyable (has locks and stuff). Should be fine to copy before it is launched, but go vet may still complain, not sure...",
+      "range": {
+        "startLine": 66,
+        "startChar": 21,
+        "endLine": 66,
+        "endChar": 36
+      },
+      "revId": "342989a58627cf6f2889c6675f562ae4c6100071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "087cf48c_d8b8aac9",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T18:29:36Z",
+      "side": 1,
+      "message": "nit: drop, it will look confusing. The host is not actually using this auth context. Only luciexe does.",
+      "range": {
+        "startLine": 67,
+        "startChar": 13,
+        "endLine": 67,
+        "endChar": 18
+      },
+      "revId": "342989a58627cf6f2889c6675f562ae4c6100071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6762dac9_8d960522",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T18:29:36Z",
+      "side": 1,
+      "message": "what does this mean? Should it be \"collected from the luciexe\" or \"collected by the host environment\"?",
+      "range": {
+        "startLine": 84,
+        "startChar": 38,
+        "endLine": 84,
+        "endChar": 63
+      },
+      "revId": "342989a58627cf6f2889c6675f562ae4c6100071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68f38531_538ca9e1",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T18:29:36Z",
+      "side": 1,
+      "message": "Note that the local auth account selected there (per https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/lucictx/local_auth.go?l\u003d77) is significant, it will be used for the task. (By default on Swarming it is \u0027task\u0027 account, so there\u0027s no need to use SwitchLocalAccount here, but it will be needed to switch to \u0027system\u0027 account for Logdog).",
+      "range": {
+        "startLine": 93,
+        "startChar": 9,
+        "endLine": 93,
+        "endChar": 28
+      },
+      "revId": "342989a58627cf6f2889c6675f562ae4c6100071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
