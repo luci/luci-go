@@ -22,9 +22,25 @@ package host
 
 import (
 	"context"
+	"os"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/lucictx"
 )
+
+type cleanups []func() error
+
+func (c cleanups) run() {
+	merr := errors.NewLazyMultiError(len(c))
+	for i, fn := range c {
+		merr.Assign(i, fn())
+	}
+	if err := merr.Get(); err != nil {
+		panic(err)
+	}
+}
 
 // Run executes `cb` in a "luciexe" host environment.
 //
@@ -37,7 +53,64 @@ import (
 // When the callback function completes, Run closes the returned channel.
 //
 // Blocking the returned channel may block the execution of `cb`.
+//
+// NOTE: This modifies the environment (i.e. with os.Setenv) while `cb` is
+// running. Be careful when using Run concurrently with other code.
 func Run(ctx context.Context, options *Options, cb func(context.Context) error) (<-chan *bbpb.Build, error) {
-	// TODO(iannucci): implement
-	return nil, nil
+	var opts Options
+	if options != nil {
+		opts = *options
+	}
+	if err := opts.initialize(); err != nil {
+		return nil, err
+	}
+
+	var envCleanups cleanups
+	defer envCleanups.run()
+
+	// Start auth services for `cb`.
+	origEnv := environ.System()
+	envCleanups = append(envCleanups, func() error {
+		os.Clearenv()
+		return errors.Annotate(origEnv.Iter(os.Setenv), "restoring original env").Err()
+	})
+
+	env := environ.New(nil)
+
+	if err := opts.ExeAuth.Launch(ctx, opts.authDir); err != nil {
+		return nil, errors.Annotate(err, "setting up task auth").Err()
+	}
+	opts.ExeAuth.Report(ctx)
+	ctx = opts.ExeAuth.Export(ctx, env)
+	envCleanups = append(envCleanups, func() error {
+		opts.ExeAuth.Close(ctx)
+		return nil
+	})
+
+	exported, err := lucictx.ExportInto(ctx, opts.lucictxDir)
+	if err != nil {
+		return nil, errors.Annotate(err, "exporting LUCI_CONTEXT").Err()
+	}
+	envCleanups = append(envCleanups, exported.Close)
+	exported.SetInEnviron(env)
+
+	if err := env.Iter(os.Setenv); err != nil {
+		return nil, errors.Annotate(err, "setting up environment").Err()
+	}
+
+	// TODO(iannucci): implement logdog butler
+	builds := make(chan *bbpb.Build)
+
+	// switch cleanups to be owned by goroutine
+	innerCleanups := envCleanups
+	envCleanups = nil
+	go func() {
+		defer close(builds)
+		defer innerCleanups.run()
+
+		// TODO(iannucci): do something with retval of cb
+		cb(ctx)
+	}()
+
+	return builds, nil
 }
