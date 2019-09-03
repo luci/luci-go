@@ -25,11 +25,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"go.starlark.net/starlark"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarkproto"
@@ -92,26 +90,10 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// the thread. This exposes it to Starlark code, so it can register descriptor
 	// sets in it.
 	ploader := starlarkproto.NewLoader()
-	registerMisc := sync.Once{}
 	pkgs["proto"] = func(path string) (dict starlark.StringDict, _ string, err error) {
 		mod, err := ploader.Module(path)
 		if err != nil {
-			// Maybe 'path' is one of the misc protos and their descriptor is not
-			// provided yet by user-supplied *.star. If so, fallback to the built-in
-			// descriptor sets.
-			//
-			// TODO(vadimsh): Get rid of this once all users provide descriptors.
-			registerMisc.Do(func() {
-				logging.Warningf(ctx, "Falling back to embedded proto descriptors to load %q", path)
-				if err := ploader.AddDescriptorSet(miscTypesDescSet); err != nil {
-					logging.Errorf(ctx, "Failed to register embedded proto descriptors: %s", err)
-					logging.Errorf(ctx, "Most likely the descriptor set you registered in your *.star is incomplete")
-				}
-			})
-			mod, err = ploader.Module(path)
-			if err != nil {
-				return nil, "", err // completely unknown proto file
-			}
+			return nil, "", err
 		}
 		return starlark.StringDict{mod.Name: mod}, "", nil
 	}

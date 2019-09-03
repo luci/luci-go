@@ -15,7 +15,6 @@
 package lucicfg
 
 import (
-	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -73,22 +72,6 @@ func testMessage(i int) *starlarkproto.Message {
 
 func TestProtos(t *testing.T) {
 	t.Parallel()
-
-	// Note: imports of standard and LUCI protos are tested by more high-level
-	// lucicfg tests that actually generate configs. Misc protos are not involved
-	// in them, so we test they can be imported separately here.
-	//
-	// TODO(vadimsh): Get rid of this.
-	loader := starlarkproto.NewLoader()
-	if err := loader.AddDescriptorSet(miscTypesDescSet); err != nil {
-		panic(err)
-	}
-	for _, path := range miscProtos {
-		Convey(fmt.Sprintf("%q is importable", path), t, func(c C) {
-			_, err := loader.Module(path)
-			So(err, ShouldBeNil)
-		})
-	}
 
 	// Note: testMessage() is used by other tests. This test verifies it works
 	// at all.
