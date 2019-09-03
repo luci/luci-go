@@ -50,6 +50,30 @@
     },
     {
       "key": {
+        "uuid": "99000a5f_9a268f60",
+        "filename": "luciexe/host/auth_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-03T23:56:16Z",
+      "side": 1,
+      "message": "ah, makes sense. 👍 for comment.",
+      "parentUuid": "3c3a583d_df11d6f8",
+      "range": {
+        "startLine": 37,
+        "startChar": 56,
+        "endLine": 37,
+        "endChar": 68
+      },
+      "revId": "fd0f996155508a1c87c4c0678bc53394d9eb7b64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4df256b_733b1e63",
         "filename": "luciexe/host/host.go",
         "patchSetId": 2
@@ -109,6 +133,30 @@
       "writtenOn": "2019-09-03T23:49:10Z",
       "side": 1,
       "message": "Done",
+      "parentUuid": "ca9b0062_4f68eab7",
+      "range": {
+        "startLine": 104,
+        "startChar": 1,
+        "endLine": 106,
+        "endChar": 18
+      },
+      "revId": "fd0f996155508a1c87c4c0678bc53394d9eb7b64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "38ed7d9d_72c6a194",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-03T23:56:16Z",
+      "side": 1,
+      "message": "derp. Forgot about defer for envCleanups above -- a comment there about this ownership change would have helped.",
       "parentUuid": "ca9b0062_4f68eab7",
       "range": {
         "startLine": 104,
