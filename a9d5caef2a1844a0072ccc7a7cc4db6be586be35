@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc3f9675_33e1722c",
+        "filename": "luciexe/host/options.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T18:44:17Z",
+      "side": 1,
+      "message": "err... what\u0027s wrong with \n\nfunc DefaultExeAuth(...) *authctx.Context {\n ...\n}\n\n?",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 21
+      },
+      "revId": "a9d5caef2a1844a0072ccc7a7cc4db6be586be35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d629186c_41021262",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T18:44:17Z",
+      "side": 1,
+      "message": "there are some unnecessary words here, I think",
+      "range": {
+        "startLine": 31,
+        "startChar": 28,
+        "endLine": 31,
+        "endChar": 62
+      },
+      "revId": "c1fa0304079e3a03d8ce7e4fad29e08e99fd66c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29757f45_7507031c",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-03T18:44:17Z",
+      "side": 1,
+      "message": "c",
+      "range": {
+        "startLine": 34,
+        "startChar": 7,
+        "endLine": 34,
+        "endChar": 8
+      },
+      "revId": "c1fa0304079e3a03d8ce7e4fad29e08e99fd66c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
