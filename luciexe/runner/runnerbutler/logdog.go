@@ -70,7 +70,7 @@ func (l *Server) Start(ctx context.Context) error {
 	// for the entire process.
 	disableGRPCLogging(ctx)
 
-	serv, err := newLogDogStreamServerForPlatform(ctx, l.WorkDir)
+	serv, err := streamserver.NewStreamServer(ctx, l.WorkDir)
 	if err != nil {
 		return errors.Annotate(err, "failed to create stream server").Err()
 	}

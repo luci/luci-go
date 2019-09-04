@@ -48,9 +48,7 @@ type listenerStreamServer struct {
 	// gen is a generator function that is called to produce the stream server's
 	// Listener. On success, it returns the instantiated Listener, which will be
 	// closed when the stream server is closed.
-	//
-	// The string returned is the address for this server.
-	gen   func() (net.Listener, string, error)
+	gen   func() (net.Listener, error)
 	l     net.Listener
 	laddr string
 
@@ -74,16 +72,13 @@ func (s *listenerStreamServer) String() string {
 }
 
 func (s *listenerStreamServer) Address() string {
-	if s.address == "" {
-		panic("server must be listening to get its address")
-	}
 	return s.address
 }
 
 func (s *listenerStreamServer) Listen() error {
 	// Create a listener (OS-specific).
 	var err error
-	s.l, s.address, err = s.gen()
+	s.l, err = s.gen()
 	if err != nil {
 		return err
 	}
