@@ -97,10 +97,17 @@ func RemoveAll(path string) error {
 	// Simple case: try removing as if it was a file or empty directory.
 	var err error
 	if isWin {
-		// On Windows, the file must not be read-only and have valid ownership.
+		// In theory this call should not be necessary. os.Remove() already
+		// tries to remove the FILE_ATTRIBUTE_READONLY attribute at
+		// https://go.googlesource.com/go/+blame/go1.13/src/os/file_windows.go#296.
+		// In practice this doesn't work in one case, when it is a symlink that
+		// points to a missing file. In this case, ErrNotExist is returned, but
+		// the function call is still needed for the os.Remove() to work below.
 		err = MakePathUserWritable(path, nil)
 	}
-	if err == nil {
+	if err == nil || IsNotExist(err) {
+		// On Windows, invalid symlink is treated as not exist error, but need to
+		// remove that.
 		err = os.Remove(path)
 	}
 	if err == nil || IsNotExist(err) {
