@@ -15,8 +15,13 @@
 package host
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	ldOutput "go.chromium.org/luci/logdog/client/butler/output"
 )
@@ -50,6 +55,9 @@ type Options struct {
 	// The BaseDir (provided or picked) will be managed by Run; Prior to
 	// execution, Run will ensure that the directory is empty.
 	BaseDir string
+
+	authDir    string
+	lucictxDir string
 }
 
 // The function below is in `var name = func` form so that it shows up in godoc.
@@ -72,4 +80,37 @@ var DefaultExeAuth = func(id string, knownGerritHosts []string) *authctx.Context
 		EnableFirebaseAuth: true,
 		KnownGerritHosts:   knownGerritHosts,
 	}
+}
+
+func (o *Options) initialize() (err error) {
+	if o.BaseDir == "" {
+		o.BaseDir, err = ioutil.TempDir("", "luciexe-host-")
+		if err != nil {
+			return errors.Annotate(err, "generating options.BaseDir").Err()
+		}
+	}
+
+	pathsToMake := []struct {
+		path string  // unique directory name under BaseDir
+		name string  // human readable name of this dir (i.e. it's purpose)
+		dest *string // output destination in Options struct
+	}{
+		{"a", "auth", &o.authDir},
+		{"l", "luci context", &o.lucictxDir},
+	}
+
+	merr := errors.NewLazyMultiError(len(pathsToMake))
+	for i, paths := range pathsToMake {
+		*paths.dest = filepath.Join(o.BaseDir, paths.path)
+		merr.Assign(i, errors.Annotate(os.Mkdir(*paths.dest, 0777), "making %q dir", paths.name).Err())
+	}
+	if err := merr.Get(); err != nil {
+		return err
+	}
+
+	if o.ExeAuth == nil {
+		o.ExeAuth = DefaultExeAuth("luciexe", nil)
+	}
+
+	return nil
 }

@@ -37,7 +37,46 @@ import (
 // When the callback function completes, Run closes the returned channel.
 //
 // Blocking the returned channel may block the execution of `cb`.
+//
+// NOTE: This modifies the environment (i.e. with os.Setenv) while `cb` is
+// running. Be careful when using Run concurrently with other code.
 func Run(ctx context.Context, options *Options, cb func(context.Context) error) (<-chan *bbpb.Build, error) {
-	// TODO(iannucci): implement
-	return nil, nil
+	var opts Options
+	if options != nil {
+		opts = *options
+	}
+	if err := opts.initialize(); err != nil {
+		return nil, err
+	}
+
+	// cleanup will accumulate all of the cleanup functions as we set up the
+	// environment. If an error occurs before we can start the user code (`cb`),
+	// the defer below will run them all. Otherwise they'll be transferred to the
+	// goroutine.
+	var cleanup cleanupSlice
+	defer cleanup.run()
+
+	// First, capture the entire env to restore it later.
+	cleanup = append(cleanup, restoreEnv())
+
+	// Startup auth services
+	if err := cleanup.add(startAuthServices(ctx, &opts)); err != nil {
+		return nil, err
+	}
+
+	// TODO(iannucci): implement logdog butler
+	builds := make(chan *bbpb.Build)
+
+	// Transfer ownership of cleanups to goroutine
+	userCleanup := cleanup
+	cleanup = nil
+	go func() {
+		defer close(builds)
+		defer userCleanup.run()
+
+		// TODO(iannucci): do something with retval of cb
+		cb(ctx)
+	}()
+
+	return builds, nil
 }
