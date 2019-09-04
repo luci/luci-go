@@ -19,12 +19,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 )
-
-// Set to true on `go test -v`
-var verboseTests = false
 
 // Channel holds a chan which you can push individual work items to.
 type Channel struct {
@@ -109,12 +105,6 @@ func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error
 		resultCh: make(chan workerResult),
 
 		timer: clock.NewTimer(clock.Tag(ctx, "coordinator")),
-	}
-
-	if verboseTests {
-		cstate.dbg = logging.Get(logging.SetField(ctx, "dispatcher.coordinator", true)).Infof
-	} else {
-		cstate.dbg = func(string, ...interface{}) {}
 	}
 
 	go cstate.run(ctx, send)

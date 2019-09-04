@@ -37,8 +37,12 @@ func dummySendFn(*buffer.Batch) error { return nil }
 
 func noDrop(dropped *buffer.Batch) { panic(fmt.Sprintf("dropping %+v", dropped)) }
 
-func init() {
-	verboseTests = testing.Verbose()
+func dbgIfVerbose(ctx context.Context) (context.Context, func(string, ...interface{})) {
+	if testing.Verbose() {
+		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+		return ctx, logging.Get(logging.SetField(ctx, "dispatcher.coordinator", true)).Infof
+	}
+	return ctx, func(string, ...interface{}) {}
 }
 
 func TestChannelConstruction(t *testing.T) {
@@ -86,10 +90,7 @@ func TestChannelConstruction(t *testing.T) {
 func TestSerialSenderWithoutDrops(t *testing.T) {
 	Convey(`serial world-state sender without drops`, t, func(cvctx C) {
 		ctx, tclock := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-
-		if testing.Verbose() {
-			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
-		}
+		ctx, dbg := dbgIfVerbose(ctx)
 
 		sentBatches := []string{}
 		enableThisError := false
@@ -102,6 +103,7 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 				BatchSize:    1,
 				FullBehavior: &buffer.BlockNewItems{MaxItems: 10},
 			},
+			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
 			cvctx.So(batch.Data, ShouldHaveLength, 1)
 			str := batch.Data[0].(string)
@@ -157,9 +159,7 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 func TestContextShutdown(t *testing.T) {
 	Convey(`context cancellation ends channel`, t, func(cvctx C) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-		if testing.Verbose() {
-			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
-		}
+		ctx, dbg := dbgIfVerbose(ctx)
 		cctx, cancel := context.WithCancel(ctx)
 
 		sentBatches := []string{}
@@ -173,6 +173,7 @@ func TestContextShutdown(t *testing.T) {
 				BatchSize:    1,
 				FullBehavior: &buffer.BlockNewItems{MaxItems: 1},
 			},
+			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
 			sentBatches = append(sentBatches, batch.Data[0].(string))
 			<-blockSend
@@ -196,9 +197,7 @@ func TestContextShutdown(t *testing.T) {
 func TestQPSLimit(t *testing.T) {
 	Convey(`QPS limited send`, t, func() {
 		ctx := context.Background() // uses real time!
-		if testing.Verbose() {
-			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
-		}
+		ctx, dbg := dbgIfVerbose(ctx)
 
 		sentBatches := []int{}
 
@@ -210,6 +209,7 @@ func TestQPSLimit(t *testing.T) {
 				BatchSize:    1,
 				FullBehavior: &buffer.BlockNewItems{MaxItems: 20},
 			},
+			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
 			sentBatches = append(sentBatches, batch.Data[0].(int))
 			return
@@ -237,9 +237,7 @@ func TestQPSLimit(t *testing.T) {
 func TestQPSLimitParallel(t *testing.T) {
 	Convey(`QPS limited send (parallel)`, t, func() {
 		ctx := context.Background() // uses real time!
-		if testing.Verbose() {
-			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
-		}
+		ctx, dbg := dbgIfVerbose(ctx)
 
 		var lock sync.Mutex
 		sentBatches := []int{}
@@ -252,6 +250,7 @@ func TestQPSLimitParallel(t *testing.T) {
 				BatchSize:    1,
 				FullBehavior: &buffer.BlockNewItems{MaxItems: 20},
 			},
+			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
 			lock.Lock()
 			sentBatches = append(sentBatches, batch.Data[0].(int))
@@ -280,9 +279,7 @@ func TestQPSLimitParallel(t *testing.T) {
 func TestExplicitDrops(t *testing.T) {
 	Convey(`explict drops with ErrorFn`, t, func() {
 		ctx := context.Background() // uses real time!
-		if testing.Verbose() {
-			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
-		}
+		ctx, dbg := dbgIfVerbose(ctx)
 
 		sentBatches := []int{}
 		droppedBatches := []int{}
@@ -300,6 +297,7 @@ func TestExplicitDrops(t *testing.T) {
 				BatchSize:    1,
 				FullBehavior: &buffer.BlockNewItems{MaxItems: 20},
 			},
+			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
 			itm := batch.Data[0].(int)
 			if itm%2 == 0 {
@@ -324,9 +322,7 @@ func TestExplicitDrops(t *testing.T) {
 func TestImplicitDrops(t *testing.T) {
 	Convey(`implicit drops with DropOldestBatch`, t, func(cvctx C) {
 		ctx := context.Background() // uses real time!
-		if testing.Verbose() {
-			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
-		}
+		ctx, dbg := dbgIfVerbose(ctx)
 
 		sentBatches := []int{}
 		sendBlocker := make(chan struct{})
@@ -339,6 +335,7 @@ func TestImplicitDrops(t *testing.T) {
 				BatchSize:    1,
 				FullBehavior: &buffer.DropOldestBatch{MaxLiveItems: 1},
 			},
+			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
 			sentBatches = append(sentBatches, batch.Data[0].(int))
 			<-sendBlocker

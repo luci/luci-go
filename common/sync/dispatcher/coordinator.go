@@ -30,8 +30,6 @@ type coordinatorState struct {
 	itemCh  <-chan interface{}
 	drainCh chan<- struct{}
 
-	dbg func(fmt string, args ...interface{})
-
 	resultCh chan workerResult
 
 	// Used as a wake-up timer for the coordinator to wake itself up when the
@@ -46,6 +44,12 @@ type coordinatorState struct {
 type workerResult struct {
 	batch *buffer.Batch
 	err   error
+}
+
+func (state *coordinatorState) dbg(msg string, args ...interface{}) {
+	if state.opts.testingDbg != nil {
+		state.opts.testingDbg(msg, args...)
+	}
 }
 
 func (state *coordinatorState) sendBatches(ctx context.Context, now time.Time, send SendFn) time.Duration {
