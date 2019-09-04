@@ -115,7 +115,7 @@ func TestListenerStreamServer(t *testing.T) {
 
 	Convey(`A stream server using a testing Listener`, t, func() {
 		var tl *testListener
-		s := &listenerStreamServer{
+		s := &StreamServer{
 			Context: context.Background(),
 			address: "test",
 			gen: func() (net.Listener, error) {
@@ -242,7 +242,7 @@ func TestListenerStreamServer(t *testing.T) {
 // server.
 //
 // svr must be in listening state when this is called.
-func testClientServer(t *testing.T, svr StreamServer, client *streamclient.Client) {
+func testClientServer(t *testing.T, svr *StreamServer, client *streamclient.Client) {
 	ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 	data := []byte("ohaithere")
 

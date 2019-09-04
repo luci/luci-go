@@ -33,8 +33,8 @@ const maxWindowsNamedPipeLength = 256
 
 var winpipeCounter uint64
 
-// newWinpipeServer instantiates a new Windows named pipe server instance.
-func newWinpipeServer(ctx context.Context, prefix string) (StreamServer, error) {
+// newStreamServer instantiates a new Windows named pipe server instance.
+func newStreamServer(ctx context.Context, prefix string) (StreamServer, error) {
 	if prefix == "" {
 		prefix = "logdog_butler"
 	}
@@ -64,8 +64,4 @@ func newWinpipeServer(ctx context.Context, prefix string) (StreamServer, error) 
 			return l, nil
 		},
 	}, nil
-}
-
-func init() {
-	newStreamServer = newWinpipeServer
 }
