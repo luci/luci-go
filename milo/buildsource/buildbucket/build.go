@@ -17,12 +17,14 @@ package buildbucket
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	// "github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
@@ -184,12 +186,15 @@ func getBugLink(c *router.Context, b *buildbucketpb.Build) (string, error) {
 		return "", err
 	}
 
+	baseURL := "https://" + c.Request.Host
 	builderPath := fmt.Sprintf("/p/%s/builders/%s/%s", b.Builder.GetProject(), b.Builder.GetBucket(), b.Builder.GetBuilder())
-	buildURL, err := c.Request.URL.Parse(builderPath + "/" + c.Params.ByName("numberOrId"))
+
+	buildURL, err := url.Parse(baseURL + builderPath + "/" + c.Params.ByName("numberOrId"))
 	if err != nil {
 		return "", errors.Annotate(err, "Unable to make build URL for build bug link.").Err()
 	}
-	builderURL, err := c.Request.URL.Parse(builderPath)
+
+	builderURL, err := url.Parse(baseURL + builderPath)
 	if err != nil {
 		return "", errors.Annotate(err, "Unable to make builder URL for build bug link.").Err()
 	}

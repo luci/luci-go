@@ -3,18 +3,24 @@
 
 package milo
 
-import prpc "go.chromium.org/luci/grpc/prpc"
-
 import (
+	prpc "go.chromium.org/luci/grpc/prpc"
+
 	context "context"
+
 	fmt "fmt"
-	math "math"
 
 	proto "github.com/golang/protobuf/proto"
+
 	milo "go.chromium.org/luci/common/proto/milo"
+
 	grpc "google.golang.org/grpc"
+
 	codes "google.golang.org/grpc/codes"
+
 	status "google.golang.org/grpc/status"
+
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -405,6 +411,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BuildInfoClient interface {
+	// DEPRECATED. Do not start using this API.
 	Get(ctx context.Context, in *BuildInfoRequest, opts ...grpc.CallOption) (*BuildInfoResponse, error)
 }
 type buildInfoPRPCClient struct {
@@ -443,6 +450,7 @@ func (c *buildInfoClient) Get(ctx context.Context, in *BuildInfoRequest, opts ..
 
 // BuildInfoServer is the server API for BuildInfo service.
 type BuildInfoServer interface {
+	// DEPRECATED. Do not start using this API.
 	Get(context.Context, *BuildInfoRequest) (*BuildInfoResponse, error)
 }
 
