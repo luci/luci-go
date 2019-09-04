@@ -18,6 +18,7 @@ package streamserver
 
 import (
 	"context"
+	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -31,30 +32,39 @@ import (
 // This is defined by the UNIX_PATH_MAX constant, and is usually this value.
 const maxPOSIXNamedSocketLength = 104
 
-// NewUNIXDomainSocketServer instantiates a new POSIX domain soecket server
+// newUNIXDomainSocketServer instantiates a new POSIX domain socket server
 // instance.
 //
 // No resources are actually created until methods are called on the returned
 // server.
-func NewUNIXDomainSocketServer(ctx context.Context, path string) (StreamServer, error) {
-	switch l := len(path); {
-	case l == 0:
-		return nil, errors.New("cannot have empty path")
-	case l > maxPOSIXNamedSocketLength:
+func newUNIXDomainSocketServer(ctx context.Context, path string) (StreamServer, error) {
+	if path == "" {
+		tFile, err := ioutil.TempFile("", "ld")
+		if err != nil {
+			return nil, err
+		}
+		path = tFile.Name()
+		if err := tFile.Close(); err != nil {
+			return nil, errors.Annotate(err, "closing tempfile %q", path).Err()
+		}
+	} else {
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			return nil, errors.Annotate(err, "could not get absolute path of %q", path).Err()
+		}
+		path = abs
+	}
+
+	if len(path) > maxPOSIXNamedSocketLength {
 		return nil, errors.Reason("path exceeds maximum length %d", maxPOSIXNamedSocketLength).
 			InternalReason("path(%s)", path).Err()
 	}
 
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		return nil, errors.Annotate(err, "could not get absolute path of [%s]", path).Err()
-	}
-	path = abs
-
 	ctx = log.SetField(ctx, "namedPipePath", path)
 	return &listenerStreamServer{
 		Context: ctx,
-		gen: func() (net.Listener, string, error) {
+		address: "unix:" + path,
+		gen: func() (net.Listener, error) {
 			log.Infof(ctx, "Creating POSIX server socket Listener.")
 
 			// Cleanup any previous named pipe. We don't bother checking for the file
@@ -68,16 +78,15 @@ func NewUNIXDomainSocketServer(ctx context.Context, path string) (StreamServer, 
 			// Create a UNIX listener
 			l, err := net.Listen("unix", path)
 			if err != nil {
-				return nil, "", err
+				return nil, err
 			}
 
-			addr := "unix:" + path
 			ul := selfCleaningUNIXListener{
 				Context:  ctx,
 				Listener: l,
 				path:     path,
 			}
-			return &ul, addr, nil
+			return &ul, nil
 		},
 	}, nil
 }
@@ -108,4 +117,8 @@ func (l *selfCleaningUNIXListener) Close() error {
 		return err
 	}
 	return nil
+}
+
+func init() {
+	newStreamServer = newUNIXDomainSocketServer
 }

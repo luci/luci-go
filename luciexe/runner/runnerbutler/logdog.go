@@ -17,6 +17,8 @@ package runnerbutler
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"go.chromium.org/luci/auth"
@@ -70,11 +72,17 @@ func (l *Server) Start(ctx context.Context) error {
 	// for the entire process.
 	disableGRPCLogging(ctx)
 
-	serv, err := newLogDogStreamServerForPlatform(ctx, l.WorkDir)
+	var streamServerBasePath string
+	if runtime.GOOS == "windows" {
+		streamServerBasePath = "luciexe_runner"
+	} else {
+		streamServerBasePath = filepath.Join(l.WorkDir, "ld.sock")
+	}
+
+	serv, err := streamserver.New(ctx, streamServerBasePath)
 	if err != nil {
 		return errors.Annotate(err, "failed to create stream server").Err()
 	}
-
 	if err := serv.Listen(); err != nil {
 		return errors.Annotate(err, "failed to listen on stream server").Err()
 	}

@@ -16,7 +16,10 @@ package streamserver
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"os"
+	"sync/atomic"
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
@@ -28,32 +31,41 @@ import (
 // maxWindowsNamedPipeLength is the maximum length of a Windows named pipe.
 const maxWindowsNamedPipeLength = 256
 
-// NewNamedPipeServer instantiates a new Windows named pipe server instance.
-func NewNamedPipeServer(ctx context.Context, name string) (StreamServer, error) {
-	switch l := len(name); {
-	case l == 0:
-		return nil, errors.New("cannot have empty name")
-	case l > maxWindowsNamedPipeLength:
-		return nil, errors.Reason("name exceeds maximum length %d", maxWindowsNamedPipeLength).
-			InternalReason("name(%s)", name).Err()
+var winpipeCounter uint64
+
+// newWinpipeServer instantiates a new Windows named pipe server instance.
+func newWinpipeServer(ctx context.Context, prefix string) (StreamServer, error) {
+	if prefix == "" {
+		prefix = "logdog_butler"
 	}
 
-	ctx = log.SetField(ctx, "name", name)
+	path := fmt.Sprintf("%s.%d.%d", prefix, os.Getpid(), atomic.AddUint64(&winpipeCounter, 1))
+	realPath := streamproto.LocalNamedPipePath(path)
+
+	if len(realPath) > maxWindowsNamedPipeLength {
+		return nil, errors.Reason("path exceeds maximum length %d", maxWindowsNamedPipeLength).
+			InternalReason("realPath(%s)", realPath).Err()
+	}
+
+	ctx = log.SetField(ctx, "path", path)
 	return &listenerStreamServer{
 		Context: ctx,
-		gen: func() (net.Listener, string, error) {
-			address := "net.pipe:" + name
-			pipePath := streamproto.LocalNamedPipePath(name)
-			log.Fields{
-				"addr":     address,
-				"pipePath": pipePath,
-			}.Debugf(ctx, "Creating Windows server socket Listener.")
+		address: "net.pipe:" + path,
+		gen: func() (net.Listener, error) {
+			log.Infof(ctx, "Creating Windows server socket Listener.")
 
-			l, err := winio.ListenPipe(pipePath, nil)
+			l, err := winio.ListenPipe(realPath, &winio.PipeConfig{
+				InputBufferSize:  1024 * 1024,
+				OutputBufferSize: 1024 * 1024,
+			})
 			if err != nil {
-				return nil, "", errors.Annotate(err, "failed to listen on named pipe").Err()
+				return nil, errors.Annotate(err, "failed to listen on named pipe").Err()
 			}
-			return l, address, nil
+			return l, nil
 		},
 	}, nil
+}
+
+func init() {
+	newStreamServer = newWinpipeServer
 }

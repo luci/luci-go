@@ -49,8 +49,6 @@ var subcommandRun = &subcommands.Command{
 				"array of strings.")
 		cmd.Flags.StringVar(&cmd.chdir, "chdir", "",
 			"If specified, switch to this directory prior to running the command.")
-		cmd.Flags.Var(&cmd.streamServerURI, "streamserver-uri",
-			"The stream server URI to bind to (e.g., "+exampleStreamServerURIs()+").")
 		cmd.Flags.BoolVar(&cmd.attach, "attach", true,
 			"If true, attaches the bootstrapped process's STDOUT and STDERR streams.")
 		cmd.Flags.BoolVar(&cmd.stdin, "forward-stdin", false,
@@ -84,10 +82,6 @@ type runCommandRun struct {
 	// chdir, if not empty, is the directory to switch to before running the
 	// bootstrapped command.
 	chdir string
-
-	// streamServerURI is The path to the stream server, or empty string to
-	// refrain from instantiating
-	streamServerURI streamServerURI
 
 	// attach, if true, automatically attaches the subprocess's STDOUT and STDERR
 	// streams to the Butler.
@@ -128,16 +122,10 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 	}
 
 	// Resolve
-	var streamServer streamserver.StreamServer
-	if cmd.streamServerURI != "" {
-		var err error
-		if streamServer, err = cmd.streamServerURI.resolve(a); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"uri":        cmd.streamServerURI,
-			}.Errorf(a, "Invalid stream server URI.")
-			return configErrorReturnCode
-		}
+	streamServer, err := streamserver.New(a, "")
+	if err != nil {
+		log.WithError(err).Errorf(a, "Invalid stream server URI.")
+		return configErrorReturnCode
 	}
 
 	// Get the actual path to the command
@@ -193,22 +181,22 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 
 	// Configure stream server
 	streamServerOwned := true
-	if streamServer != nil {
-		log.Fields{
-			"url": cmd.streamServerURI,
-		}.Infof(a, "Creating stream server.")
-		if err := streamServer.Listen(); err != nil {
-			log.WithError(err).Errorf(a, "Failed to connect to stream server.")
-			return runtimeErrorReturnCode
-		}
-		defer func() {
-			if streamServerOwned {
-				streamServer.Close()
-			}
-		}()
-
-		bsEnv.StreamServerURI = streamServer.Address()
+	log.Fields{
+		"url": streamServer.Address(),
+	}.Infof(a, "Creating stream server.")
+	if err := streamServer.Listen(); err != nil {
+		log.WithError(err).Errorf(a, "Failed to connect to stream server.")
+		return runtimeErrorReturnCode
 	}
+	log.Infof(a, "listening on %q", streamServer.Address())
+
+	defer func() {
+		if streamServerOwned {
+			streamServer.Close()
+		}
+	}()
+
+	bsEnv.StreamServerURI = streamServer.Address()
 
 	// Build our command environment.
 	env := environ.System()

@@ -15,6 +15,7 @@
 package streamserver
 
 import (
+	"context"
 	"io"
 
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -31,8 +32,6 @@ type StreamServer interface {
 	//
 	// Full package is:
 	// go.chromium.org/luci/logdog/butlerlib/streamclient
-	//
-	// Address may only be called while the StreamServer is actively listening.
 	Address() string
 
 	// Blocks, returning a new Stream when one is available. If the stream server
@@ -41,4 +40,24 @@ type StreamServer interface {
 
 	// Closes the stream server, cleaning up resources.
 	Close()
+}
+
+var newStreamServer func(ctx context.Context, path string) (StreamServer, error)
+
+// New creates a new StreamServer.
+//
+// This has a platform-specific implementation.
+//
+// On Mac/Linux, this makes a Unix Domain Socket based server, and `path` is
+// required to be the absolute path to a filesystem location which is suitable
+// for a domain socket. The location will be removed prior to, and after, use.
+//
+// On Windows, this makes a Named Pipe based server. `path` must be a valid UNC
+// path component, and will be used to listen on the named pipe
+// "\\.\$path.$PID.$UNIQUE" where $PID is the process id of the current process
+// and $UNIQUE is a monotonically increasing value within this process' memory.
+//
+// `path` may be empty and a unique name will be chosen for you.
+func New(ctx context.Context, path string) (StreamServer, error) {
+	return newStreamServer(ctx, path)
 }

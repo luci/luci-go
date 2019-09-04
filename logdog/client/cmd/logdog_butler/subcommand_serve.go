@@ -17,6 +17,7 @@ package main
 import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butler"
+	"go.chromium.org/luci/logdog/client/butler/streamserver"
 
 	"github.com/maruel/subcommands"
 )
@@ -28,34 +29,28 @@ var subcommandServe = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		cmd := &serveCommandRun{}
 
-		cmd.Flags.Var(&cmd.uri, "streamserver-uri",
-			"The stream server URI to bind to (e.g., "+exampleStreamServerURIs()+").")
 		return cmd
 	},
 }
 
 type serveCommandRun struct {
 	subcommands.CommandRunBase
-
-	uri streamServerURI
 }
 
 func (cmd *serveCommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a := app.(*application)
 
-	streamServer, err := cmd.uri.resolve(a)
+	streamServer, err := streamserver.New(a, "")
 	if err != nil {
-		log.Fields{
-			"flag":  "-streamserver_uri",
-			"value": cmd.uri,
-		}.Errorf(a, "Invalid stream server URI.")
-		return configErrorReturnCode
+		log.WithError(err).Errorf(a, "Failed to make to stream server.")
+		return runtimeErrorReturnCode
 	}
 
 	if err := streamServer.Listen(); err != nil {
-		log.Errorf(log.SetError(a, err), "Failed to connect to stream server.")
+		log.WithError(err).Errorf(a, "Failed to connect to stream server.")
 		return runtimeErrorReturnCode
 	}
+	log.Infof(a, "listening on %q", streamServer.Address())
 
 	// We think everything will work. Configure our Output instance.
 	of, err := a.getOutputFactory()
