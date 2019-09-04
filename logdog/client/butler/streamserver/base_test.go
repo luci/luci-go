@@ -117,12 +117,13 @@ func TestListenerStreamServer(t *testing.T) {
 		var tl *testListener
 		s := &listenerStreamServer{
 			Context: context.Background(),
-			gen: func() (net.Listener, string, error) {
+			address: "test",
+			gen: func() (net.Listener, error) {
 				if tl != nil {
 					panic("gen called more than once")
 				}
 				tl = newTestListener()
-				return tl, "test", nil
+				return tl, nil
 			},
 		}
 
@@ -133,8 +134,8 @@ func TestListenerStreamServer(t *testing.T) {
 		})
 
 		Convey(`Will fail to Listen if the Listener could not be created.`, func() {
-			s.gen = func() (net.Listener, string, error) {
-				return nil, "", errors.New("test error")
+			s.gen = func() (net.Listener, error) {
+				return nil, errors.New("test error")
 			}
 			So(s.Listen(), ShouldNotBeNil)
 		})

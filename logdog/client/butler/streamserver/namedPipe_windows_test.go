@@ -38,17 +38,17 @@ func TestWindowsNamedPipeServer(t *testing.T) {
 		ctx := context.Background()
 
 		Convey(`Will refuse to create if there is an empty path.`, func() {
-			_, err := NewNamedPipeServer(ctx, "")
+			_, err := newWinpipeServer(ctx, "")
 			So(err, ShouldErrLike, "cannot have empty name")
 		})
 
 		Convey(`Will refuse to create if longer than maximum length.`, func() {
-			_, err := NewNamedPipeServer(ctx, strings.Repeat("A", maxWindowsNamedPipeLength+1))
+			_, err := newWinpipeServer(ctx, strings.Repeat("A", maxWindowsNamedPipeLength+1))
 			So(err, ShouldErrLike, "name exceeds maximum length")
 		})
 
 		Convey(`When created and listening.`, func() {
-			svr, err := NewNamedPipeServer(ctx, fmt.Sprintf("ButlerNamedPipeTest_%d", pid))
+			svr, err := newWinpipeServer(ctx, fmt.Sprintf("ButlerNamedPipeTest_%d", pid))
 			So(err, ShouldBeNil)
 
 			So(svr.Listen(), ShouldBeNil)
