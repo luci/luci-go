@@ -39,6 +39,24 @@
       "revId": "2ad662077b7e46ed1da09ea34cff5c09ea3738db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "049deb5a_91738289",
+        "filename": "logdog/client/pubsubprotocol/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-04T20:19:42Z",
+      "side": 1,
+      "message": "Because ReadFrame now returns *io.LimitedReader, and later in this function we overwrite `br` with some other io.Reader. Adding the variable declaration here forces br\u0027s type to be io.Reader instead of *io.LimitedReader.",
+      "parentUuid": "71bb2ed2_1eda3dca",
+      "revId": "2ad662077b7e46ed1da09ea34cff5c09ea3738db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
