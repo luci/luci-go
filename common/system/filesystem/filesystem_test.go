@@ -221,6 +221,7 @@ func TestRemoveAll(t *testing.T) {
 					filepath.Join(subDir, "foo", "bar"),
 					filepath.Join(subDir, "foo", "baz"),
 					filepath.Join(subDir, "qux"),
+					filepath.Join(subDir, "dummy"),
 				} {
 					base := filepath.Dir(path)
 					if err := os.MkdirAll(base, 0755); err != nil {
@@ -230,6 +231,10 @@ func TestRemoveAll(t *testing.T) {
 						t.Fatalf("failed to create file [%s]: %s", path, err)
 					}
 				}
+
+				// Make invalid symlink here.
+				So(os.Symlink("dummy", filepath.Join(subDir, "invalid_symlink")), ShouldBeNil)
+				So(os.Remove(filepath.Join(subDir, "dummy")), ShouldBeNil)
 
 				Convey(`Can remove the directory`, func() {
 					So(RemoveAll(subDir), ShouldBeNil)
