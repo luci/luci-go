@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb604dd6_abf400e5",
+        "filename": "logdog/client/butler/streamserver/namedPipe_posix.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-04T20:38:55Z",
+      "side": 1,
+      "message": "socket",
+      "range": {
+        "startLine": 35,
+        "startChar": 61,
+        "endLine": 35,
+        "endChar": 68
+      },
+      "revId": "f6a75d87a96b9ebcf10d3a150ecd3e709ba7d573",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62a80d91_58eef28e",
+        "filename": "logdog/client/butler/streamserver/namedPipe_posix.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-04T20:38:55Z",
+      "side": 1,
+      "message": "why no %q here?",
+      "range": {
+        "startLine": 53,
+        "startChar": 68,
+        "endLine": 53,
+        "endChar": 72
+      },
+      "revId": "f6a75d87a96b9ebcf10d3a150ecd3e709ba7d573",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
