@@ -53,7 +53,7 @@ type Server struct {
 	// value for butler.Config.StreamRegistrationCallback. See its docs.
 	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
 
-	serv   streamserver.StreamServer
+	serv   *streamserver.StreamServer
 	output output.Output
 	butler *butler.Butler
 

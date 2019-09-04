@@ -32,12 +32,12 @@ import (
 // This is defined by the UNIX_PATH_MAX constant, and is usually this value.
 const maxPOSIXNamedSocketLength = 104
 
-// newUNIXDomainSocketServer instantiates a new POSIX domain socket server
+// newStreamServer instantiates a new POSIX domain socket server
 // instance.
 //
 // No resources are actually created until methods are called on the returned
 // server.
-func newUNIXDomainSocketServer(ctx context.Context, path string) (StreamServer, error) {
+func newStreamServer(ctx context.Context, path string) (*StreamServer, error) {
 	if path == "" {
 		tFile, err := ioutil.TempFile("", "ld")
 		if err != nil {
@@ -61,7 +61,7 @@ func newUNIXDomainSocketServer(ctx context.Context, path string) (StreamServer, 
 	}
 
 	ctx = log.SetField(ctx, "namedPipePath", path)
-	return &listenerStreamServer{
+	return &StreamServer{
 		Context: ctx,
 		address: "unix:" + path,
 		gen: func() (net.Listener, error) {
@@ -117,8 +117,4 @@ func (l *selfCleaningUNIXListener) Close() error {
 		return err
 	}
 	return nil
-}
-
-func init() {
-	newStreamServer = newUNIXDomainSocketServer
 }
