@@ -57,6 +57,24 @@
       "revId": "2ad662077b7e46ed1da09ea34cff5c09ea3738db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "31315aad_d8265e6e",
+        "filename": "logdog/client/pubsubprotocol/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-04T20:23:59Z",
+      "side": 1,
+      "message": "ah, makes sense.",
+      "parentUuid": "049deb5a_91738289",
+      "revId": "2ad662077b7e46ed1da09ea34cff5c09ea3738db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
