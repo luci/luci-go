@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c9eef70_6c31cd29",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-04T20:16:35Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 9,
+        "startChar": 22,
+        "endLine": 9,
+        "endChar": 49
+      },
+      "revId": "2ad662077b7e46ed1da09ea34cff5c09ea3738db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "71bb2ed2_1eda3dca",
+        "filename": "logdog/client/pubsubprotocol/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-04T20:16:35Z",
+      "side": 1,
+      "message": "why?",
+      "revId": "2ad662077b7e46ed1da09ea34cff5c09ea3738db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
