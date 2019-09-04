@@ -85,6 +85,7 @@ func (r *Reader) readMetadata(fr recordio.Reader) error {
 }
 
 func (r *Reader) readData(fr recordio.Reader) ([]byte, error) {
+	var br io.Reader
 	size, br, err := fr.ReadFrame()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read bundle frame: %s", err)

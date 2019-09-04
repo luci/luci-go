@@ -25,6 +25,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
 // streamParams are parameters representing a negotiated stream ready to
@@ -254,8 +255,11 @@ func (c *streamClient) handle() (*streamParams, error) {
 // connection itself becomes the stream.
 func handshake(ctx context.Context, conn net.Conn) (*logpb.LogStreamDescriptor, error) {
 	log.Infof(ctx, "Beginning handshake.")
-	hs := handshakeProtocol{}
-	return hs.Handshake(ctx, conn)
+	flags := &streamproto.Flags{}
+	if err := flags.FromHandshake(conn); err != nil {
+		return nil, err
+	}
+	return flags.Descriptor(), nil
 }
 
 // Closes the underlying connection.

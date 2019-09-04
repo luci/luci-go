@@ -57,6 +57,13 @@ func (f *Flags) Descriptor() *logpb.LogStreamDescriptor {
 	}
 }
 
+// The maximum size of the initial header in bytes that FromHandshake is willing
+// to read.
+//
+// This must include all fields of the Flags; We're counting on the total
+// encoded size of this being less than 1MiB.
+const maxFrameSize = 1024 * 1024
+
 // WriteHandshake writes the butler protocol header handshake on the given
 // Writer.
 func (f *Flags) WriteHandshake(w io.Writer) error {
@@ -77,7 +84,7 @@ func (f *Flags) WriteHandshake(w io.Writer) error {
 // Reader.
 func (f *Flags) FromHandshake(r io.Reader) error {
 	header := make([]byte, len(ProtocolFrameHeaderMagic))
-	_, err := r.Read(header)
+	_, err := io.ReadFull(r, header)
 	if err != nil {
 		return errors.Annotate(err, "reading magic number").Err()
 	}
@@ -86,9 +93,19 @@ func (f *Flags) FromHandshake(r io.Reader) error {
 			"magic number mismatch: got(%q) expected(%q)",
 			header, ProtocolFrameHeaderMagic).Err()
 	}
-	flagData, err := recordio.NewReader(r, 1024*1024).ReadFrameAll()
+
+	_, frameReader, err := recordio.NewReader(r, maxFrameSize).ReadFrame()
 	if err != nil {
 		return errors.Annotate(err, "reading property frame").Err()
 	}
-	return errors.Annotate(json.Unmarshal(flagData, f), "parsing flag JSON").Err()
+
+	if err := json.NewDecoder(frameReader).Decode(f); err != nil {
+		return errors.Annotate(err, "parsing flag JSON").Err()
+	}
+
+	if frameReader.N > 0 {
+		return errors.Reason("handshake had %d bytes of trailing data", frameReader.N).Err()
+	}
+
+	return nil
 }

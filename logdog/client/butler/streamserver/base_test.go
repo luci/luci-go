@@ -114,10 +114,6 @@ func TestListenerStreamServer(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A stream server using a testing Listener`, t, func() {
-		hb := handshakeBuilder{
-			magic: streamproto.ProtocolFrameHeaderMagic,
-		}
-
 		var tl *testListener
 		s := &listenerStreamServer{
 			Context: context.Background(),
@@ -129,6 +125,8 @@ func TestListenerStreamServer(t *testing.T) {
 				return tl, "test", nil
 			},
 		}
+
+		f := &streamproto.Flags{}
 
 		Convey(`Will panic if closed without listening.`, func() {
 			So(func() { s.Close() }, ShouldPanic)
@@ -159,18 +157,9 @@ func TestListenerStreamServer(t *testing.T) {
 				So(func() { s.Close() }, ShouldPanic)
 			})
 
-			Convey(`Client with an invalid handshake magic number is rejected.`, func() {
+			Convey(`Client with an invalid handshake is rejected.`, func() {
 				s.discardC = make(chan *streamClient)
-				hb.magic = []byte(`NOT A HANDSHAKE MAGIC`)
-				hb.writeTo(tc, "", nil)
-
-				tl.connect(tc)
-				So(<-s.discardC, ShouldNotBeNil)
-			})
-
-			Convey(`Client with invalid handshake JSON is rejected.`, func() {
-				s.discardC = make(chan *streamClient)
-				hb.writeTo(tc, "CLEARLY NOT JSON", nil)
+				tc.Write([]byte(`NOT A HANDSHAKE MAGIC`))
 
 				tl.connect(tc)
 				So(<-s.discardC, ShouldNotBeNil)
@@ -180,17 +169,18 @@ func TestListenerStreamServer(t *testing.T) {
 				s.discardC = make(chan *streamClient)
 
 				tc.panicOnRead = true
-				hb.writeTo(tc, "", nil)
+				f.WriteHandshake(tc)
 
 				tl.connect(tc)
 				So(<-s.discardC, ShouldNotBeNil)
 			})
 
 			Convey(`Can receive stream data.`, func() {
-				// Write our handshake and data to the stream.
-				handshake := `{"name": "test", "contentType": "application/octet-stream"}`
+				f.Name = "test"
+				f.ContentType = "application/octet-stream"
+				f.WriteHandshake(tc)
 				content := bytes.Repeat([]byte("THIS IS A TEST STREAM "), 100)
-				hb.writeTo(tc, handshake, content)
+				tc.Write(content)
 
 				// Retrieve the ensuing stream.
 				tl.connect(tc)
@@ -230,9 +220,11 @@ func TestListenerStreamServer(t *testing.T) {
 			Convey(`Will refrain from outputting clients whose handshakes finish after the server is closed.`, func() {
 				s.discardC = make(chan *streamClient, 1)
 
-				handshake := `{"name": "test", "contentType": "application/octet-stream"}`
+				f.Name = "test"
+				f.ContentType = "application/octet-stream"
 				content := bytes.Repeat([]byte("THIS IS A TEST STREAM "), 100)
-				hb.writeTo(tc, handshake, content)
+				f.WriteHandshake(tc)
+				tc.Write(content)
 
 				tl.connect(tc)
 				s.Close()

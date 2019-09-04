@@ -33,7 +33,7 @@ type Reader interface {
 	//
 	// The frame must be fully read before another Reader call can be made.
 	// Failure to do so will cause the Reader to become unsynchronized.
-	ReadFrame() (int64, io.Reader, error)
+	ReadFrame() (int64, *io.LimitedReader, error)
 
 	// ReadFrame returns the contents of the next frame. If there are no more
 	// frames available, ReadFrame will return io.EOF.
@@ -68,7 +68,7 @@ func NewReader(r io.Reader, maxSize int64) Reader {
 	}
 }
 
-func (r *reader) ReadFrame() (int64, io.Reader, error) {
+func (r *reader) ReadFrame() (int64, *io.LimitedReader, error) {
 	// Read the frame size.
 	count, err := binary.ReadUvarint(r)
 	if err != nil {
@@ -96,7 +96,7 @@ func (r *reader) ReadFrameAll() ([]byte, error) {
 	}
 
 	data := make([]byte, count)
-	if _, err := fr.Read(data); err != nil {
+	if _, err := io.ReadFull(fr, data); err != nil {
 		return nil, err
 	}
 	return data, nil
