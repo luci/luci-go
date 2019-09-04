@@ -86,6 +86,9 @@ type Options struct {
 	QPSLimit *rate.Limiter
 
 	Buffer buffer.Options
+
+	// Debug output for tests.
+	testingDbg func(string, ...interface{})
 }
 
 func defaultDropFnFactory(ctx context.Context, fullBehavior buffer.FullBehavior) func(*buffer.Batch) {

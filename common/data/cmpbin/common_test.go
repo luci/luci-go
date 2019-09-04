@@ -18,6 +18,8 @@ import (
 	"errors"
 	"flag"
 	"log"
+	"os"
+	"testing"
 	"time"
 )
 
@@ -25,9 +27,10 @@ var seed = flag.Int64("cmpbin.seed", time.Now().UnixNano(), "random seed for tes
 
 var randomTestSize = 1000
 
-func init() {
+func TestMain(m *testing.M) {
 	flag.Parse()
 	log.Println("cmpbin.seed =", *seed)
+	os.Exit(m.Run())
 }
 
 type fakeWriter struct{ count int }

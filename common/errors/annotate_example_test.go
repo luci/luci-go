@@ -117,7 +117,7 @@ func ExampleAnnotate() {
 	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:74 - errors.ExampleAnnotate()
 	//   reason: top level
 	//
-	// #? testing/example.go:XXX - testing.runExample()
+	// #? testing/run_example.go:XXX - testing.runExample()
 	// #? testing/example.go:XXX - testing.runExamples()
 	// #? testing/testing.go:XXX - testing.(*M).Run()
 	// #? ./_testmain.go:XXX - main.main()
