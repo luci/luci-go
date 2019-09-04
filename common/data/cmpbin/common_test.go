@@ -17,18 +17,12 @@ package cmpbin
 import (
 	"errors"
 	"flag"
-	"log"
 	"time"
 )
 
 var seed = flag.Int64("cmpbin.seed", time.Now().UnixNano(), "random seed for testing")
 
 var randomTestSize = 1000
-
-func init() {
-	flag.Parse()
-	log.Println("cmpbin.seed =", *seed)
-}
 
 type fakeWriter struct{ count int }
 
