@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ced62a65_438185c4",
+        "filename": "luciexe/host/auth.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-04T01:00:38Z",
+      "side": 1,
+      "message": "wdyt\ns/envCleanups/cleanupsHere\ns/retCleanups/cleanupCaller",
+      "range": {
+        "startLine": 27,
+        "startChar": 5,
+        "endLine": 27,
+        "endChar": 16
+      },
+      "revId": "51b1f045c6774ab5c3bca21e5abe70b07c459e47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
