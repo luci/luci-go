@@ -16,8 +16,6 @@ package streamserver
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"strings"
 	"testing"
 
@@ -30,25 +28,23 @@ import (
 func TestWindowsNamedPipeServer(t *testing.T) {
 	t.Parallel()
 
-	pid := os.Getpid()
-
 	// TODO(crbug.com/963705): This test is flaky. Hangs with non-insignificant
 	// probability.
 	SkipConvey(`A named pipe server`, t, func() {
 		ctx := context.Background()
 
 		Convey(`Will refuse to create if there is an empty path.`, func() {
-			_, err := newWinpipeServer(ctx, "")
+			_, err := newStreamServer(ctx, "")
 			So(err, ShouldErrLike, "cannot have empty name")
 		})
 
 		Convey(`Will refuse to create if longer than maximum length.`, func() {
-			_, err := newWinpipeServer(ctx, strings.Repeat("A", maxWindowsNamedPipeLength+1))
+			_, err := newStreamServer(ctx, strings.Repeat("A", maxWindowsNamedPipeLength+1))
 			So(err, ShouldErrLike, "name exceeds maximum length")
 		})
 
 		Convey(`When created and listening.`, func() {
-			svr, err := newWinpipeServer(ctx, fmt.Sprintf("ButlerNamedPipeTest_%d", pid))
+			svr, err := newStreamServer(ctx, "ButlerNamedPipeTest")
 			So(err, ShouldBeNil)
 
 			So(svr.Listen(), ShouldBeNil)
