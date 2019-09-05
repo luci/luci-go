@@ -102,6 +102,10 @@ func (o *logOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 	return nil
 }
 
+func (o *logOutput) MaxSendBundles() int {
+	return 1
+}
+
 func (o *logOutput) MaxSize() int {
 	return o.bundleSize
 }

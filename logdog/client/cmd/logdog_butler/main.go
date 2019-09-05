@@ -72,7 +72,6 @@ type application struct {
 	project         string
 	prefix          types.StreamName
 	coordinatorHost string
-	outputWorkers   int
 	outputConfig    outputConfigFlag
 
 	authFlags authcli.Flags
@@ -112,8 +111,6 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 		"The Coordinator service host to use.")
 	fs.Var(&a.outputConfig, "output",
 		"The output name and configuration. Specify 'help' for more information.")
-	fs.IntVar(&a.outputWorkers, "output-workers", butler.DefaultOutputWorkers,
-		"The maximum number of parallel output dispatches.")
 	fs.Var(&a.globalTags, "tag",
 		"Specify key[=value] tags to be applied to all log streams. Individual treams may override. Can "+
 			"be specified multiple times.")
@@ -154,11 +151,10 @@ func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butl
 
 	// Instantiate our Butler.
 	butlerOpts := butler.Config{
-		GlobalTags:    a.globalTags,
-		MaxBufferAge:  time.Duration(a.maxBufferAge),
-		BufferLogs:    !a.noBufferLogs,
-		Output:        out,
-		OutputWorkers: a.outputWorkers,
+		GlobalTags:   a.globalTags,
+		MaxBufferAge: time.Duration(a.maxBufferAge),
+		BufferLogs:   !a.noBufferLogs,
+		Output:       out,
 	}
 	b, err := butler.New(a, butlerOpts)
 	if err != nil {

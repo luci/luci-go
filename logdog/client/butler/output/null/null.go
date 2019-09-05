@@ -44,6 +44,11 @@ func (o *Output) SendBundle(b *logpb.ButlerLogBundle) error {
 	return nil
 }
 
+// MaxSendBundles implements output.Output
+func (o *Output) MaxSendBundles() int {
+	return 1
+}
+
 // Stats implements output.Output
 func (o *Output) Stats() output.Stats {
 	o.statsMu.RLock()

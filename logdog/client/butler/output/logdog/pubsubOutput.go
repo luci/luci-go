@@ -141,6 +141,10 @@ func (o *pubSubOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 	return nil
 }
 
+func (*pubSubOutput) MaxSendBundles() int {
+	return 16
+}
+
 func (*pubSubOutput) MaxSize() int {
 	return gcps.MaxPublishRequestBytes / 2
 }
