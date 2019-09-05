@@ -43,10 +43,9 @@ func TestNamedPipe(t *testing.T) {
 		name := fmt.Sprintf(`streamclient.test.%d.%d`, os.Getpid(), counter)
 		counter++
 
-		dataChan, _, closer := acceptOn(ctx, func() (net.Listener, error) {
+		dataChan := acceptOne(func() (net.Listener, error) {
 			return winio.ListenPipe(streamproto.LocalNamedPipePath(name), nil)
 		})
-		defer closer()
 		client, err := New("net.pipe:"+name, "")
 		So(err, ShouldBeNil)
 
