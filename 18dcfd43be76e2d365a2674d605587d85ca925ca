@@ -22,6 +22,30 @@
       "revId": "18dcfd43be76e2d365a2674d605587d85ca925ca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bb1cd25_76eb9941",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-09-05T14:42:24Z",
+      "side": 1,
+      "message": "You are correct - should have mentioned that. I have a dev mode example here:\n\nhttps://4800-aaf9c44-tainted-dburger-master-dot-luci-milo-dev.appspot.com/p/chromium/builders/ci/Android%20N5%20Swarm/8423\u0027\n\nWhere the \"File a bug\" link once again produces full URLs.\n\nDoing that required hacking in a fake BuildBugTemplate so that it would render a \"File a bug\" link.",
+      "parentUuid": "34481dab_682b4746",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 14
+      },
+      "revId": "18dcfd43be76e2d365a2674d605587d85ca925ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
