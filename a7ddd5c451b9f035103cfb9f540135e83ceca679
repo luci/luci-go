@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39172300_e1638dd1",
+        "filename": "client/cmd/swarming/tasks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-05T23:29:00Z",
+      "side": 1,
+      "message": "I prefer to use limit here.",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 4
+      },
+      "revId": "a7ddd5c451b9f035103cfb9f540135e83ceca679",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d06a274_57e41e85",
+        "filename": "client/cmd/swarming/tasks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-05T23:29:00Z",
+      "side": 1,
+      "message": "show specified t.lim too?",
+      "range": {
+        "startLine": 75,
+        "startChar": 39,
+        "endLine": 75,
+        "endChar": 47
+      },
+      "revId": "a7ddd5c451b9f035103cfb9f540135e83ceca679",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ede4e36d_c8e91abe",
+        "filename": "client/cmd/swarming/tasks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-05T23:29:00Z",
+      "side": 1,
+      "message": "nit: var tasks []*swarming.SwarmingRpcsTaskResult\nhttps://github.com/golang/go/wiki/CodeReviewComments#declaring-empty-slices",
+      "revId": "a7ddd5c451b9f035103cfb9f540135e83ceca679",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "552bd771_65b9439e",
+        "filename": "client/cmd/swarming/tasks_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-05T23:29:00Z",
+      "side": 1,
+      "message": "I prefer to check t.Parse() directly here and belows.",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 8
+      },
+      "revId": "a7ddd5c451b9f035103cfb9f540135e83ceca679",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
