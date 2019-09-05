@@ -34,45 +34,31 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// acceptOn runs a trivial socket server to read the entire contents of
-// connections and send them back on a channel.
-//
-// tests should cancel the context when they're done with the server.
-func acceptOn(ctx context.Context, mkListen func() (net.Listener, error)) (<-chan net.Conn, net.Addr, func()) {
-	addrCh := make(chan net.Addr)
+// acceptOne runs a trivial socket server to listen for a single connection,
+// then push it over a channel.
+func acceptOne(mkListen func() (net.Listener, error)) <-chan net.Conn {
 	ret := make(chan net.Conn)
 
 	listener, err := mkListen()
 	if err != nil {
 		panic(errors.Annotate(err, "opening listen").Err())
 	}
-	closer := func() {
+
+	go func() {
+		conn, err := listener.Accept()
+		if err != nil {
+			panic(err)
+		}
 		if err := listener.Close(); err != nil {
 			panic(errors.Annotate(err, "closing listener").Err())
 		}
-	}
-
-	go func() {
-		defer close(ret)
-
-		addrCh <- listener.Addr()
-		close(addrCh)
-
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				break
-			}
-			go func() {
-				select {
-				case ret <- conn:
-				case <-ctx.Done():
-				}
-			}()
-		}
+		go func() {
+			defer close(ret)
+			ret <- conn
+		}()
 	}()
 
-	return ret, <-addrCh, closer
+	return ret
 }
 
 func mkTestCtx() (context.Context, func()) {

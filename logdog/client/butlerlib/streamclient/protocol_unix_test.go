@@ -40,12 +40,11 @@ func TestUnixClient(t *testing.T) {
 		So(f.Close(), ShouldBeNil)
 		So(os.Remove(name), ShouldBeNil)
 
-		dataChan, addr, closer := acceptOn(ctx, func() (net.Listener, error) {
+		dataChan := acceptOne(func() (net.Listener, error) {
 			var lc net.ListenConfig
 			return lc.Listen(ctx, "unix", name)
 		})
-		defer closer()
-		client, err := New("unix:"+addr.String(), "")
+		client, err := New("unix:"+name, "")
 		So(err, ShouldBeNil)
 
 		runWireProtocolTest(ctx, dataChan, client, true)
