@@ -68,6 +68,8 @@ func (to *testOutput) SendBundle(b *logpb.ButlerLogBundle) error {
 	return nil
 }
 
+func (to *testOutput) MaxSendBundles() int { return 1 }
+
 func (to *testOutput) MaxSize() int {
 	return to.maxSize
 }
@@ -269,9 +271,8 @@ func TestButler(t *testing.T) {
 		}
 
 		conf := Config{
-			Output:        &to,
-			OutputWorkers: 1,
-			BufferLogs:    false,
+			Output:     &to,
+			BufferLogs: false,
 		}
 
 		Convey(`Will error if an invalid Config is passed.`, func() {

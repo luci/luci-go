@@ -43,9 +43,6 @@ const (
 	// be buffered before being dispatched.
 	DefaultMaxBufferAge = time.Duration(5 * time.Second)
 
-	// DefaultOutputWorkers is the default number of output workers to use.
-	DefaultOutputWorkers = 16
-
 	// streamBufferSize is the maximum amount of stream data to buffer in memory.
 	streamBufferSize = 1024 * 1024 * 5
 )
@@ -54,9 +51,6 @@ const (
 type Config struct {
 	// Output is the output instance to use for log dispatch.
 	Output output.Output
-	// OutputWorkers is the number of simultaneous goroutines that will be used
-	// to output Butler log data. If zero, DefaultOutputWorkers will be used.
-	OutputWorkers int
 
 	// GlobalTags are a set of global log stream tags to apply to individual
 	// streams on registration. Individual stream tags will override tags with
@@ -165,10 +159,6 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 		return nil, err
 	}
 
-	if config.OutputWorkers <= 0 {
-		config.OutputWorkers = DefaultOutputWorkers
-	}
-
 	bc := bundler.Config{
 		Clock:            clock.Get(ctx),
 		MaxBufferedBytes: streamBufferSize,
@@ -206,7 +196,13 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	// Load bundles from our Bundler into the queue.
 	go func() {
 		defer close(b.bundlerDrainedC)
-		parallel.Ignore(parallel.Run(config.OutputWorkers, func(workC chan<- func() error) {
+
+		numWorkers := b.c.Output.MaxSendBundles()
+		if numWorkers <= 0 {
+			numWorkers = 1
+		}
+
+		parallel.Ignore(parallel.Run(numWorkers, func(workC chan<- func() error) {
 			// Read bundles until the bundler is drained.
 			for {
 				bundle := b.bundler.Next()

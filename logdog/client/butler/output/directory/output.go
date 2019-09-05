@@ -96,6 +96,10 @@ func (o *dirOutput) SendBundle(b *logpb.ButlerLogBundle) error {
 	return nil
 }
 
+func (o *dirOutput) MaxSendBundles() int {
+	return 1
+}
+
 func (o *dirOutput) URLConstructionEnv() bootstrap.Environment {
 	return bootstrap.Environment{
 		// See HACK in bootstrap.Environment

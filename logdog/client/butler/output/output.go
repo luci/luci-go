@@ -35,6 +35,11 @@ type Output interface {
 	// Output, it should log the error and return nil.
 	SendBundle(*logpb.ButlerLogBundle) error
 
+	// MaxSendBundles is the number of concurrent calls to SendBundle allowed.
+	//
+	// If <= 0, only one SendBundle will be called at a time.
+	MaxSendBundles() int
+
 	// URLConstructionEnv should return a bootstrap.Environment containing
 	// any fields necessary for clients to construct a URL pointing to where this
 	// Output is sending its data.
