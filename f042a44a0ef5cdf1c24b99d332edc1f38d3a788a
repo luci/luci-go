@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e6835a5e_e7265cf6",
+        "filename": "client/cmd/swarming/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-09-05T04:29:07Z",
+      "side": 1,
+      "message": "How about having `--state` with string argument instead of a specific flag for success state?\ne.g. `swarming tasks -state COMPLETED_SUCESS`.",
+      "revId": "f042a44a0ef5cdf1c24b99d332edc1f38d3a788a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
