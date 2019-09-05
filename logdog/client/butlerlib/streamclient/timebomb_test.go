@@ -27,12 +27,12 @@ func init() {
 	// On my windows 10 vm, the entire suite takes .5s to complete in normal mode
 	// and 2s (yep, same speed) to complete in race mode.
 	//
-	// Because of the apparent overhead, we multiply the fuse by 5, giving us
-	// a normal 5s fuse per-test-case and race 50s fuse per-test-case (not
+	// Because of the apparent overhead, we multiply the fuse by 10, giving us
+	// a normal 10s fuse per-test-case and race 100s fuse per-test-case (not
 	// suite!). This should be more than enough, but is still a lot better than
 	// the default 10m test timeout.
 	if runtime.GOOS == "windows" {
-		timebombFuse *= 5
+		timebombFuse *= 10
 	}
 }
 

@@ -38,7 +38,7 @@ import (
 // connections and send them back on a channel.
 //
 // tests should cancel the context when they're done with the server.
-func acceptOn(ctx context.Context, mkListen func() (net.Listener, error)) (<-chan net.Conn, net.Addr, func()) {
+func acceptOne(ctx context.Context, mkListen func() (net.Listener, error)) <-chan net.Conn {
 	addrCh := make(chan net.Addr)
 	ret := make(chan net.Conn)
 
@@ -46,33 +46,30 @@ func acceptOn(ctx context.Context, mkListen func() (net.Listener, error)) (<-cha
 	if err != nil {
 		panic(errors.Annotate(err, "opening listen").Err())
 	}
-	closer := func() {
-		if err := listener.Close(); err != nil {
-			panic(errors.Annotate(err, "closing listener").Err())
-		}
-	}
 
 	go func() {
-		defer close(ret)
-
 		addrCh <- listener.Addr()
 		close(addrCh)
 
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				break
-			}
-			go func() {
-				select {
-				case ret <- conn:
-				case <-ctx.Done():
-				}
-			}()
+		conn, err := listener.Accept()
+		if err != nil {
+			panic(err)
 		}
+		if err := listener.Close(); err != nil {
+			panic(errors.Annotate(err, "closing listener").Err())
+		}
+		go func() {
+			defer close(ret)
+
+			select {
+			case ret <- conn:
+			case <-ctx.Done():
+			}
+		}()
 	}()
 
-	return ret, <-addrCh, closer
+	<-addrCh
+	return ret
 }
 
 func mkTestCtx() (context.Context, func()) {
