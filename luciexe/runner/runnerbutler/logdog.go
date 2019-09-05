@@ -28,9 +28,7 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 	grpcLogging "go.chromium.org/luci/grpc/logging"
 
-	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler"
-	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	out "go.chromium.org/luci/logdog/client/butler/output/logdog"
 	"go.chromium.org/luci/logdog/client/butler/output/null"
@@ -50,12 +48,9 @@ type Server struct {
 	Prefix          types.StreamName
 	GlobalTags      map[string]string
 
-	// value for butler.Config.StreamRegistrationCallback. See its docs.
-	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
-
 	serv   *streamserver.StreamServer
 	output output.Output
-	butler *butler.Butler
+	Butler *butler.Butler
 
 	Client *streamclient.Client
 }
@@ -120,11 +115,10 @@ func (l *Server) Start(ctx context.Context) error {
 
 	// Create a Butler.
 	cfg := butler.Config{
-		Output:                     output,
-		BufferLogs:                 true,
-		MaxBufferAge:               butler.DefaultMaxBufferAge,
-		GlobalTags:                 l.GlobalTags,
-		StreamRegistrationCallback: l.StreamRegistrationCallback,
+		Output:       output,
+		BufferLogs:   true,
+		MaxBufferAge: butler.DefaultMaxBufferAge,
+		GlobalTags:   l.GlobalTags,
 	}
 
 	// Using testclock breaks stopping the butler.
@@ -141,7 +135,7 @@ func (l *Server) Start(ctx context.Context) error {
 
 	l.serv = serv
 	l.output = output
-	l.butler = butler
+	l.Butler = butler
 	l.Client = streamclient.NewLoopback(butler, "")
 	return nil
 }
@@ -164,8 +158,8 @@ func (l *Server) Stop() error {
 		return fmt.Errorf("not started")
 	}
 
-	l.butler.Activate()
-	if err := l.butler.Wait(); err != nil {
+	l.Butler.Activate()
+	if err := l.Butler.Wait(); err != nil {
 		return err
 	}
 
@@ -173,7 +167,7 @@ func (l *Server) Stop() error {
 
 	l.serv = nil
 	l.output = nil
-	l.butler = nil
+	l.Butler = nil
 	return nil
 }
 

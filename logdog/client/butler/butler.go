@@ -60,42 +60,11 @@ type Config struct {
 	// BufferLogs, if true, instructs the butler to buffer collected log data
 	// before sending it to Output.
 	BufferLogs bool
+
 	// If buffering logs, this is the maximum amount of time that a log will
 	// be buffered before being marked for dispatch. If this is zero,
 	// DefaultMaxBufferAge will be used.
 	MaxBufferAge time.Duration
-
-	// NoWrapStreamRegistrationCallback provides a way to opt-out of wrapping
-	// StreamRegistrationCallback to call on LogEntries without buffering them
-	// to guarantee full LogEntries.
-	NoWrapStreamRegistrationCallback bool
-
-	// StreamRegistrationCallback is called on new streams and returns a callback
-	// to attach to the stream or nil if no callback is desired.
-	//
-	// The callback is by default wrapped internally to buffer LogEntries until
-	// they're guaranteed complete. This behavior can be turned off explicitly
-	// with NoWrapStreamRegistrationCallback above.
-	//
-	// In wrapped callbacks for text and datagram streams, LogEntry .TimeOffset,
-	// and .PrefixIndex will be 0. .StreamIndex and .Sequence WILL NOT correspond
-	// to the values that the logdog service sees. They will, however, be
-	// internally consistent within the stream.
-	//
-	// Wrapped datagram streams never send a partial datagram; If the logdog
-	// server or stream is shut down while we have a partial datagram buffered,
-	// the partially buffered datagram will not be observed by the buffered
-	// callback.
-	//
-	// Wrapping a binary stream is a noop (i.e. your callback will see the exact
-	// same values wrapped and unwrapped).
-	//
-	// When the stream ends (either due to EOF from the user, or when the butler
-	// is stopped), your callback will be invoked exactly once with `nil`.
-	//
-	// Expects passed *logpb.LogStreamDescriptor reference to be safe to keep, and
-	// should treat it as read-only.
-	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
 }
 
 // Validate validates that the configuration is sufficient to instantiate a
@@ -107,6 +76,11 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+type registeredCallback struct {
+	cb   bundler.StreamRegistrationCallback
+	wrap bool
+}
+
 // Butler is the Butler application structure. The Butler runs until closed.
 // During operation, it acts as a service manager and data router, routing:
 // - Messages from Streams to the attached Output.
@@ -114,6 +88,10 @@ func (c *Config) Validate() error {
 type Butler struct {
 	c   *Config
 	ctx context.Context
+
+	// streamRegistrationCallbacks is the list of callbacks the Bundler
+	streamRegistrationCallbacksMu sync.RWMutex
+	streamRegistrationCallbacks   []registeredCallback
 
 	// bundler is the Bundler instance.
 	bundler *bundler.Bundler
@@ -159,29 +137,10 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 		return nil, err
 	}
 
-	bc := bundler.Config{
-		Clock:            clock.Get(ctx),
-		MaxBufferedBytes: streamBufferSize,
-		MaxBundleSize:    config.Output.MaxSize(),
-	}
-	if config.NoWrapStreamRegistrationCallback {
-		bc.StreamRegistrationCallback = config.StreamRegistrationCallback
-	} else {
-		bc.StreamRegistrationCallback = wrapStreamRegistrationCallback(config.StreamRegistrationCallback)
-	}
-	if config.BufferLogs {
-		bc.MaxBufferDelay = config.MaxBufferAge
-		if bc.MaxBufferDelay <= 0 {
-			bc.MaxBufferDelay = DefaultMaxBufferAge
-		}
-	}
-	lb := bundler.New(bc)
-
 	b := &Butler{
 		c:   &config,
 		ctx: ctx,
 
-		bundler:         lb,
 		bundlerDrainedC: make(chan struct{}),
 
 		streamsFinishedC: make(chan struct{}),
@@ -192,6 +151,20 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 		streamServerStopC: make(chan struct{}),
 		streamStopC:       make(chan struct{}),
 	}
+
+	bc := bundler.Config{
+		Clock:                        clock.Get(ctx),
+		MaxBufferedBytes:             streamBufferSize,
+		MaxBundleSize:                config.Output.MaxSize(),
+		StreamRegistrationCallbackFn: b.newStreamCallback,
+	}
+	if config.BufferLogs {
+		bc.MaxBufferDelay = config.MaxBufferAge
+		if bc.MaxBufferDelay <= 0 {
+			bc.MaxBufferDelay = DefaultMaxBufferAge
+		}
+	}
+	b.bundler = bundler.New(bc)
 
 	// Load bundles from our Bundler into the queue.
 	go func() {
@@ -236,6 +209,60 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	}()
 
 	return b, nil
+}
+
+// AddStreamRegistrationCallback adds a new callback to this Butler.
+//
+// The callback is called on new streams and returns a chunk callback to attach
+// to the stream or nil if you don't want to monitor the stream.
+//
+// If multiple callbacks are all interested in the same stream, the first one
+// wins.
+//
+// Wrapping
+//
+// If `wrap` is true, the callback is wrapped internally to buffer LogEntries
+// until they're complete.
+//
+// In wrapped callbacks for text and datagram streams, LogEntry .TimeOffset,
+// and .PrefixIndex will be 0. .StreamIndex and .Sequence WILL NOT correspond
+// to the values that the logdog service sees. They will, however, be
+// internally consistent within the stream.
+//
+// Wrapped datagram streams never send a partial datagram; If the logdog
+// server or stream is shut down while we have a partial datagram buffered,
+// the partially buffered datagram will not be observed by the buffered
+// callback.
+//
+// Wrapping a binary stream is a noop (i.e. your callback will see the exact
+// same values wrapped and unwrapped).
+//
+// When the stream ends (either due to EOF from the user, or when the butler
+// is stopped), your callback will be invoked exactly once with `nil`.
+func (b *Butler) AddStreamRegistrationCallback(cb bundler.StreamRegistrationCallback, wrap bool) {
+	b.streamRegistrationCallbacksMu.Lock()
+	defer b.streamRegistrationCallbacksMu.Unlock()
+	b.streamRegistrationCallbacks = append(b.streamRegistrationCallbacks,
+		registeredCallback{cb, wrap})
+}
+
+func (b *Butler) newStreamCallback(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
+	b.streamRegistrationCallbacksMu.RLock()
+	defer b.streamRegistrationCallbacksMu.RUnlock()
+	for _, cb := range b.streamRegistrationCallbacks {
+		if ret := cb.cb(desc); ret != nil {
+			if cb.wrap {
+				switch desc.StreamType {
+				case logpb.StreamType_TEXT:
+					return buffered_callback.GetWrappedTextCallback(ret)
+				case logpb.StreamType_DATAGRAM:
+					return buffered_callback.GetWrappedDatagramCallback(ret)
+				}
+			}
+			return ret
+		}
+	}
+	return nil
 }
 
 // Wait blocks until the Butler instance has completed, returning with the
@@ -569,24 +596,4 @@ func (b *Butler) getRunErr() error {
 	b.shutdownMu.Lock()
 	defer b.shutdownMu.Unlock()
 	return b.runErr
-}
-
-type streamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
-
-// wrapStreamRegistrationCallback wraps the given callback to dispatch on the correct stream type.
-func wrapStreamRegistrationCallback(reg streamRegistrationCallback) streamRegistrationCallback {
-	if reg == nil {
-		return reg
-	}
-	return func(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
-		cb := reg(desc)
-		switch desc.StreamType {
-		case logpb.StreamType_TEXT:
-			return buffered_callback.GetWrappedTextCallback(cb)
-		case logpb.StreamType_DATAGRAM:
-			return buffered_callback.GetWrappedDatagramCallback(cb)
-		default:
-			return cb
-		}
-	}
 }
