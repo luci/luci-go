@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34481dab_682b4746",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-05T04:58:03Z",
+      "side": 1,
+      "message": "that sadly doesn\u0027t mean much. If you can deploy to -dev and check the page, that\u0027d be better.",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 14
+      },
+      "revId": "18dcfd43be76e2d365a2674d605587d85ca925ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
