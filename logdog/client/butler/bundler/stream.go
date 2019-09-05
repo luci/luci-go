@@ -53,6 +53,15 @@ type Stream interface {
 	Close()
 }
 
+// StreamRegistrationCallback is a callback to invoke when a new stream is
+// registered with this bundler.
+//
+// Expects passed *logpb.LogStreamDescriptor reference to be safe to keep, and
+// should treat it as read-only.
+//
+// See streamConfig.callback.
+type StreamRegistrationCallback func(*logpb.LogStreamDescriptor) StreamChunkCallback
+
 // StreamChunkCallback is a callback to invoke on a complete LogEntry.
 //
 // Called once with nil when this stream has come to an end.

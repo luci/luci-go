@@ -24,9 +24,9 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/luciexe"
-	"go.chromium.org/luci/luciexe/runner/runnerbutler"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -73,9 +73,8 @@ func New(streamNamePrefix string) *Spy {
 
 // On must be used to associate this Spy with a butler service. Otherwise the
 // Spy does nothing.
-func (l *Spy) On(s *runnerbutler.Server) {
-	prev := s.StreamRegistrationCallback
-	s.StreamRegistrationCallback = func(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
+func (l *Spy) On(b *butler.Butler) {
+	b.AddStreamRegistrationCallback(func(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
 		if !l.checkStopped() && desc.Name == l.buildStreamName {
 			switch {
 			case desc.ContentType != protoutil.BuildMediaType:
@@ -87,11 +86,8 @@ func (l *Spy) On(s *runnerbutler.Server) {
 			}
 		}
 		// TODO(iannucci): add support for sub-builds.
-		if prev != nil {
-			return prev(desc)
-		}
 		return nil
-	}
+	}, true)
 }
 
 func (l *Spy) onBuildChunk(log *logpb.LogEntry) {

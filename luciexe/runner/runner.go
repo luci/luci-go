@@ -136,12 +136,12 @@ func runButler(ctx context.Context, args *pb.RunnerArgs, wkDir workdir, cancelEx
 		return nil, nil, errors.Annotate(err, "failed to create local logdog server").Err()
 	}
 
-	// Install the spy before we start the server.
-	spy := buildspy.New(streamNamePrefix)
-	spy.On(logdogServ)
 	if err := logdogServ.Start(ctx); err != nil {
 		return nil, nil, errors.Annotate(err, "failed to start local logdog server").Err()
 	}
+
+	spy := buildspy.New(streamNamePrefix)
+	spy.On(logdogServ.Butler)
 
 	return spy, logdogServ, nil
 }
