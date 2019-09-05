@@ -52,18 +52,18 @@ func TestUNIXDomainSocketServer(t *testing.T) {
 		ctx := context.Background()
 
 		Convey(`Will create a temporary name if given an empty path`, func() {
-			s, err := newUNIXDomainSocketServer(ctx, "")
+			s, err := newStreamServer(ctx, "")
 			So(err, ShouldBeNil)
 			So(s.Address(), ShouldStartWith, "unix:"+os.TempDir())
 		})
 
 		Convey(`Will refuse to create if longer than maximum length.`, func() {
-			_, err := newUNIXDomainSocketServer(ctx, strings.Repeat("A", maxPOSIXNamedSocketLength+1))
+			_, err := newStreamServer(ctx, strings.Repeat("A", maxPOSIXNamedSocketLength+1))
 			So(err, ShouldErrLike, "path exceeds maximum length")
 		})
 
 		Convey(`When created and listening.`, withTempDir(t, func(tdir string) {
-			svr, err := newUNIXDomainSocketServer(ctx, filepath.Join(tdir, "butler.sock"))
+			svr, err := newStreamServer(ctx, filepath.Join(tdir, "butler.sock"))
 			So(err, ShouldBeNil)
 
 			So(svr.Listen(), ShouldBeNil)

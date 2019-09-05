@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/logdog/client/butler/buffered_callback"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
-	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -315,11 +314,21 @@ func (b *Butler) Streams() []types.StreamName {
 	return ([]types.StreamName)(streams)
 }
 
+// StreamServer is butler's interface for
+// go.chromium.org/luci/logdog/client/butler/streamserver
+//
+// TODO(iannucci): internalize streamserver to butler; there's no need for it to
+// be managed by the user.
+type StreamServer interface {
+	Next() (io.ReadCloser, *logpb.LogStreamDescriptor)
+	Close()
+}
+
 // AddStreamServer adds a StreamServer to the Butler. This is goroutine-safe
 // and may be called anytime before or during Butler execution.
 //
 // After this call completes, the Butler assumes ownership of the StreamServer.
-func (b *Butler) AddStreamServer(streamServer streamserver.StreamServer) {
+func (b *Butler) AddStreamServer(streamServer StreamServer) {
 	ctx := log.SetField(b.ctx, "streamServer", streamServer)
 
 	log.Debugf(ctx, "Adding stream server.")
