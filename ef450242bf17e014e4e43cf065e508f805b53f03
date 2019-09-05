@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5bd5dbb0_68e290a3",
+        "filename": "logdog/client/butler/streamserver/streamserver.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-05T05:00:12Z",
+      "side": 1,
+      "message": "\u003e \"negotitation\" is a possible misspelling of \"negotiation\".\n\nPlease Fix",
+      "parentUuid": "4d74fa62_aa85074d",
+      "range": {
+        "startLine": 236,
+        "startChar": 3,
+        "endLine": 236,
+        "endChar": 15
+      },
+      "revId": "ef450242bf17e014e4e43cf065e508f805b53f03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

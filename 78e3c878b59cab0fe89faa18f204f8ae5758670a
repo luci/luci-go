@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97991b02_8f297415",
+        "filename": "logdog/client/butler/streamserver/base.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-05T05:00:12Z",
+      "side": 0,
+      "message": "it appears this has been moved to the streamserver.go, so I don\u0027t review that one in detail.",
+      "revId": "78e3c878b59cab0fe89faa18f204f8ae5758670a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
