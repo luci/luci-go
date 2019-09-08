@@ -636,12 +636,12 @@ func (s *Server) serveLoop(srv *http.Server) error {
 	return errors.Reason("test listener is not set").Err()
 }
 
-// registerCleanup registers a callback that is run in ListenAndServe after the
+// RegisterCleanup registers a callback that is run in ListenAndServe after the
 // server has exited the serving loop.
 //
 // Registering a new cleanup callback from within a cleanup causes a deadlock,
 // don't do that.
-func (s *Server) registerCleanup(cb func()) {
+func (s *Server) RegisterCleanup(cb func()) {
 	s.cleanupM.Lock()
 	defer s.cleanupM.Unlock()
 	s.cleanup = append(s.cleanup, cb)
@@ -1214,7 +1214,7 @@ func (s *Server) initRedis() error {
 	})
 
 	// Close all connections when exiting gracefully.
-	s.registerCleanup(func() {
+	s.RegisterCleanup(func() {
 		if err := s.redisPool.Close(); err != nil {
 			logging.Warningf(s.Context, "Failed to close Redis pool - %s", err)
 		}
@@ -1251,7 +1251,7 @@ func (s *Server) initDatastoreClient() error {
 		return errors.Annotate(err, "failed to instantiate the client").Err()
 	}
 
-	s.registerCleanup(func() {
+	s.RegisterCleanup(func() {
 		if err := client.Close(); err != nil {
 			logging.Warningf(s.Context, "Failed to close datastore client - %s", err)
 		}
