@@ -350,8 +350,8 @@ func (d *Downloader) ensureDir(dir string) error {
 	// them and add them to the cache.
 	d.muCache.Lock()
 	defer d.muCache.Unlock()
-	parents := make([]string, 0, 1)
-	for i := dir; i != "" && !d.dirCache.Has(i); i = filepath.Dir(i) {
+	parents := []string{dir}
+	for i := dir; i != "" && i != "/" && !d.dirCache.Has(i); i = filepath.Dir(i) {
 		if i == d.outputDir {
 			break
 		}
