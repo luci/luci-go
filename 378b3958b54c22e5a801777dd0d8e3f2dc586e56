@@ -22,6 +22,30 @@
       "revId": "378b3958b54c22e5a801777dd0d8e3f2dc586e56",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eace0ae9_60cf11e9",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-09T21:58:10Z",
+      "side": 1,
+      "message": "Discussed offline: keeping this as returning unmarshalling error to distinguish between unmarshalling errors and \"this JSON object doesn\u0027t fit my format\" errors",
+      "parentUuid": "0a85c92e_f1349035",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 65,
+        "endChar": 17
+      },
+      "revId": "378b3958b54c22e5a801777dd0d8e3f2dc586e56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
