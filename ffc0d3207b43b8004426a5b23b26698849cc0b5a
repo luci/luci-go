@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a2aeb0c_2a950ae0",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-09T19:02:25Z",
+      "side": 1,
+      "message": "Chan: I omit \"result_parts\" here because AFAICT it isn\u0027t used by FindIt (and seems to be populated inconsistently with a subset of the output_snippet data). Is that accurate?\n\nAlso, we can add it later if needed.",
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
