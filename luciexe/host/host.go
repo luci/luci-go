@@ -64,7 +64,17 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 		return nil, err
 	}
 
-	// TODO(iannucci): implement logdog butler
+	// Startup butler
+	butler, err := startButler(ctx, &opts)
+	if err != nil {
+		return nil, err
+	}
+	cleanup = append(cleanup, func() error {
+		butler.Activate()
+		return butler.Wait()
+	})
+
+	// TODO(iannucci): add build spy
 	builds := make(chan *bbpb.Build)
 
 	// Transfer ownership of cleanups to goroutine

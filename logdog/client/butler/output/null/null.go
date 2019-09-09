@@ -59,7 +59,10 @@ func (o *Output) Stats() output.Stats {
 
 // URLConstructionEnv implements output.Output
 func (o *Output) URLConstructionEnv() bootstrap.Environment {
-	return bootstrap.Environment{}
+	return bootstrap.Environment{
+		Project: "null",
+		Prefix:  "null",
+	}
 }
 
 // MaxSize returns a large number instead of 0 because butler has bugs.
