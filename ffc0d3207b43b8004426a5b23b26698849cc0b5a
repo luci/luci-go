@@ -2,6 +2,121 @@
   "comments": [
     {
       "key": {
+        "uuid": "fb7a1ae0_5fd5c397",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T19:14:52Z",
+      "side": 1,
+      "message": "I\u0027d have expected \"unmarshaled\" here. Otherwise, why check *after* marshaling if you can check what you are about to marshal instead?\n\n(nit: i think Go uses single \"l\" in \"marshal\")",
+      "range": {
+        "startLine": 21,
+        "startChar": 28,
+        "endLine": 21,
+        "endChar": 78
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3a47dea_7912170e",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T19:14:52Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 23,
+        "startChar": 69,
+        "endLine": 24,
+        "endChar": 8
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9014014_8ea4bf60",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T19:14:52Z",
+      "side": 1,
+      "message": "disclaimer: I\u0027m not Go expert, nor did I read all your code in this project.\n$.02: does this really need to be a constant? ie do you intend to do something like:\n\n\nswitch  err :\u003d op(); {\ncase err \u003d\u003d ErrBadFormat:\n  // specific\ncase err !\u003d nil:\n  // general \n}",
+      "range": {
+        "startLine": 25,
+        "startChar": 4,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba134900_42f5bb6a",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T19:14:52Z",
+      "side": 1,
+      "message": "ErrBadFormat seems to be bound to \"JSON\", which suggests that the only format this will deal with would be JSON. Is that right?",
+      "range": {
+        "startLine": 25,
+        "startChar": 31,
+        "endLine": 25,
+        "endChar": 35
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "385cd64d_9d186e5f",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T19:14:52Z",
+      "side": 1,
+      "message": "have you run \"go fmt\"? i\u0027d have expected 3 columns here...",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 0
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4a2aeb0c_2a950ae0",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
@@ -13,6 +128,29 @@
       "writtenOn": "2019-09-09T19:02:25Z",
       "side": 1,
       "message": "Chan: I omit \"result_parts\" here because AFAICT it isn\u0027t used by FindIt (and seems to be populated inconsistently with a subset of the output_snippet data). Is that accurate?\n\nAlso, we can add it later if needed.",
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9f6c6df_1b54ec17",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T19:14:52Z",
+      "side": 1,
+      "message": "is this worth hardcoding the name *here*?",
+      "range": {
+        "startLine": 69,
+        "startChar": 68,
+        "endLine": 69,
+        "endChar": 79
+      },
       "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
