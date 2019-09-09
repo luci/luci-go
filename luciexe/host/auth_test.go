@@ -52,28 +52,34 @@ func tokenShouldStartWith(actual interface{}, expected ...interface{}) string {
 	return ""
 }
 
+func testCtx() (context.Context, func()) {
+	ctx := context.Background()
+	if testing.Verbose() {
+		ctx = gologger.StdConfig.Use(ctx)
+	}
+
+	// Setup a fake local auth. It is a real localhost server, it needs real
+	// clock, so set it up before mocking time.
+	fakeAuth := localauth.Server{
+		TokenGenerators: map[string]localauth.TokenGenerator{
+			"task": &authtest.FakeTokenGenerator{
+				Email:  "task@example.com",
+				Prefix: "task_token_",
+			},
+		},
+		DefaultAccountID: "task",
+	}
+	la, err := fakeAuth.Start(ctx)
+	So(err, ShouldBeNil)
+	ctx = lucictx.SetLocalAuth(ctx, la)
+
+	return ctx, func() { fakeAuth.Stop(ctx) }
+}
+
 func TestAuth(t *testing.T) {
 	Convey(`test auth environment`, t, func() {
-		ctx := context.Background()
-		if testing.Verbose() {
-			ctx = gologger.StdConfig.Use(ctx)
-		}
-
-		// Setup a fake local auth. It is a real localhost server, it needs real
-		// clock, so set it up before mocking time.
-		fakeAuth := localauth.Server{
-			TokenGenerators: map[string]localauth.TokenGenerator{
-				"task": &authtest.FakeTokenGenerator{
-					Email:  "task@example.com",
-					Prefix: "task_token_",
-				},
-			},
-			DefaultAccountID: "task",
-		}
-		la, err := fakeAuth.Start(ctx)
-		So(err, ShouldBeNil)
-		defer fakeAuth.Stop(ctx)
-		ctx = lucictx.SetLocalAuth(ctx, la)
+		ctx, closer := testCtx()
+		defer closer()
 
 		Convey(`default`, func(c C) {
 			ch, err := Run(ctx, nil, func(ctx context.Context) error {

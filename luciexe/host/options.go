@@ -15,15 +15,20 @@
 package host
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	ldOutput "go.chromium.org/luci/logdog/client/butler/output"
+	"go.chromium.org/luci/logdog/client/butler/output/null"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
 // Options is an optional struct which allows you to control how Run operates.
@@ -53,11 +58,26 @@ type Options struct {
 	// value for BaseDir.
 	//
 	// The BaseDir (provided or picked) will be managed by Run; Prior to
-	// execution, Run will ensure that the directory is empty.
+	// execution, Run will ensure that the directory is empty by removing its
+	// contents.
 	BaseDir string
 
-	authDir    string
-	lucictxDir string
+	// If LeakBaseDir is true, Run will not try to remove BaseDir at the end if
+	// it's execution.
+	//
+	// If BaseDir is not provided, this must be false.
+	LeakBaseDir bool
+
+	// The viewer URL for this hosted execution (if any). This will be used to
+	// apply the "logdog.viewer_url" tag to all logdog streams (the tag which is
+	// used to implement the "Back to build" link in Milo).
+	ViewerURL string
+
+	authDir          string
+	lucictxDir       string
+	streamServerPath string
+
+	logdogTags streamproto.TagMap
 }
 
 // The function below is in `var name = func` form so that it shows up in godoc.
@@ -82,35 +102,78 @@ var DefaultExeAuth = func(id string, knownGerritHosts []string) *authctx.Context
 	}
 }
 
+type pathToMake struct {
+	path string  // unique directory name under BaseDir
+	name string  // human readable name of this dir (i.e. it's purpose)
+	dest *string // output destination in Options struct
+}
+
+func (p pathToMake) create(base string) error {
+	*p.dest = filepath.Join(base, p.path)
+	return errors.Annotate(os.Mkdir(*p.dest, 0777), "making %q dir", p.name).Err()
+}
+
 func (o *Options) initialize() (err error) {
 	if o.BaseDir == "" {
+		if o.LeakBaseDir {
+			return errors.New("BaseDir was provided but LeakBaseDir == true")
+		}
 		o.BaseDir, err = ioutil.TempDir("", "luciexe-host-")
 		if err != nil {
-			return errors.Annotate(err, "generating options.BaseDir").Err()
+			return errors.Annotate(err, "Cannot create BaseDir").Err()
+		}
+	} else {
+		if err := os.RemoveAll(o.BaseDir); err != nil && !os.IsNotExist(err) {
+			return errors.Annotate(err, "clearing options.BaseDir").Err()
+		}
+		if err := os.Mkdir(o.BaseDir, 0777); err != nil {
+			return errors.Annotate(err, "creating options.BaseDir").Err()
 		}
 	}
 
-	pathsToMake := []struct {
-		path string  // unique directory name under BaseDir
-		name string  // human readable name of this dir (i.e. it's purpose)
-		dest *string // output destination in Options struct
-	}{
+	pathsToMake := []pathToMake{
 		{"a", "auth", &o.authDir},
 		{"l", "luci context", &o.lucictxDir},
 	}
 
+	if runtime.GOOS != "windows" {
+		pathsToMake = append(
+			pathsToMake, pathToMake{"ld", "logdog socket", &o.streamServerPath})
+	} else {
+		o.streamServerPath = "luciexe/host"
+	}
+
 	merr := errors.NewLazyMultiError(len(pathsToMake))
 	for i, paths := range pathsToMake {
-		*paths.dest = filepath.Join(o.BaseDir, paths.path)
-		merr.Assign(i, errors.Annotate(os.Mkdir(*paths.dest, 0777), "making %q dir", paths.name).Err())
+		merr.Assign(i, paths.create(o.BaseDir))
 	}
 	if err := merr.Get(); err != nil {
 		return err
+	}
+
+	if runtime.GOOS != "windows" {
+		o.streamServerPath = filepath.Join(o.streamServerPath, "sock")
+	}
+
+	if o.LogdogOutput == nil {
+		o.LogdogOutput = &null.Output{}
 	}
 
 	if o.ExeAuth == nil {
 		o.ExeAuth = DefaultExeAuth("luciexe", nil)
 	}
 
+	if o.ViewerURL != "" {
+		o.logdogTags = streamproto.TagMap{"logdog.viewer_url": o.ViewerURL}
+	}
+
 	return nil
+}
+
+func (o *Options) cleanup(ctx context.Context) {
+	if !o.LeakBaseDir {
+		if err := os.RemoveAll(o.BaseDir); err != nil {
+			logging.WithError(err).Errorf(ctx, "removing BaseDir")
+		}
+	}
 }
