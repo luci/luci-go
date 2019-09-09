@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "646dfe01_94f23378",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-09T21:32:48Z",
+      "side": 1,
+      "message": "could you use strings.TrimSuffix(dir, \"/\") here instead?",
+      "revId": "747a924be2d336f45a238cb760168cea63062f98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "202a4394_cb57fd99",
+        "filename": "client/downloader/downloader_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-09T21:32:48Z",
+      "side": 1,
+      "message": "Could you use MustWithTempDir here?\nhttps://godoc.org/go.chromium.org/luci/common/testing/testfs#MustWithTempDir",
+      "range": {
+        "startLine": 122,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 5
+      },
+      "revId": "747a924be2d336f45a238cb760168cea63062f98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
