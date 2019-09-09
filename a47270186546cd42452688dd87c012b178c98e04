@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7cb998b9_b1b6e16f",
+        "filename": "luciexe/host/auth_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T01:50:59Z",
+      "side": 1,
+      "message": "i often wish this encapsulated by some magic gologger func.",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 2
+      },
+      "revId": "a47270186546cd42452688dd87c012b178c98e04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e2a0836a_fb0651fe",
+        "filename": "luciexe/host/butler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T01:50:59Z",
+      "side": 1,
+      "message": "because of this, imo, 1liner doc is handy\n\n// startButler starts butler and modifies *current process* ENV",
+      "range": {
+        "startLine": 51,
+        "startChar": 14,
+        "endLine": 51,
+        "endChar": 35
+      },
+      "revId": "a47270186546cd42452688dd87c012b178c98e04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02e99a29_3ff12e7d",
+        "filename": "luciexe/host/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T01:50:59Z",
+      "side": 1,
+      "message": "why not enforce it being false?\n\nrational: makes doc simpler and costs 3 extra lines.",
+      "range": {
+        "startLine": 68,
+        "startChar": 32,
+        "endLine": 68,
+        "endChar": 64
+      },
+      "revId": "a47270186546cd42452688dd87c012b178c98e04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08f2e069_55732047",
+        "filename": "luciexe/host/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T01:50:59Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 120,
+        "startChar": 2,
+        "endLine": 121,
+        "endChar": 3
+      },
+      "revId": "a47270186546cd42452688dd87c012b178c98e04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
