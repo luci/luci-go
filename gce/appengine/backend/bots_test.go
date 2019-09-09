@@ -18,12 +18,14 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
@@ -584,18 +586,33 @@ func TestTerminateBot(t *testing.T) {
 			})
 
 			Convey("terminates", func() {
+				c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
+				rpcsToSwarming := 0
 				rt.Handler = func(req interface{}) (int, interface{}) {
+					rpcsToSwarming += 1
 					return http.StatusOK, &swarming.SwarmingRpcsTerminateResponse{}
 				}
 				datastore.Put(c, &model.VM{
 					ID:       "id",
 					Hostname: "name",
 				})
-				err := terminateBot(c, &tasks.TerminateBot{
+				terminateTask := tasks.TerminateBot{
 					Id:       "id",
 					Hostname: "name",
+				}
+				So(terminateBot(c, &terminateTask), ShouldBeNil)
+				So(rpcsToSwarming, ShouldEqual, 1)
+
+				Convey("wait 1 hour before sending another terminate task", func() {
+					c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC.Add(time.Hour-time.Second))
+					So(terminateBot(c, &terminateTask), ShouldBeNil)
+					So(rpcsToSwarming, ShouldEqual, 1)
+
+					c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC.Add(time.Hour))
+					So(terminateBot(c, &terminateTask), ShouldBeNil)
+					So(err, ShouldBeNil)
+					So(rpcsToSwarming, ShouldEqual, 2)
 				})
-				So(err, ShouldBeNil)
 			})
 		})
 	})

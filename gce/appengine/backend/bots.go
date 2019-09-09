@@ -16,6 +16,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
@@ -225,6 +227,12 @@ func terminateBot(c context.Context, payload proto.Message) error {
 		logging.Debugf(c, "bot %q does not exist", task.Hostname)
 		return nil
 	}
+	// TODO(crbug/982840): swarming should perform de-duplication itself.
+	mi := memcache.NewItem(c, fmt.Sprintf("terminate-%s/%s", vm.Swarming, vm.Hostname))
+	if err := memcache.Get(c, mi); err == nil {
+		logging.Debugf(c, "bot %q already has terminate task from us", task.Hostname)
+		return nil
+	}
 	logging.Debugf(c, "terminating bot %q: %s", vm.Hostname, vm.Swarming)
 	srv := getSwarming(c, vm.Swarming)
 	_, err := srv.Bot.Terminate(vm.Hostname).Context(c).Do()
@@ -238,6 +246,9 @@ func terminateBot(c context.Context, payload proto.Message) error {
 			logErrors(c, gerr)
 		}
 		return errors.Annotate(err, "failed to terminate bot").Err()
+	}
+	if err = memcache.Set(c, mi.SetExpiration(time.Hour)); err != nil {
+		logging.Warningf(c, "failed to record terminate task in memcache: %s", err)
 	}
 	return nil
 }
