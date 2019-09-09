@@ -22,6 +22,30 @@
       "revId": "ffd32d16a0b889b852183952a285da89387c39b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7907cbff_ef1163fc",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T23:32:00Z",
+      "side": 1,
+      "message": "sorry, didn\u0027t see before landing. I don\u0027t see an advantage once more broard-scoped err has been declared. But avoiding creating broad-scoped vars -- sgtm.\nHere is follow up: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1793776",
+      "parentUuid": "52ccea3f_8687311e",
+      "range": {
+        "startLine": 250,
+        "startChar": 8,
+        "endLine": 250,
+        "endChar": 9
+      },
+      "revId": "ffd32d16a0b889b852183952a285da89387c39b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
