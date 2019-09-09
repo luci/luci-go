@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d57063c3_4d316c1f",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-09T19:37:06Z",
+      "side": 1,
+      "message": "Yeah, this should be unmarshaled, thanks!",
+      "parentUuid": "fb7a1ae0_5fd5c397",
+      "range": {
+        "startLine": 21,
+        "startChar": 28,
+        "endLine": 21,
+        "endChar": 78
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e3a47dea_7912170e",
         "filename": "results/recorder/chromium/formats/common.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f901786e_647fbae8",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-09T19:37:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e3a47dea_7912170e",
+      "range": {
+        "startLine": 23,
+        "startChar": 69,
+        "endLine": 24,
+        "endChar": 8
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "9590039d_e769696a",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-09T19:37:06Z",
+      "side": 1,
+      "message": "Yes, that\u0027s the intention. Related to the above comment, the idea is that we\u0027ll read output.json, and then try it out as different formats. If even /unmarshalling/ fails, then there\u0027s no need to try the different formats.",
+      "parentUuid": "d9014014_8ea4bf60",
+      "range": {
+        "startLine": 25,
+        "startChar": 4,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94e2d3fd_265d5005",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-09T19:37:06Z",
+      "side": 1,
+      "message": "Yes --- there are different test result formats that all get outputted to JSON: in particular, JSON Test Results Format gets outputted to JSON in output.json, as do GTest results (so far, there are only JSON Test Results involved, which can be a little confusing as it\u0027s JSON to JSON [Test Results Format]).\n\nHappy to change with any suggestions to make it clearer!",
+      "parentUuid": "ba134900_42f5bb6a",
+      "range": {
+        "startLine": 25,
+        "startChar": 31,
+        "endLine": 25,
+        "endChar": 35
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "385cd64d_9d186e5f",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
@@ -114,6 +210,30 @@
       "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc1968ef_32efcab3",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-09T19:37:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "385cd64d_9d186e5f",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 0
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -154,6 +274,30 @@
       "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "851e10b0_725dcae7",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-09T19:37:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9f6c6df_1b54ec17",
+      "range": {
+        "startLine": 69,
+        "startChar": 68,
+        "endLine": 69,
+        "endChar": 79
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
