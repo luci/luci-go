@@ -235,8 +235,7 @@ func terminateBot(c context.Context, payload proto.Message) error {
 	}
 	logging.Debugf(c, "terminating bot %q: %s", vm.Hostname, vm.Swarming)
 	srv := getSwarming(c, vm.Swarming)
-	_, err := srv.Bot.Terminate(vm.Hostname).Context(c).Do()
-	if err != nil {
+	if _, err := srv.Bot.Terminate(vm.Hostname).Context(c).Do(); err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
 				// Bot is already deleted.
@@ -247,7 +246,7 @@ func terminateBot(c context.Context, payload proto.Message) error {
 		}
 		return errors.Annotate(err, "failed to terminate bot").Err()
 	}
-	if err = memcache.Set(c, mi.SetExpiration(time.Hour)); err != nil {
+	if err := memcache.Set(c, mi.SetExpiration(time.Hour)); err != nil {
 		logging.Warningf(c, "failed to record terminate task in memcache: %s", err)
 	}
 	return nil
