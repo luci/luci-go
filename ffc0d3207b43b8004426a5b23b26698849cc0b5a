@@ -190,6 +190,54 @@
     },
     {
       "key": {
+        "uuid": "f668e6c4_c002a1bc",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T20:24:54Z",
+      "side": 1,
+      "message": "ok, but then you are missing one place -- commented there.\n\nhowever, beware, if you annotate error with something, you return a different object. Which the switch statement above won\u0027t work as is, you\u0027d need to unwrap errors.\n\n$.01: i\u0027d try (if possible) to instead create 1 function *all* returns of which indicate bad format (either syntax or semantic) and treat any errors from it as if it was ErrBadFormat. Currently, you have such a function convertFromJSONToGTest, but I don\u0027t know how final API will look like hence if this is feasible, so you decide.",
+      "parentUuid": "9590039d_e769696a",
+      "range": {
+        "startLine": 25,
+        "startChar": 4,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "64201d43_fa9dd8d9",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-09T20:24:54Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "94e2d3fd_265d5005",
+      "range": {
+        "startLine": 25,
+        "startChar": 31,
+        "endLine": 25,
+        "endChar": 35
+      },
+      "revId": "ffc0d3207b43b8004426a5b23b26698849cc0b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "385cd64d_9d186e5f",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
