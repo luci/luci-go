@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "52ccea3f_8687311e",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-09T23:27:16Z",
+      "side": 1,
+      "message": "I prefer to use \u0027:\u003d\u0027 for nallowed scope of err",
+      "range": {
+        "startLine": 250,
+        "startChar": 8,
+        "endLine": 250,
+        "endChar": 9
+      },
+      "revId": "ffd32d16a0b889b852183952a285da89387c39b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

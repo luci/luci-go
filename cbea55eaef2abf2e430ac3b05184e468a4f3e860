@@ -22,6 +22,30 @@
       "revId": "cbea55eaef2abf2e430ac3b05184e468a4f3e860",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91dcdaff_21169408",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-09T23:27:16Z",
+      "side": 1,
+      "message": "Currently terminate task has 1 day expiration time by default.",
+      "parentUuid": "174cd903_406b2efb",
+      "range": {
+        "startLine": 250,
+        "startChar": 23,
+        "endLine": 250,
+        "endChar": 27
+      },
+      "revId": "cbea55eaef2abf2e430ac3b05184e468a4f3e860",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
