@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "6dd70dab_a20e2e66",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1351147
+      },
+      "writtenOn": "2019-09-10T17:47:48Z",
+      "side": 1,
+      "message": "Unfortunately yes. Otherwise is doesn\u0027t correctly handle creating intermediate subdirs.",
+      "parentUuid": "2d6e3c85_8a9e81ca",
+      "revId": "93ffe693dc862003e7f14e5b074635a0003fe9cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5d84f9ee_10ddc85d",
         "filename": "client/downloader/downloader_test.go",
         "patchSetId": 3

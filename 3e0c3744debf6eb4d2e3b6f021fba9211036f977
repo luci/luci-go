@@ -22,6 +22,30 @@
       "revId": "3e0c3744debf6eb4d2e3b6f021fba9211036f977",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5da6ef7_194b0532",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1351147
+      },
+      "writtenOn": "2019-09-10T17:47:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95f4d351_e8c23796",
+      "range": {
+        "startLine": 354,
+        "startChar": 10,
+        "endLine": 354,
+        "endChar": 13
+      },
+      "revId": "3e0c3744debf6eb4d2e3b6f021fba9211036f977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
