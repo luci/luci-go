@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2d6e3c85_8a9e81ca",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1351147
+      },
+      "writtenOn": "2019-09-10T00:54:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "68dd3a9b_845d70fa",
+      "revId": "93ffe693dc862003e7f14e5b074635a0003fe9cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5d84f9ee_10ddc85d",
         "filename": "client/downloader/downloader_test.go",
         "patchSetId": 3
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "ea94f951_6358482a",
+        "filename": "client/downloader/downloader_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1351147
+      },
+      "writtenOn": "2019-09-10T00:54:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d84f9ee_10ddc85d",
+      "range": {
+        "startLine": 122,
+        "startChar": 69,
+        "endLine": 122,
+        "endChar": 77
+      },
+      "revId": "93ffe693dc862003e7f14e5b074635a0003fe9cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab05b6ca_a6e2beb3",
         "filename": "client/downloader/downloader_test.go",
         "patchSetId": 3
@@ -56,6 +98,24 @@
       "revId": "93ffe693dc862003e7f14e5b074635a0003fe9cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "732e8f67_72c18766",
+        "filename": "client/downloader/downloader_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1351147
+      },
+      "writtenOn": "2019-09-10T00:54:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab05b6ca_a6e2beb3",
+      "revId": "93ffe693dc862003e7f14e5b074635a0003fe9cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
