@@ -16,6 +16,24 @@
       "revId": "b6c3f25451b5b0dfa99172b0ba70a8735908068a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c85fc1f9_459d033f",
+        "filename": "client/downloader/downloader_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-10T01:06:12Z",
+      "side": 0,
+      "message": "use comment threads not to drop any comments.\nhttps://screenshot.googleplex.com/R3aYgN1O1Kc",
+      "parentUuid": "7510517f_01503ce9",
+      "revId": "b6c3f25451b5b0dfa99172b0ba70a8735908068a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
