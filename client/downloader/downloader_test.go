@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -118,14 +119,28 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	ts := httptest.NewServer(server)
 	defer ts.Close()
 	client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
-
+	Convey(`A downloader should accept paths with trailing slashes`, t, testfs.MustWithTempDir(t, "isolated", func(tmpDir string) {
+		tmpDir += "/"
+		var mu sync.Mutex
+		var files []string
+		d := New(ctx, client, isolated2hash, tmpDir, &Options{
+			FileCallback: func(name string, _ *isolated.File) {
+				mu.Lock()
+				files = append(files, name)
+				mu.Unlock()
+			},
+		})
+		// crbug/1000344 this would previously hang.
+		So(d.Wait(), ShouldBeNil)
+		// Ensure that step above completed and isolatedFiles seems sane.
+		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
+	}))
 	Convey(`A downloader should be able to download the isolated.`, t, func() {
 		tmpDir, err := ioutil.TempDir("", "isolated")
 		So(err, ShouldBeNil)
 		defer func() {
 			So(os.RemoveAll(tmpDir), ShouldBeNil)
 		}()
-
 		mu := sync.Mutex{}
 		var files []string
 		d := New(ctx, client, isolated2hash, tmpDir, &Options{
