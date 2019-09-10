@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0867e967_20dd2ebb",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-10T01:31:44Z",
+      "side": 1,
+      "message": "Yeah... as I was putting this together I realized that there\u0027s potential for clashing with ConvertFromJSON in json.go, but I didn\u0027t want to change that in the same CL here and was planning on fixing both those names in a separate CL.\n\nI can make this visible in this CL though, and if you have thoughts on how to deal with the \"ConvertFromJSONToGTest\" in gtest.go vs. \"ConvertFromJSON\" in json.go (\"ConvertFromJSONToJSON\" is not only a mouthful but pretty confusing), please let me know.\n\nOne way I was considering is to make them both functions of JSONTestResults and GTestResults, respectively, so we would do in swarming.go something like\n\n jsonTR :\u003d \u0026formats.JSONTestResults{}\n if err :\u003d jsonTR.ConvertFromJSON(ctx, reader); err \u003d\u003d nil {\n } else if !errors.Contains(err, formats.ErrBadFormat) {\n  return err\n }\n\n gTR :\u003d \u0026formats.GTestResults{}\n if err :\u003d gTR.ConvertFromJSON(ctx, reader) [...]",
+      "parentUuid": "cc4cc0fc_314ce569",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 6
+      },
+      "revId": "378b3958b54c22e5a801777dd0d8e3f2dc586e56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a85c92e_f1349035",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 4
