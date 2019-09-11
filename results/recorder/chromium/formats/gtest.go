@@ -16,11 +16,17 @@ package formats
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"sort"
+	"strconv"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+
+	resultspb "go.chromium.org/luci/results/proto/v1"
 )
 
 // GTestResults represents the structure as described to be generated in
@@ -37,6 +43,10 @@ type GTestResults struct {
 
 	// TestLocations maps test names to their location in code.
 	TestLocations map[string]*Location `json:"test_locations"`
+
+	// StartTime is the start (epoch) time in seconds for the containing swarming shard.
+	// GTest results don't have start times, only elapsed times, so we estimate.
+	StartTime float64
 }
 
 // GTestRunResult represents the per_iteration_data as described in
@@ -50,7 +60,7 @@ type GTestRunResult struct {
 
 	OutputSnippet       string `json:"output_snippet"`
 	LosslessSnippet     bool   `json:"losless_snippet"`
-	OutputSnippetBase64 string `json:"output_snippit_base64"`
+	OutputSnippetBase64 string `json:"output_snippet_base64"`
 }
 
 // Location describes a code location.
@@ -75,4 +85,149 @@ func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) er
 	}
 
 	return nil
+}
+
+// ToInvocation converts a JSONTestResults to a (partial) resultspb.Invocation.
+func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveInvocationFromSwarmingRequest) (*resultspb.Invocation, error) {
+	inv := &resultspb.Invocation{}
+
+	// testsToVariants maps GTest base name to the variant (ID)s present to Results.
+	// We store these maps to handle the same test and variants appearing in multiple iterations.
+	testsToVariants := make(map[string]map[string][]*resultspb.Result)
+	variantDefs := make(map[string]*resultspb.VariantDef)
+
+	// curTime tracks a start time for the test run. It is a lie, as not even order is guaranteed to
+	// match, but test runs have only elapsed time so we use the swarming task start time to derive a
+	// test run start and end.
+	curTime := r.StartTime
+
+	for it, data := range r.PerIterationData {
+		// In theory, we can have multiple iterations. This seems rare in practice, so log if we do see
+		// more than one to confirm and track.
+		if it > 0 {
+			logging.Infof(ctx,
+				"Got more than one iteration for task %s on %s", req.Task.Id, req.Task.Hostname)
+		}
+
+		for name, results := range data {
+			baseName, params := r.getParameters(name)
+
+			// Derive the variant definition from base variant and params.
+			variantDef := r.getTestVariant(req.BaseTestVariant.Def, params)
+			varID := getVariantID(variantDef.Def)
+
+			varpb := &resultspb.Invocation_TestVariant{}
+			varpb.VariantId = varID
+			variantDefs[varID] = variantDef
+
+			// Generate individual result protos.
+			var rpbs []*resultspb.Result
+			for _, result := range results {
+				rpb := &resultspb.Result{
+					Status:  r.getStatus(result.Status),
+					Summary: &resultspb.Markdown{Text: result.OutputSnippetBase64},
+				}
+
+				// TODO: Verify that it's indeed the case that getting NOTRUN results in the final results
+				// indicates the task was incomplete.
+				if result.Status == "NOTRUN" {
+					inv.Incomplete = true
+				}
+
+				// Approximate times.
+				rpb.StartTime = secondsToTimestamp(curTime)
+				curTime += float64(result.ElapsedTimeMs) / 1000000
+				rpb.EndTime = secondsToTimestamp(curTime)
+
+				// Store the correct output snippet.
+				if result.LosslessSnippet {
+					rpb.Tags = append(rpb.Tags, &resultspb.StringPair{Key: "lossless_snippet", Value: "true"})
+					rpb.Summary.Text = result.OutputSnippet
+				}
+
+				// Store the test code location.
+				if loc, ok := r.TestLocations[name]; ok {
+					rpb.Tags = append(rpb.Tags, []*resultspb.StringPair{
+						{Key: "file", Value: loc.File},
+						{Key: "line", Value: strconv.Itoa(loc.Line)},
+					}...)
+				}
+
+				rpbs = append(rpbs, rpb)
+			}
+
+			// Store the processed test result into the correct part of the overall map.
+			testName := fmt.Sprintf("%s/%s", req.TestPathPrefix, baseName)
+			if _, ok := testsToVariants[testName]; !ok {
+				testsToVariants[testName] = make(map[string][]*resultspb.Result)
+			}
+			testsToVariants[testName][varID] = append(testsToVariants[testName][varID], rpbs...)
+		}
+	}
+
+	// Now that we have all the results mapped by test names and variant, populate the invocation.
+	for name, variants := range testsToVariants {
+		testpb := &resultspb.Invocation_Test{Name: name}
+
+		for id, results := range variants {
+			testpb.Variants = append(testpb.Variants, &resultspb.Invocation_TestVariant{
+				VariantId: id,
+				Results:   results,
+			})
+		}
+
+		inv.Tests = append(inv.Tests, testpb)
+	}
+
+	inv.VariantDefs = variantDefs
+
+	// Populate the tags.
+	for _, tag := range r.GlobalTags {
+		inv.Tags = append(inv.Tags, &resultspb.StringPair{Key: "global_tag", Value: tag})
+	}
+
+	return inv, nil
+}
+
+func (r *GTestResults) getStatus(status string) resultspb.Status {
+	switch status {
+	case "SUCCESS":
+		return resultspb.Status_PASS
+	case "FAILURE":
+		return resultspb.Status_FAIL
+	case "FAILURE_ON_EXIT":
+		return resultspb.Status_FAIL
+	case "CRASH":
+		return resultspb.Status_CRASH
+	case "TIMEOUT":
+		return resultspb.Status_ABORT
+	case "SKIPPED":
+		return resultspb.Status_SKIP
+	case "EXCESSIVE_OUTPUT":
+		return resultspb.Status_PASS
+	case "NOTRUN":
+		return resultspb.Status_SKIP
+	}
+	return resultspb.Status_STATUS_UNSPECIFIED
+}
+
+// getParameters gets parameters from a test path as mapping with "param/" keys.
+func (r *GTestResults) getParameters(testPath string) (string, map[string]string) {
+	// TODO: Implement.
+	return testPath, map[string]string{}
+}
+
+// getTestVariant gets the test variant def from the input maps.
+func (r *GTestResults) getTestVariant(maps ...map[string]string) *resultspb.VariantDef {
+	def := make(map[string]string)
+	var keys []string
+
+	for _, m := range maps {
+		for k, v := range m {
+			def[k] = v
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+	return getVariantFromDefMap(def, keys)
 }
