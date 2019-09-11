@@ -44,10 +44,10 @@ const (
 	User Kind = "user"
 )
 
-// knownKinds is used in Validate. It is mapping between Kind and regexp for
-// identity value. See also appengine/components/components/auth/model.py in
-// luci-py.
-var knownKinds = map[Kind]*regexp.Regexp{
+// KnownKinds is mapping between Kind and regexp for identity values.
+//
+// See also appengine/components/components/auth/model.py in luci-py.
+var KnownKinds = map[Kind]*regexp.Regexp{
 	Anonymous: regexp.MustCompile(`^anonymous$`),
 	Bot:       regexp.MustCompile(`^[0-9a-zA-Z_\-\.@]+$`),
 	Project:   regexp.MustCompile(`^[a-z0-9\-_]+$`),
@@ -79,7 +79,7 @@ func (id Identity) Validate() error {
 	if len(chunks) != 2 {
 		return fmt.Errorf("auth: bad identity string %q", id)
 	}
-	re := knownKinds[Kind(chunks[0])]
+	re := KnownKinds[Kind(chunks[0])]
 	if re == nil {
 		return fmt.Errorf("auth: bad identity kind %q", chunks[0])
 	}
